@@ -30,10 +30,11 @@ func newSessionFixture(t *testing.T) (repo, socket string) {
 	fake := filepath.Join(dir, "fake-open-task-window")
 	os.WriteFile(fake, []byte(`#!/usr/bin/env bash
 set -e
-[[ "$1" == --no-attach && "$2" == --type ]] || { echo "bad args: $*" >&2; exit 2; }
+[[ "$1" == --no-attach && "$2" == --description && "$4" == -- ]] || { echo "bad args: $*" >&2; exit 2; }
+echo "$3" >"$PWD/.fake-description"
 tmux -S `+socket+` new-session -d -s fake -x 100 -y 20 "sh -c 'echo ready; exec cat'"
-echo "branch_name=$3/${5}"
-echo "worktree_path=$PWD/.worktrees/$3-$5"
+echo "branch_name=dev/${5}"
+echo "worktree_path=$PWD/.worktrees/$5"
 echo "window_id=$(tmux -S `+socket+` display-message -p -t fake '#{window_id}')"
 echo "tmux_socket=`+socket+`"
 `), 0o755)
@@ -64,14 +65,17 @@ func TestNewSessionEndToEnd(t *testing.T) {
 		t.Skip("tmux missing")
 	}
 	repo, socket := newSessionFixture(t)
-	raw, _ := json.Marshal(map[string]string{"repo": repo, "type": "dev", "subject": "phone", "prompt": "hello from the phone"})
+	raw, _ := json.Marshal(map[string]string{"repo": repo, "name": "phone", "description": "手机端体验", "prompt": "hello from the phone"})
 	res, err := startNewSession(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 	j := waitJob(t, res.(map[string]any)["job"].(string))
-	if j.Stage != "done" || j.Branch != "dev/phone" || !strings.HasSuffix(j.Worktree, "dev-phone") {
+	if j.Stage != "done" || j.Branch != "dev/phone" || !strings.HasSuffix(j.Worktree, "/.worktrees/phone") {
 		t.Fatalf("job: %+v", j)
+	}
+	if got, _ := os.ReadFile(filepath.Join(repo, ".fake-description")); strings.TrimSpace(string(got)) != "手机端体验" {
+		t.Fatalf("description not passed: %q", got)
 	}
 	screen, _ := exec.Command("tmux", "-S", socket, "capture-pane", "-p", "-t", "fake").Output()
 	if !strings.Contains(string(screen), "hello from the phone") {
@@ -82,13 +86,16 @@ func TestNewSessionEndToEnd(t *testing.T) {
 func TestNewSessionValidates(t *testing.T) {
 	repo, _ := newSessionFixture(t)
 	cases := map[string]map[string]string{
-		"type":     {"repo": repo, "type": "feature", "subject": "x", "prompt": "p"},
-		"subject":  {"repo": repo, "type": "dev", "subject": "", "prompt": "p"},
-		"newline":  {"repo": repo, "type": "dev", "subject": "a\nb", "prompt": "p"},
-		"long":     {"repo": repo, "type": "dev", "subject": strings.Repeat("长", 61), "prompt": "p"},
-		"message":  {"repo": repo, "type": "dev", "subject": "x", "prompt": "  "},
-		"repo":     {"repo": "/etc", "type": "dev", "subject": "x", "prompt": "p"},
-		"repo-sub": {"repo": repo + "/../..", "type": "dev", "subject": "x", "prompt": "p"},
+		"name":        {"repo": repo, "name": "", "prompt": "p"},
+		"old-subject": {"repo": repo, "type": "dev", "subject": "x", "prompt": "p"}, // a page from before 2026-11-25
+		"no-ascii":    {"repo": repo, "name": "网页体验", "prompt": "p"},
+		"newline":     {"repo": repo, "name": "a\nb", "prompt": "p"},
+		"long":        {"repo": repo, "name": strings.Repeat("a", 61), "prompt": "p"},
+		"desc-long":   {"repo": repo, "name": "x", "description": strings.Repeat("长", 121), "prompt": "p"},
+		"desc-lines":  {"repo": repo, "name": "x", "description": "a\nb", "prompt": "p"},
+		"message":     {"repo": repo, "name": "x", "prompt": "  "},
+		"repo":        {"repo": "/etc", "name": "x", "prompt": "p"},
+		"repo-sub":    {"repo": repo + "/../..", "name": "x", "prompt": "p"},
 	}
 	for name, args := range cases {
 		raw, _ := json.Marshal(args)
@@ -106,7 +113,7 @@ func TestNewSessionFailureIsReported(t *testing.T) {
 	fake := filepath.Join(t.TempDir(), "failing")
 	os.WriteFile(fake, []byte("#!/usr/bin/env bash\necho 'worktree exists' >&2\nexit 1\n"), 0o755)
 	t.Setenv("WEZDECK_SESSION_NEW_CMD", fake)
-	raw, _ := json.Marshal(map[string]string{"repo": repo, "type": "task", "subject": "x", "prompt": "p"})
+	raw, _ := json.Marshal(map[string]string{"repo": repo, "name": "x", "prompt": "p"})
 	res, err := startNewSession(raw)
 	if err != nil {
 		t.Fatal(err)

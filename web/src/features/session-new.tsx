@@ -1,7 +1,9 @@
-// 新会话 — wezdeck's Ctrl+k g d/t/h from the phone: pick a repository, the
-// lifecycle (dev / task / hotfix), a subject and the first message; the host
-// creates the worktree and its agent in tmux and hands the agent the message
-// (native session_new.go). Creation outlasts an RPC, so the host answers a
+// 新会话 — wezdeck's Ctrl+k g d from the phone: pick a repository, name a
+// new workstation (one direction: ux, ci, i18n …) with a one-line purpose,
+// and write the first message; the host creates the worktree (directory
+// <name>, branch dev/<name>, the purpose as its git branch description) and
+// its agent in tmux and hands the agent the message (native
+// session_new.go). Creation outlasts an RPC, so the host answers a
 // job id and the sheet follows its stages, then opens the session once it
 // is listed. `c` on the session list opens it with a keyboard.
 import { useLingui } from '@lingui/react/macro'
@@ -10,7 +12,6 @@ import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
@@ -24,7 +25,21 @@ import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
 
 type Repo = { root: string; label: string; visited?: number }
-type Kind = 'dev' | 'task' | 'hotfix'
+
+/**
+ * The directory / branch name the host makes of a typed name
+ * (open-task-window → wt_slugify): a dev- or dev/ typed out of habit goes,
+ * then lower case, every run of other characters one '-', trimmed. "" when
+ * nothing usable is left (a name of only Chinese, say).
+ */
+export function workstationSlug(name: string) {
+  return name
+    .trim()
+    .replace(/^dev[-/]/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 type Job = {
   job: string
   stage: 'creating' | 'starting' | 'sending' | 'done' | 'failed'
@@ -134,8 +149,8 @@ function NewSessionSheet({
   })
   const sessions = useSessions()
   const [repo, setRepo] = useState('')
-  const [kind, setKind] = useState<Kind>('dev')
-  const [subject, setSubject] = useState('')
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
   const [prompt, setPrompt] = useState('')
   const [error, setError] = useState('')
   const [jobId, setJobId] = useState('')
@@ -175,27 +190,21 @@ function NewSessionSheet({
     })
   }, [listed, jobId, navigate, locale, onClose])
   const busy = Boolean(jobId) && current?.stage !== 'failed'
-  const name = subject.trim()
-  const ready =
-    Boolean(chosen) && Boolean(subject.trim()) && Boolean(prompt.trim())
+  const slug = workstationSlug(name)
+  const ready = Boolean(chosen) && Boolean(slug) && Boolean(prompt.trim())
   const submit = async () => {
     setError('')
     try {
       const res = (await hostWrite('session.new', {
         repo: chosen,
-        type: kind,
-        subject: subject.trim(),
+        name: name.trim(),
+        description: description.trim(),
         prompt: prompt.trim(),
       })) as { job: string }
       setJobId(res.job)
     } catch (e) {
       setError((e as Error).message)
     }
-  }
-  const kinds: Record<Kind, string> = {
-    dev: t`dev: a long-lived workstation for parallel work`,
-    task: t`task: a short focused change, reclaimed after delivery`,
-    hotfix: t`hotfix: an urgent fix`,
   }
   return (
     <Sheet
@@ -221,34 +230,41 @@ function NewSessionSheet({
             }))}
           />
         </label>
-        <div className="grid gap-1">
-          <Segmented
-            label={t`Kind`}
-            value={kind}
-            onChange={(value) => !busy && setKind(value)}
-            options={[
-              { value: 'dev', label: 'dev' },
-              { value: 'task', label: 'task' },
-              { value: 'hotfix', label: 'hotfix' },
-            ]}
-          />
-          <p className="px-1 text-meta text-brand-label">{kinds[kind]}</p>
-        </div>
         <label className="grid gap-1 text-caption text-brand-muted">
-          {t`Subject`}
+          {t`Direction`}
           <Input
             variant="field"
-            value={subject}
+            value={name}
             disabled={busy}
             maxLength={60}
-            onChange={(event) => setSubject(event.target.value)}
-            placeholder={t`e.g. phone-create`}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={t`e.g. ux, ci, i18n`}
           />
-          <span className="px-1 text-meta text-brand-label">
-            {subject.trim()
-              ? t`Worktree ${kind}-${name}, branch ${kind}/${name} (the host makes the final names; a taken one gets -2)`
-              : t`Becomes the worktree and branch name, like Ctrl+k g at the desk.`}
+          <span
+            className={
+              name.trim() && !slug
+                ? 'px-1 text-meta text-brand-error'
+                : 'px-1 text-meta text-brand-label'
+            }
+            data-testid="new-session-slug"
+          >
+            {!name.trim()
+              ? t`A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk.`
+              : slug
+                ? t`Worktree ${slug}, branch dev/${slug} (a taken name gets -2)`
+                : t`Needs letters or digits: it becomes the directory and branch. Put the rest in the description.`}
           </span>
+        </label>
+        <label className="grid gap-1 text-caption text-brand-muted">
+          {t`Description`}
+          <Input
+            variant="field"
+            value={description}
+            disabled={busy}
+            maxLength={120}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder={t`What this workstation is for, one line`}
+          />
         </label>
         <label className="grid gap-1 text-caption text-brand-muted">
           {t`First message to the agent`}

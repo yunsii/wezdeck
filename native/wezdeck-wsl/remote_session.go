@@ -354,14 +354,17 @@ type sessionCard struct {
 	Background  []bgTask `json:"background"`
 	// Tree grouping (repo family → worktree → pane). tmux fields are optional
 	// mount info so ticket agents on the same worktree can join later.
-	Repo        string `json:"repo,omitempty"`
-	RepoLabel   string `json:"repo_label,omitempty"` // Repo through WEZDECK_REPO_ALIASES (repo_alias.go)
-	RepoRoot    string `json:"repo_root,omitempty"`
-	Worktree    string `json:"worktree,omitempty"`
-	TmuxSession string `json:"tmux_session,omitempty"`
-	TmuxPane    string `json:"tmux_pane,omitempty"`
-	PaneIndex   int    `json:"pane_index,omitempty"`
-	PaneRole    string `json:"pane_role,omitempty"` // primary | secondary
+	Repo      string `json:"repo,omitempty"`
+	RepoLabel string `json:"repo_label,omitempty"` // Repo through WEZDECK_REPO_ALIASES (repo_alias.go)
+	RepoRoot  string `json:"repo_root,omitempty"`
+	Worktree  string `json:"worktree,omitempty"`
+	// WorktreeDescription: the workstation's one-line purpose (git branch
+	// description, worktree_description.go)
+	WorktreeDescription string `json:"worktree_description,omitempty"`
+	TmuxSession         string `json:"tmux_session,omitempty"`
+	TmuxPane            string `json:"tmux_pane,omitempty"`
+	PaneIndex           int    `json:"pane_index,omitempty"`
+	PaneRole            string `json:"pane_role,omitempty"` // primary | secondary
 	// Visited: when you last visited this worktree at the desk (ms, access
 	// ledger, session_visits.go); the phone sorts by it, not by output
 	Visited int64 `json:"visited,omitempty"`
@@ -402,6 +405,7 @@ func listSessions() (any, error) {
 			card.RepoLabel = label
 		}
 		card.Visited = visitOf(visits, card.Worktree, cwd)
+		card.WorktreeDescription = worktreeDescription(card.RepoRoot, card.Branch)
 		// Activity = when the conversation last moved: the newest turn in the
 		// transcript (remote_activity.go); the status ts (bumped for
 		// background-only sessions) and tmux window_activity (any pane in the

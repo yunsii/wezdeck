@@ -324,9 +324,18 @@ export function SessionList({
                 return (
                   <div key={wt.key} data-worktree={wt.label}>
                     {showWt ? (
-                      <p className="flex items-center gap-1.5 border-b border-brand-edge py-1.5 pr-4 pl-5 text-meta text-brand-label">
+                      <p className="flex min-w-0 items-center gap-1.5 border-b border-brand-edge py-1.5 pr-4 pl-5 text-meta text-brand-label">
                         <GitFork size={12} aria-hidden className="shrink-0" />
-                        {wt.label}
+                        <span className="shrink-0">{wt.label}</span>
+                        {/* the workstation's purpose (git branch description) */}
+                        {wt.description ? (
+                          <span
+                            className="min-w-0 truncate text-brand-muted"
+                            data-testid="worktree-description"
+                          >
+                            · {wt.description}
+                          </span>
+                        ) : null}
                       </p>
                     ) : null}
                     <ul>

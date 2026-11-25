@@ -54,7 +54,7 @@ msgstr "有 {ahead} 个提交待推送，{behind} 个待拉取。"
 msgid "{behind} commits to pull."
 msgstr "有 {behind} 个提交待拉取。"
 
-#: src/features/console-sessions.tsx:179
+#: src/features/console-sessions.tsx:148
 msgid "{bg} background tasks running"
 msgstr "{bg} 个后台任务在跑"
 
@@ -198,7 +198,7 @@ msgstr "{tasks} 个后台任务"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:479
+#: src/features/console-sessions.tsx:448
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -206,7 +206,7 @@ msgstr "共 {total} 条，已显示 {shown} 条"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
-#: src/features/console-sessions.tsx:228
+#: src/features/console-sessions.tsx:197
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -286,6 +286,10 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
+#: src/features/session-new.tsx:252
+msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
+msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
+
 #: src/features/landing-page.tsx:93
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
 msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRTC 直连主机，连不上时走中转。要写入，必须是你在主机上批准过的设备。"
@@ -347,7 +351,7 @@ msgid "Agent name"
 msgstr "Agent 名"
 
 #: src/features/session-list.tsx:307
-#: src/features/session-list.tsx:355
+#: src/features/session-list.tsx:364
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -517,8 +521,8 @@ msgid "Base commit"
 msgstr "基线提交"
 
 #: src/features/session-new.tsx:250
-msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
-msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
+#~ msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
+#~ msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 
 #: src/features/console-me.tsx:228
 msgid "Block"
@@ -582,7 +586,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:552
+#: src/features/console-sessions.tsx:521
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -778,7 +782,7 @@ msgstr "提交"
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
 
-#: src/features/console-sessions.tsx:181
+#: src/features/console-sessions.tsx:150
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
@@ -967,7 +971,7 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:48
+#: src/features/session-new.tsx:63
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -983,7 +987,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:294
+#: src/features/session-new.tsx:310
 msgid "Create session"
 msgstr "创建会话"
 
@@ -991,7 +995,7 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:41
+#: src/features/session-new.tsx:56
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
@@ -1054,13 +1058,17 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
+#: src/features/session-new.tsx:259
+msgid "Description"
+msgstr "描述"
+
 #: src/features/session-info.tsx:76
 msgid "Desk idle for"
 msgstr "终端空闲"
 
 #: src/features/session-new.tsx:196
-msgid "dev: a long-lived workstation for parallel work"
-msgstr "dev：长期并行开发的工作站"
+#~ msgid "dev: a long-lived workstation for parallel work"
+#~ msgstr "dev：长期并行开发的工作站"
 
 #: src/features/console-me.tsx:391
 #: src/features/console-shell.tsx:106
@@ -1089,6 +1097,10 @@ msgstr "诊断"
 msgid "Direct"
 msgstr "直连"
 
+#: src/features/session-new.tsx:234
+msgid "Direction"
+msgstr "方向"
+
 #: src/features/session-empty.tsx:43
 #: src/features/session-info.tsx:52
 msgid "Directory"
@@ -1112,8 +1124,12 @@ msgid "done {when}"
 msgstr "{when} 完成"
 
 #: src/features/session-new.tsx:245
-msgid "e.g. phone-create"
-msgstr "例如 phone-create"
+#~ msgid "e.g. phone-create"
+#~ msgstr "例如 phone-create"
+
+#: src/features/session-new.tsx:241
+msgid "e.g. ux, ci, i18n"
+msgstr "例如 ux、ci、i18n"
 
 #: src/features/landing-page.tsx:112
 #~ msgid "Each repository, linked worktree, and agent session keeps a place you can jump back to."
@@ -1272,12 +1288,12 @@ msgstr "已结束"
 #~ msgid "Finished ({doneCount})"
 #~ msgstr "已完成（{doneCount}）"
 
-#: src/features/console-sessions.tsx:189
+#: src/features/console-sessions.tsx:158
 #: src/features/landing-page.tsx:156
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:254
+#: src/features/session-new.tsx:270
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -1378,8 +1394,8 @@ msgid "Host up since"
 msgstr "主机上线于"
 
 #: src/features/session-new.tsx:198
-msgid "hotfix: an urgent fix"
-msgstr "hotfix：紧急修复"
+#~ msgid "hotfix: an urgent fix"
+#~ msgstr "hotfix：紧急修复"
 
 #: src/features/console-me.tsx:368
 #: src/features/landing-page.tsx:74
@@ -1396,7 +1412,7 @@ msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
 
-#: src/features/console-sessions.tsx:183
+#: src/features/console-sessions.tsx:152
 msgctxt "session status"
 msgid "Idle"
 msgstr "空闲"
@@ -1553,8 +1569,8 @@ msgid "Keys"
 msgstr "快捷"
 
 #: src/features/session-new.tsx:226
-msgid "Kind"
-msgstr "类型"
+#~ msgid "Kind"
+#~ msgstr "类型"
 
 #: src/features/remote-badge.tsx:73
 msgid "LAN"
@@ -1585,7 +1601,7 @@ msgstr "最近采样"
 msgid "Last turn"
 msgstr "最后一轮"
 
-#: src/features/console-sessions.tsx:228
+#: src/features/console-sessions.tsx:197
 #: src/features/me-host.tsx:118
 msgid "Latest"
 msgstr "回到最新"
@@ -1649,7 +1665,7 @@ msgstr "额度更新于{limitsAt}"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:502
+#: src/features/console-sessions.tsx:471
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1665,7 +1681,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:499
+#: src/features/console-sessions.tsx:468
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
@@ -1773,6 +1789,10 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
+#: src/features/session-new.tsx:255
+msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
+msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
+
 #: src/features/session-header.tsx:265
 #: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
@@ -1797,8 +1817,8 @@ msgstr "新开会话"
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-new.tsx:106
-#: src/features/session-new.tsx:206
+#: src/features/session-new.tsx:121
+#: src/features/session-new.tsx:215
 msgid "New session"
 msgstr "新会话"
 
@@ -1806,7 +1826,7 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:102
+#: src/features/session-new.tsx:117
 msgid "New session (c)"
 msgstr "新会话（c）"
 
@@ -2100,7 +2120,7 @@ msgstr "在线"
 #~ msgid "Open Runtime Console"
 #~ msgstr "打开 Runtime 控制台"
 
-#: src/features/console-sessions.tsx:575
+#: src/features/console-sessions.tsx:544
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2458,7 +2478,7 @@ msgstr "仓库筛选"
 #~ msgstr "仓库"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:212
+#: src/features/session-new.tsx:221
 msgid "Repository"
 msgstr "仓库"
 
@@ -2767,7 +2787,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:45
+#: src/features/session-new.tsx:60
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -2849,7 +2869,7 @@ msgstr "键盘快捷键"
 msgid "Show all tags"
 msgstr "显示全部标签"
 
-#: src/features/console-sessions.tsx:501
+#: src/features/console-sessions.tsx:470
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -2901,7 +2921,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:559
+#: src/features/console-sessions.tsx:528
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2953,11 +2973,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:47
+#: src/features/session-new.tsx:62
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:43
+#: src/features/session-new.tsx:58
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -2982,8 +3002,8 @@ msgid "Status updated"
 msgstr "状态更新于"
 
 #: src/features/session-new.tsx:238
-msgid "Subject"
-msgstr "主题"
+#~ msgid "Subject"
+#~ msgstr "主题"
 
 #: src/features/session-ask-claude.tsx:93
 msgid "Submit answers"
@@ -3054,8 +3074,8 @@ msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
 #: src/features/session-new.tsx:197
-msgid "task: a short focused change, reclaimed after delivery"
-msgstr "task：短期聚焦的改动，交付后回收"
+#~ msgid "task: a short focused change, reclaimed after delivery"
+#~ msgstr "task：短期聚焦的改动，交付后回收"
 
 #: src/features/session-permission.tsx:97
 msgid "Terminal"
@@ -3074,7 +3094,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:430
+#: src/features/console-sessions.tsx:399
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -3168,7 +3188,7 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 #~ msgid "This computer, not paired"
 #~ msgstr "本机，未配对"
 
-#: src/features/console-sessions.tsx:428
+#: src/features/console-sessions.tsx:397
 #: src/features/ticket-proposals.tsx:159
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
@@ -3178,7 +3198,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:553
+#: src/features/console-sessions.tsx:522
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -3525,7 +3545,7 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 #~ msgid "Waiting for the host to approve this phone. On the host run:"
 #~ msgstr "等待主机确认这台手机。在主机上运行："
 
-#: src/features/console-sessions.tsx:187
+#: src/features/console-sessions.tsx:156
 msgid "waiting for you"
 msgstr "在等你"
 
@@ -3533,7 +3553,7 @@ msgstr "在等你"
 msgid "Waiting for your answer"
 msgstr "等你回答"
 
-#: src/features/console-sessions.tsx:177
+#: src/features/console-sessions.tsx:146
 #: src/features/landing-page.tsx:142
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
@@ -3622,7 +3642,7 @@ msgstr "WezDeck"
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
 
-#: src/features/session-new.tsx:260
+#: src/features/session-new.tsx:276
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -3637,6 +3657,10 @@ msgstr "终端画面"
 #: src/features/session-skills.tsx:203
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
+
+#: src/features/session-new.tsx:266
+msgid "What this workstation is for, one line"
+msgstr "这个工作站做什么，一行"
 
 #: src/features/ticket-new.tsx:197
 msgid "What you assume"
@@ -3695,7 +3719,7 @@ msgstr "执行方提问"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
-#: src/features/console-sessions.tsx:185
+#: src/features/console-sessions.tsx:154
 #: src/features/landing-page.tsx:149
 msgid "working"
 msgstr "运行中"
@@ -3731,8 +3755,12 @@ msgid "Worktree"
 msgstr "工作树"
 
 #: src/features/session-new.tsx:249
-msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
-msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
+#~ msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
+#~ msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
+
+#: src/features/session-new.tsx:254
+msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
+msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
 #: src/features/console-development.tsx:205
 #~ msgid "Worktrees"

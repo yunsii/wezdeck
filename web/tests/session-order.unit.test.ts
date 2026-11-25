@@ -5,6 +5,7 @@ import {
   buildSessionTree,
   inRunning,
   nextInCycle,
+  workstationLabel,
 } from '#/features/session-order'
 import type { SessionCard } from '#/features/console-sessions'
 
@@ -119,8 +120,9 @@ describe('repo names follow the desk aliases', () => {
     ])
     expect(tree).toHaveLength(1)
     expect(tree[0]?.label).toBe('wezdeck')
+    // a pre-2026-11-25 dev-ui directory reads as the bare direction
     expect(tree[0]?.worktrees.map((wt) => wt.label).sort()).toEqual([
-      'dev-ui',
+      'ui',
       'wezdeck',
     ])
   })
@@ -158,5 +160,46 @@ describe('inRunning (运行中)', () => {
         now,
       ),
     ).toBe(false)
+  })
+})
+
+describe('workstations show their direction and purpose', () => {
+  it('drops the old dev- prefix, keeps other names', () => {
+    expect(workstationLabel('dev-ux')).toBe('ux')
+    expect(workstationLabel('ux')).toBe('ux')
+    expect(workstationLabel('dev-')).toBe('dev-')
+    expect(workstationLabel('devtools')).toBe('devtools')
+    expect(workstationLabel('ticket-req-1')).toBe('ticket-req-1')
+  })
+
+  it('carries the branch description of any session in the worktree', () => {
+    const tree = buildSessionTree([
+      card({
+        id: 'a',
+        repo: 'r',
+        repo_root: '/r',
+        worktree: '/wt/ux',
+        cwd: '/wt/ux',
+      }),
+      card({
+        id: 'b',
+        repo: 'r',
+        repo_root: '/r',
+        worktree: '/wt/ux',
+        cwd: '/wt/ux',
+        worktree_description: '网页控制台体验',
+      }),
+      card({
+        id: 'c',
+        repo: 'r',
+        repo_root: '/r',
+        worktree: '/wt/ci',
+        cwd: '/wt/ci',
+      }),
+    ])
+    const byLabel = Object.fromEntries(
+      tree[0].worktrees.map((wt) => [wt.label, wt.description]),
+    )
+    expect(byLabel).toEqual({ ux: '网页控制台体验', ci: '' })
   })
 })

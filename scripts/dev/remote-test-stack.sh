@@ -174,14 +174,15 @@ start() {
   cat >"$STATE/fake-open-task-window" <<FAKE
 #!/usr/bin/env bash
 set -euo pipefail
-[[ "\$1" == --no-attach && "\$2" == --type ]] || { echo "fake: bad args \$*" >&2; exit 2; }
-kind="\$3"; subject="\$5"
-path="\$PWD/.worktrees/\$kind-\$subject"
-git worktree add -q -b "\$kind/\$subject" "\$path" >&2
-tmux -S "$STATE/new.sock" new-session -d -s "\$kind-\$subject" -c "\$path" -x 100 -y 20 "sh -c 'echo ready; exec cat'"
-echo "branch_name=\$kind/\$subject"
+[[ "\$1" == --no-attach && "\$2" == --description && "\$4" == -- ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+description="\$3"; name="\$5"
+path="\$PWD/.worktrees/\$name"
+git worktree add -q -b "dev/\$name" "\$path" >&2
+[[ -z "\$description" ]] || git config "branch.dev/\$name.description" "\$description"
+tmux -S "$STATE/new.sock" new-session -d -s "\$name" -c "\$path" -x 100 -y 20 "sh -c 'echo ready; exec cat'"
+echo "branch_name=dev/\$name"
 echo "worktree_path=\$path"
-echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$kind-\$subject" '#{window_id}')"
+echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$name" '#{window_id}')"
 echo "tmux_socket=$STATE/new.sock"
 FAKE
   chmod +x "$STATE/fake-open-task-window"

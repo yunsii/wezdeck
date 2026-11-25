@@ -35,40 +35,9 @@ import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 import type { PendingCall } from './session-permission'
+import type { SessionCard } from './session-card'
 
-export type SessionCard = {
-  id: string
-  agent: string
-  name: string
-  /** Auto or /rename title from Claude aiTitle / Grok summary. */
-  title?: string
-  window: string
-  cwd: string
-  branch: string
-  status: string
-  waiting_kind?: string
-  last_prompt: string
-  ts: number
-  transcript: boolean
-  desk_idle_s: number
-  running_kind?: string
-  background?: Array<BgTask>
-  /** Repo family label (git main checkout basename). */
-  repo?: string
-  /** repo through WEZDECK_REPO_ALIASES, as on the desk (wezterm-config → wezdeck) */
-  repo_label?: string
-  /** Absolute path of the git main checkout when known. */
-  repo_root?: string
-  /** Absolute path of this worktree (grouping key with repo_root). */
-  worktree?: string
-  tmux_session?: string
-  tmux_pane?: string
-  pane_index?: number
-  /** primary | secondary when mounted in tmux; absent for future ticket agents. */
-  pane_role?: string
-  /** last visit to this worktree at the desk (ms, access ledger behind Alt+g) */
-  visited?: number
-}
+export type { SessionCard }
 
 /** waiting on a human: a permission / question prompt, or the turn asked you */
 export const needsYou = (row: { status: string; waiting_kind?: string }) =>

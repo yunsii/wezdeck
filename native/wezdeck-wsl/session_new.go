@@ -1,15 +1,16 @@
 package main
 
-// New session from the phone — wezdeck's Ctrl+k g d/t/h: a new lifecycle
-// worktree (dev-<subject> / task-… / hotfix-…, branch dev/<subject> …) with
-// its agent in tmux, via open-task-window (the desk's own path: naming,
-// collision bumps, per-repo agent profile), then the first message pasted
-// into the agent once its TUI is up.
+// New session from the phone — wezdeck's Ctrl+k g d: a new workstation (a
+// worktree for one direction: directory <name>, branch dev/<name>, its
+// one-line purpose in the git branch description) with its agent in tmux,
+// via open-task-window (the desk's own path: naming, collision bumps,
+// per-repo agent profile), then the first message pasted into the agent
+// once its TUI is up.
 //
 //   repos            read   repositories a session may be created in: the
 //                           ones you visited (access ledger) or that run a
 //                           session now, newest visit first
-//   session.new      write  {repo, type, subject, prompt} → {job}; runs in
+//   session.new      write  {repo, name, description, prompt} → {job}; runs in
 //                           the background (git fetch + agent start outlast
 //                           an RPC)
 //   session.new.job  read   {job} → stage creating | starting | sending |
@@ -117,9 +118,21 @@ func setJob(id string, change func(j *newSessionJob)) {
 }
 
 const (
-	subjectMax = 60
-	promptMax  = 8000
+	subjectMax     = 60
+	descriptionMax = 120
+	promptMax      = 8000
 )
+
+// hasSlugChar: the name becomes the directory and branch (open-task-window
+// slugifies to [a-z0-9-]), so it needs at least one ASCII letter or digit.
+func hasSlugChar(s string) bool {
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return true
+		}
+	}
+	return false
+}
 
 func validSubject(s string) bool {
 	if s == "" || utf8.RuneCountInString(s) > subjectMax {
@@ -135,23 +148,25 @@ func validSubject(s string) bool {
 
 func startNewSession(args json.RawMessage) (any, error) {
 	var a struct {
-		Repo    string `json:"repo"`
-		Type    string `json:"type"`
-		Subject string `json:"subject"`
-		Prompt  string `json:"prompt"`
+		Repo        string `json:"repo"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Prompt      string `json:"prompt"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.new: bad arguments")
 	}
-	a.Subject = strings.TrimSpace(a.Subject)
+	a.Name = strings.TrimSpace(a.Name)
+	a.Description = strings.TrimSpace(a.Description)
 	a.Prompt = strings.TrimSpace(a.Prompt)
-	switch a.Type {
-	case "dev", "task", "hotfix":
-	default:
-		return nil, errors.New("session.new: type is dev, task or hotfix")
+	if !validSubject(a.Name) {
+		return nil, fmt.Errorf("session.new: the name needs 1–%d characters, one line", subjectMax)
 	}
-	if !validSubject(a.Subject) {
-		return nil, fmt.Errorf("session.new: the subject needs 1–%d characters, one line", subjectMax)
+	if !hasSlugChar(a.Name) {
+		return nil, errors.New("session.new: the name needs letters or digits (it becomes the directory and branch); put the rest in the description")
+	}
+	if utf8.RuneCountInString(a.Description) > descriptionMax || strings.ContainsAny(a.Description, "\r\n") {
+		return nil, fmt.Errorf("session.new: the description is one line of at most %d characters", descriptionMax)
 	}
 	if a.Prompt == "" || utf8.RuneCountInString(a.Prompt) > promptMax {
 		return nil, fmt.Errorf("session.new: the first message needs 1–%d characters", promptMax)
@@ -172,7 +187,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	}
 	newJobs[job.ID] = job
 	newJobsMu.Unlock()
-	go runNewSession(job.ID, a.Repo, a.Type, a.Subject, a.Prompt)
+	go runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt)
 	return map[string]any{"v": 1, "ok": true, "job": job.ID}, nil
 }
 
@@ -190,7 +205,7 @@ func newSessionJobStatus(args json.RawMessage) (any, error) {
 	return map[string]any{"v": 1, "ok": true, "job": *j}, nil
 }
 
-func runNewSession(id, repo, kind, subject, prompt string) {
+func runNewSession(id, repo, name, description, prompt string) {
 	fail := func(err error) {
 		setJob(id, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
 		relayLogf("session_new", "job=%s ok=false err=%q", id, err)
@@ -201,7 +216,7 @@ func runNewSession(id, repo, kind, subject, prompt string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, cmdPath, "--no-attach", "--type", kind, "--", subject)
+	cmd := exec.CommandContext(ctx, cmdPath, "--no-attach", "--description", description, "--", name)
 	cmd.Dir = repo
 	out, err := cmd.Output()
 	result := map[string]string{}

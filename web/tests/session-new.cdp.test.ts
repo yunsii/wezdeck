@@ -1,5 +1,6 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
-// covers: native/wezdeck-wsl/session_new.go
+// covers: web/src/features/session-order.ts
+// covers: native/wezdeck-wsl/session_new.go native/wezdeck-wsl/worktree_description.go
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -9,7 +10,8 @@ import type { Browser, BrowserContextOptions, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 新会话 from the phone (session-new.tsx → host session_new.go): pick the
-// repository, kind, subject and first message; the host runs open-task-window
+// repository, name a workstation (its direction) with a one-line purpose and
+// write the first message; the host runs open-task-window
 // — on the test stack its stand-in, a real `git worktree add` in a throwaway
 // repo and a `cat` pane on the stack's tmux socket — pastes the message into
 // the pane, and the sheet opens the session once it is listed.
@@ -93,6 +95,8 @@ describe.runIf(attention && devicesFile && stack)(
       tmux_socket: socket,
       tmux_session: session,
       tmux_pane: pane,
+      // the fake names the branch dev/<name>; the relay reads its purpose
+      git_branch: `dev/${session}`,
       status: 'running',
       agent_name: 'claude',
       last_user_prompt: '从手机开的新会话',
@@ -100,11 +104,16 @@ describe.runIf(attention && devicesFile && stack)(
     })
 
     /**
-     * 新会话 › a task named subject; once the pane has the message, list it
-     * as id (the agent's first-prompt hook) and wait for the page to open it.
-     * Returns the worktree and the pane.
+     * 新会话 › a workstation named `name` with `description`; once the pane
+     * has the message, list it as id (the agent's first-prompt hook) and
+     * wait for the page to open it. Returns the worktree and the pane.
      */
-    const createSession = async (page: Page, subject: string, id: string) => {
+    const createSession = async (
+      page: Page,
+      name: string,
+      id: string,
+      description = '',
+    ) => {
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
@@ -112,15 +121,18 @@ describe.runIf(attention && devicesFile && stack)(
       await expect
         .poll(() => sheet.getByRole('combobox').textContent())
         .toContain('phone-repo')
-      await sheet.locator('[data-value=task]').click()
-      await sheet.getByPlaceholder(/phone-create/).fill(subject)
+      await sheet.getByPlaceholder('例如 ux、ci、i18n').fill(name)
+      await expect
+        .poll(() => sheet.getByTestId('new-session-slug').textContent())
+        .toContain(`工作站 ${name}，分支 dev/${name}`)
+      await sheet.getByPlaceholder('这个工作站做什么，一行').fill(description)
       await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
       await expect
         .poll(() => stage.getAttribute('data-stage'), { timeout: 20_000 })
         .toBe('done')
-      const session = `task-${subject}`
+      const session = name
       const pane = execFileSync('tmux', [
         '-S',
         socket,
@@ -150,14 +162,45 @@ describe.runIf(attention && devicesFile && stack)(
       return { worktree: join(repo, '.worktrees', session), pane, session }
     }
 
-    it('creates the worktree, hands the agent the message, opens the session', async () => {
+    it('creates the workstation, hands the agent the message, opens the session', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
-      const { worktree } = await createSession(page, 'phone', 'new-1')
-      expect(
-        execFileSync('git', ['-C', worktree, 'branch', '--show-current'])
+      const { worktree } = await createSession(
+        page,
+        'phone',
+        'new-1',
+        '手机端体验',
+      )
+      const git = (...args: Array<string>) =>
+        execFileSync('git', ['-C', worktree, ...args])
           .toString()
-          .trim(),
-      ).toBe('task/phone')
+          .trim()
+      expect(git('branch', '--show-current')).toBe('dev/phone')
+      // the purpose is the branch description
+      expect(git('config', 'branch.dev/phone.description')).toBe('手机端体验')
+      // and the session list shows it under the workstation
+      await page.goto(`${base}/zh/console/sessions`)
+      const group = page.locator('[data-worktree=phone]')
+      await expect
+        .poll(() => group.getByTestId('worktree-description').textContent(), {
+          timeout: 15_000,
+        })
+        .toContain('手机端体验')
+      await context.close()
+    }, 60_000)
+
+    it('a name without letters or digits is refused before anything runs', async () => {
+      const { context, page } = await approvedPage(devices['iPhone 13'])
+      await page.goto(`${base}/zh/console/sessions`)
+      await page.getByTestId('new-session').click()
+      const sheet = page.getByTestId('new-session-sheet')
+      await sheet.getByPlaceholder('例如 ux、ci、i18n').fill('网页体验')
+      await sheet.getByPlaceholder('要它做什么？').fill('不会创建')
+      await expect
+        .poll(() => sheet.getByTestId('new-session-slug').textContent())
+        .toContain('需要包含字母或数字')
+      expect(
+        await sheet.getByRole('button', { name: '创建会话' }).isDisabled(),
+      ).toBe(true)
       await context.close()
     }, 60_000)
 

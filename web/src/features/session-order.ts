@@ -7,6 +7,8 @@ import type { SessionCard } from './console-sessions'
 type WorktreeGroup = {
   key: string
   label: string
+  /** the workstation's purpose (git branch description), "" when unset */
+  description: string
   visit: number
   rows: Array<SessionCard>
 }
@@ -25,6 +27,14 @@ export const worktreeKey = (row: SessionCard) =>
 export function visitOf(row: SessionCard, phone: Record<string, number>) {
   return Math.max(row.visited ?? 0, phone[worktreeKey(row)] ?? 0)
 }
+
+/**
+ * A workstation directory as the desk shows it: one made before 2026-11-25
+ * keeps its dev- prefix on disk (transcripts and resume pins are keyed by
+ * the path) but reads as the bare direction, like the ones made since.
+ */
+export const workstationLabel = (base: string) =>
+  /^dev-./.test(base) ? base.slice(4) : base
 
 /** the repo as the desk names it: its alias when one is set */
 export const repoName = (row: { repo?: string; repo_label?: string }) =>
@@ -53,7 +63,10 @@ export function buildSessionTree(
     const wtKey = worktreeKey(row)
     const base = (row.worktree || row.cwd).split('/').filter(Boolean).at(-1)
     // the main checkout is named after the repo: show it by its alias too
-    const wtLabel = (base && base === row.repo ? repoName(row) : base) || wtKey
+    const wtLabel =
+      (base && base === row.repo
+        ? repoName(row)
+        : workstationLabel(base ?? '')) || wtKey
     const visit = visitOf(row, phone)
     let repo = repos.get(repoKey)
     if (!repo) {
@@ -62,9 +75,11 @@ export function buildSessionTree(
     }
     let tree = repo.trees.get(wtKey)
     if (!tree) {
-      tree = { key: wtKey, label: wtLabel, visit: 0, rows: [] }
+      tree = { key: wtKey, label: wtLabel, description: '', visit: 0, rows: [] }
       repo.trees.set(wtKey, tree)
     }
+    tree.description ||= row.worktree_description ?? ''
+
     tree.rows.push(row)
     tree.visit = Math.max(tree.visit, visit)
     repo.visit = Math.max(repo.visit, visit)
