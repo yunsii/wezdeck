@@ -341,6 +341,14 @@ done:
 	out := map[string]any{"id": id, "clients": len(clients), "results": results}
 	if len(clients) == 0 {
 		out["hint"] = "no web console connected in the last 3 minutes: open it on the device"
+	} else if missing := len(clients) - len(results); missing > 0 {
+		// pushed, never answered: a locked phone or a page in the
+		// background has its scripts paused
+		out["unanswered"] = missing
+		out["hint"] = fmt.Sprintf("%d of %d web consoles did not answer in time: likely locked or in the background — bring the page to the front and retry", missing, len(clients))
+	}
+	if results == nil {
+		out["results"] = []diagResult{}
 	}
 	return out
 }
