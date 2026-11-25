@@ -172,6 +172,20 @@ html:active-view-transition-type(within) .vt-split-pane {
     }
   }
 }
+/* A conversation switched to in a wide split fades in as a whole — opacity
+   only, so it is at its bottom from the first frame and nothing in it moves
+   (no view transition: a snapshot of the old pane flashed). It used to cut
+   over at once, the turn line sliding in on its own (2026-11-25). */
+@keyframes pane-enter {
+  /* not from 0: its first painted frame was a blank pane, a blink */
+  from {
+    opacity: 0.4;
+  }
+}
+.pane-enter {
+  animation: pane-enter 120ms var(--ease-enter);
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(page),
   ::view-transition-new(page),

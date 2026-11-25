@@ -19,7 +19,7 @@ and `MotionConfig reducedMotion="user"` (opacity only under reduced motion).
 | --- | --- | --- |
 | state: hover, press, open, a colour | CSS transition, preferably of `opacity` on a pseudo-element layer (compositor: smooth while the main thread renders) | short, standard |
 | an element arrives / leaves (sticky prompt, a chip, a hint) | `AnimatePresence` + `m.div` with a preset; the leaving element keeps its last content | enter medium + enter curve; leave exit + exit curve |
-| a page / pane | View Transitions (`lib/view-transition.ts`); none within a wide split | — |
+| a page / pane | View Transitions (`lib/view-transition.ts`); within a wide split a switched-to conversation fades in whole (`.pane-enter`, opacity 0.4 → 1, CSS) | 120 ms, enter curve |
 
 Rules: states move one way (a list row is hover 9 % → pressed 12 % → open
 15 % of the accent, `.list-row`, never white → grey → blue); never ease
@@ -91,7 +91,9 @@ frame later, so every growth while the conversation landed painted a frame
 cut off at the old height — blank, content, blank. Until `LANDING_MS` it now
 follows its content (no height) and holds from then on. Check it with
 `web-frame-probe.sh sessions --ids A,B --status running` (20 changed pane
-frames per run → 8, the swap plus the list row's tint).
+frames per run → 8, the swap plus the list row's tint). The probe's `blank`
+finding flags a painted frame with the pane flat (no conversation): that
+jitter, or the fade first tried from opacity 0.
 
 Session tags (`components/deck/session-tags.tsx`, `.session-tag` in
 `deck.css`) are coloured by meaning, a translucent fill of their tone (so an

@@ -139,6 +139,12 @@ function DeskKeys({ id }: { id?: string }) {
  */
 function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
   const { t } = useLingui()
+  // a switch in the split fades the new conversation in (it is already at
+  // its bottom); the first one opened, or picked for you, just shows
+  const first = useRef(id)
+  first.current ??= id
+  const switched = useRef(false)
+  if (id && first.current && id !== first.current) switched.current = true
   return (
     <div className="max-md:contents md:grid md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-start">
       {wide ? <DeskKeys id={id} /> : null}
@@ -162,7 +168,18 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
         data-testid="session-pane"
       >
         {id ? (
-          <SessionDetail key={id} id={id} />
+          // keyed with the detail: it fades in as a whole on a switch;
+          // flex like the pane, so the detail still fills its height
+          <div
+            key={id}
+            data-testid="session-detail"
+            className={cn(
+              'max-md:contents md:flex md:min-w-0 md:flex-1 md:flex-col',
+              wide && switched.current && 'pane-enter',
+            )}
+          >
+            <SessionDetail id={id} />
+          </div>
         ) : (
           <p className="rounded-2xl bg-brand-surface px-6 py-16 text-center text-caption text-brand-muted">
             {t`Pick a session on the left. j / k move through the list.`}

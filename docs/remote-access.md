@@ -350,7 +350,7 @@ space. It reports `loading`,
 grey → blue), `snap` (the pressed row's fill or tint layer stepping instead
 of easing), `glide` (painted frames not at the bottom after a session
 switch: a scroll animation), `landing` (a conversation's first frame not at its bottom / a
-ticket's not at its top) and `pixels` findings, plus `jank` warnings
+ticket's not at its top), `blank` (sessions: a painted frame with the pane flat, no conversation) and `pixels` findings, plus `jank` warnings
 (main-thread stalls; compositor-run opacity still moves), keeps
 `frames/*.jpg`, `samples.json` and `summary.json`, exits 1 on a finding and
 logs one `category=web_probe` row. Run it before saying a visual flash is

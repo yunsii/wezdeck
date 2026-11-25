@@ -2,6 +2,7 @@
 // covers: web/src/lib/view-transition.ts web/src/router.tsx
 // covers: web/src/features/console-collab.tsx web/src/lib/collab-query.ts
 // covers: web/src/components/deck/split-column.tsx web/src/features/console-me.tsx
+// covers: web/src/features/session-split.tsx web/src/styles/motion.css
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -72,8 +73,9 @@ async function frames(page: Page, title: string, act: () => Promise<void>) {
   return page.evaluate(() => (window as unknown as { f: Array<Frame> }).f)
 }
 
-describe.runIf(attention)('Wide split: switching does not flash', () => {
-  let browser: Browser
+/** two tmux panes in the stack's attention file and a browser, per describe */
+function splitStack() {
+  const split = {} as { browser: Browser }
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-sw-')), 'sock')
   const tmux = (...args: Array<string>) =>
     execFileSync('tmux', ['-S', socket, ...args])
@@ -117,17 +119,22 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       }
     }
     writeFileSync(attention, JSON.stringify({ entries }))
-    browser = await chromium.launch()
+    split.browser = await chromium.launch()
   })
 
   afterAll(async () => {
-    await browser.close()
+    await split.browser.close()
     tmux('kill-server')
   })
+  return split
+}
+
+describe.runIf(attention)('Wide split: switching does not flash', () => {
+  const split = splitStack()
 
   it('the list stays in view beside a tall conversation', async () => {
     const page = await (
-      await browser.newContext({ viewport: { width: 1280, height: 700 } })
+      await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
     ).newPage()
     await page.goto(`${base}/console/sessions/sw-tall?remote=1#pair=${token}`)
     const row = page.locator('[data-session=sw-short]')
@@ -151,54 +158,9 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     expect(await inView()).toBe(true)
   }, 30_000)
 
-  it('the list cards sit as far from the sidebar as from the divider', async () => {
-    const page = await (
-      await browser.newContext({ viewport: { width: 1280, height: 700 } })
-    ).newPage()
-    await page.goto(`${base}/console/sessions/sw-tall?remote=1#pair=${token}`)
-    await page.locator('[data-session=sw-short]').waitFor({ timeout: 20_000 })
-    await page.waitForTimeout(800)
-    const gaps = await page.evaluate(() => {
-      const r = (sel: string) =>
-        document.querySelector(sel)!.getBoundingClientRect()
-      const main = r('#console-main')
-      const card = r('[data-repo]')
-      const pane = r('[data-testid=session-pane]')
-      return {
-        left: Math.round(card.left - main.left),
-        right: Math.round(pane.left - card.right),
-      }
-    })
-    // the gutter used to come on top of a full right padding: 10 vs 20
-    expect(gaps.left).toBeGreaterThan(0)
-    expect(Math.abs(gaps.left - gaps.right)).toBeLessThanOrEqual(1)
-  }, 30_000)
-
-  it('我的 has the split divider, full window height', async () => {
-    const page = await (
-      await browser.newContext({ viewport: { width: 1280, height: 700 } })
-    ).newPage()
-    await page.goto(`${base}/console/me/connection?remote=1#pair=${token}`)
-    const pane = page.locator('.vt-split-pane')
-    await pane.waitFor({ timeout: 20_000 })
-    const got = await pane.evaluate((el) => {
-      const scroller = el.closest('.vt-page') as HTMLElement
-      const r = el.getBoundingClientRect()
-      const s = scroller.getBoundingClientRect()
-      return {
-        border: getComputedStyle(el).borderLeftWidth,
-        top: r.top - s.top,
-        bottom: s.bottom - r.bottom,
-      }
-    })
-    expect(got.border).toBe('1px')
-    expect(got.top).toBeLessThanOrEqual(1)
-    expect(got.bottom).toBeLessThanOrEqual(1)
-  }, 30_000)
-
   it('a session lands at its bottom on its first frame, no transition', async () => {
     const page = await (
-      await browser.newContext({ viewport: { width: 1280, height: 700 } })
+      await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
     ).newPage()
     await page.goto(`${base}/console/sessions/sw-short?remote=1#pair=${token}`)
     await page.locator('[data-session=sw-tall]').waitFor({ timeout: 20_000 })
@@ -239,7 +201,9 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     'a ticket starts at its top, the last one held meanwhile',
     async () => {
       const page = await (
-        await browser.newContext({ viewport: { width: 1280, height: 700 } })
+        await split.browser.newContext({
+          viewport: { width: 1280, height: 700 },
+        })
       ).newPage()
       // a ticket with runs, taller than the window (the list's first one
       // changes with the ticket store and may be short)
@@ -286,7 +250,9 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     "wheeling past the list's top leaves the pane where it is",
     async () => {
       const page = await (
-        await browser.newContext({ viewport: { width: 1280, height: 480 } })
+        await split.browser.newContext({
+          viewport: { width: 1280, height: 480 },
+        })
       ).newPage()
       // a ticket with runs: its pane is taller than the window
       await page.goto(
@@ -316,4 +282,92 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     },
     60_000,
   )
+})
+
+describe.runIf(attention)('Wide split: layout', () => {
+  const split = splitStack()
+
+  it('the list cards sit as far from the sidebar as from the divider', async () => {
+    const page = await (
+      await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/sessions/sw-tall?remote=1#pair=${token}`)
+    await page.locator('[data-session=sw-short]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(800)
+    const gaps = await page.evaluate(() => {
+      const r = (sel: string) =>
+        document.querySelector(sel)!.getBoundingClientRect()
+      const main = r('#console-main')
+      const card = r('[data-repo]')
+      const pane = r('[data-testid=session-pane]')
+      return {
+        left: Math.round(card.left - main.left),
+        right: Math.round(pane.left - card.right),
+      }
+    })
+    // the gutter used to come on top of a full right padding: 10 vs 20
+    expect(gaps.left).toBeGreaterThan(0)
+    expect(Math.abs(gaps.left - gaps.right)).toBeLessThanOrEqual(1)
+  }, 30_000)
+
+  it('我的 has the split divider, full window height', async () => {
+    const page = await (
+      await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/me/connection?remote=1#pair=${token}`)
+    const pane = page.locator('.vt-split-pane')
+    await pane.waitFor({ timeout: 20_000 })
+    const got = await pane.evaluate((el) => {
+      const scroller = el.closest('.vt-page') as HTMLElement
+      const r = el.getBoundingClientRect()
+      const s = scroller.getBoundingClientRect()
+      return {
+        border: getComputedStyle(el).borderLeftWidth,
+        top: r.top - s.top,
+        bottom: s.bottom - r.bottom,
+      }
+    })
+    expect(got.border).toBe('1px')
+    expect(got.top).toBeLessThanOrEqual(1)
+    expect(got.bottom).toBeLessThanOrEqual(1)
+  }, 30_000)
+
+  it('a switched-to conversation fades in as a whole, the first one does not', async () => {
+    const page = await (
+      await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/sessions/sw-short?remote=1#pair=${token}`)
+    await page.locator('[data-session=sw-tall]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(800)
+    const anim = () =>
+      page.evaluate(
+        () =>
+          getComputedStyle(
+            document.querySelector('[data-testid=session-detail]')!,
+          ).animationName,
+      )
+    expect(await anim()).toBe('none')
+    await page.locator('[data-session=sw-tall]').click()
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          document
+            .querySelector('[data-testid=session-title]')
+            ?.getAttribute('data-session-id'),
+        ),
+      )
+      .toBe('sw-tall')
+    // opacity only: whole detail, nothing slides on its own
+    expect(await anim()).toBe('pane-enter')
+    expect(
+      await page.evaluate(
+        () =>
+          [
+            ...document.querySelectorAll(
+              '[data-testid=session-detail] .chat-in',
+            ),
+          ].length,
+      ),
+    ).toBe(0)
+  }, 30_000)
 })

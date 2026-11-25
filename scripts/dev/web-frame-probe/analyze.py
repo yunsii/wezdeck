@@ -23,6 +23,10 @@ a press (opacity / transform transitions still run on the compositor).
              bottom; tickets: not at its top
   pixels     painted frames whose accent-coloured area in the list
              column (default x 17%..44%) jumps far above the run's median
+  blank      sessions: a painted frame whose pane (x 47%..100%, between
+             header and composer) is flat — no text: a switch that cut the
+             thread off at a stale height, or a fade starting at opacity 0
+             (2026-11-25)
 """
 from __future__ import annotations
 
@@ -81,6 +85,14 @@ def accent_count(path: str, region: tuple[float, float]) -> int:
     crop = im.crop((int(w * region[0]), 0, int(w * region[1]), h)).resize((120, 300))
     data = crop.get_flattened_data() if hasattr(crop, "get_flattened_data") else crop.getdata()
     return sum(1 for p in data if p[2] > 180 and p[0] < 110 and p[1] < 170 and p[2] - p[0] > 90)
+
+
+def pane_flat(path: str) -> bool:
+    from PIL import Image, ImageStat  # only for the pixel pass
+
+    im = Image.open(path).convert("L")
+    w, h = im.size
+    return ImageStat.Stat(im.crop((int(w * 0.47), 40, w, int(h * 0.75)))).stddev[0] < 6
 
 
 def main() -> int:
@@ -176,9 +188,12 @@ def main() -> int:
                 add("landing", i, new["t"], f"first frame at scroll {new['scroll']}, not the top")
 
     pix = []
+    blank = []
     try:
         for path in sorted(glob.glob(os.path.join(args.out, "frames", "*.jpg"))):
             pix.append((os.path.basename(path), accent_count(path, region)))
+            if args.scenario == "sessions" and pane_flat(path):
+                blank.append(os.path.basename(path))
     except ImportError:
         print("pixels: skipped (python3 -m pip install pillow)")
     if pix:
@@ -187,6 +202,8 @@ def main() -> int:
         hot = [(p, c) for p, c in pix if c > limit]
         for p, c in hot[:20]:
             add("pixels", -1, -1, f"{p}: {c} accent px (median {base:.0f})")
+    for p in blank[:20]:
+        add("blank", -1, -1, f"{p}: the pane painted without its conversation")
 
     summary = {
         "scenario": args.scenario,
