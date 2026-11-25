@@ -14,9 +14,11 @@ in meta.json, so claim / challenge / reply keep working on them.
   fanout status --parent P
 
 Scheduler gates (first failing gate → ``queued`` event with its reason):
-deps → slot (global pool .locks/slots, TICKET_MAX_PARALLEL=3) → repo_cap
-(TICKET_MAX_PER_REPO=2) → path_overlap (scope prefixes in the same repo) →
-mem (MemAvailable − TICKET_RUN_MEM_MB ≥ TICKET_MEM_FLOOR_MB). Children are
+deps → slot (ceiling: global pool .locks/slots, TICKET_MAX_PARALLEL=8) → repo_cap
+(TICKET_MAX_PER_REPO=4) → path_overlap (scope prefixes in the same repo) →
+mem (MemAvailable − reserved − estimate ≥ TICKET_MEM_FLOOR_MB; estimate = p95
+rss_peak_mb of recent real implement runs, TICKET_RUN_MEM_MB pins it; reserved =
+what running children have not grown into yet). Children are
 re-read every tick; one a session claimed (live non-worker lease) is skipped
 (gate ``session``) and waited on, so sessions and workers share one queue. When every
 child shipped, the integration step merges child branches per repo
@@ -227,6 +229,45 @@ def mem_available_mb() -> int | None:
     return None
 
 
+def mem_estimate_mb(backend: str) -> dict[str, Any]:
+    """Per-child memory estimate: p95 rss_peak_mb of recent real implement runs
+    (children run --phase auto, implement is the peak). TICKET_RUN_MEM_MB pins it."""
+    pinned = os.environ.get("TICKET_RUN_MEM_MB")
+    if pinned:
+        return {"mb": int(pinned), "source": "env", "samples": 0}
+    recs = []
+    for f in (ticket_fs.tickets_root() / "_data").glob("*/runs/run-*.json"):
+        if f.name.endswith((".launch.json", ".final.json")):
+            continue
+        try:
+            rec = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        rss = rec.get("rss_peak_mb")
+        if rec.get("backend") == backend and rec.get("phase") == "implement" and not rec.get("mock") \
+                and isinstance(rss, (int, float)):
+            recs.append((f.stat().st_mtime, float(rss)))
+    vals = sorted(v for _, v in sorted(recs)[-30:])
+    if len(vals) < 3:
+        return {"mb": 1500, "source": "default", "samples": len(vals)}
+    return {"mb": int(vals[min(len(vals) - 1, int(0.95 * len(vals)))]), "source": "measured", "samples": len(vals)}
+
+
+def group_rss_mb(pgid: int) -> float:
+    """RSS of a child's process group (children start with start_new_session)."""
+    total = 0
+    for d in os.listdir("/proc"):
+        if not d.isdigit():
+            continue
+        try:
+            f = Path(f"/proc/{d}/stat").read_text().rsplit(")", 1)[1].split()
+        except (OSError, IndexError):
+            continue
+        if int(f[2]) == pgid:
+            total += int(f[21])
+    return total * os.sysconf("SC_PAGE_SIZE") / 1048576
+
+
 def topo_order(children: list[str], deps: dict[str, list[str]]) -> list[str]:
     seen: dict[str, int] = {}
     order: list[str] = []
@@ -279,13 +320,15 @@ def try_slot(pool: int) -> Slot | None:
 class Scheduler:
     def __init__(self, parent: str, argv: list[str]):
         self.parent = parent
-        self.pool = int(os.environ.get("TICKET_MAX_PARALLEL", "3"))
+        # Ceilings only: the memory gate (measured per-child estimate + reservations) is the real limit.
+        self.pool = int(os.environ.get("TICKET_MAX_PARALLEL", "8"))
         self.cap = int(opt(argv, "--max-parallel") or self.pool)
-        self.per_repo = int(opt(argv, "--per-repo") or os.environ.get("TICKET_MAX_PER_REPO", "2"))
+        self.per_repo = int(opt(argv, "--per-repo") or os.environ.get("TICKET_MAX_PER_REPO", "4"))
         self.backend = opt(argv, "--backend") or "claude"
         self.mock = "--mock" in argv
         self.integrate = "--no-integrate" not in argv
-        self.run_mem = int(os.environ.get("TICKET_RUN_MEM_MB", "1500"))
+        self.estimate = mem_estimate_mb(self.backend)
+        self.run_mem = self.estimate["mb"]
         self.mem_floor = int(os.environ.get("TICKET_MEM_FLOOR_MB", "2048"))
         self.running: dict[str, dict[str, Any]] = {}
         self.attempts: dict[str, int] = {}
@@ -311,9 +354,13 @@ class Scheduler:
         if any(scopes_overlap(me["scope"], kids[r]["scope"]) for r in same):
             return "path_overlap"
         avail = mem_available_mb()
-        if avail is not None and avail - self.run_mem < self.mem_floor:
+        if avail is not None and avail - self.reserved_mb() - self.run_mem < self.mem_floor:
             return "mem"
         return None
+
+    def reserved_mb(self) -> int:
+        """Headroom running children have not grown into yet (MemAvailable lags a fresh dispatch)."""
+        return int(sum(max(0.0, self.run_mem - group_rss_mb(r["proc"].pid)) for r in self.running.values()))
 
     def child_cmd(self, cid: str) -> list[str]:
         override = os.environ.get("TICKET_COLLAB_RUN_CMD")
@@ -338,7 +385,7 @@ class Scheduler:
         self.last_gate.pop(cid, None)
         event(self.parent, "dispatched", child=cid, to=kids[cid]["to"], slot=slot.index,
               queue_wait_ms=wait_ms, attempt=self.attempts[cid], pid=proc.pid,
-              mem_available_mb=mem_available_mb())
+              mem_available_mb=mem_available_mb(), est_mb=self.run_mem, reserved_mb=self.reserved_mb())
         return True
 
     def note_gate(self, cid: str, gate: str, detail: str = "") -> None:
@@ -346,8 +393,10 @@ class Scheduler:
         if self.last_gate.get(cid) == gate:
             return
         self.last_gate[cid] = gate
+        mem = gate == "mem"
         event(self.parent, "queued", child=cid, gate=gate, detail=detail,
-              mem_available_mb=mem_available_mb() if gate == "mem" else None)
+              mem_available_mb=mem_available_mb() if mem else None,
+              reserved_mb=self.reserved_mb() if mem else None, est_mb=self.run_mem if mem else None)
 
     def reap(self) -> None:
         for cid in list(self.running):
@@ -390,8 +439,10 @@ class Scheduler:
             raise CollabError("parent has no children (ticket fanout add first)")
         set_status(self.parent, "in_progress", owner="worker", phase="running")
         event(self.parent, "scheduler_start", children=len(order), cap=self.cap, pool=self.pool,
-              per_repo=self.per_repo, backend=self.backend, mock=self.mock)
-        progress(self.parent, "scheduler_start", f"{len(order)} children · cap {self.cap}")
+              per_repo=self.per_repo, backend=self.backend, mock=self.mock, est_mb=self.run_mem,
+              est_source=self.estimate["source"], est_samples=self.estimate["samples"])
+        progress(self.parent, "scheduler_start",
+                 f"{len(order)} children · ceiling {self.cap} · ~{self.run_mem}MB each ({self.estimate['source']})")
         t0 = time.time()
         while True:
             self.reap()

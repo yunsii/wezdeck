@@ -66,7 +66,7 @@ pre-rename worktree ever shows up again (e.g. on another machine).
 | D3 | fe1 web reads through the fe1 local service (`127.0.0.1:5175`), which runs `ticket api` | Works on Linux and macOS. fe1 already owns the origin allowlist and Private Network Access |
 | D4 | fe1 flag-flows move onto the core in P4. Their write-side `act` becomes a collab ticket | No second checkout / evidence / event stack |
 | D5 | Same-repo parallel branches merge through an **integration child**. A conflict sets the parent to `waiting_human` | Agents never hand-resolve conflicts |
-| D6 | Global concurrency defaults to 3, gated by guest memory headroom | Guest OOM history |
+| D6 | Concurrency is dynamic: the memory gate (measured per-child estimate + reservations) limits; `TICKET_MAX_PARALLEL` 8 / per-repo 4 are ceilings only (was a fixed 3 until 2026-11-25) | Guest OOM history; implement children peak 2–4 GB, research ~0.3 GB |
 | D7 | Sessions are reused inside one role chain and forced fresh for independent verification (§5) | Saves cost without biasing reviewers |
 | D8 | The initial message of every session is stored immutably and content-addressed (§4) | You cannot debug or tune what you cannot replay |
 
@@ -175,16 +175,22 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
      dependency failed or waits on a human).
      A session-held child stops here with gate `session`.
   2. `slot` — this scheduler's `--max-parallel` and a free lock in the global
-     pool `.locks/slots/` (`TICKET_MAX_PARALLEL`, default 3) shared by all
-     parents.
-  3. `repo_cap` — running children in the same repo < `TICKET_MAX_PER_REPO` (2).
+     pool `.locks/slots/` (`TICKET_MAX_PARALLEL`, default 8 — a ceiling) shared
+     by all parents.
+  3. `repo_cap` — running children in the same repo < `TICKET_MAX_PER_REPO` (4, ceiling).
   4. `path_overlap` — scope prefixes (glob text before the first wildcard) do
      not overlap a running sibling in the same repo; no scope = whole repo.
-  5. `mem` — `MemAvailable − TICKET_RUN_MEM_MB (1500) ≥ TICKET_MEM_FLOOR_MB
-     (2048)`. MemAvailable already reflects running children, so they are not
-     subtracted twice. Tests point `TICKET_MEMINFO_PATH` at a fake file.
+  5. `mem` — `MemAvailable − reserved − estimate ≥ TICKET_MEM_FLOOR_MB (2048)`.
+     *estimate* = p95 `rss_peak_mb` of the last 30 real implement runs of the
+     backend (`mem_estimate_mb`; < 3 samples → 1500; `TICKET_RUN_MEM_MB`
+     pins it). *reserved* = Σ over running children of estimate minus the
+     child's current process-group RSS — a fresh dispatch has not grown into
+     MemAvailable yet, so without it one tick could over-dispatch. This is
+     the real concurrency limit (44 GB guest, 3.9 GB estimate → ~7). Tests
+     point `TICKET_MEMINFO_PATH` at a fake file.
 - **Events on the parent:** `scheduler_start`, `queued`, `dispatched` (slot,
-  queue wait, attempt, pid, MemAvailable), `child_exit`, `retry`, `merge`,
+  queue wait, attempt, pid, MemAvailable, `est_mb`, `reserved_mb`; `scheduler_start` has
+  `est_source` / `est_samples`), `child_exit`, `retry`, `merge`,
   `verify`, `scheduler_end` (done / waiting / failed / blocked, peak
   parallelism, wall time). `api metrics --parent` adds `realized_parallelism`
   = Σ run wall ÷ (last end − first start).
@@ -446,7 +452,7 @@ the same change, following the standing policy.
 
 | Risk | Mitigation |
 | --- | --- |
-| Parallel agents trigger guest OOM | Memory gate plus `rss_peak_mb` data to tune `TICKET_RUN_MEM_MB`. Default cap 3 |
+| Parallel agents trigger guest OOM | Memory gate sized from measured `rss_peak_mb` p95 plus reservations for children still ramping; ceilings 8 / 4 per repo; pin with `TICKET_RUN_MEM_MB` |
 | Global event file contention under many tool events | ≤1 s batching, short lock hold. Measure lock wait in P2 |
 | A prompt leaks a secret into the web | Redaction at write time, loopback-only serving, prompts never sent to servers |
 | CLI stream formats change on upgrade | Recorded fixtures plus a parser that ignores unknown events and counts them as `unparsed` in the run record |

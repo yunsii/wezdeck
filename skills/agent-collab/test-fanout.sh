@@ -183,6 +183,34 @@ r9="$(timeout 60 "$run" fanout run --parent "$P9" --mock)"
 check "lost claim race: no retry, waits for the session, finishes" \
   bash -c "jq -e '.result==\"done_unmerged\"' <<<'$r9' >/dev/null && [ \"\$(grep -c 'start $R' '$log')\" = 1 ] && ! grep -q '\"retry\"' '$TICKETS_ROOT/_data/$P9/events.jsonl'"
 
+# dynamic concurrency: the memory gate (estimate + reservations) limits, not the ceiling
+P10="$(c plan --from src --title "mem budget" --contract "$tmp/contract.md" | jq -r .id)"
+for n in 1 2 3 4; do c add --parent "$P10" --to "$([ $n -le 2 ] && echo rx || echo ry)" --title "m$n" --scope "src/m$n/**" >/dev/null; done
+printf 'MemAvailable:   5120000 kB
+' >"$TICKET_MEMINFO_PATH"   # 5000 MB, static: only reservations can hold it
+r10="$(FAKE_SLEEP=2 TICKET_RUN_MEM_MB=1000 TICKET_MEM_FLOOR_MB=2048 timeout 60 "$run" fanout run --parent "$P10" --mock --max-parallel 8)"
+printf 'MemAvailable:   16000000 kB
+' >"$TICKET_MEMINFO_PATH"
+check "reservations cap parallelism at what memory fits (5000-2x1000-1000 < 2048 → 2), all finish" \
+  jq -e '.result=="done_unmerged" and .peak_parallel==2 and (.done|length==4)' <<<"$r10"
+check "mem queue events carry estimate + reservation" \
+  jq -e -s '[.[]|select(.kind=="queued" and .gate=="mem")][0]|.est_mb==1000 and .reserved_mb>=1900' "$TICKETS_ROOT/_data/$P10/events.jsonl"
+check "scheduler_start records the estimate source" \
+  jq -e -s '[.[]|select(.kind=="scheduler_start")][0]|.est_mb==1000 and .est_source=="env" and .cap==8' "$TICKETS_ROOT/_data/$P10/events.jsonl"
+check "estimate = p95 of recent real implement runs; default below 3 samples" env -u TICKET_RUN_MEM_MB python3 -c "
+import json, os, sys, tempfile; from pathlib import Path
+root = Path(tempfile.mkdtemp()); os.environ['TICKETS_ROOT'] = str(root)
+sys.path.insert(0, '$here/lib'); import fanout as c
+def rec(i, rss, **kw):
+    d = root / '_data' / f'req-{i}' / 'runs'; d.mkdir(parents=True, exist_ok=True)
+    (d / f'run-{i}.json').write_text(json.dumps({'backend': 'claude', 'phase': 'implement', 'rss_peak_mb': rss, **kw}))
+rec(0, 3000); rec(1, 9999, mock=True); rec(2, 9999, phase='research')
+assert c.mem_estimate_mb('claude') == {'mb': 1500, 'source': 'default', 'samples': 1}
+for i, v in enumerate([2000, 2500, 3500, 4000], 3): rec(i, v)
+e = c.mem_estimate_mb('claude'); assert e['source'] == 'measured' and e['samples'] == 5 and e['mb'] == 4000, e
+assert c.mem_estimate_mb('codex')['source'] == 'default'
+assert c.group_rss_mb(os.getpgrp()) > 0"
+
 # integration: real branches merge into ticket/<parent>-integration
 P4="$(c plan --from src --title "integrate" --contract "$tmp/contract.md" | jq -r .id)"
 I1="$(c add --parent "$P4" --to rx --title I1 --scope 'src/a/**' | jq -r .id)"

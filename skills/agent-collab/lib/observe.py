@@ -113,9 +113,9 @@ def _shrink(ev: dict[str, Any]) -> dict[str, Any]:
 # Kinds mirrored into runtime.log (category ``collab``) so diagnostics,
 # workflow-timeline and habit-report see collab transitions without tool noise.
 LOG_KINDS = {
-    "created", "claimed", "released", "status", "reply", "challenge", "closed",
+    "created", "claimed", "renewed", "released", "status", "reply", "challenge", "closed",
     "research_start", "research_done", "implement_start", "implement_done",
-    "worktree_ready", "run_start", "run_end", "error", "queued", "dispatched", "merge",
+    "worktree_ready", "run_start", "run_end", "error", "queued", "dispatched", "child_joined", "merge",
     "legacy_compat",
 }
 VIA_KINDS = {"created", "claimed", "released", "reply", "challenge", "status", "closed"}
