@@ -175,9 +175,11 @@ html[data-theme='dark'] .list-row.row-selected::after {
   min-width: min(7rem, 100%);
   max-width: max-content;
 }
-.session-tag[data-expanded] {
-  /* opened to its whole text: a line of its own, wrapping inside */
-  flex-basis: 100%;
+/* in the +N panel every tag shows whole: a long one takes its natural width
+   (a line of its own when it is longer) and wraps inside it */
+.tag-panel .session-tag-fill {
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   border-radius: 0.75rem;
 }

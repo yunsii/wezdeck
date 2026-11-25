@@ -247,7 +247,7 @@ export function SessionHeader({
             />
           </Button>
           {data?.agent || data?.branch ? (
-            <TagLine testId="session-tags">
+            <TagLine testId="session-tags" maxLines={2}>
               {data.agent && data.agent !== 'agent' ? (
                 <AgentTag agent={data.agent} />
               ) : null}

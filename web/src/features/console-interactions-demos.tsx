@@ -7,6 +7,7 @@ import {
   AgentTag,
   BranchTag,
   GitStatusTag,
+  RepoTag,
   RoleTag,
   StatusTag,
   TagLine,
@@ -307,17 +308,28 @@ export function ToggleDemo() {
 const LONG_BRANCH =
   'feat/cli-secret-stdin-for-webhooks-and-env-import-long-branch-name'
 
-/** the tags of one session, as the list row and the header both show them */
-function SampleTags({ withList }: { withList: boolean }) {
+type TagPlace = 'list' | 'head' | 'crowded' | 'info'
+
+/** the tags of one session, as each place shows them */
+function SampleTags({ place }: { place: TagPlace }) {
+  const extra = place === 'crowded' || place === 'list'
   return (
     <TagLine
-      testId={withList ? 'tags-list' : 'tags-head'}
-      expandable={!withList}
+      testId={`tags-${place}`}
+      expandable={place !== 'list'}
+      maxLines={place === 'head' || place === 'crowded' ? 2 : undefined}
     >
-      {withList ? <RoleTag role="primary" label="主" /> : null}
+      {extra ? <RoleTag role="primary" label="主" /> : null}
       <AgentTag agent="claude" />
-      {withList ? <StatusTag tone="running" label="运行中" /> : null}
+      {extra ? <StatusTag tone="running" label="运行中" /> : null}
       <BranchTag branch={LONG_BRANCH} />
+      {place === 'crowded' ? (
+        <>
+          <RepoTag repo="ai-video-collection" />
+          <BranchTag branch="hotfix/resources-query-retry-after-timeout" />
+          <StatusTag tone="waiting" label="等你" />
+        </>
+      ) : null}
       <GitStatusTag
         git={{
           staged: 1,
@@ -332,28 +344,55 @@ function SampleTags({ withList }: { withList: boolean }) {
   )
 }
 
+function TagPlaceFrame({
+  label,
+  surface,
+  children,
+}: {
+  label: string
+  surface?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div className="grid gap-1">
+      <span className="px-1 text-meta text-brand-label">{label}</span>
+      <div
+        className={
+          surface
+            ? 'grid gap-1 rounded-2xl bg-brand-surface px-3.5 py-3'
+            : 'grid gap-1 border-b border-brand-edge px-1 pb-2'
+        }
+      >
+        <span className="text-title font-semibold">Gavin 最新消息排查</span>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 /**
- * Session tags in both places with a long branch: the same tag line (wraps,
- * one tag at most a whole line) on a list row's surface and on the header's
- * deck, where a neutral tag used to lose its fill.
+ * Session tags in every place with a long branch: one line first (the
+ * branch truncates beside the others), the header at most two lines with
+ * the rest behind +N in a panel over the page, 会话信息 without a limit.
  */
 export function TagsDemo() {
   return (
-    <div className="grid gap-3">
-      <div className="grid gap-1">
-        <span className="px-1 text-meta text-brand-label">会话列表的一行</span>
-        <div className="grid gap-1 rounded-2xl bg-brand-surface px-3.5 py-3">
-          <span className="text-title font-medium">Gavin 最新消息排查</span>
-          <SampleTags withList />
-        </div>
-      </div>
-      <div className="grid gap-1">
-        <span className="px-1 text-meta text-brand-label">会话详情顶部</span>
-        <div className="grid gap-1 border-b border-brand-edge px-1 pb-2">
-          <span className="text-title font-semibold">Gavin 最新消息排查</span>
-          <SampleTags withList={false} />
-        </div>
-      </div>
+    <div className="grid gap-4">
+      <TagPlaceFrame label="会话列表的一行（行是链接，标签不可点）" surface>
+        <SampleTags place="list" />
+      </TagPlaceFrame>
+      <TagPlaceFrame label="会话详情顶部（点或悬停被省略的标签，浮出全文）">
+        <SampleTags place="head" />
+      </TagPlaceFrame>
+      <TagPlaceFrame label="顶部 · 标签较多（最多两行，其余在 +N 里）">
+        <SampleTags place="crowded" />
+      </TagPlaceFrame>
+      <TagPlaceFrame
+        label="会话信息（不限行数，被省略的标签同样浮出全文）"
+        surface
+      >
+        <SampleTags place="info" />
+      </TagPlaceFrame>
     </div>
   )
 }

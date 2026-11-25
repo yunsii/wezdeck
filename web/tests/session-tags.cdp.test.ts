@@ -88,26 +88,65 @@ describe('Session tags', () => {
     expect(narrow.lines).toBeGreaterThan(1)
     expect(narrow.branch).toBeLessThanOrEqual(narrow.line + 1)
     expect(narrow.others).toBe(true)
-    // a truncated tag is a button: a tap shows it whole, a second folds it
+    // a truncated tag shows its text in a tip: nothing in the line moves
     await head.evaluate((el) => el.style.removeProperty('width'))
-    const branch = head.locator('button.session-tag[aria-expanded]')
-    await expect.poll(() => branch.count()).toBe(1)
-    await branch.click()
-    await expect.poll(() => branch.getAttribute('aria-expanded')).toBe('true')
-    const opened = await branch.evaluate((el) => {
-      const text = el.querySelector('span:last-child')!
-      return {
-        whole: text.scrollWidth <= text.clientWidth + 1,
-        lines: Math.round(el.getBoundingClientRect().height),
-      }
-    })
-    expect(opened.whole).toBe(true)
-    await branch.click()
-    await expect.poll(() => branch.getAttribute('aria-expanded')).toBe('false')
+    const lineHeight = async () => (await head.boundingBox())?.height ?? 0
+    const before = await lineHeight()
+    await head.locator('button.session-tag').first().click()
+    const tip = page.getByTestId('tag-tip')
+    await tip.waitFor({ timeout: 3_000 })
+    expect(await tip.innerText()).toContain('long-branch-name')
+    expect(Math.abs((await lineHeight()) - before)).toBeLessThan(1)
+    await page.keyboard.press('Escape')
+    await tip.waitFor({ state: 'hidden' })
     // the list row (a link) has no tag buttons
     expect(await page.getByTestId('tags-list').locator('button').count()).toBe(
       0,
     )
+    await context.close()
+  })
+
+  it('the header keeps two lines, the rest behind +N; 会话信息 has no limit', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#session-tags`)
+    const crowded = page.getByTestId('tags-crowded')
+    await crowded.waitFor({ timeout: 20_000 })
+    const rows = (testId: string) =>
+      page.getByTestId(testId).evaluate((el) => {
+        const box = el.getBoundingClientRect()
+        // rows that show (inside the line's clip)
+        const tops = [...el.querySelectorAll<HTMLElement>('.session-tag')]
+          .map((t) => t.getBoundingClientRect())
+          .filter((r) => r.bottom <= box.bottom + 1)
+          .map((r) => Math.round(r.top))
+        return new Set(tops).size
+      })
+    await expect
+      .poll(() => crowded.getAttribute('data-folded'))
+      .toMatch(/^\d+$/)
+    expect(await rows('tags-crowded')).toBeLessThanOrEqual(2)
+    const height = (await crowded.boundingBox())?.height ?? 0
+    const more = page.getByTestId('tags-crowded-more')
+    await more.click()
+    const panel = page.getByTestId('tags-crowded-panel')
+    await panel.waitFor({ timeout: 3_000 })
+    // every tag in the panel, the line itself unchanged
+    expect(await panel.locator('.session-tag').count()).toBe(
+      await crowded.locator('.session-tag').count(),
+    )
+    expect(
+      Math.abs(((await crowded.boundingBox())?.height ?? 0) - height),
+    ).toBeLessThan(1)
+    await page.keyboard.press('Escape')
+    await panel.waitFor({ state: 'detached' })
+    // 会话信息: no fold
+    expect(
+      await page.getByTestId('tags-info').getAttribute('data-folded'),
+    ).toBe(null)
     await context.close()
   })
 })

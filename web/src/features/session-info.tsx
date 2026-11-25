@@ -12,6 +12,12 @@ import { useStatusText } from './console-sessions'
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
+import {
+  AgentTag,
+  BranchTag,
+  GitStatusTag,
+  TagLine,
+} from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { SectionHeading } from '#/components/ui/section-heading'
@@ -215,6 +221,17 @@ export function SessionInfo({
       testId="session-info"
     >
       <div className="grid gap-3 px-3">
+        {/* the header's tags, whole: no line limit here, a truncated one
+            opens in place */}
+        {data.agent || data.branch || data.git ? (
+          <TagLine testId="info-tags" className="px-1">
+            {data.agent && data.agent !== 'agent' ? (
+              <AgentTag agent={data.agent} />
+            ) : null}
+            {data.branch ? <BranchTag branch={data.branch} /> : null}
+            {data.git ? <GitStatusTag git={data.git} /> : null}
+          </TagLine>
+        ) : null}
         {data.reference ? (
           <Button
             variant="solid"

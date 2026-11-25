@@ -14,10 +14,12 @@ import {
   Zap,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { useLingui } from '@lingui/react/macro'
 import {
   createContext,
   useContext,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -25,6 +27,7 @@ import {
 
 import type { LedTone } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import { PopoverContent } from '#/components/ui/popover'
 
 type Tone =
   'neutral' | 'accent' | 'waiting' | 'done' | 'claude' | 'codex' | 'grok'
@@ -45,52 +48,65 @@ export function SessionTag({
   className?: string
   children: string
 }) {
-  const expandable = useContext(Expandable)
+  const expand = useContext(Expandable)
+  const measures = expand.mode === 'inline' || expand.mode === 'overlay'
   const text = useRef<HTMLSpanElement>(null)
-  // cut: the text is truncated right now; open: shown whole (a tap)
+  // the text is truncated right now
   const [cut, setCut] = useState(false)
-  const [open, setOpen] = useState(false)
   useLayoutEffect(() => {
     const el = text.current
-    if (!expandable || open || !el || typeof ResizeObserver === 'undefined')
-      return
+    if (!measures || !el || typeof ResizeObserver === 'undefined') return
     const measure = () => setCut(el.scrollWidth > el.clientWidth + 1)
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-    // cut swaps <span> for <button>: the text node is a new element, so
-    // observe that one (the detached old one measured 0 and flipped it back)
-  }, [expandable, open, cut, children])
+    // cut swaps <span> for the tip's trigger: the text node is a new
+    // element, so observe that one (the detached old one measured 0)
+  }, [measures, cut, children])
   const body = (
     <>
       {Icon ? <Icon size={11} aria-hidden className="shrink-0" /> : null}
       <span
         ref={text}
-        className={cn('min-w-0', open ? 'break-all' : 'truncate')}
+        className={cn(
+          'min-w-0',
+          expand.mode === 'full' ? 'break-all' : 'truncate',
+        )}
       >
         {children}
       </span>
     </>
   )
   const classes = cn('session-tag text-meta', mono && 'font-mono', className)
-  // a truncated tag opens to its whole text in place (a phone has no hover)
-  if (expandable && (cut || open))
+  // truncated: the whole text in a tip over the page (a tap on a phone,
+  // hover on a desk) — opening it in place moved the layout
+  if (measures && cut)
     return (
-      <button
-        type="button"
-        data-tone={tone}
-        data-expanded={open ? '' : undefined}
-        aria-expanded={open}
-        title={hint ?? children}
-        onClick={() => setOpen(!open)}
-        className={cn(
-          classes,
-          'cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-        )}
-      >
-        {body}
-      </button>
+      <PopoverPrimitive.Root>
+        <PopoverPrimitive.Trigger
+          openOnHover
+          delay={250}
+          data-tone={tone}
+          aria-label={hint ?? children}
+          className={cn(
+            classes,
+            'cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+          )}
+        >
+          {body}
+        </PopoverPrimitive.Trigger>
+        <PopoverContent
+          side="bottom"
+          sideOffset={6}
+          className={cn(
+            'max-w-[min(22rem,calc(100vw-2rem))] px-2.5 py-1.5 text-meta break-all',
+            mono && 'font-mono',
+          )}
+        >
+          <span data-testid="tag-tip">{children}</span>
+        </PopoverContent>
+      </PopoverPrimitive.Root>
     )
   return (
     <span data-tone={tone} title={hint ?? children} className={classes}>
@@ -99,12 +115,23 @@ export function SessionTag({
   )
 }
 
-/** false inside a link (a session list row): no button within it */
-const Expandable = createContext(true)
+/**
+ * How a truncated tag shows its whole text: `inline` / `overlay` in a tip
+ * (overlay: the line also folds behind +N), `full` (inside the +N panel)
+ * shows every tag whole, `none` never (inside a link or another control).
+ */
+type ExpandMode = 'inline' | 'overlay' | 'full' | 'none'
+const Expandable = createContext<{ mode: ExpandMode }>({
+  mode: 'inline',
+})
 
 /** tags inside another control (the git tag's button) never open */
 export function NoExpand({ children }: { children: React.ReactNode }) {
-  return <Expandable.Provider value={false}>{children}</Expandable.Provider>
+  return (
+    <Expandable.Provider value={{ mode: 'none' }}>
+      {children}
+    </Expandable.Provider>
+  )
 }
 
 const AGENTS: Partial<Record<string, { tone: Tone; icon: LucideIcon }>> = {
@@ -216,36 +243,133 @@ export function GitStatusTag({ git }: { git: GitStatus }) {
 }
 
 /**
- * The tag line, the same in the session list row and the session header:
- * one line first — a long tag (a branch) truncates to fit beside the others,
- * which keep their size — and it wraps only when the long one would get
- * less than ~7rem; a tag never exceeds a whole line (full text on hover).
- * The header used to squeeze the agent to 「* c…」, then to stack every tag.
+ * The tag line, the same in the session list row, the session header and
+ * 会话信息: one line first — a long tag (a branch) truncates to fit beside
+ * the others, which keep their size — and it wraps only when the long one
+ * would get less than ~7rem; a tag never exceeds a whole line.
+ * `maxLines` (the header: 2) folds what does not fit behind +N, which opens
+ * a panel over the page with every tag whole — the header's height never
+ * changes. A truncated tag shows its text in a tip (tap / hover), nothing
+ * moves. Without `maxLines` the line wraps freely (会话信息).
  */
 export function TagLine({
   children,
   className,
   testId,
   expandable = true,
+  maxLines,
 }: {
   children: React.ReactNode
   className?: string
   testId?: string
-  /** tap a truncated tag to see it whole; off inside a link (list rows) */
+  /** false inside a link (list rows): no tag opens */
   expandable?: boolean
+  maxLines?: number
 }) {
+  const { t } = useLingui()
+  const line = useRef<HTMLSpanElement>(null)
+  const box = useRef<HTMLDivElement>(null)
+  const [fold, setFold] = useState({ height: 0, hidden: 0 })
+  const [panel, setPanel] = useState(false)
+  useLayoutEffect(() => {
+    const el = line.current
+    if (!maxLines || !el || typeof ResizeObserver === 'undefined') return
+    const measure = () => {
+      const tags = [...el.children].filter(
+        (c): c is HTMLElement => c instanceof HTMLElement,
+      )
+      const tops = [...new Set(tags.map((tag) => tag.offsetTop))].sort(
+        (a, b) => a - b,
+      )
+      const cutAt = tops.length > maxLines ? tops[maxLines] : undefined
+      const next =
+        cutAt === undefined
+          ? { height: 0, hidden: 0 }
+          : {
+              // the rows above the cut, without the gap under them
+              height: cutAt - (tops[0] ?? 0) - 4,
+              hidden: tags.filter((tag) => tag.offsetTop >= cutAt).length,
+            }
+      setFold((now) =>
+        now.height === next.height && now.hidden === next.hidden ? now : next,
+      )
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [maxLines, children])
+  useEffect(() => {
+    if (!panel) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPanel(false)
+    }
+    const onDown = (event: PointerEvent) => {
+      if (!box.current?.contains(event.target as Node)) setPanel(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onDown)
+    }
+  }, [panel])
+  const mode: ExpandMode = !expandable
+    ? 'none'
+    : maxLines
+      ? 'overlay'
+      : 'inline'
+  const folded = fold.hidden > 0
   return (
-    <Expandable.Provider value={expandable}>
-      <span
-        data-testid={testId}
-        className={cn(
-          'flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
-          className,
-        )}
-      >
-        {children}
-      </span>
-    </Expandable.Provider>
+    <div ref={box} className="relative min-w-0">
+      <Expandable.Provider value={{ mode }}>
+        <span
+          ref={line}
+          data-testid={testId}
+          data-folded={folded ? fold.hidden : undefined}
+          style={
+            folded ? { maxHeight: fold.height, overflow: 'hidden' } : undefined
+          }
+          className={cn(
+            'relative flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
+            // room for +N at the end of the last row shown
+            folded && 'pr-10',
+            className,
+          )}
+        >
+          {children}
+        </span>
+      </Expandable.Provider>
+      {folded ? (
+        <button
+          type="button"
+          data-testid={testId ? `${testId}-more` : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={panel}
+          aria-label={t`Show all tags`}
+          onClick={() => setPanel(!panel)}
+          className="session-tag absolute right-0 bottom-0 cursor-pointer text-meta outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+          data-tone="neutral"
+        >
+          +{fold.hidden}
+        </button>
+      ) : null}
+      {panel ? (
+        // over the page, not in the header's flow: its height stays
+        <div
+          role="dialog"
+          aria-label={t`All tags`}
+          data-testid={testId ? `${testId}-panel` : undefined}
+          className="absolute top-full left-0 z-30 mt-1.5 w-full min-w-56 rounded-xl bg-brand-surface p-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
+        >
+          <Expandable.Provider value={{ mode: 'full' }}>
+            <span className="tag-panel flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label">
+              {children}
+            </span>
+          </Expandable.Provider>
+        </div>
+      ) : null}
+    </div>
   )
 }
 
