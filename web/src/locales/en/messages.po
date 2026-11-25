@@ -37,7 +37,8 @@ msgstr "(pick any)"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr "{0} staged, {1} modified, {2} untracked"
 
-#: src/components/deck/session-tags.tsx:261
+#: src/components/deck/session-tags.tsx:269
+#: src/components/deck/session-tags.tsx:495
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -59,8 +60,8 @@ msgstr "{bg} background tasks running"
 
 #: src/features/session-statusbar.tsx:166
 #: src/features/session-statusbar.tsx:167
-msgid "{count} background tasks"
-msgstr "{count} background tasks"
+#~ msgid "{count} background tasks"
+#~ msgstr "{count} background tasks"
 
 #: src/features/chat-thread.tsx:471
 #~ msgid "{count} delivered, waiting for the agent"
@@ -70,6 +71,10 @@ msgstr "{count} background tasks"
 msgid "{count} images"
 msgstr "{count} images"
 
+#: src/features/session-statusbar.tsx:60
+msgid "{count} monitors running"
+msgstr "{count} monitors running"
+
 #: src/features/session-switcher.tsx:128
 msgid "{count} more need you"
 msgstr "{count} more need you"
@@ -77,6 +82,10 @@ msgstr "{count} more need you"
 #: src/features/chat-thread.tsx:470
 #~ msgid "{count} queued, the agent takes them when it is ready"
 #~ msgstr "{count} queued, the agent takes them when it is ready"
+
+#: src/features/session-statusbar.tsx:61
+msgid "{count} shells running"
+msgstr "{count} shells running"
 
 #: src/features/chat-tools.tsx:205
 msgid "{count} tool calls"
@@ -105,10 +114,10 @@ msgid "{hours} h ago"
 msgstr "{hours} h ago"
 
 #: src/features/session-statusbar.tsx:125
-msgid "{label} limit, resets in {reset}"
-msgstr "{label} limit, resets in {reset}"
+#~ msgid "{label} limit, resets in {reset}"
+#~ msgstr "{label} limit, resets in {reset}"
 
-#: src/features/session-statusbar.tsx:195
+#: src/features/session-statusbar.tsx:99
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
@@ -164,7 +173,8 @@ msgstr "{runs} runs"
 msgid "{staged} staged"
 msgstr "{staged} staged"
 
-#: src/components/deck/session-tags.tsx:259
+#: src/components/deck/session-tags.tsx:267
+#: src/components/deck/session-tags.tsx:493
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -173,8 +183,8 @@ msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
 #: src/features/session-header.tsx:140
-#~ msgid "{tasks} background tasks"
-#~ msgstr "{tasks} background tasks"
+msgid "{tasks} background tasks"
+msgstr "{tasks} background tasks"
 
 #: src/features/chat-thread.tsx:275
 #~ msgid "{tokens} tokens"
@@ -221,16 +231,16 @@ msgid "24h · no runs"
 msgstr "24h · no runs"
 
 #: src/features/session-header.tsx:125
-#~ msgid "5 h"
-#~ msgstr "5 h"
+msgid "5 h"
+msgstr "5 h"
 
 #: src/features/session-info.tsx:81
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
 #: src/features/session-header.tsx:132
-#~ msgid "7 d"
-#~ msgstr "7 d"
+msgid "7 d"
+msgstr "7 d"
 
 #: src/features/session-info.tsx:82
 msgid "7-day limit"
@@ -371,7 +381,7 @@ msgstr "All repos"
 #~ msgid "All statuses"
 #~ msgstr "All statuses"
 
-#: src/components/deck/session-tags.tsx:442
+#: src/components/deck/session-tags.tsx:450
 msgid "All tags"
 msgstr "All tags"
 
@@ -545,13 +555,12 @@ msgstr "Bytes"
 #: src/features/console-collab.tsx:269
 #: src/features/console-collab.tsx:353
 #: src/features/session-info.tsx:80
-#: src/features/session-statusbar.tsx:99
 msgid "Cache hit"
 msgstr "Cache hit"
 
 #: src/features/session-header.tsx:151
-#~ msgid "cache hit {hit}%"
-#~ msgstr "cache hit {hit}%"
+msgid "cache hit {hit}%"
+msgstr "cache hit {hit}%"
 
 #: src/features/console-sessions.tsx:552
 msgid "Can't get the latest from the host, showing {staleAt}:"
@@ -793,14 +802,14 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
+#: src/features/session-header.tsx:122
 #: src/features/session-info.tsx:78
-#: src/features/session-statusbar.tsx:93
 msgid "Context"
 msgstr "Context"
 
 #: src/features/session-header.tsx:148
-#~ msgid "Context {usedTokens} / {limitTokens}"
-#~ msgstr "Context {usedTokens} / {limitTokens}"
+msgid "Context {usedTokens} / {limitTokens}"
+msgstr "Context {usedTokens} / {limitTokens}"
 
 #: src/features/chat-thread.tsx:411
 msgid "Context compacted (/compact)"
@@ -1245,7 +1254,7 @@ msgstr "From anywhere"
 #~ msgstr "Git"
 
 #: src/features/session-git.tsx:219
-#: src/features/session-git.tsx:355
+#: src/features/session-git.tsx:358
 msgid "Git status"
 msgstr "Git status"
 
@@ -1577,8 +1586,8 @@ msgstr "Light"
 #~ msgstr "Light theme"
 
 #: src/features/session-header.tsx:152
-#~ msgid "limits as of {limitsAt}"
-#~ msgstr "limits as of {limitsAt}"
+msgid "limits as of {limitsAt}"
+msgstr "limits as of {limitsAt}"
 
 #: src/features/console-collab-run.tsx:48
 msgid "live"
@@ -1604,8 +1613,8 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:368
-#: src/features/session-header.tsx:108
+#: src/features/session-git.tsx:371
+#: src/features/session-header.tsx:246
 #: src/features/session-skeleton.tsx:14
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
@@ -1629,8 +1638,8 @@ msgid "made progress"
 msgstr "made progress"
 
 #: src/features/session-statusbar.tsx:236
-msgid "main checkout"
-msgstr "main checkout"
+#~ msgid "main checkout"
+#~ msgstr "main checkout"
 
 #: src/features/session-todos.tsx:186
 msgid "Mark done"
@@ -1675,7 +1684,6 @@ msgstr "Mode"
 
 #: src/features/session-empty.tsx:42
 #: src/features/session-info.tsx:51
-#: src/features/session-statusbar.tsx:91
 msgid "Model"
 msgstr "Model"
 
@@ -1704,7 +1712,7 @@ msgstr "Name"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-header.tsx:125
+#: src/features/session-header.tsx:263
 #: src/features/session-list.tsx:283
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -1810,7 +1818,7 @@ msgstr "No agent is working right now."
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
-#: src/components/deck/session-tags.tsx:281
+#: src/components/deck/session-tags.tsx:289
 msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
@@ -1880,7 +1888,8 @@ msgstr "No tickets match this filter."
 msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
-#: src/components/deck/session-tags.tsx:262
+#: src/components/deck/session-tags.tsx:270
+#: src/components/deck/session-tags.tsx:496
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -2064,12 +2073,12 @@ msgid "Origin session"
 msgstr "Origin session"
 
 #: src/features/session-statusbar.tsx:97
-msgid "Output"
-msgstr "Output"
+#~ msgid "Output"
+#~ msgstr "Output"
 
 #: src/features/session-header.tsx:150
-#~ msgid "output {outputTokens}"
-#~ msgstr "output {outputTokens}"
+msgid "output {outputTokens}"
+msgstr "output {outputTokens}"
 
 #: src/features/session-info.tsx:79
 msgid "Output tokens"
@@ -2121,8 +2130,8 @@ msgid "Pending"
 msgstr "Pending"
 
 #: src/features/session-statusbar.tsx:151
-msgid "Permission mode: {mode}"
-msgstr "Permission mode: {mode}"
+#~ msgid "Permission mode: {mode}"
+#~ msgstr "Permission mode: {mode}"
 
 #: src/features/collab-metrics.tsx:231
 #: src/features/console-collab.tsx:266
@@ -2371,12 +2380,12 @@ msgid "research failed"
 msgstr "research failed"
 
 #: src/features/session-header.tsx:127
-#~ msgid "resets {fiveReset}"
-#~ msgstr "resets {fiveReset}"
+msgid "resets {fiveReset}"
+msgstr "resets {fiveReset}"
 
 #: src/features/session-header.tsx:134
-#~ msgid "resets {weekReset}"
-#~ msgstr "resets {weekReset}"
+msgid "resets {weekReset}"
+msgstr "resets {weekReset}"
 
 #: src/features/chat-tools.tsx:162
 msgid "Result"
@@ -2644,7 +2653,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:138
+#: src/features/session-header.tsx:276
 #: src/features/session-info.tsx:220
 msgid "Session info"
 msgstr "Session info"
@@ -2664,7 +2673,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:78
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:87
+#: src/features/session-header.tsx:225
 #: src/features/session-list.tsx:227
 msgctxt "nav"
 msgid "Sessions"
@@ -2695,7 +2704,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/components/deck/session-tags.tsx:430
+#: src/components/deck/session-tags.tsx:438
 msgid "Show all tags"
 msgstr "Show all tags"
 
@@ -2833,7 +2842,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:99
+#: src/features/session-header.tsx:237
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -2841,7 +2850,7 @@ msgstr "Switch session (Alt+g)"
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
-#: src/components/deck/session-tags.tsx:280
+#: src/components/deck/session-tags.tsx:288
 msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
@@ -3219,7 +3228,7 @@ msgid "Undo"
 msgstr "Undo"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:66
+#: src/features/session-header.tsx:204
 #: src/features/session-list.tsx:105
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"

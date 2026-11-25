@@ -315,9 +315,12 @@ export function GitStatusButton({
   id,
   git,
   sample,
+  fixed = false,
 }: {
   id: string
   git: GitStatus
+  /** the status bar's fixed-width tag */
+  fixed?: boolean
   /** 交互调试: show this instead of reading the host */
   sample?: GitDetail
 }) {
@@ -346,7 +349,7 @@ export function GitStatusButton({
         className="inline-flex shrink-0 rounded-full"
       >
         <NoExpand>
-          <GitStatusTag git={git} />
+          <GitStatusTag git={git} fixed={fixed} />
         </NoExpand>
       </Button>
       <Sheet

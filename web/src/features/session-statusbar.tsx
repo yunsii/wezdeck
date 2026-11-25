@@ -1,42 +1,33 @@
-// The session's status under the composer, in two bars like the terminal:
+// The session's status under the composer, two lines of essentials:
 //
-//   agent:  the model · ctx % · 5h / 7d limits · permission mode · background
-//   custom: repo · branch · git changes · node · linked N · 主仓 / worktree
+//   agent:    the model · shell N · monitor N (background tasks by kind)
+//   checkout: branch · git changes · linked N
 //
-// (Claude Code's status line, then the tmux status line the person set up;
-// WakaTime lives in the top banner already.) Pills, one line for the agent
-// bar and at most two for the custom one; the branch truncates first, the
-// rest folds behind +N opening upward. ctx, linked and the background tasks
-// open upward over the conversation, so nothing in the thread moves. The
-// header keeps the title.
+// (a phone has little room: ctx and the account limits stay in the header,
+// shown only when close to full; the permission mode and node stay at the
+// terminal). Each line holds one row — the branch truncates first, the rest
+// folds behind +N opening upward; the task lists and linked open upward over
+// the thread, so nothing in it moves. The git tag keeps its width.
 import { useLingui } from '@lingui/react/macro'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
-import { Bot, Gauge, Hexagon, Layers, PlayCircle } from 'lucide-react'
+import { Bot, Layers, Radio, SquareTerminal } from 'lucide-react'
 
 import {
   AGENT_MARKS,
   BranchTag,
-  RepoTag,
   SessionTag,
   TagLine,
 } from '#/components/deck/session-tags'
 import { Led } from '#/components/deck/led'
 import { PopoverContent } from '#/components/ui/popover'
-import type { Detail, RateWindow } from './console-sessions'
+import type { Detail } from './console-sessions'
 import { BackgroundTasks } from './session-background'
 import { GitStatusButton } from './session-git'
 
-/** what the status bar adds to the session reply (session_env.go, …) */
+/** what the status bar adds to the session reply (session_env.go) */
 export type StatusFields = {
-  node?: string
   worktrees?: Array<{ path: string; branch?: string; current?: boolean }>
-  /** Claude's permission mode (auto, plan, bypassPermissions …) */
-  mode?: string
-  repo_label?: string
 }
-
-/** amber from here on */
-const NEAR_FULL = 80
 
 const trigger =
   'session-tag cursor-pointer text-meta outline-none focus-visible:ring-2 focus-visible:ring-brand-running'
@@ -50,126 +41,39 @@ export function modelName(id?: string) {
   return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${m[2]}${m[3] ? `.${m[3]}` : ''}`
 }
 
-const percent = (n: number) => `${Math.round(n)}%`
-const tokens = (n: number) =>
-  n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
+/** monitor (a Monitor stream) or shell (a background Bash) */
+const kindOf = (task: NonNullable<Detail['background']>[number]) =>
+  task.tool === 'Monitor' || task.type === 'monitor' ? 'monitor' : 'shell'
 
-/** hours (or minutes) until a window resets */
-function resetIn(w: RateWindow) {
-  if (!w.resets_at) return ''
-  const minutes = Math.max(
-    0,
-    Math.round((w.resets_at * 1000 - Date.now()) / 60_000),
-  )
-  return minutes >= 60 ? `${Math.floor(minutes / 60)}h` : `${minutes}m`
-}
-
-function Context({ data }: { data: Detail }) {
-  const { t } = useLingui()
-  const usage = data.usage
-  if (!usage?.context_limit) return null
-  const share = (usage.context / usage.context_limit) * 100
-  const hit =
-    usage.input + usage.cache_read
-      ? Math.round((usage.cache_read / (usage.input + usage.cache_read)) * 100)
-      : 0
-  return (
-    <PopoverPrimitive.Root>
-      <PopoverPrimitive.Trigger
-        data-tone={share >= NEAR_FULL ? 'waiting' : 'neutral'}
-        data-testid="status-context"
-        className={trigger}
-      >
-        <Gauge size={11} aria-hidden className="shrink-0" />
-        {usage.context_pending ? 'ctx …' : `ctx ${percent(share)}`}
-      </PopoverPrimitive.Trigger>
-      <PopoverContent side="top" sideOffset={6} className="px-3 py-2">
-        <dl
-          data-testid="status-context-detail"
-          className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-meta"
-        >
-          <dt className="text-brand-label">{t`Model`}</dt>
-          <dd className="font-mono">{usage.model ?? '—'}</dd>
-          <dt className="text-brand-label">{t`Context`}</dt>
-          <dd className="tabular-nums">
-            {tokens(usage.context)} / {tokens(usage.context_limit)}
-          </dd>
-          <dt className="text-brand-label">{t`Output`}</dt>
-          <dd className="tabular-nums">{tokens(usage.output)}</dd>
-          <dt className="text-brand-label">{t`Cache hit`}</dt>
-          <dd className="tabular-nums">{percent(hit)}</dd>
-        </dl>
-      </PopoverContent>
-    </PopoverPrimitive.Root>
-  )
-}
-
-function Limit({
-  label,
-  window: w,
-  onlyNearFull = false,
+/** one kind of background task: its count, the list upward on a tap */
+function Background({
+  kind,
+  tasks,
 }: {
-  label: string
-  window?: RateWindow
-  /** the 5-hour one: only once it is close (the terminal shows 7d alone) */
-  onlyNearFull?: boolean
+  kind: 'shell' | 'monitor'
+  tasks: NonNullable<Detail['background']>
 }) {
   const { t } = useLingui()
-  if (!w || (onlyNearFull && w.used_percentage < NEAR_FULL)) return null
-  // a snapshot taken before its window reset says nothing about now
-  if (w.resets_at && w.resets_at * 1000 < Date.now()) return null
-  const reset = resetIn(w)
-  return (
-    <SessionTag
-      tone={w.used_percentage >= NEAR_FULL ? 'waiting' : 'neutral'}
-      hint={reset ? t`${label} limit, resets in ${reset}` : undefined}
-    >
-      {`${label} ${percent(w.used_percentage)}${reset ? ` · ${reset}` : ''}`}
-    </SessionTag>
-  )
-}
-
-function Mode({ mode }: { mode?: string }) {
-  const { t } = useLingui()
-  if (!mode || mode === 'default' || mode === 'normal') return null
-  const names: Record<string, string> = {
-    auto: 'auto',
-    plan: 'plan',
-    acceptEdits: 'accept edits',
-    bypassPermissions: 'bypass',
-  }
-  return (
-    <SessionTag
-      tone={
-        mode === 'bypassPermissions'
-          ? 'waiting'
-          : mode === 'plan'
-            ? 'accent'
-            : 'neutral'
-      }
-      icon={PlayCircle}
-      hint={t`Permission mode: ${mode}`}
-    >
-      {names[mode] ?? mode}
-    </SessionTag>
-  )
-}
-
-function Background({ tasks }: { tasks: NonNullable<Detail['background']> }) {
-  const { t } = useLingui()
   const count = tasks.length
+  const label =
+    kind === 'monitor'
+      ? t`${count} monitors running`
+      : t`${count} shells running`
   return (
     <PopoverPrimitive.Root>
       <PopoverPrimitive.Trigger
         data-tone="accent"
-        data-testid="status-background"
-        aria-label={t`${count} background tasks`}
-        title={t`${count} background tasks`}
+        data-testid={`status-${kind}`}
+        aria-label={label}
+        title={label}
         className={trigger}
       >
-        <Led tone="running" size={7} className="led-running" />
-        {/* compact on the bar; the words for hover and readers */}
-        <span aria-hidden>{count}</span>
+        {kind === 'monitor' ? (
+          <Radio size={11} aria-hidden className="shrink-0" />
+        ) : (
+          <SquareTerminal size={11} aria-hidden className="shrink-0" />
+        )}
+        {`${kind} ${count}`}
       </PopoverPrimitive.Trigger>
       {/* upward, over the thread: opening it used to push the messages */}
       <PopoverContent
@@ -225,19 +129,6 @@ function Linked({ list }: { list: NonNullable<Detail['worktrees']> }) {
   )
 }
 
-/** 主仓 on the main checkout, else the worktree's folder (dev-agent …) */
-function Checkout({ list }: { list: NonNullable<Detail['worktrees']> }) {
-  const { t } = useLingui()
-  const current = list.find((wt) => wt.current)
-  if (!current) return null
-  const main = list[0]?.path === current.path
-  return (
-    <SessionTag tone={main ? 'done' : 'accent'} mono={!main}>
-      {main ? t`main checkout` : (current.path.split('/').at(-1) ?? '')}
-    </SessionTag>
-  )
-}
-
 export function SessionStatusBar({ data }: { data?: Detail }) {
   if (!data) return null
   const agent = data.agent && data.agent !== 'agent' ? data.agent : ''
@@ -245,13 +136,17 @@ export function SessionStatusBar({ data }: { data?: Detail }) {
   const model = modelName(data.usage?.model) || agent
   const worktrees = data.worktrees ?? []
   const background = data.background ?? []
+  const shells = background.filter((task) => kindOf(task) === 'shell')
+  const monitors = background.filter((task) => kindOf(task) === 'monitor')
+  const custom = Boolean(data.branch || data.git || worktrees.length > 1)
+  if (!model && !background.length && !custom) return null
   return (
     // mt-1: 10 px under the composer, as the toolbar's buttons sit 10 px
     // above it (the toolbar box pads its 32 px buttons by 4 px)
     <div data-testid="session-statusbar" className="mt-1 grid gap-1">
-      {model || data.usage || background.length ? (
-        // two lines like Claude Code's own (model · ctx · 7d, then the mode)
-        <TagLine testId="statusbar-agent" maxLines={2} panelSide="top">
+      {model || background.length ? (
+        // the agent: its model, what runs in the background by kind
+        <TagLine testId="statusbar-agent" maxLines={1} panelSide="top">
           {model ? (
             <SessionTag
               tone={mark?.tone ?? 'neutral'}
@@ -262,30 +157,27 @@ export function SessionStatusBar({ data }: { data?: Detail }) {
               {model}
             </SessionTag>
           ) : null}
-          <Context data={data} />
-          <Limit label="5h" window={data.account?.five_hour} onlyNearFull />
-          <Limit label="7d" window={data.account?.seven_day} />
-          <Mode mode={data.mode} />
-          {background.length ? <Background tasks={background} /> : null}
+          {shells.length ? <Background kind="shell" tasks={shells} /> : null}
+          {monitors.length ? (
+            <Background kind="monitor" tasks={monitors} />
+          ) : null}
         </TagLine>
       ) : null}
-      {data.branch || data.git || data.node || worktrees.length ? (
+      {custom ? (
+        // the checkout: branch, git changes, linked worktrees
         <TagLine
           testId="statusbar-custom"
-          maxLines={2}
+          maxLines={1}
           panelSide="top"
           className="session-statusbar"
         >
-          {data.repo_label ? <RepoTag repo={data.repo_label} /> : null}
           {data.branch ? <BranchTag branch={data.branch} /> : null}
-          {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
-          {data.node ? (
-            <SessionTag icon={Hexagon} mono hint={`node ${data.node}`}>
-              {data.node}
-            </SessionTag>
+          {/* right after the branch: when its width moves, the branch's
+              truncation takes it up */}
+          {data.git ? (
+            <GitStatusButton id={data.id} git={data.git} fixed />
           ) : null}
           {worktrees.length > 1 ? <Linked list={worktrees} /> : null}
-          {worktrees.length ? <Checkout list={worktrees} /> : null}
         </TagLine>
       ) : null}
     </div>

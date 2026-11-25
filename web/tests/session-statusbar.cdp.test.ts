@@ -27,8 +27,8 @@ describe('Status bar', () => {
     await page.goto(`${base}/zh/console/me/interactions#status-bar`)
     const bar = page.getByTestId('session-statusbar')
     await bar.waitFor({ timeout: 20_000 })
-    // rows that show (inside each line's clip), a few px of slack
-    const rows = (testId: string) =>
+    // two lines, one row each: the agent, then the checkout
+    const rowsOf = (testId: string) =>
       page.getByTestId(testId).evaluate((el) => {
         const box = el.getBoundingClientRect()
         const tops = [...el.querySelectorAll<HTMLElement>('.session-tag')]
@@ -36,24 +36,31 @@ describe('Status bar', () => {
           .filter((r) => r.bottom <= box.bottom + 1)
           .map((r) => r.top)
           .sort((a, b) => a - b)
-        return tops.filter((top, k) => k === 0 || top - tops[k - 1] > 6).length
+        return tops.filter((top, k) => k === 0 || top - (tops[k - 1] ?? 0) > 6)
+          .length
       })
-    expect(await rows('statusbar-agent')).toBeLessThanOrEqual(2)
-    expect(await rows('statusbar-custom')).toBeLessThanOrEqual(2)
-    const agentText = (
+    expect(await rowsOf('statusbar-agent')).toBe(1)
+    expect(await rowsOf('statusbar-custom')).toBe(1)
+    const agent = (
       await page.getByTestId('statusbar-agent').innerText()
     ).replace(/\s+/g, ' ')
-    expect(agentText).toContain('Opus 5.5')
-    expect(agentText).toContain('ctx 52%')
-    expect(agentText).toContain('7d 47%')
-    // 5h stays hidden until it is close to full (23% here)
-    expect(agentText).not.toContain('5h')
-    expect(agentText).toContain('auto')
+    expect(agent).toContain('Opus 5.5')
+    // background tasks by kind: a Bash (shell) and a Monitor
+    expect(agent).toContain('shell 1')
+    expect(agent).toContain('monitor 1')
+    const all = (await bar.innerText()).replace(/\s+/g, ' ')
+    // ctx and limits live in the header (only near full); no mode, no node
+    expect(all).not.toContain('ctx')
+    expect(all).not.toContain('auto')
     const opensUp = async (testId: string, list: string) => {
       const button = page.getByTestId(testId)
       if (!(await button.first().isVisible())) {
         // folded away: it lives in the +N panel
-        await page.getByTestId('statusbar-agent-more').click()
+        await page
+          .getByTestId(
+            `${testId === 'status-worktrees' ? 'statusbar-custom' : 'statusbar-agent'}-more`,
+          )
+          .click()
       }
       const top = (await page.getByTestId(testId).last().boundingBox())?.y ?? 0
       await page.getByTestId(testId).last().click()
@@ -65,10 +72,50 @@ describe('Status bar', () => {
       await popup.waitFor({ state: 'hidden' })
       await page.keyboard.press('Escape')
     }
-    await opensUp('status-context', 'status-context-detail')
     await opensUp('status-worktrees', 'status-worktree-list')
-    await opensUp('status-background', 'background-tasks')
+    await opensUp('status-shell', 'background-tasks')
+    await opensUp('status-monitor', 'background-tasks')
     expect(await page.getByTestId('status-worktree-list').count()).toBe(0)
     await context.close()
   })
+
+  it(
+    'churning git counts move neither the bar nor the composer',
+    { timeout: 60_000 },
+    async () => {
+      const context = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        locale: 'zh-CN',
+      })
+      const page = await context.newPage()
+      await page.goto(`${base}/zh/console/me/interactions#git-churn`)
+      const demo = page.getByTestId('git-churn')
+      await demo.waitFor({ timeout: 20_000 })
+      await page.waitForTimeout(600)
+      // 2 s of frames: the git tag's width and the bar's height hold
+      const frames = await demo.evaluate(
+        (root) =>
+          new Promise<Array<{ git: number; bar: number }>>((done) => {
+            const out: Array<{ git: number; bar: number }> = []
+            const begin = performance.now()
+            const tick = (now: number) => {
+              const git = root.querySelector('[data-testid=git-fixed]')
+              const bar = root.querySelector('[data-testid=session-statusbar]')
+              if (git && bar)
+                out.push({
+                  git: Math.round(git.getBoundingClientRect().width),
+                  bar: Math.round(bar.getBoundingClientRect().height),
+                })
+              if (now - begin < 2_000) requestAnimationFrame(tick)
+              else done(out)
+            }
+            requestAnimationFrame(tick)
+          }),
+      )
+      expect(frames.length).toBeGreaterThan(20)
+      expect(new Set(frames.map((f) => f.git)).size, 'git tag width').toBe(1)
+      expect(new Set(frames.map((f) => f.bar)).size, 'bar height').toBe(1)
+      await context.close()
+    },
+  )
 })

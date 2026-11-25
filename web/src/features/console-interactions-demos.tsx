@@ -463,8 +463,6 @@ const STATUS_SAMPLE: Detail = {
   status: 'running',
   agent: 'claude',
   branch: 'docs/test-internal-domain',
-  repo_label: 'coco-forge',
-  mode: 'auto',
   usage: {
     model: 'claude-opus-5-5',
     context: 104_000,
@@ -490,7 +488,6 @@ const STATUS_SAMPLE: Detail = {
     ahead: 1,
     behind: 3,
   },
-  node: 'v22.23.1',
   worktrees: [
     {
       path: '/home/yuns/github/wezterm-config',
@@ -523,6 +520,52 @@ export function StatusBarDemo() {
         </span>
       </div>
       <SessionStatusBar data={STATUS_SAMPLE} />
+    </div>
+  )
+}
+
+/**
+ * Git counts changing every 250 ms under a bottom-pinned composer, as when
+ * the agent edits files: the git tag keeps its width (fixed segments, two
+ * digits each), so the tags after it hold still and the bar stays one line.
+ */
+export function GitChurnDemo() {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const timer = setInterval(() => setTick((n) => n + 1), 250)
+    return () => clearInterval(timer)
+  }, [])
+  // deterministic churn: widths from one to three digits
+  const pick = (k: number, span: number) => (tick * 7919 + k * 104729) % span
+  // a short branch (nothing to truncate) and a clean state every few
+  // ticks: the widths that used to swing ("已同步" ↔ "+12 ~98 ?8 ↑11")
+  const clean = tick % 4 === 0
+  const sample: Detail = {
+    ...STATUS_SAMPLE,
+    branch: 'master',
+    git: {
+      staged: clean ? 0 : pick(2, 15),
+      unstaged: clean ? 0 : pick(3, 99),
+      untracked: clean ? 0 : pick(5, 9),
+      upstream: true,
+      ahead: clean ? 0 : pick(6, 12),
+      behind: 0,
+    },
+  }
+  return (
+    <div
+      data-testid="git-churn"
+      className="flex h-56 flex-col justify-end rounded-2xl border-t border-brand-edge px-1 pb-3"
+    >
+      <div
+        data-testid="git-churn-field"
+        className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5"
+      >
+        <span className="min-h-10 flex-1 px-3 py-2 text-body text-brand-label">
+          发消息
+        </span>
+      </div>
+      <SessionStatusBar data={sample} />
     </div>
   )
 }

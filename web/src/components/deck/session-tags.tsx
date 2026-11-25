@@ -245,9 +245,17 @@ export type GitStatus = {
  * (+staged ~unstaged ?untracked, by file) with ↑ahead ↓behind; ✓ when clean
  * and level with upstream. The hover spells it out.
  */
-export function GitStatusTag({ git }: { git: GitStatus }) {
+export function GitStatusTag({
+  git,
+  fixed = false,
+}: {
+  git: GitStatus
+  /** the status bar: every segment always (zeros dimmed), so its width holds */
+  fixed?: boolean
+}) {
   const { t } = useLingui()
   const { staged, unstaged, untracked, ahead, behind } = git
+  if (fixed) return <GitStatusFixed git={git} />
   const parts = [
     git.staged ? `+${git.staged}` : '',
     git.unstaged ? `~${git.unstaged}` : '',
@@ -457,6 +465,55 @@ export function TagLine({
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * The status bar's git tag, like the terminal's (+0,~0,?0,^1,v3): every
+ * segment always, a zero dimmed, digits of one width — the agent editing
+ * files changed the counts every few seconds, and a tag that grew and
+ * shrank (segments coming and going) pushed the bar onto another line.
+ */
+function GitStatusFixed({ git }: { git: GitStatus }) {
+  const { t } = useLingui()
+  const { staged, unstaged, untracked, ahead, behind } = git
+  const segments: Array<[string, number]> = [
+    ['+', staged],
+    ['~', unstaged],
+    ['?', untracked],
+    ...(git.upstream
+      ? ([
+          ['↑', ahead],
+          ['↓', behind],
+        ] as Array<[string, number]>)
+      : []),
+  ]
+  const clean = segments.every(([, n]) => n === 0)
+  const hint = [
+    t`${staged} staged, ${unstaged} modified, ${untracked} untracked`,
+    git.upstream
+      ? t`${ahead} ahead, ${behind} behind upstream`
+      : t`no upstream`,
+  ].join(' · ')
+  return (
+    <span
+      data-tone={clean ? 'done' : 'accent'}
+      data-testid="git-fixed"
+      title={hint}
+      className="session-tag shrink-0 font-mono text-meta tabular-nums"
+    >
+      {segments.map(([mark, n]) => (
+        // a mark and two digits wide: counts under 100 never move the tags
+        // after it
+        <span
+          key={mark}
+          className={cn('inline-block min-w-[3ch]', n === 0 && 'opacity-45')}
+        >
+          {mark}
+          {n}
+        </span>
+      ))}
+    </span>
   )
 }
 

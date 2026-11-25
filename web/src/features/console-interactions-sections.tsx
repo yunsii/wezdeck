@@ -11,6 +11,7 @@ import { PermissionCard } from './session-permission'
 import {
   StreamDemo,
   SubagentsDemo,
+  GitChurnDemo,
   StatusBarDemo,
   TagsDemo,
   ToastDemo,
@@ -452,11 +453,22 @@ function chromeSections(): Array<Omit<Section, 'group'>> {
       tags: ['common'],
       title: { zh: '底部状态栏', en: 'Status bar' },
       source: {
-        zh: '输入框下方，像终端 tmux 状态栏：agent、分支与 git 改动、node 版本（读终端缓存）、worktree 数、后台任务（session_env.go / bg_detail.go）；一行放不下时分支省略、其余收进 +N；worktree 与后台任务向上浮出，不推动对话',
-        en: 'under the composer, like the tmux status bar: agent, branch and git changes, node (the terminal’s cache), worktrees, background tasks (session_env.go / bg_detail.go); one line, the branch truncating, the rest behind +N; worktrees and background tasks open upward without moving the thread',
+        zh: '输入框下方一行关键信息：模型、分支、git 改动、linked worktree 数、后台任务（session_env.go / bg_detail.go）；放不下时分支省略、其余收进 +N；linked 与后台任务向上浮出，不推动对话。ctx 与额度接近用满才在标题栏出现',
+        en: 'one line of essentials under the composer: model, branch, git changes, linked worktrees, background tasks (session_env.go / bg_detail.go); the branch truncates, the rest folds behind +N; linked and background tasks open upward without moving the thread. ctx and limits show in the header only when close to full',
       },
       keys: { zh: '无（点各项查看）', en: 'None (tap an item)' },
       demo: <StatusBarDemo />,
+    },
+    {
+      id: 'git-churn',
+      tags: ['common'],
+      title: { zh: 'git 改动频繁变化', en: 'Git counts churning' },
+      source: {
+        zh: 'agent 改文件时 git 数字每几秒就变：状态栏的 git 标签固定分段（零调暗、每段两位宽），宽度不变，后面的标签不挪动，状态栏始终一行',
+        en: 'git counts change every few seconds while the agent edits: a fixed-segment git tag (zeros dimmed, two digits per segment) keeps its width, the tags after it hold still, the bar stays one line',
+      },
+      keys: { zh: '无', en: 'None' },
+      demo: <GitChurnDemo />,
     },
     {
       id: 'session-tags',
