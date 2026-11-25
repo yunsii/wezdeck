@@ -10,6 +10,7 @@
 //	Ctrl+Y   → copy selected worktree path to the Windows clipboard
 //	Ctrl+B   → copy selected branch name to the Windows clipboard
 //	Ctrl+D   → reclaim focused linked worktree (confirm with Enter / y)
+//	Ctrl+E   → edit the focused workstation's purpose (cmd_worktree_purpose.go)
 //	Up/Down  → move
 //	1-9,0,a-z → accelerator open
 //	Esc / Ctrl+C / Alt+g → close
@@ -75,6 +76,8 @@ type worktreeUI struct {
 	// pendingReclaim is non-empty while the Ctrl+d confirm overlay is up.
 	// Holds the human-readable confirm prompt for the focused row.
 	pendingReclaim string
+	// editing is non-nil while the Ctrl+e purpose editor is up.
+	editing *purposeEditor
 }
 
 type worktreePicker struct{}
@@ -138,6 +141,12 @@ func (worktreePicker) Run(args []string) int {
 	ui.ts.emitFirstPaint("worktree.perf", "worktree", "worktree picker paint timing", len(ui.rows), ui.selected, nil)
 
 	return runKeyLoop(func(key string) (loopAction, int) {
+		// Purpose editor overlay: every key is text until Enter / Esc.
+		if ui.editing != nil {
+			ui.purposeKey(key)
+			ui.render()
+			return loopContinue, 0
+		}
 		// Reclaim confirm overlay: Enter/y confirms, Esc/n cancels.
 		if ui.pendingReclaim != "" {
 			switch key {
@@ -171,6 +180,9 @@ func (worktreePicker) Run(args []string) int {
 			ui.render()
 		case "\x04": // Ctrl+D — reclaim focused linked worktree (confirm next)
 			ui.beginReclaimConfirm()
+			ui.render()
+		case "\x05": // Ctrl+E — edit the focused workstation's purpose
+			ui.beginPurposeEdit()
 			ui.render()
 		case "\x1b", "\x03", "\x1bg":
 			// Bare Esc / Ctrl+C / forwarded Alt+g (the chord that opened
@@ -372,6 +384,10 @@ func (ui *worktreeUI) findAccelerator(key string) int {
 }
 
 func (ui *worktreeUI) render() {
+	if ui.editing != nil {
+		ui.renderPurposeEdit()
+		return
+	}
 	if ui.pendingReclaim != "" {
 		ui.renderReclaimConfirm()
 		return
@@ -492,7 +508,7 @@ func (ui *worktreeUI) render() {
 	fmt.Fprintf(&b, "\x1b[%d;1H", row)
 	// Soft chrome gray (#a8a8a8) — quieter than body text, stronger than
 	// the over-faded #c8c8c8 pass. Timing tail uses the same tone.
-	b.WriteString("\x1b[38;2;168;168;168mEnter open · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
+	b.WriteString("\x1b[38;2;168;168;168mEnter open · Ctrl+e purpose · Ctrl+d reclaim · Ctrl+y path · Ctrl+b branch · Up/Down · 1-9,0,a-z · Esc close  ·  powered by ")
 	b.WriteString("\x1b[38;2;140;155;140mgo")
 	// Do not reset before the timing tail — keep one soft tone through the
 	// whole footer line (renderFooterTail applies the same gray).

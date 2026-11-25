@@ -511,3 +511,89 @@ func TestWorktreeDetailLineLeadsWithPurpose(t *testing.T) {
 		t.Fatalf("without purpose: %q", got)
 	}
 }
+
+func TestPurposeEditorJoinsRunesSplitAcrossReads(t *testing.T) {
+	ed := &purposeEditor{}
+	whole := []byte("网页控制台体验") // 21 bytes: more than one 16-byte read
+	ed.appendBytes(whole[:16]) // ends 1 byte into the 6th rune
+	if string(ed.text) != "网页控制台" || len(ed.pending) != 1 {
+		t.Fatalf("first read: text=%q pending=%d", string(ed.text), len(ed.pending))
+	}
+	ed.appendBytes(whole[16:])
+	if string(ed.text) != "网页控制台体验" || len(ed.pending) != 0 {
+		t.Fatalf("second read: text=%q pending=%d", string(ed.text), len(ed.pending))
+	}
+	ed.appendBytes([]byte("a\tb\n"))
+	if string(ed.text) != "网页控制台体验a b " {
+		t.Fatalf("control chars: %q", string(ed.text))
+	}
+}
+
+func TestPurposeEditorCapsLength(t *testing.T) {
+	ed := &purposeEditor{}
+	ed.appendBytes([]byte(strings.Repeat("长", purposeMax+5)))
+	if len(ed.text) != purposeMax {
+		t.Fatalf("len: %d", len(ed.text))
+	}
+}
+
+func TestPurposeEditSaveAndRefusals(t *testing.T) {
+	var gotPath, gotText string
+	calls := 0
+	orig := runWorktreeDescribe
+	runWorktreeDescribe = func(openScript, worktreePath, text string) error {
+		calls++
+		gotPath, gotText = worktreePath, text
+		return nil
+	}
+	defer func() { runWorktreeDescribe = orig }()
+
+	ui := &worktreeUI{rows: []worktreeRow{
+		{label: "primary", path: "/repo", branch: "master"},
+		{label: "dev-ux", path: "/wt/dev-ux", branch: "dev/ux", description: "旧"},
+		{label: "ticket-req-1", path: "/wt/ticket-req-1", branch: "ticket/req-1"},
+	}}
+	for _, i := range []int{0, 2} {
+		ui.selected, ui.flash = i, ""
+		ui.beginPurposeEdit()
+		if ui.editing != nil || ui.flash == "" {
+			t.Fatalf("row %d not refused: editing=%v flash=%q", i, ui.editing, ui.flash)
+		}
+	}
+
+	ui.selected = 1
+	ui.beginPurposeEdit()
+	if ui.editing == nil || string(ui.editing.text) != "旧" {
+		t.Fatalf("not prefilled: %+v", ui.editing)
+	}
+	ui.purposeKey("\x7f")    // backspace removes the whole rune
+	ui.purposeKey("网页控制台体验") // typed (an IME commit)
+	ui.purposeKey("\r")
+	if ui.editing != nil || calls != 1 || gotPath != "/wt/dev-ux" || gotText != "网页控制台体验" {
+		t.Fatalf("save: editing=%v calls=%d path=%q text=%q", ui.editing, calls, gotPath, gotText)
+	}
+	if ui.rows[1].description != "网页控制台体验" || ui.flash != "purpose saved" {
+		t.Fatalf("row/flash: %q %q", ui.rows[1].description, ui.flash)
+	}
+
+	// unchanged text does not call describe; Esc cancels
+	ui.beginPurposeEdit()
+	ui.purposeKey("\r")
+	if calls != 1 || ui.flash != "purpose unchanged" {
+		t.Fatalf("unchanged: calls=%d flash=%q", calls, ui.flash)
+	}
+	ui.beginPurposeEdit()
+	ui.purposeKey("x")
+	ui.purposeKey("\x1b")
+	if calls != 1 || ui.rows[1].description != "网页控制台体验" {
+		t.Fatalf("esc saved: calls=%d", calls)
+	}
+
+	// emptied → clear
+	ui.beginPurposeEdit()
+	ui.purposeKey("\x15")
+	ui.purposeKey("\r")
+	if calls != 2 || gotText != "" || ui.flash != "purpose cleared" {
+		t.Fatalf("clear: calls=%d text=%q flash=%q", calls, gotText, ui.flash)
+	}
+}
