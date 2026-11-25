@@ -2150,7 +2150,7 @@ msgstr "手机或平板"
 msgid "Pick a session (grouped by repository)"
 msgstr "选择会话（按仓库分组）"
 
-#: src/features/session-split.tsx:165
+#: src/features/session-split.tsx:168
 msgid "Pick a session on the left. j / k move through the list."
 msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 

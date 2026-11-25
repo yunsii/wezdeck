@@ -125,6 +125,32 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     tmux('kill-server')
   })
 
+  it('the list stays in view beside a tall conversation', async () => {
+    const page = await (
+      await browser.newContext({ viewport: { width: 1280, height: 700 } })
+    ).newPage()
+    await page.goto(`${base}/console/sessions/sw-tall?remote=1#pair=${token}`)
+    const row = page.locator('[data-session=sw-short]')
+    await row.waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(1500)
+    // the page sits at the tall thread's bottom: the list is still in view
+    // (a list-high wrapper let the page scroll carry it off the top)
+    const inView = () =>
+      row.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        return r.top >= 0 && r.bottom <= window.innerHeight
+      })
+    expect(await inView()).toBe(true)
+    await page.evaluate(() => {
+      const scroller = document
+        .querySelector('[data-testid=session-pane]')
+        ?.closest('.overflow-y-auto')
+      if (scroller) scroller.scrollTop = 0
+    })
+    await page.waitForTimeout(300)
+    expect(await inView()).toBe(true)
+  }, 30_000)
+
   it('a session lands at its bottom on its first frame, no transition', async () => {
     const page = await (
       await browser.newContext({ viewport: { width: 1280, height: 700 } })

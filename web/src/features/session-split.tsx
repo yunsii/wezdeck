@@ -144,7 +144,10 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
       {wide ? <DeskKeys id={id} /> : null}
       <div
         data-testid="session-list-column"
-        className={cn('max-md:contents', id && 'max-md:hidden')}
+        // as tall as the row (the whole conversation): the list inside is
+        // sticky, and sticky stays within its parent — a list-high wrapper
+        // let a long conversation's page scroll carry the list away
+        className={cn('max-md:contents md:self-stretch', id && 'max-md:hidden')}
       >
         <SessionList selected={id ?? ''} split={wide} />
       </div>
