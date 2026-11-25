@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type { Browser } from '@playwright/test'
+import type { Browser, BrowserContextOptions, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 新会话 from the phone (session-new.tsx → host session_new.go): pick the
@@ -63,15 +63,14 @@ describe.runIf(attention && devicesFile && stack)(
       }
     })
 
-    it('creates the worktree, hands the agent the message, opens the session', async () => {
-      const context = await browser.newContext({
-        ...devices['iPhone 13'],
-        locale: 'zh-CN',
-      })
+    /** a paired, approved page */
+    const approvedPage = async (options: BrowserContextOptions) => {
+      const context = await browser.newContext({ ...options, locale: 'zh-CN' })
       const page = await context.newPage()
       await page.goto(`${base}/zh/console/me/writing?remote=1#pair=${token}`)
       await page
         .locator('[data-testid=remote-badge-compact]')
+        .first() // a wide window shows it twice
         .waitFor({ timeout: 20_000 })
       await page.getByRole('button', { name: '申请授权' }).click()
       const command = page.locator('code', { hasText: '--approve' })
@@ -86,7 +85,26 @@ describe.runIf(attention && devicesFile && stack)(
       )
       await page.getByRole('button', { name: '重新检查' }).click()
       await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
+      return { context, page }
+    }
 
+    const listEntry = (id: string, pane: string, session: string) => ({
+      session_id: id,
+      tmux_socket: socket,
+      tmux_session: session,
+      tmux_pane: pane,
+      status: 'running',
+      agent_name: 'claude',
+      last_user_prompt: '从手机开的新会话',
+      ts: Date.now(),
+    })
+
+    /**
+     * 新会话 › a task named subject; once the pane has the message, list it
+     * as id (the agent's first-prompt hook) and wait for the page to open it.
+     * Returns the worktree and the pane.
+     */
+    const createSession = async (page: Page, subject: string, id: string) => {
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
@@ -95,21 +113,21 @@ describe.runIf(attention && devicesFile && stack)(
         .poll(() => sheet.getByRole('combobox').textContent())
         .toContain('phone-repo')
       await sheet.locator('[data-value=task]').click()
-      await sheet.getByPlaceholder(/phone-create/).fill('phone')
+      await sheet.getByPlaceholder(/phone-create/).fill(subject)
       await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
       await expect
         .poll(() => stage.getAttribute('data-stage'), { timeout: 20_000 })
         .toBe('done')
-      const worktree = join(repo, '.worktrees', 'task-phone')
+      const session = `task-${subject}`
       const pane = execFileSync('tmux', [
         '-S',
         socket,
         'display-message',
         '-p',
         '-t',
-        'task-phone',
+        session,
         '#{pane_id}',
       ])
         .toString()
@@ -124,25 +142,17 @@ describe.runIf(attention && devicesFile && stack)(
           pane,
         ]).toString(),
       ).toContain('从手机开的新会话')
-      // the agent's first-prompt hook lists it; the sheet then opens it
       writeFileSync(
         attention,
-        JSON.stringify({
-          entries: {
-            'new-1': {
-              session_id: 'new-1',
-              tmux_socket: socket,
-              tmux_session: 'task-phone',
-              tmux_pane: pane,
-              status: 'running',
-              agent_name: 'claude',
-              last_user_prompt: '从手机开的新会话',
-              ts: Date.now(),
-            },
-          },
-        }),
+        JSON.stringify({ entries: { [id]: listEntry(id, pane, session) } }),
       )
-      await page.waitForURL('**/console/sessions/new-1', { timeout: 20_000 })
+      await page.waitForURL(`**/console/sessions/${id}`, { timeout: 20_000 })
+      return { worktree: join(repo, '.worktrees', session), pane, session }
+    }
+
+    it('creates the worktree, hands the agent the message, opens the session', async () => {
+      const { context, page } = await approvedPage(devices['iPhone 13'])
+      const { worktree } = await createSession(page, 'phone', 'new-1')
       expect(
         execFileSync('git', ['-C', worktree, 'branch', '--show-current'])
           .toString()
@@ -150,5 +160,52 @@ describe.runIf(attention && devicesFile && stack)(
       ).toBe('task/phone')
       await context.close()
     }, 60_000)
+
+    it('opens the new session once: switching away stays switched (wide)', async () => {
+      // on a wide window the list — and its 新会话 sheet — stays mounted
+      // beside the session; each sessions poll made a new `listed` row that
+      // opened the new session again, so picking another one bounced
+      // straight back (2026-11-25)
+      const { context, page } = await approvedPage({
+        viewport: { width: 1440, height: 900 },
+      })
+      const { pane, session } = await createSession(page, 'desk', 'new-2')
+      const other = execFileSync('tmux', [
+        '-S',
+        socket,
+        'new-window',
+        '-d',
+        '-P',
+        '-F',
+        '#{pane_id}',
+        '-t',
+        session,
+        'cat',
+      ])
+        .toString()
+        .trim()
+      writeFileSync(
+        attention,
+        JSON.stringify({
+          entries: {
+            'new-2': listEntry('new-2', pane, session),
+            'other-1': {
+              ...listEntry('other-1', other, session),
+              status: 'done',
+              last_user_prompt: '另一个会话',
+              ts: Date.now() - 60_000,
+            },
+          },
+        }),
+      )
+      const row = page.locator('a[href$="/console/sessions/other-1"]').first()
+      await row.waitFor({ timeout: 15_000 })
+      await row.click()
+      await page.waitForURL('**/console/sessions/other-1', { timeout: 5_000 })
+      // two sessions polls (5 s each) later, still there
+      await page.waitForTimeout(11_000)
+      expect(page.url()).toContain('/console/sessions/other-1')
+      await context.close()
+    }, 90_000)
   },
 )

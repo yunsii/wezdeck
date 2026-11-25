@@ -8,7 +8,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Segmented } from '#/components/deck/segmented'
 import { useLocale } from '#/lib/locale-context'
@@ -159,15 +159,21 @@ function NewSessionSheet({
     current?.stage === 'done' && current.worktree
       ? sessions.data?.sessions.find((row) => row.worktree === current.worktree)
       : undefined
+  // once per job: `listed` is a new row on every sessions poll, and this
+  // sheet stays mounted beside the session on a wide window, so without
+  // this each poll opened the new session again — switching to another one
+  // bounced straight back (2026-11-25)
+  const opened = useRef('')
   useEffect(() => {
-    if (!listed) return
+    if (!listed || opened.current === jobId) return
+    opened.current = jobId
     recordVisit(listed.worktree || listed.cwd)
     onClose()
     void navigate({
       to: '/{-$locale}/console/sessions/$id',
       params: { locale: locale === 'en' ? undefined : locale, id: listed.id },
     })
-  }, [listed, navigate, locale, onClose])
+  }, [listed, jobId, navigate, locale, onClose])
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const name = subject.trim()
   const ready =

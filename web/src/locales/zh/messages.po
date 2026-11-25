@@ -500,7 +500,7 @@ msgstr "细线"
 msgid "Base commit"
 msgstr "基线提交"
 
-#: src/features/session-new.tsx:244
+#: src/features/session-new.tsx:250
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "用作工作树和分支名，和电脑上的 Ctrl+k g 一样。"
 
@@ -950,7 +950,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:288
+#: src/features/session-new.tsx:294
 msgid "Create session"
 msgstr "创建会话"
 
@@ -1025,7 +1025,7 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "终端空闲"
 
-#: src/features/session-new.tsx:190
+#: src/features/session-new.tsx:196
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev：长期并行开发的工作站"
 
@@ -1078,7 +1078,7 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-new.tsx:239
+#: src/features/session-new.tsx:245
 msgid "e.g. phone-create"
 msgstr "例如 phone-create"
 
@@ -1236,7 +1236,7 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:248
+#: src/features/session-new.tsx:254
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -1336,7 +1336,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/session-new.tsx:192
+#: src/features/session-new.tsx:198
 msgid "hotfix: an urgent fix"
 msgstr "hotfix：紧急修复"
 
@@ -1507,7 +1507,7 @@ msgstr "键盘快捷键"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/session-new.tsx:220
+#: src/features/session-new.tsx:226
 msgid "Kind"
 msgstr "类型"
 
@@ -1748,7 +1748,7 @@ msgid "New line"
 msgstr "换行"
 
 #: src/features/session-new.tsx:106
-#: src/features/session-new.tsx:200
+#: src/features/session-new.tsx:206
 msgid "New session"
 msgstr "新会话"
 
@@ -2376,7 +2376,7 @@ msgstr "仓库筛选"
 #~ msgstr "仓库"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:206
+#: src/features/session-new.tsx:212
 msgid "Repository"
 msgstr "仓库"
 
@@ -2865,7 +2865,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/session-new.tsx:232
+#: src/features/session-new.tsx:238
 msgid "Subject"
 msgstr "主题"
 
@@ -2937,7 +2937,7 @@ msgstr "点一下就会发到 Agent 窗格"
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
-#: src/features/session-new.tsx:191
+#: src/features/session-new.tsx:197
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task：短期聚焦的改动，交付后回收"
 
@@ -3489,7 +3489,7 @@ msgstr "WezDeck"
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "跨仓工单最近在做什么。会话请看「会话」页。"
 
-#: src/features/session-new.tsx:254
+#: src/features/session-new.tsx:260
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -3589,7 +3589,7 @@ msgstr "运行中"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new.tsx:243
+#: src/features/session-new.tsx:249
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "工作树 {kind}-{name}，分支 {kind}/{name}（最终名字由电脑生成，重名会加 -2）"
 

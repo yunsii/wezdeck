@@ -500,7 +500,7 @@ msgstr "Bar"
 msgid "Base commit"
 msgstr "Base commit"
 
-#: src/features/session-new.tsx:244
+#: src/features/session-new.tsx:250
 msgid "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 msgstr "Becomes the worktree and branch name, like Ctrl+k g at the desk."
 
@@ -950,7 +950,7 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:288
+#: src/features/session-new.tsx:294
 msgid "Create session"
 msgstr "Create session"
 
@@ -1025,7 +1025,7 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/session-new.tsx:190
+#: src/features/session-new.tsx:196
 msgid "dev: a long-lived workstation for parallel work"
 msgstr "dev: a long-lived workstation for parallel work"
 
@@ -1078,7 +1078,7 @@ msgstr "Done ({doneCount})"
 msgid "done {when}"
 msgstr "done {when}"
 
-#: src/features/session-new.tsx:239
+#: src/features/session-new.tsx:245
 msgid "e.g. phone-create"
 msgstr "e.g. phone-create"
 
@@ -1236,7 +1236,7 @@ msgstr "Finished"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new.tsx:248
+#: src/features/session-new.tsx:254
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
@@ -1336,7 +1336,7 @@ msgstr "Host unreachable right now"
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/session-new.tsx:192
+#: src/features/session-new.tsx:198
 msgid "hotfix: an urgent fix"
 msgstr "hotfix: an urgent fix"
 
@@ -1507,7 +1507,7 @@ msgstr "Keyboard shortcuts"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/session-new.tsx:220
+#: src/features/session-new.tsx:226
 msgid "Kind"
 msgstr "Kind"
 
@@ -1748,7 +1748,7 @@ msgid "New line"
 msgstr "New line"
 
 #: src/features/session-new.tsx:106
-#: src/features/session-new.tsx:200
+#: src/features/session-new.tsx:206
 msgid "New session"
 msgstr "New session"
 
@@ -2376,7 +2376,7 @@ msgstr "Repo filter"
 #~ msgstr "Repositories"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:206
+#: src/features/session-new.tsx:212
 msgid "Repository"
 msgstr "Repository"
 
@@ -2865,7 +2865,7 @@ msgstr "Status"
 msgid "Status updated"
 msgstr "Status updated"
 
-#: src/features/session-new.tsx:232
+#: src/features/session-new.tsx:238
 msgid "Subject"
 msgstr "Subject"
 
@@ -2937,7 +2937,7 @@ msgstr "Tap to send into the agent pane"
 msgid "Tappable Ask options"
 msgstr "Tappable Ask options"
 
-#: src/features/session-new.tsx:191
+#: src/features/session-new.tsx:197
 msgid "task: a short focused change, reclaimed after delivery"
 msgstr "task: a short focused change, reclaimed after delivery"
 
@@ -3489,7 +3489,7 @@ msgstr "WezDeck"
 #~ msgid "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 #~ msgstr "What cross-repo tickets have been doing. Sessions are on the Sessions tab."
 
-#: src/features/session-new.tsx:254
+#: src/features/session-new.tsx:260
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -3589,7 +3589,7 @@ msgstr "Working"
 msgid "Worktree"
 msgstr "Worktree"
 
-#: src/features/session-new.tsx:243
+#: src/features/session-new.tsx:249
 msgid "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 msgstr "Worktree {kind}-{name}, branch {kind}/{name} (the host makes the final names; a taken one gets -2)"
 
