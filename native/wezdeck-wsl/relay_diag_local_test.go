@@ -21,6 +21,10 @@ func TestLocalPendingDiag(t *testing.T) {
 		delete(diagRequests, "req1")
 		delete(diagRequests, "old")
 		diagMu.Unlock()
+		// the seen page is global: later tests must not count it
+		localMu.Lock()
+		delete(localSeen, cid)
+		localMu.Unlock()
 	}()
 	got := localPending(client)
 	if len(got) != 1 || got[0]["id"] != "req1" || got[0]["reason"] != "probe" {
