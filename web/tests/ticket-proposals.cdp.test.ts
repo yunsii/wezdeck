@@ -110,7 +110,6 @@ const seedDraft = (title: string) => {
           max_parallel: 1,
           stages: 2,
           mem_peak_mb: 3941,
-          usd: [2.4, 6.1],
           minutes_each: [22, 48],
           delivery: { [to]: `ticket/${pid}-integration` },
           pushes: false,
@@ -181,6 +180,8 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
     await expect
       .poll(() => card.getByRole('heading', { level: 2 }).textContent())
       .toBe('拆分方案：2 张子单')
+    // no money anywhere on the card (the user does not want quota estimates)
+    expect(await card.getByText(/\$/).count()).toBe(0)
     // the four parts an approver reads, in order (skills/agent-collab SKILL.md)
     expect(
       await card.getByRole('heading', { level: 3 }).allTextContents(),
@@ -193,7 +194,7 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
       await card.getByText('起 2 个后台工人，最多同时 1 个，分 2 批').count(),
     ).toBe(1)
     expect(
-      await card.getByText(/预计共 \$2.4–6.1，每个 22–48 分钟/).count(),
+      await card.getByText(/每个约 22–48 分钟，内存峰值约 3\.8 GB/).count(),
     ).toBe(1)
     expect(await card.getByText(/不推送、不提 MR/).count()).toBe(1)
     expect(

@@ -249,8 +249,8 @@ check "draft: parent in plan_review, proposal pending, no children yet" \
 check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
 check "draft: brief stored (problem/approach, status check, risks, effect per child)" \
   jq -e '.proposal.summary.approach and (.proposal.status_check[0].status=="missing") and .proposal.risks==["需要迁移"] and (.proposal.items|all(.effect))' <<<"$dr"
-check "draft: outcome computed, not modelled (3 workers, 2 stages, 2 at once, branch, no push)" \
-  jq -e --arg p "$DP" '.proposal.outcome|.workers==3 and .stages==2 and .max_parallel==2 and .pushes==false and .delivery.rx==("ticket/"+$p+"-integration") and (.usd|length==2) and .est_mb_each>0' <<<"$dr"
+check "draft: outcome computed, not modelled (3 workers, 2 stages, 2 at once, branch, no push, no money)" \
+  jq -e --arg p "$DP" '.proposal.outcome|.workers==3 and .stages==2 and .max_parallel==2 and .pushes==false and .delivery.rx==("ticket/"+$p+"-integration") and (.minutes_each|length==2) and (has("usd")|not) and .est_mb_each>0' <<<"$dr"
 check "draft: contract stored on the parent" grep -q 'exports f()' "$TICKETS_ROOT/_data/$DP/contract.md"
 check "run refuses while the draft awaits confirmation" bash -c "'$run' fanout run --parent '$DP' --mock | jq -e '.ok==false and (.error|test(\"awaits user confirmation\"))'"
 shp="$("$run" api show --id "$DP")"

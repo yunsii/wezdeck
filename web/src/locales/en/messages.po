@@ -226,7 +226,7 @@ msgstr "{untracked} untracked"
 #~ msgid "{waitingCount} waiting"
 #~ msgstr "{waitingCount} waiting"
 
-#: src/features/ticket-proposals.tsx:307
+#: src/features/ticket-proposals.tsx:305
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 
@@ -322,9 +322,9 @@ msgstr "A person (taken over)"
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
-#: src/features/ticket-proposals.tsx:308
-msgid "About ${usdLow}–{usdHigh} in total, {minLow}–{minHigh} min each, memory peak about {gb} GB"
-msgstr "About ${usdLow}–{usdHigh} in total, {minLow}–{minHigh} min each, memory peak about {gb} GB"
+#: src/features/ticket-proposals.tsx:306
+msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
+msgstr "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 
 #: src/features/session-info.tsx:86
 msgid "Account limits"
@@ -437,7 +437,7 @@ msgstr "Allow"
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
-#: src/features/ticket-proposals.tsx:332
+#: src/features/ticket-proposals.tsx:330
 msgid "already done"
 msgstr "already done"
 
@@ -1247,7 +1247,7 @@ msgstr "Errors"
 msgid "Esc"
 msgstr "Esc"
 
-#: src/features/ticket-proposals.tsx:316
+#: src/features/ticket-proposals.tsx:314
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "Estimated from this machine's past runs, not by the planner."
 
@@ -1625,7 +1625,7 @@ msgstr "Keys"
 msgid "LAN"
 msgstr "LAN"
 
-#: src/features/ticket-proposals.tsx:309
+#: src/features/ticket-proposals.tsx:307
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
@@ -1780,7 +1780,7 @@ msgstr "Mark read"
 msgid "Marked read"
 msgstr "Marked read"
 
-#: src/features/ticket-proposals.tsx:312
+#: src/features/ticket-proposals.tsx:310
 msgid "May stop to ask you:"
 msgstr "May stop to ask you:"
 
@@ -2064,7 +2064,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
-#: src/features/ticket-proposals.tsx:330
+#: src/features/ticket-proposals.tsx:328
 msgid "not done"
 msgstr "not done"
 
@@ -2288,7 +2288,7 @@ msgstr "Parallelism"
 msgid "Part"
 msgstr "Part"
 
-#: src/features/ticket-proposals.tsx:331
+#: src/features/ticket-proposals.tsx:329
 msgid "partly done"
 msgstr "partly done"
 
@@ -2647,7 +2647,7 @@ msgstr "Retry"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/ticket-proposals.tsx:358
+#: src/features/ticket-proposals.tsx:356
 msgid "Reuses"
 msgstr "Reuses"
 

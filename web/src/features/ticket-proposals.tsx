@@ -294,8 +294,6 @@ function Outcome({
   const workers = outcome.workers
   const parallel = outcome.max_parallel
   const stages = outcome.stages
-  const usdLow = outcome.usd[0] ?? 0
-  const usdHigh = outcome.usd[1] ?? usdLow
   const minLow = outcome.minutes_each[0] ?? 0
   const minHigh = outcome.minutes_each[1] ?? minLow
   const gb = (outcome.mem_peak_mb / 1024).toFixed(1)
@@ -305,7 +303,7 @@ function Outcome({
   return (
     <ul className="grid gap-1 text-caption leading-relaxed">
       <li>{t`${workers} background worker(s), at most ${parallel} at once, in ${stages} stage(s)`}</li>
-      <li>{t`About $${usdLow}–${usdHigh} in total, ${minLow}–${minHigh} min each, memory peak about ${gb} GB`}</li>
+      <li>{t`About ${minLow}–${minHigh} min each, memory peak about ${gb} GB`}</li>
       <li>{t`Lands on ${where}; nothing is pushed and no MR is opened`}</li>
       {risks.map((risk) => (
         <li key={risk} className="text-brand-waiting">

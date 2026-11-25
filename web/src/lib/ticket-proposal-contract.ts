@@ -35,7 +35,6 @@ export const ticketProposalSchema = z.object({
       max_parallel: z.number(),
       stages: z.number(),
       mem_peak_mb: z.number(),
-      usd: z.array(z.number()).default([]),
       minutes_each: z.array(z.number()).default([]),
       delivery: z.record(z.string(), z.string()).default({}),
       pushes: z.boolean().default(false),

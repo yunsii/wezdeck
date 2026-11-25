@@ -7,7 +7,7 @@ needs in plain words — a draft's ``summary`` (problem / approach),
 ``status_check`` (each goal item missing / partial / done with evidence) and
 ``risks`` from the plan agent; each child's ``effect``; and ``outcome``, which
 is computed here, not by a model: workers, max parallel, stages, memory peak,
-cost and time ranges from this machine's run records, delivery branch, no push. Two origins:
+time range from this machine's run records, delivery branch, no push. Two origins:
 
   draft  — a read-only plan agent (``research``) drafts contract + children for
            a new parent. The parent waits in phase ``plan_review``; ``fanout run``
@@ -108,9 +108,10 @@ def validate_brief(plan: dict[str, Any], items: list[dict[str, Any]]) -> list[st
     return errs
 
 
-def run_stats(backend: str) -> dict[str, Any]:
-    """p50 / p90 cost and wall per child (research + implement) from real run records."""
-    by_phase: dict[str, list[tuple[float, float]]] = {"research": [], "implement": []}
+def run_minutes(backend: str) -> dict[str, Any]:
+    """p50 / p90 minutes per child (research + implement) from real run records.
+    No money: the user does not want quota estimates on tasks (2026-11-25)."""
+    by_phase: dict[str, list[float]] = {"research": [], "implement": []}
     for f in (ticket_fs.tickets_root() / "_data").glob("*/runs/run-*.json"):
         if f.name.endswith((".launch.json", ".final.json")):
             continue
@@ -121,20 +122,17 @@ def run_stats(backend: str) -> dict[str, Any]:
         ph = rec.get("phase")
         if rec.get("backend") != backend or rec.get("mock") or ph not in by_phase:
             continue
-        if isinstance(rec.get("cost_usd"), (int, float)) and isinstance(rec.get("wall_ms"), (int, float)):
-            by_phase[ph].append((float(rec["cost_usd"]), float(rec["wall_ms"])))
+        if isinstance(rec.get("wall_ms"), (int, float)):
+            by_phase[ph].append(float(rec["wall_ms"]))
 
     def pct(vals: list[float], q: float) -> float:
         vals = sorted(vals)
         return vals[min(len(vals) - 1, int(q * len(vals)))] if vals else 0.0
 
-    out: dict[str, Any] = {"samples": {k: len(v) for k, v in by_phase.items()}}
-    for q, name in ((0.5, "p50"), (0.9, "p90")):
-        out[name] = {
-            "usd": round(sum(pct([c for c, _ in v], q) for v in by_phase.values()), 2),
-            "min": round(sum(pct([w for _, w in v], q) for v in by_phase.values()) / 60000),
-        }
-    return out
+    return {
+        "samples": {k: len(v) for k, v in by_phase.items()},
+        "each": [round(sum(pct(v, q) for v in by_phase.values()) / 60000) for q in (0.5, 0.9)],
+    }
 
 
 def outcome(pid: str, items: list[dict[str, Any]], backend: str) -> dict[str, Any]:
@@ -155,13 +153,12 @@ def outcome(pid: str, items: list[dict[str, Any]], backend: str) -> dict[str, An
     fits = max(1, (avail - floor) // est["mb"]) if avail else None
     caps = [width, int(os.environ.get("TICKET_MAX_PARALLEL", "8")), sum(min(n, per_repo) for n in repos.values())]
     parallel = min(caps + ([fits] if fits else []))
-    stats = run_stats(backend)
+    minutes = run_minutes(backend)
     return {
         "workers": len(items), "max_parallel": parallel, "stages": max(level.values(), default=0),
         "repos": repos, "backend": backend,
         "mem_peak_mb": parallel * est["mb"], "est_mb_each": est["mb"], "est_source": est["source"],
-        "usd": [round(stats["p50"]["usd"] * len(items), 1), round(stats["p90"]["usd"] * len(items), 1)],
-        "minutes_each": [stats["p50"]["min"], stats["p90"]["min"]], "samples": stats["samples"],
+        "minutes_each": minutes["each"], "samples": minutes["samples"],
         "delivery": {r: f"ticket/{pid}-integration" for r in repos}, "pushes": False,
         "estimated_at": ticket_fs.now_iso(),
     }

@@ -692,12 +692,6 @@
                   "est_source": {
                     "type": "string"
                   },
-                  "usd": {
-                    "type": "array",
-                    "items": {
-                      "type": "number"
-                    }
-                  },
                   "minutes_each": {
                     "type": "array",
                     "items": {

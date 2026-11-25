@@ -250,7 +250,8 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     `summary.approach` and a plain `effect` per child — a draft missing any of
     them is refused before review. `outcome` is computed by `split.py`, not
     the model: workers, max parallel (dependency width ∩ ceilings ∩ memory),
-    stages, memory peak, cost and minutes from this machine's run records,
+    stages, memory peak, minutes from this machine's run records (no money:
+    the user does not want quota estimates on tasks),
     delivery branch, `pushes: false`. CLI relay (SKILL.md "Say it before doing
     it") and the web card show the same four parts: 要解决什么 / 现状核对 /
     打算怎么做 / 确认后会发生什么; contract and `assumed` sit under 技术细节.
