@@ -115,6 +115,21 @@ describe('Status bar', () => {
       expect(frames.length).toBeGreaterThan(20)
       expect(new Set(frames.map((f) => f.git)).size, 'git tag width').toBe(1)
       expect(new Set(frames.map((f) => f.bar)).size, 'bar height').toBe(1)
+      // a clean tree (every few ticks): no segment dimmed on the green fill
+      await page.waitForFunction(
+        () => {
+          const git = document.querySelector('[data-testid=git-fixed]')
+          return git?.getAttribute('data-tone') === 'done'
+        },
+        null,
+        { timeout: 5_000, polling: 'raf' },
+      )
+      const dimmed = await page
+        .getByTestId('git-fixed')
+        .evaluate((el) =>
+          [...el.children].some((s) => getComputedStyle(s).opacity !== '1'),
+        )
+      expect(dimmed).toBe(false)
       await context.close()
     },
   )

@@ -507,7 +507,13 @@ function GitStatusFixed({ git }: { git: GitStatus }) {
         // after it
         <span
           key={mark}
-          className={cn('inline-block min-w-[3ch]', n === 0 && 'opacity-45')}
+          // a zero steps back only beside real counts: on a clean tree
+          // every segment is zero, and dimming them all on the green fill
+          // left too little contrast (light theme)
+          className={cn(
+            'inline-block min-w-[3ch]',
+            n === 0 && !clean && 'opacity-55',
+          )}
         >
           {mark}
           {n}
