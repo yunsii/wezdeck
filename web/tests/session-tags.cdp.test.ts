@@ -137,10 +137,12 @@ describe('Session tags', () => {
     await more.click()
     const panel = page.getByTestId('tags-crowded-panel')
     await panel.waitFor({ timeout: 3_000 })
-    // every tag in the panel, the line itself unchanged
+    // only the folded tags in the panel (the rest is in view), the line
+    // itself unchanged
     expect(await panel.locator('.session-tag').count()).toBe(
-      await crowded.locator('.session-tag').count(),
+      Number(await crowded.getAttribute('data-folded')),
     )
+    expect(await panel.innerText()).not.toContain('claude')
     expect(
       Math.abs(((await crowded.boundingBox())?.height ?? 0) - height),
     ).toBeLessThan(1)

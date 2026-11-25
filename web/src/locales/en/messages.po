@@ -37,7 +37,7 @@ msgstr "(pick any)"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr "{0} staged, {1} modified, {2} untracked"
 
-#: src/components/deck/session-tags.tsx:220
+#: src/components/deck/session-tags.tsx:233
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -145,7 +145,7 @@ msgstr "{runs} runs"
 msgid "{staged} staged"
 msgstr "{staged} staged"
 
-#: src/components/deck/session-tags.tsx:218
+#: src/components/deck/session-tags.tsx:231
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -352,7 +352,7 @@ msgstr "All repos"
 #~ msgid "All statuses"
 #~ msgstr "All statuses"
 
-#: src/components/deck/session-tags.tsx:370
+#: src/components/deck/session-tags.tsx:396
 msgid "All tags"
 msgstr "All tags"
 
@@ -1785,7 +1785,7 @@ msgstr "No agent is working right now."
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
-#: src/components/deck/session-tags.tsx:240
+#: src/components/deck/session-tags.tsx:253
 msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
@@ -1855,7 +1855,7 @@ msgstr "No tickets match this filter."
 msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
-#: src/components/deck/session-tags.tsx:221
+#: src/components/deck/session-tags.tsx:234
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -2662,7 +2662,7 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/components/deck/session-tags.tsx:358
+#: src/components/deck/session-tags.tsx:384
 msgid "Show all tags"
 msgstr "Show all tags"
 
@@ -2808,7 +2808,7 @@ msgstr "Switch session (Alt+g)"
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
-#: src/components/deck/session-tags.tsx:239
+#: src/components/deck/session-tags.tsx:252
 msgctxt "git"
 msgid "Synced"
 msgstr "Synced"

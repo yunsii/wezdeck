@@ -37,7 +37,7 @@ msgstr "（可多选）"
 #~ msgid "{0} staged, {1} modified, {2} untracked"
 #~ msgstr ""
 
-#: src/components/deck/session-tags.tsx:220
+#: src/components/deck/session-tags.tsx:233
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
@@ -145,7 +145,7 @@ msgstr "{runs} 次"
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
-#: src/components/deck/session-tags.tsx:218
+#: src/components/deck/session-tags.tsx:231
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 
@@ -352,7 +352,7 @@ msgstr "全部仓库"
 #~ msgid "All statuses"
 #~ msgstr "全部状态"
 
-#: src/components/deck/session-tags.tsx:370
+#: src/components/deck/session-tags.tsx:396
 msgid "All tags"
 msgstr "全部标签"
 
@@ -1785,7 +1785,7 @@ msgstr "没有正在干活的 agent。"
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
-#: src/components/deck/session-tags.tsx:240
+#: src/components/deck/session-tags.tsx:253
 msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
@@ -1855,7 +1855,7 @@ msgstr "没有符合这个筛选的工单。"
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
-#: src/components/deck/session-tags.tsx:221
+#: src/components/deck/session-tags.tsx:234
 msgid "no upstream"
 msgstr "无上游"
 
@@ -2662,7 +2662,7 @@ msgstr "已交付"
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
-#: src/components/deck/session-tags.tsx:358
+#: src/components/deck/session-tags.tsx:384
 msgid "Show all tags"
 msgstr "显示全部标签"
 
@@ -2808,7 +2808,7 @@ msgstr "切换会话（Alt+g）"
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
-#: src/components/deck/session-tags.tsx:239
+#: src/components/deck/session-tags.tsx:252
 msgctxt "git"
 msgid "Synced"
 msgstr "已同步"

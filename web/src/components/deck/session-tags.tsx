@@ -17,7 +17,10 @@ import type { LucideIcon } from 'lucide-react'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { useLingui } from '@lingui/react/macro'
 import {
+  Children,
+  Fragment,
   createContext,
+  isValidElement,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -112,6 +115,16 @@ export function SessionTag({
     <span data-tone={tone} title={hint ?? children} className={classes}>
       {body}
     </span>
+  )
+}
+
+/** the tags as a list: fragments opened, empty slots dropped */
+function flatChildren(children: React.ReactNode): Array<React.ReactNode> {
+  return Children.toArray(children).flatMap((child) =>
+    isValidElement<{ children?: React.ReactNode }>(child) &&
+    child.type === Fragment
+      ? flatChildren(child.props.children)
+      : [child],
   )
 }
 
@@ -269,7 +282,9 @@ export function TagLine({
   const { t } = useLingui()
   const line = useRef<HTMLSpanElement>(null)
   const box = useRef<HTMLDivElement>(null)
-  const [fold, setFold] = useState({ height: 0, hidden: 0 })
+  // first: the index of the first folded tag; -1 when the count of laid-out
+  // tags does not match the children (then the panel shows them all)
+  const [fold, setFold] = useState({ height: 0, hidden: 0, first: 0 })
   const [panel, setPanel] = useState(false)
   useLayoutEffect(() => {
     const el = line.current
@@ -285,16 +300,27 @@ export function TagLine({
         (a, b) => a - b,
       )
       const cutAt = tops.length > maxLines ? tops[maxLines] : undefined
+      const firstHidden = tags.findIndex((tag) => tag.offsetTop >= (cutAt ?? 0))
       const next =
         cutAt === undefined
-          ? { height: 0, hidden: 0 }
+          ? { height: 0, hidden: 0, first: 0 }
           : {
               // the rows above the cut, without the gap under them
               height: cutAt - (tops[0] ?? 0) - 4,
               hidden: tags.filter((tag) => tag.offsetTop >= cutAt).length,
+              // tags wrap in order: the folded ones are a tail
+              // one laid-out tag per child (else show them all)
+              first:
+                tags.length === flatChildren(children).length
+                  ? firstHidden
+                  : -1,
             }
       setFold((now) =>
-        now.height === next.height && now.hidden === next.hidden ? now : next,
+        now.height === next.height &&
+        now.hidden === next.hidden &&
+        now.first === next.first
+          ? now
+          : next,
       )
     }
     measure()
@@ -372,8 +398,11 @@ export function TagLine({
           className="absolute top-full left-0 z-30 mt-1.5 w-full min-w-56 rounded-xl bg-brand-surface p-2.5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]"
         >
           <Expandable.Provider value={{ mode: 'full' }}>
+            {/* only what the line folded away: the rest is in view */}
             <span className="tag-panel flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label">
-              {children}
+              {fold.first >= 0
+                ? flatChildren(children).slice(fold.first)
+                : children}
             </span>
           </Expandable.Provider>
         </div>
