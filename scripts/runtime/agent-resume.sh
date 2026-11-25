@@ -35,9 +35,30 @@ log_resume() {
   fi
 }
 
+# A fresh start asked for with a known id (session-restart.sh --fresh, the
+# web console's 新开会话): the pane option names it, so the page can follow
+# the new conversation before its first prompt. One use: read and unset.
+fresh_session_id() {
+  [[ -n "${TMUX_PANE:-}" ]] || return 0
+  local id
+  id="$(tmux show-options -pqv -t "$TMUX_PANE" @wezdeck_fresh_session_id 2>/dev/null || true)"
+  tmux set-option -p -u -t "$TMUX_PANE" @wezdeck_fresh_session_id 2>/dev/null || true
+  [[ "$id" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] && printf '%s' "$id"
+  return 0
+}
+
 start_fresh() {
   local reason="${1:-}"
-  log_resume "agent resume fresh" "resume_mode=fresh" "${reason:+$reason}"
+  local fresh_id=""
+  if [[ "$agent" == claude* ]]; then
+    fresh_id="$(fresh_session_id)"
+  fi
+  if [[ -n "$fresh_id" ]]; then
+    agent_args+=(--session-id "$fresh_id")
+    agent_session_pin_pane "$TMUX_PANE" "$fresh_id" "$agent" "$PWD" 2>/dev/null || true
+  fi
+  log_resume "agent resume fresh" "resume_mode=fresh" "${reason:+$reason}" \
+    "${fresh_id:+session_id=$fresh_id}"
   bash "$fallback_log" "$agent" 2>/dev/null || true
   printf '\033[2J\033[H\n\n  \033[2;36mLoading %s ...\033[0m\n  \033[2;36mMode: %s\033[0m\n' \
     "$agent" "$mode"

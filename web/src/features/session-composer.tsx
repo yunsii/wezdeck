@@ -37,6 +37,8 @@ import {
 import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
 import { useSkillCompletion } from './composer-complete'
+import { RestartActions } from './session-restart'
+import { KeyPanel } from './session-key-panel'
 
 export type Outgoing = {
   text: string
@@ -194,85 +196,6 @@ const tool =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-caption'
 
 /**
- * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
- * are not here: questions and plans get their own tap targets on the page
- * (session-elicitation.tsx, permission keys), which is where they belong;
- * so does Claude Code's Ctrl+B — 转到后台 on the running call's own row, shown only
- * while a foreground command or subagent runs (chat-thread.tsx).
- */
-function useQuickKeys() {
-  const { t } = useLingui()
-  return [
-    { key: 'Enter', label: 'Enter', hint: t`confirm` },
-    { key: 'Escape', label: 'Esc', hint: t`cancel` },
-    { key: 'C-c', label: 'Ctrl+C', hint: t`interrupt` },
-  ] as const
-}
-
-/**
- * Confirm / cancel / interrupt for the session TUI (Ctrl+C stops Grok).
- * Opens above the toolbar like every tool; each key says what it does,
- * and the panel closes once a key is sent.
- */
-function KeyPanel({
-  disabled,
-  onKey,
-  onClose,
-}: {
-  disabled: boolean
-  onKey: (key: string) => void
-  onClose: () => void
-}) {
-  const { t } = useLingui()
-  const keys = useQuickKeys()
-  return (
-    <div data-write className="grid gap-1.5 rounded-2xl bg-brand-surface p-2">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-meta text-brand-label">
-          {disabled
-            ? t`Turn on write access in Settings to send these keys`
-            : t`Tap to send into the agent pane`}
-        </span>
-        <Button
-          variant="plain"
-          type="button"
-          onClick={onClose}
-          aria-label={t`Close keys`}
-          className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted"
-        >
-          <X size={14} aria-hidden />
-        </Button>
-      </div>
-      <div
-        role="group"
-        aria-label={t`Quick keys`}
-        data-testid="session-quick-keys"
-        className="grid grid-cols-3 gap-1.5"
-      >
-        {keys.map(({ key, label, hint }) => (
-          <Button
-            variant="key"
-            key={key}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              onKey(key)
-              onClose()
-            }}
-            className="grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40"
-          >
-            <span className="text-body leading-none font-medium">{label}</span>
-            <span className="text-meta leading-none text-brand-label">
-              {hint}
-            </span>
-          </Button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/**
  * One row above the input: 快捷 (always), then 图片 and 诊断 once this phone
  * may write, then the picked thumbnails. What a tool opens — the key pad,
  * the diagnostics note — renders above the row in the same card style.
@@ -385,9 +308,9 @@ export function ComposerBox({
   blocked,
   keysDisabled,
   writable,
-  onKey,
+  onRun,
   commands,
-  skills,
+  session,
 }: {
   composer: Composer
   blocked: boolean
@@ -395,17 +318,21 @@ export function ComposerBox({
   keysDisabled: boolean
   /** this phone may write: only then are image / diagnostics attachments offered */
   writable: boolean
-  /** send an allowlisted key into the agent pane (Enter / Esc / Ctrl+C / …) */
-  onKey: (key: string) => void
+  /** an allowlisted key into the agent pane (Enter / Esc / Ctrl+C / …), or
+   * session.restart (重启会话 / 新开会话); true once the host took it */
+  onRun: (
+    action: 'key' | 'session.restart',
+    args: Record<string, unknown>,
+  ) => Promise<boolean>
   /** Claude sessions: send a slash command, open 恢复会话 */
   commands?: { send: (text: string) => void; resume: () => void }
   /** the session reply: its agent and `skills_rev` drive the 能力 chip and `/` completion */
-  skills?: { agent?: string; skills_rev?: string }
+  session?: { agent?: string; skills_rev?: string }
 }) {
   const { t } = useLingui()
   // one tool panel at a time, above the toolbar
   const [panel, setPanel] = useState<Panel>(null)
-  const complete = useSkillCompletion(composer, skills)
+  const complete = useSkillCompletion(composer, session)
   // a touch keyboard has one Enter key and no Shift+Enter: there Enter is
   // a new line and the button sends (as in Telegram / WhatsApp); with a
   // mouse and keyboard Enter sends, Shift+Enter breaks the line
@@ -418,9 +345,16 @@ export function ComposerBox({
       {panel === 'keys' ? (
         <KeyPanel
           disabled={keysDisabled}
-          onKey={onKey}
+          onKey={(key) => void onRun('key', { key })}
           onClose={() => setPanel(null)}
-        />
+        >
+          <RestartActions
+            agent={session?.agent}
+            disabled={keysDisabled}
+            onRestart={(fresh) => onRun('session.restart', { fresh })}
+            onDone={() => setPanel(null)}
+          />
+        </KeyPanel>
       ) : null}
       {panel === 'todos' ? (
         <TodoPanel

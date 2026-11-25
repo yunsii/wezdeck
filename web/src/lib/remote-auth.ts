@@ -15,6 +15,7 @@ export const OPEN_ACTIONS = new Set([
   'todo',
   'clear',
   'session.new',
+  'session.restart',
   'ticket.new',
 ])
 

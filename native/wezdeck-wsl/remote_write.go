@@ -40,6 +40,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = clearAttention(args)
 	case "session.new":
 		result, err = startNewSession(args)
+	case "session.restart":
+		result, err = restartSession(args)
 	case "ticket.new":
 		result, err = createTicket(args)
 	default:

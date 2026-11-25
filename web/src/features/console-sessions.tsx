@@ -582,7 +582,7 @@ export function SessionDetail({ id }: { id: string }) {
           blocked={sending || Boolean(blocked)}
           keysDisabled={sending || device.state !== 'approved'}
           writable={device.state === 'approved'}
-          onKey={(key) => void run('key', { key })}
+          onRun={run}
           commands={
             data?.agent === 'claude'
               ? {
@@ -592,7 +592,7 @@ export function SessionDetail({ id }: { id: string }) {
                 }
               : undefined
           }
-          skills={data}
+          session={data}
         />
         <SessionStatusBar data={data} />
         {resume.element}

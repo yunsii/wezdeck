@@ -112,6 +112,7 @@ start_relay() {
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
     WEZDECK_TODO_DB="$STATE/todo.db" \
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
+    WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \
     TICKETS_ROOT="$STATE/tickets" \
     WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
     WEZDECK_RELAY_OPEN_READS="$([[ "$(cat "$STATE/gated" 2>/dev/null)" == 1 ]] && echo 0 || echo 1)" \
@@ -169,6 +170,16 @@ echo "window_id=\$(tmux -S "$STATE/new.sock" display-message -p -t "\$kind-\$sub
 echo "tmux_socket=$STATE/new.sock"
 FAKE
   chmod +x "$STATE/fake-open-task-window"
+  # stand-in for session-restart.sh (重启会话 / 新开会话, session_restart.go):
+  # records each call in restart.log, never respawns a pane; a fresh start
+  # names a new conversation like the real Claude path
+  cat >"$STATE/fake-session-restart" <<FAKE
+#!/usr/bin/env bash
+echo "\$*" >>"$STATE/restart.log"
+[[ " \$* " == *" --fresh "* ]] && echo "session_id=00000000-0000-4000-8000-000000000001"
+echo outcome=respawned
+FAKE
+  chmod +x "$STATE/fake-session-restart"
   # a private copy of the ticket store: reads stay realistic (the tickets
   # page shows real tickets) while 新工单 / replies only write the copy; a
   # ticket run is recorded, never started

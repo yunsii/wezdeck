@@ -253,6 +253,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '在某仓库新开一个会话（可选新工作树）',
         'Start a session in a repository (optionally a new worktree)',
       ),
+      c(
+        'session.restart',
+        '重启会话所在窗格（等同终端 F5，agent 恢复原会话）或新开全新进程（等同 Ctrl+Shift+n）',
+        'Respawn the session pane (the desk F5: the agent resumes) or start a blank agent process (Ctrl+Shift+n)',
+      ),
       c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
     ],
   },

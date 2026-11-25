@@ -141,8 +141,12 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       patch(target, { sending: false, retryIn: 0 })
     }
   }
-  /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c) */
-  const run = (action: 'key', args: Record<string, unknown>) => {
+  /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c), or
+   * session.restart (重启会话 / 新开会话) */
+  const run = (
+    action: 'key' | 'session.restart',
+    args: Record<string, unknown>,
+  ) => {
     const target = id
     return write(target, async () => {
       await hostWrite(action, { id: target, ...args })

@@ -155,6 +155,12 @@ complete() {
     "${common_fields[@]}" \
     "duration_ms=$(runtime_log_duration_ms "$start_ms")" \
     "outcome=$outcome"
+  # session-restart.sh (the web console's 新开会话) reads the outcome; the
+  # hotkey path must print nothing (tmux run-shell -b opens view-mode on
+  # any stdout)
+  if [[ -n "${AGENT_CTRL_N_PRINT_OUTCOME:-}" ]]; then
+    printf 'outcome=%s\n' "$outcome"
+  fi
 }
 
 # Tests may override the /new injector via AGENT_NEW_INTO_PANE_SH.

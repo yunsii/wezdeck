@@ -67,7 +67,7 @@ msgstr "{bg} background tasks running"
 #~ msgid "{count} delivered, waiting for the agent"
 #~ msgstr "{count} delivered, waiting for the agent"
 
-#: src/features/session-composer.tsx:152
+#: src/features/session-composer.tsx:154
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -250,9 +250,17 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
+#: src/features/session-restart.tsx:71
+msgid "A blank agent process and conversation (Ctrl+Shift+n)"
+msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
+
 #: src/features/console-usage.tsx:177
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
+
+#: src/features/session-restart.tsx:41
+msgid "A fresh conversation is starting"
+msgstr "A fresh conversation is starting"
 
 #: src/features/ticket-reply.tsx:300
 msgid "A headless run is still going; take over when it finishes."
@@ -570,7 +578,7 @@ msgstr "cache hit {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-composer.tsx:207
+#: src/features/session-key-panel.tsx:20
 msgid "cancel"
 msgstr "cancel"
 
@@ -644,8 +652,8 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer.tsx:537
-#: src/features/session-composer.tsx:538
+#: src/features/session-composer.tsx:471
+#: src/features/session-composer.tsx:472
 msgid "Clear input (Esc Esc)"
 msgstr "Clear input (Esc Esc)"
 
@@ -670,7 +678,7 @@ msgstr "Close a sheet, or let go of a focused button"
 msgid "Close commands"
 msgstr "Close commands"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-key-panel.tsx:56
 msgid "Close keys"
 msgstr "Close keys"
 
@@ -735,12 +743,12 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:196
+#: src/features/session-send.ts:200
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:252
-#: src/features/session-composer.tsx:339
+#: src/features/session-composer.tsx:262
 msgid "Commands"
 msgstr "Commands"
 
@@ -765,11 +773,11 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:313
+#: src/features/session-composer.tsx:236
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/session-composer.tsx:206
+#: src/features/session-key-panel.tsx:19
 msgid "confirm"
 msgstr "confirm"
 
@@ -841,7 +849,7 @@ msgstr "context usage"
 #~ msgid "Control"
 #~ msgstr "Control"
 
-#: src/features/session-composer.tsx:87
+#: src/features/session-composer.tsx:89
 #: src/features/session-info.tsx:252
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
@@ -872,7 +880,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:87
+#: src/features/session-composer.tsx:89
 msgid "Copy"
 msgstr "Copy"
 
@@ -884,7 +892,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:79
+#: src/features/session-composer.tsx:81
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1122,6 +1130,10 @@ msgstr "Enabled on this computer: writes go through the local Runtime, with no d
 #~ msgid "Enabled. This phone can send messages to sessions and reply to tickets."
 #~ msgstr "Enabled. This phone can send messages to sessions and reply to tickets."
 
+#: src/features/session-restart.tsx:33
+msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
+msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it. Continue?"
+
 #: src/features/tickets-view.tsx:222
 msgctxt "filter"
 msgid "Ended"
@@ -1248,7 +1260,7 @@ msgstr "First turn"
 #~ msgid "Follow system theme"
 #~ msgstr "Follow system theme"
 
-#: src/features/session-composer.tsx:346
+#: src/features/session-composer.tsx:269
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1380,7 +1392,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:365
+#: src/features/session-composer.tsx:288
 msgid "Images"
 msgstr "Images"
 
@@ -1421,7 +1433,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/session-composer.tsx:165
+#: src/features/session-composer.tsx:167
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -1455,7 +1467,7 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-composer.tsx:208
+#: src/features/session-key-panel.tsx:21
 msgid "interrupt"
 msgstr "interrupt"
 
@@ -1503,7 +1515,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:327
+#: src/features/session-composer.tsx:250
 msgid "Keys"
 msgstr "Keys"
 
@@ -1670,11 +1682,11 @@ msgstr "Marked read"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:529
+#: src/features/session-composer.tsx:463
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:472
+#: src/features/session-composer.tsx:406
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1742,6 +1754,10 @@ msgstr "Needs you"
 #: src/features/session-list.tsx:176
 #~ msgid "Needs you {waitingCount}"
 #~ msgstr "Needs you {waitingCount}"
+
+#: src/features/session-restart.tsx:76
+msgid "New conversation"
+msgstr "New conversation"
 
 #: src/features/console-keys.tsx:69
 msgid "New line"
@@ -2251,8 +2267,8 @@ msgstr "Queued messages"
 #~ msgid "Queued, the agent takes it when it is ready"
 #~ msgstr "Queued, the agent takes it when it is ready"
 
-#: src/features/session-composer.tsx:248
-#: src/features/session-composer.tsx:321
+#: src/features/session-composer.tsx:244
+#: src/features/session-key-panel.tsx:64
 msgid "Quick keys"
 msgstr "Quick keys"
 
@@ -2423,6 +2439,22 @@ msgstr "resets {fiveReset}"
 #: src/features/session-header.tsx:134
 msgid "resets {weekReset}"
 msgstr "resets {weekReset}"
+
+#: src/features/session-restart.tsx:59
+msgid "Respawn the pane; the agent resumes this conversation (F5)"
+msgstr "Respawn the pane; the agent resumes this conversation (F5)"
+
+#: src/features/session-restart.tsx:50
+msgid "Restart"
+msgstr "Restart"
+
+#: src/features/session-restart.tsx:64
+msgid "Restart session"
+msgstr "Restart session"
+
+#: src/features/session-restart.tsx:34
+msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
+msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5). Continue?"
 
 #: src/features/chat-tools.tsx:162
 msgid "Result"
@@ -2651,7 +2683,7 @@ msgstr "seen"
 #~ msgstr "Select a worktree to see its agent status."
 
 #: src/features/console-keys.tsx:68
-#: src/features/session-composer.tsx:551
+#: src/features/session-composer.tsx:485
 msgid "Send"
 msgstr "Send"
 
@@ -2663,7 +2695,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:322
+#: src/features/session-composer.tsx:245
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2789,7 +2821,7 @@ msgstr "Skills this agent was given"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:334
+#: src/features/session-composer.tsx:257
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2941,7 +2973,7 @@ msgstr "Tap a row to copy its value; long-press or right-click for more."
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-key-panel.tsx:50
 msgid "Tap to send into the agent pane"
 msgstr "Tap to send into the agent pane"
 
@@ -3006,6 +3038,10 @@ msgstr "The contract or behaviour you expect from it — the target checks this 
 #: src/features/console-shared.tsx:352
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
+
+#: src/features/session-restart.tsx:42
+msgid "The pane is restarting; the agent resumes in a moment"
+msgstr "The pane is restarting; the agent resumes in a moment"
 
 #: src/features/session-commands.tsx:60
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
@@ -3199,7 +3235,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:351
+#: src/features/session-composer.tsx:274
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -3273,7 +3309,7 @@ msgstr "Trigger"
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
-#: src/features/session-composer.tsx:233
+#: src/features/session-key-panel.tsx:49
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
@@ -3295,7 +3331,7 @@ msgstr "Unavailable"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-composer.tsx:167
+#: src/features/session-composer.tsx:169
 msgid "Undo"
 msgstr "Undo"
 
@@ -3327,7 +3363,7 @@ msgstr "Updated {time}"
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 
-#: src/features/session-composer.tsx:141
+#: src/features/session-composer.tsx:143
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
