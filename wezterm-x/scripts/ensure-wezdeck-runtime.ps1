@@ -104,6 +104,10 @@ function Read-HelperState {
   return $state
 }
 
+# Why the last Test-HelperStateFresh said no (logged when ensure restarts the
+# helper: a restart here used to leave only "launcher started" behind).
+$script:HelperStaleReason = ''
+
 function Test-HelperStateFresh {
   param(
     [hashtable]$State,
@@ -112,16 +116,19 @@ function Test-HelperStateFresh {
   )
 
   if ($null -eq $State) {
+    $script:HelperStaleReason = 'no_state'
     return $false
   }
 
   if ([string]$State.ready -ne '1') {
+    $script:HelperStaleReason = 'not_ready'
     return $false
   }
 
   $helperPid = 0
   [void][int]::TryParse([string]$State.pid, [ref]$helperPid)
   if ($helperPid -le 0) {
+    $script:HelperStaleReason = 'no_pid'
     return $false
   }
 
@@ -130,28 +137,34 @@ function Test-HelperStateFresh {
   # the recorded pid is a live wezdeck-runtime process.
   $helperProcess = Get-Process -Id $helperPid -ErrorAction SilentlyContinue
   if ($null -eq $helperProcess -or $helperProcess.ProcessName -ne 'wezdeck-runtime') {
+    $script:HelperStaleReason = 'pid_not_running'
     return $false
   }
 
   $heartbeatAtMs = 0
   [void][long]::TryParse([string]$State.heartbeat_at_ms, [ref]$heartbeatAtMs)
   if ($heartbeatAtMs -le 0) {
+    $script:HelperStaleReason = 'no_heartbeat'
     return $false
   }
 
   if ((Get-NowEpochMilliseconds) - $heartbeatAtMs -gt ($HeartbeatTimeoutSeconds * 1000)) {
+    $script:HelperStaleReason = 'heartbeat_stale'
     return $false
   }
 
   if (-not [string]::IsNullOrWhiteSpace($ExpectedRuntimeDir) -and [string]$State.runtime_dir -ne $ExpectedRuntimeDir) {
+    $script:HelperStaleReason = 'runtime_dir_changed'
     return $false
   }
 
   if (-not [string]::IsNullOrWhiteSpace($ExpectedConfigHash) -and [string]$State.config_hash -ne $ExpectedConfigHash) {
+    $script:HelperStaleReason = 'config_changed'
     return $false
   }
 
   $process = Get-Process -Id $helperPid -ErrorAction SilentlyContinue
+  if ($null -eq $process) { $script:HelperStaleReason = 'pid_not_running' }
   return ($null -ne $process)
 }
 
@@ -207,6 +220,7 @@ function Stop-StaleProcesses {
   foreach ($process in $targets) {
     try {
       Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop
+      $process.ProcessId
     } catch {
     }
   }
@@ -410,7 +424,15 @@ try {
     exit 0
   }
 
-  Stop-StaleProcesses -ManagerPaths $managerPaths
+  $stoppedPids = @(Stop-StaleProcesses -ManagerPaths $managerPaths)
+  if ($stoppedPids.Count -gt 0) {
+    # a running helper is being replaced: say why, so a restart is never silent
+    Write-StructuredLog -Level 'info' -Category 'wezdeck_runtime' -Message 'launcher restarting helper manager' -Fields @{
+      reason = $script:HelperStaleReason
+      stopped_process_ids = ($stoppedPids -join ',')
+      runtime_dir = $runtimeDir
+    }
+  }
   Ensure-ManagerInstalled -RuntimeDir $runtimeDir -ManagerPaths $managerPaths
 
   $child = Start-Process -FilePath $managerPaths.Exe -ArgumentList @('--config', $managerPaths.Config) -PassThru
