@@ -6,7 +6,7 @@
 // the message catalogs.
 import { useCanGoBack, useLocation, useNavigate } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SessionTag } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
@@ -28,6 +28,7 @@ export function InteractionsPage() {
   const p = (text: Text) => (locale === 'zh' ? text.zh : text.en)
   // phone first: hydration must not flash the split on a phone
   const wide = useIsWidePhoneFirst()
+  const fill = useFillWindow(wide)
   const [log, setLog] = useState<Array<string>>([])
   const keyFor = (name: string) => (key: string) => {
     setLog((rows) => [`${name} → ${key}`, ...rows].slice(0, 8))
@@ -196,24 +197,57 @@ export function InteractionsPage() {
   if (!wide)
     return detail ?? <div className="key rounded-2xl px-2 py-3">{list}</div>
   return (
-    // each column scrolls on its own, pinned in view: the list's group
-    // headings and the detail's title stay put while their column moves
-    // (the whole page used to scroll, list and demo together)
-    <div className="grid grid-cols-[16rem_minmax(0,1fr)] items-start gap-6">
+    // each column scrolls on its own and together they fill the rest of
+    // the window exactly: the page itself never scrolls (it had 88 px of
+    // room, so a scroll moved the page first and the list with it)
+    <div
+      ref={fill.box}
+      style={fill.height ? { height: fill.height } : undefined}
+      className="grid grid-cols-[16rem_minmax(0,1fr)] gap-6"
+    >
       <div
         data-testid="interaction-list-scroll"
-        className="sticky top-0 max-h-[100cqh] min-w-0 overflow-y-auto overscroll-contain border-r border-brand-edge pr-3 pb-4"
+        className="min-h-0 min-w-0 overflow-y-auto overscroll-contain border-r border-brand-edge pr-3 pb-4"
       >
         {list}
       </div>
       <div
         data-testid="interaction-detail-scroll"
-        className="sticky top-0 max-h-[100cqh] min-w-0 overflow-y-auto overscroll-contain pb-4"
+        className="min-h-0 min-w-0 overflow-y-auto overscroll-contain pb-4"
       >
         {detail}
       </div>
     </div>
   )
+}
+
+/**
+ * The rest of the scroller's height below this box (its top inside the
+ * scroller, the page's bottom padding off): the two columns fill the window
+ * and scroll inside, the page never does. Re-measured on resize.
+ */
+function useFillWindow(on: boolean) {
+  const box = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+  useLayoutEffect(() => {
+    const el = box.current
+    const scroller = el?.closest<HTMLElement>('.overflow-y-auto')
+    if (!on || !el || !scroller || typeof ResizeObserver === 'undefined') return
+    const main = document.getElementById('console-main')
+    const measure = () => {
+      const top =
+        el.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop
+      const pad = main ? parseFloat(getComputedStyle(main).paddingBottom) : 0
+      setHeight(Math.max(240, Math.floor(scroller.clientHeight - top - pad)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(scroller)
+    return () => observer.disconnect()
+  }, [on])
+  return { box, height }
 }
 
 /** every interaction id (the hash a link may carry) */

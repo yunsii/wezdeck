@@ -37,7 +37,21 @@ describe('Interaction debugging layout', () => {
       }
     })
     expect(sizes.listScrolls).toBe(true)
-    expect(sizes.pageRoom).toBeLessThan(160)
+    // the columns fill the window exactly: the page itself never scrolls
+    expect(sizes.pageRoom).toBeLessThanOrEqual(1)
+    // whatever the detail holds (short, long, a live demo)
+    for (const id of ['claude-ask', 'stream', 'git-status', 'tool-toggle']) {
+      await page.goto(`${base}/zh/console/me/interactions#${id}`)
+      await page.getByTestId('interaction-detail').waitFor()
+      await page.waitForTimeout(400)
+      const room = await page.evaluate(() => {
+        const scroller = document
+          .querySelector('[data-testid=interaction-list-scroll]')
+          ?.closest('.vt-page') as HTMLElement
+        return scroller.scrollHeight - scroller.clientHeight
+      })
+      expect(room, `${id}: page room`).toBeLessThanOrEqual(1)
+    }
     // scroll the list: its first group heading stays at the list's top
     const stuck = await list.evaluate((el) => {
       el.scrollTop = 400
