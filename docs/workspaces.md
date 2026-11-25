@@ -23,14 +23,14 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
 - Each managed git project tab attaches to one tmux session per repo family, even when that repo has multiple linked worktrees.
 - Inside that tmux session, each git worktree gets its own tmux window.
 - Worktree switching inside that tmux session follows the live git state of the current pane or window layout, so manually created linked worktrees are discoverable without prewritten tmux metadata.
-- The `worktree-task` skill creates linked task worktrees under the repository parent's `.worktrees/<repo>/` directory and opens them as additional tmux windows inside that same repo-family session.
-- The `worktree-task` runtime also ships a lifecycle-aware quick-create prompt (`scripts/runtime/worktree/create-prompt`) bound to the `Ctrl+k` `g` sub-chord (`g d` for dev-, `g t` for task-, `g h` for hotfix-, `g r` to reclaim the current pane's worktree; see [`keybindings.md`](./keybindings.md#panes)). The prompt explains the selected lifecycle, its reclaim rule, and live-previews the final subject slug, worktree slug, worktree path, and branch as you type. On Enter it calls `open-task-window`, which passes the subject title, explicit worktree slug, and explicit branch to `worktree-task launch`: local worktree slugs carry lifecycle (`dev-<subject>`, `task-<subject>`, `hotfix-<subject>`), while branches use type-specific prefixes (`dev/<subject>`, `task/<subject>`, `hotfix/<subject>` by default). The configured agent starts in the new tmux window and comes up idle — `worktree-task` never injects an initial prompt.
+- The `worktree-task` skill creates workstations (linked worktrees) under the repository parent's `.worktrees/<repo>/` directory and opens them as additional tmux windows inside that same repo-family session.
+- `Ctrl+k` `g` `d` opens the new-workstation prompt (`scripts/runtime/worktree/create-prompt`): a short direction name and a one-line purpose, with a live preview of the directory and branch; `g r` reclaims the current pane's worktree (see [`keybindings.md`](./keybindings.md#panes) and [Workstations](#workstations)).
 - The left pane runs the configured primary command.
 - The right pane stays as a shell in the same directory.
 - `work` and `config` default to the managed launcher profile from `managed_cli.default_profile`.
 - The tracked baseline resolves that profile from `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` when present; otherwise it falls back through the shared `worktree-task` config and then the built-in Lua default.
 - The managed agent startup uses the profile default, and switches to the light variant when `managed_cli.ui_variant = "light"`.
-- Profile commands are forked into bare and `-resume` variants. Every wezterm/tmux entry point that creates **or refreshes** an agent pane — workspace first-open of `work` / `config` (the `defaults.launcher` for managed workspaces resolves to `<base>-resume` when that profile is registered), `Ctrl+k g d/t/h` lifecycle hotkeys, the `Alt+g` picker when it spawns a window on demand, `Alt+Shift+G` cycle, the legacy bare-name path of `open-task-window`, and the palette refresh actions (`session.refresh-current-window` / `refresh-current-session` / `refresh-current-workspace`) — launches the agent under the `<base>-resume` profile via `agent-launcher.sh`. Resume prefers a **typed session id** in this order: pane option → durable `agent-session-pins.json` keyed by worktree cwd + `primary|secondary` → `attention.json` for the current pane **only when** `tmux_window_name` matches (pane ids recycle across worktree windows in one repo-family tmux session) → window option; then runs `claude|grok --resume <id>` / `codex resume <id>`. When no usable id exists it falls back to cwd-scoped `claude --continue` / `codex resume --last` / `grok --continue` (the agent CLI's native project isolation), then to a fresh CLI when the cwd has no prior conversation. Claude: upstream also deletes transcripts after `cleanupPeriodDays` (default 30); a pin that outlives the `.jsonl` is skipped and falls through — see [`architecture.md` Claude transcript retention](./architecture.md#claude-transcript-retention-upstream). Primary-pane F5 restores that pane's conversation. Secondary pane remembers **agent vs shell** as current process state: in agent → F5 typed-resumes when an id is known; exited to shell → F5 stays a login shell and drops leftover secondary resume sources (`pane-died`, wrapper Ctrl+C/fallback, and shell-state F5 itself). Primary pins stay so F5 remains the bring-back path there. After `tmux kill-server`, `tmux_worktree_ensure_window_panes` recreates a secondary agent only when its durable pin still says agent (not cleared by an exit to shell). The bare `claude` / `codex` profiles remain the fresh fallback target and for direct `worktree-task launch` invocations that opt out of resume explicitly.
+- Profile commands are forked into bare and `-resume` variants. Every wezterm/tmux entry point that creates **or refreshes** an agent pane — workspace first-open of `work` / `config` (the `defaults.launcher` for managed workspaces resolves to `<base>-resume` when that profile is registered), `Ctrl+k g d` (new workstation), the `Alt+g` picker when it spawns a window on demand, `Alt+Shift+G` cycle, the legacy bare-name path of `open-task-window`, and the palette refresh actions (`session.refresh-current-window` / `refresh-current-session` / `refresh-current-workspace`) — launches the agent under the `<base>-resume` profile via `agent-launcher.sh`. Resume prefers a **typed session id** in this order: pane option → durable `agent-session-pins.json` keyed by worktree cwd + `primary|secondary` → `attention.json` for the current pane **only when** `tmux_window_name` matches (pane ids recycle across worktree windows in one repo-family tmux session) → window option; then runs `claude|grok --resume <id>` / `codex resume <id>`. When no usable id exists it falls back to cwd-scoped `claude --continue` / `codex resume --last` / `grok --continue` (the agent CLI's native project isolation), then to a fresh CLI when the cwd has no prior conversation. Claude: upstream also deletes transcripts after `cleanupPeriodDays` (default 30); a pin that outlives the `.jsonl` is skipped and falls through — see [`architecture.md` Claude transcript retention](./architecture.md#claude-transcript-retention-upstream). Primary-pane F5 restores that pane's conversation. Secondary pane remembers **agent vs shell** as current process state: in agent → F5 typed-resumes when an id is known; exited to shell → F5 stays a login shell and drops leftover secondary resume sources (`pane-died`, wrapper Ctrl+C/fallback, and shell-state F5 itself). Primary pins stay so F5 remains the bring-back path there. After `tmux kill-server`, `tmux_worktree_ensure_window_panes` recreates a secondary agent only when its durable pin still says agent (not cleared by an exit to shell). The bare `claude` / `codex` profiles remain the fresh fallback target and for direct `worktree-task launch` invocations that opt out of resume explicitly.
 - `session.refresh-current-window` (hotkey `F5`, also palette accelerator `r`) only respawns the focused pane: focus the agent pane to bring the agent back under the resume profile, focus a secondary pane to respawn just that shell. The "primary pane" of a managed window is identified by pane id (the first entry from `tmux list-panes`), not pane index — under this repo's `tmux.conf` (`pane-base-index 1`) the agent pane's index is `1`. Use `refresh-current-session` if you want the whole window rebuilt regardless of focus.
 - The pane's `@wezterm_pane_role=agent-cli:<base>` tag is written by every managed-agent create / refresh path: `open-project-session.sh` on first workspace open (it receives the agent profile via `--agent-profile <base>`, supplied by `workspace/runtime.lua:project_session_args` whenever `item.launcher` resolves to a managed launcher); `tmux-reset/{session,window}.sh` on every refresh / reset (which clear the option for non-agent respawns via `ensure_primary_pane_role_tag`); `tmux-worktree-open.sh` on `Alt+g` / `Alt+Shift+g` create **and** re-select (so on-demand worktree windows, and older windows that lost the pane option, stay tagged); and `worktree/providers/tmux-agent.sh` on `Ctrl+k g` / `worktree-task launch`. This tag lets `Ctrl+n` recognize agent panes through the `sh -c '<resume> || exec <fresh>'` wrapper's `pane_current_command=sh`/`node` boot transient. The shared `@agent_pane_match` predicate (defined at the top of `tmux.conf`) layers this **intent tag** with the leaf-name fallback (`claude*` / `codex*` / `grok*`) and a shell-veto, so manually-launched agent panes still work without a tag and the binding falls through cleanly once a shell takes over the pane. See the `Ctrl+n` entry in `keybindings.md` for the full predicate.
 - Managed Codex panes pass the generic `MANAGED_AGENT_PERMISSION_PROFILE` from `wezterm-x/local/shared.env` to `codex --profile <name> resume --last`; the obsolete `MANAGED_CODEX_PROFILE` field is ignored with a warning. Before launch, the managed launcher applies the tracked `auto.config.toml` / `full-access.config.toml` permission templates into `CODEX_HOME` as regular files (managed keys only; Codex runtime keys on the host copy are preserved; leftover symlinks into the checkout are converted). Failure to apply the selected overlay stops the launch with an actionable error. The base `~/.codex/config.toml` remains the shared configuration and the profile overlays only change permission behavior. Set `full-access` only for an explicitly trusted personal workstation.
@@ -46,7 +46,7 @@ WezTerm workspaces are the top-level session unit. For the full WezTerm-vs-tmux 
     LUA["wezterm-x/lua/<br/>config/managed_cli.lua<br/>parses + normalises<br/>'-' → '_'"]
     REG{{"managed_cli.profiles<br/>['claude_resume']"}}
     DEF["constants.lua<br/>default_resume_profile<br/>looks up 'claude_resume'"]
-    LAUNCH(["workspace open /<br/>Ctrl+k g d/t/h /<br/>Alt+g picker /<br/>refresh-* actions"])
+    LAUNCH(["workspace open /<br/>Ctrl+k g d /<br/>Alt+g picker /<br/>refresh-* actions"])
 
     ENV -->|"wezdeck-runtime-ops<br/>(P0 step)"| SYNC
     SYNC -->|"io.open from<br/>wezterm.exe Lua"| LUA
@@ -97,7 +97,7 @@ config = {
 - Permission intent follows the same item-over-defaults layering through
   `permission_profile`; managed launch commands export it as
   `MANAGED_AGENT_PERMISSION_PROFILE` before entering `agent-launcher.sh`.
-- **Shell entry points** (`Alt+g`, `Ctrl+k g d/t/h`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezdeck-runtime-ops` before expecting shell paths to pick up the change.
+- **Shell entry points** (`Alt+g`, `Ctrl+k g d`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezdeck-runtime-ops` before expecting shell paths to pick up the change.
 - If the map misses the cwd: `MANAGED_AGENT_PROFILE` / `shared.env` → `WT_PROVIDER_AGENT_PROFILE` → `claude`.
 - Within one repo family, a more specific mapped cwd wins over a shorter prefix; when only the family rule applies, the entry whose cwd equals the primary worktree is preferred.
 - Registered profiles today: `claude`, `claude_sub2api`, `codex`, `grok` (each with a `_resume` Lua key / `-resume` shell form). Add new ones in `config/worktree-task.env` + `scripts/runtime/agent-launcher.sh`.
@@ -122,107 +122,66 @@ provider, hooks, and MCP settings. Managed launcher startup applies the
 selected Codex overlay before launch. Permission resolution is logged in
 `category=primary_pane` as `permission_profile` and `permission_resolution`.
 
-## Task Worktree Lifecycle Model
+## Workstations
 
-The worktree-task runtime supports a two-tier model where directory naming encodes lifecycle, decoupled from git branch naming. Use this for projects with team collaboration and PR review cycles; **personal projects that work directly on master usually don't need it**.
+Every linked worktree is a **workstation for one direction** (`ux`, `ci`, `i18n` …): long-lived, reset onto the latest `origin/HEAD` each round, holding that direction's agent context, caches and dev-server state across rounds. There are no lifecycle kinds any more (the `dev-` / `task-` / `hotfix-` prefixes and `Ctrl+k g t` / `g h` went on 2026-11-25): what used to be a short task is simply the next round on a workstation.
 
-### Directory prefixes (lifecycle)
-
-| Prefix | Lifetime | Created by | Reclaimed by | Agent profile |
+| Worktree | Directory | Branch | Round reset | End |
 |---|---|---|---|---|
-| `main/` (the primary worktree) | permanent | initial clone | never | `claude-resume` / `codex-resume` |
-| `dev-*` | weeks–months | `Ctrl+k g d` | `Ctrl+k g r` after explicit long-lived confirmation; CLI requires `--allow-long-lived` | `claude-resume` / `codex-resume` |
-| `task-*` | hours–days | `Ctrl+k g t` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
-| `hotfix-*` | hours | `Ctrl+k g h` | `Ctrl+k g r` after merge | `claude-resume` / `codex-resume` |
-| `ticket-*` | ticket lifetime (hours–days) | Mode 3 `agent-collab` `run` / `create --run` | `ticket close` (default) + `ticket gc`; keeps branch | none (headless; `--provider none`) |
+| primary | the repo root | default (`master` / `main`) | `worktree-task recycle` | never |
+| workstation | `.worktrees/<repo>/<name>` | `dev/<name>` | `worktree-task recycle` (skill `worktree-recycle`) | `Ctrl+k g r` once the direction is done (clean + delivered) |
+| ticket | `ticket-*` (agent-collab) | the ticket's | — | `ticket close` + `ticket gc` |
+| OpenClaw | `claw-*` | `claw/…` | — | `claw-worktree.sh reclaim` |
 
-Long-lived `dev-*` worktrees act like persistent parallel "workstations" — accumulated agent context, dev-server state, dependency caches survive across days. The CLI refuses reclaim by default; `Ctrl+k g r` can reclaim one only after the normal clean / delivered checks pass and the confirmation prompt names it as long-lived. For day-to-day round closure on a `dev-*` workstation, prefer **`worktree-task recycle`** (in-place reset onto `origin/HEAD`) over reclaim→recreate — the directory, tmux window, and caches stay.
-
-Lifecycle, recycle, and reclaim flow:
+- **Purpose.** Each workstation carries a one-line purpose in its **git branch description** (`branch.dev/<name>.description` in the shared config, so every worktree reads it and recycle keeps it; `git branch --edit-description` edits the same value). It leads the `Alt+g` detail line and follows the workstation's name in the web console's session list. Set or change it with `worktree-task describe --set TEXT` (from inside the workstation, or `--cwd PATH`); `--clear` removes it.
+- **Names.** The name becomes the directory and branch, so it needs letters or digits (a Chinese-only name is refused: put that in the purpose); a `dev-` / `dev/` typed out of habit is dropped; `ticket-` / `claw-` are reserved. A taken name — an existing directory, an existing `dev/<name>` branch, or an old `dev-<name>` directory — is bumped to `<name>-2`, `-3` … on both. `lib/workstation.sh` (`wt_workstation_plan`) is the one rule; the prompt's preview and the creation run it, and the web console mirrors it for its preview.
+- **Workstations from before 2026-11-25** keep their `dev-<name>` directories: Claude / Codex transcripts, attention rows and resume pins are keyed by the path, so renaming them would orphan every session. Displays drop the prefix (`dev-ux` reads `ux` in `Alt+g` and the web console); tmux window names keep the directory name, because attention gates typed resume on it. Their branch is already `dev/<name>`, the same mapping recycle uses.
+- **Creating one:** `Ctrl+k g d` (name, then purpose; Tab switches, Enter creates), the web console's 新会话 (`session.new {repo, name, description, prompt}`), or `open-task-window [--description TEXT] [--no-attach] -- <name>` / `worktree-task launch --title NAME [--description TEXT]`. All branch off a fresh `origin/HEAD` ([base ref strategy](#base-ref-strategy)) and start the agent under the `<base>-resume` profile.
 
 ```mermaid
 flowchart TD
-  A["main worktree<br/>repo root"] --> B{"Create type"}
-
-  B -->|"Ctrl+k g d"| D["dev-&lt;slug&gt;<br/>long-lived workstation"]
-  B -->|"Ctrl+k g t"| T["task-&lt;slug&gt;<br/>PR-scoped task"]
-  B -->|"Ctrl+k g h"| H["hotfix-&lt;slug&gt;<br/>urgent fix"]
-
-  A --> RCP["worktree-task recycle<br/>primary → origin/HEAD"]
-  D --> RC["worktree-task recycle<br/>in-place onto origin/HEAD"]
-  D --> R["Ctrl+k g r<br/>reclaim current worktree"]
-  T --> R
-  H --> R
-
-  RCP --> RCP2["fetch + dirty check<br/>reset default branch → origin/HEAD<br/>ensure upstream matches"]
-  RC --> RC1{"clean? (delivery optional)"}
-  RC1 -->|"dirty without --force"| RCX["Refuse"]
-  RC1 -->|"yes"| RC2["align branch to slug<br/>prune temp locals<br/>clean allowlisted debug files<br/>reset --hard origin/HEAD<br/>sync origin/branch to same tip<br/>optional --task in output/log"]
-
-  R --> C1{"Main worktree?"}
-  C1 -->|"yes"| X1["Refuse<br/>primary worktree is permanent"]
-  C1 -->|"no"| C2{"Dirty or untracked?"}
-
-  C2 -->|"yes"| X2["Refuse<br/>commit or discard first"]
-  C2 -->|"no"| C3{"Delivered?"}
-
-  C3 -->|"no"| X3["Refuse<br/>merge into origin/HEAD<br/>or push to origin/&lt;branch&gt;<br/>with remote containing local HEAD"]
-  C3 -->|"yes"| C4{"dev-*?"}
-
-  C4 -->|"no: task-* / hotfix-*"| Y1["Confirm<br/>reclaim &lt;slug&gt;?"]
-  C4 -->|"yes"| Y2["Long-lived confirm<br/>reclaim long-lived &lt;slug&gt;?"]
-
-  Y1 -->|"y"| Z1["worktree-task reclaim"]
-  Y2 -->|"y"| Z2["worktree-task reclaim<br/>--allow-long-lived"]
-  Y1 -->|"other"| K["Cancel"]
-  Y2 -->|"other"| K
-
-  Z1 --> W["provider cleanup<br/>git worktree remove<br/>metadata cleanup<br/>git worktree prune"]
-  Z2 --> W
-
-  W --> Q{"Branch merged into<br/>main worktree HEAD?"}
-  Q -->|"yes"| BD["Delete local branch"]
-  Q -->|"no"| BK["Keep local branch"]
-
-  BD --> END["Close original tmux window"]
-  BK --> END
+  P["primary checkout<br/>repo root · master"] -->|"Ctrl+k g d / 新会话<br/>name + purpose"| W["workstation &lt;name&gt;<br/>branch dev/&lt;name&gt;<br/>purpose = branch description"]
+  P --> RCP["worktree-task recycle<br/>primary → origin/HEAD"]
+  W -->|"round delivered onto origin/HEAD"| RC["worktree-task recycle<br/>reset --hard origin/HEAD<br/>align branch to dev/&lt;name&gt;<br/>sync origin/dev/&lt;name&gt;"]
+  RC -->|"next round"| W
+  W -->|"direction done: Ctrl+k g r"| C1{"clean and delivered?"}
+  C1 -->|"no"| X["Refuse"]
+  C1 -->|"yes, confirmed"| Z["worktree-task reclaim<br/>git worktree remove<br/>delete branch if merged<br/>close the tmux window"]
 ```
 
-(`task-*` and `hotfix-*` differ only in directory prefix and intended lifetime; their lifecycle transitions are identical. Recycle refuses non-`dev-*` slugs — short-lived trees should reclaim.)
+### Branch naming
 
-### Branch naming is independent
-
-Worktree directory prefix encodes lifecycle (your local UX), git branch name follows the team's review surface. Quick-create separates the subject from lifecycle: typing `ci fix` under `Ctrl+k g t` creates worktree `.worktrees/<repo>/task-ci-fix/` and branch `task/ci-fix`; under `Ctrl+k g d` it creates `.worktrees/<repo>/dev-ci-fix/` and branch `dev/ci-fix`. The defaults live in `WT_POLICY_BRANCH_PREFIX_DEV=dev/`, `WT_POLICY_BRANCH_PREFIX_TASK=task/`, and `WT_POLICY_BRANCH_PREFIX_HOTFIX=hotfix/`; `WT_POLICY_BRANCH_PREFIX=task/` remains the generic `worktree-task launch --title` fallback. Set the per-type values to the same prefix if a repository requires all branches under one namespace.
+Workstation branches are `WT_POLICY_BRANCH_PREFIX` + name (`dev/` by default, `config/worktree-task.env`): typing `ci fix` under `Ctrl+k g d` creates `.worktrees/<repo>/ci-fix/` on `dev/ci-fix`. The directory carries no prefix; the branch keeps `dev/` as a namespace so a team repository's shared remote does not collect bare `ci` / `i18n` branches. The per-type keys `WT_POLICY_BRANCH_PREFIX_DEV` / `_TASK` / `_HOTFIX` are removed: a config that still sets them gets a warning and they have no effect. New branches are created with `--no-track` (see below).
 
 ### Base ref strategy
 
-The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fetch origin` then branches off `origin/HEAD`. This insulates new worktrees from the primary worktree's current checkout AND from local divergence with origin. New task/dev/hotfix branches are created with `--no-track`: `origin/HEAD` is only the start point, not the branch upstream, so `git status` does not compare a fresh task branch against `origin/main` / `origin/master`. The branch gets an upstream only after the normal first push (`git push -u origin <branch>`). **First-time setup**: run `git remote set-head origin -a` once per repo to populate `origin/HEAD`. Repos without a remote fall back to `WT_POLICY_BASE_REF_STRATEGY=primary-head` (set explicitly in their env file or pass `--base-ref HEAD` per launch).
+The default `WT_POLICY_BASE_REF_STRATEGY=origin-default-branch` performs `git fetch origin` then branches off `origin/HEAD`. This insulates new worktrees from the primary worktree's current checkout AND from local divergence with origin. New workstation branches are created with `--no-track`: `origin/HEAD` is only the start point, not the branch upstream, so `git status` does not compare a fresh workstation branch against `origin/main` / `origin/master`. The branch gets an upstream only after the normal first push (`git push -u origin <branch>`). **First-time setup**: run `git remote set-head origin -a` once per repo to populate `origin/HEAD`. Repos without a remote fall back to `WT_POLICY_BASE_REF_STRATEGY=primary-head` (set explicitly in their env file or pass `--base-ref HEAD` per launch).
 
 ### Maintenance loop (wezdeck standing policy)
 
-**Why linked worktrees exist here:** **change isolation** (parallel agents / dirty WIP / rollback risk) — not review ceremony. **All changes are judged against the default branch (`origin/master` / `origin/HEAD`).** A `dev-*` tree is a disposable workstation, not a second source of truth.
+**Why linked worktrees exist here:** **change isolation** (parallel agents / dirty WIP / rollback risk) — not review ceremony. **All changes are judged against the default branch (`origin/master` / `origin/HEAD`).** A workstation is a disposable checkout of mainline plus its direction's context, not a second source of truth.
 
 **Invariant (must hold whenever a round is idle):**  
-`primary master` == `origin/HEAD` == linked `dev/*` tip (and preferably `origin/<same-dev-branch>` after recycle sync).  
-A `dev-*` branch that lags mainline is **out of policy**, not an acceptable resting state.
+`primary master` == `origin/HEAD` == every workstation's `dev/<name>` tip (and preferably `origin/<same-dev-branch>` after recycle sync).  
+A workstation branch that lags mainline is **out of policy**, not an acceptable resting state.
 
 **Delivery is mainline-direct: no PR.** wezdeck is personal mainline ([vcs-34](../agent-profiles/v1/en/vcs.md)): after acceptance, push (or ff) onto `master` / `origin/HEAD` as efficiently as possible. Do not open a pull/merge request, do not ask “merge to main?”, and do not keep the only copy of the work on `dev/*`.
 
-Standing loop after finishing a round in a linked worktree:
+Standing loop after finishing a round on a workstation:
 
 1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). Graph hygiene [vcs-36]–[vcs-37] still applies.
-2. **Recycle the `dev-*` workstation immediately** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so `dev/*` **stays in sync** with mainline (same tip). Do not leave the workstation behind “until next time”.
+2. **Recycle the workstation immediately** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so its `dev/<name>` **stays in sync** with mainline (same tip). Do not leave the workstation behind “until next time”.
 3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZDECK_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
 
-If mainline moved elsewhere (another session pushed `master`) while a `dev-*` tree sat idle, **recycle (or ff-reset onto `origin/HEAD`) before starting new work** on that workstation — same invariant.
+If mainline moved elsewhere (another session pushed `master`) while a workstation sat idle, **recycle (or ff-reset onto `origin/HEAD`) before starting new work** on that workstation — same invariant.
 
-Do **not** leave user-level skills / `WEZDECK_REPO` pointed at a stale `dev-*` worktree after the round is closed. Short-lived `task-*` / `hotfix-*` end with **reclaim**, not recycle.
+Do **not** leave user-level skills / `WEZDECK_REPO` pointed at a stale workstation after the round is closed. A workstation whose direction is done ends with **reclaim**.
 
-### Recycle (primary or long-lived `dev-*` round reset)
+### Recycle (primary or workstation round reset)
 
 Agents should load the platform skill **`worktree-recycle`** (`skills/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` — not a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
 
-`worktree-task recycle` is a **fast path**: `git fetch` → dirty check → hard-reset onto `origin/HEAD` → sync `origin/<branch>` to the same tip. The old **delivered / content-absorbed** gate is **off by default** (opt in with `--require-delivered` / `WT_RECYCLE_REQUIRE_DELIVERED=1`; reclaim still uses the full delivery check). Linked `dev-*` worktrees force the branch name to the slug mapping (`dev-agent` → `dev/agent`; opt out with `--keep-branch-name`). The **primary** checkout is allowed: it resets the default branch (`master` / `main`) onto `origin/HEAD` and ensures upstream matches. Remote sync uses fast-forward or `--force-with-lease` when the remote still holds the pre-reset tip; opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`.
+`worktree-task recycle` is a **fast path**: `git fetch` → dirty check → hard-reset onto `origin/HEAD` → sync `origin/<branch>` to the same tip. The old **delivered / content-absorbed** gate is **off by default** (opt in with `--require-delivered` / `WT_RECYCLE_REQUIRE_DELIVERED=1`; reclaim still uses the full delivery check). A workstation's branch is forced to its slug mapping (`ux` → `dev/ux`, an old `dev-ux` directory → `dev/ux` too; opt out with `--keep-branch-name`). The **primary** checkout is allowed: it resets the default branch (`master` / `main`) onto `origin/HEAD` and ensures upstream matches. Remote sync uses fast-forward or `--force-with-lease` when the remote still holds the pre-reset tip; opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`.
 
 Typical invocation (prefer the skill runner from agents):
 
@@ -240,7 +199,7 @@ Project init is **skipped by default** — follow-up tasks bootstrap what they n
 
 Behavior:
 
-- Accepts the primary worktree **or** linked `dev-*` slugs (use `reclaim` for `task-*` / `hotfix-*`).
+- Accepts the primary worktree **or** any workstation; refuses `ticket-*` (agent-collab) and `claw-*` (OpenClaw), which their owners close.
 - Refuses dirty trees except allowlisted debug leftovers (`WT_RECYCLE_CLEAN_GLOBS`, default `.ticket` / `.scratch` / `*.orig` / `*.rej` / `.task-brief.md`) and `--force`.
 - Optionally prunes local branches that match `WT_RECYCLE_TEMP_BRANCH_PREFIXES` (default `backup/,tmp/,wip/,scratch/`), are ancestors of `origin/HEAD`, and are not checked out elsewhere (linked trees; off on primary unless `WT_RECYCLE_PRUNE_ON_PRIMARY=1`).
 - Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (or when the branch name will change).
@@ -250,7 +209,7 @@ Behavior:
 
 ### Reclaim safety
 
-`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on `dev-*` slugs unless `--allow-long-lived` is explicit, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the task branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. For `dev-*`, the wrapper adds `--allow-long-lived` only after those checks pass and the confirmation prompt calls out the long-lived worktree. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later worktree happens to reuse the same slug (legitimate inside the lifecycle prefix model), `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
+`worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the workstation branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. The confirmation prompt names it as a workstation whose direction is done. `--allow-long-lived` is removed (2026-11-25): passing it fails with that replacement. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later workstation reuses the same name, `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
 
 ## File Ownership
 

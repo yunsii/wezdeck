@@ -47,6 +47,9 @@ case "$command" in
   recycle)
     wt_core_recycle "$@"
     ;;
+  describe)
+    wt_core_describe "$@"
+    ;;
   -h|--help|help|'')
     wt_core_usage
     ;;

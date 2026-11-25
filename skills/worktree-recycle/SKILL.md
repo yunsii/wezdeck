@@ -1,7 +1,7 @@
 ---
 name: worktree-recycle
 description: >
-  Fast reset of a primary checkout or linked dev-* workstation onto
+  Fast reset of a primary checkout or a workstation onto
   origin/HEAD: soft preflight, then worktree-task recycle (fetch + dirty
   check + hard-reset + remote sync). Skips delivery gate and project init
   by default. Use when the user says 重置开发分支 / 重置工作站 / recycle
@@ -28,7 +28,8 @@ This skill owns soft preflight and readiness hints. **Project bootstrap is not p
 
 **Skip / redirect:**
 
-- Short-lived `task-*` / `hotfix-*` end-of-life → **`worktree-task reclaim`** / `Ctrl+k g r` (not this skill)
+- A workstation whose direction is done → **`worktree-task reclaim`** / `Ctrl+k g r` (not this skill)
+- `ticket-*` (agent-collab) / `claw-*` (OpenClaw) worktrees → their owners close them (recycle refuses)
 - Pure `git reset` without this skill → do not bypass; still use the runner
 
 **wezdeck policy:** worktrees = **isolation**; delivery = **direct mainline** (no PR).  
@@ -66,12 +67,12 @@ Install / refresh discovery (idempotent, from wezdeck):
 
 ## Agent procedure
 
-1. **Resolve** TOOL_HOME; confirm `"$R"` is executable. Cwd may be a linked `dev-*` worktree **or** the primary checkout (or pass `--cwd`).
+1. **Resolve** TOOL_HOME; confirm `"$R"` is executable. Cwd may be a workstation **or** the primary checkout (or pass `--cwd`).
 2. **Preflight** (optional glance; recycle also runs it):
    ```bash
    "$R" preflight --cwd "$PWD"
    ```
-   Soft signals only. `task-*` / `hotfix-*` are real blockers (use reclaim). Dirty trees need `--force` or a clean tree.
+   Soft signals only. `ticket-*` / `claw-*` are real blockers. It also prints the workstation's purpose (git branch description). Dirty trees need `--force` or a clean tree.
 3. If the user already named the next task, keep it for `--task`.
 4. **When the user already said 重置 / recycle:** do **not** re-ask about squash / push / init. Proceed:
    ```bash
@@ -86,7 +87,7 @@ Install / refresh discovery (idempotent, from wezdeck):
 
 | Check | Hard / soft | Notes |
 | --- | --- | --- |
-| Primary **or** linked `dev-*` | hard | `task-*` / `hotfix-*` → reclaim |
+| Primary **or** a workstation | hard | `ticket-*` / `claw-*` → their owners |
 | Dirty outside recycle allowlist | hard (CLI) | Fix or explicit `--force` from user |
 | Delivery / content-absorbed | **off by default** | Opt in with `--require-delivered` |
 | `.ticket/` leftovers | soft | Allowlisted clean on linked trees |
@@ -97,7 +98,7 @@ Install / refresh discovery (idempotent, from wezdeck):
 After a successful recycle:
 
 - Local tip == `origin/HEAD` (default branch tip)
-- Branch name matches the worktree slug mapping (`dev-agent` → `dev/agent`); primary uses the default branch (`master` / `main`)
+- Branch name matches the workstation mapping (`ux` → `dev/ux`; an old `dev-ux` directory → `dev/ux` too); primary uses the default branch (`master` / `main`)
 - `origin/<same branch>` tip == that same commit (unless `--no-sync-remote`)
 - Upstream is `origin/<branch>` (linked never tracks the default branch)
 - Project bootstrap **not** required by recycle itself
@@ -115,7 +116,7 @@ After a successful recycle:
 
 - Don't ask the human to run CLI as the main path
 - Don't re-ask squash / push / manual-reset questions after the user already said 重置开发分支
-- Don't use recycle for short-lived `task-*` / `hotfix-*` (use reclaim)
+- Don't recycle `ticket-*` / `claw-*` worktrees (their owners close them)
 - Don't `--force` away dirty trees without an explicit user override
 - Don't treat attention / ledger / ticket `shipped` as proof of merge
 - Don't run `sync-runtime` or package installs just because recycle finished

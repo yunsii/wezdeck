@@ -87,7 +87,7 @@ flowchart TB
     WS["Workspace<br/>default / work / config / opensource"]
     TAB["WezTerm tab<br/>= one repo family"]
     SESS["tmux session<br/>= repo family (reused)"]
-    WIN["tmux window<br/>= git worktree<br/>main / dev-* / task-* / hotfix-*"]
+    WIN["tmux window<br/>= git worktree<br/>primary / workstation &lt;name&gt;"]
     PANE["tmux panes<br/>left agent · right shell"]
     AGENT["agent CLI pane<br/>claude / codex (-resume)<br/>via agent-launcher.sh"]
     ATT[("attention.json<br/>running / waiting / done")]
@@ -131,7 +131,7 @@ flowchart TB
 The nesting and ownership rules are in [*Interaction Layers*](#interaction-layers) above; the lifecycle detail is in [`workspaces.md`](./workspaces.md). Key facts this repo commits to:
 
 - **Naming / reuse.** A managed WezTerm tab maps to one repo family and attaches to **one tmux session per repo family**, reused across that repo's linked worktrees. Each git worktree is one tmux window; each window splits into a left agent pane and a right shell pane. Managed workspaces are `work` / `config` / `opensource`; `default` is the built-in WezTerm workspace.
-- **Worktree sessions.** `worktree-task` creates linked worktrees under `.worktrees/<repo>/` and opens them as additional windows in the same session. Directory prefixes encode lifecycle (`dev-*` / `task-*` / `hotfix-*`), created by `Ctrl+k g d/t/h` and reclaimed by `Ctrl+k g r`; branch naming is independent. Full lifecycle + reclaim safety: [`workspaces.md#task-worktree-lifecycle-model`](./workspaces.md#task-worktree-lifecycle-model).
+- **Worktree sessions.** `worktree-task` creates workstations — one linked worktree per direction under `.worktrees/<repo>/<name>` on `dev/<name>`, its one-line purpose in the git branch description — and opens them as additional windows in the same session. Created by `Ctrl+k g d` or the web console's 新会话, reset each round by `worktree-task recycle`, reclaimed by `Ctrl+k g r` once the direction is done. Full model + reclaim safety: [`workspaces.md#workstations`](./workspaces.md#workstations).
 - **Agent pane lifecycle.** Every agent-CLI launch terminates at `scripts/runtime/agent-launcher.sh <profile>` (the single env-loading + boot-cue site). Managed resume prefers a **typed session id** (from `WEZDECK_RESUME_SESSION_ID`, same-pane option, cwd-keyed durable pin, `attention.json` gated by `tmux_window_name`, or the window pin `@wezterm_primary_agent_session_id`) via `claude|grok --resume <id>` / `codex resume <id>`; only when no usable id is found does it fall back to cwd-scoped `claude --continue` / `codex resume --last` / `grok --continue`, then to a fresh CLI on a brand-new worktree. `primary-pane-wrapper.sh` execs the login shell after the agent exits so the pane survives agent death. See [*Startup Invariants*](#startup-invariants).
 - **Attention state.** Provider hooks → `agent-attention/emit.sh` → `attention.json` (`running` / `waiting` / `done`, keyed by session id or `pane:<N>`) → event bus tick → tab badges + right-status counter; jump via `Alt+j` / `Alt+k` / `Alt+l` (Lua `--direct`) and `Alt+/` (tmux popup). This is the same state file the interop layer reads. Full pipeline: [`agent-attention.md`](./agent-attention.md).
 
@@ -149,7 +149,7 @@ The host TUI agents (`claude` / `codex`, plus `grok` when run natively) live ins
 | Area | Component | State |
 |---|---|---|
 | Session | WezTerm ⊃ tmux nesting, repo-family session reuse, agent pane resume + survival | **Built** |
-| Session | Worktree lifecycle (`dev/task/hotfix`, `Ctrl+k g d/t/h/r`), branch-independent naming | **Built** |
+| Session | Workstations (one per direction, purpose in the branch description, `Ctrl+k g d/r`, recycle per round) | **Built** |
 | Session | Attention pipeline (hooks → `attention.json` → badges + `Alt+j`/`k`/`l`/`/`) | **Built** |
 | Interop | Read (host + claw), `poke`, `panic`, `audit` (P1) | **Built** |
 | Interop | `lease` + `host-send-keys` + `bot-send` + attention inference + audit receipt (P2) | **Built** |
@@ -198,7 +198,7 @@ Adding a new shortcut means: (1) new item in `manifest.json` with `binding`; (2)
 - `wezterm-x/local/`: gitignored machine-local overrides copied by the sync skill when present
 - `config/worktree-task.env`: tracked repo profile for the `worktree-task` runtime; sync-time mirrored to `<runtime_dir>/repo-worktree-task.env` so Windows-side wezterm.exe Lua can read it (the WSL path in `repo-root.txt` is unreachable from Win32 file APIs). `wezterm-x/lua/constants.lua` reads the local copy first; the env file is the single source of truth for `<base>` / `<base>_resume` profile commands.
 - `skills/wezdeck-runtime-ops/`: runtime sync workflow, prompt rendering, and prompt regression scripts
-- `scripts/runtime/worktree/`: linked worktree task runtime — `worktree-task` CLI, `open-task-window` (Ctrl+k g d/t/h create entry), `reclaim-current-window` (Ctrl+k g r reclaim entry), core libraries under `lib/`, built-in providers under `providers/`
+- `scripts/runtime/worktree/`: linked worktree task runtime — `worktree-task` CLI, `open-task-window` (Ctrl+k g d / web 新会话 create entry), `create-prompt` (its popup), `reclaim-current-window` (Ctrl+k g r reclaim entry), core libraries under `lib/`, built-in providers under `providers/`
 - `scripts/runtime/open-project-session.sh`: tmux bootstrap for managed project tabs
 - `scripts/runtime/primary-pane-wrapper.sh`: traps INT/HUP/TERM around the managed agent and execs the login shell on exit so the primary pane survives agent death
 - `scripts/runtime/run-managed-command.sh`: managed startup command launcher
@@ -458,4 +458,4 @@ The `worktree-task` runtime creates linked worktrees under the repository parent
 - The built-in `tmux-agent` provider executes the agent CLI inside the resolved login shell so PATH and rc files match the user's normal terminal.
 - Runtime launch uses a temporary prompt file only long enough to start the new pane; no prompt archive is kept.
 
-Lifecycle prefixes (`dev-` / `task-` / `hotfix-`), reclaim safety rules, branch-naming policy, base-ref strategy, and `Ctrl+k g {d,t,h,r}` quick-create wiring: see [`workspaces.md#task-worktree-lifecycle-model`](./workspaces.md#task-worktree-lifecycle-model).
+Workstations (one linked worktree per direction, directory `<name>` on `dev/<name>`, purpose in the git branch description), reclaim safety rules, branch-naming policy, base-ref strategy, and `Ctrl+k g {d,r}` wiring: see [`workspaces.md#workstations`](./workspaces.md#workstations).

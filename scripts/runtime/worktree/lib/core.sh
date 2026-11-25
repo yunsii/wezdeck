@@ -9,6 +9,8 @@
 
 __WT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
+. "$__WT_CORE_DIR/workstation.sh"
+# shellcheck disable=SC1091
 . "$__WT_CORE_DIR/core-shared.sh"
 # shellcheck disable=SC1091
 . "$__WT_CORE_DIR/core-configure.sh"
@@ -18,3 +20,5 @@ __WT_CORE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$__WT_CORE_DIR/core-reclaim.sh"
 # shellcheck disable=SC1091
 . "$__WT_CORE_DIR/core-recycle.sh"
+# shellcheck disable=SC1091
+. "$__WT_CORE_DIR/core-describe.sh"

@@ -42,7 +42,7 @@ The third constraint is load-bearing for iteration: badges warn live, logs expla
 - **Primary pane auto-resume** — managed agent panes boot through `agent-launcher.sh` with `<base>-resume`; after WezTerm or machine restart, entering a worktree continues the last conversation (falls back to a fresh session when none exists).
 - **Live attention surface** — per-tab badges plus a right-status counter `▲ N waiting ✓ N done ● N running`, driven by agent hooks → `attention.json`.
 - **In-slot jump keys** — `Alt+j` / `Alt+k` / `Alt+l` step waiting / done / running; `Alt+/` and `Alt+x` are occasional overview / overflow pickers, not the main loop.
-- **One keystroke to spawn a worktree** — `Ctrl+k g d/t/h` carves out a linked worktree (with its own agent) when no suitable slot exists.
+- **One keystroke to spawn a worktree** — `Ctrl+k g d` (or the web console's 新会话) carves out a workstation — a linked worktree for one direction, with a one-line purpose and its own agent — when no suitable one exists.
 - **Manifest-driven hotkeys** — `wezterm-x/commands/manifest.json` is the single source of truth; per-machine overrides live in `wezterm-x/local/keybindings.lua`.
 - **Dev-env observability** — right-status pressure badges, structured runtime / WezTerm logs, threshold-gated latency rows, plus day timeline and habit-weekly projectors for review.
 
@@ -55,12 +55,12 @@ The third constraint is load-bearing for iteration: badges warn live, logs expla
 ```text
 need arises
   → switch workspace (Alt+w/c/…) · tab (Alt+1..9) · worktree (Alt+g)
-       └─ no suitable slot → Ctrl+k g d|t|h  create, then enter
+       └─ no suitable slot → Ctrl+k g d       create, then enter
   → primary pane auto-resumes for that cwd
   → main loop: Alt+j waiting · Alt+k done · Alt+l running
                + Alt+v open VS Code (daily verify path)
        · side paths: Alt+b debug Chrome · Alt+/ overview · Alt+x overflow
-  → deliver onto origin/HEAD → recycle (dev-*) / reclaim (task|hotfix)
+  → deliver onto origin/HEAD → recycle (next round) / reclaim (direction done)
 ```
 
 | Stage | Capability | Deep dive |

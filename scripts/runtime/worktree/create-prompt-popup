@@ -2,38 +2,35 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
-usage: create-prompt-popup dev|task|hotfix [cwd]
+  cat <<'USAGE'
+usage: create-prompt-popup [cwd]
 
-Launch the lifecycle worktree create prompt inside a tmux display-popup.
-EOF
+Open the new-workstation prompt (create-prompt) inside a tmux display-popup.
+USAGE
 }
 
-if (($# < 1 || $# > 2)); then
-  usage >&2
-  exit 64
-fi
-
-type_kind="$1"
-cwd="${2:-$PWD}"
-
-case "$type_kind" in
-  dev|task|hotfix) ;;
+case "${1:-}" in
   -h|--help)
     usage
     exit 0
     ;;
-  *)
-    usage >&2
+  dev|task|hotfix)
+    # removed with the lifecycles (2026-11-25): a stale chord binding
+    printf 'create-prompt-popup: the %s argument is removed; re-render the tmux bindings (sync-runtime)\n' "$1" >&2
     exit 64
     ;;
 esac
+if (($# > 1)); then
+  usage >&2
+  exit 64
+fi
 
+cwd="${1:-$PWD}"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-prompt="$script_dir/create-prompt-$type_kind"
+prompt="$script_dir/create-prompt"
 
 if [[ ! -x "$prompt" ]]; then
-  printf 'create-prompt-popup: prompt wrapper not executable: %s\n' "$prompt" >&2
+  printf 'create-prompt-popup: prompt not executable: %s\n' "$prompt" >&2
   exit 1
 fi
 
@@ -42,4 +39,4 @@ if [[ ! -d "$cwd" ]]; then
 fi
 
 printf -v popup_command 'exec %q' "$prompt"
-exec bash "$script_dir/../tmux-display-popup.sh" -E -d "$cwd" -w "88%" -h "60%" -T "$type_kind worktree" "$popup_command"
+exec bash "$script_dir/../tmux-display-popup.sh" -E -d "$cwd" -w "88%" -h "60%" -T "new workstation" "$popup_command"

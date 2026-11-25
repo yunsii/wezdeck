@@ -38,7 +38,7 @@ source "$SCRIPT_DIR/lib/delivery.sh"
 export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.reclaim-current"
 
 # Informational refusal — checks failed, but it's an expected outcome
-# (dev-* / dirty / unmerged / not-in-repo). Stay visible long enough to
+# (dirty / unmerged / not-in-repo / another owner's worktree). Stay visible long enough to
 # read, then exit 0 so the tmux chord doesn't trip its own
 # "command returned 1" reporting.
 refuse() {
@@ -111,13 +111,8 @@ fi
 slug="$(basename "$worktree_root")"
 
 reclaim_extra_args=()
-reclaim_prompt="reclaim $slug? (y/N):"
-case "$slug" in
-  dev-*)
-    reclaim_extra_args+=(--allow-long-lived)
-    reclaim_prompt="reclaim long-lived $slug? (y/N):"
-    ;;
-esac
+# a workstation holds a direction's accumulated context: the prompt says so
+reclaim_prompt="reclaim workstation $slug (its direction is done)? (y/N):"
 
 # ---------- cleanliness check ----------
 if [[ -n "$(git -C "$worktree_root" status --porcelain --untracked-files=all 2>/dev/null)" ]]; then

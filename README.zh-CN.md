@@ -42,7 +42,7 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 - **主 pane 自动续聊** — 托管 agent pane 经 `agent-launcher.sh` 以 `<base>-resume` 启动；WezTerm 或整机重启后进入 worktree 会续上上次对话（没有会话则开新会话）。
 - **实时 attention 面** — tab 徽章 + 右状态计数 `▲ N waiting ✓ N done ● N running`，由 agent hooks → `attention.json` 驱动。
 - **槽内跳转键** — `Alt+j` / `Alt+k` / `Alt+l` 分别步进 waiting / done / running；`Alt+/` 与 `Alt+x` 是偶发总览 / overflow 选择器，不是主循环。
-- **一键开 worktree** — `Ctrl+k g d/t/h` 在没有合适槽位时切开 linked worktree（并带上配套 agent）。
+- **一键开 worktree** — `Ctrl+k g d`（或网页控制台的「新会话」）在没有合适槽位时切开一个工作站：一个方向一个 linked worktree，带一行描述和配套 agent。
 - **Manifest 驱动热键** — `wezterm-x/commands/manifest.json` 是唯一事实来源；本机覆盖在 `wezterm-x/local/keybindings.lua`。
 - **开发环境可观测** — 右状态压力徽章、结构化 runtime / WezTerm 日志、阈值门控 latency，以及日环 timeline 与 habit-weekly 投影，用于复盘。
 
@@ -53,12 +53,12 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 ```text
 需求出现
   → 切 workspace (Alt+w/c/…) · tab (Alt+1..9) · worktree (Alt+g)
-       └─ 没有合适槽位 → Ctrl+k g d|t|h  创建后进入
+       └─ 没有合适槽位 → Ctrl+k g d       创建后进入
   → 该 cwd 的主 pane 自动 resume
   → 主循环: Alt+j waiting · Alt+k done · Alt+l running
                + Alt+v 打开 VS Code（日常验证路径）
        · 旁路: Alt+b debug Chrome · Alt+/ 总览 · Alt+x overflow
-  → 交付到 origin/HEAD → recycle (dev-*) / reclaim (task|hotfix)
+  → 交付到 origin/HEAD → recycle（下一轮）/ reclaim（方向收尾）
 ```
 
 | 阶段 | 能力 | 深入阅读 |

@@ -14,7 +14,7 @@
 --   * '+' joins modifiers: Ctrl / Shift / Alt (Opt, Option, Meta) / Cmd (Super, Win).
 --   * Last token is the main key (case-preserved: 'Ctrl+Shift+v' vs 'Ctrl+Shift+V').
 --   * Chord keys are supported for tmux-chord ids (pane.split-*, pane.close-current,
---     windows.restart-explorer, worktree.quick-create-*, worktree.reclaim-current).
+--     windows.restart-explorer, worktree.quick-create, worktree.reclaim-current).
 --     Write the full chord path: 'Ctrl+k s' to rebind the leaf, 'Ctrl+k g e' for
 --     a worktree chord leaf. Only the final segment is consumed (the prefix stays
 --     Ctrl+k at the tmux side); rerun wezdeck-runtime-ops after editing so the
@@ -68,9 +68,7 @@ return {
   -- ── Worktree navigation ──────────────────────────────
   -- ['worktree.picker']                 = 'Alt+g',
   -- ['worktree.cycle-next']             = 'Alt+Shift+g',
-  -- ['worktree.quick-create-dev']       = 'Ctrl+k g d',  -- chord leaf
-  -- ['worktree.quick-create-task']      = 'Ctrl+k g t',
-  -- ['worktree.quick-create-hotfix']    = 'Ctrl+k g f',  -- rebind h -> f
+  -- ['worktree.quick-create']           = 'Ctrl+k g n',  -- chord leaf, rebind d -> n
   -- ['worktree.reclaim-current']        = 'Ctrl+k g r',
 
   -- ── Panes / host (chord leaves) ───────────────────────

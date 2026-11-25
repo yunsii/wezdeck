@@ -18,19 +18,19 @@ if constants.managed_cli then
 end
 
 -- The `work` workspace is the primary entry into a company project's
--- two-tier worktree model (see docs/workspaces.md "Task Worktree Lifecycle
--- Model"). Each item below is a separate WezTerm tab pointing at either:
+-- workstations (see docs/workspaces.md "Workstations"). Each item below is
+-- a separate WezTerm tab pointing at either:
 --   - the project's main worktree, or
---   - a long-lived dev-* worktree.
+--   - a workstation (a linked worktree for one direction).
 -- Both resolve to the `<base>-resume` profile, which is the resume
 -- command wrapped in a fresh-session fallback (e.g. `sh -c 'claude
 -- --continue || exec claude'`), so first-open of a workspace tab
 -- auto-resumes the cwd's last conversation and falls back to a fresh
 -- session when none exists.
 --
--- task-* and hotfix-* worktrees are NOT listed here — they're created on
--- demand via `Ctrl+k g t` / `Ctrl+k g h` and live as tmux windows inside
--- the repo-family session, not as WezTerm tabs.
+-- Workstations created on demand (`Ctrl+k g d`, the web console's 新会话)
+-- need not be listed here: they live as tmux windows inside the
+-- repo-family session, not as WezTerm tabs.
 return {
   work = {
     defaults = {
@@ -42,12 +42,12 @@ return {
       -- Primary checkout — keep this one for review, integration, hotfixes.
       { cwd = '/home/your-user/work/myproject/main' },
 
-      -- Long-lived parallel dev workstations. Each maps to a worktree
-      -- created once via `git worktree add` (manually) and lives weeks-
-      -- to-months. Naming is up to you; recommended `dev-<area>` so the
-      -- intent is obvious in tmux titles and `git worktree list`.
-      { cwd = '/home/your-user/work/myproject/dev-billing' },
-      { cwd = '/home/your-user/work/myproject/dev-search-rewrite' },
+      -- Workstations: one linked worktree per direction, created with
+      -- `Ctrl+k g d` (directory <name>, branch dev/<name>, a one-line
+      -- purpose in the git branch description) and reset each round with
+      -- `worktree-task recycle`.
+      { cwd = '/home/your-user/work/.worktrees/myproject/billing' },
+      { cwd = '/home/your-user/work/.worktrees/myproject/search-rewrite' },
 
       -- Per-repo agent override: this checkout uses Codex for every
       -- launch path (workspace first-open, Alt+g, Ctrl+k g, refresh).

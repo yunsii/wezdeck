@@ -54,9 +54,11 @@ slugify() {
 }
 
 is_human_slug() {
+  # a human workstation: any worktree that is neither claw-* nor ticket-*
+  # (bare <name> since 2026-11-25, dev-<name> before; WezDeck
+  # scripts/runtime/worktree/lib/workstation.sh)
   local s="$1"
-  [[ "${s}" != claw-* ]] || return 1
-  [[ "${s}" == dev-* || "${s}" == task-* || "${s}" == hotfix-* ]]
+  [[ "${s}" != claw-* && "${s}" != ticket-* ]]
 }
 
 is_claw_slug() {
@@ -488,7 +490,8 @@ cmd_reclaim() {
   else args+=(--worktree-root "${root}")
   fi
   [[ "${force}" -eq 1 ]] && args+=(--force)
-  [[ "${long}" -eq 1 ]] && args+=(--allow-long-lived)
+  # claw's own long-lived guard (above) stays; worktree-task reclaim no
+  # longer takes --allow-long-lived (2026-11-25)
 
   echo "reclaiming ${name}..." >&2
   "${WT_BIN}" "${args[@]}"

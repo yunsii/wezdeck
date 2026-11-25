@@ -38,10 +38,10 @@ One line per topic: the trigger words, then the doc. Details live in the doc.
   [`docs/compatibility-policy.md`](docs/compatibility-policy.md).
 - Capability sources, user-level links, agent profiles, `WEZDECK_REPO`, upstream
   skills → [`docs/skill-sources.md`](docs/skill-sources.md).
-- 「重置开发分支」 / recycle a checkout or `dev-*` onto `origin/HEAD` / next round →
+- 「重置开发分支」 / recycle a checkout or workstation onto `origin/HEAD` / next round →
   skill [`worktree-recycle`](skills/worktree-recycle/SKILL.md) (not hand-rolled
   `git reset`; `--fresh-agent` for a blank round) —
-  [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-long-lived-dev--round-reset).
+  [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-workstation-round-reset).
 - Workspaces → [`docs/workspaces.md`](docs/workspaces.md); keybindings →
   [`docs/keybindings.md`](docs/keybindings.md).
 - tmux UI, titles, status, copy-mode → [`docs/tmux-ui.md`](docs/tmux-ui.md):
@@ -139,10 +139,10 @@ One line per topic: the trigger words, then the doc. Details live in the doc.
   prompts that way is overridden here). Still ask on detached HEAD,
   mid-rebase/merge, or when the user explicitly wants a branch; force-push /
   history rewrite still needs explicit yes.
-- **Worktree maintenance:** linked `dev-*` trees are for **isolation**, not PRs.
+- **Worktree maintenance:** workstations (linked worktrees, one per direction) are for **isolation**, not PRs.
   Finish a round by delivering **directly onto mainline** (`origin/HEAD` / primary
   `master` push or ff — **no pull request**), then **immediately** recycle so the
-  `dev-*` tip **stays equal to** `origin/HEAD` (lagging `dev/*` is out of policy).
+  workstation's `dev/<name>` tip **stays equal to** `origin/HEAD` (lagging is out of policy).
   Keep `WEZDECK_REPO` / platform skills / `agent-tools.env` on the primary tree.
   Detail:
   [`docs/workspaces.md#maintenance-loop-wezdeck-standing-policy`](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy).

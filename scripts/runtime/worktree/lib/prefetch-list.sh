@@ -10,7 +10,7 @@
 # worktree_prefetch_list <session> <window_id> <cwd> <prefetch_file>
 #
 # Writes TSV rows to prefetch_file:
-#   label \t path \t branch \t window_id \t status \t age \t reason
+#   label \t path \t branch \t window_id \t status \t age \t reason \t description
 #
 # Sets caller-visible globals:
 #   current_worktree_root repo_common_dir main_worktree_root repo_label
@@ -137,6 +137,18 @@ worktree_prefetch_list() {
     bench_mark attention_joined
   fi
 
+  # every workstation's purpose (git branch description) in one git call:
+  # -z records are "key\nvalue"; first line only, tabs flattened (TSV)
+  declare -A branch_description=()
+  local desc_record desc_key desc_value
+  while IFS= read -r -d '' desc_record; do
+    desc_key="${desc_record%%$'\n'*}"
+    desc_value="${desc_record#*$'\n'}"
+    desc_value="${desc_value%%$'\n'*}"
+    desc_key="${desc_key#branch.}"
+    branch_description["${desc_key%.description}"]="${desc_value//$'\t'/ }"
+  done < <(git -C "$list_root" config -z --get-regexp '^branch\..*\.description$' 2>/dev/null || true)
+
   ranked_rows=()
   git_order=0
   while IFS=$'\t' read -r worktree_label worktree_path branch_name; do
@@ -175,9 +187,10 @@ worktree_prefetch_list() {
   if (( ${#ranked_rows[@]} > 0 )); then
     while IFS=$'\t' read -r _ _ _ worktree_label worktree_path branch_name prefetch_window_id row_status row_age row_reason; do
       [[ -n "$worktree_path" ]] || continue
-      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$worktree_label" "$worktree_path" "$branch_name" "$prefetch_window_id" \
-        "$row_status" "$row_age" "$row_reason" >> "$prefetch_file"
+        "$row_status" "$row_age" "$row_reason" \
+        "${branch_description[$branch_name]:-}" >> "$prefetch_file"
       item_labels+=("$worktree_label")
       item_paths+=("$worktree_path")
       item_branches+=("$branch_name")

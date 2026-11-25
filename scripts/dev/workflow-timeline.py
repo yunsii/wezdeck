@@ -46,6 +46,9 @@ HOTKEY_KIND = {
     "tab.next": ("tab.select", {"dir": "next"}),
     "tab.previous": ("tab.select", {"dir": "prev"}),
     "worktree.picker": ("worktree.picker_open", {}),
+    "worktree.quick-create": ("worktree.create", {}),
+    # ids from before 2026-11-25 (dev / task / hotfix lifecycles), still in
+    # older hotkey-usage rows
     "worktree.quick-create-dev": ("worktree.create", {"slug_kind": "dev"}),
     "worktree.quick-create-task": ("worktree.create", {"slug_kind": "task"}),
     "worktree.quick-create-hotfix": ("worktree.create", {"slug_kind": "hotfix"}),

@@ -10,9 +10,10 @@ usage:
 
 commands:
   configure Configure or update WEZDECK_REPO for worktree-task
-  launch    Create a linked task worktree and optionally open it in tmux
-  reclaim   Remove a linked task worktree created by worktree-task
-  recycle   Fast reset primary or linked dev-* onto origin/HEAD (skip delivery by default)
+  launch    Create a workstation (linked worktree for one direction) and optionally open it in tmux
+  reclaim   Remove a workstation whose direction is done (clean + delivered)
+  recycle   Fast reset the primary checkout or a workstation onto origin/HEAD (skip delivery by default)
+  describe  Show or set a workstation's one-line purpose (git branch description)
 
 environment:
   WEZDECK_REPO  Required wezdeck checkout root (legacy WEZTERM_CONFIG_REPO still accepted); if missing, run worktree-task configure --repo /absolute/path
@@ -26,8 +27,9 @@ usage:
 
 options:
   --cwd PATH            Target repository path. Default: current directory
-  --task-slug VALUE     Slug prefix for the worktree directory
+  --task-slug VALUE     Directory name (the direction). Default: slug of TITLE
   --branch VALUE        Explicit branch name. Default: WT_POLICY_BRANCH_PREFIX + slug
+  --description TEXT    One-line purpose, stored as the branch description
   --base-ref VALUE      Base ref for the new branch. Default: primary worktree HEAD
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
@@ -35,6 +37,18 @@ options:
   --session-name NAME   Force a specific tmux session name for tmux-agent
   --variant MODE        Provider variant override: auto, light, or dark
   --no-attach           Prepare the runtime target without switching/attaching
+EOF
+}
+
+wt_core_describe_usage() {
+  cat <<'EOF'
+usage:
+  worktree-task describe [--cwd PATH]               print the purpose of the workstation at PATH
+  worktree-task describe [--cwd PATH] --set TEXT    set it (one line, at most 120 characters)
+  worktree-task describe [--cwd PATH] --clear       remove it
+
+The purpose lives in the git branch description (branch.<branch>.description),
+so `git branch --edit-description` edits the same value.
 EOF
 }
 
@@ -61,7 +75,6 @@ options:
   --provider VALUE      Provider name or path. Builtins: none, tmux-agent
   --provider-mode MODE  off, auto, or required
   --force               Reclaim even when the task worktree has local changes
-  --allow-long-lived    Allow reclaiming dev-* long-lived worktrees
   --keep-branch         Keep the task branch even if it is already merged
 EOF
 }

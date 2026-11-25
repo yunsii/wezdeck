@@ -9,7 +9,6 @@ wt_core_reclaim() {
   local provider_override=""
   local provider_mode_override=""
   local force_mode="0"
-  local allow_long_lived="0"
   local keep_branch="0"
   local context_path=""
   local manifest_provider=""
@@ -51,8 +50,9 @@ wt_core_reclaim() {
         shift
         ;;
       --allow-long-lived)
-        allow_long_lived="1"
-        shift
+        # removed with the dev-* lifecycle (2026-11-25): every workstation
+        # is reclaimed the same way, gated by clean + delivered
+        wt_die "--allow-long-lived is removed: drop it (reclaim checks clean + delivered for every workstation)"
         ;;
       --keep-branch)
         keep_branch="1"
@@ -89,7 +89,6 @@ wt_core_reclaim() {
     "provider_mode=$WT_PROVIDER_MODE" \
     "provider=${provider_override:-$WT_PROVIDER}" \
     "force=$force_mode" \
-    "allow_long_lived=$allow_long_lived" \
     "keep_branch=$keep_branch"
 
   if [[ -n "$worktree_root" ]]; then
@@ -120,18 +119,6 @@ wt_core_reclaim() {
   fi
 
   WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
-
-  # Refuse to reclaim long-lived workstation worktrees by lifecycle prefix.
-  # `dev-*` is reserved for multi-week parallel development; reclaiming
-  # them by accident would lose accumulated agent context and dev-server
-  # state. Use `git worktree remove` directly if you really mean it.
-  case "$WT_TASK_SLUG" in
-    dev-*)
-      if [[ "$allow_long_lived" != "1" ]]; then
-        wt_die "refusing to reclaim long-lived worktree: $WT_TASK_SLUG (rerun with --allow-long-lived if intentional)"
-      fi
-      ;;
-  esac
 
   WT_MANIFEST_FILE="$(wt_manifest_path "$WT_POLICY_METADATA_DIR_ABS" "$WT_TASK_SLUG")"
   WT_BRANCH_NAME="$(git -C "$WT_WORKTREE_PATH" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"

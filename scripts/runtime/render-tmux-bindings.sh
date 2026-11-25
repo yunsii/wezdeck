@@ -161,7 +161,7 @@ normalize_leaf() {
 
   # Sub-chord trigger: command-chord g → worktree-chord
   printf 'bind-key -T command-chord g %s \\; switch-client -T worktree-chord\n\n' \
-    "$(chord_hint_start "'(Ctrl+K g) Worktree chord. Pick: d=dev t=task h=hotfix r=reclaim'")"
+    "$(chord_hint_start "'(Ctrl+K g) Worktree chord. Pick: d=new workstation r=reclaim'")"
 
   # Per-leaf bindings from manifest. Fields are joined with ASCII Unit
   # Separator (\x1f) because the exec body contains backslash sequences that

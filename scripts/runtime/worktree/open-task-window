@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
-# open-task-window — quick-create a lifecycle worktree. The user's short
-# <name> is kept as the subject title, while the local worktree slug carries
-# lifecycle (`dev-<subject>`, `task-<subject>`, `hotfix-<subject>`) and the
-# git branch uses the type-specific team prefix (`dev/<subject>`,
-# `task/<subject>`, `hotfix/<subject>` by default). Collisions are bumped
-# consistently to `<subject>-2`, `<subject>-3`, … across both names.
+# open-task-window — create a workstation: a linked worktree for one
+# direction (ux, ci, i18n …) off the latest origin/HEAD, directory <name>,
+# branch dev/<name>, with a one-line purpose in the git branch description
+# (lib/workstation.sh). A taken name is bumped to <name>-2, -3 … on both the
+# directory and the branch. Reopening an existing workstation belongs to
+# `Alt+g` / `Alt+Shift+g`; a new round on one is `worktree-task recycle`.
 #
-# `--type dev|task|hotfix` opts into the lifecycle-aware path. Opening an
-# already-existing worktree belongs to `Alt+g` / `Alt+Shift+g`, not here.
-# Every lifecycle — and the legacy bare path — uses the `<base>-resume`
-# profile so the agent auto-continues the cwd's most recent conversation;
-# when no prior conversation exists, the resume command falls back to a
-# fresh agent on its own. `<base>` comes from workspace-agent-map.tsv for
-# the current repo (per-item launcher in workspaces.lua), else
-# MANAGED_AGENT_PROFILE (claude / codex / …).
+# The agent launches under the `<base>-resume` profile (auto-continue the
+# cwd's last conversation, fall back to a fresh agent on a new cwd). `<base>`
+# comes from workspace-agent-map.tsv for the current repo (per-item launcher
+# in workspaces.lua), else MANAGED_AGENT_PROFILE (claude / codex / …).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,27 +31,16 @@ source "$SCRIPT_DIR/lib/core.sh"
 export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.open-window"
 
 usage() {
-  cat <<'EOF'
-usage: open-task-window [--type dev|task|hotfix] [--no-attach] <name>
+  cat <<'USAGE'
+usage: open-task-window [--description TEXT] [--no-attach] [--] <name>
 
-Quick-create a task workspace for <name>. `worktree-task` treats <name> as
-a subject title. In lifecycle mode the local worktree slug is
-`<type>-<subject-slug>` while the branch is
-`<type-branch-prefix><subject-slug>`. Existing worktrees or branches bump
-both names to `<subject-slug>-2`, `<subject-slug>-3`, etc. Use `Alt+g` /
-`Alt+Shift+g` to reopen an already-existing worktree instead.
+Create a workstation for the direction <name> (letters or digits; a dev- or
+dev/ prefix typed out of habit is dropped): directory <name>, branch
+dev/<name>, from the latest origin/HEAD.
 
-  --no-attach     open the window without switching / attaching to it
-  --type dev      long-lived parallel dev workstation
-  --type task     short-lived focused task (PR-scoped)
-  --type hotfix   urgent fix
-
-All lifecycles (and the legacy bare-name path) launch with the
-`<base>-resume` profile so the agent auto-continues the cwd's most
-recent conversation; the resume command falls back to a fresh agent
-when no prior conversation exists for that cwd. `<base>` follows
-workspace-agent-map.tsv (per-item launcher) then MANAGED_AGENT_PROFILE.
-EOF
+  --description TEXT  one-line purpose (git branch description, ≤ 120 chars)
+  --no-attach         open the window without switching / attaching to it
+USAGE
 }
 
 die() {
@@ -63,7 +48,7 @@ die() {
   exit 1
 }
 
-type_kind=""
+description=""
 raw=""
 no_attach=0
 
@@ -73,14 +58,18 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 0
       ;;
-    --type)
-      [[ $# -ge 2 ]] || die "--type requires a value (dev, task, or hotfix)"
-      type_kind="$2"
+    --description)
+      [[ $# -ge 2 ]] || die "--description requires a value"
+      description="$2"
       shift 2
       ;;
-    --type=*)
-      type_kind="${1#--type=}"
+    --description=*)
+      description="${1#--description=}"
       shift
+      ;;
+    --type|--type=*)
+      # removed with the dev / task / hotfix lifecycles (2026-11-25)
+      die "--type is removed: every worktree is a workstation; drop --type (pass --description for its purpose)"
       ;;
     --no-attach)
       # prepare the window without switching / attaching (callers with no
@@ -107,71 +96,19 @@ done
 
 [[ -n "$raw" ]] || { usage >&2; exit 1; }
 
-case "$type_kind" in
-  ""|dev|task|hotfix) ;;
-  *) die "invalid --type: $type_kind (expected dev, task, or hotfix)" ;;
-esac
-
-normalize_subject() {
-  local value="${1:-}"
-  case "$value" in
-    task/|dev/|hotfix/) printf '\n' ;;
-    task/*)             printf '%s\n' "${value#task/}" ;;
-    dev/*)              printf '%s\n' "${value#dev/}" ;;
-    hotfix/*)           printf '%s\n' "${value#hotfix/}" ;;
-    "${type_kind}-"*)   printf '%s\n' "${value#"$type_kind"-}" ;;
-    *)                  printf '%s\n' "$value" ;;
-  esac
-}
-
-branch_prefix_for_type() {
-  case "$type_kind" in
-    dev)    printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_DEV:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    task)   printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_TASK:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    hotfix) printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_HOTFIX:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    *)      printf '%s\n' "$WT_POLICY_BRANCH_PREFIX" ;;
-  esac
-}
-
-resolve_names() {
-  local subject_slug base_worktree_slug branch_prefix suffix
-
-  title="$(normalize_subject "$raw")"
-  [[ -n "$title" ]] || die "task name is empty after stripping lifecycle prefix"
-
-  if [[ -z "$type_kind" ]]; then
-    task_slug=""
-    branch_name=""
-    return 0
-  fi
-
-  wt_core_resolve_repo_context "$PWD"
-  wt_config_load
-  wt_core_resolve_policy_paths
-
-  subject_slug="$(wt_slugify "$title" "$WT_POLICY_SLUG_FALLBACK")"
-  base_worktree_slug="${type_kind}-${subject_slug}"
-  branch_prefix="$(branch_prefix_for_type)"
-  task_slug="$base_worktree_slug"
-  branch_name="${branch_prefix}${subject_slug}"
-  suffix=1
-
-  while [[ -e "$WT_POLICY_WORKTREE_DIR_ABS/$task_slug" ]] || wt_git_branch_exists "$WT_MAIN_WORKTREE_ROOT" "$branch_name"; do
-    suffix=$((suffix + 1))
-    task_slug="${base_worktree_slug}-${suffix}"
-    branch_name="${branch_prefix}${subject_slug}-${suffix}"
-  done
-}
-
-title=""
-task_slug=""
-branch_name=""
-resolve_names
+wt_core_resolve_repo_context "$PWD"
+wt_config_load
+wt_core_resolve_policy_paths
+if ! wt_workstation_plan "$raw"; then
+  runtime_log_warn worktree "workstation name refused" "raw=$raw" "error=$WT_PLAN_ERROR"
+  die "$WT_PLAN_ERROR"
+fi
+task_slug="$WT_PLAN_SLUG"
+branch_name="$WT_PLAN_BRANCH"
 
 # Profile selection. Prefer per-repo launcher from workspace-agent-map.tsv
 # (derived from workspaces.lua), then MANAGED_AGENT_PROFILE / shared.env.
-# Always launch the resume variant — every lifecycle (dev/task/hotfix) and
-# the legacy bare path want cwd auto-resume; if there is no prior
+# Always launch the resume variant: cwd auto-resume; with no prior
 # conversation for the cwd, the resume command falls back to a fresh agent.
 # shellcheck disable=SC1091
 source "$RUNTIME_LIB_DIR/worktree/lib/resume-command.sh"
@@ -194,7 +131,8 @@ fi
 # whether we set anything or not.
 
 runtime_log_info worktree "dispatching to worktree-task launch" \
-  "raw=$raw" "type=${type_kind:-<none>}" "title=$title" "task_slug=${task_slug:-<auto>}" "branch=${branch_name:-<auto>}" "profile=${selected_profile:-<inherit>}"
+  "raw=$raw" "task_slug=$task_slug" "branch=$branch_name" "bumped=$WT_PLAN_BUMPED" \
+  "described=$([[ -n "$description" ]] && echo 1 || echo 0)" "profile=${selected_profile:-<inherit>}"
 
 # Immediate feedback so the user sees the chord registered before any
 # slow git/fetch work starts. Each downstream stage will replace this
@@ -203,25 +141,24 @@ if [[ -n "${TMUX:-}" ]]; then
   tmux_session="$(tmux display-message -p '#{session_name}' 2>/dev/null || true)"
   if [[ -n "$tmux_session" ]]; then
     tmux set-option -q -t "$tmux_session" '@tmux_status_override_line_2' \
-      "[worktree-task] preparing ${task_slug:-$title}…" 2>/dev/null || true
+      "[worktree-task] preparing $task_slug…" 2>/dev/null || true
     tmux refresh-client -S 2>/dev/null || true
   fi
 fi
 
 launch_args=(
   launch
-  --title "$title"
+  --title "$WT_PLAN_NAME"
+  --task-slug "$task_slug"
+  --branch "$branch_name"
   --provider "$quick_create_provider"
   --provider-mode "$quick_create_provider_mode"
 )
 if [[ -n "${WT_QUICK_CREATE_BASE_REF:-}" ]]; then
   launch_args+=(--base-ref "$WT_QUICK_CREATE_BASE_REF")
 fi
-if [[ -n "$task_slug" ]]; then
-  launch_args+=(--task-slug "$task_slug")
-fi
-if [[ -n "$branch_name" ]]; then
-  launch_args+=(--branch "$branch_name")
+if [[ -n "$description" ]]; then
+  launch_args+=(--description "$description")
 fi
 if (( no_attach )); then
   launch_args+=(--no-attach)

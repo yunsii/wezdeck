@@ -2,7 +2,7 @@
 # tmux-worktree-reclaim.sh — Alt+g Ctrl+d reclaim helper.
 #
 # Validates like reclaim-current-window (refuse primary / dirty / detached /
-# undelivered; auto --allow-long-lived for dev-* after the picker's confirm),
+# undelivered; the picker has already confirmed),
 # then runs `worktree-task reclaim`, kills the matching tmux window, and
 # refreshes status. Designed to be called synchronously from the Go picker
 # so the popup can flash the outcome and stay open.
@@ -92,11 +92,6 @@ fi
 
 slug="$(basename "$worktree_path")"
 reclaim_extra_args=()
-case "$slug" in
-  dev-*)
-    reclaim_extra_args+=(--allow-long-lived)
-    ;;
-esac
 
 if [[ -n "$(git -C "$worktree_path" status --porcelain --untracked-files=all 2>/dev/null)" ]]; then
   refuse "$slug has uncommitted changes"

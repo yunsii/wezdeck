@@ -46,7 +46,7 @@ Scripts: `dev-task-ledger.sh`, `claw-worktree.sh`, `claw-run.sh`.
   --cwd "$HOME/github/wezterm-config"
 ```
 
-- Prefer-reuse same domain; never human `dev-*`/`task-*` as write targets.
+- Prefer-reuse same domain; never a human workstation (any worktree that is not `claw-*` / `ticket-*`) as a write target.
 - **Reclaim never automatic** after close (only if a worktree was used).
 
 ## Rails & modes (user-facing)

@@ -20,11 +20,11 @@ Use this doc when you need to apply or verify changes.
 3. Reload the main WezTerm window (or open a new one) after a successful sync so it picks up the promoted tree.
 4. Reload tmux only when needed; reload affected interactive shells if shell rc files changed.
 
-### Closing a `dev-*` development round
+### Closing a round on a workstation
 
-**Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the `dev-*` workstation onto `origin/HEAD`, and keep primary `master` / `WEZDECK_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
+**Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the workstation onto `origin/HEAD`, and keep primary `master` / `WEZDECK_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
 
-Reset a primary checkout or long-lived linked workstation (`dev-*`) in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
+Reset a primary checkout or a workstation in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
 
 ```bash
 skills/worktree-recycle/run.sh recycle -y --fresh-agent --task "describe the next round"
@@ -34,7 +34,7 @@ scripts/runtime/worktree/worktree-task recycle -y --fresh-agent --task "describe
 
 `--fresh-agent` unpins typed resume and cold-respawns the worktree’s agent pane (`WEZDECK_FORCE_FRESH_SESSION=1`), so you do not need a manual `Ctrl+Shift+n` after the reset.
 
-Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Task Worktree Lifecycle / Recycle](./workspaces.md#recycle-primary-or-long-lived-dev--round-reset). Short-lived `task-*` / `hotfix-*` trees still use `Ctrl+k g r` / `worktree-task reclaim`.
+Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Workstations / Recycle](./workspaces.md#recycle-primary-or-workstation-round-reset). A workstation whose direction is done ends with `Ctrl+k g r` / `worktree-task reclaim`.
 
 ### Manual / recovery
 
@@ -246,4 +246,4 @@ After a coherent task round is **done and verified** on this repo:
 
 **Hold** (do not auto land) when any of: user asked to pause; staged multi-step plan still open; unrelated dirty files the agent did not change; abnormal git state; only exploratory notes with no verified change.
 
-Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot. After a `dev-*` worktree delivers onto mainline, recycle per [Closing a `dev-*` development round](#closing-a-dev--development-round).
+Ensure the repo-hygiene pre-commit hook is installed (see [Repo hygiene](#repo-hygiene)) before relying on commits to catch basic doc/script rot. After a workstation delivers onto mainline, recycle per [Closing a round on a workstation](#closing-a-round-on-a-workstation).

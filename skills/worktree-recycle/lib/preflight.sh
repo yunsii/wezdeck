@@ -56,6 +56,7 @@ wr_preflight_run() {
   local blockers=0
   local is_primary=0
   local branch=""
+  local description=""
   local expected=""
 
   worktree_root="$(wr_preflight_resolve_worktree "$cwd")" \
@@ -73,21 +74,20 @@ wr_preflight_run() {
     printf '  lifecycle: primary worktree (fast reset onto origin/HEAD)\n'
   else
     case "$slug" in
-      dev-*)
-        printf '  lifecycle: long-lived workstation (recycle OK)\n'
-        expected="${slug#dev-}"
-        expected="dev/${expected}"
-        if [[ -n "$branch" && "$branch" != "$expected" ]]; then
-          printf '  note: branch will align %s → %s\n' "$branch" "$expected"
-        fi
-        ;;
-      task-*|hotfix-*)
-        printf '  blocker: %s is short-lived — use worktree-task reclaim / Ctrl+k g r\n' "$slug"
+      ticket-*|claw-*)
+        printf '  blocker: %s belongs to agent-collab / OpenClaw, not a workstation\n' "$slug"
         blockers=1
         ;;
       *)
-        printf '  blocker: slug %s is not primary or a managed dev-* workstation\n' "$slug"
-        blockers=1
+        # a workstation: <name>, or dev-<name> from before 2026-11-25; both
+        # map to dev/<name> (scripts/runtime/worktree/lib/workstation.sh)
+        printf '  lifecycle: workstation (recycle OK)\n'
+        expected="dev/${slug#dev-}"
+        if [[ -n "$branch" && "$branch" != "$expected" ]]; then
+          printf '  note: branch will align %s → %s\n' "$branch" "$expected"
+        fi
+        description="$(git -C "$worktree_root" config --get "branch.${branch}.description" 2>/dev/null || true)"
+        printf '  purpose: %s\n' "${description:-(none — worktree-task describe --set TEXT)}"
         ;;
     esac
   fi

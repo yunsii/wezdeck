@@ -8,6 +8,7 @@ wt_core_launch() {
   local task_slug=""
   local branch_name=""
   local base_ref=""
+  local description=""
   local provider_override=""
   local provider_mode_override=""
   local workspace_override=""
@@ -49,6 +50,11 @@ wt_core_launch() {
       --base-ref)
         [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
         base_ref="$2"
+        shift 2
+        ;;
+      --description)
+        [[ $# -ge 2 ]] || { wt_core_launch_usage; exit 1; }
+        description="$2"
         shift 2
         ;;
       --provider)
@@ -182,6 +188,12 @@ wt_core_launch() {
       "base_ref=$base_ref" \
       "worktree_created=$worktree_created" \
       "branch_created=$branch_created"
+  fi
+
+  if [[ -n "$description" ]]; then
+    wt_workstation_set_description "$WT_MAIN_WORKTREE_ROOT" "$WT_BRANCH_NAME" "$description"
+    runtime_log_info task "workstation described" \
+      "branch_name=$WT_BRANCH_NAME" "chars=${#description}"
   fi
 
   wt_tmux_progress "[worktree-task] $WT_TASK_SLUG ready, starting agent…"

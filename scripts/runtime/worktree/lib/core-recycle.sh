@@ -9,7 +9,8 @@ usage:
 
 Fast reset onto origin/HEAD:
   fetch → dirty check → hard-reset → sync origin/<branch> (default).
-  Linked dev-*: branch name is forced to the slug mapping (dev-agent → dev/agent).
+  Workstation: branch name is forced to the slug mapping (ux → dev/ux; a
+  dev-ux directory made before 2026-11-25 → dev/ux too).
   Primary worktree: reset the default branch (master/main) onto origin/HEAD.
   Delivery gate is off by default (use --require-delivered to restore).
 
@@ -220,31 +221,10 @@ wt_core_recycle_is_temp_branch() {
   return 1
 }
 
-# Map lifecycle worktree slug → expected branch (dev-agent → dev/agent).
+# Map a workstation slug → expected branch (ux → dev/ux; a pre-2026-11-25
+# dev-ux directory maps to the same dev/ux). lib/workstation.sh.
 wt_core_recycle_branch_for_slug() {
-  local slug="${1:?missing slug}"
-  local subject=""
-
-  case "$slug" in
-    dev-*)
-      subject="${slug#dev-}"
-      [[ -n "$subject" ]] || return 1
-      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_DEV:-dev/}" "$subject"
-      ;;
-    task-*)
-      subject="${slug#task-}"
-      [[ -n "$subject" ]] || return 1
-      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_TASK:-task/}" "$subject"
-      ;;
-    hotfix-*)
-      subject="${slug#hotfix-}"
-      [[ -n "$subject" ]] || return 1
-      printf '%s%s\n' "${WT_POLICY_BRANCH_PREFIX_HOTFIX:-hotfix/}" "$subject"
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  wt_workstation_branch "${1:?missing slug}"
 }
 
 # Default branch short name from origin/HEAD (origin/master → master).
@@ -580,13 +560,9 @@ wt_core_recycle() {
     fi
 
     WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
-    case "$WT_TASK_SLUG" in
-      dev-*)
-        ;;
-      *)
-        wt_die "recycle is for primary or long-lived dev-* worktrees; use reclaim for $WT_TASK_SLUG"
-        ;;
-    esac
+    if wt_workstation_reserved "$WT_TASK_SLUG"; then
+      wt_die "recycle is for the primary checkout or a workstation; $WT_TASK_SLUG belongs to agent-collab / OpenClaw"
+    fi
   else
     WT_TASK_SLUG="$(basename "$WT_WORKTREE_PATH")"
   fi

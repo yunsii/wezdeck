@@ -42,27 +42,45 @@ else
   assert_fail "selfcheck"
 fi
 
-echo "=== preflight refuses task-* ==="
-repo="$WORK_DIR/origin-task"
+echo "=== preflight refuses ticket-* (agent-collab's, not a workstation) ==="
+repo="$WORK_DIR/origin-ticket"
 setup_repo "$repo"
-slug="task-no-recycle"
-expect_wt="$WORK_DIR/.worktrees/origin-task/$slug"
+slug="ticket-no-recycle"
+expect_wt="$WORK_DIR/.worktrees/origin-ticket/$slug"
 HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
     --title no-recycle \
     --task-slug "$slug" \
-    --branch "task/no-recycle" \
+    --branch "ticket/no-recycle" \
     --base-ref HEAD \
     --provider none \
     --no-attach >/dev/null
 
 if HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
   "$RUN" preflight --cwd "$expect_wt" >/dev/null 2>&1; then
-  assert_fail "preflight should refuse task-*"
+  assert_fail "preflight should refuse ticket-*"
 else
-  assert_pass "preflight refuses task-*"
+  assert_pass "preflight refuses ticket-*"
 fi
+
+echo "=== preflight accepts a bare-name workstation and shows its purpose ==="
+repo="$WORK_DIR/origin-bare"
+setup_repo "$repo"
+expect_wt="$WORK_DIR/.worktrees/origin-bare/ux"
+HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title ux \
+    --description "网页控制台体验" \
+    --base-ref HEAD \
+    --provider none \
+    --no-attach >/dev/null
+out="$(HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" "$RUN" preflight --cwd "$expect_wt" 2>&1)" \
+  && grep -q "lifecycle: workstation" <<<"$out" \
+  && grep -q "purpose: 网页控制台体验" <<<"$out" \
+  && assert_pass "bare workstation passes preflight with its purpose" \
+  || assert_fail "bare workstation preflight: $out"
 
 echo "=== recycle happy path (no init by default) ==="
 remote="$WORK_DIR/remote-ok.git"

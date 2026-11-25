@@ -9,23 +9,26 @@
 # Cases:
 #   1. happy-path: launch + reclaim creates and removes worktree, branch,
 #      and metadata; no phantom worktree entry afterward.
-#   2. dev-* prefix refusal: reclaim of a dev-* worktree refuses by default
-#      with a clear error and leaves the worktree in place.
-#   3. dev-* explicit allow: reclaim of a dev-* worktree succeeds when
-#      --allow-long-lived is passed.
-#   4. create-prompt preview: lifecycle prompt computes final title, slug,
-#      worktree path, and branch before launch.
-#   5. open-task-window lifecycle names: quick-create uses lifecycle only
-#      for the local worktree slug and keeps branch names type-scoped.
+#   2. removed flag: reclaim --allow-long-lived fails with the replacement.
+#   3. a workstation from before 2026-11-25 (dev-<name>) reclaims without
+#      any extra flag.
+#   4. create-prompt preview: name → directory <name>, branch dev/<name>;
+#      collisions (also with an old dev-<name> directory) bump; a dev- typed
+#      out of habit is dropped; no letters/digits or a reserved prefix is an
+#      error.
+#   5. open-task-window: creates <name> on dev/<name> with the description
+#      as the branch description; --type is refused with the replacement.
 #   6. origin-default-branch launch: branch starts from origin/HEAD but
 #      does not track the default branch as upstream.
 #   7. transcript preserved across reclaim.
 #   8. recycle refuses undelivered workstation commits.
 #   9. recycle happy path: reset to origin/HEAD, prune merged temp branch,
 #      clean debug dirs, write next-task brief, sync origin/<branch>.
-#  10. recycle refuses task-* (short-lived trees use reclaim).
+#  10. recycle refuses ticket-* (agent-collab's) and aligns a bare-name
+#      workstation to dev/<name>.
 #  11. recycle accepts squash-merged tip (content absorbed) and force-with-lease
 #      syncs a stale origin/<branch>.
+#  12. describe: set / get / clear the purpose, shared by every worktree.
 #
 # Exit non-zero on any failure with a short trace.
 
@@ -122,9 +125,9 @@ case1_happy_path() {
   [[ -d "$expect_wt" ]] && assert_pass "worktree dir present" \
     || { assert_fail "worktree dir missing: $expect_wt"; return 1; }
 
-  git -C "$repo" branch --list "task/$slug" | grep -q "task/$slug" \
-    && assert_pass "branch present" \
-    || { assert_fail "branch task/$slug missing"; return 1; }
+  git -C "$repo" branch --list "dev/$slug" | grep -q "dev/$slug" \
+    && assert_pass "branch present (WT_POLICY_BRANCH_PREFIX dev/)" \
+    || { assert_fail "branch dev/$slug missing"; return 1; }
 
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
@@ -137,8 +140,8 @@ case1_happy_path() {
   [[ ! -d "$expect_wt" ]] && assert_pass "worktree dir gone" \
     || { assert_fail "worktree dir still present after reclaim"; return 1; }
 
-  if git -C "$repo" branch --list "task/$slug" | grep -q "task/$slug"; then
-    assert_fail "branch task/$slug still present after reclaim"
+  if git -C "$repo" branch --list "dev/$slug" | grep -q "dev/$slug"; then
+    assert_fail "branch dev/$slug still present after reclaim"
     return 1
   fi
   assert_pass "branch gone"
@@ -150,13 +153,13 @@ case1_happy_path() {
   assert_pass "no phantom worktree entry"
 }
 
-# ---------- case 2: dev-* default refusal ----------
-case2_dev_refusal() {
-  printf '\n=== case 2: dev-* prefix refusal ===\n'
+# ---------- case 2: removed --allow-long-lived ----------
+case2_allow_long_lived_removed() {
+  printf '\n=== case 2: --allow-long-lived is removed ===\n'
 
   local repo="$WORK_DIR/origin2"
   setup_repo "$repo"
-  local slug="dev-billing"
+  local slug="billing"
   local expect_wt="$WORK_DIR/.worktrees/origin2/$slug"
 
   HOME="$SANDBOX_HOME" \
@@ -167,41 +170,29 @@ case2_dev_refusal() {
     --base-ref HEAD \
     --provider none \
     --no-attach >/dev/null \
-    || { assert_fail "launch returned non-zero for dev-* slug"; return 1; }
+    || { assert_fail "launch failed"; return 1; }
 
-  [[ -d "$expect_wt" ]] || { assert_fail "dev-* worktree not created"; return 1; }
-  assert_pass "dev-* worktree created (launch is allowed)"
-
-  # Reclaim must refuse with a recognizable message.
   local stderr_file="$WORK_DIR/case2-stderr"
   if HOME="$SANDBOX_HOME" \
      WEZDECK_REPO="$REPO_ROOT" \
      "$WORKTREE_TASK" reclaim \
        --cwd "$repo" \
        --task-slug "$slug" \
+       --allow-long-lived \
        --provider none >/dev/null 2>"$stderr_file"; then
-    assert_fail "reclaim of $slug should have failed but succeeded"
+    assert_fail "reclaim accepted the removed --allow-long-lived"
     return 1
   fi
-  assert_pass "reclaim of dev-* refused (non-zero exit)"
-
-  if grep -qiE "long-lived|dev-billing" "$stderr_file"; then
-    assert_pass "refusal message mentions long-lived/dev-billing"
-  else
-    assert_fail "refusal message unclear: $(cat "$stderr_file")"
-    return 1
-  fi
-
-  [[ -d "$expect_wt" ]] && assert_pass "dev-* worktree still present after refused reclaim" \
-    || { assert_fail "dev-* worktree was removed despite refusal"; return 1; }
-
-  # Manual cleanup so case 3 starts clean.
-  git -C "$repo" worktree remove -f "$expect_wt" >/dev/null 2>&1 || true
+  grep -q -- "--allow-long-lived is removed" "$stderr_file" \
+    && assert_pass "removed flag fails with the replacement" \
+    || { assert_fail "unclear refusal: $(cat "$stderr_file")"; return 1; }
+  [[ -d "$expect_wt" ]] && assert_pass "workstation left in place" \
+    || { assert_fail "workstation removed by a refused reclaim"; return 1; }
 }
 
-# ---------- case 3: dev-* explicit allow ----------
-case3_dev_allow_long_lived() {
-  printf '\n=== case 3: dev-* explicit allow ===\n'
+# ---------- case 3: an old dev-<name> workstation reclaims plainly ----------
+case3_legacy_dev_reclaim() {
+  printf '\n=== case 3: dev-<name> from before 2026-11-25 reclaims ===\n'
 
   local repo="$WORK_DIR/origin3"
   setup_repo "$repo"
@@ -212,26 +203,24 @@ case3_dev_allow_long_lived() {
   WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
-    --title "$slug" \
+    --title ci-fix \
+    --task-slug "$slug" \
+    --branch dev/ci-fix \
     --base-ref HEAD \
     --provider none \
     --no-attach >/dev/null \
-    || { assert_fail "launch returned non-zero for dev-* slug"; return 1; }
-
+    || { assert_fail "launch failed"; return 1; }
   [[ -d "$expect_wt" ]] || { assert_fail "dev-* worktree not created"; return 1; }
-  assert_pass "dev-* worktree created for explicit allow"
 
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" reclaim \
     --cwd "$repo" \
     --task-slug "$slug" \
-    --allow-long-lived \
     --provider none >/dev/null \
-    || { assert_fail "reclaim with --allow-long-lived failed"; return 1; }
-
-  [[ ! -d "$expect_wt" ]] && assert_pass "dev-* worktree gone after explicit allow" \
-    || { assert_fail "dev-* worktree still present after explicit allow"; return 1; }
+    || { assert_fail "reclaim of dev-ci-fix failed without a flag"; return 1; }
+  [[ ! -d "$expect_wt" ]] && assert_pass "dev-* workstation reclaimed without a flag" \
+    || { assert_fail "dev-* worktree still present"; return 1; }
 }
 
 # ---------- case 4: create-prompt preview ----------
@@ -242,51 +231,60 @@ case4_create_prompt_preview() {
   setup_repo "$repo"
   local preview
 
-  preview="$(
-    cd "$repo"
-    HOME="$SANDBOX_HOME" \
-    WEZDECK_REPO="$REPO_ROOT" \
-    "$CREATE_PROMPT" --type dev --preview "ci fix"
-  )"
+  plan() {
+    (
+      cd "$repo"
+      HOME="$SANDBOX_HOME" \
+      WEZDECK_REPO="$REPO_ROOT" \
+      "$CREATE_PROMPT" --preview "$1"
+    )
+  }
+  expect_line() {
+    grep -qx -- "$1" <<<"$preview" \
+      && assert_pass "$2" \
+      || { assert_fail "$2: want '$1' in: $preview"; return 1; }
+  }
 
-  grep -qx 'subject=ci fix' <<<"$preview" \
-    && assert_pass "preview preserves subject title" \
-    || { assert_fail "preview subject mismatch: $preview"; return 1; }
-  grep -qx 'subject_slug=ci-fix' <<<"$preview" \
-    && assert_pass "preview slugifies subject" \
-    || { assert_fail "preview subject slug mismatch: $preview"; return 1; }
-  grep -qx 'worktree_slug=dev-ci-fix' <<<"$preview" \
-    && assert_pass "preview applies dev lifecycle to worktree slug" \
-    || { assert_fail "preview title mismatch: $preview"; return 1; }
-  grep -qx "worktree=$WORK_DIR/.worktrees/origin4/dev-ci-fix" <<<"$preview" \
-    && assert_pass "preview shows final worktree path" \
-    || { assert_fail "preview worktree mismatch: $preview"; return 1; }
-  grep -qx 'branch=dev/ci-fix' <<<"$preview" \
-    && assert_pass "preview shows final branch" \
-    || { assert_fail "preview branch mismatch: $preview"; return 1; }
+  preview="$(plan "ci fix")"
+  expect_line 'name=ci fix' "preview keeps the typed name" || return 1
+  expect_line 'slug=ci-fix' "preview slugifies the name" || return 1
+  expect_line "worktree=$WORK_DIR/.worktrees/origin4/ci-fix" "directory is the bare name" || return 1
+  expect_line 'branch=dev/ci-fix' "branch is dev/<name>" || return 1
+  expect_line 'status=new' "fresh name is new" || return 1
+
+  preview="$(plan "dev-ci fix")"
+  expect_line 'slug=ci-fix' "a dev- typed out of habit is dropped" || return 1
+  preview="$(plan "dev/ci fix")"
+  expect_line 'branch=dev/ci-fix' "a dev/ typed out of habit is dropped" || return 1
 
   git -C "$repo" branch dev/ci-fix
-  preview="$(
-    cd "$repo"
-    HOME="$SANDBOX_HOME" \
-    WEZDECK_REPO="$REPO_ROOT" \
-    "$CREATE_PROMPT" --type dev --preview "ci fix"
-  )"
-  grep -qx 'worktree_slug=dev-ci-fix-2' <<<"$preview" \
-    && assert_pass "preview bumps colliding worktree slug" \
-    || { assert_fail "preview did not bump collision: $preview"; return 1; }
-  grep -qx 'branch=dev/ci-fix-2' <<<"$preview" \
-    && assert_pass "preview bumps colliding branch" \
-    || { assert_fail "preview did not bump branch: $preview"; return 1; }
+  preview="$(plan "ci fix")"
+  expect_line 'slug=ci-fix-2' "taken branch bumps the directory" || return 1
+  expect_line 'branch=dev/ci-fix-2' "taken branch bumps the branch" || return 1
+  expect_line 'status=bumped' "bump is reported" || return 1
+
+  mkdir -p "$WORK_DIR/.worktrees/origin4/dev-i18n"
+  preview="$(plan "i18n")"
+  expect_line 'slug=i18n-2' "an old dev-<name> directory takes the name" || return 1
+  expect_line "taken=$WORK_DIR/.worktrees/origin4/dev-i18n" "the old directory is named" || return 1
+
+  preview="$(plan "网页体验")"
+  expect_line 'status=error' "a name without letters or digits is an error" || return 1
+  grep -q '^error=the name needs letters or digits' <<<"$preview" \
+    && assert_pass "error says why" \
+    || { assert_fail "error text: $preview"; return 1; }
+
+  preview="$(plan "ticket-x")"
+  expect_line 'status=error' "a reserved ticket- prefix is an error" || return 1
 }
 
-# ---------- case 5: open-task-window lifecycle names ----------
-case5_open_task_window_lifecycle_names() {
-  printf '\n=== case 5: open-task-window lifecycle names ===\n'
+# ---------- case 5: open-task-window creates a workstation ----------
+case5_open_task_window_workstation() {
+  printf '\n=== case 5: open-task-window creates a workstation ===\n'
 
   local repo="$WORK_DIR/origin5"
   setup_repo "$repo"
-  local expect_wt="$WORK_DIR/.worktrees/origin5/task-ci-fix"
+  local expect_wt="$WORK_DIR/.worktrees/origin5/web-ux"
 
   (
     cd "$repo"
@@ -296,19 +294,34 @@ case5_open_task_window_lifecycle_names() {
     WT_QUICK_CREATE_BASE_REF=HEAD \
     WT_QUICK_CREATE_PROVIDER=none \
     WT_QUICK_CREATE_PROVIDER_MODE=off \
-    "$OPEN_TASK_WINDOW" --type task -- "ci fix" >/dev/null
-  ) || { assert_fail "open-task-window task quick-create failed"; return 1; }
+    "$OPEN_TASK_WINDOW" --description $'网页控制台\t体验' -- "Web UX" >/dev/null
+  ) || { assert_fail "open-task-window failed"; return 1; }
 
-  [[ -d "$expect_wt" ]] && assert_pass "quick-create worktree uses lifecycle slug" \
-    || { assert_fail "quick-create worktree missing: $expect_wt"; return 1; }
-  git -C "$repo" branch --list "task/ci-fix" | grep -q "task/ci-fix" \
-    && assert_pass "quick-create branch uses type prefix plus subject" \
-    || { assert_fail "branch task/ci-fix missing"; return 1; }
-  if git -C "$repo" branch --list "task/task-ci-fix" | grep -q "task/task-ci-fix"; then
-    assert_fail "legacy duplicated branch task/task-ci-fix was created"
+  [[ -d "$expect_wt" ]] && assert_pass "workstation directory is the bare name" \
+    || { assert_fail "workstation missing: $expect_wt"; return 1; }
+  [[ "$(git -C "$expect_wt" branch --show-current)" == dev/web-ux ]] \
+    && assert_pass "branch dev/web-ux" \
+    || { assert_fail "branch: $(git -C "$expect_wt" branch --show-current)"; return 1; }
+  [[ "$(git -C "$repo" config branch.dev/web-ux.description)" == "网页控制台 体验" ]] \
+    && assert_pass "description stored as the branch description (one line)" \
+    || { assert_fail "description: $(git -C "$repo" config branch.dev/web-ux.description)"; return 1; }
+
+  local stderr_file="$WORK_DIR/case5-stderr"
+  if ( cd "$repo" && HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+       "$OPEN_TASK_WINDOW" --type dev -- x >/dev/null 2>"$stderr_file" ); then
+    assert_fail "--type was accepted"
     return 1
   fi
-  assert_pass "quick-create avoids duplicated branch prefix"
+  grep -q -- "--type is removed" "$stderr_file" \
+    && assert_pass "--type fails with the replacement" \
+    || { assert_fail "unclear --type refusal: $(cat "$stderr_file")"; return 1; }
+
+  if ( cd "$repo" && HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+       "$OPEN_TASK_WINDOW" -- "网页" >/dev/null 2>"$stderr_file" ); then
+    assert_fail "a name without letters or digits was accepted"
+    return 1
+  fi
+  assert_pass "a name without letters or digits is refused"
 }
 
 # ---------- case 6: origin default does not become upstream ----------
@@ -567,44 +580,69 @@ case9_recycle_happy() {
     || { assert_fail "later.txt missing after reset"; return 1; }
 }
 
-# ---------- case 10: recycle refuses task-* ----------
-case10_recycle_refuses_task_slug() {
-  printf '\n=== case 10: recycle refuses task-* ===\n'
+# ---------- case 10: recycle scope ----------
+case10_recycle_scope() {
+  printf '\n=== case 10: recycle refuses ticket-*, aligns a bare workstation ===\n'
 
+  local remote="$WORK_DIR/remote10.git"
   local repo="$WORK_DIR/origin10"
+  git init -q --bare "$remote"
   setup_repo "$repo"
-  local slug="task-recycle-no"
-  local expect_wt="$WORK_DIR/.worktrees/origin10/$slug"
+  git -C "$repo" remote add origin "$remote"
+  git -C "$repo" push -q -u origin main
+  git -C "$remote" symbolic-ref HEAD refs/heads/main
+  git -C "$repo" remote set-head origin -a >/dev/null
 
+  local ticket_wt="$WORK_DIR/.worktrees/origin10/ticket-req-1"
   HOME="$SANDBOX_HOME" \
   WEZDECK_REPO="$REPO_ROOT" \
   "$WORKTREE_TASK" launch \
     --cwd "$repo" \
-    --title recycle-no \
-    --task-slug "$slug" \
-    --branch "task/recycle-no" \
+    --title req-1 \
+    --task-slug ticket-req-1 \
+    --branch ticket/req-1 \
     --base-ref HEAD \
     --provider none \
     --no-attach >/dev/null \
-    || { assert_fail "launch failed"; return 1; }
+    || { assert_fail "ticket launch failed"; return 1; }
 
   local stderr_file="$WORK_DIR/case10-stderr"
   if HOME="$SANDBOX_HOME" \
      WEZDECK_REPO="$REPO_ROOT" \
      "$WORKTREE_TASK" recycle \
-       --worktree-root "$expect_wt" \
+       --worktree-root "$ticket_wt" \
        -y >/dev/null 2>"$stderr_file"; then
-    assert_fail "recycle should refuse task-* slug"
+    assert_fail "recycle should refuse ticket-*"
     return 1
   fi
-  if grep -qiE "dev-\*|long-lived|reclaim" "$stderr_file"; then
-    assert_pass "refusal points at reclaim / dev-* scope"
-  else
-    assert_fail "unclear refusal: $(cat "$stderr_file")"
-    return 1
-  fi
-  [[ -d "$expect_wt" ]] && assert_pass "task worktree left in place" \
-    || { assert_fail "task worktree disappeared"; return 1; }
+  grep -qi "agent-collab" "$stderr_file" \
+    && assert_pass "refusal names the owner" \
+    || { assert_fail "unclear refusal: $(cat "$stderr_file")"; return 1; }
+  [[ -d "$ticket_wt" ]] && assert_pass "ticket worktree left in place" \
+    || { assert_fail "ticket worktree disappeared"; return 1; }
+
+  # a bare-name workstation on a stray branch: recycle aligns it to dev/<name>
+  local ws_wt="$WORK_DIR/.worktrees/origin10/ux"
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title ux \
+    --task-slug ux \
+    --branch wip/ux \
+    --base-ref HEAD \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "workstation launch failed"; return 1; }
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" recycle \
+    --worktree-root "$ws_wt" \
+    -y >/dev/null \
+    || { assert_fail "recycle of a bare-name workstation failed"; return 1; }
+  [[ "$(git -C "$ws_wt" branch --show-current)" == dev/ux ]] \
+    && assert_pass "bare workstation aligned to dev/ux" \
+    || { assert_fail "branch: $(git -C "$ws_wt" branch --show-current)"; return 1; }
 }
 
 # ---------- case 11: squash merge + stale remote sync ----------
@@ -685,18 +723,70 @@ case11_recycle_squash_and_sync_remote() {
     || { assert_fail "later.txt missing"; return 1; }
 }
 
+# ---------- case 12: describe ----------
+case12_describe() {
+  printf '\n=== case 12: describe ===\n'
+
+  local repo="$WORK_DIR/origin12"
+  setup_repo "$repo"
+  local wt="$WORK_DIR/.worktrees/origin12/docs"
+
+  HOME="$SANDBOX_HOME" \
+  WEZDECK_REPO="$REPO_ROOT" \
+  "$WORKTREE_TASK" launch \
+    --cwd "$repo" \
+    --title docs \
+    --base-ref HEAD \
+    --provider none \
+    --no-attach >/dev/null \
+    || { assert_fail "launch failed"; return 1; }
+
+  local out
+  out="$(HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" "$WORKTREE_TASK" describe --cwd "$wt")"
+  [[ -z "$out" ]] && assert_pass "no purpose yet" \
+    || { assert_fail "unexpected purpose: $out"; return 1; }
+
+  HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+    "$WORKTREE_TASK" describe --cwd "$wt" --set $'文档\n整理' >/dev/null \
+    || { assert_fail "describe --set failed"; return 1; }
+  # read from the primary checkout: the purpose lives in the shared config
+  [[ "$(git -C "$repo" config branch.dev/docs.description)" == "文档 整理" ]] \
+    && assert_pass "set flattens to one line, visible from every worktree" \
+    || { assert_fail "stored: $(git -C "$repo" config branch.dev/docs.description)"; return 1; }
+  out="$(HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" "$WORKTREE_TASK" describe --cwd "$wt")"
+  [[ "$out" == "文档 整理" ]] && assert_pass "describe reads it back" \
+    || { assert_fail "read back: $out"; return 1; }
+
+  HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+    "$WORKTREE_TASK" describe --cwd "$wt" --clear >/dev/null \
+    || { assert_fail "describe --clear failed"; return 1; }
+  if git -C "$repo" config branch.dev/docs.description >/dev/null; then
+    assert_fail "description still set after --clear"
+    return 1
+  fi
+  assert_pass "clear removes it"
+
+  if HOME="$SANDBOX_HOME" WEZDECK_REPO="$REPO_ROOT" \
+     "$WORKTREE_TASK" describe --cwd "$wt" --set "   " >/dev/null 2>&1; then
+    assert_fail "empty --set accepted"
+    return 1
+  fi
+  assert_pass "empty --set refused"
+}
+
 # ---------- run ----------
 case1_happy_path
-case2_dev_refusal
-case3_dev_allow_long_lived
+case2_allow_long_lived_removed
+case3_legacy_dev_reclaim
 case4_create_prompt_preview
-case5_open_task_window_lifecycle_names
+case5_open_task_window_workstation
 case6_origin_default_no_tracking
 case7_transcript_preserved
 case8_recycle_undelivered
 case9_recycle_happy
-case10_recycle_refuses_task_slug
+case10_recycle_scope
 case11_recycle_squash_and_sync_remote
+case12_describe
 
 printf '\n=== summary ===\n'
 printf 'pass=%d fail=%d\n' "$PASS" "$FAIL"

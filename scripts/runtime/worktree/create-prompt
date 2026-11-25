@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# create-prompt — the tmux popup behind Ctrl+k g d: name a new workstation
+# (the direction: ux, ci, i18n …) and give it a one-line purpose, with a live
+# preview of the directory and branch it becomes (lib/workstation.sh, the
+# same plan open-task-window runs). Enter on the name moves to the
+# description, Enter on the description creates, Tab switches, Esc cancels.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,15 +24,14 @@ source "$SCRIPT_DIR/lib/core.sh"
 export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.create-prompt"
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 usage:
-  create-prompt --type dev|task|hotfix
-  create-prompt --type dev|task|hotfix --preview NAME
+  create-prompt                 interactive (inside a tmux popup)
+  create-prompt --preview NAME  print the plan for NAME (key=value lines)
 
-Interactive tmux popup prompt for lifecycle worktree creation. The prompt
-shows the lifecycle purpose, reclaim rule, final title, worktree directory,
-and branch name while typing.
-EOF
+Name a new workstation and its purpose; Enter creates it through
+open-task-window.
+USAGE
 }
 
 die() {
@@ -35,24 +39,16 @@ die() {
   exit 1
 }
 
-type_kind=""
 preview_name=""
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --type)
-      [[ $# -ge 2 ]] || die "--type requires a value"
-      type_kind="$2"
-      shift 2
-      ;;
-    --type=*)
-      type_kind="${1#--type=}"
-      shift
-      ;;
     --preview)
       [[ $# -ge 2 ]] || die "--preview requires a value"
       preview_name="$2"
       shift 2
+      ;;
+    --type|--type=*)
+      die "--type is removed: every worktree is a workstation (run create-prompt without it)"
       ;;
     -h|--help)
       usage
@@ -65,158 +61,67 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$type_kind" in
-  dev|task|hotfix) ;;
-  *) die "invalid --type: $type_kind (expected dev, task, or hotfix)" ;;
-esac
-
-case "$type_kind" in
-  dev)
-    prompt_label="dev"
-    purpose="long-lived parallel workstation"
-    reclaim_rule="round reset: worktree-task recycle (in-place); reclaim: Ctrl+k g r needs clean + delivered + long-lived confirmation"
-    ;;
-  task)
-    prompt_label="task"
-    purpose="short-lived PR-scoped task"
-    reclaim_rule="reclaim: Ctrl+k g r after clean + delivered"
-    ;;
-  hotfix)
-    prompt_label="hotfix"
-    purpose="urgent fix lane"
-    reclaim_rule="reclaim: Ctrl+k g r after clean + delivered"
-    ;;
-esac
-
-load_context() {
-  local cwd="${1:-$PWD}"
-  wt_core_resolve_repo_context "$cwd"
-  wt_config_load
-  wt_core_resolve_policy_paths
-}
-
-normalize_title() {
-  local raw="${1:-}"
-  local name=""
-  case "$raw" in
-    task/)  name="" ;;
-    task/*) name="${raw#task/}" ;;
-    *)      name="$raw" ;;
-  esac
-
-  if [[ -n "$type_kind" && -n "$name" ]]; then
-    case "$name" in
-      "${type_kind}-"*) printf '%s\n' "$name" ;;
-      *)                printf '%s-%s\n' "$type_kind" "$name" ;;
-    esac
-  else
-    printf '%s\n' "$name"
-  fi
-}
-
-normalize_subject() {
-  local raw="${1:-}"
-  case "$raw" in
-    task/|dev/|hotfix/) printf '\n' ;;
-    task/*)             printf '%s\n' "${raw#task/}" ;;
-    dev/*)              printf '%s\n' "${raw#dev/}" ;;
-    hotfix/*)           printf '%s\n' "${raw#hotfix/}" ;;
-    "${type_kind}-"*)   printf '%s\n' "${raw#"$type_kind"-}" ;;
-    *)                  printf '%s\n' "$raw" ;;
-  esac
-}
-
-branch_prefix_for_type() {
-  case "$type_kind" in
-    dev)    printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_DEV:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    task)   printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_TASK:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    hotfix) printf '%s\n' "${WT_POLICY_BRANCH_PREFIX_HOTFIX:-$WT_POLICY_BRANCH_PREFIX}" ;;
-    *)      printf '%s\n' "$WT_POLICY_BRANCH_PREFIX" ;;
-  esac
-}
+wt_core_resolve_repo_context "$PWD"
+wt_config_load
+wt_core_resolve_policy_paths
 
 compute_preview() {
-  local raw="${1:-}"
-  local subject subject_slug base_worktree_slug resolved_worktree_slug resolved_subject_slug suffix branch_prefix branch worktree_path branch_status path_status
-
-  subject="$(normalize_subject "$raw")"
-  subject_slug="$(wt_slugify "$subject" "$WT_POLICY_SLUG_FALLBACK")"
-  if [[ -z "$subject" ]]; then
-    printf 'raw=%s\n' "$raw"
-    printf 'subject=\nsubject_slug=\nworktree_slug=\nworktree=\nbranch=\nbranch_status=empty\npath_status=empty\n'
-    return 0
+  local raw="${1:-}" status
+  if wt_workstation_plan "$raw"; then
+    status="new"
+    [[ "$WT_PLAN_BUMPED" == 1 ]] && status="bumped"
+  else
+    status="error"
   fi
-
-  base_worktree_slug="${type_kind}-${subject_slug}"
-  resolved_worktree_slug="$base_worktree_slug"
-  resolved_subject_slug="$subject_slug"
-  branch_prefix="$(branch_prefix_for_type)"
-  suffix=1
-  while [[ -e "$WT_POLICY_WORKTREE_DIR_ABS/$resolved_worktree_slug" ]] || wt_git_branch_exists "$WT_MAIN_WORKTREE_ROOT" "${branch_prefix}${resolved_subject_slug}"; do
-    suffix=$((suffix + 1))
-    resolved_subject_slug="${subject_slug}-${suffix}"
-    resolved_worktree_slug="${base_worktree_slug}-${suffix}"
-  done
-
-  branch="${branch_prefix}${resolved_subject_slug}"
-  worktree_path="$WT_POLICY_WORKTREE_DIR_ABS/$resolved_worktree_slug"
-  branch_status="new"
-  path_status="new"
-  [[ "$resolved_worktree_slug" != "$base_worktree_slug" ]] && branch_status="bumped"
-  [[ -e "$worktree_path" ]] && path_status="exists"
-
   printf 'raw=%s\n' "$raw"
-  printf 'subject=%s\n' "$subject"
-  printf 'subject_slug=%s\n' "$resolved_subject_slug"
-  printf 'worktree_slug=%s\n' "$resolved_worktree_slug"
-  printf 'worktree=%s\n' "$worktree_path"
-  printf 'branch=%s\n' "$branch"
-  printf 'branch_status=%s\n' "$branch_status"
-  printf 'path_status=%s\n' "$path_status"
+  printf 'name=%s\n' "$WT_PLAN_NAME"
+  printf 'slug=%s\n' "$WT_PLAN_SLUG"
+  printf 'worktree=%s\n' "${WT_PLAN_SLUG:+$WT_POLICY_WORKTREE_DIR_ABS/$WT_PLAN_SLUG}"
+  printf 'branch=%s\n' "$WT_PLAN_BRANCH"
+  printf 'taken=%s\n' "$WT_PLAN_TAKEN"
+  printf 'status=%s\n' "$status"
+  printf 'error=%s\n' "$WT_PLAN_ERROR"
 }
 
-render() {
-  local raw="$1"
-  local rows cols subject subject_slug worktree_slug worktree branch branch_status path_status line
-  IFS=' ' read -r rows cols < <(stty size 2>/dev/null || printf '22 96')
+if [[ -n "$preview_name" ]]; then
+  runtime_log_info worktree "create prompt preview" "cwd=$PWD" "preview=$preview_name"
+  compute_preview "$preview_name"
+  exit 0
+fi
 
-  while IFS='=' read -r key value; do
-    case "$key" in
-      subject) subject="$value" ;;
-      subject_slug) subject_slug="$value" ;;
-      worktree_slug) worktree_slug="$value" ;;
-      worktree) worktree="$value" ;;
-      branch) branch="$value" ;;
-      branch_status) branch_status="$value" ;;
-      path_status) path_status="$value" ;;
-    esac
-  done < <(compute_preview "$raw")
+render() {
+  local name="$1" description="$2" field="$3"
+  local rows cols line
+  IFS=' ' read -r rows cols < <(stty size 2>/dev/null || printf '22 96')
+  wt_workstation_plan "$name" || true
 
   printf '\033[H\033[2J'
-  printf '\033[1m%s worktree\033[0m\n' "$prompt_label"
-  printf 'purpose: %s\n' "$purpose"
-  printf '%s\n' "$reclaim_rule"
-  printf '\n'
-  printf 'name: %s\n' "$raw"
-  printf '\n'
-  if [[ -z "${subject:-}" ]]; then
-    printf '\033[2mtype a short name; Enter creates, Esc cancels\033[0m\n'
+  printf '\033[1mnew workstation\033[0m  \033[2mone direction, latest %s, reset each round with recycle\033[0m\n\n' "origin/HEAD"
+  if [[ "$field" == name ]]; then
+    printf '\033[1m> name:        %s\033[0m\n' "$name"
+    printf '  description: %s\n' "$description"
   else
-    printf 'subject:       %s\n' "$subject"
-    printf 'subject slug:  %s\n' "$subject_slug"
-    printf 'worktree slug: %s\n' "$worktree_slug"
-    printf 'worktree:      %s\n' "$worktree"
-    printf 'branch:        %s\n' "$branch"
-    if [[ "$branch_status" == "bumped" ]]; then
-      printf '\033[33mcollision: final names were bumped to %s / %s\033[0m\n' "$worktree_slug" "$branch"
-    elif [[ "$path_status" == "exists" ]]; then
-      printf '\033[33mwarning: worktree path already exists\033[0m\n'
-    else
-      printf '\033[2mready: Enter creates this worktree and branch\033[0m\n'
+    printf '  name:        %s\n' "$name"
+    printf '\033[1m> description: %s\033[0m\n' "$description"
+  fi
+  printf '\n'
+  if [[ -z "$WT_PLAN_NAME" ]]; then
+    printf '\033[2ma short direction name (ux, ci, i18n); the description says what it is for\033[0m\n'
+  elif [[ -n "$WT_PLAN_ERROR" ]]; then
+    printf '\033[31m%s\033[0m\n' "$WT_PLAN_ERROR"
+  else
+    printf 'worktree: %s\n' "$WT_POLICY_WORKTREE_DIR_ABS/$WT_PLAN_SLUG"
+    printf 'branch:   %s\n' "$WT_PLAN_BRANCH"
+    if [[ "$WT_PLAN_BUMPED" == 1 && -n "$WT_PLAN_TAKEN" ]]; then
+      printf '\033[33m%s is taken by %s — Alt+g opens it; this creates %s\033[0m\n' \
+        "$WT_PLAN_NAME" "${WT_PLAN_TAKEN##*/}" "$WT_PLAN_SLUG"
+    elif [[ "$WT_PLAN_BUMPED" == 1 ]]; then
+      printf '\033[33mbranch %s%s exists: this creates %s\033[0m\n' \
+        "$WT_POLICY_BRANCH_PREFIX" "${WT_PLAN_SLUG%-*}" "$WT_PLAN_SLUG"
     fi
   fi
   printf '\n'
-  line="Enter create | Backspace delete | Ctrl+U clear | Esc cancel"
+  line="Enter next/create | Tab switch field | Backspace delete | Ctrl+U clear | Esc cancel"
   printf '\033[2m%-*.*s\033[0m' "$cols" "$cols" "$line"
 }
 
@@ -224,7 +129,7 @@ read_key() {
   local key extra
   REPLY=""
   if ! IFS= read -rsn1 key; then
-    runtime_log_warn worktree "create prompt input ended" "type=$type_kind" "cwd=$PWD"
+    runtime_log_warn worktree "create prompt input ended" "cwd=$PWD"
     return 1
   fi
   if [[ "$key" == $'\033' ]]; then
@@ -235,20 +140,32 @@ read_key() {
   REPLY="$key"
 }
 
-load_context "$PWD"
-runtime_log_info worktree "create prompt started" "type=$type_kind" "cwd=$PWD" "preview=$preview_name"
+create() {
+  local name="$1" description="$2" rc
+  printf '\033[0m\033[?25h\033[H\033[2J'
+  runtime_log_info worktree "create prompt submitted" "cwd=$PWD" "name=$name" \
+    "described=$([[ -n "$description" ]] && echo 1 || echo 0)"
+  set +e
+  bash "$SCRIPT_DIR/open-task-window" --description "$description" -- "$name"
+  rc=$?
+  set -e
+  if [[ "$rc" -ne 0 ]]; then
+    # keep the error on screen: the popup would close with it otherwise
+    printf '\ncreating the workstation failed (rc=%d). Press any key to close, or wait 30 seconds.\n' "$rc" >&2
+    IFS= read -rsn1 -t 30 _ || true
+  fi
+  exit "$rc"
+}
 
-if [[ -n "$preview_name" ]]; then
-  compute_preview "$preview_name"
-  exit 0
-fi
-
-raw=""
+runtime_log_info worktree "create prompt started" "cwd=$PWD"
+name=""
+description=""
+field="name"
 printf '\033[?25l'
 trap 'printf "\033[0m\033[?25h"' EXIT
 
 while true; do
-  render "$raw"
+  render "$name" "$description" "$field"
   if ! read_key; then
     printf '\n\ninput unavailable; prompt cannot read from popup tty.\n'
     printf 'cwd: %s\n' "$PWD"
@@ -259,24 +176,33 @@ while true; do
   key="$REPLY"
   case "$key" in
     ""|$'\r'|$'\n')
-      if [[ -n "$(normalize_subject "$raw")" ]]; then
-        exec bash "$SCRIPT_DIR/open-task-window" --type "$type_kind" -- "$raw"
+      if [[ "$field" == name ]]; then
+        wt_workstation_plan "$name" && field="description"
+      elif wt_workstation_plan "$name"; then
+        create "$name" "$description"
+      else
+        field="name"
       fi
+      ;;
+    $'\t')
+      if [[ "$field" == name ]]; then field="description"; else field="name"; fi
       ;;
     $'\033'|$'\003')
       exit 0
       ;;
     $'\177'|$'\010')
-      if [[ -n "$raw" ]]; then
-        raw="${raw%?}"
+      if [[ "$field" == name ]]; then
+        name="${name%?}"
+      else
+        description="${description%?}"
       fi
       ;;
     $'\025')
-      raw=""
+      if [[ "$field" == name ]]; then name=""; else description=""; fi
       ;;
     *)
       if [[ "$key" =~ [[:print:]] ]]; then
-        raw+="$key"
+        if [[ "$field" == name ]]; then name+="$key"; else description+="$key"; fi
       fi
       ;;
   esac

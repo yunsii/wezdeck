@@ -139,8 +139,8 @@ resume_command_lookup_workspace_selection() {
     fi
 
     # Longest map cwd that is a prefix of the needle (slash-bounded), so
-    # `.worktrees/<repo>/task-foo` inherits the item configured at the
-    # primary checkout or a longer-lived `dev-*` tab path.
+    # `.worktrees/<repo>/ux` inherits the item configured at the
+    # primary checkout or another workstation tab path.
     if resume_command_path_under "$needle" "$map_cwd"; then
       if [[ -z "$best_prefix_cwd" || ${#map_cwd} -gt ${#best_prefix_cwd} ]]; then
         best_prefix_cwd="$map_cwd"

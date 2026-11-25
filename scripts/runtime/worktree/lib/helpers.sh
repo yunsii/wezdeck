@@ -37,7 +37,7 @@ wt_tmux_progress_refresh_clients() {
 # back to normal).
 #
 # The clear MUST run through `tmux run-shell -b`, not a local `& disown`
-# subshell. The common trigger path (`Ctrl+k g d/t/h`) executes the whole
+# subshell. The common trigger path (`Ctrl+k g d`) executes the whole
 # worktree-task launch inside a `tmux display-popup -E`, and the launch
 # returns ~immediately after scheduling this clear, so the popup closes
 # almost at once. When a popup closes tmux tears down its pane and kills
