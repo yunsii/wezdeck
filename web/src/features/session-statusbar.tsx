@@ -11,7 +11,7 @@
 // header keeps the title.
 import { useLingui } from '@lingui/react/macro'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
-import { Bot, FolderTree, Gauge, Hexagon, PlayCircle } from 'lucide-react'
+import { Bot, Gauge, Hexagon, Layers, PlayCircle } from 'lucide-react'
 
 import {
   AGENT_MARKS,
@@ -195,7 +195,7 @@ function Linked({ list }: { list: NonNullable<Detail['worktrees']> }) {
         title={t`${linked} linked worktrees`}
         className={trigger}
       >
-        <FolderTree size={11} aria-hidden className="shrink-0" />
+        <Layers size={11} aria-hidden className="shrink-0" />
         {`linked ${linked}`}
       </PopoverPrimitive.Trigger>
       <PopoverContent
@@ -246,7 +246,9 @@ export function SessionStatusBar({ data }: { data?: Detail }) {
   const worktrees = data.worktrees ?? []
   const background = data.background ?? []
   return (
-    <div data-testid="session-statusbar" className="grid gap-1">
+    // mt-1: 10 px under the composer, as the toolbar's buttons sit 10 px
+    // above it (the toolbar box pads its 32 px buttons by 4 px)
+    <div data-testid="session-statusbar" className="mt-1 grid gap-1">
       {model || data.usage || background.length ? (
         // two lines like Claude Code's own (model · ctx · 7d, then the mode)
         <TagLine testId="statusbar-agent" maxLines={2} panelSide="top">

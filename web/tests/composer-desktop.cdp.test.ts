@@ -52,6 +52,8 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
               tmux_session: 'fresh',
               tmux_pane: pane,
               status,
+              // a branch: the status bar under the composer shows
+              git_branch: 'master',
               agent_name: 'fresh-agent',
               ts: Date.now(),
             },
@@ -355,6 +357,24 @@ async function clearThenLeaveMidUpload(page: Page) {
   await box.waitFor({ timeout: 15_000 })
   const clear = page.getByTestId('composer-clear')
   expect(await clear.count()).toBe(0)
+  // the composer sits evenly: toolbar buttons above, status bar below
+  // (polled: the bar comes with the session reply, after the composer)
+  const gaps = () =>
+    page.evaluate(() => {
+      const field = document.querySelector('[data-text-field]')
+      const button = field?.previousElementSibling?.querySelector('button')
+      const pill = document.querySelector(
+        '[data-testid=session-statusbar] .session-tag',
+      )
+      if (!field || !button || !pill) return null
+      const f = field.getBoundingClientRect()
+      return Math.abs(
+        f.top -
+          button.getBoundingClientRect().bottom -
+          (pill.getBoundingClientRect().top - f.bottom),
+      )
+    })
+  await expect.poll(gaps, { timeout: 10_000 }).toBeLessThan(1.5)
   await box.fill('要清掉的草稿')
   await clear.click()
   expect(await box.inputValue()).toBe('')
