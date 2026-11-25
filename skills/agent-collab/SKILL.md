@@ -100,7 +100,8 @@ P=$("$D" fanout draft --from . --repos <repo>[,<repo2>] --title "…" --goal-fil
 ```
 
 Workers may `fanout propose` one extra sibling inside their own scope (one level, ≤12 children);
-`fanout status` / parent `progress.json` show `split_proposed`. Relay each proposal to the user and
+`fanout status` / parent `progress.json` / the web console's ticket page (确认并开始 / 驳回) show
+`split_proposed`. Relay each proposal to the user and
 approve/reject on their answer — **never approve on an agent's own judgment**. A parent in
 `split_review` resumes with `fanout run` after the decision.
 

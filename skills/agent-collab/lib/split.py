@@ -16,7 +16,7 @@ only after the user said yes in chat. Two origins:
   fanout draft --from KEY --repos A[,B…] --title T --goal-file F [--backend B]
   fanout propose --parent P --by-child C --title T --observed O --assumed A
                  [--scope G,G] [--depends-on ID,ID] [--reason R]
-  fanout approve --parent P --proposal ID [--only KEY,KEY]
+  fanout approve --parent P --proposal ID [--only KEY,KEY] [--run [--mock] [--backend B]]
   fanout reject  --parent P --proposal ID --reason R
   fanout proposals --parent P [--pending]
 """
@@ -215,8 +215,16 @@ def cmd_approve(argv: list[str]) -> dict[str, Any]:
     collab.event(pid, "proposal_approved", proposal=prop["id"], origin=prop["origin"], created=created)
     if prop["origin"] == "draft" or (parked(pid) and not pending(pid)):
         collab.set_status(pid, "in_progress", owner="initiator", phase="planning")
-    return {"parent": pid, "proposal": prop["id"], "created": created,
-            "next": f"ticket fanout run --parent {pid} --detach"}
+    res: dict[str, Any] = {"parent": pid, "proposal": prop["id"], "created": created}
+    if "--run" not in argv:
+        return {**res, "next": f"ticket fanout run --parent {pid} --detach"}
+    if collab.cmd_status(["--parent", pid])["scheduler"]["alive"]:
+        return {**res, "scheduler": "already_running"}  # it re-reads children every tick
+    if pending(pid, "draft"):
+        return {**res, "scheduler": "draft_pending"}
+    extra = ["--mock"] if "--mock" in argv else []
+    extra += ["--backend", collab.opt(argv, "--backend") or "claude"]
+    return {**res, "scheduler": collab.cmd_run(["--parent", pid, "--detach", *extra])}
 
 
 def cmd_reject(argv: list[str]) -> dict[str, Any]:

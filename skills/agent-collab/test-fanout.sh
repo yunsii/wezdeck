@@ -188,10 +188,12 @@ P10="$(c plan --from src --title "mem budget" --contract "$tmp/contract.md" | jq
 for n in 1 2 3 4; do c add --parent "$P10" --to "$([ $n -le 2 ] && echo rx || echo ry)" --title "m$n" --scope "src/m$n/**" >/dev/null; done
 printf 'MemAvailable:   5120000 kB
 ' >"$TICKET_MEMINFO_PATH"   # 5000 MB, static: only reservations can hold it
-r10="$(FAKE_SLEEP=2 TICKET_RUN_MEM_MB=1000 TICKET_MEM_FLOOR_MB=2048 timeout 60 "$run" fanout run --parent "$P10" --mock --max-parallel 8)"
+r10="$(FAKE_SLEEP=2 TICKET_RUN_MEM_MB=1000 TICKET_MEM_FLOOR_MB=2400 timeout 60 "$run" fanout run --parent "$P10" --mock --max-parallel 8)"
 printf 'MemAvailable:   16000000 kB
 ' >"$TICKET_MEMINFO_PATH"
-check "reservations cap parallelism at what memory fits (5000-2x1000-1000 < 2048 → 2), all finish" \
+# floor 2400, not 2048: a child that already grew (the fake runner's python) shrinks its own reservation,
+# which is the point — the margin keeps that from admitting a third here
+check "reservations cap parallelism at what memory fits (5000-~2x1000-1000 < 2400 → 2), all finish" \
   jq -e '.result=="done_unmerged" and .peak_parallel==2 and (.done|length==4)' <<<"$r10"
 check "mem queue events carry estimate + reservation" \
   jq -e -s '[.[]|select(.kind=="queued" and .gate=="mem")][0]|.est_mb==1000 and .reserved_mb>=1900' "$TICKETS_ROOT/_data/$P10/events.jsonl"
@@ -236,10 +238,14 @@ check "draft: parent in plan_review, proposal pending, no children yet" \
 check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
 check "draft: contract stored on the parent" grep -q 'exports f()' "$TICKETS_ROOT/_data/$DP/contract.md"
 check "run refuses while the draft awaits confirmation" bash -c "'$run' fanout run --parent '$DP' --mock | jq -e '.ok==false and (.error|test(\"awaits user confirmation\"))'"
+shp="$("$run" api show --id "$DP")"
+check "api show exposes the pending draft + its contract (schema-valid) for the web console" \
+  bash -c "jq -e '.proposals|length==1 and .[0].id==\"p1\" and .[0].origin==\"draft\" and (.[0].items|length==3) and (.[0].contract|test(\"exports f\"))' <<<'$shp' >/dev/null && python3 '$here/lib/validate_api.py' show <<<'$shp'"
 ap="$("$run" fanout approve --parent "$DP" --proposal p1)"
 CA="$(jq -r .created.a <<<"$ap")"; CC="$(jq -r .created.c <<<"$ap")"
 check "approve creates children with deps mapped to real ids; parent back to planning" \
   bash -c "jq -e '.ok and (.created|length==3)' <<<'$ap' >/dev/null && jq -e --arg a '$CA' '.depends_on==[\$a]' '$TICKETS_ROOT/_data/$CC/meta.json' >/dev/null && grep -q 'phase: planning' '$TICKETS_ROOT/_data/$DP/ticket.md'"
+check "api show: no pending proposals after approve" bash -c "'$run' api show --id '$DP' | jq -e '.proposals==[]'"
 check "approved proposal cannot be approved twice" bash -c "'$run' fanout approve --parent '$DP' --proposal p1 | jq -e '.ok==false'"
 mkplan "$tmp/bad.stream.jsonl" '[{"key":"x","to":"nope","title":"t","observed":"o","assumed":"a"},{"key":"y","to":"rx","title":"t","observed":"o","assumed":"a","depends_on":["y2"]}]'
 bad="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/bad.stream.jsonl" "$run" fanout draft --from src --repos rx --title "bad" --goal-file "$tmp/goal.md")"
@@ -265,16 +271,17 @@ check "phase view tells unsplit children how to propose (never approve)" \
 r11="$(timeout 60 "$run" fanout run --parent "$P11" --mock)"
 check "pending split parks the parent in split_review instead of integrating" \
   bash -c "jq -e '.result==\"awaiting_approval\" and .proposals==[\"p1\"]' <<<'$r11' >/dev/null && grep -q 'phase: split_review' '$TICKETS_ROOT/_data/$P11/ticket.md'"
-ap11="$("$run" fanout approve --parent "$P11" --proposal p1)"
+ap11="$("$run" fanout approve --parent "$P11" --proposal p1 --run --mock)"
+for _ in $(seq 1 150); do [ "$(grep -c '"scheduler_end"' "$TICKETS_ROOT/_data/$P11/events.jsonl")" -ge 2 ] && break; sleep 0.2; done
 SB="$(jq -r .created.s1 <<<"$ap11")"
 check "approved split → sibling with split_from; parent leaves split_review" \
-  bash -c "jq -e --arg a '$SA' '.split_from==\$a and .scope==[\"src/sa/tests/**\"]' '$TICKETS_ROOT/_data/$SB/meta.json' >/dev/null && grep -q 'phase: planning' '$TICKETS_ROOT/_data/$P11/ticket.md'"
+  bash -c "jq -e --arg a '$SA' '.split_from==\$a and .scope==[\"src/sa/tests/**\"]' '$TICKETS_ROOT/_data/$SB/meta.json' >/dev/null && ! grep -q 'phase: split_review' '$TICKETS_ROOT/_data/$P11/ticket.md'"
 check "split-born child cannot split again" \
   bash -c "'$run' fanout propose --parent '$P11' --by-child '$SB' --title x --observed o --assumed a --scope 'src/sa/tests/x/**' | jq -e '.ok==false and (.error|test(\"cannot split again\"))'"
 check "split-born phase view says no further splits" \
   bash -c "python3 '$here/lib/ticket_fs.py' phase-view '$SB' implement | grep -q 'cannot propose further splits'"
-r11b="$(timeout 60 "$run" fanout run --parent "$P11" --mock)"
-check "rerun after approve ships the new sibling too" jq -e --arg b "$SB" '.result=="done_unmerged" and (.done|index($b)!=null)' <<<"$r11b"
+check "approve --run detaches the scheduler, which ships the new sibling" \
+  bash -c "jq -e '.scheduler.detached==true' <<<'$ap11' >/dev/null && [ \"\$(awk -F': ' '/^status:/{print \$2}' '$TICKETS_ROOT/_data/$SB/ticket.md')\" = shipped ] && jq -e -s '[.[]|select(.kind==\"scheduler_end\")]|length==2' '$TICKETS_ROOT/_data/$P11/events.jsonl' >/dev/null"
 check "children cap counts pending proposals" bash -c "
   P='$(c plan --from src --title cap --contract "$tmp/contract.md" | jq -r .id)'
   X=\$('$run' fanout add --parent \$P --to rx --title X --scope 'src/x/**' | jq -r .id)

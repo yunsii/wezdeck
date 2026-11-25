@@ -12,6 +12,7 @@ import type {
 import { cn } from '#/lib/utils'
 import { RunDetail } from './console-collab-run'
 import { CopyReference } from './ticket-copy-reference'
+import { TicketProposals } from './ticket-proposals'
 import { num, pct, secs, usd } from './console-collab-format'
 import { Reading } from './inspector'
 import type { LedTone } from '#/components/deck/led'
@@ -125,7 +126,17 @@ export function TicketReading({
             [t`Ticket`, ticket.id],
           ]}
         />
-        {ticket.status === 'waiting_initiator' ? (
+        <TicketProposals
+          id={ticket.id}
+          proposals={data.proposals}
+          childTitle={(child) =>
+            data.children_detail.find((item) => item.id === child)?.title ??
+            undefined
+          }
+        />
+        {/* a parent parked on proposals answers them above, not with free text */}
+        {ticket.status === 'waiting_initiator' &&
+        data.proposals.length === 0 ? (
           <TicketReply
             id={ticket.id}
             question={openQuestion(data.sections)}

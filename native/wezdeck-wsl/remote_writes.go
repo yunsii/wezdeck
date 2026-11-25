@@ -145,21 +145,62 @@ func keyToSession(args json.RawMessage) (any, error) {
 
 var ticketIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,96}$`)
 
-// replyTicket runs `ticket reply` as the phone's owner (via=mobile).
-func replyTicket(args json.RawMessage) (any, error) {
-	var a struct {
-		ID       string `json:"id"`
-		Text     string `json:"text"`
-		Continue bool   `json:"continue"`
+var proposalIDPattern = regexp.MustCompile(`^p[0-9]{1,4}$`)
+
+type ticketReply struct {
+	ID       string `json:"id"`
+	Text     string `json:"text"`
+	Continue bool   `json:"continue"`
+	// a fan-out split proposal on a parent (skills/agent-collab/lib/split.py):
+	// the user's tap is the confirmation the CLI waits for. Riding on `reply`
+	// keeps the Runtime's write allowlist (C#) unchanged; native/wezdeck-wsl
+	// is the only side that maps it (web/src/features/ticket-proposals.tsx).
+	Proposal string `json:"proposal"`
+	Verdict  string `json:"verdict"` // approve | reject (Text = the reason)
+}
+
+// replyArgv maps a reply write to the ticket CLI argv.
+func replyArgv(a ticketReply) ([]string, error) {
+	if !ticketIDPattern.MatchString(a.ID) || len(a.Text) > 20000 {
+		return nil, errors.New("invalid reply")
 	}
-	if json.Unmarshal(args, &a) != nil || !ticketIDPattern.MatchString(a.ID) || strings.TrimSpace(a.Text) == "" || len(a.Text) > 20000 {
+	if a.Proposal != "" {
+		if !proposalIDPattern.MatchString(a.Proposal) {
+			return nil, errors.New("invalid proposal")
+		}
+		switch a.Verdict {
+		case "approve":
+			// the console's button is 确认并开始: approving also starts the scheduler
+			return []string{"fanout", "approve", "--parent", a.ID, "--proposal", a.Proposal, "--run"}, nil
+		case "reject":
+			if strings.TrimSpace(a.Text) == "" {
+				return nil, errors.New("rejecting a proposal needs a reason")
+			}
+			return []string{"fanout", "reject", "--parent", a.ID, "--proposal", a.Proposal, "--reason", a.Text}, nil
+		}
+		return nil, errors.New("verdict must be approve or reject")
+	}
+	if strings.TrimSpace(a.Text) == "" {
 		return nil, errors.New("invalid reply")
 	}
 	argv := []string{"reply", "--id", a.ID, "--decision", a.Text}
 	if a.Continue {
 		argv = append(argv, "--continue")
 	}
-	return runTicketCLI("ticket reply", argv)
+	return argv, nil
+}
+
+// replyTicket runs `ticket reply` (or a proposal verdict) as the phone's owner (via=mobile).
+func replyTicket(args json.RawMessage) (any, error) {
+	var a ticketReply
+	if json.Unmarshal(args, &a) != nil {
+		return nil, errors.New("invalid reply")
+	}
+	argv, err := replyArgv(a)
+	if err != nil {
+		return nil, err
+	}
+	return runTicketCLI("ticket "+argv[0], argv)
 }
 
 // attachTicket opens the ticket's agent session in a tmux window of the

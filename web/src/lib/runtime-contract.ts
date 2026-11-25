@@ -314,6 +314,31 @@ export const ticketQuestionsSchema = z.object({
 })
 export type TicketQuestions = z.infer<typeof ticketQuestionsSchema>
 
+/** a pending split: origin draft (plan agent, with its contract) or split (a running child) */
+export const ticketProposalSchema = z.object({
+  id: z.string(),
+  origin: z.enum(['draft', 'split']),
+  by: nstr,
+  reason: nstr,
+  warnings: z.array(z.string()).nullable().default([]),
+  created_at: nstr,
+  contract: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        key: z.string(),
+        to: z.string(),
+        title: z.string(),
+        observed: z.string().optional(),
+        assumed: z.string().optional(),
+        scope: z.array(z.string()).default([]),
+        depends_on: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+})
+export type TicketProposal = z.infer<typeof ticketProposalSchema>
+
 export const collabShowSchema = collabEnvelope({
   ticket: collabTicketSchema.optional(),
   /** a text block for another agent (复制引用): skills/agent-collab/lib/reference.py */
@@ -361,6 +386,8 @@ export const collabShowSchema = collabEnvelope({
     .nullable()
     .optional(),
   runs: z.array(collabRunSummarySchema).default([]),
+  /** fan-out splits awaiting the user's confirmation (skills/agent-collab/lib/split.py) */
+  proposals: z.array(ticketProposalSchema).default([]),
 })
 
 export const collabEventsSchema = collabEnvelope({

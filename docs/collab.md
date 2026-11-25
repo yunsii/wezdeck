@@ -231,7 +231,10 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     once the rest is done, parks the parent in `split_review` (result
     `awaiting_approval`) instead of integrating; approve/reject, then rerun.
   - Agents run `approve` only after the user said yes in chat — never on a
-    worker's or plan agent's say-so.
+    worker's or plan agent's say-so. The web console's ticket page shows the
+    same proposals (`api show` `proposals`, the draft's contract included)
+    with 确认并开始 (= `approve --run`) / 驳回 (reason required); see
+    [`remote-sessions.md`](remote-sessions.md) `reply`.
 - **Deferred:** forking children from the plan session (today children start
   fresh with the contract placed first).
 

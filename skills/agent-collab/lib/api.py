@@ -276,7 +276,25 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
         "running": in_flight_runs(tid),
         # structured questions while the worker waits on the initiator
         "questions": ticket_fs.read_questions(tid) if meta.get("status") == "waiting_initiator" else None,
+        # fan-out splits awaiting the user's confirmation (lib/split.py)
+        "proposals": pending_proposals(tid),
     }
+
+
+def pending_proposals(tid: str) -> list[dict[str, Any]]:
+    p = root() / "_data" / tid / "proposals.json"
+    try:
+        props = json.loads(p.read_text(encoding="utf-8")) if p.is_file() else []
+    except (OSError, ValueError):
+        return []
+    keep = ("id", "origin", "by", "reason", "warnings", "created_at", "items")
+    out = [{k: x.get(k) for k in keep} for x in props if x.get("status") == "pending"]
+    contract = root() / "_data" / tid / "contract.md"
+    for x in out:
+        if x["origin"] == "draft" and contract.is_file():  # reviewing a plan means reading its contract
+            text = contract.read_text(encoding="utf-8")
+            x["contract"] = text if len(text) <= 8000 else text[:7999] + "…"
+    return out
 
 
 def _read_events(path: Path, after: int, limit: int, ticket: str | None) -> list[dict[str, Any]]:

@@ -509,6 +509,100 @@
               }
             }
           ]
+        },
+        "proposals": {
+          "description": "Fan-out splits awaiting the user's confirmation (lib/split.py): origin draft (plan agent) or split (a running child). Empty when none.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "origin",
+              "items"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "origin": {
+                "enum": [
+                  "draft",
+                  "split"
+                ]
+              },
+              "by": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "warnings": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "created_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "key",
+                    "to",
+                    "title"
+                  ],
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "observed": {
+                      "type": "string"
+                    },
+                    "assumed": {
+                      "type": "string"
+                    },
+                    "scope": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "depends_on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "contract": {
+                "type": "string",
+                "description": "draft only: the parent contract under review (≤8000 chars)"
+              }
+            }
+          }
         }
       }
     },
