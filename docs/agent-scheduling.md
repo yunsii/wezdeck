@@ -98,7 +98,7 @@ Host TUI / OpenClaw 推荐卡须同时写 **轨 + 执行通道 + 后端全名**�
 | **2. 主会话认领并开发** | `claim` → 当前 TUI/cwd 改码 | `owner=human`；**禁止**自动 worktree/worker | 主会话参与 Alt+/ |
 | **3. 主会话建单并委托开发** | `create --run` / `run --phase auto` | headless worker + `ticket-*` worktree | SKIP（`TICKET_HEADLESS`） |
 
-**硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。租约按**会话**区分（默认身份 `tmux:$TMUX_PANE` / `claude:$CLAUDE_CODE_SESSION_ID`），同一用户的另一个会话认领会得到 `lease held`；会话认领要求 cwd 在目标仓（主 checkout 或其 worktree）；`renew` / `release` 只限持有人。  
+**硬规则：** `claim` ≠ `run`。TUI 认领后由主会话开发；只有用户明确要「委托 / 后台 / 派工人」才走 Mode 3。Session lease 下 `run` / `reply --continue` / `watch` 不会抢租约（除非 `run --steal`）。Mode 3 的单独委托在开跑前排同一个全局名额池 + 内存预算（`lib/gate.py`，与 fanout 调度共用，排队写 `queued` 事件/进度）。租约按**会话**区分（默认身份 `tmux:$TMUX_PANE` / `claude:$CLAUDE_CODE_SESSION_ID`），同一用户的另一个会话认领会得到 `lease held`；会话认领要求 cwd 在目标仓（主 checkout 或其 worktree）；`renew` / `release` 只限持有人。  
 Mode 2 的 `--to .` / `--from .` 按 **主 worktree 根** 解析 allowlist（`git rev-parse --git-common-dir`）：在 `…/.worktrees/<repo>/<slug>` 里认领等于在主仓认领，不会把 slug basename 当成仓库名。
 
 **Mode 3 分步反馈：** `_data/<id>/progress.json` + `events.jsonl` 的 `progress` 行覆盖

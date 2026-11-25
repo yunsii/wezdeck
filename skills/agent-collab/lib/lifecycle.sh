@@ -79,6 +79,17 @@ cmd_run() {
   root="$(ticket_store_root)"
   [[ -f "$root/_data/$id/ticket.md" ]] || ticket_die "ticket not found: $id" 2
 
+  # Standalone runs share the fan-out pool + memory budget (lib/gate.py);
+  # a scheduler's child is already gated, and the gated re-run must not loop.
+  if [[ "${TICKET_RUN_GATED:-0}" != 1 && -z "${TICKET_PARENT_SCHEDULER:-}" && "${TICKET_RUN_GATE:-1}" != 0 ]]; then
+    local again=(--id "$id" --phase "$phase" --backend "$backend")
+    ((mock)) && again+=(--mock)
+    ((no_worktree)) && again+=(--no-worktree)
+    ((steal)) && again+=(--steal)
+    python3 "$TOOL_ROOT/lib/gate.py" --id "$id" --backend "$backend" -- "$TOOL_ROOT/run.sh" run "${again[@]}"
+    return
+  fi
+
   wt_path="$(ticket_prepare_worker_cwd "$id" "$backend" "$no_worktree" "$steal")"
 
   if [[ "$phase" == "research" || "$phase" == "auto" ]]; then

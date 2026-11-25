@@ -211,7 +211,7 @@ assert c.mem_estimate_mb('claude') == {'mb': 1500, 'source': 'default', 'samples
 for i, v in enumerate([2000, 2500, 3500, 4000], 3): rec(i, v)
 e = c.mem_estimate_mb('claude'); assert e['source'] == 'measured' and e['samples'] == 5 and e['mb'] == 4000, e
 assert c.mem_estimate_mb('codex')['source'] == 'default'
-assert c.group_rss_mb(os.getpgrp()) > 0"
+assert c.tree_rss_mb(os.getpid()) > 0"
 
 # draft: a plan agent proposes contract + children; nothing exists until the user approves
 mkplan() {  # out-file children-json

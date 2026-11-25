@@ -160,6 +160,18 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
   `_data/<parent>/scheduler.pid`; `--detach` re-execs in a new session with
   its log at `_data/<parent>/scheduler.log`. Rerunning is safe: it picks up
   from the store (after a human `reply`, or after fixing a conflict).
+- **Standalone runs share the budget** (`lib/gate.py`, 2026-11-25). A
+  `ticket run` outside a scheduler (`create --run`, `reply --continue`,
+  `watch`, the web console's 新工单) waits for a free slot in the same
+  `.locks/slots/` pool and the same memory check, then execs the run with
+  the slot's lock fd inherited, so the slot lives exactly as long as the
+  run. Every slot file records its holder's pid (`Slot.claim`; the scheduler
+  writes its child's), and the reservation is global: Σ over held slots of
+  estimate − that pid tree's RSS (`reserved_mb`), so fan-out and standalone
+  runs see each other. Waiting writes `queued` (gate `slot` / `mem`, with
+  `mem_available_mb` / `reserved_mb` / `est_mb`) and a `queued` progress
+  step; going through after a wait writes `dispatched` with
+  `queue_wait_ms`. Scheduler children (`TICKET_PARENT_SCHEDULER`) skip it.
 - **Shared queue.** Children are re-read every tick (`child_joined` event), so
   `fanout add` mid-run is picked up. A child under a live session lease
   (`ticket_fs.session_holder`) gets gate `session` and is waited on, never

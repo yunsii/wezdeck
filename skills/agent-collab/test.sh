@@ -722,6 +722,64 @@ ret="$(python3 "$here/lib/observe.py" retention --force)"
 check "retention prunes old stream/launch/prompt/global events, keeps run record + live prompt" \
   bash -c "jq -e '.streams>=1 and .launches>=1 and .prompts==1 and .events==1' <<<'$ret' >/dev/null && test -f '$old_run.json' && test ! -f '$old_run.stream.jsonl' && test -f '$TICKETS_ROOT/prompts/$sha.md'"
 
+# --- standalone run gate (lib/gate.py): same slots + memory budget as fan-out ---
+gate_meminfo="$tmp/gate-meminfo"
+slots="$TICKETS_ROOT/.locks/slots"
+gate_env=(env TICKET_MEMINFO_PATH="$gate_meminfo" TICKET_GATE_TICK=0.2 TICKET_RUN_MEM_MB=1000 TICKET_MEM_FLOOR_MB=2048)
+gid() { "$run" create --to wezdeck --from avc --title "$1" --observed o --assumed a 2>/dev/null | jq -r .id; }
+ev() { jq -c -s "$1" "$TICKETS_ROOT/_data/$2/events.jsonl"; }
+# memory: queue while it does not fit, run once it does
+g1="$(gid "gate mem")"
+printf 'MemAvailable:   2048000 kB\n' >"$gate_meminfo"   # 2000 MB: 2000-0-1000 < 2048
+( "${gate_env[@]}" "$run" run --id "$g1" --phase research --mock >"$tmp/g1.out" 2>"$tmp/g1.err" ) & g1pid=$!
+sleep 1
+check "gate: low memory queues the run (event + progress), nothing claimed yet" \
+  bash -c "jq -e -s '[.[]|select(.kind==\"queued\" and .gate==\"mem\" and .est_mb==1000)]|length==1' '$TICKETS_ROOT/_data/$g1/events.jsonl' >/dev/null && jq -e '.step==\"queued\"' '$TICKETS_ROOT/_data/$g1/progress.json' >/dev/null && ! grep -q '\"claimed\"' '$TICKETS_ROOT/_data/$g1/events.jsonl'"
+check "gate: waiting reason on stderr for the blocked caller" grep -q 'queued: 2000 MB free' "$tmp/g1.err"
+printf 'MemAvailable:   16000000 kB\n' >"$gate_meminfo"
+wait "$g1pid"; rc_g1=$?
+check "gate: runs once memory fits; dispatched records the wait" \
+  bash -c "[ $rc_g1 -eq 0 ] && jq -e -s '[.[]|select(.kind==\"dispatched\")][0]|.queue_wait_ms>=500' '$TICKETS_ROOT/_data/$g1/events.jsonl' >/dev/null && grep -q '\"claimed\"' '$TICKETS_ROOT/_data/$g1/events.jsonl'"
+check "gate: the slot is free again after the run" python3 -c "
+import fcntl, sys
+for i in range(8):
+    try:
+        f = open('$slots/%d.lock' % i)
+    except FileNotFoundError:
+        continue
+    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)"
+# a held slot (another run, any kind) is reserved for: 4000 - ~1000 - 1000 < 2048
+sleep 300 & holder=$!
+python3 -c "
+import fcntl, os, sys, time
+os.makedirs('$slots', exist_ok=True)
+f = open('$slots/0.lock', 'a+'); fcntl.flock(f, fcntl.LOCK_EX); f.seek(0); f.truncate(); f.write('$holder'); f.flush()
+open('$tmp/holding', 'w').close(); time.sleep(300)" & locker=$!
+for _ in $(seq 1 25); do [ -f "$tmp/holding" ] && break; sleep 0.2; done
+printf 'MemAvailable:   4096000 kB\n' >"$gate_meminfo"
+g2="$(gid "gate reserve")"
+( "${gate_env[@]}" "$run" run --id "$g2" --phase research --mock >/dev/null 2>&1 ) & g2pid=$!
+sleep 1
+check "gate: reserves for runs already holding a slot (fan-out or standalone)" \
+  jq -e -s '[.[]|select(.kind=="queued" and .gate=="mem")][0]|.reserved_mb>=900' "$TICKETS_ROOT/_data/$g2/events.jsonl"
+# end the queued run's whole tree (subshell → run.sh → gate.py) by its unique id
+pkill -f -- "--id $g2" 2>/dev/null; wait "$g2pid" 2>/dev/null
+check "gate: the abandoned queued run is gone (no stray gate racing later checks)" bash -c "! pgrep -f -- 'gate[.]py --id $g2' >/dev/null"
+# slots: TICKET_MAX_PARALLEL=1 and slot 0 held → queue on slot
+printf 'MemAvailable:   16000000 kB\n' >"$gate_meminfo"
+g3="$(gid "gate slot")"
+( "${gate_env[@]}" TICKET_MAX_PARALLEL=1 "$run" run --id "$g3" --phase research --mock >/dev/null 2>&1 ) & g3pid=$!
+sleep 1
+check "gate: all slots busy queues with gate=slot" jq -e -s '[.[]|select(.kind=="queued")][0].gate=="slot"' "$TICKETS_ROOT/_data/$g3/events.jsonl"
+kill "$locker" "$holder" 2>/dev/null; wait "$locker" "$holder" 2>/dev/null
+wait "$g3pid"; rc_g3=$?
+check "gate: a freed slot lets the queued run through" bash -c "[ $rc_g3 -eq 0 ] && grep -q '\"dispatched\"' '$TICKETS_ROOT/_data/$g3/events.jsonl'"
+# a fan-out scheduler's child is gated already: no second gate
+printf 'MemAvailable:   1024000 kB\n' >"$gate_meminfo"
+g4="$(gid "gate child")"
+"${gate_env[@]}" TICKET_PARENT_SCHEDULER=req-parent "$run" run --id "$g4" --phase research --mock >/dev/null 2>&1
+check "gate: scheduler children skip the standalone gate" bash -c "! grep -q '\"queued\"' '$TICKETS_ROOT/_data/$g4/events.jsonl' && grep -q '\"claimed\"' '$TICKETS_ROOT/_data/$g4/events.jsonl'"
+
 echo "---"
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
 echo "isolated root: $TICKETS_ROOT"

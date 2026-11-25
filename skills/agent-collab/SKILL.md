@@ -59,6 +59,13 @@ More visible files are not better cross-repo context for delegation: the target 
 "$D" progress --id <id> [--after N]              # one-shot: progress.json + events
 ```
 
+**Queueing:** every standalone run (`create --run`, `run`, `reply --continue`, `watch`, the web
+console's 新工单) first passes `lib/gate.py` — the same global slots (`TICKET_MAX_PARALLEL`, 8) and
+memory budget as fan-out (measured per-run estimate + reservations for every in-flight run). While
+it waits the ticket gets `queued` (gate `slot` | `mem`) in events and `progress.json`, and the
+blocked caller sees `[ticket] progress · queued: …` — relay that to the user instead of silence.
+`TICKET_RUN_GATE=0` bypasses it (tests / emergencies only).
+
 **Step feedback (avoid hard-wait silence):** Mode 3 writes `_data/<id>/progress.json` and
 `progress` rows into `events.jsonl` at milestones (`research_start` → `research_done` →
 `implement_start` → `implement_done`, plus `worktree_ready` / watch kicks). Long invokes also

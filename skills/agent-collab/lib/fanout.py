@@ -19,7 +19,8 @@ deps → slot (ceiling: global pool .locks/slots, TICKET_MAX_PARALLEL=8) → rep
 (TICKET_MAX_PER_REPO=4) → path_overlap (scope prefixes in the same repo) →
 mem (MemAvailable − reserved − estimate ≥ TICKET_MEM_FLOOR_MB; estimate = p95
 rss_peak_mb of recent real implement runs, TICKET_RUN_MEM_MB pins it; reserved =
-what running children have not grown into yet). Children are
+what in-flight runs — fan-out children and gated standalone
+runs (lib/gate.py), all through the same slots — have not grown into yet). Children are
 re-read every tick; one a session claimed (live non-worker lease) is skipped
 (gate ``session``) and waited on, so sessions and workers share one queue. When every
 child shipped, the integration step merges child branches per repo
@@ -258,9 +259,10 @@ def mem_estimate_mb(backend: str) -> dict[str, Any]:
     return {"mb": int(vals[min(len(vals) - 1, int(0.95 * len(vals)))]), "source": "measured", "samples": len(vals)}
 
 
-def group_rss_mb(pgid: int) -> float:
-    """RSS of a child's process group (children start with start_new_session)."""
-    total = 0
+def tree_rss_mb(pid: int) -> float:
+    """RSS of pid and all its descendants (a run's agent, builds, tests)."""
+    kids: dict[int, list[int]] = {}
+    rss: dict[int, int] = {}
     for d in os.listdir("/proc"):
         if not d.isdigit():
             continue
@@ -268,9 +270,40 @@ def group_rss_mb(pgid: int) -> float:
             f = Path(f"/proc/{d}/stat").read_text().rsplit(")", 1)[1].split()
         except (OSError, IndexError):
             continue
-        if int(f[2]) == pgid:
-            total += int(f[21])
+        kids.setdefault(int(f[1]), []).append(int(d))
+        rss[int(d)] = int(f[21])
+    total, todo = 0, [pid]
+    while todo:
+        p = todo.pop()
+        total += rss.get(p, 0)
+        todo += kids.get(p, [])
     return total * os.sysconf("SC_PAGE_SIZE") / 1048576
+
+
+def slot_holders(pool: int, skip: int | None = None) -> list[int]:
+    """pids recorded in the global slots someone holds (fan-out children and gated runs alike)."""
+    d = ticket_fs.tickets_root() / ".locks" / "slots"
+    pids = []
+    for i in range(pool):
+        f = d / f"{i}.lock"
+        if i == skip or not f.is_file():
+            continue
+        with open(f) as fh:
+            try:
+                fcntl.flock(fh, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                fcntl.flock(fh, fcntl.LOCK_UN)
+                continue  # free
+            except OSError:
+                pass
+            txt = fh.read().strip()
+        if txt.isdigit():
+            pids.append(int(txt))
+    return pids
+
+
+def reserved_mb(est: int, pool: int, skip: int | None = None) -> int:
+    """Headroom in-flight runs have not grown into yet: MemAvailable lags a fresh start."""
+    return int(sum(max(0.0, est - tree_rss_mb(p)) for p in slot_holders(pool, skip)))
 
 
 def topo_order(children: list[str], deps: dict[str, list[str]]) -> list[str]:
@@ -298,6 +331,13 @@ class Slot:
     def __init__(self, index: int, fh: Any):
         self.index = index
         self.fh = fh
+
+    def claim(self, pid: int) -> None:
+        """Record who holds the slot, so every gate can reserve for it."""
+        self.fh.seek(0)
+        self.fh.truncate()
+        self.fh.write(str(pid))
+        self.fh.flush()
 
     def release(self) -> None:
         try:
@@ -364,8 +404,7 @@ class Scheduler:
         return None
 
     def reserved_mb(self) -> int:
-        """Headroom running children have not grown into yet (MemAvailable lags a fresh dispatch)."""
-        return int(sum(max(0.0, self.run_mem - group_rss_mb(r["proc"].pid)) for r in self.running.values()))
+        return reserved_mb(self.run_mem, self.pool)
 
     def child_cmd(self, cid: str) -> list[str]:
         override = os.environ.get("TICKET_COLLAB_RUN_CMD")
@@ -383,6 +422,7 @@ class Scheduler:
         env = {**os.environ, "TICKET_PARENT_SCHEDULER": self.parent, "TICKET_TRIGGER_SOURCE": "parent"}
         proc = subprocess.Popen(self.child_cmd(cid), stdout=log, stderr=subprocess.STDOUT, env=env,
                                 start_new_session=True)
+        slot.claim(proc.pid)
         self.attempts[cid] = self.attempts.get(cid, 0) + 1
         wait_ms = int((time.time() - self.queued_at.pop(cid, time.time())) * 1000)
         self.running[cid] = {"proc": proc, "slot": slot, "log": log, "t0": time.time()}
