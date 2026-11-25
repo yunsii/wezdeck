@@ -91,7 +91,12 @@ A=$("$D" fanout add --parent "$P" --to <repo> --title "…" --observed "…" --a
 ```
 
 Children are normal tickets (challenge / reply still apply; rerun `ticket fanout run` after a reply or a
-merge-conflict fix). Disjoint scopes in the same repo run in parallel worktrees; overlapping
+merge-conflict fix). **One shared queue:** a session in the child's target repo may pull a ready child
+(`inbox` shows `parent` / `blocked_by`; `claim` refuses `deps pending`) and develop it as Mode 2 — the
+scheduler sees the session lease, skips that child (`queued` gate `session`) and waits for its
+`close` / `release` instead of dispatching a worker. The scheduler re-reads children every tick, so
+`fanout add` during a run joins the queue (`child_joined`). Session-developed children deliver per the
+target repo's own policy; integration only merges worker `ticket/<id>` branches. Disjoint scopes in the same repo run in parallel worktrees; overlapping
 scopes serialize. Every queue/dispatch/merge/verify decision is an event on the parent.
 
 Policy for **Mode 3**: **no objection after research → start implement**; **objection → human `reply` then continue**. Filing with `--run` means the initiator is blocked — prefer `watch` so work resumes when the ball returns. Use `--mock` offline.

@@ -327,6 +327,29 @@ def read_meta_json(tid: str) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def deps_pending(tid: str) -> list[str]:
+    """Fan-out child deps (meta.json depends_on) not yet shipped/closed."""
+    pending = []
+    for dep in read_meta_json(tid).get("depends_on") or []:
+        try:
+            st = read_ticket(dep)[0].get("status")
+        except FileNotFoundError:
+            st = None
+        if st not in ("shipped", "closed"):
+            pending.append(dep)
+    return pending
+
+
+def session_holder(tid: str) -> str | None:
+    """claimed_by of a live, non-worker (session) lease on an in_progress ticket."""
+    meta, _ = read_ticket(tid)
+    mj = read_meta_json(tid)
+    holder = str(meta.get("claimed_by") or mj.get("claimed_by") or "")
+    until = mj.get("lease_until_epoch")
+    live = meta.get("status") == "in_progress" and isinstance(until, int) and until > now_epoch()
+    return holder if live and holder and not holder.startswith("worker-") else None
+
+
 def write_meta_json(tid: str, meta: dict[str, Any]) -> None:
     d = data_dir(tid)
     d.mkdir(parents=True, exist_ok=True)

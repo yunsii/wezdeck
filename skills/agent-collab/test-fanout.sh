@@ -44,6 +44,10 @@ rc=0
 case "\$b" in
   ship) "$run" set-status --id "\$id" --status shipped --owner initiator >/dev/null ;;
   human) "$run" set-status --id "\$id" --status waiting_initiator --owner human >/dev/null ;;
+  race)  # a session claims it first: the worker loses the claim, the session ships later
+    TICKET_SESSION_ID=s-race "$run" claim --id "\$id" --any-cwd >/dev/null
+    ( sleep 1; "$run" close --id "\$id" --no-doc "session did it" >/dev/null 2>&1 ) &
+    rc=3 ;;
   fail-once)
     if [[ -f "$beh/\$id.tried" ]]; then "$run" set-status --id "\$id" --status shipped --owner initiator >/dev/null
     else touch "$beh/\$id.tried"; rc=1; fi ;;
@@ -142,6 +146,42 @@ r3="$(timeout 60 "$run" fanout run --parent "$P3" --mock)"
 check "challenged child → parent waiting_human, dependent blocked" \
   jq -e --arg h "$H" --arg h2 "$H2" '.result=="waiting_human" and (.waiting_human|index($h)!=null) and (.blocked|index($h2)!=null)' <<<"$r3"
 check "blocked gate recorded" jq -e -s --arg h2 "$H2" '[.[]|select(.kind=="queued" and .child==$h2)|.gate]|index("blocked")!=null' "$TICKETS_ROOT/_data/$P3/events.jsonl"
+
+# shared queue: sessions and workers pull from one parent's children
+P7="$(c plan --from src --title "shared queue" --contract "$tmp/contract.md" | jq -r .id)"
+S1="$(c add --parent "$P7" --to rx --title S1 --scope 'src/s1/**' | jq -r .id)"
+(cd "$tmp/rx" && TICKET_SESSION_ID=sess-1 "$run" claim --id "$S1" >/dev/null)
+( timeout 60 "$run" fanout run --parent "$P7" --mock >"$tmp/p7.json" ) & p7=$!
+sleep 2
+check "session-claimed child gated as session (holder recorded), never dispatched" \
+  bash -c "jq -e -s --arg s '$S1' '[.[]|select(.kind==\"queued\" and .child==\$s and .gate==\"session\" and .detail==\"sess-1\")]|length==1' '$TICKETS_ROOT/_data/$P7/events.jsonl' >/dev/null && ! grep -q 'start $S1' '$log'"
+check "scheduler keeps waiting while the session works" kill -0 "$p7"
+S3="$(c add --parent "$P7" --to ry --title S3 | jq -r .id)"
+sleep 2
+check "child added mid-run joins the queue and is dispatched" \
+  bash -c "grep -q 'start $S3' '$log' && jq -e -s --arg s '$S3' '[.[]|select(.kind==\"child_joined\" and .child==\$s)]|length==1' '$TICKETS_ROOT/_data/$P7/events.jsonl' >/dev/null"
+(cd "$tmp/rx" && "$run" close --id "$S1" --no-doc "shipped from the session" >/dev/null)
+wait "$p7"
+check "session-closed child counts as done; parent finishes" jq -e '.ok and .result=="done_unmerged" and (.done|length==2)' "$tmp/p7.json"
+
+# claimability: deps-pending children refuse session claims; inbox shows why
+P8="$(c plan --from src --title "claimability" --contract "$tmp/contract.md" | jq -r .id)"
+G1="$(c add --parent "$P8" --to rx --title G1 | jq -r .id)"
+G2="$(c add --parent "$P8" --to rx --title G2 --depends-on "$G1" | jq -r .id)"
+g2c="$(cd "$tmp/rx" && TICKET_SESSION_ID=sess-2 "$run" claim --id "$G2" 2>/dev/null)" || true
+check "claim refuses a child whose deps have not shipped" jq -e --arg g "$G1" '.ok==false and .error=="deps pending" and .blocked_by==[$g]' <<<"$g2c"
+(cd "$tmp/rx" && TICKET_SESSION_ID=sess-2 "$run" claim --id "$G1" >/dev/null)
+ib="$(cd "$tmp/rx" && "$run" inbox --to . 2>/dev/null)"
+check "inbox: child shows parent + blocked_by; the claimed one leaves the inbox" \
+  jq -e --arg p "$P8" --arg g1 "$G1" --arg g2 "$G2" '(.tickets|map(select(.id==$g2))[0]|.parent==$p and .blocked_by==[$g1]) and (.tickets|map(.id)|index($g1)==null)' <<<"$ib"
+
+# claim race: a worker that loses the claim to a session is not a failed attempt
+P9="$(c plan --from src --title "claim race" --contract "$tmp/contract.md" | jq -r .id)"
+R="$(c add --parent "$P9" --to rx --title R | jq -r .id)"
+echo race >"$beh/$R"
+r9="$(timeout 60 "$run" fanout run --parent "$P9" --mock)"
+check "lost claim race: no retry, waits for the session, finishes" \
+  bash -c "jq -e '.result==\"done_unmerged\"' <<<'$r9' >/dev/null && [ \"\$(grep -c 'start $R' '$log')\" = 1 ] && ! grep -q '\"retry\"' '$TICKETS_ROOT/_data/$P9/events.jsonl'"
 
 # integration: real branches merge into ticket/<parent>-integration
 P4="$(c plan --from src --title "integrate" --contract "$tmp/contract.md" | jq -r .id)"

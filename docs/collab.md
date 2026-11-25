@@ -160,6 +160,12 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
   `_data/<parent>/scheduler.pid`; `--detach` re-execs in a new session with
   its log at `_data/<parent>/scheduler.log`. Rerunning is safe: it picks up
   from the store (after a human `reply`, or after fixing a conflict).
+- **Shared queue.** Children are re-read every tick (`child_joined` event), so
+  `fanout add` mid-run is picked up. A child under a live session lease
+  (`ticket_fs.session_holder`) gets gate `session` and is waited on, never
+  dispatched; a worker that loses the claim race to a session is not counted
+  as a retry. `claim` refuses a child whose `depends_on` has not shipped
+  (`deps pending`); `inbox` lists `parent` / `blocked_by`.
 - **Children** run as `run.sh run --id <child> --phase auto` subprocesses with
   `TICKET_TRIGGER_SOURCE=parent`, so each child keeps its own worktree,
   lease, session reuse and run records.
@@ -167,6 +173,7 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
   parent (only when the reason changes):
   1. `deps` — every `depends_on` child is `shipped`/`closed` (`blocked` when a
      dependency failed or waits on a human).
+     A session-held child stops here with gate `session`.
   2. `slot` — this scheduler's `--max-parallel` and a free lock in the global
      pool `.locks/slots/` (`TICKET_MAX_PARALLEL`, default 3) shared by all
      parents.
@@ -245,7 +252,7 @@ Pre-v1 rows in old tickets have no `seq`; `api events --ticket` returns them as
 | kind | data | Producer |
 | --- | --- | --- |
 | `created` `claimed` `renewed` `released` `challenge` `reply` `status` `closed` `progress` | existing fields | lifecycle |
-| `queued` / `dispatched` | `gate, detail, slot, queue_wait_ms, mem_available_mb` | scheduler |
+| `queued` / `dispatched` / `child_joined` | `gate` (incl. `session`; detail = holder), `detail, slot, queue_wait_ms, mem_available_mb` | scheduler |
 | `run_start` | launch-record summary (`trigger.source, prompt.sha256, est_tokens, session.reuse, reason`) | invoke |
 | `session_init` | `cli_init` | stream parser |
 | `tool` | `name, target` (truncated path or command) | stream parser |

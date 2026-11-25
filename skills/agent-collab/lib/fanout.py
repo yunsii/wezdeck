@@ -16,7 +16,9 @@ in meta.json, so claim / challenge / reply keep working on them.
 Scheduler gates (first failing gate → ``queued`` event with its reason):
 deps → slot (global pool .locks/slots, TICKET_MAX_PARALLEL=3) → repo_cap
 (TICKET_MAX_PER_REPO=2) → path_overlap (scope prefixes in the same repo) →
-mem (MemAvailable − TICKET_RUN_MEM_MB ≥ TICKET_MEM_FLOOR_MB). When every
+mem (MemAvailable − TICKET_RUN_MEM_MB ≥ TICKET_MEM_FLOOR_MB). Children are
+re-read every tick; one a session claimed (live non-worker lease) is skipped
+(gate ``session``) and waited on, so sessions and workers share one queue. When every
 child shipped, the integration step merges child branches per repo
 (conflict → waiting on a human) and runs a fresh-session verify agent.
 Design: docs/collab.md.
@@ -361,18 +363,31 @@ class Scheduler:
                   wall_ms=int((time.time() - r["t0"]) * 1000))
             if st in DONE | HUMAN | FAILED:
                 continue
+            if ticket_fs.session_holder(cid):
+                self.attempts[cid] = max(0, self.attempts.get(cid, 0) - 1)  # lost the claim race; not a failure
+                continue
             if self.attempts.get(cid, 0) < 2:
                 event(self.parent, "retry", child=cid, after_exit=rc, status=st)
                 continue  # stays eligible; next tick re-dispatches (resume when warm)
             set_status(cid, "failed", owner="initiator")
             event(self.parent, "error", where="child", child=cid, message=f"failed twice (last exit {rc}, status {st})")
 
-    def run(self) -> dict[str, Any]:
+    def refresh(self) -> tuple[list[str], dict[str, dict[str, Any]]]:
+        """Children are re-read every tick, so `fanout add` during a run joins the queue."""
         kids_ids = children_of(self.parent)
-        if not kids_ids:
-            raise CollabError("parent has no children (ticket fanout add first)")
         kids = {c: self.info(c) for c in kids_ids}
-        order = topo_order(kids_ids, {c: kids[c]["deps"] for c in kids_ids})
+        known = getattr(self, "known", None)
+        if known is not None:
+            for c in kids_ids:
+                if c not in known:
+                    event(self.parent, "child_joined", child=c, to=kids[c]["to"])
+        self.known = set(kids_ids)
+        return topo_order(kids_ids, {c: kids[c]["deps"] for c in kids_ids}), kids
+
+    def run(self) -> dict[str, Any]:
+        order, kids = self.refresh()
+        if not order:
+            raise CollabError("parent has no children (ticket fanout add first)")
         set_status(self.parent, "in_progress", owner="worker", phase="running")
         event(self.parent, "scheduler_start", children=len(order), cap=self.cap, pool=self.pool,
               per_repo=self.per_repo, backend=self.backend, mock=self.mock)
@@ -380,6 +395,7 @@ class Scheduler:
         t0 = time.time()
         while True:
             self.reap()
+            order, kids = self.refresh()
             states = {c: status_of(c) for c in order}
             pending = [c for c in order if c not in self.running and states[c] not in DONE | HUMAN | FAILED]
             dispatched = False
@@ -387,6 +403,12 @@ class Scheduler:
             for cid in pending:
                 if any(states[d] in FAILED | HUMAN for d in kids[cid]["deps"]):
                     self.note_gate(cid, "blocked", "a dependency failed or waits on a human")
+                    continue
+                holder = ticket_fs.session_holder(cid)
+                if holder:
+                    # A session took it from the shared queue: wait for it, never dispatch over it.
+                    self.note_gate(cid, "session", holder)
+                    waiting_on_capacity = True
                     continue
                 g = self.gate(cid, kids)
                 if g:

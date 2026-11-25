@@ -138,6 +138,8 @@ for it in items:
         "owner": m.get("owner"),
         "summary": m.get("summary"),
         "updated_at": m.get("updated_at"),
+        "parent": mod.read_meta_json(it["id"]).get("parent"),
+        "blocked_by": mod.deps_pending(it["id"]),
     })
 print(json.dumps({"ok": True, "to": os.environ["TO_KEY"], "count": len(out), "tickets": out}, ensure_ascii=False, indent=2))
 PY
@@ -213,6 +215,15 @@ lease_active = (
     and isinstance(lease_until, int)
     and lease_until > mod.now_epoch()
 )
+pending = mod.deps_pending(tid)
+if pending and not steal:
+    print(json.dumps({
+        "ok": False,
+        "error": "deps pending",
+        "blocked_by": pending,
+        "hint": "fan-out child: its depends_on tickets must ship first; pick another ready child (inbox shows blocked_by)",
+    }, ensure_ascii=False))
+    sys.exit(3)
 if lease_active and claimed_by and claimed_by != by and not steal:
     print(json.dumps({
         "ok": False,
