@@ -12,6 +12,7 @@ in meta.json, so claim / challenge / reply keep working on them.
   fanout run   --parent P [--max-parallel N] [--per-repo N] [--backend B]
                 [--mock] [--detach] [--no-integrate]
   fanout status --parent P
+  fanout draft|propose|approve|reject|proposals …   (lib/split.py: every split waits on a human)
 
 Scheduler gates (first failing gate → ``queued`` event with its reason):
 deps → slot (ceiling: global pool .locks/slots, TICKET_MAX_PARALLEL=8) → repo_cap
@@ -46,6 +47,10 @@ INVOKE_LIB = REPO_ROOT / "scripts" / "dev" / "host-agent-invoke" / "lib" / "host
 sys.path.insert(0, str(HERE))
 import observe  # noqa: E402
 import ticket_fs  # noqa: E402
+
+# Run as a script, this module must also be `fanout` so split.py / research.py
+# share its CollabError and helpers instead of importing a second copy.
+sys.modules.setdefault("fanout", sys.modules[__name__])
 
 DONE = {"shipped", "closed"}
 FAILED = {"failed", "rejected"}
@@ -492,6 +497,13 @@ class Scheduler:
                      "reply/fix then rerun `ticket fanout run --parent`",
                      **{k: summary[k] for k in ("waiting_human", "failed", "blocked")})
             return {"parent": self.parent, "result": "waiting_human", **summary}
+        waiting = split.pending(self.parent, "split")
+        if waiting:  # a confirmed split adds a child: integrating now would ship without it
+            set_status(self.parent, "waiting_initiator", owner="human", phase="split_review")
+            progress(self.parent, "split_review",
+                     f"{len(waiting)} split proposal(s) await user confirmation; approve/reject then rerun")
+            return {"parent": self.parent, "result": "awaiting_approval",
+                    "proposals": [p["id"] for p in waiting], **summary}
         if not self.integrate:
             set_status(self.parent, "waiting_initiator", owner="initiator", phase="children_done")
             return {"parent": self.parent, "result": "children_done", **summary}
@@ -669,6 +681,10 @@ def cmd_run(argv: list[str]) -> dict[str, Any]:
     parent = observe_tid(opt(argv, "--parent"))
     if ticket_fs.read_meta_json(parent).get("kind") != "parent":
         raise CollabError(f"{parent} is not a collab parent")
+    drafts = split.pending(parent, "draft")
+    if drafts:
+        raise CollabError(f"{parent}: draft {drafts[0]['id']} awaits user confirmation "
+                          f"(ticket fanout approve --parent {parent} --proposal {drafts[0]['id']})")
     if "--detach" in argv:
         rest = [a for a in argv if a != "--detach"]
         log = (ticket_fs.data_dir(parent) / "scheduler.log").open("a", encoding="utf-8")
@@ -706,10 +722,14 @@ def cmd_status(argv: list[str]) -> dict[str, Any]:
     meta, _ = ticket_fs.read_ticket(parent)
     return {"parent": parent, "status": meta.get("status"), "phase": meta.get("phase"),
             "scheduler": {"pid": pid if alive else None, "alive": alive},
-            "children": kids, "integration": ticket_fs.read_meta_json(parent).get("integration")}
+            "children": kids, "integration": ticket_fs.read_meta_json(parent).get("integration"),
+            "proposals_pending": split.pending(parent)}
 
 
-COMMANDS = {"plan": cmd_plan, "add": cmd_add, "run": cmd_run, "status": cmd_status}
+import split  # noqa: E402  (needs the names above; splits are proposals until a human approves)
+
+COMMANDS = {"plan": cmd_plan, "add": cmd_add, "run": cmd_run, "status": cmd_status,
+            **{n: getattr(split, f"cmd_{n}") for n in ("draft", "propose", "approve", "reject", "proposals")}}
 
 
 def main(argv: list[str]) -> int:

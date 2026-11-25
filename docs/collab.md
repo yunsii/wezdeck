@@ -212,8 +212,28 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
      (`prompts/integrate.md`: contract + merged diffstat; reuse reason
      `forced_independent`) prints a `{"verdict","findings"}` JSON, read from
      `runs/<run>.final.txt`. Pass → parent `shipped` / `done`.
-- **Deferred:** a plan agent that drafts `contract.md` (and fork from its
-  session into children); today the initiating TUI agent writes the contract.
+- **Splits are proposals; the user confirms every one** (`lib/split.py`,
+  2026-11-25). Proposals live in `_data/<parent>/proposals.json` with events
+  `proposal_created` / `proposal_approved` / `proposal_rejected`.
+  - `fanout draft --from K --repos A,B --title T --goal-file F` runs a
+    read-only plan agent (`prompts/plan.md`, through `research`, so it is a
+    research ticket with full run records). Its JSON (contract + children with
+    keys, scope, `depends_on` by key) is validated first — allowlisted targets,
+    known deps, no cycle, ≤ `TICKET_MAX_CHILDREN` (12) — then stored as a
+    pending draft; overlapping scopes in one repo come back as `warnings`.
+    The parent waits in `plan_review`; `fanout run` refuses until
+    `fanout approve --parent P --proposal p1 [--only k1,k2]` creates the
+    children (deps mapped to real ids). `reject --reason` → `plan_rejected`.
+  - A running child (phase view tells it how) may `fanout propose --by-child C`
+    one sibling whose scope sits **inside C's scope**. One level: an approved
+    split carries `split_from` and cannot split again; pending proposals count
+    toward the 12-child cap. The scheduler keeps running everything else and,
+    once the rest is done, parks the parent in `split_review` (result
+    `awaiting_approval`) instead of integrating; approve/reject, then rerun.
+  - Agents run `approve` only after the user said yes in chat — never on a
+    worker's or plan agent's say-so.
+- **Deferred:** forking children from the plan session (today children start
+  fresh with the contract placed first).
 
 ## 7. Data layout
 

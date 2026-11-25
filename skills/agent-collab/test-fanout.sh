@@ -211,6 +211,76 @@ e = c.mem_estimate_mb('claude'); assert e['source'] == 'measured' and e['samples
 assert c.mem_estimate_mb('codex')['source'] == 'default'
 assert c.group_rss_mb(os.getpgrp()) > 0"
 
+# draft: a plan agent proposes contract + children; nothing exists until the user approves
+mkplan() {  # out-file children-json
+  python3 - "$1" "$2" <<'PY'
+import json, sys
+out, kids = sys.argv[1], json.loads(sys.argv[2])
+plan = {"contract": "# Contract\n\n- a/ exports f()\n", "children": kids}
+rows = [{"type": "system", "subtype": "init", "session_id": "sess-plan", "model": "m", "claude_code_version": "t",
+         "tools": ["Read"], "mcp_servers": [], "permissionMode": "plan", "cwd": "/x"},
+        {"type": "result", "subtype": "success", "session_id": "sess-plan", "num_turns": 2, "total_cost_usd": 0.01,
+         "result": "plan:\n```json\n" + json.dumps(plan) + "\n```",
+         "usage": {"input_tokens": 1, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0, "output_tokens": 1}}]
+open(out, "w").write("".join(json.dumps(r) + "\n" for r in rows))
+PY
+}
+printf 'Add f() in rx a/ and use it from ry.\n' >"$tmp/goal.md"
+mkplan "$tmp/plan.stream.jsonl" '[{"key":"a","to":"rx","title":"add f","observed":"no f","assumed":"f exists","scope":["src/a/**"]},
+  {"key":"b","to":"rx","title":"docs","observed":"o","assumed":"a","scope":["src/a/docs/**"]},
+  {"key":"c","to":"ry","title":"use f","observed":"o","assumed":"a","depends_on":["a"]}]'
+dr="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/plan.stream.jsonl" "$run" fanout draft --from src --repos rx,ry --title "drafted" --goal-file "$tmp/goal.md")"
+DP="$(jq -r .parent <<<"$dr")"
+check "draft: parent in plan_review, proposal pending, no children yet" \
+  bash -c "jq -e '.ok and .proposal.status==\"pending\" and .proposal.origin==\"draft\" and (.proposal.items|length==3)' <<<'$dr' >/dev/null && grep -q 'phase: plan_review' '$TICKETS_ROOT/_data/$DP/ticket.md' && [ \"\$('$run' fanout status --parent '$DP' | jq '.children|length')\" = 0 ]"
+check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
+check "draft: contract stored on the parent" grep -q 'exports f()' "$TICKETS_ROOT/_data/$DP/contract.md"
+check "run refuses while the draft awaits confirmation" bash -c "'$run' fanout run --parent '$DP' --mock | jq -e '.ok==false and (.error|test(\"awaits user confirmation\"))'"
+ap="$("$run" fanout approve --parent "$DP" --proposal p1)"
+CA="$(jq -r .created.a <<<"$ap")"; CC="$(jq -r .created.c <<<"$ap")"
+check "approve creates children with deps mapped to real ids; parent back to planning" \
+  bash -c "jq -e '.ok and (.created|length==3)' <<<'$ap' >/dev/null && jq -e --arg a '$CA' '.depends_on==[\$a]' '$TICKETS_ROOT/_data/$CC/meta.json' >/dev/null && grep -q 'phase: planning' '$TICKETS_ROOT/_data/$DP/ticket.md'"
+check "approved proposal cannot be approved twice" bash -c "'$run' fanout approve --parent '$DP' --proposal p1 | jq -e '.ok==false'"
+mkplan "$tmp/bad.stream.jsonl" '[{"key":"x","to":"nope","title":"t","observed":"o","assumed":"a"},{"key":"y","to":"rx","title":"t","observed":"o","assumed":"a","depends_on":["y2"]}]'
+bad="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/bad.stream.jsonl" "$run" fanout draft --from src --repos rx --title "bad" --goal-file "$tmp/goal.md")"
+check "invalid draft (unknown target, unknown dep) rejected before review, no parent" \
+  jq -e '.ok==false and (.error|test("not in the allowlist")) and (.error|test("unknown depends_on"))' <<<"$bad"
+mkplan "$tmp/rej.stream.jsonl" '[{"key":"r","to":"rx","title":"t","observed":"o","assumed":"a"}]'
+RP="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/rej.stream.jsonl" "$run" fanout draft --from src --repos rx --title "rej" --goal-file "$tmp/goal.md" | jq -r .parent)"
+check "reject: draft rejected, parent plan_rejected, still no children" \
+  bash -c "'$run' fanout reject --parent '$RP' --proposal p1 --reason 'split by layer instead' | jq -e '.ok' >/dev/null && grep -q 'phase: plan_rejected' '$TICKETS_ROOT/_data/$RP/ticket.md' && [ \"\$('$run' fanout status --parent '$RP' | jq '.children|length')\" = 0 ]"
+
+# split: a running child proposes a sibling inside its own scope; the user confirms
+P11="$(c plan --from src --title "split" --contract "$tmp/contract.md" | jq -r .id)"
+SA="$(c add --parent "$P11" --to rx --title SA --scope 'src/sa/**' | jq -r .id)"
+check "propose outside the proposer's scope refused" \
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --observed o --assumed a --scope 'src/other/**' | jq -e '.ok==false and (.error|test(\"not inside\"))'"
+check "propose without scope (whole repo) from a scoped child refused" \
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SA' --title x --observed o --assumed a | jq -e '.ok==false'"
+pr="$("$run" fanout propose --parent "$P11" --by-child "$SA" --title "sa tests" --observed o --assumed a --scope 'src/sa/tests/**' --reason "independent")"
+check "propose inside scope → pending split proposal + progress row" \
+  bash -c "jq -e '.ok and .proposal.origin==\"split\" and .proposal.by==\"$SA\" and .proposal.items[0].to==\"rx\"' <<<'$pr' >/dev/null && jq -e '.step==\"split_proposed\"' '$TICKETS_ROOT/_data/$P11/progress.json' >/dev/null"
+check "phase view tells unsplit children how to propose (never approve)" \
+  bash -c "python3 '$here/lib/ticket_fs.py' phase-view '$SA' implement | grep -q 'fanout propose --parent $P11 --by-child $SA'"
+r11="$(timeout 60 "$run" fanout run --parent "$P11" --mock)"
+check "pending split parks the parent in split_review instead of integrating" \
+  bash -c "jq -e '.result==\"awaiting_approval\" and .proposals==[\"p1\"]' <<<'$r11' >/dev/null && grep -q 'phase: split_review' '$TICKETS_ROOT/_data/$P11/ticket.md'"
+ap11="$("$run" fanout approve --parent "$P11" --proposal p1)"
+SB="$(jq -r .created.s1 <<<"$ap11")"
+check "approved split → sibling with split_from; parent leaves split_review" \
+  bash -c "jq -e --arg a '$SA' '.split_from==\$a and .scope==[\"src/sa/tests/**\"]' '$TICKETS_ROOT/_data/$SB/meta.json' >/dev/null && grep -q 'phase: planning' '$TICKETS_ROOT/_data/$P11/ticket.md'"
+check "split-born child cannot split again" \
+  bash -c "'$run' fanout propose --parent '$P11' --by-child '$SB' --title x --observed o --assumed a --scope 'src/sa/tests/x/**' | jq -e '.ok==false and (.error|test(\"cannot split again\"))'"
+check "split-born phase view says no further splits" \
+  bash -c "python3 '$here/lib/ticket_fs.py' phase-view '$SB' implement | grep -q 'cannot propose further splits'"
+r11b="$(timeout 60 "$run" fanout run --parent "$P11" --mock)"
+check "rerun after approve ships the new sibling too" jq -e --arg b "$SB" '.result=="done_unmerged" and (.done|index($b)!=null)' <<<"$r11b"
+check "children cap counts pending proposals" bash -c "
+  P='$(c plan --from src --title cap --contract "$tmp/contract.md" | jq -r .id)'
+  X=\$('$run' fanout add --parent \$P --to rx --title X --scope 'src/x/**' | jq -r .id)
+  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title a --observed o --assumed a --scope 'src/x/a/**' | jq -e .ok >/dev/null &&
+  TICKET_MAX_CHILDREN=2 '$run' fanout propose --parent \$P --by-child \$X --title b --observed o --assumed a --scope 'src/x/b/**' | jq -e '.ok==false and (.error|test(\"already has 2\"))'"
+
 # integration: real branches merge into ticket/<parent>-integration
 P4="$(c plan --from src --title "integrate" --contract "$tmp/contract.md" | jq -r .id)"
 I1="$(c add --parent "$P4" --to rx --title I1 --scope 'src/a/**' | jq -r .id)"
@@ -290,7 +360,8 @@ check "research launch: trigger fe1-flows, system+task parts, allow rules in arg
   jq -e '.trigger.source=="fe1-flows" and (.composition|map(.kind)|index("system")!=null and index("task")!=null) and (.invocation.argv|index("Bash(git -C yy log:*)")!=null) and (.invocation.argv|index("--max-turns")!=null) and .session.reason=="research_oneshot"' "$rl"
 check "research events: checkout per repo + research_done" \
   jq -e -s 'map(.kind) | (map(select(.=="checkout"))|length==2) and index("research_done")!=null and index("milestone")!=null' "$TICKETS_ROOT/_data/$RID/events.jsonl"
-check "api list --kind research" jq -e --arg r "$RID" '.total==1 and .tickets[0].id==$r and .tickets[0].kind=="research"' <<<"$("$run" api list --kind research)"
+# fanout draft plan runs are research tickets too, so only membership + kind are fixed here
+check "api list --kind research" jq -e --arg r "$RID" '(.tickets|map(.id)|index($r)!=null) and all(.tickets[]; .kind=="research")' <<<"$("$run" api list --kind research)"
 check "research parse_json picks fenced or bare JSON" python3 -c "
 import sys; sys.path.insert(0,'$here/lib'); import research as r
 assert r.parse_json('x {\"a\": 1} y')=={'a':1}

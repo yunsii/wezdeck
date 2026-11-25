@@ -90,6 +90,20 @@ A=$("$D" fanout add --parent "$P" --to <repo> --title "…" --observed "…" --a
 "$D" fanout status --parent "$P"              # children, scheduler pid, integration
 ```
 
+**Splitting always waits on the user (hard rule).** To let a planner split the work:
+
+```bash
+P=$("$D" fanout draft --from . --repos <repo>[,<repo2>] --title "…" --goal-file /tmp/goal.md | jq -r .parent)
+"$D" fanout proposals --parent "$P" --pending   # show contract + children (+ warnings) to the user
+# only after the user says yes in chat:
+"$D" fanout approve --parent "$P" --proposal p1 [--only k1,k2]   # or: reject --reason "…"
+```
+
+Workers may `fanout propose` one extra sibling inside their own scope (one level, ≤12 children);
+`fanout status` / parent `progress.json` show `split_proposed`. Relay each proposal to the user and
+approve/reject on their answer — **never approve on an agent's own judgment**. A parent in
+`split_review` resumes with `fanout run` after the decision.
+
 Children are normal tickets (challenge / reply still apply; rerun `ticket fanout run` after a reply or a
 merge-conflict fix). **One shared queue:** a session in the child's target repo may pull a ready child
 (`inbox` shows `parent` / `blocked_by`; `claim` refuses `deps pending`) and develop it as Mode 2 — the

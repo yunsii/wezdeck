@@ -39,7 +39,7 @@
 #       decision table: ticket × worktree (exists/dirty/ahead/age → suggest)
 #   run.sh walkthrough [--seed]
 #   run.sh reindex | selfcheck
-#   run.sh api …(read-only JSON) · fanout plan|add|run|status · research (read-only multi-repo run) · attach --id (tmux takeover)
+#   run.sh api …(read-only JSON) · fanout plan|add|run|status|draft|propose|approve|reject|proposals · research (read-only multi-repo run) · attach --id (tmux takeover)
 #
 # Tickets live under ~/.agent/tickets (override: TICKETS_ROOT).
 # Three modes: create | claim(session develop) | create --run (ticket develop).

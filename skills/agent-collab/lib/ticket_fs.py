@@ -615,8 +615,17 @@ def render_parent_contract(tid: str) -> str:
         "- Depends on (already shipped): " + (", ".join(deps) if deps else "none"),
         "- Sibling children change other paths in parallel. If the contract is wrong or the work needs "
         "paths outside your scope, **challenge** instead of editing them.",
-        "",
     ]
+    if mj.get("split_from"):
+        lines.append(f"- You were split from {mj['split_from']}: you cannot propose further splits.")
+    else:
+        run_sh = Path(__file__).resolve().parent.parent / "run.sh"
+        lines.append(
+            "- Found an independent sub-task **inside your scope** that could run in parallel? Do not implement it: "
+            f"`{run_sh} fanout propose --parent {parent} --by-child {tid} --title '…' --observed '…' "
+            "--assumed '…' --scope 'sub/path/**' --reason '…'`, then finish your own part. The user confirms "
+            "before it becomes a sibling; never approve it yourself.")
+    lines.append("")
     return "\n".join(lines)
 
 
