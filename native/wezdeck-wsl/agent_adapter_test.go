@@ -54,13 +54,17 @@ func TestEveryAdapterDeclaresCapabilities(t *testing.T) {
 			t.Errorf("%s declares a derived capability: %+v", a.Name(), c)
 		}
 	}
-	// claude and grok wire Ask and plan review (session-ask-claude.tsx,
-	// session-permission.tsx); codex neither yet
-	want := map[string]bool{"claude": true, "grok": true, "codex": false}
+	// claude and grok wire Ask and plan review; agy wires Ask only; codex neither yet
+	want := map[string][2]bool{
+		"claude": {true, true},
+		"grok":   {true, true},
+		"agy":    {true, false},
+		"codex":  {false, false},
+	}
 	for name, on := range want {
 		c := capabilitiesOf(adapterFor(name))
-		if c.AskOptions != on || c.PlanReview != on {
-			t.Errorf("%s: ask_options=%v plan_review=%v, want %v", name, c.AskOptions, c.PlanReview, on)
+		if c.AskOptions != on[0] || c.PlanReview != on[1] {
+			t.Errorf("%s: ask_options=%v plan_review=%v, want %v/%v", name, c.AskOptions, c.PlanReview, on[0], on[1])
 		}
 	}
 	if planToolOf("claude") != "ExitPlanMode" || planToolOf("grok") != "" || planToolOf("codex") != "" || planToolOf("nope") != "" {

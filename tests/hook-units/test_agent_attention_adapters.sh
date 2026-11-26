@@ -256,13 +256,27 @@ rm -rf "$sandbox"
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
 export WEZDECK_AGY_MANAGED=1
-printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","workspacePaths":["/tmp"]}' \
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"<USER_REQUEST>\nfix agy prompt\nsecond line\n</USER_REQUEST>","workspacePaths":["/tmp"]}' \
   | "$agy_adapter" running >/dev/null 2>&1 || true
 assert_eq "Agy PreInvocation becomes running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
 assert_eq "Agy provider field" "agy" "$(field_for "$sandbox" "agy-session-1" "agent_name")"
+assert_eq "Agy lastUserInput becomes last_user_prompt" "fix agy prompt" "$(field_for "$sandbox" "agy-session-1" "last_user_prompt")"
+ask_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreToolUse","toolCall":{"name":"ask_question","args":{"questions":[{"question":"Ship now?"}]}}}' | "$agy_adapter" ask-waiting)"
+assert_eq "Agy ask-waiting becomes waiting" "waiting" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy ask-waiting sets elicitation_dialog" "elicitation_dialog" "$(field_for "$sandbox" "agy-session-1" "waiting_kind")"
+assert_eq "Agy ask-waiting returns allow decision" '{"decision":"allow"}' "$ask_decision"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","lastUserInput":"fix agy prompt"}' \
+  | "$agy_adapter" ask-resolved >/dev/null 2>&1 || true
+assert_eq "Agy ask-resolved returns to running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
 decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","fullyIdle":true}' | "$agy_adapter" done)"
 assert_eq "Agy Stop becomes done" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
 assert_eq "Agy Stop returns decision" '{"decision":"stop"}' "$decision"
+AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" install --provider agy >/dev/null
+if AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" check --provider agy --quiet; then
+  pass=$((pass+1)); echo "  ✓ Agy agent-hooks install and check healthy"
+else
+  fail=$((fail+1)); echo "FAIL Agy agent-hooks check" >&2
+fi
 unset WEZDECK_AGY_MANAGED
 rm -rf "$sandbox"
 

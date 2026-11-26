@@ -25,7 +25,7 @@ func pendingPermission(messages []chatMessage, planTool string) *pendingCall {
 		if m.Role != "tool" || !m.Pending {
 			continue
 		}
-		if m.Tool == "AskUserQuestion" {
+		if m.Tool == "AskUserQuestion" || m.Tool == "ask_question" {
 			return nil // a question, answered by the elicitation card
 		}
 		return &pendingCall{Tool: m.Tool, Text: m.Text, Body: m.Body, File: m.File, Plan: planTool != "" && m.Tool == planTool}

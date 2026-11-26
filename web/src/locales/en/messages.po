@@ -298,6 +298,10 @@ msgstr "Agent name"
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
+#: src/features/session-skills.tsx:77
+msgid "agent settings and execution mode"
+msgstr "agent settings and execution mode"
+
 #: src/features/console-me.tsx:125
 #: src/features/me-agents.tsx:84
 msgid "Agents"
@@ -357,8 +361,12 @@ msgid "Already the latest"
 msgstr "Already the latest"
 
 #: src/features/session-elicitation.tsx:210
-msgid "Answer sent; waiting for Grok to continue…"
-msgstr "Answer sent; waiting for Grok to continue…"
+#~ msgid "Answer sent; waiting for Grok to continue…"
+#~ msgstr "Answer sent; waiting for Grok to continue…"
+
+#: src/features/session-elicitation.tsx:210
+msgid "Answer sent; waiting for the agent to continue…"
+msgstr "Answer sent; waiting for the agent to continue…"
 
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
@@ -526,7 +534,7 @@ msgstr "Breakdowns"
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 
-#: src/features/session-skills.tsx:48
+#: src/features/session-skills.tsx:49
 msgid "Built in"
 msgstr "Built in"
 
@@ -733,7 +741,7 @@ msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
 #: src/features/console-collab-run.tsx:114
-#: src/features/session-skills.tsx:49
+#: src/features/session-skills.tsx:50
 msgid "Command"
 msgstr "Command"
 
@@ -750,7 +758,7 @@ msgstr "Command sent: {command}"
 msgid "Commands"
 msgstr "Commands"
 
-#: src/features/session-skills.tsx:97
+#: src/features/session-skills.tsx:114
 msgid "Commands and skills"
 msgstr "Commands and skills"
 
@@ -865,7 +873,7 @@ msgid "Context compactions"
 msgstr "Context compactions"
 
 #: src/features/session-commands.tsx:220
-#: src/features/session-skills.tsx:62
+#: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "context usage"
 
@@ -954,7 +962,7 @@ msgid "Cost"
 msgstr "Cost"
 
 #: src/features/session-commands.tsx:225
-#: src/features/session-skills.tsx:63
+#: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "cost and limits"
 
@@ -1633,6 +1641,10 @@ msgstr "Light"
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
+#: src/features/session-skills.tsx:80
+msgid "list available commands"
+msgstr "list available commands"
+
 #: src/features/console-collab-run.tsx:48
 msgid "live"
 msgstr "live"
@@ -1661,7 +1673,7 @@ msgstr "Loading original…"
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:233
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
@@ -1682,6 +1694,14 @@ msgstr "Login"
 #: src/features/console-activity.tsx:100
 msgid "made progress"
 msgstr "made progress"
+
+#: src/features/session-skills.tsx:79
+msgid "manage MCP servers"
+msgstr "manage MCP servers"
+
+#: src/features/session-skills.tsx:78
+msgid "manage tool permission rules"
+msgstr "manage tool permission rules"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -1776,7 +1796,7 @@ msgstr "Multiple choice: tap to toggle options, then press Enter."
 msgid "Name"
 msgstr "Name"
 
-#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:66
 msgid "name this session"
 msgstr "name this session"
 
@@ -2066,7 +2086,7 @@ msgstr "Nothing is created until you confirm."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-skills.tsx:219
+#: src/features/session-skills.tsx:236
 msgid "Nothing matches"
 msgstr "Nothing matches"
 
@@ -2178,6 +2198,10 @@ msgstr "Opus tier"
 msgid "Origin session"
 msgstr "Origin session"
 
+#: src/features/session-skills.tsx:75
+msgid "outline a plan before editing"
+msgstr "outline a plan before editing"
+
 #: src/features/session-header.tsx:123
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
@@ -2252,7 +2276,7 @@ msgstr "Pick a session (grouped by repository)"
 #~ msgstr "Pick a session on the left. j / k move through the list."
 
 #: src/features/session-commands.tsx:217
-#: src/features/session-skills.tsx:61
+#: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
@@ -2272,7 +2296,7 @@ msgstr "Plan ready for review"
 msgid "Plan review"
 msgstr "Plan review"
 
-#: src/features/session-skills.tsx:47
+#: src/features/session-skills.tsx:48
 msgid "Plugin"
 msgstr "Plugin"
 
@@ -2754,7 +2778,7 @@ msgstr "Saving…"
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-skills.tsx:209
+#: src/features/session-skills.tsx:226
 msgid "Search name or description"
 msgstr "Search name or description"
 
@@ -2767,7 +2791,7 @@ msgstr "Search or filter the list"
 msgid "Search sessions"
 msgstr "Search sessions"
 
-#: src/features/session-skills.tsx:210
+#: src/features/session-skills.tsx:227
 msgid "Search skills"
 msgstr "Search skills"
 
@@ -2905,15 +2929,15 @@ msgstr "showing the last copy"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/session-skills.tsx:157
+#: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "Skills"
 
-#: src/features/session-skills.tsx:196
+#: src/features/session-skills.tsx:213
 msgid "Skills · {count}"
 msgstr "Skills · {count}"
 
-#: src/features/session-skills.tsx:152
+#: src/features/session-skills.tsx:169
 msgid "Skills this agent was given"
 msgstr "Skills this agent was given"
 
@@ -2964,8 +2988,10 @@ msgid "Staged"
 msgstr "Staged"
 
 #: src/features/session-commands.tsx:214
-#: src/features/session-skills.tsx:59
 #: src/features/session-skills.tsx:60
+#: src/features/session-skills.tsx:61
+#: src/features/session-skills.tsx:73
+#: src/features/session-skills.tsx:74
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
@@ -3034,7 +3060,8 @@ msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
 #: src/features/session-commands.tsx:204
-#: src/features/session-skills.tsx:58
+#: src/features/session-skills.tsx:59
+#: src/features/session-skills.tsx:72
 msgid "summarise the context"
 msgstr "summarise the context"
 
@@ -3058,7 +3085,8 @@ msgstr "Switch mode"
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
-#: src/features/session-skills.tsx:64
+#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:76
 msgid "switch the model"
 msgstr "switch the model"
 
@@ -3191,7 +3219,7 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/session-skills.tsx:219
+#: src/features/session-skills.tsx:236
 msgid "This agent lists no skills yet"
 msgstr "This agent lists no skills yet"
 
@@ -3243,7 +3271,7 @@ msgstr "This page hit a rendering error. The rest of the console is still availa
 msgid "This pane switched sessions"
 msgstr "This pane switched sessions"
 
-#: src/features/session-skills.tsx:45
+#: src/features/session-skills.tsx:46
 msgid "This repo"
 msgstr "This repo"
 
@@ -3479,7 +3507,7 @@ msgstr "Use CLI default"
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 
-#: src/features/session-skills.tsx:46
+#: src/features/session-skills.tsx:47
 msgid "User"
 msgstr "User"
 
@@ -3592,7 +3620,7 @@ msgstr "WebSocket relay"
 
 #: src/features/console-shell.tsx:226
 #: src/features/console-shell.tsx:315
-#: src/features/session-skills.tsx:44
+#: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
 
@@ -3624,7 +3652,7 @@ msgstr "What the other repository should do"
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 
-#: src/features/session-skills.tsx:203
+#: src/features/session-skills.tsx:220
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
