@@ -20,7 +20,29 @@ type StageJob = {
     'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
   branch?: string
   error?: string
-  mode?: 'new' | 'parallel' | 'reuse'
+  mode?: 'new' | 'parallel' | 'reuse' | 'group'
+}
+
+export function useStageText() {
+  const { t } = useLingui()
+  return (job: StageJob) => {
+    const reason = job.error ?? ''
+    return job.stage === 'creating'
+      ? job.mode === 'reuse'
+        ? t`Resetting the workstation onto the latest main branch…`
+        : job.mode === 'group'
+          ? t`Starting the agent…`
+          : t`Creating the worktree…`
+      : job.stage === 'starting'
+        ? t`Starting the agent…`
+        : job.stage === 'waiting_trust'
+          ? t`Agy is waiting for this worktree to be trusted.`
+          : job.stage === 'sending'
+            ? t`Sending the first message…`
+            : job.stage === 'done'
+              ? t`Started. Opening the session when the agent picks it up…`
+              : t`Could not create it: ${reason}`
+  }
 }
 
 export function ComposeLayer({

@@ -33,6 +33,7 @@ import {
 import type { DirectionPick } from './session-new-direction'
 import {
   ComposeLayer,
+  useStageText,
   NewDirectionLayer,
   PlaceLayer,
 } from './session-new-panels'
@@ -43,7 +44,9 @@ type Repo = { root: string; label: string; visited?: number }
 type Layer = 'compose' | 'place' | 'new'
 
 /** open 新会话 already on a repo + direction (chat row 「新一轮」) */
-export type NewSessionPreset = { repo: string; direction: string }
+export type NewSessionPreset =
+  | { repo: string; direction: string; anchor?: never; group?: never }
+  | { repo: string; anchor: string; group: string; direction?: never }
 
 type NewSessionRequest = { round: number; preset?: NewSessionPreset }
 let newSessionReq: NewSessionRequest = { round: 0 }
@@ -85,7 +88,7 @@ type Job = {
   stage:
     'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
   /** new direction, one more parallel slot, or an idle slot reused */
-  mode?: 'new' | 'parallel' | 'reuse'
+  mode?: 'new' | 'parallel' | 'reuse' | 'group'
   worktree?: string
   branch?: string
   session_id?: string
@@ -191,26 +194,6 @@ function readPendingJob(): { job: string; before: string[] } | null {
   return null
 }
 
-function useStageText() {
-  const { t } = useLingui()
-  return (job: Pick<Job, 'stage' | 'mode' | 'error'>) => {
-    const reason = job.error ?? ''
-    return job.stage === 'creating'
-      ? job.mode === 'reuse'
-        ? t`Resetting the workstation onto the latest main branch…`
-        : t`Creating the worktree…`
-      : job.stage === 'starting'
-        ? t`Starting the agent…`
-        : job.stage === 'waiting_trust'
-          ? t`Agy is waiting for this worktree to be trusted.`
-          : job.stage === 'sending'
-            ? t`Sending the first message…`
-            : job.stage === 'done'
-              ? t`Started. Opening the session when the agent picks it up…`
-              : t`Could not create it: ${reason}`
-  }
-}
-
 function useAgyTrust(jobId: string, setError: (message: string) => void) {
   const [trusting, setTrusting] = useState(false)
   const trust = async () => {
@@ -227,9 +210,17 @@ function useAgyTrust(jobId: string, setError: (message: string) => void) {
   return { trust, trusting }
 }
 
-function useSheetTitle(layer: Layer, placeLocked: boolean, onBack: () => void) {
+function useSheetTitle(
+  layer: Layer,
+  placeLocked: boolean,
+  grouped: boolean,
+  onBack: () => void,
+) {
   const { t } = useLingui()
-  if (layer === 'compose') return placeLocked ? t`New round` : t`New session`
+  if (layer === 'compose') {
+    if (grouped) return t`New session in this group`
+    return placeLocked ? t`New round` : t`New session`
+  }
   return (
     <span className="flex min-w-0 items-center gap-0.5">
       <BackButton
@@ -350,7 +341,8 @@ function NewSessionSheet({
   const stageText = useStageText()
   const plan = useDirectionPlan()
   const planShort = useDirectionPlanShort()
-  const placeLocked = Boolean(preset?.repo && preset.direction)
+  const anchor = preset?.anchor
+  const placeLocked = Boolean(preset)
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
     queryFn: async () =>
@@ -426,25 +418,30 @@ function NewSessionSheet({
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const slug = workstationSlug(name)
   const ready =
-    Boolean(chosen && (pick || slug) && prompt.trim()) &&
+    Boolean((anchor || (chosen && (pick || slug))) && prompt.trim()) &&
     (!agentProfiles.data || availableProfiles.length > 0)
-  const locationClause = isNew
-    ? slug || t`+ New direction`
-    : pick || t`Direction`
-  const locationHint = planShort(pickedDir, isNew)
+  const locationClause =
+    preset?.group ?? (isNew ? slug || t`+ New direction` : pick || t`Direction`)
+  const locationHint = anchor ? '' : planShort(pickedDir, isNew)
   const submit = async () => {
     setError('')
     try {
-      const reused = pickedDir?.slots.find((s) => s.state === 'idle')?.path
+      const reused = anchor
+        ? sessions.data?.sessions.find((row) => row.id === anchor)?.worktree
+        : pickedDir?.slots.find((s) => s.state === 'idle')?.path
       before.current = new Set(
         (sessions.data?.sessions ?? [])
           .filter((row) => reused && row.worktree === reused)
           .map((row) => row.id),
       )
       const res = (await hostWrite('session.new', {
-        repo: chosen,
-        name: pick || name.trim(),
-        description: pick ? '' : description.trim(),
+        ...(anchor
+          ? { anchor_session_id: anchor }
+          : {
+              repo: chosen,
+              name: pick || name.trim(),
+              description: pick ? '' : description.trim(),
+            }),
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
@@ -457,7 +454,7 @@ function NewSessionSheet({
       setError((e as Error).message)
     }
   }
-  const title = useSheetTitle(layer, placeLocked, () =>
+  const title = useSheetTitle(layer, placeLocked, Boolean(anchor), () =>
     setLayer(layer === 'new' ? 'place' : 'compose'),
   )
   return (
@@ -480,7 +477,7 @@ function NewSessionSheet({
             placeLocked={placeLocked}
             prompt={prompt}
             setPrompt={setPrompt}
-            isNew={isNew}
+            isNew={!anchor && isNew}
             name={name}
             slug={slug}
             current={current}

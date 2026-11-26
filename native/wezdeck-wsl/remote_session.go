@@ -516,7 +516,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			listed[card.ID] = true
 		}
 		for _, r := range recent {
-			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
+			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" || sessionWasClosed(r.SessionID) ||
 				replacementForArchived(r.SessionID, recent, entries) != "" ||
 				now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
 				continue
@@ -702,7 +702,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		}
 		if includeArchived {
 			for _, r := range recent {
-				if r.SessionID == a.ID {
+				if r.SessionID == a.ID && !sessionWasClosed(a.ID) {
 					if path = archivedCodexTranscript(r); path != "" {
 						e = attentionEntry{SessionID: a.ID, Status: "idle", TS: r.ArchivedTS,
 							AgentName: r.AgentName, WindowName: r.WindowName, GitBranch: r.GitBranch}

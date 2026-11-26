@@ -164,6 +164,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 		Description string `json:"description"`
 		Prompt      string `json:"prompt"`
 		Agent       string `json:"agent_profile"`
+		Anchor      string `json:"anchor_session_id"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.new: bad arguments")
@@ -204,10 +205,10 @@ func startNewSession(args json.RawMessage) (any, error) {
 			return nil, errors.New("session.new: default agent is disabled; select another agent")
 		}
 	}
-	if !validSubject(a.Name) {
+	if a.Anchor == "" && !validSubject(a.Name) {
 		return nil, fmt.Errorf("session.new: the name needs 1–%d characters, one line", subjectMax)
 	}
-	if !hasSlugChar(a.Name) {
+	if a.Anchor == "" && !hasSlugChar(a.Name) {
 		return nil, errors.New("session.new: the name needs letters or digits (it becomes the directory and branch); put the rest in the description")
 	}
 	if utf8.RuneCountInString(a.Description) > descriptionMax || strings.ContainsAny(a.Description, "\r\n") {
@@ -215,6 +216,12 @@ func startNewSession(args json.RawMessage) (any, error) {
 	}
 	if a.Prompt == "" || utf8.RuneCountInString(a.Prompt) > promptMax {
 		return nil, fmt.Errorf("session.new: the first message needs 1–%d characters", promptMax)
+	}
+	if a.Anchor != "" {
+		if a.Agent == "" {
+			a.Agent = activeAgentProfile()
+		}
+		return startGroupedSession(a.Anchor, a.Agent, a.Prompt)
 	}
 	allowed := false
 	for _, r := range knownRepos() {
@@ -244,11 +251,20 @@ func startNewSession(args json.RawMessage) (any, error) {
 		}
 		newJobsMu.Unlock()
 	}
+	unlock := func() {}
+	if reuse != "" {
+		var err error
+		unlock, err = lockSessionWorktree(reuse)
+		if err != nil {
+			return nil, err
+		}
+	}
 	job := &newSessionJob{ID: newDiagID(), Stage: "creating", Repo: a.Repo, Mode: mode, Worktree: reuse, at: time.Now()}
 	newJobsMu.Lock()
 	if reuse != "" {
 		if reusing[reuse] != "" { // taken between the check and here
 			newJobsMu.Unlock()
+			unlock()
 			return nil, errors.New("session.new: that workstation was just taken; try again")
 		}
 		reusing[reuse] = job.ID
@@ -261,6 +277,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	newJobs[job.ID] = job
 	newJobsMu.Unlock()
 	go func() {
+		defer unlock()
 		runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt, a.Agent, reuse)
 		if reuse != "" {
 			newJobsMu.Lock()
@@ -522,19 +539,25 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 		return
 	}
 	target := strings.TrimSpace(string(pane))
-	if err := waitAgentReady(socket, target, 90*time.Second); err != nil {
+	if err := sendNewSessionPrompt(ctx, id, socket, target, prompt); err != nil {
 		fail(err)
 		return
 	}
+	relayLogf("session_new", "job=%s ok=true reuse=%t worktree=%q branch=%q",
+		id, reuse != "", result["worktree_path"], result["branch_name"])
+}
+
+func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string) error {
+	if err := waitAgentReady(socket, target, 90*time.Second); err != nil {
+		return err
+	}
 	if err := clearWorkspaceTrust(ctx, id, socket, target, true); err != nil {
-		fail(err)
-		return
+		return err
 	}
 	beforeIDs := paneAttentionIDs(socket, target)
 	setJob(id, func(j *newSessionJob) { j.Stage = "sending" })
 	if err := pasteToPane(socket, target, prompt); err != nil {
-		fail(err)
-		return
+		return err
 	}
 	waitFor := 20 * time.Second
 	// test stubs set WEZDECK_SESSION_NEW_CMD and often write attention.json
@@ -547,8 +570,7 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 		j.SessionID = newID
 		j.Stage = "done"
 	})
-	relayLogf("session_new", "job=%s ok=true reuse=%t session_id=%s worktree=%q branch=%q",
-		id, reuse != "", newID, result["worktree_path"], result["branch_name"])
+	return nil
 }
 
 func newSessionCreateArgs(name, description, agent string) []string {
