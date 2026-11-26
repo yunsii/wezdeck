@@ -406,6 +406,26 @@ func TestPendingGrokPlanApprovalRespectsPlanModeFile(t *testing.T) {
 	}
 }
 
+func TestPendingGrokPlanHidesExcerptWhenPlanModeInactive(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "plan.md"), []byte("# leftover plan\n\nstill on disk\n"), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
+		`{"state":"Inactive","awaiting_plan_approval":false}`,
+	), 0o600)
+	if got := (grokAdapter{}).PendingPlan(chat); got != nil {
+		t.Fatalf("Inactive plan mode must not surface leftover plan.md: %#v", got)
+	}
+	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
+		`{"state":"Active","awaiting_plan_approval":false}`,
+	), 0o600)
+	got := (grokAdapter{}).PendingPlan(chat)
+	if got == nil || got["excerpt"] == nil || got["awaiting_approval"] != nil {
+		t.Fatalf("Active plan mode should show excerpt only: %#v", got)
+	}
+}
+
 func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")

@@ -252,10 +252,16 @@ export function PromptPanels({
   // Host gates elicitation / plan.awaiting_approval on attention waiting;
   // also hide here so a stale poll cache after Ctrl+C cannot keep the card.
   const waiting = data?.status === 'waiting' || Boolean(data?.waiting_kind)
+  const midTurn = waiting || data?.status === 'running'
   const elicitation = waiting ? data?.elicitation : undefined
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
   const planReview = waiting && Boolean(data?.plan?.awaiting_approval)
-  const planExcerpt = data?.plan?.excerpt
+  // 「当前计划」 excerpt is for peeking while planning / reviewing — not
+  // under 已完成 with a leftover plan.md after plan mode ends.
+  const planExcerpt =
+    (planReview || midTurn) && data?.plan?.excerpt
+      ? data.plan.excerpt
+      : undefined
   return (
     <div
       aria-busy={sending}

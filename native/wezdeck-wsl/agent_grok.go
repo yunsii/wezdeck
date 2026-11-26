@@ -201,22 +201,41 @@ func grokPlanExcerpt(chatHistoryPath string, limit int) string {
 	return text
 }
 
-// grokAwaitingPlanApprovalFile reads sibling plan_mode.json. When the file
-// says awaiting_plan_approval=false, updates.jsonl alone must not keep the
-// web on the plan-review card after Ctrl+C / quit (exit_plan_mode often has
-// no status=completed).
-func grokAwaitingPlanApprovalFile(chatHistoryPath string) (awaiting bool, known bool) {
+// grokPlanModeFile reads sibling plan_mode.json (Active / awaiting flags).
+type grokPlanMode struct {
+	Active   bool // state == "Active"
+	Awaiting bool
+	Known    bool // file present and parsed
+}
+
+func grokPlanModeFile(chatHistoryPath string) grokPlanMode {
 	raw, err := os.ReadFile(filepath.Join(filepath.Dir(chatHistoryPath), "plan_mode.json"))
 	if err != nil {
-		return false, false
+		return grokPlanMode{}
 	}
 	var doc struct {
-		Awaiting *bool `json:"awaiting_plan_approval"`
+		State    string `json:"state"`
+		Awaiting *bool  `json:"awaiting_plan_approval"`
 	}
-	if json.Unmarshal(raw, &doc) != nil || doc.Awaiting == nil {
+	if json.Unmarshal(raw, &doc) != nil {
+		return grokPlanMode{}
+	}
+	out := grokPlanMode{Known: true, Active: strings.EqualFold(doc.State, "Active")}
+	if doc.Awaiting != nil {
+		out.Awaiting = *doc.Awaiting
+	}
+	return out
+}
+
+// grokAwaitingPlanApprovalFile: when the file says awaiting_plan_approval=false,
+// updates.jsonl alone must not keep the web on the plan-review card after
+// Ctrl+C / quit (exit_plan_mode often has no status=completed).
+func grokAwaitingPlanApprovalFile(chatHistoryPath string) (awaiting bool, known bool) {
+	m := grokPlanModeFile(chatHistoryPath)
+	if !m.Known {
 		return false, false
 	}
-	return *doc.Awaiting, true
+	return m.Awaiting, true
 }
 
 // pendingGrokPlanApproval: exit_plan_mode opened the TUI review and has not completed.
@@ -332,11 +351,16 @@ func (t *transcript) feedGrok(raw []byte) {
 func (grokAdapter) PendingAsk(path, _ string) *elicitation { return pendingGrokElicitation(path) }
 func (grokAdapter) PendingPlan(path string) map[string]any {
 	plan := map[string]any{}
-	if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" {
-		plan["excerpt"] = excerpt
-	}
-	if pendingGrokPlanApproval(path) {
+	awaiting := pendingGrokPlanApproval(path)
+	if awaiting {
 		plan["awaiting_approval"] = true
+	}
+	// plan.md often survives after plan mode ends; only surface the excerpt
+	// while reviewing or while plan mode is still Active — otherwise the web
+	// keeps a 「当前计划」 disclosure under 已完成 with leftover text.
+	mode := grokPlanModeFile(path)
+	if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" && (awaiting || mode.Active) {
+		plan["excerpt"] = excerpt
 	}
 	if len(plan) == 0 {
 		return nil
