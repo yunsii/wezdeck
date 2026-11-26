@@ -180,7 +180,7 @@ msgid "+ Description"
 msgstr "+ Description"
 
 #: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:396
+#: src/features/session-new.tsx:432
 msgid "+ New direction"
 msgstr "+ New direction"
 
@@ -299,7 +299,7 @@ msgstr "Agent sessions"
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/session-new.tsx:151
+#: src/features/session-new.tsx:205
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy is waiting for this worktree to be trusted."
 
@@ -440,11 +440,11 @@ msgstr "Back"
 msgid "Back to agents"
 msgstr "Back to agents"
 
-#: src/features/session-new.tsx:182
+#: src/features/session-new.tsx:236
 msgid "Back to message"
 msgstr "Back to message"
 
-#: src/features/session-new.tsx:182
+#: src/features/session-new.tsx:236
 msgid "Back to place"
 msgstr "Back to place"
 
@@ -902,7 +902,7 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
-#: src/features/session-new.tsx:156
+#: src/features/session-new.tsx:210
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -930,7 +930,7 @@ msgstr "Create session"
 msgid "Create ticket"
 msgstr "Create ticket"
 
-#: src/features/session-new.tsx:147
+#: src/features/session-new.tsx:201
 msgid "Creating the worktree…"
 msgstr "Creating the worktree…"
 
@@ -1013,7 +1013,7 @@ msgstr "Direct"
 
 #: src/features/session-new-direction.tsx:121
 #: src/features/session-new-panels.tsx:242
-#: src/features/session-new.tsx:397
+#: src/features/session-new.tsx:433
 msgid "Direction"
 msgstr "Direction"
 
@@ -1684,7 +1684,7 @@ msgid "new direction"
 msgstr "new direction"
 
 #: src/features/session-new-panels.tsx:283
-#: src/features/session-new.tsx:187
+#: src/features/session-new.tsx:241
 msgid "New direction"
 msgstr "New direction"
 
@@ -1694,12 +1694,12 @@ msgstr "New line"
 
 #: src/features/session-list.tsx:191
 #: src/features/session-list.tsx:192
-#: src/features/session-new.tsx:178
+#: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "New round"
 
-#: src/features/session-new.tsx:178
-#: src/features/session-new.tsx:257
+#: src/features/session-new.tsx:232
+#: src/features/session-new.tsx:311
 msgid "New session"
 msgstr "New session"
 
@@ -1707,7 +1707,7 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:253
+#: src/features/session-new.tsx:307
 msgid "New session (c)"
 msgstr "New session (c)"
 
@@ -2355,7 +2355,7 @@ msgstr "resets {reset}"
 msgid "Resets {reset}"
 msgstr "Resets {reset}"
 
-#: src/features/session-new.tsx:146
+#: src/features/session-new.tsx:200
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
@@ -2616,7 +2616,7 @@ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
-#: src/features/session-new.tsx:153
+#: src/features/session-new.tsx:207
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -2777,11 +2777,11 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new.tsx:155
+#: src/features/session-new.tsx:209
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new.tsx:149
+#: src/features/session-new.tsx:203
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -2942,7 +2942,7 @@ msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
-#: src/features/session-new.tsx:114
+#: src/features/session-new.tsx:168
 msgid "The previous session request expired. Start a new one."
 msgstr "The previous session request expired. Start a new one."
 
@@ -3398,7 +3398,7 @@ msgstr "What you assume"
 msgid "What you saw"
 msgstr "What you saw"
 
-#: src/features/session-new.tsx:187
+#: src/features/session-new.tsx:241
 msgid "Where"
 msgstr "Where"
 

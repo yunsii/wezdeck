@@ -21,7 +21,15 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 
 // A managed Agy pane may report its launcher shell while agy runs below it.
 func paneHasProcess(e attentionEntry, name string) bool {
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{pane_pid}").Output()
+	return paneHasDescendant(e.TmuxSocket, e.TmuxPane, func(comm string) bool { return comm == name })
+}
+
+func paneHasAgentProcess(socket, pane string) bool {
+	return paneHasDescendant(socket, pane, func(comm string) bool { return agentCommands[comm] })
+}
+
+func paneHasDescendant(socket, pane string, match func(string) bool) bool {
+	out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_pid}").Output()
 	if err != nil {
 		return false
 	}
@@ -33,7 +41,7 @@ func paneHasProcess(e attentionEntry, name string) bool {
 	for i := 0; i < len(pids) && i < 64; i++ {
 		pid := pids[i]
 		comm, err := os.ReadFile(fmt.Sprintf("/proc/%d/comm", pid))
-		if err == nil && strings.TrimSpace(string(comm)) == name {
+		if err == nil && match(strings.TrimSpace(string(comm))) {
 			return true
 		}
 		children, err := os.ReadFile(fmt.Sprintf("/proc/%d/task/%d/children", pid, pid))

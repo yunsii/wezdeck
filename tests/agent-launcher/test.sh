@@ -207,6 +207,60 @@ printf 'PASS managed Agy profile resumes with model and permission intent\n'
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'
 
+# Managed launches pre-trust the launch worktree for Claude, Codex, and Agy
+# without clobbering existing host settings, and remain idempotent.
+TRUST_DIR="$TEST_ROOT/worktree-trust-dir"
+mkdir -p "$TRUST_DIR" "$TEST_ROOT/trust-home/.gemini/antigravity-cli" "$TEST_ROOT/trust-codex"
+printf '{"theme":"dark","projects":{"/existing":{"hasTrustDialogAccepted":true}}}\n' \
+  > "$TEST_ROOT/trust-home/.claude.json"
+printf '# keep comment\nmodel = "gpt-5.4"\n' \
+  > "$TEST_ROOT/trust-codex/config.toml"
+printf '{"model":"gemini-4-neon","trustedWorkspaces":["/existing"]}\n' \
+  > "$TEST_ROOT/trust-home/.gemini/antigravity-cli/settings.json"
+
+(
+  cd "$TRUST_DIR"
+  env -i HOME="$TEST_ROOT/trust-home" NVM_DIR="$NVM_DIR" CLAUDE_TEST_LOG="$CLAUDE_LOG" \
+    PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+    bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+  env -i HOME="$TEST_ROOT/trust-home" NVM_DIR="$NVM_DIR" CODEX_HOME="$TEST_ROOT/trust-codex" \
+    CODEX_TEST_LOG="$LOG" PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+    bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+  env -i HOME="$TEST_ROOT/trust-home" NVM_DIR="$NVM_DIR" AGY_TEST_LOG="$AGY_LOG" \
+    PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+    bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" agy
+  # Re-run to verify idempotency (no duplicate entries).
+  env -i HOME="$TEST_ROOT/trust-home" NVM_DIR="$NVM_DIR" AGY_TEST_LOG="$AGY_LOG" \
+    PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+    bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" agy
+)
+
+python3 - "$TEST_ROOT/trust-home" "$TEST_ROOT/trust-codex/config.toml" "$TRUST_DIR" <<'PY'
+import json, os, sys, tomllib
+
+home, codex_cfg, cwd = sys.argv[1], sys.argv[2], os.path.realpath(sys.argv[3])
+
+with open(os.path.join(home, ".claude.json"), encoding="utf-8") as f:
+    claude = json.load(f)
+assert claude["theme"] == "dark"
+assert claude["projects"]["/existing"]["hasTrustDialogAccepted"] is True
+assert claude["projects"][cwd]["hasTrustDialogAccepted"] is True
+
+with open(codex_cfg, encoding="utf-8") as f:
+    raw_toml = f.read()
+assert "# keep comment" in raw_toml
+codex = tomllib.loads(raw_toml)
+assert codex["model"] == "gpt-5.4"
+assert codex["projects"][cwd]["trust_level"] == "trusted"
+
+with open(os.path.join(home, ".gemini", "antigravity-cli", "settings.json"), encoding="utf-8") as f:
+    agy = json.load(f)
+assert agy["model"] == "gemini-4-neon"
+assert "/existing" in agy["trustedWorkspaces"]
+assert agy["trustedWorkspaces"].count(cwd) == 1
+PY
+printf 'PASS agent-launcher pre-trusts managed worktrees for Claude, Codex, and Agy\n'
+
 if command -v zsh >/dev/null; then
   for tmux_context in '/tmp/test-tmux,1,0' ''; do
     env -i PATH="$FAKE_BIN:/usr/bin:/bin" WEZDECK_REPO="$REPO_ROOT" \

@@ -109,9 +109,6 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	if !alive {
 		return nil, errors.New("session.handoff: the pane is gone")
 	}
-	if a.To == "agy" && !agyWorkspaceTrusted(cwd) {
-		return nil, errors.New("session.handoff: trust this worktree in Agy at the terminal before handoff")
-	}
 	job := &handoffJob{
 		ID: newDiagID(), Stage: "starting", FromID: a.ID, FromAgent: fromAgent,
 		ToAgent: a.To, Worktree: cwd, Pane: e.TmuxPane, at: time.Now(),
@@ -187,6 +184,10 @@ func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAge
 		setHandoffJob(id, func(j *handoffJob) { j.SessionID = newID })
 	}
 	if err := waitAgentReady(e.TmuxSocket, e.TmuxPane, 90*time.Second); err != nil {
+		fail(err)
+		return
+	}
+	if err := clearWorkspaceTrust(ctx, id, e.TmuxSocket, e.TmuxPane, false); err != nil {
 		fail(err)
 		return
 	}
