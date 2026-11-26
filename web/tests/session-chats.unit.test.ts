@@ -195,7 +195,7 @@ describe('chatTone / chatPreview', () => {
         {},
         now,
       )?.id,
-    ).toBe('recent-turn')
+    ).toBe('fresh-empty')
   })
 })
 
