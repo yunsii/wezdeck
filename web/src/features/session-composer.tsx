@@ -408,10 +408,7 @@ export function ComposerBox({
       ) : null}
       <div
         data-text-field
-        className={cn(
-          'relative rounded-3xl bg-brand-surface p-1.5',
-          composer.text || composer.images.length ? 'min-h-16' : 'min-h-12',
-        )}
+        className="relative min-h-12 rounded-3xl bg-brand-surface p-1.5"
       >
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
@@ -468,10 +465,7 @@ export function ComposerBox({
           enterKeyHint={touch ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className={cn(
-            'w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label',
-            composer.text || composer.images.length ? 'pb-12' : null,
-          )}
+          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-20 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         {composer.text || composer.images.length ? (
           <Button
@@ -481,9 +475,9 @@ export function ComposerBox({
             aria-label={t`Clear input`}
             title={t`Clear input`}
             onClick={() => composer.clear('button')}
-            className="absolute right-1.5 top-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-label"
+            className="absolute bottom-2 right-12 inline-flex size-8 items-center justify-center rounded-full text-brand-label"
           >
-            <X size={18} aria-hidden />
+            <X size={16} aria-hidden />
           </Button>
         ) : null}
         <Button

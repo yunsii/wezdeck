@@ -674,8 +674,8 @@ msgstr "Claude 命令，发进窗格执行"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-composer.tsx:481
-#: src/features/session-composer.tsx:482
+#: src/features/session-composer.tsx:475
+#: src/features/session-composer.tsx:476
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -1787,11 +1787,11 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:470
+#: src/features/session-composer.tsx:467
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:417
+#: src/features/session-composer.tsx:414
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -2860,7 +2860,7 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:495
+#: src/features/session-composer.tsx:489
 msgid "Send"
 msgstr "发送"
 
