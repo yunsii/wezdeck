@@ -1,33 +1,52 @@
 #!/usr/bin/env bash
-# Claude API Error detection for attention emit (idle_prompt path).
-# When Claude prints an API Error the TUI returns to the prompt but Stop
-# often never fires — attention stays running. idle_prompt then arrives;
-# if the transcript's newest signal is that API Error, treat the turn as
-# done (same as the terminal).
+# Claude API Error / incomplete-turn detection for attention emit (idle_prompt).
+# When Claude prints an API Error (or the gateway fails before any assistant
+# row is written) the TUI returns to the prompt but Stop often never fires —
+# attention stays running. idle_prompt then arrives; if the transcript shows
+# that failure mode, treat the turn as done (same as the terminal).
 #
 # claude_api_error_recent <session_id>
 #   exit 0 + prints a one-line reason when the newest transcript signal is
-#   an API Error; exit 1 otherwise.
+#   an API Error, or a user turn that only got api-request rows (no
+#   successful assistant); exit 1 otherwise.
 
+# Prefer CLAUDE_CONFIG_DIR, then ~/.claude, then every
+# ~/.config/claude-profiles/*/projects (kimi-home / sub2api home, …).
+# Multiple hits: newest mtime wins so a recycled sid under another profile
+# does not shadow the live transcript.
 claude_transcript_path() {
   local sid="$1"
   [[ -n "$sid" ]] || return 1
-  local root="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/projects"
-  [[ -d "$root" ]] || return 1
-  # Session files are ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
-  local path=""
-  local d
-  for d in "$root"/*/; do
-    [[ -f "${d}${sid}.jsonl" ]] || continue
-    path="${d}${sid}.jsonl"
-    break
+  local -a roots=()
+  local root d path best="" best_mtime=0 mtime
+  if [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
+    roots+=("${CLAUDE_CONFIG_DIR}/projects")
+  fi
+  roots+=("${HOME}/.claude/projects")
+  if [[ -d "${HOME}/.config/claude-profiles" ]]; then
+    for d in "${HOME}/.config/claude-profiles"/*/projects; do
+      [[ -d "$d" ]] || continue
+      roots+=("$d")
+    done
+  fi
+  for root in "${roots[@]}"; do
+    [[ -d "$root" ]] || continue
+    for d in "$root"/*/; do
+      path="${d}${sid}.jsonl"
+      [[ -f "$path" ]] || continue
+      mtime="$(stat -c '%Y' "$path" 2>/dev/null || stat -f '%m' "$path" 2>/dev/null || echo 0)"
+      if [[ -z "$best" || "$mtime" -gt "$best_mtime" ]]; then
+        best="$path"
+        best_mtime="$mtime"
+      fi
+    done
   done
-  [[ -n "$path" ]] || return 1
-  printf '%s\n' "$path"
+  [[ -n "$best" ]] || return 1
+  printf '%s\n' "$best"
 }
 
-# Newest signal in the transcript tail: "error" | "user" | "other".
-# Prints the error first line on stdout when the newest signal is error.
+# Newest signal in the transcript tail: "error" | "incomplete" | "user" | "other".
+# Prints the error / fallback first line on stdout when the turn should end.
 claude_api_error_recent() {
   local sid="$1"
   local path
@@ -47,8 +66,10 @@ try:
 except OSError:
     sys.exit(1)
 
-last = None  # "error" | "user" | "other"
+# last: "error" | "incomplete" | "user" | "other"
+last = None
 reason = ""
+saw_api_after_user = False
 
 
 def text_of(msg):
@@ -84,31 +105,40 @@ for line in data.splitlines():
     if typ == "assistant" and is_err and text:
         last = "error"
         reason = text.split("\n", 1)[0][:160]
+        saw_api_after_user = False
     elif typ == "user":
-        # Human (or queued human) input after the error starts a new turn.
         content = text_of(msg) if text else ""
         if not content:
-            # content may be blocks; already in text_of
             raw = msg.get("content")
             if isinstance(raw, str):
                 content = raw.strip()
         if content and not content.startswith("<"):
             last = "user"
-        elif typ == "user":
-            # attachment-only / harness user lines: ignore for "after error"
-            pass
+            reason = ""
+            saw_api_after_user = False
+        # attachment-only / harness user lines: ignore
     elif typ == "assistant" and text:
         last = "other"
+        reason = ""
+        saw_api_after_user = False
+    elif typ.startswith("api-request") and last == "user":
+        # Gateway / Anthropic request logged, but no assistant reply yet.
+        # Kimi org / auth failures often print in the TUI without writing
+        # isApiErrorMessage — idle_prompt is then the only turn-end signal.
+        saw_api_after_user = True
 
 if last == "error" and reason:
     print(reason)
+    sys.exit(0)
+if last == "user" and saw_api_after_user:
+    print(reason or "API Error")
     sys.exit(0)
 sys.exit(1)
 PY
 }
 
-# If idle_prompt should end the turn for a Claude API Error, set:
-#   status=done, reason_override, AGENT_ATTENTION_DONE_KIND=api_error
+# If idle_prompt should end the turn for a Claude API Error / incomplete
+# turn, set: status=done, reason_override, AGENT_ATTENTION_DONE_KIND=api_error
 # and return 0. Otherwise return 1 (caller should ignore as before).
 # Usage: claude_api_error_end_turn_from_idle <session_id> || true
 claude_api_error_end_turn_from_idle() {

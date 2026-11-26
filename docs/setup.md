@@ -158,7 +158,7 @@ Managed Claude has two auth identities that share the same binary and the same `
 |---|---|---|
 | `claude` (default) | Claude.ai OAuth / team subscription | `~/.claude/.credentials.json` (login once). Launcher **clears** `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL` so a leaked parent env cannot override OAuth. |
 | `claude_sub2api` | Anthropic-compatible gateway (sub2api, etc.) | `~/.config/claude-profiles/sub2api.env` (or `$CLAUDE_SUB2API_ENV`). Must set `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` (or `ANTHROPIC_API_KEY`). |
-| `claude_kimi` | Kimi API Platform through its Anthropic-compatible endpoint | `~/.config/claude-profiles/kimi.env` (or `$CLAUDE_KIMI_ENV`). Must set the Kimi endpoint, token, and account-supported model ids. |
+| `claude_kimi` | Kimi Code Anthropic-compatible coding endpoint | `~/.config/claude-profiles/kimi.env` (or `$CLAUDE_KIMI_ENV`). Must set `ANTHROPIC_BASE_URL` (`https://api.kimi.ai/coding/`), `ANTHROPIC_API_KEY`, and account-supported model ids (`k3.1-pro` / `k3.1-pro[1m]`). |
 
 **Why not `shell-env.d`?** That directory is sourced for *every* managed agent. Putting gateway keys there would force API auth onto team panes as well. The sub2api file is deliberately outside the auto-glob and is only read by `agent-launcher.sh claude-sub2api`.
 
@@ -193,8 +193,15 @@ claude-sub2api -p 'hi'  # forward args to claude after loading gateway env
 ### Claude Code on Kimi
 
 `claude_kimi` keeps the Claude Code CLI as the user interface and routes its
-Anthropic Messages API calls to Kimi. Kimi documents this integration at
-<https://platform.kimi.ai/docs/guide/claude-code-kimi>.
+Anthropic Messages API calls to **Kimi Code**. Current guide:
+<https://www.kimi.com/code/docs/en/third-party-tools/claude-code.html>
+(create the key in the [Kimi Code Console](https://www.kimi.com/code/console);
+membership required). Defaults match the K3.1 Pro 256K recipe:
+`ANTHROPIC_BASE_URL=https://api.kimi.ai/coding/`, `ANTHROPIC_API_KEY`,
+model `k3.1-pro`, `CLAUDE_CODE_EFFORT_LEVEL=high`, and
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW` / `CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144`.
+For 1M context use model `k3.1-pro[1m]` (web save bumps both budgets to
+`1048576`).
 
 Install the profile file once; keep it outside `shell-env.d` so the default
 Claude OAuth profile cannot inherit the Kimi token:
@@ -204,22 +211,20 @@ mkdir -p ~/.config/claude-profiles
 cp wezterm-x/local.example/claude-profiles/kimi.env \
   ~/.config/claude-profiles/kimi.env
 chmod 600 ~/.config/claude-profiles/kimi.env
-# edit the token and model ids
+# edit ANTHROPIC_API_KEY (and model ids if needed)
 ```
 
 Run it directly with `claude-kimi`, or select it for newly managed panes:
 
-The web console's 我的 › Agents can also write the Kimi API key and model to
-the same private file. Its read view reports only whether Kimi is configured;
-the key is never returned. The browser's default agent applies to new web
-sessions only, while `MANAGED_AGENT_PROFILE` below controls terminal launches.
-The other profile panels save a model override under
-`~/.config/wezdeck/agent-models/<profile>.env`; managed launches pass it as
-`--model`, and clearing it restores each CLI's own default. Running sessions
-keep the model they started with until restarted. The web panel reads existing
-defaults from Claude settings JSON, Codex/Grok TOML and gateway env files;
-when a CLI has no explicit default it says so. Kimi/gateway keys are shown
-only as a masked suffix or as unconfigured, never returned in full.
+The web console's 我的 › Agents writes the same private file and shows a
+`/status`-style read-only block (Base URL, masked Login, model, effort,
+compact / max context, tiers). The key is never returned. The browser's
+default agent applies to new web sessions only, while
+`MANAGED_AGENT_PROFILE` below controls terminal launches. The other profile
+panels save a model override under `~/.config/wezdeck/agent-models/<profile>.env`;
+managed launches pass it as `--model`, and clearing it restores each CLI's
+own default. Running sessions keep the model they started with until
+restarted.
 
 ```bash
 # wezterm-x/local/shared.env
@@ -228,23 +233,24 @@ MANAGED_AGENT_PROFILE='claude_kimi'
 
 `claude-kimi` uses a separate `CLAUDE_CONFIG_DIR` under
 `~/.config/claude-profiles/kimi-home`; the launcher copies local settings while
-removing endpoint, credential, model, and effort entries that could override
-the profile environment. The Kimi home never reuses the Claude OAuth
+removing endpoint, credential, model, compact, and effort entries that could
+override the profile environment. The Kimi home never reuses the Claude OAuth
 credentials file.
 
 Verify the endpoint before opening the TUI:
 
 ```bash
-curl https://api.moonshot.ai/anthropic/v1/messages \
-  -H "Authorization: Bearer $MOONSHOT_API_KEY" \
+curl https://api.kimi.ai/coding/v1/messages \
+  -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"<account-supported-model>","max_tokens":1,"messages":[{"role":"user","content":"hi"}]}'
+  -H "anthropic-version: 2023-06-01" \
+  -d '{"model":"k3.1-pro","max_tokens":1,"messages":[{"role":"user","content":"hi"}]}'
 claude-kimi
 ```
 
-Inside Claude Code, `/status` should show the Kimi base URL and model. Also
-exercise a sub-agent, auto-compact, and a resumed conversation; each tier must
-have a model id accepted by the Kimi account.
+Inside Claude Code, `/status` should show Base URL
+`https://api.kimi.ai/coding/`. Also exercise a sub-agent, auto-compact, and a
+resumed conversation; each tier must use a model id your membership allows.
 
 **Verify**
 

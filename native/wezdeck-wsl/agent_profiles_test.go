@@ -96,7 +96,7 @@ func TestClaudeAdapterFindsKimiTranscript(t *testing.T) {
 func TestConfigureKimiProfileWritesPrivateFileWithoutReturningKey(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "claude-profiles", "kimi.env")
 	t.Setenv("CLAUDE_KIMI_ENV", path)
-	result, err := configureKimiProfile(json.RawMessage(`{"token":"sk-test-secret","model":"kimi-k3[1m]"}`))
+	result, err := configureKimiProfile(json.RawMessage(`{"token":"sk-test-secret","model":"k3.1-pro"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,21 +108,34 @@ func TestConfigureKimiProfileWritesPrivateFileWithoutReturningKey(t *testing.T) 
 		t.Fatalf("credential file mode: %v", info.Mode().Perm())
 	}
 	content, _ := os.ReadFile(path)
-	if !strings.Contains(string(content), "ANTHROPIC_AUTH_TOKEN='sk-test-secret'") || !kimiConfigured() {
-		t.Fatal("credential file was not configured")
+	got := string(content)
+	if !strings.Contains(got, "ANTHROPIC_API_KEY='sk-test-secret'") ||
+		!strings.Contains(got, "ANTHROPIC_BASE_URL='https://api.kimi.ai/coding/'") ||
+		!strings.Contains(got, "CLAUDE_CODE_AUTO_COMPACT_WINDOW='262144'") ||
+		!strings.Contains(got, "CLAUDE_CODE_MAX_CONTEXT_TOKENS='262144'") ||
+		!strings.Contains(got, "CLAUDE_CODE_EFFORT_LEVEL='high'") ||
+		!kimiConfigured() {
+		t.Fatalf("credential file was not configured: %s", got)
+	}
+	if strings.Contains(got, "ANTHROPIC_AUTH_TOKEN=") {
+		t.Fatal("Kimi Code profile must not also write AUTH_TOKEN")
 	}
 	body, _ := json.Marshal(result)
 	if strings.Contains(string(body), "sk-test-secret") {
 		t.Fatal("API key leaked in response")
 	}
-	if _, err := configureKimiProfile(json.RawMessage(`{"model":"kimi-k3.1-pro"}`)); err != nil {
+	if _, err := configureKimiProfile(json.RawMessage(`{"model":"k3.1-pro[1m]"}`)); err != nil {
 		t.Fatalf("model-only update: %v", err)
 	}
 	content, _ = os.ReadFile(path)
-	if !strings.Contains(string(content), "ANTHROPIC_AUTH_TOKEN='sk-test-secret'") || !strings.Contains(string(content), "ANTHROPIC_MODEL='kimi-k3.1-pro'") {
-		t.Fatal("model-only update lost the key or model")
+	got = string(content)
+	if !strings.Contains(got, "ANTHROPIC_API_KEY='sk-test-secret'") ||
+		!strings.Contains(got, "ANTHROPIC_MODEL='k3.1-pro[1m]'") ||
+		!strings.Contains(got, "CLAUDE_CODE_AUTO_COMPACT_WINDOW='1048576'") ||
+		!strings.Contains(got, "CLAUDE_CODE_MAX_CONTEXT_TOKENS='1048576'") {
+		t.Fatalf("model-only 1M update lost key/budget: %s", got)
 	}
-	if _, err := configureKimiProfile(json.RawMessage(`{"token":"bad'key","model":"kimi-k3[1m]"}`)); err == nil {
+	if _, err := configureKimiProfile(json.RawMessage(`{"token":"bad'key","model":"k3.1-pro"}`)); err == nil {
 		t.Fatal("unsafe API key accepted")
 	}
 }
@@ -203,7 +216,7 @@ func TestAgentProfilesReadExistingModelsAndMaskKeys(t *testing.T) {
 		filepath.Join(home, ".codex", "config.toml"):       "model = \"gpt-6.2-sol\"\napi_key = \"codex-secret\"\n",
 		filepath.Join(home, ".grok", "config.toml"):        "[models]\ndefault = \"grok-4.5\"\n[model.secret]\napi_key = \"grok-secret\"\n",
 		sub2api: "ANTHROPIC_BASE_URL='https://gateway.example'\nANTHROPIC_AUTH_TOKEN='sub2api-secret-1234'\nANTHROPIC_MODEL='gateway-model'\n",
-		kimi:    "ANTHROPIC_AUTH_TOKEN='kimi-secret-5678'\nANTHROPIC_MODEL='kimi-k3[1m]'\n",
+		kimi:    "ANTHROPIC_BASE_URL='https://api.kimi.ai/coding/'\nANTHROPIC_API_KEY='kimi-secret-5678'\nANTHROPIC_MODEL='k3.1-pro'\nANTHROPIC_DEFAULT_OPUS_MODEL='k3.1-pro'\nANTHROPIC_DEFAULT_SONNET_MODEL='k3.1-pro'\nANTHROPIC_DEFAULT_HAIKU_MODEL='k3.1-pro'\nANTHROPIC_DEFAULT_FABLE_MODEL='k3.1-pro'\nCLAUDE_CODE_SUBAGENT_MODEL='k3.1-pro'\nCLAUDE_CODE_AUTO_COMPACT_WINDOW='262144'\nCLAUDE_CODE_MAX_CONTEXT_TOKENS='262144'\nCLAUDE_CODE_EFFORT_LEVEL='high'\n",
 	}
 	for path, body := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -232,8 +245,15 @@ func TestAgentProfilesReadExistingModelsAndMaskKeys(t *testing.T) {
 	if got["claude_sub2api"].MaskedKey != "••••••••1234" || !got["claude_sub2api"].Configured {
 		t.Fatalf("gateway credential status: %+v", got["claude_sub2api"])
 	}
-	if got["claude_kimi"].MaskedKey != "••••••••5678" || got["claude_kimi"].Model != "kimi-k3[1m]" {
-		t.Fatalf("Kimi credential/model status: %+v", got["claude_kimi"])
+	kimiProfile := got["claude_kimi"]
+	if kimiProfile.MaskedKey != "••••••••5678" || kimiProfile.Model != "k3.1-pro" {
+		t.Fatalf("Kimi credential/model status: %+v", kimiProfile)
+	}
+	if kimiProfile.BaseURL != "https://api.kimi.ai/coding/" || kimiProfile.EffortLevel != "high" || kimiProfile.AutoCompactWindow != "262144" || kimiProfile.MaxContextTokens != "262144" {
+		t.Fatalf("Kimi /status fields: %+v", kimiProfile)
+	}
+	if kimiProfile.OpusModel != "k3.1-pro" || kimiProfile.SubagentModel != "k3.1-pro" {
+		t.Fatalf("Kimi tier models: %+v", kimiProfile)
 	}
 	response, _ := json.Marshal(result)
 	for _, secret := range []string{"sub2api-secret-1234", "kimi-secret-5678", "codex-secret", "grok-secret"} {

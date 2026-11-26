@@ -28,6 +28,16 @@ type agentProfile struct {
 	ModelOverride string `json:"model_override,omitempty"`
 	DefaultModel  string `json:"default_model,omitempty"`
 	MaskedKey     string `json:"masked_key,omitempty"`
+	// Kimi / gateway status (Claude Code /status parity). Never include raw keys.
+	BaseURL           string `json:"base_url,omitempty"`
+	EffortLevel       string `json:"effort_level,omitempty"`
+	AutoCompactWindow string `json:"auto_compact_window,omitempty"`
+	MaxContextTokens  string `json:"max_context_tokens,omitempty"`
+	OpusModel         string `json:"opus_model,omitempty"`
+	SonnetModel       string `json:"sonnet_model,omitempty"`
+	HaikuModel        string `json:"haiku_model,omitempty"`
+	FableModel        string `json:"fable_model,omitempty"`
+	SubagentModel     string `json:"subagent_model,omitempty"`
 }
 
 var agentProfileKey = regexp.MustCompile(`^WT_PROVIDER_AGENT_PROFILE_([A-Z0-9_]+)_RESUME_COMMAND=(.+)$`)
@@ -123,8 +133,7 @@ func listAgentProfiles() (any, error) {
 		case "claude_kimi":
 			profile.Configured = kimiConfigured()
 			if profile.Configured {
-				profile.Model = readEnvAssignment(kimiEnvPath(), "ANTHROPIC_MODEL")
-				profile.MaskedKey = maskKey(readEnvAssignment(kimiEnvPath(), "ANTHROPIC_AUTH_TOKEN"))
+				fillKimiProfileStatus(&profile)
 			}
 		}
 		profiles = append(profiles, profile)
@@ -350,10 +359,50 @@ func kimiEnvPath() string {
 	return filepath.Join(home, ".config", "claude-profiles", "kimi.env")
 }
 
+const (
+	kimiCodeBaseURL      = "https://api.kimi.ai/coding/"
+	kimiCodeDefaultModel = "k3.1-pro"
+	kimiPlaceholderKey   = "sk-your-kimi-api-key"
+)
+
+func kimiCredential(path string) string {
+	// Kimi Code docs use ANTHROPIC_API_KEY; older Moonshot Anthropic guide used AUTH_TOKEN.
+	key := readEnvAssignment(path, "ANTHROPIC_API_KEY")
+	if key == "" {
+		key = readEnvAssignment(path, "ANTHROPIC_AUTH_TOKEN")
+	}
+	return key
+}
+
 func kimiConfigured() bool {
+	token := kimiCredential(kimiEnvPath())
+	return token != "" && token != kimiPlaceholderKey && token != "sk-your-moonshot-api-key"
+}
+
+// kimiContextBudget returns AUTO_COMPACT / MAX_CONTEXT for the model id.
+// Kimi Code: k3.1-pro[1m] → 1M; default k3.1-pro (and peers) → 256K.
+func kimiContextBudget(model string) string {
+	if strings.Contains(model, "[1m]") {
+		return "1048576"
+	}
+	return "262144"
+}
+
+// fillKimiProfileStatus copies Claude Code /status fields from kimi.env
+// (https://www.kimi.com/code/docs/en/third-party-tools/claude-code.html).
+func fillKimiProfileStatus(profile *agentProfile) {
 	path := kimiEnvPath()
-	token := readEnvAssignment(path, "ANTHROPIC_AUTH_TOKEN")
-	return token != "" && token != "sk-your-moonshot-api-key"
+	profile.BaseURL = readEnvAssignment(path, "ANTHROPIC_BASE_URL")
+	profile.Model = readEnvAssignment(path, "ANTHROPIC_MODEL")
+	profile.MaskedKey = maskKey(kimiCredential(path))
+	profile.EffortLevel = readEnvAssignment(path, "CLAUDE_CODE_EFFORT_LEVEL")
+	profile.AutoCompactWindow = readEnvAssignment(path, "CLAUDE_CODE_AUTO_COMPACT_WINDOW")
+	profile.MaxContextTokens = readEnvAssignment(path, "CLAUDE_CODE_MAX_CONTEXT_TOKENS")
+	profile.OpusModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_OPUS_MODEL")
+	profile.SonnetModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_SONNET_MODEL")
+	profile.HaikuModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_HAIKU_MODEL")
+	profile.FableModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_FABLE_MODEL")
+	profile.SubagentModel = readEnvAssignment(path, "CLAUDE_CODE_SUBAGENT_MODEL")
 }
 
 var kimiModelPattern = regexp.MustCompile(`^[a-zA-Z0-9._-]+(?:\[[a-zA-Z0-9]+\])?$`)
@@ -368,8 +417,11 @@ func configureKimiProfile(args json.RawMessage) (any, error) {
 	}
 	input.Token = strings.TrimSpace(input.Token)
 	input.Model = strings.TrimSpace(input.Model)
+	if input.Model == "" {
+		input.Model = kimiCodeDefaultModel
+	}
 	if input.Token == "" {
-		input.Token = readEnvAssignment(kimiEnvPath(), "ANTHROPIC_AUTH_TOKEN")
+		input.Token = kimiCredential(kimiEnvPath())
 	}
 	if len(input.Token) < 8 || len(input.Token) > 512 || strings.ContainsAny(input.Token, " \t\r\n'\"") {
 		return nil, errors.New("agent.profile.configure: invalid API key")
@@ -390,14 +442,17 @@ func configureKimiProfile(args json.RawMessage) (any, error) {
 	if err := tmp.Chmod(0o600); err != nil {
 		return nil, errors.New("agent.profile.configure: cannot protect credential file")
 	}
-	content := fmt.Sprintf("ANTHROPIC_BASE_URL='https://api.moonshot.ai/anthropic'\nANTHROPIC_AUTH_TOKEN='%s'\n", input.Token)
+	budget := kimiContextBudget(input.Model)
+	// Kimi Code guide: API_KEY + api.kimi.ai/coding/. Do not also write AUTH_TOKEN
+	// (dual keys confuse Claude Code auth).
+	content := fmt.Sprintf("ANTHROPIC_BASE_URL='%s'\nANTHROPIC_API_KEY='%s'\n", kimiCodeBaseURL, input.Token)
 	for _, key := range []string{
 		"ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
 		"ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL", "CLAUDE_CODE_SUBAGENT_MODEL",
 	} {
 		content += fmt.Sprintf("%s='%s'\n", key, input.Model)
 	}
-	content += "CLAUDE_CODE_AUTO_COMPACT_WINDOW='1000000'\nCLAUDE_CODE_EFFORT_LEVEL='max'\n"
+	content += fmt.Sprintf("CLAUDE_CODE_EFFORT_LEVEL='high'\nCLAUDE_CODE_AUTO_COMPACT_WINDOW='%s'\nCLAUDE_CODE_MAX_CONTEXT_TOKENS='%s'\n", budget, budget)
 	if _, err := tmp.WriteString(content); err != nil {
 		return nil, errors.New("agent.profile.configure: cannot write credential file")
 	}

@@ -213,6 +213,27 @@ assert_eq "Claude idle_prompt after API Error becomes done" "done" "$(field_for 
 assert_eq "Claude API Error done_kind" "api_error" "$(field_for "$sandbox" "claude-api-err-1" "done_kind")"
 rm -rf "$sandbox"
 
+# Kimi / gateway: API Error shown in TUI but no isApiErrorMessage row — only
+# user + api-request*. idle_prompt must still end the turn. Transcript lives
+# under ~/.config/claude-profiles/kimi-home (not ~/.claude); lookup must find
+# it even when CLAUDE_CONFIG_DIR is unset in the hook env.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+mkdir -p "$sandbox/home/.config/claude-profiles/kimi-home/projects/enc"
+printf '%s\n' \
+  '{"type":"user","message":{"role":"user","content":"hello"}}' \
+  '{"type":"api-request","id":"req-1"}' \
+  '{"type":"api-request","id":"req-2"}' \
+  > "$sandbox/home/.config/claude-profiles/kimi-home/projects/enc/claude-kimi-incomplete-1.jsonl"
+unset CLAUDE_CONFIG_DIR 2>/dev/null || true
+printf '%s' '{"session_id":"claude-kimi-incomplete-1","hook_event_name":"UserPromptSubmit","prompt":"hello"}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+printf '%s' '{"session_id":"claude-kimi-incomplete-1","hook_event_name":"Notification","notification_type":"idle_prompt","message":"Claude is waiting for your input"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Kimi idle_prompt after user+api-request becomes done" "done" "$(field_for "$sandbox" "claude-kimi-incomplete-1" "status")"
+assert_eq "Kimi incomplete done_kind" "api_error" "$(field_for "$sandbox" "claude-kimi-incomplete-1" "done_kind")"
+rm -rf "$sandbox"
+
 # Grok loads Claude hooks via compat and sends camelCase payloads. Turn
 # complete fires Notification with message "Turn complete" — must NOT raise
 # ⚠ waiting after a correct Stop→done.

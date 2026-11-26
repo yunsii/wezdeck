@@ -12,6 +12,16 @@ export type AgentProfile = {
   model_override?: string
   default_model?: string
   masked_key?: string
+  /** Kimi / Claude Code /status parity (from kimi.env; never raw secrets). */
+  base_url?: string
+  effort_level?: string
+  auto_compact_window?: string
+  max_context_tokens?: string
+  opus_model?: string
+  sonnet_model?: string
+  haiku_model?: string
+  fable_model?: string
+  subagent_model?: string
 }
 
 export function useAgentProfiles() {
