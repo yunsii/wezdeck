@@ -28,6 +28,8 @@ type agentProfile struct {
 	ModelOverride string `json:"model_override,omitempty"`
 	DefaultModel  string `json:"default_model,omitempty"`
 	MaskedKey     string `json:"masked_key,omitempty"`
+	Note          string `json:"note,omitempty"`
+	Disabled      bool   `json:"disabled,omitempty"`
 	// Kimi / gateway status (Claude Code /status parity). Never include raw keys.
 	BaseURL           string `json:"base_url,omitempty"`
 	EffortLevel       string `json:"effort_level,omitempty"`
@@ -115,6 +117,11 @@ func listAgentProfiles() (any, error) {
 	profiles := make([]agentProfile, 0, len(ids))
 	for id := range ids {
 		profile := agentProfile{ID: id, Label: agentProfileLabel(id), Default: id == active}
+		settings, err := readAgentProfileSettings(id)
+		if err != nil {
+			return nil, fmt.Errorf("agent profiles: cannot read %s settings: %w", id, err)
+		}
+		profile.Note, profile.Disabled = settings.Note, settings.Disabled
 		if id != "claude_kimi" {
 			profile.ModelOverride = readEnvAssignment(agentModelPath(id), "MODEL")
 		}

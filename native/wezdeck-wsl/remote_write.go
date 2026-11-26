@@ -58,6 +58,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = configureKimiProfile(args)
 	case "agent.profile.model":
 		result, err = configureAgentModel(args)
+	case "agent.profile.settings":
+		result, err = configureAgentProfileSettings(args)
 	case "session.restart":
 		result, err = restartSession(args)
 	case "session.handoff":

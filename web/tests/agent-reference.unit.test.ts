@@ -32,5 +32,22 @@ describe('agentReference', () => {
     expect(agentReference({ id: 'agy', label: 'Antigravity' })).toBe(
       '[wezdeck 智能体] Antigravity\nagent_profile: agy',
     )
+    expect(
+      agentReference({
+        id: 'claude',
+        label: 'Claude',
+        disabled: true,
+        note: '当前不可用',
+      }),
+    ).toBe(
+      '[wezdeck 智能体] Claude\nagent_profile: claude\ndisabled: true\nnote: 当前不可用',
+    )
+    expect(
+      agentReference({
+        id: 'grok',
+        label: 'Grok',
+        note: '不能自动处理用户消息队列，不建议在交互场景下使用',
+      }),
+    ).toContain('note: 不能自动处理用户消息队列，不建议在交互场景下使用')
   })
 })

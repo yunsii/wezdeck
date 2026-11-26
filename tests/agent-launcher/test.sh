@@ -225,3 +225,18 @@ if command -v zsh >/dev/null; then
   grep -Fxq -- '--remote ws://localhost:1234' "$LOG"
   printf 'PASS interactive Codex uses --no-daemon in tmux and preserves explicit remote\n'
 fi
+
+mkdir -p "$TEST_ROOT/home/.config/wezdeck/agent-profiles"
+printf '{"disabled":true,"note":"currently unavailable"}\n' \
+  > "$TEST_ROOT/home/.config/wezdeck/agent-profiles/claude.json"
+rm -f "$CLAUDE_LOG"
+if env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" CLAUDE_TEST_LOG="$CLAUDE_LOG" \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude \
+  >"$TEST_ROOT/disabled.out" 2>&1; then
+  echo 'FAIL disabled Claude launched' >&2
+  exit 1
+fi
+grep -q 'profile claude is disabled' "$TEST_ROOT/disabled.out"
+test ! -e "$CLAUDE_LOG"
+printf 'PASS disabled managed profile cannot start a new CLI process\n'

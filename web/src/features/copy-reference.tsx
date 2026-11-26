@@ -72,7 +72,13 @@ export function useCopySessionReference(): CopyFn {
 
 type AgentReferenceProfile = Pick<
   AgentProfile,
-  'id' | 'label' | 'model' | 'model_override' | 'default_model'
+  | 'id'
+  | 'label'
+  | 'model'
+  | 'model_override'
+  | 'default_model'
+  | 'note'
+  | 'disabled'
 >
 
 export function agentReference(profile: AgentReferenceProfile): string {
@@ -82,6 +88,8 @@ export function agentReference(profile: AgentReferenceProfile): string {
     `[wezdeck 智能体] ${profile.label}`,
     `agent_profile: ${profile.id}`,
     ...(model ? [`model: ${model}`] : []),
+    ...(profile.disabled ? ['disabled: true'] : []),
+    ...(profile.note ? [`note: ${profile.note}`] : []),
   ].join('\n')
 }
 

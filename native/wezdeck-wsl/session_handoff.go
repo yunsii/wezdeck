@@ -79,6 +79,13 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	if !handoffAgents[a.To] {
 		return nil, errors.New("session.handoff: to must be claude, codex, grok or agy")
 	}
+	disabled, err := agentProfileDisabled(a.To)
+	if err != nil {
+		return nil, errors.New("session.handoff: cannot read target agent settings")
+	}
+	if disabled {
+		return nil, errors.New("session.handoff: target agent is disabled")
+	}
 	if utf8.RuneCountInString(a.Note) > handoffNoteMax || strings.ContainsAny(a.Note, "\x00") {
 		return nil, fmt.Errorf("session.handoff: note is at most %d characters", handoffNoteMax)
 	}

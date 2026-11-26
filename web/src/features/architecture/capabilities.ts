@@ -289,6 +289,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Save or clear the model override for one managed agent profile',
       ),
       c(
+        'agent.profile.settings',
+        '保存智能体备注与停用状态，阻止停用项的新会话和接力',
+        'Save an agent note and disabled state; block new sessions and handoffs to disabled profiles',
+      ),
+      c(
         'worktree.describe',
         '改工作站的一行描述（git 分支描述，等同终端 Alt+g 里的 Ctrl+e）',
         'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',

@@ -180,6 +180,9 @@ func startNewSession(args json.RawMessage) (any, error) {
 		if rows, ok := profiles.(map[string]any)["profiles"].([]agentProfile); ok {
 			for _, profile := range rows {
 				if profile.ID == a.Agent {
+					if profile.Disabled {
+						return nil, errors.New("session.new: agent profile is disabled")
+					}
 					valid = true
 					break
 				}
@@ -190,6 +193,14 @@ func startNewSession(args json.RawMessage) (any, error) {
 		}
 		if a.Agent == "claude_kimi" && !kimiConfigured() {
 			return nil, errors.New("session.new: configure the Kimi API key in Agents first")
+		}
+	} else {
+		disabled, err := agentProfileDisabled(activeAgentProfile())
+		if err != nil {
+			return nil, errors.New("session.new: cannot read default agent settings")
+		}
+		if disabled {
+			return nil, errors.New("session.new: default agent is disabled; select another agent")
 		}
 	}
 	if !validSubject(a.Name) {

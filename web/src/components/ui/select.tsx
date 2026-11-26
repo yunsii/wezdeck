@@ -4,7 +4,11 @@ import type { ComponentProps } from 'react'
 
 import { cn } from '#/lib/utils'
 
-export type SelectOption = { value: string; label: React.ReactNode }
+export type SelectOption = {
+  value: string
+  label: React.ReactNode
+  disabled?: boolean
+}
 
 export type SelectProps = Omit<
   ComponentProps<typeof BaseSelect.Root<string>>,
@@ -67,8 +71,9 @@ export function Select({
                 <BaseSelect.Item
                   key={option.value || '__empty'}
                   value={option.value}
+                  disabled={option.disabled}
                   className={cn(
-                    'flex items-center justify-between gap-3 rounded px-2 text-brand-text outline-none data-highlighted:bg-brand-soft data-highlighted:text-brand-running',
+                    'flex items-center justify-between gap-3 rounded px-2 text-brand-text outline-none data-disabled:opacity-40 data-highlighted:bg-brand-soft data-highlighted:text-brand-running',
                     lg ? 'min-h-11 text-body' : 'min-h-8 text-meta',
                   )}
                 >

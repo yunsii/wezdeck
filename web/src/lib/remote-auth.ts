@@ -18,6 +18,7 @@ export const OPEN_ACTIONS = new Set([
   'session.new.trust',
   'agent.profile.configure',
   'agent.profile.model',
+  'agent.profile.settings',
   'session.restart',
   'session.handoff',
   'ticket.new',

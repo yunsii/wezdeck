@@ -21,6 +21,7 @@ import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
+import type { AgentProfile } from './agent-profiles'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import {
@@ -267,6 +268,21 @@ export function NewSessionButton() {
   )
 }
 
+function useAgentSelection(profiles: Array<AgentProfile>, preferred: string) {
+  const [picked, setPicked] = useState<string | null>(null)
+  const available = profiles.filter((profile) => !profile.disabled)
+  const defaultDisabled = profiles.some(
+    (profile) => profile.default && profile.disabled,
+  )
+  const requested = picked ?? preferred
+  const selected = available.some((profile) => profile.id === requested)
+    ? requested
+    : defaultDisabled
+      ? available[0]?.id || ''
+      : ''
+  return { available, defaultDisabled, selected, setPicked }
+}
+
 function NewSessionSheet({
   open,
   onClose,
@@ -291,12 +307,12 @@ function NewSessionSheet({
   const sessions = useSessions()
   const agentProfiles = useAgentProfiles()
   const [preferredAgent] = usePreferredAgentProfile()
-  const [agentProfile, setAgentProfile] = useState('')
-  const selectedAgent = agentProfiles.data?.profiles.some(
-    (profile) => profile.id === (agentProfile || preferredAgent),
-  )
-    ? agentProfile || preferredAgent
-    : ''
+  const {
+    available: availableProfiles,
+    defaultDisabled,
+    selected: selectedAgent,
+    setPicked: setAgentProfile,
+  } = useAgentSelection(agentProfiles.data?.profiles ?? [], preferredAgent)
   const [layer, setLayer] = useState<Layer>('compose')
   const [repo, setRepo] = useState(preset?.repo ?? '')
   const [name, setName] = useState('')
@@ -374,7 +390,8 @@ function NewSessionSheet({
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const slug = workstationSlug(name)
   const ready =
-    Boolean(chosen) && Boolean(pick || slug) && Boolean(prompt.trim())
+    Boolean(chosen && (pick || slug) && prompt.trim()) &&
+    (!agentProfiles.data || availableProfiles.length > 0)
   const locationClause = isNew
     ? slug || t`+ New direction`
     : pick || t`Direction`
@@ -442,6 +459,7 @@ function NewSessionSheet({
             trusting={trusting}
             agentProfiles={agentProfiles.data?.profiles ?? []}
             agentProfile={selectedAgent}
+            defaultAgentDisabled={defaultDisabled}
             onAgentProfile={setAgentProfile}
           />
         ) : null}

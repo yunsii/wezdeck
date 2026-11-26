@@ -46,14 +46,27 @@ export function AgentsPage() {
           aria-label={t`Default agent`}
           size="lg"
           value={
-            rows.some((profile) => profile.id === preferred) ? preferred : ''
+            rows.some(
+              (profile) => profile.id === preferred && !profile.disabled,
+            )
+              ? preferred
+              : ''
           }
           onValueChange={setPreferred}
           options={[
-            { value: '', label: t`Repository default` },
+            {
+              value: '',
+              label: t`Repository default`,
+              disabled: rows.some(
+                (profile) => profile.default && profile.disabled,
+              ),
+            },
             ...rows.map((profile) => ({
               value: profile.id,
-              label: profile.label,
+              label: profile.disabled
+                ? `${profile.label} (${t`Disabled`})`
+                : profile.label,
+              disabled: profile.disabled,
             })),
           ]}
         />
@@ -97,8 +110,17 @@ export function AgentsPage() {
                     )}
                   >
                     <AgentAvatar profile={profile.id} size={36} />
-                    <span className="min-w-0 flex-1 truncate text-body">
-                      {profile.label}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-body">
+                        {profile.label}
+                      </span>
+                      {profile.disabled || profile.note ? (
+                        <span className="block truncate text-meta text-brand-label">
+                          {profile.disabled ? t`Disabled` : ''}
+                          {profile.disabled && profile.note ? ' · ' : ''}
+                          {profile.note}
+                        </span>
+                      ) : null}
                     </span>
                     {profile.id === 'claude_kimi' && !profile.configured ? (
                       <span className="shrink-0 text-meta text-brand-label">{t`Not configured`}</span>

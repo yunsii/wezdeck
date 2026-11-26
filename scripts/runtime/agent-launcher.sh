@@ -203,6 +203,28 @@ load_managed_model_override() {
   managed_model_args=(--model "$model")
 }
 
+check_managed_profile_enabled() {
+  local profile="${1//-/_}"
+  local path="$HOME/.config/wezdeck/agent-profiles/${profile}.json"
+  local disabled=""
+  case "$profile" in
+    claude|claude_sub2api|claude_kimi|codex|grok|agy) ;;
+    *) return 0 ;;
+  esac
+  [[ -e "$path" ]] || return 0
+  if [[ ! -r "$path" ]] || ! command -v jq >/dev/null 2>&1 ||
+      ! disabled="$(jq -r 'if type == "object" and (.disabled == null or (.disabled | type) == "boolean") then (.disabled // false) else error("invalid settings") end' "$path" 2>/dev/null)"; then
+    printf 'agent-launcher: cannot read profile settings for %s\n' "$profile" >&2
+    _launcher_log_error "agent launcher failed" "reason=profile_settings_invalid" "profile=$profile" "cwd=$PWD"
+    return 1
+  fi
+  if [[ "$disabled" == true ]]; then
+    printf 'agent-launcher: profile %s is disabled in WezDeck\n' "$profile" >&2
+    _launcher_log_error "agent launcher blocked" "reason=profile_disabled" "profile=$profile" "cwd=$PWD"
+    return 1
+  fi
+}
+
 ensure_codex_permission_overlay() {
   local profile="$1"
   local profile_file="${CODEX_HOME:-$HOME/.codex}/${profile}.config.toml"
@@ -280,6 +302,8 @@ resolve_grok_permission() {
 # + error line stay visible above the welcome box. Re-clear and re-draw
 # the banner inside the `||` branch so the fallback path looks the same
 # as the resume-success path.
+check_managed_profile_enabled "$agent" || exit 1
+
 case "$agent" in
   claude)
     clear_anthropic_gateway_env

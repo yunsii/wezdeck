@@ -15,6 +15,7 @@ import { trace } from '#/lib/client-trace'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useSessions } from './console-sessions'
+import { useAgentProfiles } from './agent-profiles'
 import { seedQueuedPending } from './session-send'
 
 const AGENTS = ['claude', 'codex', 'grok', 'agy'] as const
@@ -74,11 +75,18 @@ export function HandoffActions({
   const navigate = useNavigate()
   const client = useQueryClient()
   const sessions = useSessions()
+  const profiles = useAgentProfiles()
   const normalized = (agent || '').replace(/\.real$/, '')
   const current: Agent | '' = AGENTS.includes(normalized as Agent)
     ? (normalized as Agent)
     : ''
-  const targets = AGENTS.filter((a) => a !== current)
+  const targets = AGENTS.filter(
+    (candidate) =>
+      candidate !== current &&
+      profiles.data?.profiles.some(
+        (profile) => profile.id === candidate && !profile.disabled,
+      ),
+  )
   const [to, setTo] = useState<Agent | null>(null)
   const [note, setNote] = useState('')
   const [asking, setAsking] = useState(false)
@@ -214,7 +222,7 @@ export function HandoffActions({
             type="button"
             data-handoff-confirm
             autoFocus
-            disabled={disabled}
+            disabled={disabled || !targets.includes(to)}
             onClick={() => void run()}
             className={action}
           >

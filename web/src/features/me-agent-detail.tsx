@@ -4,6 +4,7 @@ import { Hash } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { hostWrite } from '#/lib/runtime-client'
 import { AgentAvatar } from './agent-avatar'
@@ -252,6 +253,62 @@ function ModelSettings({ profile }: { profile: AgentProfile }) {
   )
 }
 
+function ProfileManagement({ profile }: { profile: AgentProfile }) {
+  const { t } = useLingui()
+  const [note, setNote] = useState(profile.note || '')
+  const [disabled, setDisabled] = useState(Boolean(profile.disabled))
+  const { saving, message, save } = useSaveState()
+  const changed =
+    note.trim() !== (profile.note || '') ||
+    disabled !== Boolean(profile.disabled)
+  return (
+    <form
+      className="mt-8 grid max-w-lg gap-4 border-t border-brand-edge pt-5"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void save('agent.profile.settings', {
+          profile: profile.id,
+          note: note.trim(),
+          disabled,
+        })
+      }}
+    >
+      <h3 className="text-body font-semibold text-brand-text">{t`Availability and note`}</h3>
+      <label className="grid gap-1 text-caption text-brand-muted">
+        {t`Note`}
+        <Input
+          variant="field"
+          value={note}
+          maxLength={240}
+          onChange={(event) => setNote(event.target.value)}
+          data-testid="agent-profile-note"
+        />
+      </label>
+      <label className="flex min-h-11 items-center gap-2 text-caption text-brand-text">
+        <Checkbox
+          checked={disabled}
+          onCheckedChange={setDisabled}
+          data-testid="agent-profile-disabled"
+        />
+        {t`Disable this agent`}
+      </label>
+      {message ? (
+        <p role="status" className="text-meta text-brand-muted">
+          {message}
+        </p>
+      ) : null}
+      <Button
+        type="submit"
+        disabled={saving || !changed}
+        data-testid="agent-profile-settings-save"
+        className="min-h-11 justify-self-start px-4"
+      >
+        {saving ? t`Saving…` : t`Save availability and note`}
+      </Button>
+    </form>
+  )
+}
+
 export function AgentDetail({
   profile,
   onCopy,
@@ -275,7 +332,9 @@ export function AgentDetail({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {profile.id === 'claude_kimi' ? (
+          {profile.disabled ? (
+            <span className="text-meta text-brand-muted">{t`Disabled`}</span>
+          ) : profile.id === 'claude_kimi' ? (
             <span className="text-meta text-brand-muted">
               {profile.configured ? t`Configured` : t`Not configured`}
             </span>
@@ -303,6 +362,7 @@ export function AgentDetail({
       ) : (
         <p className="text-caption text-brand-muted">{t`Managed in host configuration`}</p>
       )}
+      <ProfileManagement profile={profile} />
     </section>
   )
 }

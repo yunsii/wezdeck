@@ -55,9 +55,15 @@ describe('Agy worktree trust in new session', () => {
           return reply({
             v: 1,
             ok: true,
-            default: 'claude',
+            default: 'codex',
             profiles: [
-              { id: 'claude', label: 'Claude' },
+              {
+                id: 'claude',
+                label: 'Claude',
+                disabled: true,
+                note: '当前不可用',
+              },
+              { id: 'codex', label: 'Codex', default: true },
               { id: 'agy', label: 'Antigravity' },
             ],
           })
@@ -115,6 +121,11 @@ describe('Agy worktree trust in new session', () => {
       await sheet.getByTestId('new-session-direction-done').click()
       await sheet.getByPlaceholder('要它做什么？').fill('Read the README')
       await sheet.getByRole('combobox', { name: '智能体' }).click()
+      expect(
+        await page
+          .getByRole('option', { name: 'Claude (已停用)' })
+          .getAttribute('aria-disabled'),
+      ).toBe('true')
       await page.getByRole('option', { name: 'Antigravity' }).click()
       await sheet.getByRole('button', { name: '创建会话' }).click()
       await expect

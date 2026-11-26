@@ -44,6 +44,7 @@ export function ComposeLayer({
   trusting,
   agentProfiles,
   agentProfile,
+  defaultAgentDisabled,
   onAgentProfile,
 }: {
   busy: boolean
@@ -67,6 +68,7 @@ export function ComposeLayer({
   trusting: boolean
   agentProfiles: Array<AgentProfile>
   agentProfile: string
+  defaultAgentDisabled: boolean
   onAgentProfile: (next: string) => void
 }) {
   const { t } = useLingui()
@@ -119,11 +121,17 @@ export function ComposeLayer({
             size="lg"
             aria-label={t`Agent`}
             options={[
-              { value: '', label: t`Repository default` },
+              {
+                value: '',
+                label: t`Repository default`,
+                disabled: defaultAgentDisabled,
+              },
               ...agentProfiles.map((profile) => ({
                 value: profile.id,
-                label:
-                  profile.id === 'claude_kimi' && !profile.configured
+                disabled: profile.disabled,
+                label: profile.disabled
+                  ? `${profile.label} (${t`Disabled`})`
+                  : profile.id === 'claude_kimi' && !profile.configured
                     ? `${profile.label} (${t`Not configured`})`
                     : profile.default
                       ? `${profile.label} (${t`host default`})`

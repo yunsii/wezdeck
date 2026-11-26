@@ -20,6 +20,19 @@ async function pageWithProfiles(
     permissions: ['clipboard-read', 'clipboard-write'],
   })
   const writes: Array<{ profile: string; model: string }> = []
+  const settingsWrites: Array<{
+    profile: string
+    note: string
+    disabled: boolean
+  }> = []
+  const settings: Record<string, { note: string; disabled: boolean }> = {
+    claude: { note: '当前不可用', disabled: true },
+    claude_sub2api: { note: '当前不可用', disabled: true },
+    grok: {
+      note: '不能自动处理用户消息队列，不建议在交互场景下使用',
+      disabled: false,
+    },
+  }
   let codexModel = ''
   await context.route('http://127.0.0.1:35791/**', async (route) => {
     const url = new URL(route.request().url())
@@ -42,15 +55,16 @@ async function pageWithProfiles(
       return json({
         v: 1,
         ok: true,
-        default: 'claude',
+        default: 'codex',
         profiles: [
-          { id: 'claude', label: 'Claude', default: true },
+          { id: 'claude', label: 'Claude', ...settings.claude },
           {
             id: 'claude_sub2api',
             label: 'Claude · gateway',
             configured: true,
             default_model: 'gateway-model',
             masked_key: '••••••••1234',
+            ...settings.claude_sub2api,
           },
           {
             id: 'claude_kimi',
@@ -62,10 +76,17 @@ async function pageWithProfiles(
           {
             id: 'codex',
             label: 'Codex',
+            default: true,
             default_model: 'gpt-6.2-sol',
             model_override: codexModel,
+            ...settings.codex,
           },
-          { id: 'grok', label: 'Grok', default_model: 'grok-4.5' },
+          {
+            id: 'grok',
+            label: 'Grok',
+            default_model: 'grok-4.5',
+            ...settings.grok,
+          },
           { id: 'agy', label: 'Antigravity' },
         ],
       })
@@ -76,6 +97,16 @@ async function pageWithProfiles(
       }
       writes.push(body)
       codexModel = body.model
+      return json({ v: 1, ok: true })
+    }
+    if (url.pathname === '/api/v1/remote/agent.profile.settings') {
+      const body = route.request().postDataJSON() as {
+        profile: string
+        note: string
+        disabled: boolean
+      }
+      settingsWrites.push(body)
+      settings[body.profile] = { note: body.note, disabled: body.disabled }
       return json({ v: 1, ok: true })
     }
     return route.abort()
@@ -92,7 +123,7 @@ async function pageWithProfiles(
       if (attempt === 2) throw error
     }
   }
-  return { context, page, writes }
+  return { context, page, writes, settingsWrites }
 }
 
 describe('Agent settings layout', () => {
@@ -115,6 +146,7 @@ describe('Agent settings layout', () => {
     expect(
       await page
         .locator('[data-agent-profile=claude_sub2api] span.truncate')
+        .first()
         .evaluate((label) => label.scrollWidth <= label.clientWidth),
     ).toBe(true)
     await page
@@ -168,7 +200,7 @@ describe('Agent settings layout', () => {
       await detail.getByRole('textbox', { name: '模型 ID' }).inputValue(),
     ).toBe('gpt-6.2-sol')
     await detail.getByRole('textbox', { name: '模型 ID' }).fill('gpt-6.2-astra')
-    await detail.getByRole('button', { name: '保存' }).click()
+    await detail.getByRole('button', { name: '保存', exact: true }).click()
     await expect.poll(() => writes.length).toBe(1)
     expect(writes[0]).toEqual({ profile: 'codex', model: 'gpt-6.2-astra' })
     await expect.poll(() => detail.getByText('受管模型覆盖').count()).toBe(1)
@@ -184,7 +216,10 @@ describe('Agent settings layout', () => {
   })
 
   it('phone opens one profile detail and returns to the list', async () => {
-    const { context, page } = await pageWithProfiles(browser, 390)
+    const { context, page, settingsWrites } = await pageWithProfiles(
+      browser,
+      390,
+    )
     await page
       .locator('[data-agent-profile=agy]')
       .locator('..')
@@ -218,6 +253,20 @@ describe('Agent settings layout', () => {
     ).not.toContain('5678')
     if (process.env.WEZDECK_VISUAL_SHOTS)
       await page.screenshot({ path: '/tmp/wezdeck-agents-mobile.png' })
+    await page
+      .getByTestId('agent-detail')
+      .getByTestId('agent-profile-note')
+      .fill('Kimi 用于交互会话')
+    await page
+      .getByTestId('agent-detail')
+      .getByTestId('agent-profile-settings-save')
+      .click()
+    await expect.poll(() => settingsWrites.length).toBe(1)
+    expect(settingsWrites[0]).toEqual({
+      profile: 'claude_kimi',
+      note: 'Kimi 用于交互会话',
+      disabled: false,
+    })
     expect(
       await page
         .getByTestId('agent-detail')
@@ -231,6 +280,56 @@ describe('Agent settings layout', () => {
     expect(await page.locator('[data-agent-profile=codex]').isVisible()).toBe(
       true,
     )
+    await context.close()
+  })
+
+  it('edits notes and disabled state without hiding profiles or copying keys', async () => {
+    const { context, page, settingsWrites } = await pageWithProfiles(
+      browser,
+      1280,
+      true,
+    )
+    const detail = page.getByTestId('agent-detail')
+    await page.locator('[data-agent-profile=claude]').click()
+    expect(await detail.getByTestId('agent-profile-note').inputValue()).toBe(
+      '当前不可用',
+    )
+    expect(
+      await detail.getByRole('checkbox', { name: '停用此智能体' }).isChecked(),
+    ).toBe(true)
+    await page.locator('[data-agent-profile=grok]').click()
+    expect(
+      await detail.getByTestId('agent-profile-note').inputValue(),
+    ).toContain('不能自动处理用户消息队列')
+    await page.locator('[data-agent-profile=codex]').click()
+    await detail.getByTestId('agent-profile-note').fill('用于交互和队列')
+    await detail.getByRole('checkbox', { name: '停用此智能体' }).check()
+    await detail.getByTestId('agent-profile-settings-save').click()
+    await expect.poll(() => settingsWrites.length).toBe(1)
+    expect(settingsWrites[0]).toEqual({
+      profile: 'codex',
+      note: '用于交互和队列',
+      disabled: true,
+    })
+    await expect
+      .poll(() => page.locator('[data-agent-profile=codex]').textContent())
+      .toContain('已停用 · 用于交互和队列')
+    await page
+      .locator('[data-agent-profile=codex]')
+      .locator('..')
+      .getByTestId('agent-copy-reference')
+      .click()
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toContain(
+        'agent_profile: codex\nmodel: gpt-6.2-sol\ndisabled: true\nnote: 用于交互和队列',
+      )
+    await page.getByRole('combobox', { name: '默认智能体' }).click()
+    expect(
+      await page
+        .getByRole('option', { name: 'Codex (已停用)' })
+        .getAttribute('aria-disabled'),
+    ).toBe('true')
     await context.close()
   })
 })

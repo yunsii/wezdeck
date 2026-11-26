@@ -12,6 +12,8 @@ export type AgentProfile = {
   model_override?: string
   default_model?: string
   masked_key?: string
+  note?: string
+  disabled?: boolean
   /** Kimi / Claude Code /status parity (from kimi.env; never raw secrets). */
   base_url?: string
   effort_level?: string
