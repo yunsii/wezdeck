@@ -305,10 +305,11 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session title (tap to `/rename`) over an agent chip + branch, a
-  「需要你处理」 chip only while the agent waits for the human (running and
-  done are visible in the thread itself: the working line, the reply), and **ⓘ
-  会话信息** at the far right. The composer agent row shows context used
+  back, session title (opens the session switcher; `/rename` lives in
+  会话信息), and **ⓘ 会话信息** at the far right — no status/waiting chip in
+  the header, since running, done, and waiting prompts are already visible in
+  the thread itself (while the session list and tab badges surface waiting
+  sessions before entry). The composer agent row shows context used
   and the available 5 h and 7 d limits after the model and background tasks.
   Tags that do not fit are available in the upward `+N` panel. A metric at
   or above 75% appears in the header when it is folded out of the bottom

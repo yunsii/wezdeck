@@ -104,6 +104,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
         page.getByTestId('session-title').getAttribute('data-session-id'),
       )
       .toBe(first)
+    // once inside a waiting session, the thread itself shows the prompt — no redundant header chip
+    expect(await page.getByTestId('session-header').innerText()).not.toContain(
+      '需要你处理',
+    )
     await page.keyboard.press('Alt+j')
     await expect
       .poll(() => page.url().split('/').at(-1))

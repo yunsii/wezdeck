@@ -1,5 +1,5 @@
 // Top of a session page, pinned while the thread scrolls under it: back,
-// which session this is, its status, and three meters — context used,
+// which session this is, and three meters — context used,
 // the Claude account's 5-hour and 7-day limits (reported by Claude Code to
 // its status line, scripts/runtime/claude-statusline-tap.sh). Tapping the
 // meters shows the spend (model, output, cache hit), how fresh the limits
@@ -10,9 +10,7 @@ import { ChevronDown, Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 
-import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
-import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
@@ -145,7 +143,6 @@ export function SessionHeader({
   renameDisabled?: boolean
 }) {
   const { t } = useLingui()
-  const statusText = useStatusText()
   const [infoOpen, setInfoOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const openSwitcher = useCallback(() => setSwitcherOpen(true), [])
@@ -173,17 +170,6 @@ export function SessionHeader({
     }
   }, [])
   const title = data ? data.title || t`Untitled session` : ''
-  // the page shows running (the working line) and done (the reply) by itself;
-  // the header only speaks up when the agent needs the human
-  const long = data
-    ? statusText(
-        data.status,
-        data.waiting_kind,
-        data.running_kind,
-        data.background?.length ?? 0,
-        data.restart_pending,
-      )
-    : undefined
   return (
     // opaque: at 95 % a dark user bubble scrolling under it greyed the
     // header (and an image's loading pulse flickered through)
@@ -228,15 +214,6 @@ export function SessionHeader({
           {/* agent, branch, git, node, worktrees and background tasks
               live in the status bar under the composer (session-statusbar) */}
         </div>
-        {data?.waiting_kind ? (
-          <span
-            title={long}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-caption text-brand-text"
-          >
-            <Led tone="waiting" size={10} />
-            {t`Needs you`}
-          </span>
-        ) : null}
         {data ? (
           <Button
             variant="plain"
