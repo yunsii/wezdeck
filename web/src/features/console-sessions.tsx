@@ -120,6 +120,8 @@ export type Detail = StatusFields & {
   compacted_at?: number
   compactions?: number
   agent?: string
+  /** execution / permission mode (auto | accept-edits | plan | full-access | default …) */
+  mode?: string
   status: string
   /** the attention entry's last change (ms): seen-ack clears this state only */
   ts?: number

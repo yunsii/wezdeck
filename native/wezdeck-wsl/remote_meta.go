@@ -55,6 +55,9 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 			model = summaryModel
 		}
 	}
+	if agent == "agy" && model == "" {
+		model = agyDefaultModel()
+	}
 	session.add("model", model)
 	session.add("effort", effort)
 
@@ -104,6 +107,14 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 
 	state := metaGroup{Name: "state"}
 	state.add("status", e.Status)
+	mode := ""
+	if t != nil {
+		mode = t.mode
+	}
+	if agent == "agy" {
+		mode = resolveAgyMode(e, t)
+	}
+	state.add("mode", mode)
 	state.add("reason", e.Reason)
 	state.add("running_kind", e.RunningKind)
 	state.add("waiting_kind", e.WaitingKind)

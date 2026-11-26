@@ -73,6 +73,7 @@ function useLabels() {
     first_turn: t`First turn`,
     last_turn: t`Last turn`,
     status: t`Status`,
+    mode: t`Execution mode`,
     reason: t`Reason`,
     running_kind: t`Running substate`,
     waiting_kind: t`Waiting for`,
