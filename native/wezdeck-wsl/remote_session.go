@@ -535,12 +535,79 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			}
 		}
 	}
+	// Resume on pane A while the prior "new" session still runs on pane B:
+	// both would list; the empty splash on A is noise — drop it when B still
+	// has visible chat (same worktree). A fresh /new with no sibling content
+	// stays (needs a row for the first message).
+	cards = dropEmptyHandoffSplashes(cards, recent)
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
 	return map[string]any{
 		"v": 1, "ok": true, "sessions": cards,
 		"redirects": sessionRedirects(recent, entries),
 	}, nil
+}
+
+// sessionHasVisibleChat: at least one user/assistant/tool line the phone
+// would render (harness-only user rows do not count).
+func sessionHasVisibleChat(id string) bool {
+	path, agent := findTranscript(id)
+	if path == "" {
+		return false
+	}
+	tr, err := loadTranscript(path, agent)
+	if err != nil || tr == nil {
+		return false
+	}
+	for _, m := range tr.messages {
+		if m.Role == "user" || m.Role == "assistant" || m.Role == "tool" {
+			return true
+		}
+	}
+	return false
+}
+
+// dropEmptyHandoffSplashes removes idle empty cards that only exist because
+// this pane's cleared_to pointed here, while the prior session id is still
+// listed (alive on another pane) with real chat — the resume-to-splash case.
+func dropEmptyHandoffSplashes(cards []sessionCard, recent []recentEntry) []sessionCard {
+	listed := map[string]bool{}
+	for _, c := range cards {
+		listed[c.ID] = true
+	}
+	visible := map[string]bool{}
+	hasContent := map[string]bool{}
+	for _, c := range cards {
+		v := sessionHasVisibleChat(c.ID)
+		visible[c.ID] = v
+		key := c.Worktree
+		if key == "" {
+			key = c.Cwd
+		}
+		if v {
+			hasContent[key] = true
+		}
+	}
+	handoffTarget := map[string]bool{}
+	for _, r := range recent {
+		next := r.ClearedTo
+		if !sessionIDPattern.MatchString(next) || !listed[next] || !listed[r.SessionID] {
+			continue
+		}
+		handoffTarget[next] = true
+	}
+	out := make([]sessionCard, 0, len(cards))
+	for _, c := range cards {
+		key := c.Worktree
+		if key == "" {
+			key = c.Cwd
+		}
+		if !visible[c.ID] && c.Status == "idle" && hasContent[key] && handoffTarget[c.ID] {
+			continue
+		}
+		out = append(out, c)
+	}
+	return out
 }
 
 // sessionRedirect: an old / phantom session id that a pane left behind, and

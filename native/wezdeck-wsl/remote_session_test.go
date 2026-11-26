@@ -429,6 +429,32 @@ func TestClearedSessionStillListedWhenPinnedElsewhere(t *testing.T) {
 	}
 }
 
+func TestDropEmptyHandoffSplashWhenPriorStillListed(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	dir := filepath.Join(home, ".grok", "sessions", "proj", "prior-with-chat")
+	_ = os.MkdirAll(dir, 0o755)
+	_ = os.WriteFile(filepath.Join(dir, "chat_history.jsonl"), []byte(
+		"{\"type\":\"user\",\"content\":\"hello from prior\"}\n{\"type\":\"assistant\",\"content\":\"hi\"}\n",
+	), 0o600)
+	cards := []sessionCard{
+		{ID: "prior-with-chat", Worktree: "/wt", Status: "idle"},
+		{ID: "splash-after-resume", Worktree: "/wt", Status: "idle"},
+		{ID: "lonely-empty", Worktree: "/only", Status: "idle"},
+	}
+	recent := []recentEntry{
+		{attentionEntry: attentionEntry{SessionID: "prior-with-chat"}, ClearedTo: "splash-after-resume"},
+	}
+	got := dropEmptyHandoffSplashes(cards, recent)
+	ids := map[string]bool{}
+	for _, c := range got {
+		ids[c.ID] = true
+	}
+	if !ids["prior-with-chat"] || ids["splash-after-resume"] || !ids["lonely-empty"] {
+		t.Fatalf("want prior+lonely, drop splash; got %+v", got)
+	}
+}
+
 func TestReplacementForArchivedUsesPaneWhenClearedToMissing(t *testing.T) {
 	recent := []recentEntry{{attentionEntry: attentionEntry{
 		SessionID:  "old-session",
