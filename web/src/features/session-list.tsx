@@ -25,7 +25,6 @@ import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton, requestNewSession } from './session-new'
-import { WorktreePurpose } from './session-purpose'
 import { worktreeKey } from './session-order'
 import {
   buildChatGroups,
@@ -173,12 +172,14 @@ function ChatRow({
                 >
                   {chat.title}
                 </span>
-                {chat.editable || chat.purpose ? (
-                  <WorktreePurpose
-                    worktree={chat.key}
-                    description={chat.purpose}
-                    editable={chat.editable}
-                  />
+                {chat.purpose ? (
+                  <span
+                    className="min-w-0 truncate text-brand-muted"
+                    data-testid="worktree-description"
+                    title={chat.purpose}
+                  >
+                    · {chat.purpose}
+                  </span>
                 ) : null}
               </span>
               <span className="flex shrink-0 items-center gap-1.5">

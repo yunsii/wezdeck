@@ -8,10 +8,12 @@ import { useLingui } from '@lingui/react/macro'
 import { Check, Code2, Copy, Pencil } from 'lucide-react'
 import { useState } from 'react'
 
-import { useStatusText } from './console-sessions'
+import { useSessions, useStatusText } from './console-sessions'
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
+import { isWorkstation, worktreeKey } from './session-order'
+import { WorktreePurpose } from './session-purpose'
 import {
   AgentTag,
   BranchTag,
@@ -188,6 +190,8 @@ export function SessionInfo({
   const { t } = useLingui()
   const { groups: groupLabels, keys, yes, no } = useLabels()
   const statusText = useStatusText()
+  const sessions = useSessions()
+  const card = sessions.data?.sessions.find((row) => row.id === data.id)
   const [copiedRef, setCopiedRef] = useState(false)
   useFocusKey(data.focus)
   // stays mounted while closed: the sheet plays its exit before it unmounts
@@ -231,6 +235,21 @@ export function SessionInfo({
             {data.branch ? <BranchTag branch={data.branch} /> : null}
             {data.git ? <GitStatusTag git={data.git} /> : null}
           </TagLine>
+        ) : null}
+        {card && isWorkstation(card) ? (
+          <div
+            className="rounded-xl border border-brand-edge px-3 py-2"
+            data-testid="session-info-purpose"
+          >
+            <p className="mb-1 text-meta text-brand-label">{t`Workstation purpose`}</p>
+            <div className="text-body text-brand-text">
+              <WorktreePurpose
+                worktree={worktreeKey(card)}
+                description={card.worktree_description ?? ''}
+                editable
+              />
+            </div>
+          </div>
         ) : null}
         {data.reference ? (
           <Button

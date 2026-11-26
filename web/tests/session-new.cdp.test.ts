@@ -1,5 +1,6 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
 // covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
+// covers: web/src/features/session-info.tsx
 // covers: web/src/features/session-new-direction.tsx native/wezdeck-wsl/workstations.go
 // covers: native/wezdeck-wsl/session_new.go native/wezdeck-wsl/worktree_description.go
 // covers: scripts/runtime/worktree/lib/core-describe.sh
@@ -189,7 +190,7 @@ describe.runIf(attention && devicesFile && stack)(
       expect(git('branch', '--show-current')).toBe('dev/phone')
       // the purpose is the branch description
       expect(git('config', 'branch.dev/phone.description')).toBe('手机端体验')
-      // and the session list shows it under the workstation
+      // list shows purpose read-only; editing lives in 会话信息
       await page.goto(`${base}/zh/console/sessions`)
       const group = page.locator('[data-worktree=phone]')
       await expect
@@ -197,8 +198,10 @@ describe.runIf(attention && devicesFile && stack)(
           timeout: 15_000,
         })
         .toContain('手机端体验')
+      expect(await group.getByTestId('worktree-purpose-add').count()).toBe(0)
+      expect(await group.getByTestId('worktree-purpose-input').count()).toBe(0)
 
-      await editPurposeInList(page, group, worktree)
+      await editPurposeInSessionInfo(page, group, worktree)
       await context.close()
     }, 90_000)
 
@@ -303,11 +306,14 @@ async function newRoundLockedSheet({
 }
 
 /**
- * The workstation's purpose edited in place from the session list
- * (session-purpose.tsx → relay worktree.describe → worktree-task describe):
- * retype, clear (the row then offers 「+ 描述」), add by keyboard, Esc.
+ * Purpose edited from 会话信息 (list stays read-only).
+ * session-purpose.tsx → relay worktree.describe → worktree-task describe.
  */
-async function editPurposeInList(page: Page, group: Locator, worktree: string) {
+async function editPurposeInSessionInfo(
+  page: Page,
+  group: Locator,
+  worktree: string,
+) {
   const purpose = () =>
     execFileSync('git', [
       '-C',
@@ -319,35 +325,46 @@ async function editPurposeInList(page: Page, group: Locator, worktree: string) {
     ])
       .toString()
       .trim()
-  const input = group.getByTestId('worktree-purpose-input')
-  await group.getByTestId('worktree-description').click()
+  await group.click()
+  await page.getByTestId('session-info-button').click()
+  const info = page.getByTestId('session-info')
+  await info.waitFor({ timeout: 5_000 })
+  const block = info.getByTestId('session-info-purpose')
+  const input = block.getByTestId('worktree-purpose-input')
+  await block.getByTestId('worktree-description').click()
   await input.fill('手机端新建与收尾')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')
   await expect
-    .poll(() => group.getByTestId('worktree-description').textContent())
+    .poll(() => block.getByTestId('worktree-description').textContent())
     .toContain('手机端新建与收尾')
 
-  // emptied → removed, and the row offers 「+ 描述」 instead
-  await group.getByTestId('worktree-description').click()
+  await block.getByTestId('worktree-description').click()
   await input.fill('')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('')
-  const add = group.getByTestId('worktree-purpose-add')
+  const add = block.getByTestId('worktree-purpose-add')
   await expect.poll(() => add.textContent()).toContain('+ 描述')
-  // keyboard: focus it, Enter opens the field
   await add.focus()
   await page.keyboard.press('Enter')
   await input.fill('再补一句')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('再补一句')
 
-  // Esc leaves it as it was
-  await group.getByTestId('worktree-description').click()
+  await block.getByTestId('worktree-description').click()
   await input.fill('不保存')
   await input.press('Escape')
   expect(await input.count()).toBe(0)
   expect(purpose()).toBe('再补一句')
+
+  // list still shows the purpose read-only after closing the sheet
+  await page.keyboard.press('Escape')
+  await page.goto(`${base}/zh/console/sessions`)
+  await expect
+    .poll(() => group.getByTestId('worktree-description').textContent(), {
+      timeout: 15_000,
+    })
+    .toContain('再补一句')
 }
 
 /**

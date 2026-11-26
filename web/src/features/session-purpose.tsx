@@ -1,10 +1,9 @@
-// A workstation's one-line purpose on its group row in 会话 (the git branch
-// description; relay `worktree.describe` → `worktree-task describe`, the
-// same writer as Ctrl+e in the desk's Alt+g). Without one, an editable
-// workstation shows a quiet 「+ 描述」; a tap or Enter opens an inline field
-// (Enter saves, an empty field removes it, Esc cancels). The primary
-// checkout and ticket / claw worktrees have none (session-order.ts
-// `editable`).
+// Workstation one-line purpose (git branch description; relay
+// `worktree.describe` → `worktree-task describe`, same writer as Ctrl+e in
+// Alt+g). Edited from 会话信息 — the IM session list only shows it read-only.
+// Without one, an editable workstation shows 「+ 描述」; Enter saves, empty
+// clears, Esc cancels. Primary checkout and ticket-* / claw-* are not editable
+// (session-order.ts `isWorkstation`).
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -117,16 +116,16 @@ export function WorktreePurpose({
         onPointerDown={(event) => event.stopPropagation()}
         title={t`Edit the description`}
         data-testid="worktree-description"
-        className="min-w-0 truncate text-left text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+        className="min-h-11 w-full min-w-0 truncate text-left text-body text-brand-text outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
       >
-        · {shown}
+        {shown}
       </Button>
     ) : (
       <span
-        className="min-w-0 truncate text-brand-muted"
+        className="min-w-0 truncate text-body text-brand-text"
         data-testid="worktree-description"
       >
-        · {shown}
+        {shown}
       </span>
     )
   }
@@ -140,7 +139,7 @@ export function WorktreePurpose({
       onPointerDown={(event) => event.stopPropagation()}
       data-testid="worktree-purpose-add"
       className={cn(
-        'shrink-0 text-brand-label opacity-70 outline-none hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand-running',
+        'inline-flex min-h-11 shrink-0 items-center text-brand-label opacity-70 outline-none hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand-running',
       )}
     >
       {t`+ Description`}

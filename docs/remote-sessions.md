@@ -52,7 +52,8 @@ focusing a session opens its preview. A status LED on the avatar shows waiting
 or running; the preview
 line reads like the last message (`Waiting on you · …` / `Replying…` /
 human prompt); list time is clock-today / yesterday / weekday / date; a
-top search filters by title, purpose, preview, and agent; pane index still
+top search filters by title, purpose, preview, and agent; purpose on the
+row is read-only (edit in 会话信息 via `worktree.describe`); pane index still
 orders sessions inside a worktree.
 
 ## Session RPCs
