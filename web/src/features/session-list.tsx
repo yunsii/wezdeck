@@ -396,7 +396,10 @@ export function SessionList({
     )
   return (
     <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
-      <StickyBar>{headActions}</StickyBar>
+      {/* No -mx bleed: bled sticky made the search row look inset while the
+          surface cards (skeleton especially) read as full-bleed against a
+          near-white deck. Keep sticky and cards on the same content width. */}
+      <StickyBar className="mx-0 px-0">{headActions}</StickyBar>
       {body}
     </div>
   )
