@@ -324,7 +324,7 @@ msgstr "All repos"
 msgid "All tags"
 msgstr "All tags"
 
-#: src/features/me-agent-detail.tsx:79
+#: src/features/me-agent-detail.tsx:87
 msgid "All tiers"
 msgstr "All tiers"
 
@@ -418,6 +418,10 @@ msgstr "At the desk: {host}"
 #: src/features/me-agent-detail.tsx:71
 msgid "Auto compact"
 msgstr "Auto compact"
+
+#: src/features/me-agent-detail.tsx:79
+msgid "Auto mode server"
+msgstr "Auto mode server"
 
 #: src/features/console-me.tsx:450
 #: src/features/tickets-view.tsx:413
@@ -608,11 +612,11 @@ msgstr "Clear input (Esc Esc)"
 msgid "Clearing…"
 msgstr "Clearing…"
 
-#: src/features/me-agent-detail.tsx:199
+#: src/features/me-agent-detail.tsx:207
 msgid "CLI default"
 msgstr "CLI default"
 
-#: src/features/me-agent-detail.tsx:200
+#: src/features/me-agent-detail.tsx:208
 msgid "CLI selects automatically"
 msgstr "CLI selects automatically"
 
@@ -711,7 +715,7 @@ msgstr "Composer"
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/me-agent-detail.tsx:264
+#: src/features/me-agent-detail.tsx:272
 msgid "Configured"
 msgstr "Configured"
 
@@ -921,7 +925,7 @@ msgstr "Cross-repo collab"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/me-agent-detail.tsx:204
+#: src/features/me-agent-detail.tsx:212
 msgid "Current API key"
 msgstr "Current API key"
 
@@ -1096,7 +1100,7 @@ msgstr "Exit"
 msgid "Expired"
 msgstr "Expired"
 
-#: src/features/me-agent-detail.tsx:92
+#: src/features/me-agent-detail.tsx:100
 msgid "Fable tier"
 msgstr "Fable tier"
 
@@ -1171,7 +1175,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/me-agent-detail.tsx:89
+#: src/features/me-agent-detail.tsx:97
 msgid "Haiku tier"
 msgstr "Haiku tier"
 
@@ -1394,7 +1398,7 @@ msgstr "Keyboard shortcuts"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/me-agent-detail.tsx:121
+#: src/features/me-agent-detail.tsx:129
 msgid "Kimi API key"
 msgstr "Kimi API key"
 
@@ -1444,7 +1448,7 @@ msgstr "Latest output"
 msgid "Launch details"
 msgstr "Launch details"
 
-#: src/features/me-agent-detail.tsx:131
+#: src/features/me-agent-detail.tsx:139
 msgid "Leave blank to keep current key"
 msgstr "Leave blank to keep current key"
 
@@ -1525,11 +1529,11 @@ msgstr "Login"
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/me-agent-detail.tsx:273
+#: src/features/me-agent-detail.tsx:281
 msgid "Managed in host configuration"
 msgstr "Managed in host configuration"
 
-#: src/features/me-agent-detail.tsx:197
+#: src/features/me-agent-detail.tsx:205
 msgid "Managed override"
 msgstr "Managed override"
 
@@ -1584,8 +1588,8 @@ msgstr "Mode"
 msgid "Model"
 msgstr "Model"
 
-#: src/features/me-agent-detail.tsx:136
-#: src/features/me-agent-detail.tsx:187
+#: src/features/me-agent-detail.tsx:144
+#: src/features/me-agent-detail.tsx:195
 msgid "Model ID"
 msgstr "Model ID"
 
@@ -1808,8 +1812,8 @@ msgid "No upstream branch: nothing to compare with."
 msgstr "No upstream branch: nothing to compare with."
 
 #: src/features/me-agent-detail.tsx:65
-#: src/features/me-agent-detail.tsx:206
-#: src/features/me-agent-detail.tsx:264
+#: src/features/me-agent-detail.tsx:214
+#: src/features/me-agent-detail.tsx:272
 #: src/features/me-agents.tsx:91
 #: src/features/session-new-panels.tsx:122
 msgid "Not configured"
@@ -1852,6 +1856,7 @@ msgstr "Not running"
 #: src/features/me-agent-detail.tsx:69
 #: src/features/me-agent-detail.tsx:72
 #: src/features/me-agent-detail.tsx:76
+#: src/features/me-agent-detail.tsx:83
 msgid "Not set"
 msgstr "Not set"
 
@@ -1882,6 +1887,10 @@ msgstr "now {label}"
 #: src/features/console-me.tsx:305
 msgid "Off"
 msgstr "Off"
+
+#: src/features/me-agent-detail.tsx:82
+msgid "Off (client classifier)"
+msgstr "Off (client classifier)"
 
 #: src/features/console-shared.tsx:213
 msgid "Offline"
@@ -1963,7 +1972,7 @@ msgstr "opens one more"
 msgid "Optional note"
 msgstr "Optional note"
 
-#: src/features/me-agent-detail.tsx:83
+#: src/features/me-agent-detail.tsx:91
 msgid "Opus tier"
 msgstr "Opus tier"
 
@@ -2205,7 +2214,7 @@ msgstr "Rename via /rename in the agent pane"
 msgid "Reopen"
 msgstr "Reopen"
 
-#: src/features/me-agent-detail.tsx:121
+#: src/features/me-agent-detail.tsx:129
 msgid "Replace API key"
 msgstr "Replace API key"
 
@@ -2480,8 +2489,8 @@ msgstr "Same as Enter in the Alt+/ picker (key: o)"
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
-#: src/features/me-agent-detail.tsx:162
-#: src/features/me-agent-detail.tsx:221
+#: src/features/me-agent-detail.tsx:170
+#: src/features/me-agent-detail.tsx:229
 msgid "Save"
 msgstr "Save"
 
@@ -2489,7 +2498,7 @@ msgstr "Save"
 msgid "Saved"
 msgstr "Saved"
 
-#: src/features/me-agent-detail.tsx:146
+#: src/features/me-agent-detail.tsx:154
 msgid "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 msgstr "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 
@@ -2497,8 +2506,8 @@ msgstr "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, 
 #~ msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
 #~ msgstr "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
 
-#: src/features/me-agent-detail.tsx:162
-#: src/features/me-agent-detail.tsx:221
+#: src/features/me-agent-detail.tsx:170
+#: src/features/me-agent-detail.tsx:229
 msgid "Saving…"
 msgstr "Saving…"
 
@@ -2664,7 +2673,7 @@ msgstr "Some numbers are missing: {missing}"
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
-#: src/features/me-agent-detail.tsx:86
+#: src/features/me-agent-detail.tsx:94
 msgid "Sonnet tier"
 msgstr "Sonnet tier"
 
@@ -2735,7 +2744,7 @@ msgstr "Status"
 msgid "Status updated"
 msgstr "Status updated"
 
-#: src/features/me-agent-detail.tsx:95
+#: src/features/me-agent-detail.tsx:103
 msgid "Sub-agent"
 msgstr "Sub-agent"
 
@@ -3151,8 +3160,8 @@ msgstr "Usage"
 msgid "Usage from"
 msgstr "Usage from"
 
-#: src/features/me-agent-detail.tsx:191
-#: src/features/me-agent-detail.tsx:238
+#: src/features/me-agent-detail.tsx:199
+#: src/features/me-agent-detail.tsx:246
 msgid "Use CLI default"
 msgstr "Use CLI default"
 

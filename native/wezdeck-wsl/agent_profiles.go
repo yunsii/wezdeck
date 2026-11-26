@@ -33,6 +33,7 @@ type agentProfile struct {
 	EffortLevel       string `json:"effort_level,omitempty"`
 	AutoCompactWindow string `json:"auto_compact_window,omitempty"`
 	MaxContextTokens  string `json:"max_context_tokens,omitempty"`
+	AutoModeServer    string `json:"auto_mode_server,omitempty"`
 	OpusModel         string `json:"opus_model,omitempty"`
 	SonnetModel       string `json:"sonnet_model,omitempty"`
 	HaikuModel        string `json:"haiku_model,omitempty"`
@@ -357,6 +358,7 @@ func fillKimiProfileStatus(profile *agentProfile) {
 	profile.EffortLevel = readEnvAssignment(path, "CLAUDE_CODE_EFFORT_LEVEL")
 	profile.AutoCompactWindow = readEnvAssignment(path, "CLAUDE_CODE_AUTO_COMPACT_WINDOW")
 	profile.MaxContextTokens = readEnvAssignment(path, "CLAUDE_CODE_MAX_CONTEXT_TOKENS")
+	profile.AutoModeServer = readEnvAssignment(path, "CLAUDE_CODE_AUTO_MODE_SERVER")
 	profile.OpusModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_OPUS_MODEL")
 	profile.SonnetModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_SONNET_MODEL")
 	profile.HaikuModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_HAIKU_MODEL")
@@ -411,7 +413,11 @@ func configureKimiProfile(args json.RawMessage) (any, error) {
 	} {
 		content += fmt.Sprintf("%s='%s'\n", key, input.Model)
 	}
-	content += fmt.Sprintf("CLAUDE_CODE_EFFORT_LEVEL='high'\nCLAUDE_CODE_AUTO_COMPACT_WINDOW='%s'\nCLAUDE_CODE_MAX_CONTEXT_TOKENS='%s'\n", budget, budget)
+	// Kimi Code does not yet pass Anthropic's server-side auto-mode
+	// classifier (safeguards / safeguard_results). Opt out so Claude Code
+	// skips the ineligible notice and keeps the billed client-side classifier.
+	// https://code.claude.com/docs/en/auto-mode-classifier-billing
+	content += fmt.Sprintf("CLAUDE_CODE_EFFORT_LEVEL='high'\nCLAUDE_CODE_AUTO_COMPACT_WINDOW='%s'\nCLAUDE_CODE_MAX_CONTEXT_TOKENS='%s'\nCLAUDE_CODE_AUTO_MODE_SERVER='0'\n", budget, budget)
 	if _, err := tmp.WriteString(content); err != nil {
 		return nil, errors.New("agent.profile.configure: cannot write credential file")
 	}

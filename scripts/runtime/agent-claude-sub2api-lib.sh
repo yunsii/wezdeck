@@ -65,7 +65,8 @@ if isinstance(env, dict):
         "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME", "ANTHROPIC_DEFAULT_FABLE_MODEL",
         "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME", "ENABLE_TOOL_SEARCH",
         "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
-        "CLAUDE_CODE_EFFORT_LEVEL",
+        "CLAUDE_CODE_EFFORT_LEVEL", "CLAUDE_CODE_AUTO_MODE_SERVER",
+        "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS",
     }
     data["env"] = {key: value for key, value in env.items() if key not in blocked}
 with open(target, "w", encoding="utf-8") as f:

@@ -17,6 +17,7 @@ export type AgentProfile = {
   effort_level?: string
   auto_compact_window?: string
   max_context_tokens?: string
+  auto_mode_server?: string
   opus_model?: string
   sonnet_model?: string
   haiku_model?: string

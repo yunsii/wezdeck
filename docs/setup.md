@@ -201,7 +201,11 @@ membership required). Defaults match the K3.1 Pro 256K recipe:
 model `k3.1-pro`, `CLAUDE_CODE_EFFORT_LEVEL=high`, and
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` / `CLAUDE_CODE_MAX_CONTEXT_TOKENS=262144`.
 For 1M context use model `k3.1-pro[1m]` (web save bumps both budgets to
-`1048576`).
+`1048576`). Kimi Code does not yet pass Anthropic's server-side auto-mode
+classifier (`safeguards` / `safeguard_results`); the profile sets
+`CLAUDE_CODE_AUTO_MODE_SERVER=0` so Claude Code keeps the client-side
+classifier and skips the “api.kimi.ai isn't compatible” notice
+([docs](https://code.claude.com/docs/en/auto-mode-classifier-billing)).
 
 Install the profile file once; keep it outside `shell-env.d` so the default
 Claude OAuth profile cannot inherit the Kimi token:

@@ -75,6 +75,14 @@ function KimiStatus({ profile }: { profile: AgentProfile }) {
         label={t`Max context`}
         value={profile.max_context_tokens || t`Not set`}
       />
+      <StatusRow
+        label={t`Auto mode server`}
+        value={
+          profile.auto_mode_server === '0'
+            ? t`Off (client classifier)`
+            : profile.auto_mode_server || t`Not set`
+        }
+      />
       {sameTier ? (
         <StatusRow label={t`All tiers`} value={tiers[0] || ''} />
       ) : (

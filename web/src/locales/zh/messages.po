@@ -324,7 +324,7 @@ msgstr "全部仓库"
 msgid "All tags"
 msgstr "全部标签"
 
-#: src/features/me-agent-detail.tsx:79
+#: src/features/me-agent-detail.tsx:87
 msgid "All tiers"
 msgstr "全部档位"
 
@@ -418,6 +418,10 @@ msgstr "终端：{host}"
 #: src/features/me-agent-detail.tsx:71
 msgid "Auto compact"
 msgstr "自动压缩窗口"
+
+#: src/features/me-agent-detail.tsx:79
+msgid "Auto mode server"
+msgstr "Auto mode 服务端"
 
 #: src/features/console-me.tsx:450
 #: src/features/tickets-view.tsx:413
@@ -608,11 +612,11 @@ msgstr "清空输入（Esc Esc）"
 msgid "Clearing…"
 msgstr "处理中…"
 
-#: src/features/me-agent-detail.tsx:199
+#: src/features/me-agent-detail.tsx:207
 msgid "CLI default"
 msgstr "CLI 默认模型"
 
-#: src/features/me-agent-detail.tsx:200
+#: src/features/me-agent-detail.tsx:208
 msgid "CLI selects automatically"
 msgstr "由 CLI 自动选择"
 
@@ -711,7 +715,7 @@ msgstr "输入框"
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/me-agent-detail.tsx:264
+#: src/features/me-agent-detail.tsx:272
 msgid "Configured"
 msgstr "已配置"
 
@@ -921,7 +925,7 @@ msgstr "跨仓协作"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/me-agent-detail.tsx:204
+#: src/features/me-agent-detail.tsx:212
 msgid "Current API key"
 msgstr "当前 API 密钥"
 
@@ -1096,7 +1100,7 @@ msgstr "退出码"
 msgid "Expired"
 msgstr "已过期"
 
-#: src/features/me-agent-detail.tsx:92
+#: src/features/me-agent-detail.tsx:100
 msgid "Fable tier"
 msgstr "Fable 档"
 
@@ -1171,7 +1175,7 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/me-agent-detail.tsx:89
+#: src/features/me-agent-detail.tsx:97
 msgid "Haiku tier"
 msgstr "Haiku 档"
 
@@ -1394,7 +1398,7 @@ msgstr "键盘快捷键"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/me-agent-detail.tsx:121
+#: src/features/me-agent-detail.tsx:129
 msgid "Kimi API key"
 msgstr "Kimi API 密钥"
 
@@ -1444,7 +1448,7 @@ msgstr "最新输出"
 msgid "Launch details"
 msgstr "启动详情"
 
-#: src/features/me-agent-detail.tsx:131
+#: src/features/me-agent-detail.tsx:139
 msgid "Leave blank to keep current key"
 msgstr "留空以保留当前密钥"
 
@@ -1525,11 +1529,11 @@ msgstr "登录"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/me-agent-detail.tsx:273
+#: src/features/me-agent-detail.tsx:281
 msgid "Managed in host configuration"
 msgstr "由主机配置管理"
 
-#: src/features/me-agent-detail.tsx:197
+#: src/features/me-agent-detail.tsx:205
 msgid "Managed override"
 msgstr "受管模型覆盖"
 
@@ -1584,8 +1588,8 @@ msgstr "模式"
 msgid "Model"
 msgstr "模型"
 
-#: src/features/me-agent-detail.tsx:136
-#: src/features/me-agent-detail.tsx:187
+#: src/features/me-agent-detail.tsx:144
+#: src/features/me-agent-detail.tsx:195
 msgid "Model ID"
 msgstr "模型 ID"
 
@@ -1808,8 +1812,8 @@ msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
 #: src/features/me-agent-detail.tsx:65
-#: src/features/me-agent-detail.tsx:206
-#: src/features/me-agent-detail.tsx:264
+#: src/features/me-agent-detail.tsx:214
+#: src/features/me-agent-detail.tsx:272
 #: src/features/me-agents.tsx:91
 #: src/features/session-new-panels.tsx:122
 msgid "Not configured"
@@ -1852,6 +1856,7 @@ msgstr "未运行"
 #: src/features/me-agent-detail.tsx:69
 #: src/features/me-agent-detail.tsx:72
 #: src/features/me-agent-detail.tsx:76
+#: src/features/me-agent-detail.tsx:83
 msgid "Not set"
 msgstr "未设置"
 
@@ -1882,6 +1887,10 @@ msgstr "状态：{label}"
 #: src/features/console-me.tsx:305
 msgid "Off"
 msgstr "未启用"
+
+#: src/features/me-agent-detail.tsx:82
+msgid "Off (client classifier)"
+msgstr "关闭（客户端分类器）"
 
 #: src/features/console-shared.tsx:213
 msgid "Offline"
@@ -1963,7 +1972,7 @@ msgstr "将新开"
 msgid "Optional note"
 msgstr "补充说明"
 
-#: src/features/me-agent-detail.tsx:83
+#: src/features/me-agent-detail.tsx:91
 msgid "Opus tier"
 msgstr "Opus 档"
 
@@ -2205,7 +2214,7 @@ msgstr "通过 Agent 窗格的 /rename 改标题"
 msgid "Reopen"
 msgstr "重新打开"
 
-#: src/features/me-agent-detail.tsx:121
+#: src/features/me-agent-detail.tsx:129
 msgid "Replace API key"
 msgstr "更换 API 密钥"
 
@@ -2480,8 +2489,8 @@ msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 msgid "Same at the desk"
 msgstr "终端同键"
 
-#: src/features/me-agent-detail.tsx:162
-#: src/features/me-agent-detail.tsx:221
+#: src/features/me-agent-detail.tsx:170
+#: src/features/me-agent-detail.tsx:229
 msgid "Save"
 msgstr "保存"
 
@@ -2489,7 +2498,7 @@ msgstr "保存"
 msgid "Saved"
 msgstr "已保存"
 
-#: src/features/me-agent-detail.tsx:146
+#: src/features/me-agent-detail.tsx:154
 msgid "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 档位、effort=high，以及 compact/max-context（262144；模型含 [1m] 时为 1048576）。重启 Kimi 窗后 /status 才会刷新。"
 
@@ -2497,8 +2506,8 @@ msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 
 #~ msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
 #~ msgstr "保存时会按 Kimi Claude Code 指南写入 Base URL、全部 Claude 档位、自动压缩窗口与推理力度。重启 Kimi 窗后 /status 才会刷新。"
 
-#: src/features/me-agent-detail.tsx:162
-#: src/features/me-agent-detail.tsx:221
+#: src/features/me-agent-detail.tsx:170
+#: src/features/me-agent-detail.tsx:229
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -2664,7 +2673,7 @@ msgstr "部分数据没拿到：{missing}"
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
-#: src/features/me-agent-detail.tsx:86
+#: src/features/me-agent-detail.tsx:94
 msgid "Sonnet tier"
 msgstr "Sonnet 档"
 
@@ -2735,7 +2744,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/me-agent-detail.tsx:95
+#: src/features/me-agent-detail.tsx:103
 msgid "Sub-agent"
 msgstr "子智能体"
 
@@ -3151,8 +3160,8 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-agent-detail.tsx:191
-#: src/features/me-agent-detail.tsx:238
+#: src/features/me-agent-detail.tsx:199
+#: src/features/me-agent-detail.tsx:246
 msgid "Use CLI default"
 msgstr "使用 CLI 默认模型"
 
