@@ -16,6 +16,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 // log, nothing reaches a pane, so no stack state is needed.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 
+// This file intentionally keeps the interaction fixture scenarios together so
+// the page-level smoke coverage is easy to scan.
+// eslint-disable-next-line max-lines-per-function
 describe('Interaction debugging page', () => {
   let browser: Browser
   beforeAll(async () => {
@@ -192,6 +195,57 @@ describe('Interaction debugging page', () => {
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('to-background → C-b')
+    await context.close()
+  })
+
+  it('Grok Ask: sixth option, immediate loading, then multi-select and Enter', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#grok-ask`)
+    const detail = page.getByTestId('interaction-detail')
+    const card = detail.getByTestId('session-elicitation')
+    await card.waitFor({ timeout: 20_000 })
+    const log = page.getByTestId('interaction-log')
+
+    await card.getByRole('button', { name: /6\. 第六项/ }).click()
+    await card.getByTestId('grok-ask-loading').waitFor()
+    await expect.poll(() => log.textContent()).toContain('grok-ask → 6')
+    await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')
+    await card.getByText('报告包含哪些部分？').waitFor()
+    await expect
+      .poll(() => card.getByText('周报采用哪种数据源？').count())
+      .toBe(0)
+
+    const risks = card.getByRole('button', { name: /2\. 风险与阻塞/ })
+    await risks.click()
+    await expect.poll(() => risks.getAttribute('aria-pressed')).toBe('true')
+    await expect
+      .poll(() => card.getByTestId('grok-ask-loading').count())
+      .toBe(0)
+    await expect.poll(() => log.textContent()).toContain('grok-ask → 2')
+    // Toggling must not submit; the first question contributed the only Enter.
+    expect(
+      ((await log.textContent()) ?? '').match(/grok-ask → Enter/g),
+    ).toHaveLength(1)
+
+    await card.getByRole('button', { name: /3\. 下周计划/ }).click()
+    await expect
+      .poll(() =>
+        card
+          .getByRole('button', { name: /3\. 下周计划/ })
+          .getAttribute('aria-pressed'),
+      )
+      .toBe('true')
+    await card.getByTestId('grok-ask-submit').click()
+    await expect
+      .poll(() => card.getByTestId('grok-ask-loading').textContent())
+      .toContain('已提交，等待 Grok 继续')
+    await page.waitForTimeout(250)
+    await card.getByTestId('grok-ask-loading').waitFor()
+    await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')
     await context.close()
   })
 

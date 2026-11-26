@@ -30,10 +30,18 @@ export function InteractionsPage() {
   const wide = useIsWidePhoneFirst()
   const fill = useFillWindow(wide)
   const [log, setLog] = useState<Array<string>>([])
-  const keyFor = (name: string) => (key: string) => {
-    setLog((rows) => [`${name} → ${key}`, ...rows].slice(0, 8))
-    return Promise.resolve()
-  }
+  const keyFor = (name: string) => (key: string) =>
+    new Promise<void>((resolve) => {
+      // Grok's loading is part of the demo: leave enough time to see the local
+      // pending state before the simulated host write lands in the key log.
+      setTimeout(
+        () => {
+          setLog((rows) => [`${name} → ${key}`, ...rows].slice(0, 8))
+          resolve()
+        },
+        name === 'grok-ask' ? 180 : 0,
+      )
+    })
   const sections = buildSections(keyFor, Date.now())
   const tagChips = (tags: ReadonlyArray<Tag>) =>
     tags.map((id) => (

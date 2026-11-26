@@ -1,5 +1,6 @@
 // covers: web/src/features/session-restart.tsx web/src/features/session-key-panel.tsx
-// covers: native/wezdeck-wsl/session_restart.go
+// covers: web/src/features/session-handoff.tsx
+// covers: native/wezdeck-wsl/session_restart.go native/wezdeck-wsl/session_handoff.go
 import { execFileSync } from 'node:child_process'
 import {
   mkdtempSync,
@@ -35,6 +36,7 @@ describe.runIf(attention && devicesFile && stack)(
     const dir = mkdtempSync(join(tmpdir(), 'wd-restart-'))
     const socket = join(dir, 'sock')
     const log = join(stack, 'restart.log')
+    const handoffLog = join(stack, 'handoff.log')
     const tmux = (...args: Array<string>) =>
       execFileSync('tmux', ['-S', socket, ...args]).toString()
     let pane = ''
@@ -73,6 +75,7 @@ describe.runIf(attention && devicesFile && stack)(
       )
       writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
       rmSync(log, { force: true })
+      rmSync(handoffLog, { force: true })
       browser = await chromium.launch()
     })
 
@@ -118,6 +121,16 @@ describe.runIf(attention && devicesFile && stack)(
           return []
         }
       }
+      const handoffCalls = () => {
+        try {
+          return readFileSync(handoffLog, 'utf8')
+            .trim()
+            .split('\n')
+            .filter(Boolean)
+        } catch {
+          return []
+        }
+      }
       // no browser dialog: the question is asked in the panel
       let dialogs = 0
       page.on('dialog', (dialog) => {
@@ -152,8 +165,35 @@ describe.runIf(attention && devicesFile && stack)(
       expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
       await page.getByText('窗格正在重启').waitFor({ timeout: 5_000 })
 
+      // 空白切换: same target-agent confirmation, no note or brief. The
+      // relay returns its pending id and the page opens the blank session.
+      await openKeys()
+      await expect(
+        page.getByTestId('session-handoff-mode').getByRole('radio', {
+          name: /空白切换/,
+        }),
+      ).toBeVisible()
+      await page.locator('[data-handoff=grok]').click()
+      const handoff = page.getByTestId('session-handoff-confirm')
+      const blank = handoff.getByRole('radio', { name: /空白切换/ })
+      await blank.focus()
+      await page.keyboard.press('Space')
+      await expect.poll(() => blank.isChecked()).toBe(true)
+      await expect
+        .poll(() => handoff.getByTestId('session-handoff-note').count())
+        .toBe(0)
+      await handoff.locator('[data-handoff-confirm]').click()
+      await expect.poll(handoffCalls, { timeout: 10_000 }).toHaveLength(1)
+      expect(handoffCalls()[0]).toContain('--empty')
+      expect(handoffCalls()[0]).toContain('--to grok')
+      await page.waitForURL(
+        '**/console/sessions/pending-00000000-0000-4000-8000-000000000003',
+        { timeout: 20_000 },
+      )
+
       // 新开会话: --fresh; the host archives the old entry cleared_to the
       // new conversation and the page goes there
+      await page.goto(`${base}/zh/console/sessions/restart-s1`)
       await openKeys()
       await page.locator('[data-restart=fresh]').click()
       await page.locator('[data-restart-confirm]').click()

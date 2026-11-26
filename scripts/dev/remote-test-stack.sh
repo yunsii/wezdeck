@@ -116,6 +116,7 @@ start_relay() {
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
     WEZDECK_SESSION_REUSE_CMD="$STATE/fake-reuse-workstation" \
     WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \
+    WEZDECK_SESSION_HANDOFF_CMD="$STATE/fake-session-handoff" \
     TICKETS_ROOT="$STATE/tickets" \
     WEZDECK_TICKET_RUN_CMD="$STATE/fake-ticket-run" \
     TICKET_COLLAB_RUN_CMD="$STATE/fake-ticket-run" \
@@ -213,6 +214,18 @@ echo "\$*" >>"$STATE/restart.log"
 echo outcome=respawned
 FAKE
   chmod +x "$STATE/fake-session-restart"
+  # stand-in for session-handoff.sh: record the relay argv, give the test pane
+  # a stable ready screen and return a blank switch's pending id. Only the
+  # test's own tmux socket is touched; no source transcript is read.
+  ln -sf "$(command -v cat)" "$STATE/claude"
+  cat >"$STATE/fake-session-handoff" <<FAKE
+#!/usr/bin/env bash
+echo "\$*" >>"$STATE/handoff.log"
+tmux respawn-pane -k -t "\$2" "sh" "-c" "echo ready; exec '$STATE/claude'"
+[[ " \$* " == *" --empty "* ]] && echo "session_id=pending-00000000-0000-4000-8000-000000000003"
+echo outcome=respawned
+FAKE
+  chmod +x "$STATE/fake-session-handoff"
   # a private copy of the ticket store: reads stay realistic (the tickets
   # page shows real tickets) while 新工单 / replies only write the copy; a
   # ticket run is recorded, never started

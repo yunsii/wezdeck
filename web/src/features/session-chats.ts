@@ -16,10 +16,19 @@ import type { SessionCard } from './session-card'
 export type ChatTone = 'waiting' | 'running' | 'idle'
 
 export function chatTone(
-  focus: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
+  focus: Pick<
+    SessionCard,
+    'status' | 'running_kind' | 'waiting_kind' | 'ts' | 'last_prompt'
+  >,
   now = Date.now(),
 ): ChatTone {
   if (needsYou(focus)) return 'waiting'
+  // A fresh pane gets a recent ts before its first prompt. That is not a
+  // just-finished turn, so RECENT_MS must not paint it as "Replying…" (or
+  // make it the chat's running focus). A host-reported running state still
+  // wins: the first prompt may be on its way before the transcript shows it.
+  if (focus.status !== 'running' && !humanPrompt(focus.last_prompt))
+    return 'idle'
   if (inRunning(focus, now)) return 'running'
   return 'idle'
 }
@@ -122,7 +131,9 @@ export function resolveChatFocus(
     visitOf(b, phone) - visitOf(a, phone) || b.ts - a.ts
   const waiting = sessions.filter(needsYou).sort(byVisit)
   if (waiting[0]) return waiting[0]
-  const running = sessions.filter((row) => inRunning(row, now)).sort(byVisit)
+  const running = sessions
+    .filter((row) => chatTone(row, now) === 'running')
+    .sort(byVisit)
   if (running[0]) return running[0]
   return [...sessions].sort((a, b) => b.ts - a.ts || byVisit(a, b))[0]
 }

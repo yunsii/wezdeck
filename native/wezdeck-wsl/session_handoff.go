@@ -2,14 +2,15 @@ package main
 
 // Cross-agent session handoff (replace in place):
 //
-//   session.handoff      write  {id, to, note?} → {job}
+//   session.handoff      write  {id, to, note?, mode?} → {job}
 //   session.handoff.job  read   {job} → stage starting|sending|done|failed …
 //
-// Builds a deterministic continuation brief from the source transcript
-// (no LLM), replaces the pane's agent via scripts/runtime/session-handoff.sh
-// (sticks @wezterm_window_agent_profile so later F5 keeps the target), waits
-// for the TUI, pastes the brief. Does not recycle the worktree and does not
-// migrate the transcript — different backends only get a pointer + summary.
+// The default handoff builds a deterministic continuation brief from the source
+// transcript (no LLM). mode=switch starts blank: same pane respawn, but no
+// transcript read, brief or first prompt. Both replace the pane's agent via
+// scripts/runtime/session-handoff.sh (sticks @wezterm_window_agent_profile so
+// later F5 keeps the target). Neither recycles the worktree nor migrates the
+// transcript — different backends only get a pointer + summary on a handoff.
 
 import (
 	"bufio"
@@ -44,7 +45,8 @@ type handoffJob struct {
 	ToAgent   string `json:"to_agent"`
 	Worktree  string `json:"worktree,omitempty"`
 	Pane      string `json:"pane,omitempty"`
-	SessionID string `json:"session_id,omitempty"` // Claude up front; others after paste
+	Mode      string `json:"mode"`                 // handoff | switch
+	SessionID string `json:"session_id,omitempty"` // Claude up front; switch pending-*; others after paste
 	// Brief is the pasted continuation text so the web console can seed a
 	// queued bubble before the transcript poll catches up.
 	Brief string `json:"brief,omitempty"`
@@ -70,12 +72,20 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 		ID   string `json:"id"`
 		To   string `json:"to"`
 		Note string `json:"note"`
+		Mode string `json:"mode"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.handoff: bad arguments")
 	}
 	a.To = strings.ToLower(strings.TrimSpace(a.To))
 	a.Note = strings.TrimSpace(a.Note)
+	a.Mode = strings.ToLower(strings.TrimSpace(a.Mode))
+	if a.Mode == "" {
+		a.Mode = "handoff"
+	}
+	if a.Mode != "handoff" && a.Mode != "switch" {
+		return nil, errors.New("session.handoff: mode must be handoff or switch")
+	}
 	if !handoffAgents[a.To] {
 		return nil, errors.New("session.handoff: to must be claude, codex, grok or agy")
 	}
@@ -107,7 +117,7 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	}
 	job := &handoffJob{
 		ID: newDiagID(), Stage: "starting", FromID: a.ID, FromAgent: fromAgent,
-		ToAgent: a.To, Worktree: cwd, Pane: e.TmuxPane, at: time.Now(),
+		ToAgent: a.To, Worktree: cwd, Pane: e.TmuxPane, Mode: a.Mode, at: time.Now(),
 	}
 	handoffJobsMu.Lock()
 	for id, j := range handoffJobs {
@@ -117,7 +127,7 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	}
 	handoffJobs[job.ID] = job
 	handoffJobsMu.Unlock()
-	go runSessionHandoff(job.ID, e, path, fromAgent, a.To, a.Note)
+	go runSessionHandoff(job.ID, e, path, fromAgent, a.To, a.Note, a.Mode)
 	return map[string]any{"v": 1, "ok": true, "job": job.ID}, nil
 }
 
@@ -135,18 +145,24 @@ func handoffJobStatus(args json.RawMessage) (any, error) {
 	return map[string]any{"v": 1, "ok": true, "job": *j}, nil
 }
 
-func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAgent, note string) {
+func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAgent, note, mode string) {
 	fail := func(err error) {
 		setHandoffJob(id, func(j *handoffJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
-		relayLogf("session_handoff", "job=%s ok=false err=%q", id, err)
+		relayLogf("session_handoff", "job=%s mode=%s ok=false err=%q", id, mode, err)
 	}
-	brief := buildHandoffBrief(e, transcript, fromAgent, toAgent, note)
-	setHandoffJob(id, func(j *handoffJob) { j.Brief = brief })
+	brief := ""
+	if mode == "handoff" {
+		brief = buildHandoffBrief(e, transcript, fromAgent, toAgent, note)
+		setHandoffJob(id, func(j *handoffJob) { j.Brief = brief })
+	}
 	cmdPath := os.Getenv("WEZDECK_SESSION_HANDOFF_CMD")
 	if cmdPath == "" {
 		cmdPath = filepath.Join(repoRoot(), "scripts", "runtime", "session-handoff.sh")
 	}
 	argv := []string{cmdPath, "--pane", e.TmuxPane, "--to", toAgent, "--from", fromAgent}
+	if mode == "switch" {
+		argv = append(argv, "--empty")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "bash", argv...)
@@ -181,6 +197,12 @@ func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAge
 	}
 	if err := waitAgentReady(e.TmuxSocket, e.TmuxPane, 90*time.Second); err != nil {
 		fail(err)
+		return
+	}
+	if mode == "switch" {
+		setHandoffJob(id, func(j *handoffJob) { j.Stage = "done" })
+		relayLogf("session_handoff", "job=%s mode=switch ok=true from=%s to=%s pane=%s new=%s",
+			id, fromAgent, toAgent, e.TmuxPane, newID)
 		return
 	}
 	setHandoffJob(id, func(j *handoffJob) { j.Stage = "sending" })

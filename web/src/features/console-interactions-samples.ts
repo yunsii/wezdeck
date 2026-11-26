@@ -29,6 +29,31 @@ export const ASK_MANY: Elicitation = {
     },
   ],
 }
+export const GROK_ASK_MANY: Elicitation = {
+  tool_call_id: 'grok-ask-demo',
+  questions: [
+    {
+      question: '周报采用哪种数据源？',
+      options: [
+        { label: 'dev_report' },
+        { label: 'team_stat' },
+        { label: 'project_daily' },
+        { label: 'commit_log' },
+        { label: 'ticket_events' },
+        { label: '第六项：合并数据源', description: '验证数字 6 与 Enter' },
+      ],
+    },
+    {
+      question: '报告包含哪些部分？',
+      multi_select: true,
+      options: [
+        { label: '本周进展' },
+        { label: '风险与阻塞' },
+        { label: '下周计划' },
+      ],
+    },
+  ],
+}
 export const BASH: PendingCall = {
   tool: 'Bash',
   text: 'Bash git push origin master',
