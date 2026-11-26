@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
+import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
@@ -164,26 +165,27 @@ export function ConsoleDiagnosticsPage() {
 
   if (wide)
     return (
-      <div className="grid content-start gap-3">
-        <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
-        <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
-          <aside
-            aria-label={t`Log stream`}
-            className="sticky top-0 grid h-[100cqh] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pb-0 [scrollbar-gutter:stable_both-edges]"
-          >
-            <div className="md:px-[var(--page-x)]">{filters}</div>
-            {list}
-          </aside>
-          <div
-            data-testid="diagnostics-pane"
-            className="min-w-0 bg-brand-surface p-5"
-          >
-            {detail ?? (
-              <p className="py-10 text-center text-caption text-brand-muted">
-                {empty}
-              </p>
-            )}
-          </div>
+      <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-stretch">
+        <SplitColumn
+          label={t`Log stream`}
+          head={
+            <>
+              <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
+              {filters}
+            </>
+          }
+        >
+          {list}
+        </SplitColumn>
+        <div
+          data-testid="diagnostics-pane"
+          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge bg-brand-surface p-[var(--page-x)]"
+        >
+          {detail ?? (
+            <p className="py-10 text-center text-caption text-brand-muted">
+              {empty}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -254,7 +256,7 @@ function EntryList({
   const { t } = useLingui()
   if (entries.length === 0)
     return (
-      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
+      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted md:rounded-none md:bg-transparent md:px-[var(--page-x)]">
         {empty}
       </p>
     )

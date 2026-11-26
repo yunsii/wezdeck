@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import { useTicketSync } from '#/lib/ticket-sync'
 import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
@@ -233,55 +234,60 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           </Link>
-          <nav
-            className="grid min-h-0 content-start gap-1.5 overflow-y-auto px-2.5 py-1"
-            aria-label={t`Console navigation`}
-          >
-            {sidebar.map((item) => {
-              const active = current === item.id
-              const jump = Object.entries(JUMP_KEYS).find(
-                ([, section]) => section === item.id,
-              )?.[0]
-              return (
-                <Link
-                  key={item.id}
-                  to={SECTION_PATH[item.id]}
-                  params={{ locale: localeParam }}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={(event) => {
-                    // a modified click still opens a new tab / window
-                    if (
-                      event.metaKey ||
-                      event.ctrlKey ||
-                      event.shiftKey ||
-                      event.button !== 0
-                    )
-                      return
-                    event.preventDefault()
-                    if (!active) go(item.id)
-                    // clicking 会话 while on it: re-read the held order
-                    else if (item.id === 'sessions') {
-                      resetSessionOrder()
-                      void client.invalidateQueries({ queryKey: ['remote'] })
-                    }
-                  }}
-                  className={cn(
-                    'flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-                    active
-                      ? 'bg-brand-surface font-semibold text-brand-text'
-                      : 'text-brand-muted hover:bg-brand-soft',
-                  )}
-                >
-                  <span>{item.icon}</span>
-                  <span className="flex-1">{item.label}</span>
-                  {badges[item.id] ? (
-                    <CountBadge value={badges[item.id]!} />
-                  ) : jump ? (
-                    <kbd className="text-meta text-brand-label">g {jump}</kbd>
-                  ) : null}
-                </Link>
-              )
-            })}
+          <nav className="min-h-0 flex-1" aria-label={t`Console navigation`}>
+            <OverlayScroll>
+              <div className="grid content-start gap-1.5 px-2.5 py-1">
+                {sidebar.map((item) => {
+                  const active = current === item.id
+                  const jump = Object.entries(JUMP_KEYS).find(
+                    ([, section]) => section === item.id,
+                  )?.[0]
+                  return (
+                    <Link
+                      key={item.id}
+                      to={SECTION_PATH[item.id]}
+                      params={{ locale: localeParam }}
+                      aria-current={active ? 'page' : undefined}
+                      onClick={(event) => {
+                        // a modified click still opens a new tab / window
+                        if (
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.button !== 0
+                        )
+                          return
+                        event.preventDefault()
+                        if (!active) go(item.id)
+                        // clicking 会话 while on it: re-read the held order
+                        else if (item.id === 'sessions') {
+                          resetSessionOrder()
+                          void client.invalidateQueries({
+                            queryKey: ['remote'],
+                          })
+                        }
+                      }}
+                      className={cn(
+                        'flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                        active
+                          ? 'bg-brand-surface font-semibold text-brand-text'
+                          : 'text-brand-muted hover:bg-brand-soft',
+                      )}
+                    >
+                      <span>{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {badges[item.id] ? (
+                        <CountBadge value={badges[item.id]!} />
+                      ) : jump ? (
+                        <kbd className="text-meta text-brand-label">
+                          g {jump}
+                        </kbd>
+                      ) : null}
+                    </Link>
+                  )
+                })}
+              </div>
+            </OverlayScroll>
           </nav>
           <KeysEntry />
         </aside>

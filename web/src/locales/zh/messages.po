@@ -7,7 +7,7 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-git.tsx:56
+#: src/features/session-git.tsx:57
 msgctxt "list separator"
 msgid ", "
 msgstr "，"
@@ -25,15 +25,15 @@ msgstr "（可多选）"
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
-#: src/features/session-git.tsx:63
+#: src/features/session-git.tsx:64
 msgid "{ahead} commits not pushed yet."
 msgstr "有 {ahead} 个提交还没推送。"
 
-#: src/features/session-git.tsx:61
+#: src/features/session-git.tsx:62
 msgid "{ahead} commits to push, {behind} to pull."
 msgstr "有 {ahead} 个提交待推送，{behind} 个待拉取。"
 
-#: src/features/session-git.tsx:65
+#: src/features/session-git.tsx:66
 msgid "{behind} commits to pull."
 msgstr "有 {behind} 个提交待拉取。"
 
@@ -126,7 +126,7 @@ msgstr "{runningCount} 个子 agent 运行中"
 msgid "{runs} runs"
 msgstr "{runs} 次"
 
-#: src/features/session-git.tsx:52
+#: src/features/session-git.tsx:53
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
@@ -155,11 +155,11 @@ msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
-#: src/features/session-git.tsx:53
+#: src/features/session-git.tsx:54
 msgid "{unstaged} modified"
 msgstr "已修改 {unstaged} 个"
 
-#: src/features/session-git.tsx:54
+#: src/features/session-git.tsx:55
 msgid "{untracked} untracked"
 msgstr "未跟踪 {untracked} 个"
 
@@ -293,8 +293,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:402
-#: src/features/session-list.tsx:452
+#: src/features/session-list.tsx:406
+#: src/features/session-list.tsx:456
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -304,7 +304,7 @@ msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
 
 #: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:84
+#: src/features/me-agents.tsx:85
 msgid "Agents"
 msgstr "智能体"
 
@@ -312,7 +312,7 @@ msgstr "智能体"
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
-#: src/features/console-diagnostics.tsx:131
+#: src/features/console-diagnostics.tsx:132
 msgid "All"
 msgstr "全部"
 
@@ -321,7 +321,7 @@ msgctxt "filter"
 msgid "All"
 msgstr "全部"
 
-#: src/features/console-diagnostics.tsx:142
+#: src/features/console-diagnostics.tsx:143
 msgid "All categories"
 msgstr "全部分类"
 
@@ -480,12 +480,12 @@ msgstr "自动批准编辑（未开启 Auto 模式）"
 msgid "Availability and note"
 msgstr "可用状态与备注"
 
-#: src/features/console-me.tsx:450
+#: src/features/console-me.tsx:461
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:165
+#: src/features/me-agents.tsx:166
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
@@ -614,8 +614,8 @@ msgstr "能力（{capabilityCount}）"
 msgid "Carry a brief"
 msgstr "携带简报"
 
-#: src/features/console-diagnostics.tsx:140
-#: src/features/console-diagnostics.tsx:317
+#: src/features/console-diagnostics.tsx:141
+#: src/features/console-diagnostics.tsx:319
 msgid "Category"
 msgstr "分类"
 
@@ -623,7 +623,7 @@ msgstr "分类"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
-#: src/features/session-git.tsx:225
+#: src/features/session-git.tsx:226
 msgctxt "git"
 msgid "Changes"
 msgstr "变更"
@@ -683,7 +683,7 @@ msgstr "清空输入"
 #~ msgstr "清空输入（Esc Esc）"
 
 #: src/features/session-list.tsx:294
-#: src/features/session-list.tsx:392
+#: src/features/session-list.tsx:396
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -775,7 +775,7 @@ msgstr "命令"
 msgid "Commands and skills"
 msgstr "命令与能力"
 
-#: src/features/session-git.tsx:232
+#: src/features/session-git.tsx:233
 msgctxt "git"
 msgid "Commits"
 msgstr "提交"
@@ -824,7 +824,7 @@ msgstr "已确认：建了 {n} 张子单，调度已启动"
 msgid "conflict"
 msgstr "冲突"
 
-#: src/features/session-git.tsx:182
+#: src/features/session-git.tsx:183
 msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
@@ -848,7 +848,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:320
+#: src/features/console-shell.tsx:326
 msgid "Connection details"
 msgstr "连接详情"
 
@@ -860,7 +860,7 @@ msgstr "连接失败"
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
-#: src/features/console-shell.tsx:238
+#: src/features/console-shell.tsx:237
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -908,7 +908,7 @@ msgstr "已复制 {label}"
 msgid "Copied reference"
 msgstr "已复制引用"
 
-#: src/features/console-diagnostics.tsx:344
+#: src/features/console-diagnostics.tsx:346
 msgid "Copied the raw line"
 msgstr "已复制原始日志"
 
@@ -933,7 +933,7 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/console-diagnostics.tsx:348
+#: src/features/console-diagnostics.tsx:350
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
@@ -941,8 +941,8 @@ msgstr "复制原始日志"
 #: src/features/copy-reference.tsx:119
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:138
 #: src/features/me-agents.tsx:139
+#: src/features/me-agents.tsx:140
 #: src/features/session-chat-group.tsx:106
 #: src/features/session-chat-group.tsx:210
 #: src/features/session-list.tsx:113
@@ -991,7 +991,7 @@ msgstr "复制引用失败：{reason}"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-agents.tsx:30
+#: src/features/me-agents.tsx:31
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
@@ -1045,7 +1045,7 @@ msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
 #: src/features/console-me.tsx:220
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:386
 msgid "Dark"
 msgstr "深色"
@@ -1058,11 +1058,11 @@ msgstr "数据截至 {time}"
 msgid "Decision"
 msgstr "决定"
 
-#: src/features/me-agents.tsx:46
+#: src/features/me-agents.tsx:47
 msgid "Default agent"
 msgstr "默认智能体"
 
-#: src/features/me-agents.tsx:44
+#: src/features/me-agents.tsx:45
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
@@ -1104,9 +1104,9 @@ msgstr "终端空闲"
 msgid "Device access"
 msgstr "设备授权"
 
-#: src/features/console-diagnostics.tsx:168
-#: src/features/console-me.tsx:398
-#: src/features/console-shell.tsx:96
+#: src/features/console-diagnostics.tsx:173
+#: src/features/console-me.tsx:401
+#: src/features/console-shell.tsx:97
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -1130,8 +1130,8 @@ msgid "Disable this agent"
 msgstr "停用此 Agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:67
-#: src/features/me-agents.tsx:119
+#: src/features/me-agents.tsx:68
+#: src/features/me-agents.tsx:120
 #: src/features/session-new-panels.tsx:149
 msgid "Disabled"
 msgstr "已停用"
@@ -1183,11 +1183,11 @@ msgstr "修改描述"
 msgid "Effort"
 msgstr "推理力度"
 
-#: src/features/console-me.tsx:301
+#: src/features/console-me.tsx:302
 msgid "Enabled"
 msgstr "已启用"
 
-#: src/features/console-me.tsx:300
+#: src/features/console-me.tsx:301
 msgid "Enabled on this computer"
 msgstr "本机，已启用"
 
@@ -1214,7 +1214,7 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
-#: src/features/console-diagnostics.tsx:133
+#: src/features/console-diagnostics.tsx:134
 msgid "Errors"
 msgstr "错误"
 
@@ -1279,7 +1279,7 @@ msgstr "失败次数"
 msgid "File"
 msgstr "文件"
 
-#: src/features/session-git.tsx:57
+#: src/features/session-git.tsx:58
 msgid "Files: {list}."
 msgstr "文件：{list}。"
 
@@ -1333,8 +1333,8 @@ msgstr "完全访问"
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
-#: src/features/session-git.tsx:219
-#: src/features/session-git.tsx:358
+#: src/features/session-git.tsx:220
+#: src/features/session-git.tsx:359
 msgid "Git status"
 msgstr "Git 状态"
 
@@ -1418,7 +1418,7 @@ msgstr "主机离线"
 msgid "Host signals"
 msgstr "主机信号"
 
-#: src/features/console-activity.tsx:210
+#: src/features/console-activity.tsx:211
 #: src/features/tickets-view.tsx:161
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
@@ -1427,7 +1427,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:379
+#: src/features/console-me.tsx:382
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"
@@ -1562,7 +1562,7 @@ msgstr "刚压缩，下一次回复后更新"
 msgid "just now"
 msgstr "刚刚"
 
-#: src/features/console-shell.tsx:487
+#: src/features/console-shell.tsx:493
 msgid "just restarted"
 msgstr "刚重启"
 
@@ -1606,7 +1606,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:469
+#: src/features/console-shell.tsx:475
 #: src/features/me-host.tsx:116
 msgid "Last sample"
 msgstr "最近采样"
@@ -1644,17 +1644,17 @@ msgstr "字母"
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
-#: src/features/console-diagnostics.tsx:126
-#: src/features/console-diagnostics.tsx:316
+#: src/features/console-diagnostics.tsx:127
+#: src/features/console-diagnostics.tsx:318
 msgid "Level"
 msgstr "级别"
 
-#: src/features/session-git.tsx:66
+#: src/features/session-git.tsx:67
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
 #: src/features/console-me.tsx:219
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:385
 msgid "Light"
 msgstr "浅色"
@@ -1683,16 +1683,16 @@ msgstr "本页已加载"
 msgid "Loading original…"
 msgstr "正在加载原图…"
 
-#: src/features/console-activity.tsx:216
+#: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
-#: src/features/console-diagnostics.tsx:100
+#: src/features/console-diagnostics.tsx:101
 #: src/features/console-sessions.tsx:465
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:82
+#: src/features/me-agents.tsx:83
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:371
+#: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
@@ -1700,12 +1700,12 @@ msgstr "正在加载原图…"
 msgid "Loading…"
 msgstr "加载中…"
 
-#: src/features/console-diagnostics.tsx:197
+#: src/features/console-diagnostics.tsx:199
 msgid "Log entry"
 msgstr "日志详情"
 
-#: src/features/console-diagnostics.tsx:171
-#: src/features/console-diagnostics.tsx:263
+#: src/features/console-diagnostics.tsx:170
+#: src/features/console-diagnostics.tsx:265
 msgid "Log stream"
 msgstr "日志流"
 
@@ -1798,12 +1798,12 @@ msgstr "模型 ID"
 msgid "Modified"
 msgstr "修改时间"
 
-#: src/features/session-git.tsx:184
+#: src/features/session-git.tsx:185
 msgctxt "git"
 msgid "Modified"
 msgstr "已修改"
 
-#: src/features/session-git.tsx:288
+#: src/features/session-git.tsx:289
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
@@ -1960,7 +1960,7 @@ msgstr "当前没有远控会话"
 msgid "No activity for a while"
 msgstr "有一阵子没动静了"
 
-#: src/features/console-activity.tsx:217
+#: src/features/console-activity.tsx:218
 msgid "No activity yet"
 msgstr "还没有动态"
 
@@ -1968,7 +1968,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:397
+#: src/features/session-list.tsx:401
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -2002,7 +2002,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/console-diagnostics.tsx:102
+#: src/features/console-diagnostics.tsx:103
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
 
@@ -2022,7 +2022,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/session-list.tsx:384
+#: src/features/session-list.tsx:388
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2034,8 +2034,8 @@ msgstr "未选中工单"
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
-#: src/features/session-git.tsx:57
-#: src/features/session-git.tsx:283
+#: src/features/session-git.tsx:58
+#: src/features/session-git.tsx:284
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
@@ -2044,14 +2044,14 @@ msgstr "没有未提交的改动。"
 msgid "no upstream"
 msgstr "无上游"
 
-#: src/features/session-git.tsx:59
+#: src/features/session-git.tsx:60
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:126
+#: src/features/me-agents.tsx:127
 #: src/features/session-new-panels.tsx:151
 msgid "Not configured"
 msgstr "未配置"
@@ -2072,19 +2072,19 @@ msgstr "未实现"
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:330
+#: src/features/console-me.tsx:333
 msgid "Not paired"
 msgstr "未配对"
 
-#: src/features/session-git.tsx:301
+#: src/features/session-git.tsx:302
 msgid "Not pulled"
 msgstr "未拉取"
 
-#: src/features/session-git.tsx:296
+#: src/features/session-git.tsx:297
 msgid "Not pushed"
 msgstr "未推送"
 
-#: src/features/console-shell.tsx:420
+#: src/features/console-shell.tsx:426
 msgid "Not running"
 msgstr "未运行"
 
@@ -2125,7 +2125,7 @@ msgstr "这个仓库暂时没有要跟进的事。"
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-me.tsx:305
+#: src/features/console-me.tsx:306
 msgid "Off"
 msgstr "未启用"
 
@@ -2149,7 +2149,7 @@ msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
 
-#: src/features/console-diagnostics.tsx:358
+#: src/features/console-diagnostics.tsx:360
 msgid "Only this trace"
 msgstr "只看这个 trace"
 
@@ -2406,7 +2406,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:433
+#: src/features/console-shell.tsx:439
 #: src/features/me-host.tsx:59
 #: src/features/me-host.tsx:142
 msgid "Ready"
@@ -2416,7 +2416,7 @@ msgstr "就绪"
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/session-git.tsx:305
+#: src/features/session-git.tsx:306
 msgid "Recent commits"
 msgstr "最近提交"
 
@@ -2452,11 +2452,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:231
+#: src/features/console-shell.tsx:232
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:396
+#: src/features/console-shell.tsx:402
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -2542,8 +2542,8 @@ msgstr "仓库筛选"
 msgid "Repository"
 msgstr "仓库"
 
-#: src/features/console-me.tsx:319
-#: src/features/me-agents.tsx:59
+#: src/features/console-me.tsx:322
+#: src/features/me-agents.tsx:60
 #: src/features/session-new-panels.tsx:142
 msgid "Repository default"
 msgstr "按仓库设置"
@@ -2631,7 +2631,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:538
+#: src/features/console-shell.tsx:544
 #: src/features/me-host.tsx:100
 msgid "Retry"
 msgstr "重试"
@@ -2708,7 +2708,7 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:420
+#: src/features/console-shell.tsx:426
 msgid "Running"
 msgstr "运行中"
 
@@ -2755,7 +2755,7 @@ msgstr "Runtime 操作失败"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-diagnostics.tsx:103
+#: src/features/console-diagnostics.tsx:104
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime 离线时无法获取诊断数据。"
 
@@ -2823,7 +2823,7 @@ msgstr "搜索会话"
 msgid "Search skills"
 msgstr "搜索能力"
 
-#: src/features/console-shell.tsx:332
+#: src/features/console-shell.tsx:338
 msgid "Sections"
 msgstr "栏目"
 
@@ -2908,7 +2908,7 @@ msgstr "会话"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:81
+#: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
 #: src/features/session-list.tsx:356
@@ -2916,12 +2916,12 @@ msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:374
+#: src/features/session-list.tsx:378
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/console-me.tsx:313
-#: src/features/console-shell.tsx:100
+#: src/features/console-me.tsx:315
+#: src/features/console-shell.tsx:101
 msgid "Settings"
 msgstr "我的"
 
@@ -2949,7 +2949,7 @@ msgstr "查看初始消息"
 msgid "Show the call"
 msgstr "跳到发起的调用"
 
-#: src/features/console-activity.tsx:210
+#: src/features/console-activity.tsx:211
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
 
@@ -2969,7 +2969,7 @@ msgstr "能力 · {count}"
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:309
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -2998,7 +2998,7 @@ msgid "Sonnet tier"
 msgstr "Sonnet 档"
 
 #: src/features/console-collab-run.tsx:160
-#: src/features/console-diagnostics.tsx:318
+#: src/features/console-diagnostics.tsx:320
 msgid "Source"
 msgstr "来源"
 
@@ -3010,7 +3010,7 @@ msgstr "本机来源"
 msgid "Split proposal {pid}"
 msgstr "拆分提案 {pid}"
 
-#: src/features/session-git.tsx:183
+#: src/features/session-git.tsx:184
 msgctxt "git"
 msgid "Staged"
 msgstr "已暂存"
@@ -3143,7 +3143,7 @@ msgid "Synced"
 msgstr "已同步"
 
 #: src/features/console-me.tsx:218
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:384
 msgid "System"
 msgstr "跟随系统"
@@ -3227,7 +3227,7 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 
-#: src/features/console-shell.tsx:484
+#: src/features/console-shell.tsx:490
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
@@ -3264,8 +3264,8 @@ msgid "This browser"
 msgstr "当前浏览器"
 
 #: src/features/console-me.tsx:123
-#: src/features/console-me.tsx:328
-#: src/features/console-shell.tsx:229
+#: src/features/console-me.tsx:331
+#: src/features/console-shell.tsx:230
 msgid "This computer"
 msgstr "本机"
 
@@ -3299,7 +3299,7 @@ msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:533
+#: src/features/console-shell.tsx:539
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -3325,8 +3325,8 @@ msgid "Ticket"
 msgstr "工单编号"
 
 #: src/features/console-activity.tsx:206
-#: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:91
+#: src/features/console-activity.tsx:294
+#: src/features/console-shell.tsx:92
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -3338,7 +3338,7 @@ msgstr "工单"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:86
+#: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3352,7 +3352,7 @@ msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 msgid "Tidy up the phone interactions"
 msgstr "整理手机端交互"
 
-#: src/features/console-diagnostics.tsx:315
+#: src/features/console-diagnostics.tsx:317
 msgid "Time"
 msgstr "时间"
 
@@ -3431,12 +3431,12 @@ msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 msgid "Took {took}"
 msgstr "用时 {took}"
 
-#: src/features/console-diagnostics.tsx:319
+#: src/features/console-diagnostics.tsx:321
 msgid "Trace"
 msgstr "Trace"
 
-#: src/features/console-diagnostics.tsx:118
 #: src/features/console-diagnostics.tsx:119
+#: src/features/console-diagnostics.tsx:120
 msgid "Trace ID or text"
 msgstr "Trace ID 或文本"
 
@@ -3498,7 +3498,7 @@ msgstr "未知"
 msgid "Untitled session"
 msgstr "未命名会话"
 
-#: src/features/session-git.tsx:185
+#: src/features/session-git.tsx:186
 msgctxt "git"
 msgid "Untracked"
 msgstr "未跟踪"
@@ -3520,7 +3520,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:475
+#: src/features/console-shell.tsx:481
 #: src/features/me-host.tsx:115
 msgid "Uptime"
 msgstr "运行时长"
@@ -3568,7 +3568,7 @@ msgstr "已切到 VS Code 窗口"
 msgid "Waiting for"
 msgstr "等待类型"
 
-#: src/features/console-me.tsx:303
+#: src/features/console-me.tsx:304
 msgid "Waiting for the host"
 msgstr "等电脑确认"
 
@@ -3612,7 +3612,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "等你"
 
-#: src/features/console-shell.tsx:444
+#: src/features/console-shell.tsx:450
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3629,7 +3629,7 @@ msgstr "耗时 p50 / p95"
 msgid "Wall total"
 msgstr "总耗时"
 
-#: src/features/console-diagnostics.tsx:132
+#: src/features/console-diagnostics.tsx:133
 msgid "Warnings"
 msgstr "警告"
 
@@ -3653,8 +3653,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:226
-#: src/features/console-shell.tsx:315
+#: src/features/console-shell.tsx:227
+#: src/features/console-shell.tsx:321
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"

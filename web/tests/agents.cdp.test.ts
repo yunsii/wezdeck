@@ -143,6 +143,15 @@ describe('Agent settings layout', () => {
     )
     const detail = page.getByTestId('agent-detail')
     await detail.waitFor()
+    const gap = await page.evaluate(() => {
+      const second = document.querySelector('.vt-split-list')!
+      const third = document.querySelector('[data-agent-profile]')!
+      return (
+        third.getBoundingClientRect().left -
+        second.getBoundingClientRect().right
+      )
+    })
+    expect(gap).toBeLessThanOrEqual(1)
     expect(
       await page
         .locator('[data-agent-profile=claude_sub2api] span.truncate')
@@ -283,6 +292,14 @@ describe('Agent settings layout', () => {
     await context.close()
   })
 
+  it('tablet opens one agent detail at a time and returns to its list', async () => {
+    const { context, page } = await pageWithProfiles(browser, 900)
+    await page.locator('[data-agent-profile=codex]').click()
+    await page.getByRole('button', { name: '返回智能体列表' }).click()
+    await page.locator('[data-agent-profile=codex]').waitFor()
+    await context.close()
+  })
+
   it('edits notes and disabled state without hiding profiles or copying keys', async () => {
     const { context, page, settingsWrites } = await pageWithProfiles(
       browser,
@@ -295,7 +312,7 @@ describe('Agent settings layout', () => {
       '当前不可用',
     )
     expect(
-      await detail.getByRole('checkbox', { name: '停用此智能体' }).isChecked(),
+      await detail.getByRole('checkbox', { name: '停用此 Agent' }).isChecked(),
     ).toBe(true)
     await page.locator('[data-agent-profile=grok]').click()
     expect(
@@ -303,7 +320,7 @@ describe('Agent settings layout', () => {
     ).toContain('不能自动处理用户消息队列')
     await page.locator('[data-agent-profile=codex]').click()
     await detail.getByTestId('agent-profile-note').fill('用于交互和队列')
-    await detail.getByRole('checkbox', { name: '停用此智能体' }).check()
+    await detail.getByRole('checkbox', { name: '停用此 Agent' }).check()
     await detail.getByTestId('agent-profile-settings-save').click()
     await expect.poll(() => settingsWrites.length).toBe(1)
     expect(settingsWrites[0]).toEqual({

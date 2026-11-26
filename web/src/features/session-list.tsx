@@ -368,7 +368,11 @@ export function SessionList({
       {sessions.isError ? (
         <p
           role="status"
-          className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
+          className={cn(
+            'border-l-[3px] border-brand-waiting bg-brand-waiting/10 px-3 py-3 text-caption break-words',
+            split &&
+              'border-b border-b-brand-edge pl-[calc(var(--split-pad)-3px)] pr-[var(--split-pad)]',
+          )}
         >
           {sessions.error.message === NOT_PAIRED
             ? t`Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`

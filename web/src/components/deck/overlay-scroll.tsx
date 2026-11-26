@@ -68,6 +68,7 @@ export function OverlayScroll({ className, children, ...rest }: NativeProps) {
       }
     >
       <OverlayScrollbarsLazy
+        {...rest}
         defer
         data-overlayscrollbars-initialize=""
         options={defaults}

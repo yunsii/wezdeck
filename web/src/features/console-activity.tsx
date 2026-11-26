@@ -201,77 +201,79 @@ export function ConsoleActivityPage() {
   )
   let lastDay = ''
   return (
-    <div className="grid max-w-3xl content-start gap-3">
-      <h1 className="hidden text-body font-semibold md:block">
+    <div className="grid content-start">
+      <h1 className="hidden text-body font-semibold md:flex md:min-h-14 md:items-center md:border-b md:border-brand-edge md:px-[var(--page-x)]">
         {t`Ticket activity`}
       </h1>
-      {events.isError ? (
-        <p role="status" className="text-meta text-brand-waiting">
-          {t`Host unreachable right now`}，{t`showing the last copy`}
-        </p>
-      ) : null}
-      {groups.length === 0 ? (
-        <p className="py-8 text-center text-caption text-brand-muted">
-          {events.isPending
-            ? t`Loading…`
-            : (events.data?.error ?? t`No activity yet`)}
-        </p>
-      ) : (
-        groups.map((group) => {
-          const ticket = tickets.get(group.ticket)
-          const origin = created.get(group.ticket)
-          const title =
-            ticket?.title || text(origin?.title) || group.ticket.slice(-6)
-          const from = ticket?.from ?? text(origin?.from)
-          const to = ticket?.to ?? text(origin?.to)
-          const heading = group.day !== lastDay ? group.day : ''
-          lastDay = group.day
-          return (
-            <section
-              key={`${group.ticket}-${group.events[0]?.seq ?? ''}`}
-              className="grid gap-2"
-            >
-              {heading ? (
-                <h2 className="pt-2 text-body font-semibold">{heading}</h2>
-              ) : null}
-              <div className="rounded-2xl bg-brand-surface px-4 py-3">
-                <Link
-                  to="/{-$locale}/console/collab/$id"
-                  params={{ locale: localeParam, id: group.ticket }}
-                  className="grid gap-0.5"
-                >
-                  <span className="line-clamp-2 text-body leading-snug font-semibold">
-                    {title}
-                  </span>
-                  {from || to ? (
-                    <span className="text-meta text-brand-label">
-                      {from || '?'} → {to || '?'}
+      <div className="grid max-w-3xl content-start gap-3 md:px-[var(--page-x)] md:py-3">
+        {events.isError ? (
+          <p role="status" className="text-meta text-brand-waiting">
+            {t`Host unreachable right now`}，{t`showing the last copy`}
+          </p>
+        ) : null}
+        {groups.length === 0 ? (
+          <p className="py-8 text-center text-caption text-brand-muted">
+            {events.isPending
+              ? t`Loading…`
+              : (events.data?.error ?? t`No activity yet`)}
+          </p>
+        ) : (
+          groups.map((group) => {
+            const ticket = tickets.get(group.ticket)
+            const origin = created.get(group.ticket)
+            const title =
+              ticket?.title || text(origin?.title) || group.ticket.slice(-6)
+            const from = ticket?.from ?? text(origin?.from)
+            const to = ticket?.to ?? text(origin?.to)
+            const heading = group.day !== lastDay ? group.day : ''
+            lastDay = group.day
+            return (
+              <section
+                key={`${group.ticket}-${group.events[0]?.seq ?? ''}`}
+                className="grid gap-2"
+              >
+                {heading ? (
+                  <h2 className="pt-2 text-body font-semibold">{heading}</h2>
+                ) : null}
+                <div className="rounded-2xl bg-brand-surface px-4 py-3 md:rounded-none md:border-b md:border-brand-edge md:bg-transparent md:px-0">
+                  <Link
+                    to="/{-$locale}/console/collab/$id"
+                    params={{ locale: localeParam, id: group.ticket }}
+                    className="grid gap-0.5"
+                  >
+                    <span className="line-clamp-2 text-body leading-snug font-semibold">
+                      {title}
                     </span>
-                  ) : null}
-                </Link>
-                <ol className="mt-2 grid gap-1.5">
-                  {group.events.map((event) => (
-                    <li
-                      key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
-                      className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-body"
-                    >
-                      <span className="pt-1">
-                        <Led tone={toneOf(event)} size={9} />
+                    {from || to ? (
+                      <span className="text-meta text-brand-label">
+                        {from || '?'} → {to || '?'}
                       </span>
-                      <span className="line-clamp-3 text-brand-text">
-                        {sentence(event)}
-                      </span>
-                      <span className="text-meta text-brand-label tabular-nums">
-                        {clock(event.ts)}
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </section>
-          )
-        })
-      )}
+                    ) : null}
+                  </Link>
+                  <ol className="mt-2 grid gap-1.5">
+                    {group.events.map((event) => (
+                      <li
+                        key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
+                        className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-body"
+                      >
+                        <span className="pt-1">
+                          <Led tone={toneOf(event)} size={9} />
+                        </span>
+                        <span className="line-clamp-3 text-brand-text">
+                          {sentence(event)}
+                        </span>
+                        <span className="text-meta text-brand-label tabular-nums">
+                          {clock(event.ts)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </section>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

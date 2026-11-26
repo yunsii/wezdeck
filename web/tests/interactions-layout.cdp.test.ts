@@ -25,14 +25,29 @@ describe('Interaction debugging layout', () => {
     await page.goto(`${base}/zh/console/me/interactions#status-bar`)
     const list = page.getByTestId('interaction-list-scroll')
     await list.waitFor({ timeout: 20_000 })
+    const gap = await page.evaluate(() => {
+      const second = document.querySelector('.vt-split-list')!
+      const third = document.querySelector(
+        '[data-testid=interaction-list-scroll]',
+      )!
+      return (
+        third.getBoundingClientRect().left -
+        second.getBoundingClientRect().right
+      )
+    })
+    expect(gap).toBeLessThanOrEqual(1)
     // the list is taller than the window: it scrolls, the page barely does
     const sizes = await page.evaluate(() => {
       const column = document.querySelector<HTMLElement>(
         '[data-testid=interaction-list-scroll]',
       )!
-      const scroller = column.closest('.vt-page') as HTMLElement
+      const viewport =
+        column.querySelector<HTMLElement>(
+          '[data-overlayscrollbars-viewport]',
+        ) ?? column
+      const scroller = document.querySelector('.vt-page') as HTMLElement
       return {
-        listScrolls: column.scrollHeight > column.clientHeight,
+        listScrolls: viewport.scrollHeight > viewport.clientHeight,
         pageRoom: scroller.scrollHeight - scroller.clientHeight,
       }
     })
@@ -45,9 +60,7 @@ describe('Interaction debugging layout', () => {
       await page.getByTestId('interaction-detail').waitFor()
       await page.waitForTimeout(400)
       const room = await page.evaluate(() => {
-        const scroller = document
-          .querySelector('[data-testid=interaction-list-scroll]')
-          ?.closest('.vt-page') as HTMLElement
+        const scroller = document.querySelector('.vt-page') as HTMLElement
         return scroller.scrollHeight - scroller.clientHeight
       })
       expect(room, `${id}: page room`).toBeLessThanOrEqual(1)
@@ -57,9 +70,12 @@ describe('Interaction debugging layout', () => {
     // list grew, and its heading rightly went with it)
     const stuck = await list.evaluate((el) => {
       const heading = el.querySelector('h2')!
-      el.scrollTop = Math.floor(heading.parentElement!.offsetHeight / 2)
+      const viewport =
+        el.querySelector<HTMLElement>('[data-overlayscrollbars-viewport]') ?? el
+      viewport.scrollTop = Math.floor(heading.parentElement!.offsetHeight / 2)
       return Math.abs(
-        heading.getBoundingClientRect().top - el.getBoundingClientRect().top,
+        heading.getBoundingClientRect().top -
+          viewport.getBoundingClientRect().top,
       )
     })
     expect(stuck).toBeLessThan(2)
