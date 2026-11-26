@@ -21,13 +21,13 @@ export function SplitColumn({
     <aside
       aria-label={label}
       className={cn(
-        'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 flex-col [--split-pad:var(--page-x)]',
+        'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 w-full flex-col [--split-pad:var(--page-x)]',
         className,
       )}
     >
       <div
         data-testid="split-head"
-        className="grid shrink-0 gap-3 overflow-hidden border-b border-brand-edge px-[var(--split-pad)] pt-0.5 pb-3"
+        className="grid shrink-0 gap-3 overflow-hidden border-b border-brand-edge px-[var(--split-pad)] py-2.5"
       >
         {head}
       </div>
@@ -37,7 +37,7 @@ export function SplitColumn({
         <OverlayScroll className="overscroll-contain">
           <div
             data-testid="split-body"
-            className="grid content-start gap-0 pt-3 pb-0"
+            className="grid content-start gap-0 pt-0 pb-0"
           >
             {children}
           </div>

@@ -133,8 +133,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    as its left edge (no card).
    工单's run / cache / cost band opens from the head in a dialog. Session
    groups carry icons: repo `FolderGit2`, worktree `GitFork`.
-   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx). Both
-   remember status filter on 工单; 会话 has none (IM list). With no item in
+   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): zero outer padding, equal head padding, and session bars within pane edges. 工单
+   remembers its status filter; 会话 has none (IM list). With no item in
    the URL, reopen the last opened item if it still exists, else the top
    (`lib/last-opened.tsx` `pickLast`). The list sticky on the left, the
    ticket beside it in the
