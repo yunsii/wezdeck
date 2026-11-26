@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ship a committed wezdeck round: push, relay and web in parallel. Versions
+# Ship a committed wezdeck round: push first, then deploy relay and web. Versions
 # are source fingerprints (scripts/dev/source-fingerprint.sh): a part whose
 # running version already equals its fingerprint is skipped, so a web-only
 # round never restarts the relay (and drops web console links). A deploy that
@@ -9,7 +9,10 @@
 # After the reload, scripts/dev/device-check.sh confirms the person's pages
 # (phones and the host's own browser) run the new build before any retest.
 #
-#   scripts/dev/wezdeck-release.sh [--commit MSGFILE] [--only push|relay|web]... [--force] [--gate | --no-test] [--no-reload]
+#   scripts/dev/wezdeck-release.sh [--land COMMIT | --commit MSGFILE] [--only push|relay|web]... [--force] [--gate | --no-test] [--no-reload]
+#
+# --land COMMIT integrates a committed worktree tip on the primary master.
+# A repository-wide lock covers integration, push and deployment.
 #
 # --commit MSGFILE commits the staged changes first, after fixing what the
 # pre-commit gate only reports: prettier on the staged web files and the
@@ -36,7 +39,7 @@
 # survives). Retried while no web console is known yet — a relay restarted in the
 # same release forgets them until they reconnect. --no-reload skips it.
 #
-# Jobs (concurrent; logs under ~/.local/state/wezdeck/release/<stamp>/):
+# Jobs (deployments run after the push; logs under ~/.local/state/wezdeck/release/<stamp>/):
 #   push   git push origin HEAD:master when HEAD is ahead
 #   relay  build.sh, then restart wezdeck-relay unless the running process
 #          already logged `event=connected version=<fingerprint>`
@@ -45,6 +48,7 @@
 #          (skipped when web/dist already carries it — the test gate's stack
 #          just built it) + wrangler deploy
 # --force redeploys relay and web even when they look current.
+# WEZDECK_RELEASE_LOCK_WAIT bounds lock contention in seconds (default 300).
 # Refuses to run with uncommitted tracked changes (ship what is committed).
 # Each run appends one summary row to ~/.local/state/wezdeck/release.log.
 set -uo pipefail
@@ -52,21 +56,35 @@ set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SITE="${WEZDECK_SITE:-https://wezdeck.yuns.love}"
 UNIT=wezdeck-relay
-STATE="$HOME/.local/state/wezdeck"
-RUN="$STATE/release/$(date +%Y%m%d-%H%M%S)"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/wezdeck"
 only=()
 force=0
 test_mode=parallel # parallel | gate | off
 reload_clients=1
 commit_msg=''
+land_commit=''
+release_args=()
 while (($#)); do
   case "$1" in
-    --commit) commit_msg="$2"; shift 2 ;;
-    --only) only+=("$2"); shift 2 ;;
-    --force) force=1; shift ;;
-    --no-test) test_mode=off; shift ;;
-    --gate) test_mode=gate; shift ;;
-    --no-reload) reload_clients=0; shift ;;
+    --commit|--land|--only)
+      [[ $# -ge 2 && -n "$2" ]] || { echo "release: $1 requires a value" >&2; exit 2; }
+      case "$1" in
+        --commit) commit_msg="$2"; release_args+=("$1" "$2") ;;
+        --land)
+          land_commit="$(git -C "$REPO" rev-parse --verify --end-of-options "$2^{commit}")" || exit 2
+          release_args+=("$1" "$land_commit")
+          ;;
+        --only)
+          case "$2" in push|relay|web) ;; *) echo "release: invalid job $2" >&2; exit 2 ;; esac
+          only+=("$2"); release_args+=("$1" "$2")
+          ;;
+      esac
+      shift 2
+      ;;
+    --force) force=1; release_args+=("$1"); shift ;;
+    --no-test) test_mode=off; release_args+=("$1"); shift ;;
+    --gate) test_mode=gate; release_args+=("$1"); shift ;;
+    --no-reload) reload_clients=0; release_args+=("$1"); shift ;;
     -h | --help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -74,6 +92,35 @@ done
 wanted() { ((${#only[@]} == 0)) || [[ " ${only[*]} " == *" $1 "* ]]; }
 
 cd "$REPO" || exit 1
+
+if [[ -n "$land_commit" ]]; then
+  if [[ -n "$commit_msg" ]] || ! wanted push; then
+    echo 'release: --land requires push and cannot be combined with --commit' >&2
+    exit 2
+  fi
+  primary=''
+  IFS= read -r -d '' primary < <(git worktree list --porcelain -z)
+  primary="${primary#worktree }"
+  [[ -n "$primary" ]] || exit 1
+  if [[ "$primary" != "$REPO" ]]; then
+    exec bash "$primary/scripts/dev/wezdeck-release.sh" "${release_args[@]}"
+  fi
+fi
+
+common_dir="$(git rev-parse --path-format=absolute --git-common-dir)" || exit 1
+exec 8>>"$common_dir/wezdeck-release.lock" || exit 1
+if ! flock -n 8; then
+  lock_wait="${WEZDECK_RELEASE_LOCK_WAIT:-300}"
+  echo "release: another release is running, waiting up to ${lock_wait}s" >&2
+  flock -w "$lock_wait" 8 || exit 75
+fi
+[[ "$(git branch --show-current)" == master ]] || { echo 'release: use --land COMMIT or run on master' >&2; exit 1; }
+for marker in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply sequencer; do
+  if [[ -e "$(git rev-parse --git-path "$marker")" ]]; then
+    echo "release: finish the Git operation on master first ($marker)" >&2
+    exit 1
+  fi
+done
 
 # the mechanical half of the pre-commit gate, applied instead of reported
 autofix_staged() {
@@ -107,13 +154,17 @@ if [[ -n "$commit_msg" ]]; then
   echo "release: committed $(git log -1 --format='%h %s')"
 fi
 
-if ! git diff --quiet HEAD; then
-  echo "release: uncommitted tracked changes — commit first (nothing shipped)" >&2
+checkout_clean() {
+  local status
+  status="$(git status --porcelain --untracked-files=normal)" && [[ -z "$status" ]]
+}
+if ! checkout_clean; then
+  echo 'release: master checkout must be clean before integration' >&2
   exit 1
 fi
-[[ "$(git branch --show-current)" == master ]] || { echo "release: not on master" >&2; exit 1; }
-mkdir -p "$RUN"
-head="$(git rev-parse --short HEAD)"
+mkdir -p "$STATE/release" || exit 1
+run_root="$(mktemp -d "$STATE/release/$(date +%Y%m%d-%H%M%S).XXXXXX")" || exit 1
+RUN="$run_root"
 
 # Live progress, like `coco-cli cmdb` deploy watch: one line per step change,
 # `[mm:ss] glyph step  what`, and a heartbeat when a step is quiet for 10 s.
@@ -185,8 +236,39 @@ watch_until() {
   return 0
 }
 
-# fixed before the push moves @{u}: the tests compare against what origin had
-test_base="$(git rev-parse '@{u}')"
+fetch_master() {
+  git fetch -q origin refs/heads/master:refs/remotes/origin/master
+}
+merge_release_input() {
+  local input="$1"
+  if git merge --no-edit "$input"; then return 0; fi
+  if git rev-parse --verify -q MERGE_HEAD >/dev/null; then
+    git merge --abort || return 1
+  fi
+  echo "release: merge failed for $input. Resolve against origin/master in the task worktree." >&2
+  return 1
+}
+prepare_release() {
+  checkout_clean || return 1
+  fetch_master || return 1
+  test_base="$(git rev-parse refs/remotes/origin/master)" || return 1
+  if wanted push; then
+    merge_release_input "$test_base" || return 1
+    if [[ -n "$land_commit" ]]; then
+      merge_release_input "$land_commit" || return 1
+    fi
+  else
+    git merge --ff-only "$test_base" || return 1
+    if [[ "$(git rev-parse HEAD)" != "$test_base" ]]; then
+      echo 'release: deploy-only requires the local commit to match origin/master' >&2
+      return 1
+    fi
+  fi
+  release_commit="$(git rev-parse HEAD)" || return 1
+  head="$(git rev-parse --short "$release_commit")" || return 1
+  checkout_clean
+}
+
 job_test() {
   scripts/dev/web-affected-tests.sh --base "$test_base" --run || {
     echo "FAIL: affected tests (log $RUN/test.log)"
@@ -212,37 +294,59 @@ job_build() {
   fi
   echo "ok: builds current"
 }
-start_job build 'shared builds (relay binary, web/dist) when stale' job_build
-watch_until build
-if ((rcs[build] != 0)); then
-  say '✗' done "build failed; nothing pushed or deployed (log $RUN/build.log)"
-  printf '%s head=%s build=FAIL logs=%s\n' "$(date -Iseconds)" "$head" "$RUN" >>"$STATE/release.log"
-  exit 1
-fi
-if [[ $test_mode != off ]]; then
-  start_job test 'affected tests (go / unit / cdp on the test stack)' job_test
-fi
-if [[ $test_mode == gate ]]; then
-  watch_until test
-  if ((rcs[test] != 0)); then
-    say '✗' done "tests failed; nothing pushed or deployed"
-    [[ -n "$commit_msg" ]] &&
-      echo "release: the commit $(git log -1 --format=%h) stays local — fix, then commit the fix and rerun without --commit (or amend it: not pushed yet)" >&2
-    printf '%s head=%s test=FAIL/%ss logs=%s\n' "$(date -Iseconds)" "$head" "${durs[test]}" "$RUN" >>"$STATE/release.log"
+# Use the tested commit for the push, including when retrying deployment.
+job_push() {
+  local advertised
+  if [[ "$(git rev-parse HEAD)" != "$release_commit" ]] || ! checkout_clean; then
+    echo "release: checkout changed during build"
+    return 1
+  fi
+  if wanted push && [[ "$test_base" != "$release_commit" ]]; then
+    phase "pushing $head"
+    git push -q origin "$release_commit:refs/heads/master" || return 1
+  fi
+  advertised="$(git ls-remote --exit-code origin refs/heads/master)" || return 1
+  if [[ "${advertised%%$'\t'*}" != "$release_commit" ]]; then
+    echo "release: origin/master is not at $head"
+    return 1
+  fi
+  echo "ok: origin/master at $head"
+}
+
+for attempt in 1 2; do
+  prepare_release || exit 1
+  start_job build 'shared builds (relay binary, web/dist) when stale' job_build
+  watch_until build
+  if ((rcs[build] != 0)); then
+    say '✗' done "build failed (log $RUN/build.log)"
     exit 1
   fi
-fi
-
-# each job prints its last line as the result; exit 0 = verified or skipped
-job_push() {
-  local ahead
-  ahead="$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 1)"
-  if [[ "$ahead" == 0 ]]; then echo "skip: origin already at $head"; return 0; fi
-  phase "pushing $ahead commit(s)"
-  git push -q origin HEAD:master || return 1
-  [[ "$(git rev-parse --short '@{u}')" == "$head" ]] || { echo "push: origin is not at $head"; return 1; }
-  echo "ok: origin at $head"
-}
+  if [[ $test_mode != off ]]; then
+    start_job test 'affected tests (go / unit / cdp on the local stack)' job_test
+    if [[ $test_mode == gate ]]; then
+      watch_until test
+      if ((rcs[test] != 0)); then
+        say '✗' done "tests failed (log $RUN/test.log)"
+        exit 1
+      fi
+    fi
+  fi
+  start_job push 'confirm the release commit on origin/master' job_push
+  watch_until push
+  ((rcs[push] == 0)) && break
+  [[ $test_mode == off ]] || watch_until test
+  if ((attempt == 1)) && wanted push && fetch_master &&
+     [[ "$(git rev-parse refs/remotes/origin/master)" != "$test_base" ]]; then
+    say '↻' push 'origin/master moved, integrating and rebuilding once'
+    RUN="$run_root/retry"
+    mkdir -p "$RUN" || exit 1
+    pids=() starts=() rcs=() durs=() seen=() quiet=() jobs_all=()
+  else
+    say '✗' done "push or remote verification failed (log $RUN/push.log)"
+    printf '%s head=%s push=FAIL logs=%s\n' "$(date -Iseconds)" "$head" "$RUN" >>"$STATE/release.log"
+    exit 1
+  fi
+done
 
 relay_running_version() {
   local pid
@@ -297,7 +401,7 @@ job_web() {
   fi
   local built reused=''
   built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' web/dist/client/build.json 2>/dev/null)"
-  if [[ $force == 0 && "$built" == "$want" ]]; then
+  if [[ "$built" == "$want" ]]; then
     reused=' (reused dist)'
   else
     phase "vite build $want"
@@ -309,9 +413,9 @@ job_web() {
 }
 
 running=()
-for name in push relay web; do
+for name in relay web; do
   wanted "$name" || continue
-  start_job "$name" "$(case $name in push) echo 'git push to origin' ;; relay) echo 'restart the host relay if changed' ;; web) echo 'deploy the web console if changed' ;; esac)" "job_$name"
+  start_job "$name" "$(case $name in relay) echo 'restart the host relay if changed' ;; web) echo 'deploy the web console if changed' ;; esac)" "job_$name"
   running+=("$name")
 done
 ((${#running[@]})) && watch_until "${running[@]}"
@@ -332,7 +436,7 @@ if ((reload_clients && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/de
   # a console needs a moment to reconnect only after the relay restarted;
   # otherwise one ask settles it (three asks 5 s apart cost ~15 s each run)
   tries=1
-  grep -q '^ok: restarted' "$RUN/relay.log" 2>/dev/null && tries=3
+  grep -q '^ok: running relay' "$RUN/relay.log" 2>/dev/null && tries=3
   for ((i = 1; i <= tries; i++)); do
     out="$(native/wezdeck-wsl/bin/wezdeck-wsl diag --reload --wait 10 \
       --reason "发布网页 $head" 2>&1 | tee -a "$RUN/clients.log")"
