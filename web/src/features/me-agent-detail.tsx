@@ -45,8 +45,14 @@ function KimiSettings({ profile }: { profile: AgentProfile }) {
         })
       }}
     >
+      <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-brand-edge text-caption">
+        <span className="text-brand-muted">{t`Current API key`}</span>
+        <code className="min-w-0 break-all text-right font-mono text-brand-text">
+          {profile.masked_key || t`Not configured`}
+        </code>
+      </div>
       <label className="grid gap-1 text-caption text-brand-muted">
-        {t`Kimi API key`}
+        {profile.configured ? t`Replace API key` : t`Kimi API key`}
         <Input
           variant="field"
           type="password"
@@ -92,14 +98,19 @@ function KimiSettings({ profile }: { profile: AgentProfile }) {
 
 function ModelSettings({ profile }: { profile: AgentProfile }) {
   const { t } = useLingui()
-  const [model, setModel] = useState(profile.model_override || '')
+  const currentModel = profile.model_override || profile.default_model || ''
+  const [model, setModel] = useState(currentModel)
   const { saving, message, save } = useSaveState()
   return (
     <form
       className="grid max-w-lg gap-4"
       onSubmit={(event) => {
         event.preventDefault()
-        void save('agent.profile.model', { profile: profile.id, model })
+        void save('agent.profile.model', { profile: profile.id, model }).then(
+          (ok) => {
+            if (ok && !model.trim()) setModel(profile.default_model || '')
+          },
+        )
       }}
     >
       <label className="grid gap-1 text-caption text-brand-muted">
@@ -111,6 +122,21 @@ function ModelSettings({ profile }: { profile: AgentProfile }) {
           onChange={(event) => setModel(event.target.value)}
         />
       </label>
+      <p className="text-meta text-brand-label">
+        {profile.model_override
+          ? t`Managed override`
+          : profile.default_model
+            ? t`CLI default`
+            : t`CLI selects automatically`}
+      </p>
+      {profile.id === 'claude_sub2api' ? (
+        <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-brand-edge text-caption">
+          <span className="text-brand-muted">{t`Current API key`}</span>
+          <code className="min-w-0 break-all text-right font-mono text-brand-text">
+            {profile.masked_key || t`Not configured`}
+          </code>
+        </div>
+      ) : null}
       {message ? (
         <p role="status" className="text-meta text-brand-muted">
           {message}
@@ -119,7 +145,7 @@ function ModelSettings({ profile }: { profile: AgentProfile }) {
       <div className="flex flex-wrap gap-2">
         <Button
           type="submit"
-          disabled={saving || model === (profile.model_override || '')}
+          disabled={saving || model === currentModel}
           className="min-h-11 px-4"
         >
           {saving ? t`Saving…` : t`Save`}
@@ -135,7 +161,7 @@ function ModelSettings({ profile }: { profile: AgentProfile }) {
                 profile: profile.id,
                 model: '',
               }).then((ok) => {
-                if (ok) setModel('')
+                if (ok) setModel(profile.default_model || '')
               })
             }}
           >

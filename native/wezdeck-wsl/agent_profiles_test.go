@@ -185,3 +185,59 @@ func TestAgentModelOverrideIsPrivateAndPerProfile(t *testing.T) {
 		t.Fatal("invalid model accepted")
 	}
 }
+
+func TestAgentProfilesReadExistingModelsAndMaskKeys(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("WEZDECK_REPO", home)
+	t.Setenv("CODEX_HOME", "")
+	t.Setenv("GROK_HOME", "")
+	sub2api := filepath.Join(home, "sub2api.env")
+	kimi := filepath.Join(home, "kimi.env")
+	t.Setenv("CLAUDE_SUB2API_ENV", sub2api)
+	t.Setenv("CLAUDE_KIMI_ENV", kimi)
+	files := map[string]string{
+		filepath.Join(home, "config", "worktree-task.env"): "WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=claude\nWT_PROVIDER_AGENT_PROFILE_CLAUDE_SUB2API_RESUME_COMMAND=claude-sub2api\nWT_PROVIDER_AGENT_PROFILE_CLAUDE_KIMI_RESUME_COMMAND=claude-kimi\nWT_PROVIDER_AGENT_PROFILE_CODEX_RESUME_COMMAND=codex\nWT_PROVIDER_AGENT_PROFILE_GROK_RESUME_COMMAND=grok\n",
+		filepath.Join(home, ".claude", "settings.json"):    `{"model":"sonnet"}`,
+		filepath.Join(home, ".codex", "config.toml"):       "model = \"gpt-6.2-sol\"\napi_key = \"codex-secret\"\n",
+		filepath.Join(home, ".grok", "config.toml"):        "[models]\ndefault = \"grok-4.5\"\n[model.secret]\napi_key = \"grok-secret\"\n",
+		sub2api: "ANTHROPIC_BASE_URL='https://gateway.example'\nANTHROPIC_AUTH_TOKEN='sub2api-secret-1234'\nANTHROPIC_MODEL='gateway-model'\n",
+		kimi:    "ANTHROPIC_AUTH_TOKEN='kimi-secret-5678'\nANTHROPIC_MODEL='kimi-k3[1m]'\n",
+	}
+	for path, body := range files {
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	result, err := listAgentProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]agentProfile{}
+	for _, profile := range result.(map[string]any)["profiles"].([]agentProfile) {
+		got[profile.ID] = profile
+	}
+	for id, model := range map[string]string{
+		"claude": "sonnet", "claude_sub2api": "gateway-model",
+		"codex": "gpt-6.2-sol", "grok": "grok-4.5",
+	} {
+		if got[id].DefaultModel != model {
+			t.Fatalf("%s default model: %q, want %q", id, got[id].DefaultModel, model)
+		}
+	}
+	if got["claude_sub2api"].MaskedKey != "••••••••1234" || !got["claude_sub2api"].Configured {
+		t.Fatalf("gateway credential status: %+v", got["claude_sub2api"])
+	}
+	if got["claude_kimi"].MaskedKey != "••••••••5678" || got["claude_kimi"].Model != "kimi-k3[1m]" {
+		t.Fatalf("Kimi credential/model status: %+v", got["claude_kimi"])
+	}
+	response, _ := json.Marshal(result)
+	for _, secret := range []string{"sub2api-secret-1234", "kimi-secret-5678", "codex-secret", "grok-secret"} {
+		if strings.Contains(string(response), secret) {
+			t.Fatalf("secret leaked in profile response: %s", secret)
+		}
+	}
+}

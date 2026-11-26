@@ -1,12 +1,18 @@
 // covers: web/src/features/me-agents.tsx
 // covers: web/src/features/me-agent-detail.tsx
+// covers: web/src/features/agent-profiles.ts
+// covers: native/wezdeck-wsl/agent_profiles.go
 import { chromium } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 
-async function pageWithProfiles(browser: Browser, width: number) {
+async function pageWithProfiles(
+  browser: Browser,
+  width: number,
+  kimiConfigured = false,
+) {
   const context: BrowserContext = await browser.newContext({
     viewport: { width, height: 850 },
     locale: 'zh-CN',
@@ -37,10 +43,27 @@ async function pageWithProfiles(browser: Browser, width: number) {
         default: 'claude',
         profiles: [
           { id: 'claude', label: 'Claude', default: true },
-          { id: 'claude_sub2api', label: 'Claude · gateway' },
-          { id: 'claude_kimi', label: 'Claude · Kimi', configured: false },
-          { id: 'codex', label: 'Codex', model_override: codexModel },
-          { id: 'grok', label: 'Grok' },
+          {
+            id: 'claude_sub2api',
+            label: 'Claude · gateway',
+            configured: true,
+            default_model: 'gateway-model',
+            masked_key: '••••••••1234',
+          },
+          {
+            id: 'claude_kimi',
+            label: 'Claude · Kimi',
+            configured: kimiConfigured,
+            model: kimiConfigured ? 'kimi-k3[1m]' : '',
+            masked_key: kimiConfigured ? '••••••••5678' : '',
+          },
+          {
+            id: 'codex',
+            label: 'Codex',
+            default_model: 'gpt-6.2-sol',
+            model_override: codexModel,
+          },
+          { id: 'grok', label: 'Grok', default_model: 'grok-4.5' },
         ],
       })
     if (url.pathname === '/api/v1/remote/agent.profile.model') {
@@ -70,7 +93,11 @@ describe('Agent settings layout', () => {
   })
 
   it('desktop keeps a detail column while switching profiles and saves the selected model', async () => {
-    const { context, page, writes } = await pageWithProfiles(browser, 1440)
+    const { context, page, writes } = await pageWithProfiles(
+      browser,
+      1440,
+      true,
+    )
     const detail = page.getByTestId('agent-detail')
     await detail.waitFor()
     const before = await detail.boundingBox()
@@ -84,15 +111,30 @@ describe('Agent settings layout', () => {
         await detail.getByRole('textbox', { name: '模型 ID' }).count(),
       ).toBe(1)
     }
+    await page.locator('[data-agent-profile=claude_sub2api]').click()
+    expect(
+      await detail.getByRole('textbox', { name: '模型 ID' }).inputValue(),
+    ).toBe('gateway-model')
+    expect(await detail.getByText('••••••••1234').count()).toBe(1)
+    await page.locator('[data-agent-profile=grok]').click()
+    expect(
+      await detail.getByRole('textbox', { name: '模型 ID' }).inputValue(),
+    ).toBe('grok-4.5')
+    await page.locator('[data-agent-profile=claude_kimi]').click()
+    expect(await detail.getByText('••••••••5678').count()).toBe(1)
+    expect(await detail.getByLabel('更换 API 密钥').inputValue()).toBe('')
     await page.locator('[data-agent-profile=codex]').click()
     await expect.poll(() => detail.locator('h2').textContent()).toBe('Codex')
     const after = await detail.boundingBox()
     expect(after?.x).toBe(before?.x)
     expect(after?.width).toBe(before?.width)
-    await detail.getByRole('textbox', { name: '模型 ID' }).fill('gpt-6.2-sol')
+    expect(
+      await detail.getByRole('textbox', { name: '模型 ID' }).inputValue(),
+    ).toBe('gpt-6.2-sol')
+    await detail.getByRole('textbox', { name: '模型 ID' }).fill('gpt-6.2-astra')
     await detail.getByRole('button', { name: '保存' }).click()
     await expect.poll(() => writes.length).toBe(1)
-    expect(writes[0]).toEqual({ profile: 'codex', model: 'gpt-6.2-sol' })
+    expect(writes[0]).toEqual({ profile: 'codex', model: 'gpt-6.2-astra' })
     await context.close()
   })
 

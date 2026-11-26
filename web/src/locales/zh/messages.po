@@ -591,6 +591,14 @@ msgstr "清空输入（Esc Esc）"
 msgid "Clearing…"
 msgstr "处理中…"
 
+#: src/features/me-agent-detail.tsx:129
+msgid "CLI default"
+msgstr "CLI 默认模型"
+
+#: src/features/me-agent-detail.tsx:130
+msgid "CLI selects automatically"
+msgstr "由 CLI 自动选择"
+
 #: src/components/ui/sheet.tsx:76
 #: src/features/image-viewer.tsx:150
 msgid "Close"
@@ -686,7 +694,7 @@ msgstr "输入框"
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/me-agent-detail.tsx:165
+#: src/features/me-agent-detail.tsx:191
 msgid "Configured"
 msgstr "已配置"
 
@@ -895,6 +903,11 @@ msgstr "跨仓协作"
 #: src/features/session-elicitation.tsx:139
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
+
+#: src/features/me-agent-detail.tsx:49
+#: src/features/me-agent-detail.tsx:134
+msgid "Current API key"
+msgstr "当前 API 密钥"
 
 #: src/features/console-shared.tsx:349
 msgid "Current sample is from the foreground WezTerm window."
@@ -1353,7 +1366,7 @@ msgstr "键盘快捷键"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/me-agent-detail.tsx:49
+#: src/features/me-agent-detail.tsx:55
 msgid "Kimi API key"
 msgstr "Kimi API 密钥"
 
@@ -1403,7 +1416,7 @@ msgstr "最新输出"
 msgid "Launch details"
 msgstr "启动详情"
 
-#: src/features/me-agent-detail.tsx:59
+#: src/features/me-agent-detail.tsx:65
 msgid "Leave blank to keep current key"
 msgstr "留空以保留当前密钥"
 
@@ -1480,9 +1493,13 @@ msgstr "日志流"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/me-agent-detail.tsx:174
+#: src/features/me-agent-detail.tsx:200
 msgid "Managed in host configuration"
 msgstr "由主机配置管理"
+
+#: src/features/me-agent-detail.tsx:127
+msgid "Managed override"
+msgstr "受管模型覆盖"
 
 #: src/features/session-todos.tsx:186
 msgid "Mark done"
@@ -1530,8 +1547,8 @@ msgstr "模式"
 msgid "Model"
 msgstr "模型"
 
-#: src/features/me-agent-detail.tsx:64
-#: src/features/me-agent-detail.tsx:106
+#: src/features/me-agent-detail.tsx:70
+#: src/features/me-agent-detail.tsx:117
 msgid "Model ID"
 msgstr "模型 ID"
 
@@ -1753,7 +1770,9 @@ msgstr "无上游"
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
-#: src/features/me-agent-detail.tsx:165
+#: src/features/me-agent-detail.tsx:51
+#: src/features/me-agent-detail.tsx:136
+#: src/features/me-agent-detail.tsx:191
 #: src/features/me-agents.tsx:89
 #: src/features/session-new-panels.tsx:122
 msgid "Not configured"
@@ -2137,6 +2156,10 @@ msgstr "通过 Agent 窗格的 /rename 改标题"
 msgid "Reopen"
 msgstr "重新打开"
 
+#: src/features/me-agent-detail.tsx:55
+msgid "Replace API key"
+msgstr "更换 API 密钥"
+
 #: src/features/session-handoff.tsx:244
 msgid "Replace this pane with {target} and paste a continuation brief"
 msgstr "用 {target} 替换本格，并粘贴接续 brief"
@@ -2408,8 +2431,8 @@ msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 msgid "Same at the desk"
 msgstr "终端同键"
 
-#: src/features/me-agent-detail.tsx:87
-#: src/features/me-agent-detail.tsx:125
+#: src/features/me-agent-detail.tsx:93
+#: src/features/me-agent-detail.tsx:151
 msgid "Save"
 msgstr "保存"
 
@@ -2417,8 +2440,8 @@ msgstr "保存"
 msgid "Saved"
 msgstr "已保存"
 
-#: src/features/me-agent-detail.tsx:87
-#: src/features/me-agent-detail.tsx:125
+#: src/features/me-agent-detail.tsx:93
+#: src/features/me-agent-detail.tsx:151
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -3063,8 +3086,8 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-agent-detail.tsx:110
-#: src/features/me-agent-detail.tsx:142
+#: src/features/me-agent-detail.tsx:121
+#: src/features/me-agent-detail.tsx:168
 msgid "Use CLI default"
 msgstr "使用 CLI 默认模型"
 

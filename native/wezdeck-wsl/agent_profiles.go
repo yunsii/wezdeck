@@ -6,14 +6,17 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 type agentProfile struct {
@@ -23,6 +26,8 @@ type agentProfile struct {
 	Configured    bool   `json:"configured,omitempty"`
 	Model         string `json:"model,omitempty"`
 	ModelOverride string `json:"model_override,omitempty"`
+	DefaultModel  string `json:"default_model,omitempty"`
+	MaskedKey     string `json:"masked_key,omitempty"`
 }
 
 var agentProfileKey = regexp.MustCompile(`^WT_PROVIDER_AGENT_PROFILE_([A-Z0-9_]+)_RESUME_COMMAND=(.+)$`)
@@ -100,16 +105,119 @@ func listAgentProfiles() (any, error) {
 		if id != "claude_kimi" {
 			profile.ModelOverride = readEnvAssignment(agentModelPath(id), "MODEL")
 		}
-		if id == "claude_kimi" {
+		switch id {
+		case "claude":
+			profile.DefaultModel = claudeDefaultModel()
+		case "claude_sub2api":
+			profile.DefaultModel = readEnvAssignment(sub2apiEnvPath(), "ANTHROPIC_MODEL")
+			profile.MaskedKey = maskedGatewayKey(sub2apiEnvPath())
+			profile.Configured = profile.MaskedKey != "" && readEnvAssignment(sub2apiEnvPath(), "ANTHROPIC_BASE_URL") != ""
+		case "codex":
+			profile.DefaultModel = readTOMLModel(codexConfigPath(), "", "model")
+		case "grok":
+			profile.DefaultModel = readTOMLModel(grokConfigPath(), "models", "default")
+		case "claude_kimi":
 			profile.Configured = kimiConfigured()
 			if profile.Configured {
 				profile.Model = readEnvAssignment(kimiEnvPath(), "ANTHROPIC_MODEL")
+				profile.MaskedKey = maskKey(readEnvAssignment(kimiEnvPath(), "ANTHROPIC_AUTH_TOKEN"))
 			}
 		}
 		profiles = append(profiles, profile)
 	}
 	sort.Slice(profiles, func(i, j int) bool { return profiles[i].ID < profiles[j].ID })
 	return map[string]any{"v": 1, "ok": true, "profiles": profiles, "default": active}, nil
+}
+
+func maskKey(key string) string {
+	if key == "" {
+		return ""
+	}
+	if len(key) <= 4 {
+		return "••••••••"
+	}
+	return "••••••••" + key[len(key)-4:]
+}
+
+func maskedGatewayKey(path string) string {
+	key := readEnvAssignment(path, "ANTHROPIC_AUTH_TOKEN")
+	if key == "" {
+		key = readEnvAssignment(path, "ANTHROPIC_API_KEY")
+	}
+	if strings.HasPrefix(key, "sk-your-") {
+		return ""
+	}
+	return maskKey(key)
+}
+
+func sub2apiEnvPath() string {
+	if path := os.Getenv("CLAUDE_SUB2API_ENV"); path != "" {
+		return path
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "claude-profiles", "sub2api.env")
+}
+
+func claudeDefaultModel() string {
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, ".claude", "settings.json")
+	if root := os.Getenv("CLAUDE_CONFIG_DIR"); root != "" {
+		path = filepath.Join(root, "settings.json")
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var settings struct {
+		Model string            `json:"model"`
+		Env   map[string]string `json:"env"`
+	}
+	if json.Unmarshal(body, &settings) != nil {
+		return ""
+	}
+	if model := settings.Env["ANTHROPIC_MODEL"]; model != "" {
+		return model
+	}
+	return settings.Model
+}
+
+func codexConfigPath() string {
+	if home := os.Getenv("CODEX_HOME"); home != "" {
+		return filepath.Join(home, "config.toml")
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".codex", "config.toml")
+}
+
+func grokConfigPath() string {
+	if home := os.Getenv("GROK_HOME"); home != "" {
+		return filepath.Join(home, "config.toml")
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".grok", "config.toml")
+}
+
+const readTOMLModelScript = `import sys, tomllib
+try:
+    with open(sys.argv[1], "rb") as f:
+        data = tomllib.load(f)
+    if sys.argv[2]:
+        data = data.get(sys.argv[2], {})
+    value = data.get(sys.argv[3], "") if isinstance(data, dict) else ""
+    if isinstance(value, str):
+        print(value[:100])
+except (OSError, ValueError):
+    pass
+`
+
+func readTOMLModel(path, section, key string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "python3", "-c", readTOMLModelScript, path, section, key).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
 }
 
 func agentModelPath(id string) string {

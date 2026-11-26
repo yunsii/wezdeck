@@ -216,7 +216,10 @@ sessions only, while `MANAGED_AGENT_PROFILE` below controls terminal launches.
 The other profile panels save a model override under
 `~/.config/wezdeck/agent-models/<profile>.env`; managed launches pass it as
 `--model`, and clearing it restores each CLI's own default. Running sessions
-keep the model they started with until restarted.
+keep the model they started with until restarted. The web panel reads existing
+defaults from Claude settings JSON, Codex/Grok TOML and gateway env files;
+when a CLI has no explicit default it says so. Kimi/gateway keys are shown
+only as a masked suffix or as unconfigured, never returned in full.
 
 ```bash
 # wezterm-x/local/shared.env
