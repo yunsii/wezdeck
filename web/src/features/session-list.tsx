@@ -6,11 +6,13 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { FolderGit2 } from 'lucide-react'
+import { FolderGit2, Plus } from 'lucide-react'
+import type { SyntheticEvent } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
+import { Button } from '#/components/ui/button'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -19,11 +21,12 @@ import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, SwipeToClear } from './session-clear'
-import { NewSessionButton } from './session-new'
+import { NewSessionButton, requestNewSession } from './session-new'
 import { WorktreePurpose } from './session-purpose'
 import { worktreeKey } from './session-order'
 import { buildChatGroups, flattenChats } from './session-chats'
 import type { SessionChat } from './session-chats'
+import { directionForWorktree, useDirections } from './session-new-direction'
 import { useFrozenVisits, useStickyMembers } from './session-stable'
 import { useAgo } from './tickets-view'
 import { RowCopyButton, useCopySessionReference } from './copy-reference'
@@ -52,10 +55,22 @@ function ChatRow({
   const wide = useIsWide()
   const copyReference = useCopySessionReference()
   const client = useQueryClient()
+  const directions = useDirections(chat.repoKey)
   const row = chat.focus
   const warm = () => prefetchSession(client, row.id)
   const prompt = humanPrompt(row.last_prompt)
   const selected = Boolean(selectedWorktree && selectedWorktree === chat.key)
+  const newRound = (event: SyntheticEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const direction = directionForWorktree(
+      directions.data?.directions ?? [],
+      chat.key,
+      chat.title,
+    )
+    if (!direction) return
+    requestNewSession({ repo: chat.repoKey, direction })
+  }
   return (
     <SwipeToClear id={row.id} enabled={clearable(row.status, row.waiting_kind)}>
       <div className="group/row relative">
@@ -71,7 +86,7 @@ function ChatRow({
           onPointerDown={warm}
           onFocus={warm}
           className={cn(
-            'list-row flex min-h-14 items-start gap-3 px-4 py-3',
+            'list-row flex min-h-14 items-start gap-3 px-4 py-3 pr-14',
             selected && 'row-selected',
           )}
         >
@@ -118,6 +133,21 @@ function ChatRow({
             </span>
           </span>
         </Link>
+        {chat.editable ? (
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            data-testid="chat-new-round"
+            title={t`New round`}
+            aria-label={t`New round`}
+            onClick={newRound}
+            onPointerDown={(event) => event.stopPropagation()}
+            className="absolute top-2 right-2 inline-flex size-9 items-center justify-center rounded-full text-brand-muted opacity-0 outline-none group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand-running max-md:opacity-70"
+          >
+            <Plus size={16} aria-hidden />
+          </Button>
+        ) : null}
         <RowCopyButton id={row.id} copy={copyReference} />
       </div>
     </SwipeToClear>

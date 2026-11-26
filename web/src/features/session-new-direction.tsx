@@ -47,6 +47,17 @@ export function useDirections(repo: string) {
 export const defaultDirection = (dirs: Array<Direction> = []): DirectionPick =>
   dirs.find((d) => d.idle > 0)?.name ?? ''
 
+/** direction that owns this workstation path (parallel slots share one name) */
+export function directionForWorktree(
+  dirs: Array<Direction>,
+  worktree: string,
+  fallback = '',
+) {
+  for (const d of dirs) {
+    if (d.slots.some((s) => s.path === worktree)) return d.name
+  }
+  return fallback
+}
 function useStateText() {
   const { t } = useLingui()
   return (d: Direction) => {

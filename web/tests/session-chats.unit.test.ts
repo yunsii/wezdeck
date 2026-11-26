@@ -5,7 +5,9 @@ import {
   resolveChatFocus,
   unreadChatCount,
 } from '#/features/session-chats'
+import { directionForWorktree } from '#/features/session-new-direction'
 import type { SessionCard } from '#/features/console-sessions'
+import type { Direction } from '#/features/session-new-direction'
 
 const card = (over: Partial<SessionCard>): SessionCard => ({
   id: 'x',
@@ -99,6 +101,35 @@ describe('buildChatGroups', () => {
       }),
     ])
     expect(groups[0].chats[0].title).toBe('wezdeck')
+  })
+})
+
+describe('directionForWorktree', () => {
+  it('returns the direction that owns a parallel slot path', () => {
+    const dirs: Array<Direction> = [
+      {
+        name: 'ux',
+        idle: 1,
+        slots: [
+          {
+            path: '/r/a/.worktrees/ux',
+            name: 'ux',
+            branch: 'dev/ux',
+            state: 'idle',
+          },
+          {
+            path: '/r/a/.worktrees/ux-2',
+            name: 'ux-2',
+            branch: 'dev/ux-2',
+            state: 'running',
+          },
+        ],
+      },
+    ]
+    expect(directionForWorktree(dirs, '/r/a/.worktrees/ux-2', 'ux-2')).toBe(
+      'ux',
+    )
+    expect(directionForWorktree(dirs, '/missing', 'fallback')).toBe('fallback')
   })
 })
 

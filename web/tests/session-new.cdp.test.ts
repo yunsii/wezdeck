@@ -209,6 +209,10 @@ describe.runIf(attention && devicesFile && stack)(
       await reuseIdleDirection({ repo, socket, listEntry, approvedPage })
     }, 90_000)
 
+    it('chat row 新一轮 opens a locked place sheet for that direction', async () => {
+      await newRoundLockedSheet({ approvedPage })
+    }, 60_000)
+
     it('a name without letters or digits is refused before anything runs', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
       await page.goto(`${base}/zh/console/sessions`)
@@ -274,6 +278,29 @@ describe.runIf(attention && devicesFile && stack)(
     }, 90_000)
   },
 )
+
+/** chat row + → 新一轮 sheet with place locked to that direction */
+async function newRoundLockedSheet({
+  approvedPage,
+}: {
+  approvedPage: (
+    options: BrowserContextOptions,
+  ) => Promise<{ context: BrowserContext; page: Page }>
+}) {
+  const { context, page } = await approvedPage(devices['iPhone 13'])
+  await page.goto(`${base}/zh/console/sessions`)
+  const row = page.locator('[data-worktree=phone]')
+  await row.waitFor({ timeout: 15_000 })
+  await row.getByTestId('chat-new-round').click()
+  const sheet = page.getByTestId('new-session-sheet')
+  await sheet.waitFor({ timeout: 5_000 })
+  const place = sheet.getByTestId('new-session-place')
+  await expect.poll(() => place.getAttribute('data-locked')).toBe('')
+  await expect.poll(() => place.textContent()).toMatch(/phone/)
+  await place.click({ force: true })
+  expect(await sheet.getByTestId('new-session-directions').count()).toBe(0)
+  await context.close()
+}
 
 /**
  * The workstation's purpose edited in place from the session list

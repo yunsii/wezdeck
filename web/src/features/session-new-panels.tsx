@@ -27,6 +27,7 @@ export function ComposeLayer({
   repoLabel,
   locationClause,
   locationHint,
+  placeLocked = false,
   prompt,
   setPrompt,
   isNew,
@@ -46,6 +47,8 @@ export function ComposeLayer({
   repoLabel: string
   locationClause: string
   locationHint: string
+  /** 新一轮 from a chat: place is fixed, bar is not a control */
+  placeLocked?: boolean
   prompt: string
   setPrompt: (next: string) => void
   isNew: boolean
@@ -68,10 +71,11 @@ export function ComposeLayer({
         variant="plain"
         size="none"
         type="button"
-        disabled={busy}
+        disabled={busy || placeLocked}
         data-testid="new-session-place"
+        data-locked={placeLocked ? '' : undefined}
         onClick={onPlace}
-        className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-xl border border-brand-edge bg-brand-surface px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+        className="flex min-h-12 w-full min-w-0 items-center gap-2 rounded-xl border border-brand-edge bg-brand-surface px-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running disabled:opacity-100"
       >
         <span className="min-w-0 flex-1 truncate text-body text-brand-text">
           <span className="text-brand-muted">{repoLabel || '…'}</span>
@@ -81,11 +85,13 @@ export function ComposeLayer({
             <span className="text-brand-label"> · {locationHint}</span>
           ) : null}
         </span>
-        <ChevronRight
-          size={18}
-          aria-hidden
-          className="shrink-0 text-brand-label"
-        />
+        {placeLocked ? null : (
+          <ChevronRight
+            size={18}
+            aria-hidden
+            className="shrink-0 text-brand-label"
+          />
+        )}
       </Button>
       <label className="grid gap-1 text-caption text-brand-muted">
         {t`First message to the agent`}

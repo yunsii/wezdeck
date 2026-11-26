@@ -11,7 +11,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { BackButton } from '#/components/deck/back-button'
 import { useLocale } from '#/lib/locale-context'
@@ -40,6 +40,30 @@ type Repo = { root: string; label: string; visited?: number }
 
 /** compose = message; place = repo + directions; new = name a new direction */
 type Layer = 'compose' | 'place' | 'new'
+
+/** open 新会话 already on a repo + direction (chat row 「新一轮」) */
+export type NewSessionPreset = { repo: string; direction: string }
+
+type NewSessionRequest = { round: number; preset?: NewSessionPreset }
+let newSessionReq: NewSessionRequest = { round: 0 }
+const newSessionListeners = new Set<() => void>()
+
+/** open the 新会话 sheet; optional preset locks the place bar to that chat */
+export function requestNewSession(preset?: NewSessionPreset) {
+  newSessionReq = { round: newSessionReq.round + 1, preset }
+  for (const listener of newSessionListeners) listener()
+}
+
+function useNewSessionRequest() {
+  return useSyncExternalStore(
+    (listener) => {
+      newSessionListeners.add(listener)
+      return () => newSessionListeners.delete(listener)
+    },
+    () => newSessionReq,
+    () => newSessionReq,
+  )
+}
 
 /**
  * The directory / branch name the host makes of a typed name
@@ -86,14 +110,24 @@ function useStageText() {
 export function NewSessionButton() {
   const { t } = useLingui()
   const device = useDeviceState()
+  const req = useNewSessionRequest()
   const [open, setOpen] = useState(false)
   // a fresh form per opening (key), while the sheet stays mounted on close
   // so it can play its exit
   const [round, setRound] = useState(0)
-  const show = () => {
+  const [preset, setPreset] = useState<NewSessionPreset | undefined>()
+  const show = (next?: NewSessionPreset) => {
+    setPreset(next)
     setRound((n) => n + 1)
     setOpen(true)
   }
+  // chat row 「新一轮」 / requestNewSession — only on a new request id
+  const seenReq = useRef(0)
+  useEffect(() => {
+    if (req.round === 0 || req.round === seenReq.current) return
+    seenReq.current = req.round
+    show(req.preset)
+  }, [req])
   // `c` on the list: Ctrl+k g at the desk. Ctrl/⌘+N too, even from the
   // composer — where the browser lets the page have it (an installed app
   // window); a plain tab may keep it for a new window, `c` still works.
@@ -131,7 +165,7 @@ export function NewSessionButton() {
       <Button
         variant="solid"
         type="button"
-        onClick={show}
+        onClick={() => show()}
         data-testid="new-session"
         title={t`New session (c)`}
         className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
@@ -143,6 +177,7 @@ export function NewSessionButton() {
         <NewSessionSheet
           key={round}
           open={open}
+          preset={preset}
           onClose={() => setOpen(false)}
         />
       ) : null}
@@ -153,9 +188,11 @@ export function NewSessionButton() {
 function NewSessionSheet({
   open,
   onClose,
+  preset,
 }: {
   open: boolean
   onClose: () => void
+  preset?: NewSessionPreset
 }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -163,6 +200,7 @@ function NewSessionSheet({
   const stageText = useStageText()
   const plan = useDirectionPlan()
   const planShort = useDirectionPlanShort()
+  const placeLocked = Boolean(preset?.repo && preset.direction)
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
     queryFn: async () =>
@@ -178,11 +216,13 @@ function NewSessionSheet({
     ? agentProfile || preferredAgent
     : ''
   const [layer, setLayer] = useState<Layer>('compose')
-  const [repo, setRepo] = useState('')
+  const [repo, setRepo] = useState(preset?.repo ?? '')
   const [name, setName] = useState('')
   // the chosen direction: null until picked (then the default applies),
-  // '' for a new one
-  const [picked, setPicked] = useState<DirectionPick | null>(null)
+  // '' for a new one; a preset locks it
+  const [picked, setPicked] = useState<DirectionPick | null>(
+    preset?.direction ?? null,
+  )
   // sessions already in the worktree when submitted: a reused one has its
   // last round listed, which is not the new session
   const before = useRef<Set<string>>(new Set())
@@ -279,7 +319,11 @@ function NewSessionSheet({
   }
   const title =
     layer === 'compose' ? (
-      t`New session`
+      placeLocked ? (
+        t`New round`
+      ) : (
+        t`New session`
+      )
     ) : (
       <span className="flex min-w-0 items-center gap-0.5">
         <BackButton
@@ -309,6 +353,7 @@ function NewSessionSheet({
             repoLabel={repoLabel}
             locationClause={locationClause}
             locationHint={locationHint}
+            placeLocked={placeLocked}
             prompt={prompt}
             setPrompt={setPrompt}
             isNew={isNew}
@@ -318,14 +363,16 @@ function NewSessionSheet({
             stageText={stageText}
             error={error}
             ready={ready}
-            onPlace={() => setLayer('place')}
+            onPlace={() => {
+              if (!placeLocked) setLayer('place')
+            }}
             onSubmit={() => void submit()}
             agentProfiles={agentProfiles.data?.profiles ?? []}
             agentProfile={selectedAgent}
             onAgentProfile={setAgentProfile}
           />
         ) : null}
-        {layer === 'place' ? (
+        {layer === 'place' && !placeLocked ? (
           <PlaceLayer
             busy={busy}
             chosen={chosen}
