@@ -770,6 +770,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		out["focus"] = sessionFocus(a.ID, e)
 	}
 	out["meta"] = sessionMeta(e, path, agent, nil)
+	var agyPending *pendingCall
 	if path != "" {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
@@ -819,6 +820,8 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p
 			}
+		} else if agent == "agy" {
+			agyPending = pendingPermission(t.messages, "")
 		}
 		mode := t.mode
 		// the page refetches session.skills when this changes
@@ -861,8 +864,6 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if agent == "claude" {
 			// what its subagents (Agent tool, forked skills) are doing
 			out["subagents"] = subagentsOf(path)
-		}
-		if agent == "claude" {
 			if size := claudeContextSize(e.SessionID); size > 0 {
 				usage.ContextLimit = size
 				out["usage"] = usage
@@ -877,11 +878,10 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {
-		out["screen"] = strings.TrimRight(string(screen), "\n ")
+		trimmed := strings.TrimRight(string(screen), "\n ")
+		out["screen"] = trimmed
 		if agent == "agy" {
-			if msgs, ok := out["messages"].([]chatMessage); ok {
-				applyAgyScreenPermission(out, msgs, string(screen))
-			}
+			applyAgyScreenPermission(out, agyPending, trimmed)
 		}
 	}
 	if r, ok := adapterFor(agent).(askReader); ok && path != "" {

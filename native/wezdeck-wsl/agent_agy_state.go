@@ -101,45 +101,71 @@ func parseAgyAskQuestions(id string, input json.RawMessage) *elicitation {
 
 // agyPermissionPromptVisible reports whether the tail of an Agy pane currently
 // displays a tool/command permission confirmation dialog (distinct from the
-// first-open workspace trust dialog).
+// first-open workspace trust dialog and from ordinary assistant prose).
 func agyPermissionPromptVisible(screen string) bool {
-	lines := strings.Split(screen, "\n")
-	if len(lines) > 22 {
-		lines = lines[len(lines)-22:]
-	}
-	tail := strings.Join(lines, "\n")
-	if agyTrustPrompt(tail) {
+	tail := agyScreenTail(screen, 24)
+	if tail == "" || agyTrustPrompt(tail) {
 		return false
 	}
-	if strings.Contains(tail, "Run this command?") ||
+	hasYes := strings.Contains(tail, "Yes, run command") ||
 		strings.Contains(tail, "Yes, accept this change") ||
 		strings.Contains(tail, "Yes, allow access") ||
 		strings.Contains(tail, "Yes, allow creation") ||
-		strings.Contains(tail, "Yes, allow tool call") {
-		return true
+		strings.Contains(tail, "Yes, allow tool call") ||
+		strings.Contains(tail, "Yes, and always allow") ||
+		strings.Contains(tail, "1. Yes")
+	if !hasYes {
+		return false
 	}
-	if strings.Contains(tail, "Do you want to proceed?") &&
-		(strings.Contains(tail, "Yes, and always allow") ||
-			strings.Contains(tail, "No, deny") ||
-			strings.Contains(tail, "No, and always deny") ||
-			strings.Contains(tail, "1. Yes")) {
-		return true
+	hasNo := strings.Contains(tail, "No, deny") ||
+		strings.Contains(tail, "No, and always deny")
+	hasHeader := strings.Contains(tail, "Run this command?") ||
+		strings.Contains(tail, "Allow access to this URL?") ||
+		strings.Contains(tail, "Allow calling this tool?") ||
+		strings.Contains(tail, "Do you want to proceed?")
+	return hasNo || hasHeader
+}
+
+func agyScreenTail(screen string, maxLines int) string {
+	trimmed := strings.TrimRight(screen, "\n \t\r")
+	if trimmed == "" {
+		return ""
 	}
-	return false
+	lines := strings.Split(trimmed, "\n")
+	if len(lines) > maxLines {
+		lines = lines[len(lines)-maxLines:]
+	}
+	return strings.Join(lines, "\n")
+}
+
+func agyScreenPendingCall(screen string) *pendingCall {
+	tail := agyScreenTail(screen, 16)
+	header := "Run this command?"
+	for _, line := range strings.Split(tail, "\n") {
+		s := strings.TrimSpace(line)
+		if strings.Contains(s, "Run this command?") ||
+			strings.Contains(s, "Allow access to this URL?") ||
+			strings.Contains(s, "Allow calling this tool?") ||
+			strings.Contains(s, "Do you want to proceed?") {
+			header = s
+			break
+		}
+	}
+	return &pendingCall{Tool: "agy", Text: header, Body: tail}
 }
 
 // applyAgyScreenPermission surfaces a pending Agy tool call as a permission
 // prompt card when the TUI is blocked on a confirmation dialog (Agy has no
-// PermissionRequest lifecycle hook).
-func applyAgyScreenPermission(out map[string]any, messages []chatMessage, screen string) {
+// PermissionRequest lifecycle hook). pending must come from the full
+// transcript (not the incremental since-window slice).
+func applyAgyScreenPermission(out map[string]any, pending *pendingCall, screen string) {
 	if _, already := out["permission"]; already || !agyPermissionPromptVisible(screen) {
 		return
 	}
-	p := pendingPermission(messages, "")
-	if p == nil {
-		return
+	if pending == nil {
+		pending = agyScreenPendingCall(screen)
 	}
-	out["permission"] = p
+	out["permission"] = pending
 	out["status"] = "waiting"
 	out["waiting_kind"] = "permission_prompt"
 }
