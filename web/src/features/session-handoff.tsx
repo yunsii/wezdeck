@@ -1,7 +1,8 @@
-// 接力: replace this pane's agent with another (claude → grok / codex),
-// paste a continuation brief built from the source transcript. Relay
-// `session.handoff` → scripts/runtime/session-handoff.sh (sticks the target
-// agent on the window for later F5). Same agent → use 新开会话 instead.
+// 接力 / 空白切换: replace this pane's agent with another. Handoff pastes a
+// continuation brief built from the source transcript; a blank switch does not
+// read it or send a first prompt. Relay `session.handoff` →
+// scripts/runtime/session-handoff.sh (sticks the target agent on the window for
+// later F5). Same agent → use 新开会话 instead.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -28,6 +29,7 @@ type Job = {
   to_agent: string
   worktree?: string
   pane?: string
+  mode: 'handoff' | 'switch'
   session_id?: string
   /** pasted brief — seed a queued bubble before the transcript poll */
   brief?: string
@@ -35,6 +37,49 @@ type Job = {
 }
 
 type SessionRow = { id: string; tmux_pane?: string; worktree?: string }
+
+type HandoffMode = 'handoff' | 'switch'
+
+function ModeSelector({
+  mode,
+  onChange,
+}: {
+  mode: HandoffMode
+  onChange: (mode: HandoffMode) => void
+}) {
+  const { t } = useLingui()
+  return (
+    <div
+      className="grid grid-cols-2 gap-1.5"
+      role="radiogroup"
+      aria-label={t`Switch mode`}
+    >
+      {(
+        [
+          ['handoff', t`Hand off`, t`Carry a brief`],
+          ['switch', t`Blank switch`, t`Start without context`],
+        ] as const
+      ).map(([value, label, description]) => (
+        <Button
+          key={value}
+          type="button"
+          variant="plain"
+          role="radio"
+          aria-checked={mode === value}
+          onClick={() => onChange(value)}
+          className={`grid min-h-12 cursor-pointer content-center justify-start rounded-xl border px-2 py-1.5 text-left ${
+            mode === value
+              ? 'border-brand-running bg-brand-running/10'
+              : 'border-brand-border'
+          }`}
+        >
+          <span className="text-caption font-medium">{label}</span>
+          <span className="text-meta text-brand-muted">{description}</span>
+        </Button>
+      ))}
+    </div>
+  )
+}
 
 function followHandoffId(
   job: Job | undefined,
@@ -88,6 +133,7 @@ export function HandoffActions({
       ),
   )
   const [to, setTo] = useState<Agent | null>(null)
+  const [mode, setMode] = useState<HandoffMode>('handoff')
   const [note, setNote] = useState('')
   const [asking, setAsking] = useState(false)
   const [error, setError] = useState('')
@@ -124,7 +170,11 @@ export function HandoffActions({
     void client.invalidateQueries({ queryKey: ['remote', 'session', followId] })
     onDone()
     const toAgent = currentJob?.to_agent ?? 'agent'
-    toast(t`Handed off to ${toAgent}`)
+    toast(
+      currentJob?.mode === 'switch'
+        ? t`Switched to ${toAgent}`
+        : t`Handed off to ${toAgent}`,
+    )
     void navigate({
       to: '/{-$locale}/console/sessions/$id',
       params: { locale: locale === 'en' ? undefined : locale, id: followId },
@@ -171,6 +221,7 @@ export function HandoffActions({
           id,
           to,
           note: note.trim(),
+          mode,
         })) as { job: string }
         setJobId(res.job)
         setAsking(false)
@@ -191,19 +242,24 @@ export function HandoffActions({
           setAsking(false)
         }}
       >
+        <ModeSelector mode={mode} onChange={setMode} />
         <p className="px-1 text-caption text-brand-muted">
-          {t`Replace this pane with ${to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps ${to}. Does not recycle the worktree.`}
+          {mode === 'handoff'
+            ? t`Replace this pane with ${to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps ${to}. Does not recycle the worktree.`
+            : t`Replace this pane with a blank ${to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps ${to}.`}
         </p>
-        <label className="grid gap-1 px-1 text-caption text-brand-muted">
-          {t`Optional note`}
-          <Input
-            data-testid="session-handoff-note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={2000}
-            placeholder={t`What should the next agent do first?`}
-          />
-        </label>
+        {mode === 'handoff' ? (
+          <label className="grid gap-1 px-1 text-caption text-brand-muted">
+            {t`Optional note`}
+            <Input
+              data-testid="session-handoff-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={2000}
+              placeholder={t`What should the next agent do first?`}
+            />
+          </label>
+        ) : null}
         {error ? (
           <p className="px-1 text-caption text-brand-danger">{error}</p>
         ) : null}
@@ -226,7 +282,7 @@ export function HandoffActions({
             onClick={() => void run()}
             className={action}
           >
-            {t`Hand off to ${to}`}
+            {mode === 'handoff' ? t`Hand off to ${to}` : t`Switch to ${to}`}
           </Button>
         </div>
       </div>
@@ -240,7 +296,12 @@ export function HandoffActions({
       data-testid="session-handoff"
       className="grid gap-1.5"
     >
-      <p className="px-1 text-meta text-brand-label">{t`Hand off`}</p>
+      <div className="grid gap-1 px-1">
+        <p className="text-meta text-brand-label">{t`Hand off / switch`}</p>
+        <div data-testid="session-handoff-mode">
+          <ModeSelector mode={mode} onChange={setMode} />
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-1.5">
         {targets.map((target) => (
           <Button
@@ -249,7 +310,7 @@ export function HandoffActions({
             type="button"
             disabled={disabled}
             data-handoff={target}
-            title={t`Replace this pane with ${target} and paste a continuation brief`}
+            title={t`Replace this pane with ${target}; choose a handoff brief or a blank switch`}
             onClick={() => {
               setTo(target)
               setAsking(true)

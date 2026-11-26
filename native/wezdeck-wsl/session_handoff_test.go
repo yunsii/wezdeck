@@ -135,6 +135,56 @@ echo agent=grok
 	}
 }
 
+func TestStartSessionSwitchStartsBlankWithoutBrief(t *testing.T) {
+	dir, socket, pane, _ := restartFixture(t)
+	record := filepath.Join(dir, "argv")
+	stub := filepath.Join(dir, "handoff-stub")
+	_ = os.WriteFile(stub, []byte(`#!/usr/bin/env bash
+printf '%s\n' "$*" >`+record+`
+tmux respawn-pane -k -t "$2" "sh" "-c" "echo ready; exec cat"
+echo session_id=pending-11111111-2222-3333-4444-555555555555
+echo outcome=respawned
+echo agent=grok
+`), 0o755)
+	t.Setenv("WEZDECK_SESSION_HANDOFF_CMD", stub)
+	home := t.TempDir()
+	t.Setenv("HOME", home) // no source transcript: switch must not need one
+
+	res, err := startSessionHandoff([]byte(`{"id":"s1","to":"grok","mode":"switch"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobID := res.(map[string]any)["job"].(string)
+	deadline := time.Now().Add(15 * time.Second)
+	var job handoffJob
+	for time.Now().Before(deadline) {
+		st, err := handoffJobStatus([]byte(`{"job":"` + jobID + `"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		job = st.(map[string]any)["job"].(handoffJob)
+		if job.Stage == "done" || job.Stage == "failed" {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if job.Stage != "done" || job.Error != "" {
+		t.Fatalf("stage=%s err=%s", job.Stage, job.Error)
+	}
+	if job.Mode != "switch" || job.Brief != "" ||
+		job.SessionID != "pending-11111111-2222-3333-4444-555555555555" {
+		t.Fatalf("switch job: %+v", job)
+	}
+	argv, _ := os.ReadFile(record)
+	if !strings.Contains(string(argv), "--empty") {
+		t.Fatalf("script did not get --empty: %q", argv)
+	}
+	screen, _ := exec.Command("tmux", "-S", socket, "capture-pane", "-p", "-t", pane).Output()
+	if strings.Contains(string(screen), "wezdeck 接力") {
+		t.Fatalf("blank switch pasted a brief:\n%s", screen)
+	}
+}
+
 func TestHandoffJobUnknown(t *testing.T) {
 	if _, err := handoffJobStatus([]byte(`{"job":"nope"}`)); err == nil {
 		t.Fatal("expected unknown job")

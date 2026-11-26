@@ -316,7 +316,7 @@ msgstr "All"
 msgid "All categories"
 msgstr "All categories"
 
-#: src/features/session-ask-claude.tsx:83
+#: src/features/session-ask-claude.tsx:80
 msgid "All questions answered. The agent waits until you submit."
 msgstr "All questions answered. The agent waits until you submit."
 
@@ -352,6 +352,10 @@ msgstr "already done"
 msgid "Already the latest"
 msgstr "Already the latest"
 
+#: src/features/session-elicitation.tsx:210
+msgid "Answer sent; waiting for Grok to continue…"
+msgstr "Answer sent; waiting for Grok to continue…"
+
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
 msgstr "Anything to add (optional)"
@@ -383,11 +387,11 @@ msgstr "Appearance"
 msgid "Approve"
 msgstr "Approve"
 
-#: src/features/session-elicitation.tsx:195
+#: src/features/session-elicitation.tsx:333
 msgid "Approve plan"
 msgstr "Approve plan"
 
-#: src/features/session-elicitation.tsx:217
+#: src/features/session-elicitation.tsx:355
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
@@ -473,6 +477,10 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
+#: src/features/session-handoff.tsx:60
+msgid "Blank switch"
+msgstr "Blank switch"
+
 #: src/features/console-me.tsx:232
 msgid "Block"
 msgstr "Block"
@@ -539,13 +547,13 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
-#: src/features/session-handoff.tsx:218
+#: src/features/session-handoff.tsx:274
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/features/session-ask-claude.tsx:156
+#: src/features/session-ask-claude.tsx:153
 msgid "Cancel (Esc)"
 msgstr "Cancel (Esc)"
 
@@ -556,6 +564,10 @@ msgstr "Capabilities"
 #: src/features/me-host.tsx:139
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
+
+#: src/features/session-handoff.tsx:59
+msgid "Carry a brief"
+msgstr "Carry a brief"
 
 #: src/features/console-diagnostics.tsx:140
 #: src/features/console-diagnostics.tsx:317
@@ -942,8 +954,8 @@ msgstr "Creating…"
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
-#: src/features/session-elicitation.tsx:91
-#: src/features/session-elicitation.tsx:139
+#: src/features/session-elicitation.tsx:194
+#: src/features/session-elicitation.tsx:277
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
@@ -1092,8 +1104,9 @@ msgstr "Ended"
 msgid "Endpoint"
 msgstr "Endpoint"
 
-#: src/features/session-ask-claude.tsx:140
-#: src/features/session-elicitation.tsx:137
+#: src/features/session-ask-claude.tsx:137
+#: src/features/session-elicitation.tsx:175
+#: src/features/session-elicitation.tsx:275
 msgid "Enter"
 msgstr "Enter"
 
@@ -1101,8 +1114,8 @@ msgstr "Enter"
 msgid "Errors"
 msgstr "Errors"
 
-#: src/features/session-elicitation.tsx:82
-#: src/features/session-elicitation.tsx:138
+#: src/features/session-elicitation.tsx:185
+#: src/features/session-elicitation.tsx:276
 msgid "Esc"
 msgstr "Esc"
 
@@ -1213,16 +1226,20 @@ msgstr "Grant failed ({micError}) — retry"
 msgid "Haiku tier"
 msgstr "Haiku tier"
 
-#: src/features/session-handoff.tsx:184
-#: src/features/session-handoff.tsx:243
+#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:235
 msgid "Hand off"
 msgstr "Hand off"
 
-#: src/features/session-handoff.tsx:229
+#: src/features/session-handoff.tsx:300
+msgid "Hand off / switch"
+msgstr "Hand off / switch"
+
+#: src/features/session-handoff.tsx:285
 msgid "Hand off to {to}"
 msgstr "Hand off to {to}"
 
-#: src/features/session-handoff.tsx:239
+#: src/features/session-handoff.tsx:295
 msgid "Hand off to another agent"
 msgstr "Hand off to another agent"
 
@@ -1230,15 +1247,15 @@ msgstr "Hand off to another agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/session-handoff.tsx:127
+#: src/features/session-handoff.tsx:176
 msgid "Handed off to {toAgent}"
 msgstr "Handed off to {toAgent}"
 
-#: src/features/session-handoff.tsx:121
+#: src/features/session-handoff.tsx:167
 msgid "Handoff brief"
 msgstr "Handoff brief"
 
-#: src/features/session-handoff.tsx:136
+#: src/features/session-handoff.tsx:186
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
@@ -1640,9 +1657,13 @@ msgstr "Modified"
 msgid "More files changed than listed here."
 msgstr "More files changed than listed here."
 
-#: src/features/session-ask-claude.tsx:103
+#: src/features/session-ask-claude.tsx:100
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
+
+#: src/features/session-elicitation.tsx:216
+msgid "Multiple choice: tap to toggle options, then press Enter."
+msgstr "Multiple choice: tap to toggle options, then press Enter."
 
 #: src/features/collab-metrics.tsx:252
 msgid "Name"
@@ -1823,7 +1844,7 @@ msgstr "No Origin (script, curl, another app)"
 msgid "No output yet"
 msgstr "No output yet"
 
-#: src/features/session-elicitation.tsx:185
+#: src/features/session-elicitation.tsx:323
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
@@ -2014,7 +2035,7 @@ msgstr "Opening…"
 msgid "opens one more"
 msgstr "opens one more"
 
-#: src/features/session-handoff.tsx:198
+#: src/features/session-handoff.tsx:253
 msgid "Optional note"
 msgstr "Optional note"
 
@@ -2100,7 +2121,7 @@ msgstr "Pick a session (grouped by repository)"
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
-#: src/features/session-elicitation.tsx:179
+#: src/features/session-elicitation.tsx:317
 msgid "Plan ready for review"
 msgstr "Plan ready for review"
 
@@ -2173,7 +2194,7 @@ msgstr "Quick keys"
 msgid "Quiet for over a week ({count})"
 msgstr "Quiet for over a week ({count})"
 
-#: src/features/session-elicitation.tsx:213
+#: src/features/session-elicitation.tsx:351
 msgid "Quit plan"
 msgstr "Quit plan"
 
@@ -2265,12 +2286,20 @@ msgid "Replace API key"
 msgstr "Replace API key"
 
 #: src/features/session-handoff.tsx:252
-msgid "Replace this pane with {target} and paste a continuation brief"
-msgstr "Replace this pane with {target} and paste a continuation brief"
+#~ msgid "Replace this pane with {target} and paste a continuation brief"
+#~ msgstr "Replace this pane with {target} and paste a continuation brief"
 
-#: src/features/session-handoff.tsx:195
+#: src/features/session-handoff.tsx:313
+msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
+msgstr "Replace this pane with {target}; choose a handoff brief or a blank switch"
+
+#: src/features/session-handoff.tsx:248
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
+
+#: src/features/session-handoff.tsx:249
+msgid "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
+msgstr "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
 
 #: src/features/console-activity.tsx:103
 msgid "replied"
@@ -2327,7 +2356,7 @@ msgstr "Repository root"
 msgid "Request access"
 msgstr "Request access"
 
-#: src/features/session-elicitation.tsx:204
+#: src/features/session-elicitation.tsx:342
 msgid "Request changes"
 msgstr "Request changes"
 
@@ -2620,7 +2649,7 @@ msgstr "Send the first message below."
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
-#: src/features/session-handoff.tsx:150
+#: src/features/session-handoff.tsx:200
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
@@ -2765,6 +2794,10 @@ msgstr "start a fresh conversation"
 msgid "Start fresh"
 msgstr "Start fresh"
 
+#: src/features/session-handoff.tsx:60
+msgid "Start without context"
+msgstr "Start without context"
+
 #: src/features/ticket-new.tsx:208
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
@@ -2808,13 +2841,17 @@ msgstr "Status updated"
 msgid "Sub-agent"
 msgstr "Sub-agent"
 
-#: src/features/session-ask-claude.tsx:93
+#: src/features/session-ask-claude.tsx:90
 msgid "Submit answers"
 msgstr "Submit answers"
 
 #: src/features/tickets-view.tsx:131
 msgid "submitted"
 msgstr "submitted"
+
+#: src/features/session-elicitation.tsx:213
+msgid "Submitting your answer…"
+msgstr "Submitting your answer…"
 
 #: src/features/session-commands.tsx:204
 #: src/features/session-skills.tsx:58
@@ -2829,6 +2866,10 @@ msgstr "Summary"
 msgid "Switch chat"
 msgstr "Switch chat"
 
+#: src/features/session-handoff.tsx:55
+msgid "Switch mode"
+msgstr "Switch mode"
+
 #: src/features/session-switcher.tsx:195
 #~ msgid "Switch session"
 #~ msgstr "Switch session"
@@ -2841,11 +2882,19 @@ msgstr "Switch session (Alt+g)"
 msgid "switch the model"
 msgstr "switch the model"
 
+#: src/features/session-handoff.tsx:285
+msgid "Switch to {to}"
+msgstr "Switch to {to}"
+
+#: src/features/session-handoff.tsx:175
+msgid "Switched to {toAgent}"
+msgstr "Switched to {toAgent}"
+
 #: src/features/session-focus.tsx:65
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
-#: src/features/session-handoff.tsx:151
+#: src/features/session-handoff.tsx:201
 msgid "Switching agent…"
 msgstr "Switching agent…"
 
@@ -2868,7 +2917,7 @@ msgstr "Take over in tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "Tap a row to copy its value; long-press or right-click for more."
 
-#: src/features/session-elicitation.tsx:95
+#: src/features/session-elicitation.tsx:218
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
@@ -2897,7 +2946,7 @@ msgstr "Terminal screen"
 msgid "Text caret"
 msgstr "Text caret"
 
-#: src/features/session-elicitation.tsx:128
+#: src/features/session-elicitation.tsx:266
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
@@ -2905,12 +2954,17 @@ msgstr "The agent asks:"
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
-#: src/features/session-ask-claude.tsx:63
-#: src/features/session-elicitation.tsx:46
+#: src/features/session-ask-claude.tsx:60
+#: src/features/session-elicitation.tsx:123
 msgid "The agent is asking you"
 msgstr "The agent is asking you"
 
-#: src/features/session-ask-claude.tsx:62
+#. placeholder {0}: step + 1
+#: src/features/session-elicitation.tsx:122
+msgid "The agent is asking you (question {0} of {total})"
+msgstr "The agent is asking you (question {0} of {total})"
+
+#: src/features/session-ask-claude.tsx:59
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "The agent is asking you (question {number} of {total})"
 
@@ -3209,6 +3263,10 @@ msgstr "Updated {time}"
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 
+#: src/features/session-elicitation.tsx:212
+msgid "Updating your selection…"
+msgstr "Updating your selection…"
+
 #: src/features/session-composer.tsx:144
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
@@ -3369,7 +3427,7 @@ msgstr "What it solves"
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
-#: src/features/session-handoff.tsx:204
+#: src/features/session-handoff.tsx:259
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 
@@ -3377,7 +3435,7 @@ msgstr "What should the next agent do first?"
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
-#: src/features/session-ask-claude.tsx:162
+#: src/features/session-ask-claude.tsx:159
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 

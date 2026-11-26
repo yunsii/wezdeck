@@ -8,10 +8,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
-import {
-  pickElicitationOption,
-  SessionElicitation,
-} from './session-elicitation'
+import { SessionElicitation } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -197,8 +194,7 @@ export function AskCard({
     <SessionElicitation
       elicitation={elicitation}
       disabled={disabled}
-      onKey={(key) => void sendKey(key)}
-      onPick={(_qi, oi) => void pickElicitationOption(oi, sendKey)}
+      sendKey={sendKey}
     />
   )
 }

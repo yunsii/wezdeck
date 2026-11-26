@@ -8,7 +8,7 @@ import (
 )
 
 func TestAllowedKeys(t *testing.T) {
-	for _, k := range []string{"Enter", "Escape", "C-c", "C-b", "1", "Tab"} {
+	for _, k := range []string{"Enter", "Escape", "Space", "C-c", "C-b", "1", "5", "6", "9", "Tab"} {
 		if !allowedKeys[k] {
 			t.Errorf("%s should be allowed", k)
 		}

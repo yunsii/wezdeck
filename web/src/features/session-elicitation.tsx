@@ -1,8 +1,10 @@
 // Grok Ask (ask_user_question / elicitation_dialog): structured questions with
-// tappable options. Number keys + Enter match the phone key allowlist and the
-// usual TUI option list; bare Enter alone is easy to misfire so it is not
-// offered here.
+// tappable options. Grok shows one question at a time: digits 1–9 select (or
+// toggle a multi-select), arrows cover later options, and Enter advances or
+// submits. Local pending state gives immediate feedback through the key writes
+// and the host poll that closes the card.
 import { useLingui } from '@lingui/react/macro'
+import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
@@ -24,40 +26,126 @@ export type Elicitation = {
   review?: boolean
 }
 
+type AskPending = {
+  id: string
+  step: number
+  option?: number
+  phase: 'sending' | 'waiting'
+  toggle: boolean
+}
+
 export function SessionElicitation({
   elicitation,
   disabled,
-  onPick,
-  onKey,
+  sendKey,
 }: {
   elicitation: Elicitation
   disabled: boolean
-  /** 0-based option index within the (currently single) question */
-  onPick: (questionIndex: number, optionIndex: number) => void
-  onKey: (key: string) => void
+  sendKey: (key: string) => Promise<unknown>
 }) {
   const { t } = useLingui()
+  const questions = elicitation.questions
+  const askId = elicitation.tool_call_id ?? ''
+  const [progress, setProgress] = useState({ id: askId, step: 0 })
+  const [selected, setSelected] = useState<{
+    id: string
+    byStep: Record<number, Array<number>>
+  }>({ id: askId, byStep: {} })
+  const [pendingBy, setPendingBy] = useState<AskPending | null>(null)
+  const step =
+    progress.id === askId ? Math.min(progress.step, questions.length - 1) : 0
+  const current = questions[step]
+  const pending = pendingBy?.id === askId ? pendingBy : null
+  const selections = selected.id === askId ? selected.byStep : {}
+  const picked = selections[step] ?? []
+  const total = questions.length
+  const last = step === total - 1
+
+  const advance = () => {
+    if (last) {
+      setPendingBy((now) => (now ? { ...now, phase: 'waiting' } : now))
+      return
+    }
+    setPendingBy(null)
+    setProgress({ id: askId, step: step + 1 })
+  }
+  const pick = async (optionIndex: number) => {
+    if (pending) return
+    const toggle = Boolean(current.multi_select)
+    setPendingBy({
+      id: askId,
+      step,
+      option: optionIndex,
+      phase: 'sending',
+      toggle,
+    })
+    const ok = await pickElicitationOption(optionIndex, sendKey, toggle)
+    if (!ok) {
+      setPendingBy(null)
+      return
+    }
+    if (toggle) {
+      const next = picked.includes(optionIndex)
+        ? picked.filter((index) => index !== optionIndex)
+        : [...picked, optionIndex]
+      setSelected({
+        id: askId,
+        byStep: { ...selections, [step]: next },
+      })
+      setPendingBy(null)
+      return
+    }
+    advance()
+  }
+  const submit = async () => {
+    if (pending) return
+    setPendingBy({ id: askId, step, phase: 'sending', toggle: false })
+    if ((await sendKey('Enter')) === false) {
+      setPendingBy(null)
+      return
+    }
+    advance()
+  }
+
   return (
     <div
-      className="grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3"
+      className={cn(
+        'grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3',
+        pending && 'pointer-events-none',
+      )}
       data-testid="session-elicitation"
       data-write
+      aria-busy={Boolean(pending)}
     >
-      <p className="text-body font-medium">{t`The agent is asking you`}</p>
-      {elicitation.questions.map((q, qi) => (
-        <div key={`${qi}-${q.question.slice(0, 24)}`} className="grid gap-2">
-          <p className="text-body leading-snug font-semibold">{q.question}</p>
-          <div className="grid gap-2">
-            {q.options.map((opt, oi) => (
+      <p className="text-body font-medium">
+        {total > 1
+          ? t`The agent is asking you (question ${step + 1} of ${total})`
+          : t`The agent is asking you`}
+      </p>
+      <div className="grid gap-2">
+        <p className="text-body leading-snug font-semibold">
+          {current.question}
+        </p>
+        <div className="grid gap-2">
+          {current.options.map((opt, oi) => {
+            const isPicked = picked.includes(oi)
+            return (
               <Button
                 variant="key"
                 key={`${oi}-${opt.label.slice(0, 24)}`}
                 type="button"
-                disabled={disabled}
-                onClick={() => onPick(qi, oi)}
-                className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
+                disabled={disabled || Boolean(pending)}
+                aria-pressed={current.multi_select ? isPicked : undefined}
+                onClick={() => void pick(oi)}
+                className={cn(
+                  'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
+                  pending && 'disabled:opacity-100',
+                  isPicked && 'border-brand-running bg-brand-running/10',
+                  pending?.option === oi && 'border-brand-running',
+                )}
               >
                 <span className="text-body font-medium">
+                  {current.multi_select && isPicked ? '✓ ' : ''}
                   {oi < 9 ? `${oi + 1}. ` : ''}
                   {opt.label}
                 </span>
@@ -67,16 +155,31 @@ export function SessionElicitation({
                   </span>
                 ) : null}
               </Button>
-            ))}
-          </div>
+            )
+          })}
         </div>
-      ))}
+      </div>
       <div className="flex flex-wrap gap-2">
+        {current.multi_select ? (
+          <Button
+            variant="solid"
+            type="button"
+            data-testid="grok-ask-submit"
+            disabled={disabled || Boolean(pending)}
+            onClick={() => void submit()}
+            className={cn(
+              'min-h-11 px-3 text-body disabled:opacity-40',
+              pending && 'disabled:opacity-100',
+            )}
+          >
+            {t`Enter`}
+          </Button>
+        ) : null}
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey('Escape')}
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void sendKey('Escape')}
           className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {t`Esc`}
@@ -84,32 +187,67 @@ export function SessionElicitation({
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey('C-c')}
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void sendKey('C-c')}
           className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {t`Ctrl+C`}
         </Button>
       </div>
-      <p className="text-meta text-brand-label">
-        {t`Tap an option to send its number and Enter into the agent pane.`}
+      <p
+        role={pending ? 'status' : undefined}
+        aria-live={pending ? 'polite' : undefined}
+        data-testid={pending ? 'grok-ask-loading' : undefined}
+        className={cn(
+          'flex min-h-5 items-center gap-2 text-meta',
+          pending ? 'text-brand-running' : 'text-brand-label',
+        )}
+      >
+        {pending ? (
+          <>
+            <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-brand-border border-t-brand-running" />
+            {pending.phase === 'waiting'
+              ? t`Answer sent; waiting for Grok to continue…`
+              : pending.toggle
+                ? t`Updating your selection…`
+                : t`Submitting your answer…`}
+          </>
+        ) : current.multi_select ? (
+          t`Multiple choice: tap to toggle options, then press Enter.`
+        ) : (
+          t`Tap an option to send its number and Enter into the agent pane.`
+        )}
       </p>
     </div>
   )
 }
 
-/** Drive Grok Ask: digit for options 1–9, else Down from top, then Enter. */
+/** Drive Grok Ask. A failed write stops the rest so Enter cannot submit a default. */
 export async function pickElicitationOption(
   optionIndex: number,
   sendKey: (key: string) => Promise<unknown> | void,
-) {
-  if (optionIndex >= 0 && optionIndex <= 8) {
-    await sendKey(String(optionIndex + 1))
-  } else {
-    for (let i = 0; i < 12; i++) await sendKey('Up')
-    for (let i = 0; i < optionIndex; i++) await sendKey('Down')
+  multiSelect = false,
+): Promise<boolean> {
+  const put = async (key: string) => {
+    if ((await sendKey(key)) === false) return false
+    // A relay write only means tmux accepted the key. Grok needs a render turn
+    // between a digit / Enter and the next semantic action: five writes in
+    // 270ms made a real multi-select submit its default and queued "23" as a
+    // later prompt. Arrow repeats are safe to keep short.
+    const settle = key === 'Up' || key === 'Down' ? 25 : 180
+    await new Promise((resolve) => setTimeout(resolve, settle))
+    return true
   }
-  await sendKey('Enter')
+  if (optionIndex >= 0 && optionIndex <= 8) {
+    if (!(await put(String(optionIndex + 1)))) return false
+  } else {
+    for (let i = 0; i < 12; i++) if (!(await put('Up'))) return false
+    for (let i = 0; i < optionIndex; i++) if (!(await put('Down'))) return false
+    if (multiSelect) return put('Space')
+  }
+  // Multi-select digits only toggle; Enter belongs to the explicit submit button.
+  if (multiSelect) return true
+  return put('Enter')
 }
 
 /** Permission-prompt strip (Claude-style 1/2/3/Enter) when Ask payload is absent. */

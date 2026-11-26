@@ -316,7 +316,7 @@ msgstr "全部"
 msgid "All categories"
 msgstr "全部分类"
 
-#: src/features/session-ask-claude.tsx:83
+#: src/features/session-ask-claude.tsx:80
 msgid "All questions answered. The agent waits until you submit."
 msgstr "都答完了，提交后 agent 才会继续。"
 
@@ -352,6 +352,10 @@ msgstr "已实现"
 msgid "Already the latest"
 msgstr "已是最新版本"
 
+#: src/features/session-elicitation.tsx:210
+msgid "Answer sent; waiting for Grok to continue…"
+msgstr "答案已提交，等待 Grok 继续…"
+
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
 msgstr "补充说明（可选）"
@@ -383,11 +387,11 @@ msgstr "外观"
 msgid "Approve"
 msgstr "批准"
 
-#: src/features/session-elicitation.tsx:195
+#: src/features/session-elicitation.tsx:333
 msgid "Approve plan"
 msgstr "批准计划"
 
-#: src/features/session-elicitation.tsx:217
+#: src/features/session-elicitation.tsx:355
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
@@ -473,6 +477,10 @@ msgstr "基线提交"
 msgid "Base URL"
 msgstr "Base URL"
 
+#: src/features/session-handoff.tsx:60
+msgid "Blank switch"
+msgstr "空白切换"
+
 #: src/features/console-me.tsx:232
 msgid "Block"
 msgstr "方块"
@@ -539,13 +547,13 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/session-handoff.tsx:218
+#: src/features/session-handoff.tsx:274
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "取消"
 
-#: src/features/session-ask-claude.tsx:156
+#: src/features/session-ask-claude.tsx:153
 msgid "Cancel (Esc)"
 msgstr "取消（Esc）"
 
@@ -556,6 +564,10 @@ msgstr "能力"
 #: src/features/me-host.tsx:139
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
+
+#: src/features/session-handoff.tsx:59
+msgid "Carry a brief"
+msgstr "携带接续简报"
 
 #: src/features/console-diagnostics.tsx:140
 #: src/features/console-diagnostics.tsx:317
@@ -942,8 +954,8 @@ msgstr "创建中…"
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
-#: src/features/session-elicitation.tsx:91
-#: src/features/session-elicitation.tsx:139
+#: src/features/session-elicitation.tsx:194
+#: src/features/session-elicitation.tsx:277
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
@@ -1092,8 +1104,9 @@ msgstr "已结束"
 msgid "Endpoint"
 msgstr "端点"
 
-#: src/features/session-ask-claude.tsx:140
-#: src/features/session-elicitation.tsx:137
+#: src/features/session-ask-claude.tsx:137
+#: src/features/session-elicitation.tsx:175
+#: src/features/session-elicitation.tsx:275
 msgid "Enter"
 msgstr "回车"
 
@@ -1101,8 +1114,8 @@ msgstr "回车"
 msgid "Errors"
 msgstr "错误"
 
-#: src/features/session-elicitation.tsx:82
-#: src/features/session-elicitation.tsx:138
+#: src/features/session-elicitation.tsx:185
+#: src/features/session-elicitation.tsx:276
 msgid "Esc"
 msgstr "Esc"
 
@@ -1213,16 +1226,20 @@ msgstr "授权失败（{micError}），点此重试"
 msgid "Haiku tier"
 msgstr "Haiku 档"
 
-#: src/features/session-handoff.tsx:184
-#: src/features/session-handoff.tsx:243
+#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:235
 msgid "Hand off"
 msgstr "接力"
 
-#: src/features/session-handoff.tsx:229
+#: src/features/session-handoff.tsx:300
+msgid "Hand off / switch"
+msgstr "接力 / 切换"
+
+#: src/features/session-handoff.tsx:285
 msgid "Hand off to {to}"
 msgstr "接力给 {to}"
 
-#: src/features/session-handoff.tsx:239
+#: src/features/session-handoff.tsx:295
 msgid "Hand off to another agent"
 msgstr "接力给另一个 agent"
 
@@ -1230,15 +1247,15 @@ msgstr "接力给另一个 agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/session-handoff.tsx:127
+#: src/features/session-handoff.tsx:176
 msgid "Handed off to {toAgent}"
 msgstr "已接力给 {toAgent}"
 
-#: src/features/session-handoff.tsx:121
+#: src/features/session-handoff.tsx:167
 msgid "Handoff brief"
 msgstr "接力 brief"
 
-#: src/features/session-handoff.tsx:136
+#: src/features/session-handoff.tsx:186
 msgid "Handoff failed"
 msgstr "接力失败"
 
@@ -1640,9 +1657,13 @@ msgstr "已修改"
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
-#: src/features/session-ask-claude.tsx:103
+#: src/features/session-ask-claude.tsx:100
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "多选：每点一次切换一个选项，对照下面的终端画面确认后按回车。"
+
+#: src/features/session-elicitation.tsx:216
+msgid "Multiple choice: tap to toggle options, then press Enter."
+msgstr "多选：点选项切换选中状态，再按回车提交。"
 
 #: src/features/collab-metrics.tsx:252
 msgid "Name"
@@ -1823,7 +1844,7 @@ msgstr "无 Origin（脚本、curl 或其他程序）"
 msgid "No output yet"
 msgstr "还没有输出"
 
-#: src/features/session-elicitation.tsx:185
+#: src/features/session-elicitation.tsx:323
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
@@ -2014,7 +2035,7 @@ msgstr "正在打开…"
 msgid "opens one more"
 msgstr "将新开"
 
-#: src/features/session-handoff.tsx:198
+#: src/features/session-handoff.tsx:253
 msgid "Optional note"
 msgstr "补充说明"
 
@@ -2100,7 +2121,7 @@ msgstr "选择会话（按仓库分组）"
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
-#: src/features/session-elicitation.tsx:179
+#: src/features/session-elicitation.tsx:317
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
@@ -2173,7 +2194,7 @@ msgstr "快捷键"
 msgid "Quiet for over a week ({count})"
 msgstr "一周以上没动静（{count}）"
 
-#: src/features/session-elicitation.tsx:213
+#: src/features/session-elicitation.tsx:351
 msgid "Quit plan"
 msgstr "退出计划"
 
@@ -2265,12 +2286,20 @@ msgid "Replace API key"
 msgstr "更换 API 密钥"
 
 #: src/features/session-handoff.tsx:252
-msgid "Replace this pane with {target} and paste a continuation brief"
-msgstr "用 {target} 替换本格，并粘贴接续 brief"
+#~ msgid "Replace this pane with {target} and paste a continuation brief"
+#~ msgstr "用 {target} 替换本格，并粘贴接续 brief"
 
-#: src/features/session-handoff.tsx:195
+#: src/features/session-handoff.tsx:313
+msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
+msgstr "将此窗格切换为 {target}；可选择带接力说明或空白切换"
+
+#: src/features/session-handoff.tsx:248
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "用 {to} 替换本格。源会话 transcript 仍在磁盘上；首条消息会粘贴一段接续 brief。之后 F5 仍起 {to}。不会 recycle worktree。"
+
+#: src/features/session-handoff.tsx:249
+msgid "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
+msgstr "用空白的 {to} 替换本格。不发送接续简报或首条消息，也不读取旧 transcript。worktree 保持不变，之后 F5 仍起 {to}。"
 
 #: src/features/console-activity.tsx:103
 msgid "replied"
@@ -2327,7 +2356,7 @@ msgstr "仓库根目录"
 msgid "Request access"
 msgstr "申请授权"
 
-#: src/features/session-elicitation.tsx:204
+#: src/features/session-elicitation.tsx:342
 msgid "Request changes"
 msgstr "请修改"
 
@@ -2620,7 +2649,7 @@ msgstr "在下方发第一条消息。"
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
-#: src/features/session-handoff.tsx:150
+#: src/features/session-handoff.tsx:200
 msgid "Sending the handoff brief…"
 msgstr "正在发送接续 brief…"
 
@@ -2765,6 +2794,10 @@ msgstr "开一个新会话"
 msgid "Start fresh"
 msgstr "新开"
 
+#: src/features/session-handoff.tsx:60
+msgid "Start without context"
+msgstr "不携带旧上下文"
+
 #: src/features/ticket-new.tsx:208
 msgid "Start working on it now (a headless run on the host)"
 msgstr "创建后立即开始处理（在电脑上后台运行）"
@@ -2808,13 +2841,17 @@ msgstr "状态更新于"
 msgid "Sub-agent"
 msgstr "子智能体"
 
-#: src/features/session-ask-claude.tsx:93
+#: src/features/session-ask-claude.tsx:90
 msgid "Submit answers"
 msgstr "提交答案"
 
 #: src/features/tickets-view.tsx:131
 msgid "submitted"
 msgstr "已提交"
+
+#: src/features/session-elicitation.tsx:213
+msgid "Submitting your answer…"
+msgstr "正在提交答案…"
 
 #: src/features/session-commands.tsx:204
 #: src/features/session-skills.tsx:58
@@ -2829,6 +2866,10 @@ msgstr "摘要"
 msgid "Switch chat"
 msgstr "切换对话"
 
+#: src/features/session-handoff.tsx:55
+msgid "Switch mode"
+msgstr "切换方式"
+
 #: src/features/session-switcher.tsx:195
 #~ msgid "Switch session"
 #~ msgstr "切换会话"
@@ -2841,11 +2882,19 @@ msgstr "切换会话（Alt+g）"
 msgid "switch the model"
 msgstr "切换模型"
 
+#: src/features/session-handoff.tsx:285
+msgid "Switch to {to}"
+msgstr "切换到 {to}"
+
+#: src/features/session-handoff.tsx:175
+msgid "Switched to {toAgent}"
+msgstr "已切换到 {toAgent}"
+
 #: src/features/session-focus.tsx:65
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
-#: src/features/session-handoff.tsx:151
+#: src/features/session-handoff.tsx:201
 msgid "Switching agent…"
 msgstr "正在切换 agent…"
 
@@ -2868,7 +2917,7 @@ msgstr "接管到 tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 
-#: src/features/session-elicitation.tsx:95
+#: src/features/session-elicitation.tsx:218
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
@@ -2897,7 +2946,7 @@ msgstr "终端画面"
 msgid "Text caret"
 msgstr "输入光标"
 
-#: src/features/session-elicitation.tsx:128
+#: src/features/session-elicitation.tsx:266
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
@@ -2905,12 +2954,17 @@ msgstr "Agent 在问："
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
-#: src/features/session-ask-claude.tsx:63
-#: src/features/session-elicitation.tsx:46
+#: src/features/session-ask-claude.tsx:60
+#: src/features/session-elicitation.tsx:123
 msgid "The agent is asking you"
 msgstr "Agent 在问你"
 
-#: src/features/session-ask-claude.tsx:62
+#. placeholder {0}: step + 1
+#: src/features/session-elicitation.tsx:122
+msgid "The agent is asking you (question {0} of {total})"
+msgstr "Agent 在问你（第 {0}/{total} 题）"
+
+#: src/features/session-ask-claude.tsx:59
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "Agent 在问你（第 {number}/{total} 题）"
 
@@ -3209,6 +3263,10 @@ msgstr "更新于 {time}"
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
 
+#: src/features/session-elicitation.tsx:212
+msgid "Updating your selection…"
+msgstr "正在更新选择…"
+
 #: src/features/session-composer.tsx:144
 msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
@@ -3369,7 +3427,7 @@ msgstr "要解决什么"
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
-#: src/features/session-handoff.tsx:204
+#: src/features/session-handoff.tsx:259
 msgid "What should the next agent do first?"
 msgstr "希望下一个 agent 先做什么？"
 
@@ -3377,7 +3435,7 @@ msgstr "希望下一个 agent 先做什么？"
 msgid "What the other repository should do"
 msgstr "要对方仓库做什么"
 
-#: src/features/session-ask-claude.tsx:162
+#: src/features/session-ask-claude.tsx:159
 msgid "What the terminal shows"
 msgstr "终端画面"
 

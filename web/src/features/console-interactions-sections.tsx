@@ -18,6 +18,7 @@ import { BackgroundTasks } from './session-background'
 import {
   ASK_ONE,
   ASK_MANY,
+  GROK_ASK_MANY,
   BASH,
   EDIT,
   PLAN,
@@ -128,16 +129,22 @@ function promptSections(
     {
       id: 'grok-ask',
       tags: ['grok'],
-      title: { zh: 'Grok 问答', en: 'Grok question' },
+      title: {
+        zh: 'Grok 问答（多题 / 多选）',
+        en: 'Grok questions / multi-select',
+      },
       source: {
         zh: 'updates.jsonl 里未答复的 ask_user_question（agent_grok.go）',
         en: 'An unanswered ask_user_question in updates.jsonl (agent_grok.go)',
       },
-      keys: { zh: '每题序号 + Enter', en: 'Digit + Enter per question' },
+      keys: {
+        zh: '一次一题：单选序号 + Enter；多选序号只切换，Enter 单独提交；点击后立即显示发送 / 等待状态',
+        en: 'One at a time: digit + Enter for single choice; digits only toggle multi-select, Enter submits separately; immediate sending / waiting feedback',
+      },
       demo: (
         <AskCard
           agent="grok"
-          elicitation={ASK_ONE}
+          elicitation={GROK_ASK_MANY}
           disabled={false}
           sendKey={keyFor('grok-ask')}
         />

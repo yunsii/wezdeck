@@ -8,10 +8,12 @@
 # (different backends cannot share a transcript). Source conversation stays
 # on disk; the brief points at it.
 #
-#   session-handoff.sh --pane %N --to grok|codex|claude [--from claude]
+#   session-handoff.sh --pane %N --to grok|codex|claude [--from claude] [--empty]
 #
-# stdout: key=value lines — outcome=respawned, agent=<to>, and for a Claude
-# target session_id=<uuid> so the old attention entry can be cleared_to it.
+# --empty is a blank agent switch: mint a pending-* id for non-Claude targets
+# too, so the web can open the blank page without waiting for its first prompt.
+# stdout: key=value lines — outcome=respawned, agent=<to>, and session_id=<id>
+# for Claude targets and every --empty switch, so the old entry can be cleared.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,12 +24,14 @@ export WEZTERM_RUNTIME_LOG_SOURCE="session-handoff.sh"
 pane=""
 to=""
 from=""
+empty=false
 while (($#)); do
   case "$1" in
     --pane) pane="${2-}"; shift ;;
     --to) to="${2-}"; shift ;;
     --from) from="${2-}"; shift ;;
-    *) echo "usage: $0 --pane %N --to grok|codex|claude [--from NAME]" >&2; exit 2 ;;
+    --empty) empty=true ;;
+    *) echo "usage: $0 --pane %N --to grok|codex|claude [--from NAME] [--empty]" >&2; exit 2 ;;
   esac
   shift
 done
@@ -149,9 +153,13 @@ if [[ -z "$fresh_cmd" ]]; then
 fi
 
 new_id=""
-if [[ "$to_base" == "claude" ]]; then
+if [[ "$to_base" == "claude" || "$empty" == true ]]; then
   new_id="$(cat /proc/sys/kernel/random/uuid)"
-  tmux set-option -p -t "$pane" @wezdeck_fresh_session_id "$new_id"
+  if [[ "$to_base" == "claude" ]]; then
+    tmux set-option -p -t "$pane" @wezdeck_fresh_session_id "$new_id"
+  else
+    new_id="pending-$new_id"
+  fi
 fi
 
 work_cwd="${cwd:-$HOME}"

@@ -175,6 +175,28 @@ describe('chatTone / chatPreview', () => {
       ),
     ).toBe('Waiting on you · Needs a decision')
   })
+
+  it('does not call a freshly created empty session a running reply', () => {
+    const now = Date.now()
+    const fresh = card({ id: 'fresh-empty', status: 'idle', ts: now })
+    expect(chatTone(fresh, now)).toBe('idle')
+    expect(chatPreview(fresh, previewLabels, now)).toBe('No human message yet')
+    expect(
+      resolveChatFocus(
+        [
+          fresh,
+          card({
+            id: 'recent-turn',
+            status: 'idle',
+            last_prompt: 'finished work',
+            ts: now - 1_000,
+          }),
+        ],
+        {},
+        now,
+      )?.id,
+    ).toBe('fresh-empty')
+  })
 })
 
 describe('unreadChatCount', () => {
