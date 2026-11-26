@@ -24,17 +24,21 @@ export type PendingCall = {
 export const PERMISSION_KEYS = { allow: '1', deny: 'Escape' } as const
 
 export function PermissionCard({
+  agent,
   call,
   screen,
   disabled,
   onKey,
 }: {
+  agent?: string
   call: PendingCall
   screen?: string
   disabled: boolean
   onKey: (key: string) => void
 }) {
   const { t } = useLingui()
+  const isAgy = agent === 'agy'
+  const allowKey = isAgy ? 'Enter' : PERMISSION_KEYS.allow
   const target = call.text.startsWith(`${call.tool} `)
     ? call.text.slice(call.tool.length + 1)
     : ''
@@ -47,7 +51,9 @@ export function PermissionCard({
       <p className="text-body font-medium">
         {call.plan
           ? t`Claude wants to leave plan mode and start on this plan`
-          : t`Claude asks to run this`}
+          : isAgy
+            ? t`Antigravity asks to run this`
+            : t`Claude asks to run this`}
       </p>
       {call.plan ? (
         <div className="max-h-96 overflow-y-auto rounded-xl bg-brand-deck px-3 py-2">
@@ -72,7 +78,7 @@ export function PermissionCard({
           variant="solid"
           type="button"
           disabled={disabled}
-          onClick={() => onKey(PERMISSION_KEYS.allow)}
+          onClick={() => onKey(allowKey)}
           className="min-h-11 px-3 text-body disabled:opacity-40"
         >
           {call.plan ? t`Approve the plan` : t`Allow`}
@@ -90,7 +96,9 @@ export function PermissionCard({
       <p className="text-meta leading-relaxed text-brand-label">
         {call.plan
           ? t`Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change.`
-          : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`}
+          : isAgy
+            ? t`Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal.`
+            : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`}
       </p>
       {screen ? (
         <Disclosure

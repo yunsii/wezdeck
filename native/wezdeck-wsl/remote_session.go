@@ -516,7 +516,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			listed[card.ID] = true
 		}
 		for _, r := range recent {
-			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
+			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" || sessionWasClosed(r.SessionID) ||
 				replacementForArchived(r.SessionID, recent, entries) != "" ||
 				now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
 				continue
@@ -702,7 +702,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		}
 		if includeArchived {
 			for _, r := range recent {
-				if r.SessionID == a.ID {
+				if r.SessionID == a.ID && !sessionWasClosed(a.ID) {
 					if path = archivedCodexTranscript(r); path != "" {
 						e = attentionEntry{SessionID: a.ID, Status: "idle", TS: r.ArchivedTS,
 							AgentName: r.AgentName, WindowName: r.WindowName, GitBranch: r.GitBranch}
@@ -770,6 +770,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		out["focus"] = sessionFocus(a.ID, e)
 	}
 	out["meta"] = sessionMeta(e, path, agent, nil)
+	var agyPending *pendingCall
 	if path != "" {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
@@ -799,11 +800,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		transcriptsMu.Lock()
 		total := len(t.messages)
 		windowArgs := a
-		if agent == "codex" {
-			windowArgs = a.forMessagesRev(codexMessagesRev)
-			out["messages_rev"] = codexMessagesRev
+		if rev := messagesRevFor(agent); rev > 0 {
+			windowArgs = a.forMessagesRev(rev)
+			out["messages_rev"] = rev
 			if (a.Since != nil || a.Before != nil) && windowArgs.Since == nil && windowArgs.Before == nil {
-				relayLogf("session_cursor", "id=%s agent=codex outcome=revision_reset", a.ID)
+				relayLogf("session_cursor", "id=%s agent=%s outcome=revision_reset", a.ID, agent)
 			}
 		}
 		start, end, span := sessionWindow(t.messages, windowArgs)
@@ -819,6 +820,8 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p
 			}
+		} else if agent == "agy" {
+			agyPending = pendingPermission(t.messages, "")
 		}
 		mode := t.mode
 		// the page refetches session.skills when this changes
@@ -861,8 +864,6 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if agent == "claude" {
 			// what its subagents (Agent tool, forked skills) are doing
 			out["subagents"] = subagentsOf(path)
-		}
-		if agent == "claude" {
 			if size := claudeContextSize(e.SessionID); size > 0 {
 				usage.ContextLimit = size
 				out["usage"] = usage
@@ -877,7 +878,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {
-		out["screen"] = strings.TrimRight(string(screen), "\n ")
+		trimmed := strings.TrimRight(string(screen), "\n ")
+		out["screen"] = trimmed
+		if agent == "agy" {
+			applyAgyScreenPermission(out, agyPending, trimmed)
+		}
 	}
 	if r, ok := adapterFor(agent).(askReader); ok && path != "" {
 		if el := r.PendingAsk(path, string(screen)); el != nil {

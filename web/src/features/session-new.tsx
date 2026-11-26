@@ -1,49 +1,28 @@
-// 新会话 — wezdeck's Ctrl+k g d from the phone, layered so the common path
-// stays one screen: a location summary bar + the first message. Tap the bar
-// for the place layer (repository + directions with idle/busy); "+ New
-// direction" opens a third layer for the name and purpose. The host creates
-// or reuses the worktree (native session_new.go / workstations.go), starts
-// its agent in tmux and hands it the message. Creation outlasts an RPC, so
-// the host answers a job id and the sheet follows its stages, then opens
-// the session once it is listed. `c` on the session list opens it with a
-// keyboard.
+// 新会话 collects the first question, repository and agent.
+// The host allocates the checkout and starts the agent as an observable job.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
-import { BackButton } from '#/components/deck/back-button'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
+import { worktreeKey } from './session-order'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import type { AgentProfile } from './agent-profiles'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
-import {
-  defaultDirection,
-  useDirectionPlan,
-  useDirectionPlanShort,
-  useDirections,
-} from './session-new-direction'
-import type { DirectionPick } from './session-new-direction'
-import {
-  ComposeLayer,
-  NewDirectionLayer,
-  PlaceLayer,
-} from './session-new-panels'
+import { ComposeLayer, useStageText } from './session-new-panels'
 
 type Repo = { root: string; label: string; visited?: number }
 
-/** compose = message; place = repo + directions; new = name a new direction */
-type Layer = 'compose' | 'place' | 'new'
-
-/** open 新会话 already on a repo + direction (chat row 「新一轮」) */
-export type NewSessionPreset = { repo: string; direction: string }
+export type NewSessionPreset = { repo: string; anchor: string; group: string }
 
 type NewSessionRequest = { round: number; preset?: NewSessionPreset }
 let newSessionReq: NewSessionRequest = { round: 0 }
@@ -66,30 +45,57 @@ function useNewSessionRequest() {
   )
 }
 
-/**
- * The directory / branch name the host makes of a typed name
- * (open-task-window → wt_slugify): a dev- or dev/ typed out of habit goes,
- * then lower case, every run of other characters one '-', trimmed. "" when
- * nothing usable is left (a name of only Chinese, say).
- */
-export function workstationSlug(name: string) {
-  return name
+export function suggestGroupName(prompt: string): string {
+  const firstLine = prompt.trim().split(/\r?\n/, 1)[0]
+  if (/^(?:https?:\/\/|```|[<{[])/.test(firstLine)) return ''
+  const subject = firstLine
+    .replace(/^\s*(?:[-*] |#+\s+)/, '')
+    .replace(/^(?:请(?:帮我)?|帮我|please\s+|could you\s+)/i, '')
+    .split(/[。！？；]|[.!?;](?:\s|$)/, 1)[0]
     .trim()
-    .replace(/^dev[-/]/, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  if (
+    /^(?:继续|好的|开始|continue|please continue|go ahead|ok)$/i.test(subject)
+  )
+    return ''
+  const characters = Array.from(subject)
+  return characters.length <= 32
+    ? subject
+    : characters.slice(0, 31).join('') + '…'
 }
+
 type Job = {
   job: string
   stage:
     'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
   /** new direction, one more parallel slot, or an idle slot reused */
-  mode?: 'new' | 'parallel' | 'reuse'
+  mode?: 'new' | 'parallel' | 'reuse' | 'group'
   worktree?: string
   branch?: string
   session_id?: string
   error?: string
+  warning?: string
+}
+
+const preferenceKeys = {
+  repo: 'wezdeck.new-session.repo',
+  agent: 'wezdeck.new-session.agent',
+}
+
+function readPreference(key: string) {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function rememberSessionChoices(repo: string | undefined, agent: string) {
+  try {
+    if (repo) localStorage.setItem(preferenceKeys.repo, repo)
+    localStorage.setItem(preferenceKeys.agent, agent)
+  } catch {
+    // Creating a session still works if the browser blocks local storage.
+  }
 }
 
 const pendingJobKey = 'wezdeck.pending-new-session-job'
@@ -136,6 +142,7 @@ function useAutoOpenNewSession({
     sessionStorage.removeItem(pendingJobKey)
     const visitPath = listed?.worktree || listed?.cwd || current?.worktree
     if (visitPath) recordVisit(visitPath)
+    if (current?.warning) toast.warning(current.warning)
     void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
     onClose()
     void navigate({
@@ -146,6 +153,7 @@ function useAutoOpenNewSession({
     targetId,
     listed,
     current?.worktree,
+    current?.warning,
     jobId,
     navigate,
     locale,
@@ -191,26 +199,6 @@ function readPendingJob(): { job: string; before: string[] } | null {
   return null
 }
 
-function useStageText() {
-  const { t } = useLingui()
-  return (job: Pick<Job, 'stage' | 'mode' | 'error'>) => {
-    const reason = job.error ?? ''
-    return job.stage === 'creating'
-      ? job.mode === 'reuse'
-        ? t`Resetting the workstation onto the latest main branch…`
-        : t`Creating the worktree…`
-      : job.stage === 'starting'
-        ? t`Starting the agent…`
-        : job.stage === 'waiting_trust'
-          ? t`Agy is waiting for this worktree to be trusted.`
-          : job.stage === 'sending'
-            ? t`Sending the first message…`
-            : job.stage === 'done'
-              ? t`Started. Opening the session when the agent picks it up…`
-              : t`Could not create it: ${reason}`
-  }
-}
-
 function useAgyTrust(jobId: string, setError: (message: string) => void) {
   const [trusting, setTrusting] = useState(false)
   const trust = async () => {
@@ -227,23 +215,6 @@ function useAgyTrust(jobId: string, setError: (message: string) => void) {
   return { trust, trusting }
 }
 
-function useSheetTitle(layer: Layer, placeLocked: boolean, onBack: () => void) {
-  const { t } = useLingui()
-  if (layer === 'compose') return placeLocked ? t`New round` : t`New session`
-  return (
-    <span className="flex min-w-0 items-center gap-0.5">
-      <BackButton
-        label={layer === 'new' ? t`Back to place` : t`Back to message`}
-        onClick={onBack}
-        className="-ml-2"
-      />
-      <span className="truncate">
-        {layer === 'place' ? t`Where` : t`New direction`}
-      </span>
-    </span>
-  )
-}
-
 export function NewSessionButton() {
   const { t } = useLingui()
   const device = useDeviceState()
@@ -258,7 +229,7 @@ export function NewSessionButton() {
     setRound((n) => n + 1)
     setOpen(true)
   }
-  // chat row 「新一轮」 / requestNewSession — only on a new request id
+  // The group menu opens the form once per request.
   const seenReq = useRef(0)
   useEffect(() => {
     if (req.round === 0 || req.round === seenReq.current) return
@@ -348,9 +319,7 @@ function NewSessionSheet({
 }) {
   const { t } = useLingui()
   const stageText = useStageText()
-  const plan = useDirectionPlan()
-  const planShort = useDirectionPlanShort()
-  const placeLocked = Boolean(preset?.repo && preset.direction)
+  const anchor = preset?.anchor
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
     queryFn: async () =>
@@ -359,22 +328,25 @@ function NewSessionSheet({
   const sessions = useSessions()
   const agentProfiles = useAgentProfiles()
   const [preferredAgent] = usePreferredAgentProfile()
+  const [lastAgent] = useState(() => readPreference(preferenceKeys.agent))
   const {
     available: availableProfiles,
     defaultDisabled,
     selected: selectedAgent,
     setPicked: setAgentProfile,
-  } = useAgentSelection(agentProfiles.data?.profiles ?? [], preferredAgent)
-  const [layer, setLayer] = useState<Layer>('compose')
-  const [repo, setRepo] = useState(preset?.repo ?? '')
-  const [name, setName] = useState('')
-  const [picked, setPicked] = useState<DirectionPick | null>(
-    preset?.direction ?? null,
+  } = useAgentSelection(
+    agentProfiles.data?.profiles ?? [],
+    lastAgent ?? preferredAgent,
   )
+  const [repo, setRepo] = useState(
+    () => readPreference(preferenceKeys.repo) ?? '',
+  )
+  const submitting = useRef(false)
+  const [sending, setSending] = useState(false)
   const [pending] = useState(readPendingJob)
   const before = useRef<Set<string>>(new Set(pending?.before ?? []))
-  const [description, setDescription] = useState('')
   const [prompt, setPrompt] = useState('')
+  const [groupName, setGroupName] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [jobId, setJobId] = useState(pending?.job ?? '')
   const { trust, trusting } = useAgyTrust(jobId, setError)
@@ -392,16 +364,32 @@ function NewSessionSheet({
         job: Job
       },
   })
-  const chosen = repo || repos.data?.repos[0]?.root || ''
+  const repositories = repos.data?.repos ?? []
+  const chosen =
+    preset?.repo ??
+    (repositories.some(({ root }) => root === repo)
+      ? repo
+      : repositories[0]?.root || '')
   const repoLabel =
-    (repos.data?.repos ?? []).find((r) => r.root === chosen)?.label ||
+    repositories.find((r) => r.root === chosen)?.label ||
     chosen.split('/').pop() ||
     ''
-  const directions = useDirections(chosen)
-  const dirs = directions.data?.directions ?? []
-  const pick = picked ?? defaultDirection(dirs)
-  const pickedDir = dirs.find((d) => d.name === pick)
-  const isNew = pick === ''
+  const sessionRows = sessions.data?.sessions ?? []
+  const source = sessionRows.find((row) => row.id === anchor)
+  const firstSibling =
+    source &&
+    sessionRows.filter((row) => worktreeKey(row) === worktreeKey(source))
+      .length === 1
+  const managedName =
+    source &&
+    !/^(ticket|claw)-/.test(worktreeKey(source).split('/').at(-1) ?? '')
+  const nameGroup = Boolean(firstSibling && managedName)
+  const suggestedName =
+    suggestGroupName(source?.title ?? '') ||
+    suggestGroupName(source?.last_prompt ?? '') ||
+    suggestGroupName(source?.worktree_description ?? '') ||
+    t`New session group`
+  const resolvedGroupName = groupName ?? suggestedName
   const current = job.data?.job
   usePendingJobRecovery(jobId, job.error, setJobId, setError)
   useAutoOpenNewSession({
@@ -411,43 +399,39 @@ function NewSessionSheet({
     before: before.current,
     onClose,
   })
-  // Esc backs a layer before the drawer closes the sheet
-  useEffect(() => {
-    if (!open || layer === 'compose') return
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      event.stopPropagation()
-      setLayer(layer === 'new' ? 'place' : 'compose')
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [open, layer])
-  const busy = Boolean(jobId) && current?.stage !== 'failed'
-  const slug = workstationSlug(name)
+  const busy = sending || (Boolean(jobId) && current?.stage !== 'failed')
   const ready =
-    Boolean(chosen && (pick || slug) && prompt.trim()) &&
+    Boolean(
+      (anchor || chosen) &&
+      prompt.trim() &&
+      (!nameGroup || resolvedGroupName.trim()),
+    ) &&
     (!agentProfiles.data || availableProfiles.length > 0)
-  const locationClause = isNew
-    ? slug || t`+ New direction`
-    : pick || t`Direction`
-  const locationHint = planShort(pickedDir, isNew)
   const submit = async () => {
+    if (submitting.current || busy || !ready) return
+    submitting.current = true
+    setSending(true)
     setError('')
     try {
-      const reused = pickedDir?.slots.find((s) => s.state === 'idle')?.path
+      const reused = anchor
+        ? sessions.data?.sessions.find((row) => row.id === anchor)?.worktree
+        : undefined
       before.current = new Set(
         (sessions.data?.sessions ?? [])
           .filter((row) => reused && row.worktree === reused)
           .map((row) => row.id),
       )
       const res = (await hostWrite('session.new', {
-        repo: chosen,
-        name: pick || name.trim(),
-        description: pick ? '' : description.trim(),
+        ...(anchor
+          ? {
+              anchor_session_id: anchor,
+              group_name: nameGroup ? resolvedGroupName.trim() : undefined,
+            }
+          : { repo: chosen, new_group: true }),
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
+      rememberSessionChoices(anchor ? undefined : chosen, selectedAgent)
       sessionStorage.setItem(
         pendingJobKey,
         JSON.stringify({ job: res.job, before: [...before.current] }),
@@ -455,88 +439,45 @@ function NewSessionSheet({
       setJobId(res.job)
     } catch (e) {
       setError((e as Error).message)
+    } finally {
+      submitting.current = false
+      setSending(false)
     }
   }
-  const title = useSheetTitle(layer, placeLocked, () =>
-    setLayer(layer === 'new' ? 'place' : 'compose'),
-  )
   return (
     <Sheet
       open={open}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}
-      title={title}
+      title={anchor ? t`New session in this group` : t`New session`}
       testId="new-session-sheet"
       write
     >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
-        {layer === 'compose' ? (
-          <ComposeLayer
-            busy={busy}
-            repoLabel={repoLabel}
-            locationClause={locationClause}
-            locationHint={locationHint}
-            placeLocked={placeLocked}
-            prompt={prompt}
-            setPrompt={setPrompt}
-            isNew={isNew}
-            name={name}
-            slug={slug}
-            current={current}
-            stageText={stageText}
-            error={error}
-            ready={ready}
-            onPlace={() => {
-              if (!placeLocked) setLayer('place')
-            }}
-            onSubmit={() => void submit()}
-            onTrust={() => void trust()}
-            trusting={trusting}
-            agentProfiles={agentProfiles.data?.profiles ?? []}
-            agentProfile={selectedAgent}
-            defaultAgentDisabled={defaultDisabled}
-            onAgentProfile={setAgentProfile}
-          />
-        ) : null}
-        {layer === 'place' && !placeLocked ? (
-          <PlaceLayer
-            busy={busy}
-            chosen={chosen}
-            repos={repos.data?.repos ?? []}
-            dirs={dirs}
-            pick={pick}
-            pickedDir={pickedDir}
-            plan={plan}
-            onRepo={(next) => {
-              setRepo(next)
-              setPicked(null)
-              setName('')
-              setDescription('')
-            }}
-            onPick={(next) => {
-              setPicked(next)
-              if (next === '') {
-                setLayer('new')
-                return
-              }
-              setName('')
-              setDescription('')
-              setLayer('compose')
-            }}
-          />
-        ) : null}
-        {layer === 'new' ? (
-          <NewDirectionLayer
-            busy={busy}
-            name={name}
-            slug={slug}
-            setName={setName}
-            description={description}
-            setDescription={setDescription}
-            onDone={() => setLayer('compose')}
-          />
-        ) : null}
+        <ComposeLayer
+          busy={busy}
+          repoLabel={repoLabel}
+          repositories={repositories}
+          repo={chosen}
+          onRepo={setRepo}
+          group={preset?.group}
+          groupName={nameGroup ? resolvedGroupName : undefined}
+          onGroupName={setGroupName}
+          prompt={prompt}
+          setPrompt={setPrompt}
+          current={current}
+          stageText={stageText}
+          error={error}
+          ready={ready}
+          onSubmit={() => void submit()}
+          onTrust={() => void trust()}
+          trusting={trusting}
+          agentProfiles={agentProfiles.data?.profiles ?? []}
+          agentProfile={selectedAgent}
+          defaultAgentDisabled={defaultDisabled}
+          onAgentProfile={setAgentProfile}
+        />
       </div>
     </Sheet>
   )

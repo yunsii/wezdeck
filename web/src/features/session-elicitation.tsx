@@ -207,7 +207,7 @@ export function SessionElicitation({
           <>
             <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-brand-border border-t-brand-running" />
             {pending.phase === 'waiting'
-              ? t`Answer sent; waiting for Grok to continue…`
+              ? t`Answer sent; waiting for the agent to continue…`
               : pending.toggle
                 ? t`Updating your selection…`
                 : t`Submitting your answer…`}
@@ -407,6 +407,7 @@ export function PromptPanels({
       ) : null}
       {data?.permission && !asking && !planReview ? (
         <PermissionCard
+          agent={data.agent}
           call={data.permission}
           screen={data.screen}
           disabled={!canWrite}

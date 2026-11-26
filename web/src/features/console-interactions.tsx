@@ -9,10 +9,11 @@ import { ChevronRight } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { SessionTag } from '#/components/deck/session-tags'
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import { Button } from '#/components/ui/button'
 import { SectionHeading } from '#/components/ui/section-heading'
 import { useLocale } from '#/lib/locale-context'
-import { useIsWidePhoneFirst } from '#/lib/use-media'
+import { useMediaQuery } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { GROUPS, TAGS, buildSections } from './console-interactions-sections'
 import type { Tag, Text } from './console-interactions-sections'
@@ -27,7 +28,7 @@ export function InteractionsPage() {
   const { locale } = useLocale()
   const p = (text: Text) => (locale === 'zh' ? text.zh : text.en)
   // phone first: hydration must not flash the split on a phone
-  const wide = useIsWidePhoneFirst()
+  const wide = useMediaQuery('(min-width: 1280px)', false)
   const fill = useFillWindow(wide)
   const [log, setLog] = useState<Array<string>>([])
   const keyFor = (name: string) => (key: string) =>
@@ -92,22 +93,13 @@ export function InteractionsPage() {
           </SectionHeading>
           {/* a phone gets the 我的 list row (ink, a rule between rows); a
               wide screen keeps the sidebar look beside the detail */}
-          <ul
-            className={cn(
-              'grid grid-cols-[minmax(0,1fr)]',
-              wide ? 'gap-0.5' : '',
-            )}
-          >
+          <ul className="grid grid-cols-[minmax(0,1fr)]">
             {sections
               .filter((s) => s.group === group.id)
               .map((s) => (
                 <li
                   key={s.id}
-                  className={
-                    wide
-                      ? undefined
-                      : 'border-b border-brand-edge last:border-b-0'
-                  }
+                  className="border-b border-brand-edge last:border-b-0"
                 >
                   <Button
                     variant="plain"
@@ -119,9 +111,11 @@ export function InteractionsPage() {
                       'flex w-full min-w-0 items-center justify-between gap-2 overflow-hidden px-2.5 text-left text-body',
                       !wide
                         ? 'key-press min-h-13 text-brand-text'
-                        : current?.id === s.id
-                          ? 'min-h-10 rounded-xl bg-brand-surface font-medium text-brand-text'
-                          : 'min-h-10 rounded-xl text-brand-muted hover:bg-brand-soft',
+                        : cn(
+                            'list-row min-h-11 text-brand-muted',
+                            current?.id === s.id &&
+                              'row-selected font-medium text-brand-text',
+                          ),
                     )}
                   >
                     <span className="min-w-0 flex-1 truncate">
@@ -159,7 +153,7 @@ export function InteractionsPage() {
         {p(current.title)}
         {tagChips(current.tags)}
       </h2>
-      <dl className="grid gap-2 rounded-2xl bg-brand-surface px-3.5 py-3 text-caption">
+      <dl className="grid gap-2 rounded-2xl bg-brand-surface px-3.5 py-3 text-caption md:rounded-none md:border-y md:border-brand-edge md:bg-transparent md:px-0">
         <div className="grid gap-0.5">
           <dt className="text-meta text-brand-label">
             {p({ zh: '怎么识别', en: 'Where it comes from' })}
@@ -203,7 +197,13 @@ export function InteractionsPage() {
     </section>
   ) : null
   if (!wide)
-    return detail ?? <div className="key rounded-2xl px-2 py-3">{list}</div>
+    return detail ? (
+      <div className="md:max-xl:px-[var(--page-x)]">{detail}</div>
+    ) : (
+      <div className="rounded-2xl bg-brand-surface px-2 py-3 md:rounded-none md:bg-transparent md:px-0 md:py-0">
+        {list}
+      </div>
+    )
   return (
     // each column scrolls on its own and together they fill the rest of
     // the window exactly: the page itself never scrolls (it had 88 px of
@@ -211,27 +211,27 @@ export function InteractionsPage() {
     <div
       ref={fill.box}
       style={fill.height ? { height: fill.height } : undefined}
-      className="grid grid-cols-[16rem_minmax(0,1fr)] gap-6"
+      className="grid grid-cols-[15rem_minmax(0,1fr)] gap-0 border-t border-brand-edge"
     >
-      <div
+      <OverlayScroll
         data-testid="interaction-list-scroll"
-        className="min-h-0 min-w-0 overflow-y-auto overscroll-contain border-r border-brand-edge pr-3 pb-4"
+        className="min-h-0 min-w-0 border-r border-brand-edge"
       >
         {list}
-      </div>
-      <div
+      </OverlayScroll>
+      <OverlayScroll
         data-testid="interaction-detail-scroll"
-        className="min-h-0 min-w-0 overflow-y-auto overscroll-contain pb-4"
+        className="min-h-0 min-w-0 pl-4"
       >
         {detail}
-      </div>
+      </OverlayScroll>
     </div>
   )
 }
 
 /**
  * The rest of the scroller's height below this box (its top inside the
- * scroller, the page's bottom padding off): the two columns fill the window
+ * scroller, the enclosing pane's bottom padding off): the two columns fill the window
  * and scroll inside, the page never does. Re-measured on resize.
  */
 function useFillWindow(on: boolean) {
@@ -241,13 +241,13 @@ function useFillWindow(on: boolean) {
     const el = box.current
     const scroller = el?.closest<HTMLElement>('.overflow-y-auto')
     if (!on || !el || !scroller || typeof ResizeObserver === 'undefined') return
-    const main = document.getElementById('console-main')
+    const pane = el.closest<HTMLElement>('[data-testid="me-pane"]')
     const measure = () => {
       const top =
         el.getBoundingClientRect().top -
         scroller.getBoundingClientRect().top +
         scroller.scrollTop
-      const pad = main ? parseFloat(getComputedStyle(main).paddingBottom) : 0
+      const pad = pane ? parseFloat(getComputedStyle(pane).paddingBottom) : 0
       setHeight(Math.max(240, Math.floor(scroller.clientHeight - top - pad)))
     }
     measure()

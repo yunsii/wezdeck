@@ -7,12 +7,12 @@ msgstr ""
 "X-Generator: @lingui/cli\n"
 "Language: zh\n"
 
-#: src/features/session-git.tsx:56
+#: src/features/session-git.tsx:57
 msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:458
+#: src/features/chat-thread.tsx:471
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -25,15 +25,15 @@ msgstr "（可多选）"
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
-#: src/features/session-git.tsx:63
+#: src/features/session-git.tsx:64
 msgid "{ahead} commits not pushed yet."
 msgstr "有 {ahead} 个提交还没推送。"
 
-#: src/features/session-git.tsx:61
+#: src/features/session-git.tsx:62
 msgid "{ahead} commits to push, {behind} to pull."
 msgstr "有 {ahead} 个提交待推送，{behind} 个待拉取。"
 
-#: src/features/session-git.tsx:65
+#: src/features/session-git.tsx:66
 msgid "{behind} commits to pull."
 msgstr "有 {behind} 个提交待拉取。"
 
@@ -111,8 +111,8 @@ msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
 #: src/features/session-new-direction.tsx:74
-msgid "{reason} · opens one more"
-msgstr "{reason} · 将新开一个"
+#~ msgid "{reason} · opens one more"
+#~ msgstr "{reason} · 将新开一个"
 
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
@@ -126,7 +126,7 @@ msgstr "{runningCount} 个子 agent 运行中"
 msgid "{runs} runs"
 msgstr "{runs} 次"
 
-#: src/features/session-git.tsx:52
+#: src/features/session-git.tsx:53
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
@@ -143,7 +143,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:429
+#: src/features/console-sessions.tsx:445
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -155,11 +155,11 @@ msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
-#: src/features/session-git.tsx:53
+#: src/features/session-git.tsx:54
 msgid "{unstaged} modified"
 msgstr "已修改 {unstaged} 个"
 
-#: src/features/session-git.tsx:54
+#: src/features/session-git.tsx:55
 msgid "{untracked} untracked"
 msgstr "未跟踪 {untracked} 个"
 
@@ -180,9 +180,9 @@ msgid "+ Description"
 msgstr "+ 描述"
 
 #: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:432
-msgid "+ New direction"
-msgstr "+ 新方向"
+#: src/features/session-new.tsx:424
+#~ msgid "+ New direction"
+#~ msgstr "+ 新方向"
 
 #: src/features/collab-metrics.tsx:52
 msgid "24h · no runs"
@@ -192,7 +192,7 @@ msgstr "24 小时 · 无运行"
 msgid "5 h"
 msgstr "5 小时"
 
-#: src/features/session-info.tsx:87
+#: src/features/session-info.tsx:90
 msgid "5-hour limit"
 msgstr "5 小时额度"
 
@@ -200,7 +200,7 @@ msgstr "5 小时额度"
 msgid "7 d"
 msgstr "7 天"
 
-#: src/features/session-info.tsx:88
+#: src/features/session-info.tsx:91
 msgid "7-day limit"
 msgstr "7 天额度"
 
@@ -228,13 +228,13 @@ msgstr "后台还在跑，等它结束再接管。"
 msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
 msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 WezTerm 标签、tmux 窗格和 git worktree，离开电脑也能在手机上接着干。"
 
-#: src/features/session-info.tsx:93
+#: src/features/session-info.tsx:96
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/session-new-panels.tsx:302
-msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
-msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
+#: src/features/session-new-panels.tsx:324
+#~ msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
+#~ msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
 
 #: src/features/landing-page.tsx:93
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
@@ -260,7 +260,7 @@ msgstr "每个约 {minLow}–{minHigh} 分钟，内存峰值约 {gb} GB"
 msgid "Accept edits"
 msgstr "自动编辑"
 
-#: src/features/session-info.tsx:92
+#: src/features/session-info.tsx:95
 msgid "Account limits"
 msgstr "账号额度"
 
@@ -280,34 +280,39 @@ msgstr "登记于"
 msgid "after"
 msgstr "依赖"
 
-#: src/features/session-permission.tsx:93
+#: src/features/session-permission.tsx:101
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:116
-#: src/features/session-new-panels.tsx:122
+#: src/features/session-new-panels.tsx:132
+#: src/features/session-new-panels.tsx:138
 msgid "Agent"
 msgstr "智能体"
 
-#: src/features/session-info.tsx:53
+#: src/features/session-info.tsx:56
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:423
-#: src/features/session-list.tsx:472
+#: src/features/session-list.tsx:413
+#: src/features/session-list.tsx:463
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
+#: src/features/session-commands.tsx:224
+#: src/features/session-skills.tsx:77
+msgid "agent settings and execution mode"
+msgstr "查看设置与执行模式"
+
 #: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:84
+#: src/features/me-agents.tsx:85
 msgid "Agents"
 msgstr "智能体"
 
-#: src/features/session-new.tsx:205
+#: src/features/session-new-panels.tsx:33
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
-#: src/features/console-diagnostics.tsx:131
+#: src/features/console-diagnostics.tsx:132
 msgid "All"
 msgstr "全部"
 
@@ -316,7 +321,7 @@ msgctxt "filter"
 msgid "All"
 msgstr "全部"
 
-#: src/features/console-diagnostics.tsx:142
+#: src/features/console-diagnostics.tsx:143
 msgid "All categories"
 msgstr "全部分类"
 
@@ -340,9 +345,13 @@ msgstr "全部档位"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Allow"
 msgstr "允许"
+
+#: src/features/session-permission.tsx:100
+msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
+msgstr "允许会确认默认选中的 Yes（Enter）；拒绝发送 Esc。持久化白名单规则需在终端选择。"
 
 #: src/features/remote-badge.tsx:135
 msgid "Allow LAN direct"
@@ -357,8 +366,20 @@ msgid "Already the latest"
 msgstr "已是最新版本"
 
 #: src/features/session-elicitation.tsx:210
-msgid "Answer sent; waiting for Grok to continue…"
-msgstr "答案已发送，等待 Grok 继续……"
+#~ msgid "Answer sent; waiting for Grok to continue…"
+#~ msgstr "答案已发送，等待 Grok 继续……"
+
+#: src/features/session-elicitation.tsx:210
+msgid "Answer sent; waiting for the agent to continue…"
+msgstr "答案已发送，等待 Agent 继续……"
+
+#: src/features/session-permission.tsx:55
+msgid "Antigravity asks to run this"
+msgstr "Antigravity 请求执行此操作"
+
+#: src/features/session-commands.tsx:276
+msgid "Antigravity commands, sent into the pane"
+msgstr "Antigravity 命令，直接发到终端窗格"
 
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
@@ -399,11 +420,11 @@ msgstr "批准计划"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
-#: src/features/session-permission.tsx:92
+#: src/features/session-permission.tsx:98
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。选择继续规划后，可以在下面输入框里说明要改什么。"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Approve the plan"
 msgstr "批准计划"
 
@@ -459,22 +480,22 @@ msgstr "自动批准编辑（未开启 Auto 模式）"
 msgid "Availability and note"
 msgstr "可用状态与备注"
 
-#: src/features/console-me.tsx:450
+#: src/features/console-me.tsx:461
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:165
+#: src/features/me-agents.tsx:166
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
-#: src/features/session-new.tsx:236
-msgid "Back to message"
-msgstr "返回写消息"
+#: src/features/session-new.tsx:227
+#~ msgid "Back to message"
+#~ msgstr "返回写消息"
 
-#: src/features/session-new.tsx:236
-msgid "Back to place"
-msgstr "返回选位置"
+#: src/features/session-new.tsx:227
+#~ msgid "Back to place"
+#~ msgstr "返回选位置"
 
 #: src/features/console-collab-run.tsx:124
 msgid "Backend"
@@ -485,7 +506,7 @@ msgid "background"
 msgstr "后台"
 
 #: src/features/session-background.tsx:133
-#: src/features/session-info.tsx:82
+#: src/features/session-info.tsx:85
 msgid "Background tasks"
 msgstr "后台任务"
 
@@ -514,7 +535,7 @@ msgid "Block and underscore need Chrome 144 or later; other browsers keep the ba
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
 #: src/features/session-empty.tsx:49
-#: src/features/session-info.tsx:60
+#: src/features/session-info.tsx:63
 msgid "Branch"
 msgstr "分支"
 
@@ -526,7 +547,7 @@ msgstr "分组明细"
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读写都不需要设备密钥，这里没有需要批准的。"
 
-#: src/features/session-skills.tsx:48
+#: src/features/session-skills.tsx:49
 msgid "Built in"
 msgstr "内置"
 
@@ -555,7 +576,7 @@ msgstr "字节"
 #: src/features/console-collab.tsx:229
 #: src/features/console-collab.tsx:280
 #: src/features/console-collab.tsx:364
-#: src/features/session-info.tsx:86
+#: src/features/session-info.tsx:89
 msgid "Cache hit"
 msgstr "缓存命中"
 
@@ -563,7 +584,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:505
+#: src/features/console-sessions.tsx:521
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -581,7 +602,7 @@ msgstr "取消"
 msgid "Cancel (Esc)"
 msgstr "取消（Esc）"
 
-#: src/features/session-info.tsx:47
+#: src/features/session-info.tsx:50
 msgid "Capabilities"
 msgstr "能力"
 
@@ -593,8 +614,8 @@ msgstr "能力（{capabilityCount}）"
 msgid "Carry a brief"
 msgstr "携带简报"
 
-#: src/features/console-diagnostics.tsx:140
-#: src/features/console-diagnostics.tsx:317
+#: src/features/console-diagnostics.tsx:141
+#: src/features/console-diagnostics.tsx:319
 msgid "Category"
 msgstr "分类"
 
@@ -602,7 +623,7 @@ msgstr "分类"
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
 
-#: src/features/session-git.tsx:225
+#: src/features/session-git.tsx:226
 msgctxt "git"
 msgid "Changes"
 msgstr "变更"
@@ -639,20 +660,20 @@ msgstr "子单"
 msgid "claimed"
 msgstr "认领"
 
-#: src/features/session-permission.tsx:50
+#: src/features/session-permission.tsx:56
 msgid "Claude asks to run this"
 msgstr "Claude 请求执行"
 
-#: src/features/session-commands.tsx:238
+#: src/features/session-commands.tsx:277
 msgid "Claude commands, sent into the pane"
 msgstr "Claude 命令，发进窗格执行"
 
-#: src/features/session-permission.tsx:49
+#: src/features/session-permission.tsx:53
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-composer.tsx:474
 #: src/features/session-composer.tsx:475
+#: src/features/session-composer.tsx:476
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -661,14 +682,14 @@ msgstr "清空输入"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "清空输入（Esc Esc）"
 
-#: src/features/session-list.tsx:310
-#: src/features/session-list.tsx:413
+#: src/features/session-list.tsx:296
+#: src/features/session-list.tsx:403
 msgid "Clear search"
 msgstr "清除搜索"
 
-#: src/features/session-chat-group.tsx:134
+#: src/features/session-chat-group.tsx:116
 #: src/features/session-clear.tsx:114
-#: src/features/session-list.tsx:142
+#: src/features/session-list.tsx:124
 msgid "Clearing…"
 msgstr "处理中…"
 
@@ -689,7 +710,7 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/session-commands.tsx:244
+#: src/features/session-commands.tsx:283
 msgid "Close commands"
 msgstr "关闭命令"
 
@@ -728,12 +749,12 @@ msgstr "协作指标"
 msgid "Collab tickets"
 msgstr "协作工单"
 
-#: src/features/session-chat-group.tsx:293
+#: src/features/session-chat-group.tsx:291
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
 #: src/features/console-collab-run.tsx:114
-#: src/features/session-skills.tsx:49
+#: src/features/session-skills.tsx:50
 msgid "Command"
 msgstr "命令"
 
@@ -745,23 +766,23 @@ msgstr "命令输出"
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
-#: src/features/session-commands.tsx:252
+#: src/features/session-commands.tsx:291
 #: src/features/session-composer.tsx:263
 msgid "Commands"
 msgstr "命令"
 
-#: src/features/session-skills.tsx:97
+#: src/features/session-skills.tsx:114
 msgid "Commands and skills"
 msgstr "命令与能力"
 
-#: src/features/session-git.tsx:232
+#: src/features/session-git.tsx:233
 msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
 #: src/features/session-new-direction.tsx:70
-msgid "commits not in main yet"
-msgstr "有未合入主分支的提交"
+#~ msgid "commits not in main yet"
+#~ msgstr "有未合入主分支的提交"
 
 #: src/features/chat-turn.tsx:143
 msgid "Compacting conversation"
@@ -803,7 +824,7 @@ msgstr "已确认：建了 {n} 张子单，调度已启动"
 msgid "conflict"
 msgstr "冲突"
 
-#: src/features/session-git.tsx:182
+#: src/features/session-git.tsx:183
 msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
@@ -827,7 +848,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:320
+#: src/features/console-shell.tsx:326
 msgid "Connection details"
 msgstr "连接详情"
 
@@ -839,11 +860,11 @@ msgstr "连接失败"
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
-#: src/features/console-shell.tsx:238
+#: src/features/console-shell.tsx:237
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/session-info.tsx:83
+#: src/features/session-info.tsx:86
 #: src/features/session-usage.tsx:46
 msgid "Context"
 msgstr "上下文"
@@ -852,29 +873,29 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:442
+#: src/features/chat-thread.tsx:455
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:443
+#: src/features/chat-thread.tsx:456
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
-#: src/features/session-info.tsx:72
+#: src/features/session-info.tsx:75
 msgid "Context compactions"
 msgstr "上下文压缩次数"
 
-#: src/features/session-commands.tsx:220
-#: src/features/session-skills.tsx:62
+#: src/features/session-commands.tsx:257
+#: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "上下文占用"
 
-#: src/features/session-new-panels.tsx:327
-msgid "Continue"
-msgstr "继续"
+#: src/features/session-new-panels.tsx:349
+#~ msgid "Continue"
+#~ msgstr "继续"
 
 #: src/features/session-composer.tsx:90
-#: src/features/session-info.tsx:287
+#: src/features/session-info.tsx:292
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
 msgstr "已复制"
@@ -887,7 +908,7 @@ msgstr "已复制 {label}"
 msgid "Copied reference"
 msgstr "已复制引用"
 
-#: src/features/console-diagnostics.tsx:344
+#: src/features/console-diagnostics.tsx:346
 msgid "Copied the raw line"
 msgstr "已复制原始日志"
 
@@ -912,7 +933,7 @@ msgstr "复制命令"
 msgid "Copy error"
 msgstr "复制错误信息"
 
-#: src/features/console-diagnostics.tsx:348
+#: src/features/console-diagnostics.tsx:350
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
@@ -920,17 +941,17 @@ msgstr "复制原始日志"
 #: src/features/copy-reference.tsx:119
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:138
 #: src/features/me-agents.tsx:139
-#: src/features/session-chat-group.tsx:124
-#: src/features/session-chat-group.tsx:235
-#: src/features/session-list.tsx:132
-#: src/features/session-list.tsx:240
+#: src/features/me-agents.tsx:140
+#: src/features/session-chat-group.tsx:107
+#: src/features/session-chat-group.tsx:217
+#: src/features/session-list.tsx:115
+#: src/features/session-list.tsx:223
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "复制引用"
 
-#: src/features/session-info.tsx:287
+#: src/features/session-info.tsx:292
 msgid "Copy session reference for an agent"
 msgstr "复制会话引用（给 agent 用）"
 
@@ -953,8 +974,8 @@ msgstr "复制值"
 msgid "Cost"
 msgstr "花费"
 
-#: src/features/session-commands.tsx:225
-#: src/features/session-skills.tsx:63
+#: src/features/session-commands.tsx:262
+#: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "费用与额度"
 
@@ -966,11 +987,11 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:210
+#: src/features/session-new-panels.tsx:38
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-agents.tsx:30
+#: src/features/me-agents.tsx:31
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
@@ -986,7 +1007,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new-panels.tsx:197
+#: src/features/session-new-panels.tsx:199
 msgid "Create session"
 msgstr "创建会话"
 
@@ -994,9 +1015,13 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:201
-msgid "Creating the worktree…"
-msgstr "正在创建工作树…"
+#: src/features/session-new-panels.tsx:29
+msgid "Creating the session group…"
+msgstr "正在创建会话组…"
+
+#: src/features/session-new-panels.tsx:35
+#~ msgid "Creating the worktree…"
+#~ msgstr "正在创建工作树…"
 
 #: src/features/ticket-new.tsx:222
 msgid "Creating…"
@@ -1020,7 +1045,7 @@ msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
 #: src/features/console-me.tsx:220
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:386
 msgid "Dark"
 msgstr "深色"
@@ -1033,11 +1058,11 @@ msgstr "数据截至 {time}"
 msgid "Decision"
 msgstr "决定"
 
-#: src/features/me-agents.tsx:46
+#: src/features/me-agents.tsx:47
 msgid "Default agent"
 msgstr "默认智能体"
 
-#: src/features/me-agents.tsx:44
+#: src/features/me-agents.tsx:45
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
@@ -1049,7 +1074,17 @@ msgstr "默认模式：未开启 Auto 模式"
 msgid "Degraded"
 msgstr "受限"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-delete.ts:19
+msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
+msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
+
+#: src/features/session-chat-group.tsx:238
+#: src/features/session-info.tsx:341
+#: src/features/session-list.tsx:244
+msgid "Delete session"
+msgstr "删除会话"
+
+#: src/features/session-permission.tsx:93
 msgid "Deny"
 msgstr "拒绝"
 
@@ -1057,11 +1092,11 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-new-panels.tsx:309
-msgid "Description"
-msgstr "描述"
+#: src/features/session-new-panels.tsx:331
+#~ msgid "Description"
+#~ msgstr "描述"
 
-#: src/features/session-info.tsx:81
+#: src/features/session-info.tsx:84
 msgid "Desk idle for"
 msgstr "终端空闲"
 
@@ -1069,9 +1104,9 @@ msgstr "终端空闲"
 msgid "Device access"
 msgstr "设备授权"
 
-#: src/features/console-diagnostics.tsx:168
-#: src/features/console-me.tsx:398
-#: src/features/console-shell.tsx:96
+#: src/features/console-diagnostics.tsx:173
+#: src/features/console-me.tsx:401
+#: src/features/console-shell.tsx:97
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -1080,13 +1115,13 @@ msgid "Direct"
 msgstr "直连"
 
 #: src/features/session-new-direction.tsx:121
-#: src/features/session-new-panels.tsx:242
-#: src/features/session-new.tsx:433
-msgid "Direction"
-msgstr "方向"
+#: src/features/session-new-panels.tsx:264
+#: src/features/session-new.tsx:424
+#~ msgid "Direction"
+#~ msgstr "方向"
 
 #: src/features/session-empty.tsx:48
-#: src/features/session-info.tsx:56
+#: src/features/session-info.tsx:59
 msgid "Directory"
 msgstr "目录"
 
@@ -1095,9 +1130,9 @@ msgid "Disable this agent"
 msgstr "停用此 Agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:67
-#: src/features/me-agents.tsx:119
-#: src/features/session-new-panels.tsx:133
+#: src/features/me-agents.tsx:68
+#: src/features/me-agents.tsx:120
+#: src/features/session-new-panels.tsx:149
 msgid "Disabled"
 msgstr "已停用"
 
@@ -1115,8 +1150,8 @@ msgstr "正在断开…"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
-#: src/features/session-chat-group.tsx:95
-#: src/features/session-list.tsx:63
+#: src/features/session-chat-group.tsx:94
+#: src/features/session-list.tsx:62
 msgid "Done"
 msgstr "已完成"
 
@@ -1128,15 +1163,15 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:212
-#: src/features/session-chat-group.tsx:315
-#: src/features/session-list.tsx:66
+#: src/features/session-chat-group.tsx:194
+#: src/features/session-chat-group.tsx:313
+#: src/features/session-list.tsx:65
 msgid "Draft"
 msgstr "草稿"
 
-#: src/features/session-new-panels.tsx:291
-msgid "e.g. ux, ci, i18n"
-msgstr "例如 ux、ci、i18n"
+#: src/features/session-new-panels.tsx:313
+#~ msgid "e.g. ux, ci, i18n"
+#~ msgstr "例如 ux、ci、i18n"
 
 #: src/features/session-commands.tsx:130
 msgid "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
@@ -1154,11 +1189,11 @@ msgstr "修改描述"
 msgid "Effort"
 msgstr "推理力度"
 
-#: src/features/console-me.tsx:301
+#: src/features/console-me.tsx:302
 msgid "Enabled"
 msgstr "已启用"
 
-#: src/features/console-me.tsx:300
+#: src/features/console-me.tsx:301
 msgid "Enabled on this computer"
 msgstr "本机，已启用"
 
@@ -1185,7 +1220,7 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
-#: src/features/console-diagnostics.tsx:133
+#: src/features/console-diagnostics.tsx:134
 msgid "Errors"
 msgstr "错误"
 
@@ -1203,8 +1238,8 @@ msgid "Event stream"
 msgstr "事件流"
 
 #: src/features/session-new-direction.tsx:175
-msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
-msgstr "{direction} 的工作站都在忙：新开一个并行的，描述沿用。"
+#~ msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
+#~ msgstr "{direction} 的工作站都在忙：新开一个并行的，描述沿用。"
 
 #: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
@@ -1214,7 +1249,7 @@ msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协�
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
 
-#: src/features/session-info.tsx:76
+#: src/features/session-info.tsx:79
 msgid "Execution mode"
 msgstr "执行模式"
 
@@ -1226,7 +1261,7 @@ msgstr "执行模式：{mode}"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/session-chat-group.tsx:293
+#: src/features/session-chat-group.tsx:291
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -1246,11 +1281,11 @@ msgstr "失败"
 msgid "Failed runs"
 msgstr "失败次数"
 
-#: src/features/session-info.tsx:67
+#: src/features/session-info.tsx:70
 msgid "File"
 msgstr "文件"
 
-#: src/features/session-git.tsx:57
+#: src/features/session-git.tsx:58
 msgid "Files: {list}."
 msgstr "文件：{list}。"
 
@@ -1276,11 +1311,11 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new-panels.tsx:104
-msgid "First message to the agent"
-msgstr "给 agent 的第一条消息"
+#: src/features/session-new-panels.tsx:126
+#~ msgid "First message to the agent"
+#~ msgstr "给 agent 的第一条消息"
 
-#: src/features/session-info.tsx:73
+#: src/features/session-info.tsx:76
 msgid "First turn"
 msgstr "第一轮"
 
@@ -1304,8 +1339,8 @@ msgstr "完全访问"
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
-#: src/features/session-git.tsx:219
-#: src/features/session-git.tsx:358
+#: src/features/session-git.tsx:220
+#: src/features/session-git.tsx:359
 msgid "Git status"
 msgstr "Git 状态"
 
@@ -1316,6 +1351,11 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 #: src/features/remote-badge.tsx:134
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
+
+#: src/features/session-info.tsx:265
+#: src/features/session-new-panels.tsx:118
+msgid "Group name"
+msgstr "组名"
 
 #: src/features/me-agent-detail.tsx:99
 msgid "Haiku tier"
@@ -1370,7 +1410,7 @@ msgstr "收起初始消息"
 msgid "hit {hit}%"
 msgstr "命中 {hit}%"
 
-#: src/features/session-new-panels.tsx:137
+#: src/features/session-new-panels.tsx:153
 msgid "host default"
 msgstr "主机默认"
 
@@ -1384,7 +1424,7 @@ msgstr "主机离线"
 msgid "Host signals"
 msgstr "主机信号"
 
-#: src/features/console-activity.tsx:210
+#: src/features/console-activity.tsx:211
 #: src/features/tickets-view.tsx:161
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
@@ -1393,7 +1433,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:379
+#: src/features/console-me.tsx:382
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"
@@ -1408,8 +1448,8 @@ msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
 #: src/features/session-new-direction.tsx:65
-msgid "idle"
-msgstr "空闲"
+#~ msgid "idle"
+#~ msgstr "空闲"
 
 #: src/features/session-list.tsx:247
 #~ msgctxt "filter"
@@ -1422,8 +1462,8 @@ msgid "Idle"
 msgstr "空闲"
 
 #: src/features/session-new-direction.tsx:65
-msgid "idle · {count} workstations"
-msgstr "空闲 · 共 {count} 个工作站"
+#~ msgid "idle · {count} workstations"
+#~ msgstr "空闲 · 共 {count} 个工作站"
 
 #: src/features/chat-images.tsx:58
 msgid "Image"
@@ -1508,11 +1548,11 @@ msgstr "公网"
 msgid "interrupt"
 msgstr "打断"
 
-#: src/features/session-info.tsx:230
+#: src/features/session-info.tsx:235
 msgid "is queued"
 msgstr "排队等这一轮结束"
 
-#: src/features/session-info.tsx:229
+#: src/features/session-info.tsx:234
 msgid "joins the current turn"
 msgstr "插入当前这一轮"
 
@@ -1520,7 +1560,7 @@ msgstr "插入当前这一轮"
 msgid "Jump to your message: {text}"
 msgstr "跳到你的消息：{text}"
 
-#: src/features/session-info.tsx:231
+#: src/features/session-info.tsx:236
 msgid "Just compacted; updates after the next reply"
 msgstr "刚压缩，下一次回复后更新"
 
@@ -1528,11 +1568,11 @@ msgstr "刚压缩，下一次回复后更新"
 msgid "just now"
 msgstr "刚刚"
 
-#: src/features/console-shell.tsx:487
+#: src/features/console-shell.tsx:493
 msgid "just restarted"
 msgstr "刚重启"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-permission.tsx:93
 msgid "Keep planning"
 msgstr "继续规划"
 
@@ -1572,12 +1612,12 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:469
+#: src/features/console-shell.tsx:475
 #: src/features/me-host.tsx:116
 msgid "Last sample"
 msgstr "最近采样"
 
-#: src/features/session-info.tsx:74
+#: src/features/session-info.tsx:77
 msgid "Last turn"
 msgstr "最后一轮"
 
@@ -1610,17 +1650,17 @@ msgstr "字母"
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
-#: src/features/console-diagnostics.tsx:126
-#: src/features/console-diagnostics.tsx:316
+#: src/features/console-diagnostics.tsx:127
+#: src/features/console-diagnostics.tsx:318
 msgid "Level"
 msgstr "级别"
 
-#: src/features/session-git.tsx:66
+#: src/features/session-git.tsx:67
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
 #: src/features/console-me.tsx:219
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:385
 msgid "Light"
 msgstr "浅色"
@@ -1629,15 +1669,19 @@ msgstr "浅色"
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
+#: src/features/session-skills.tsx:80
+msgid "list available commands"
+msgstr "查看可用命令"
+
 #: src/features/console-collab-run.tsx:48
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:452
+#: src/features/console-sessions.tsx:468
 msgid "Load earlier"
 msgstr "加载更早"
 
-#: src/features/session-info.tsx:71
+#: src/features/session-info.tsx:74
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
@@ -1645,29 +1689,29 @@ msgstr "本页已加载"
 msgid "Loading original…"
 msgstr "正在加载原图…"
 
-#: src/features/console-activity.tsx:216
+#: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
-#: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:449
+#: src/features/console-diagnostics.tsx:101
+#: src/features/console-sessions.tsx:465
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:82
+#: src/features/me-agents.tsx:83
 #: src/features/session-commands.tsx:133
-#: src/features/session-git.tsx:371
+#: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:233
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
 
-#: src/features/console-diagnostics.tsx:197
+#: src/features/console-diagnostics.tsx:199
 msgid "Log entry"
 msgstr "日志详情"
 
-#: src/features/console-diagnostics.tsx:171
-#: src/features/console-diagnostics.tsx:263
+#: src/features/console-diagnostics.tsx:170
+#: src/features/console-diagnostics.tsx:265
 msgid "Log stream"
 msgstr "日志流"
 
@@ -1678,6 +1722,15 @@ msgstr "登录"
 #: src/features/console-activity.tsx:100
 msgid "made progress"
 msgstr "有进展"
+
+#: src/features/session-skills.tsx:79
+msgid "manage MCP servers"
+msgstr "管理 MCP 服务"
+
+#: src/features/session-commands.tsx:229
+#: src/features/session-skills.tsx:78
+msgid "manage tool permission rules"
+msgstr "管理工具权限规则"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -1691,12 +1744,12 @@ msgstr "受管模型覆盖"
 msgid "Mark done"
 msgstr "标为完成"
 
-#: src/features/session-chat-group.tsx:133
-#: src/features/session-chat-group.tsx:254
+#: src/features/session-chat-group.tsx:115
+#: src/features/session-chat-group.tsx:249
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
-#: src/features/session-list.tsx:141
-#: src/features/session-list.tsx:259
+#: src/features/session-list.tsx:123
+#: src/features/session-list.tsx:255
 msgid "Mark read"
 msgstr "标为已读"
 
@@ -1716,15 +1769,15 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:466
+#: src/features/session-composer.tsx:467
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:413
+#: src/features/session-composer.tsx:414
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
-#: src/features/session-info.tsx:70
+#: src/features/session-info.tsx:73
 msgid "Messages"
 msgstr "消息数"
 
@@ -1738,7 +1791,7 @@ msgstr "模式"
 
 #: src/features/me-agent-detail.tsx:70
 #: src/features/session-empty.tsx:47
-#: src/features/session-info.tsx:55
+#: src/features/session-info.tsx:58
 msgid "Model"
 msgstr "模型"
 
@@ -1747,16 +1800,16 @@ msgstr "模型"
 msgid "Model ID"
 msgstr "模型 ID"
 
-#: src/features/session-info.tsx:69
+#: src/features/session-info.tsx:72
 msgid "Modified"
 msgstr "修改时间"
 
-#: src/features/session-git.tsx:184
+#: src/features/session-git.tsx:185
 msgctxt "git"
 msgid "Modified"
 msgstr "已修改"
 
-#: src/features/session-git.tsx:288
+#: src/features/session-git.tsx:289
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
@@ -1772,22 +1825,22 @@ msgstr "多选题：点击切换选项，然后按 Enter。"
 msgid "Name"
 msgstr "名称"
 
-#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:66
 msgid "name this session"
 msgstr "给会话命名"
 
-#: src/features/session-info.tsx:94
+#: src/features/session-info.tsx:97
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-list.tsx:62
+#: src/features/session-list.tsx:61
 msgid "Needs a decision"
 msgstr "需要确认"
 
-#: src/features/session-new-panels.tsx:150
-#: src/features/session-new-panels.tsx:305
-msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
-msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
+#: src/features/session-new-panels.tsx:172
+#: src/features/session-new-panels.tsx:327
+#~ msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
+#~ msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
 #: src/features/session-header.tsx:238
 msgid "Needs you"
@@ -1804,29 +1857,29 @@ msgid "New conversation"
 msgstr "新开会话"
 
 #: src/features/session-new-direction.tsx:183
-msgid "new direction"
-msgstr "新方向"
+#~ msgid "new direction"
+#~ msgstr "新方向"
 
-#: src/features/session-new-panels.tsx:283
-#: src/features/session-new.tsx:241
-msgid "New direction"
-msgstr "新方向"
+#: src/features/session-new-panels.tsx:305
+#: src/features/session-new.tsx:232
+#~ msgid "New direction"
+#~ msgstr "新方向"
 
 #: src/features/console-keys.tsx:81
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-chat-group.tsx:118
-#: src/features/session-chat-group.tsx:244
-#: src/features/session-list.tsx:126
-#: src/features/session-list.tsx:249
-#: src/features/session-new.tsx:232
-msgid "New round"
-msgstr "新一轮"
+#: src/features/session-chat-group.tsx:120
+#: src/features/session-chat-group.tsx:240
+#: src/features/session-list.tsx:127
+#: src/features/session-list.tsx:251
+#: src/features/session-new.tsx:222
+#~ msgid "New round"
+#~ msgstr "新一轮"
 
-#: src/features/session-chat-group.tsx:185
-#: src/features/session-new.tsx:232
-#: src/features/session-new.tsx:311
+#: src/features/session-chat-group.tsx:167
+#: src/features/session-new.tsx:282
+#: src/features/session-new.tsx:453
 msgid "New session"
 msgstr "新会话"
 
@@ -1834,11 +1887,24 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:307
+#: src/features/session-new.tsx:278
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-info.tsx:303
+#: src/features/session-new.tsx:391
+msgid "New session group"
+msgstr "新会话组"
+
+#: src/features/session-chat-group.tsx:232
+#: src/features/session-chat-group.tsx:323
+#: src/features/session-chat-group.tsx:324
+#: src/features/session-info.tsx:334
+#: src/features/session-list.tsx:238
+#: src/features/session-new.tsx:453
+msgid "New session in this group"
+msgstr "在此组新建会话"
+
+#: src/features/session-info.tsx:308
 msgid "New session title"
 msgstr "新的会话标题"
 
@@ -1888,7 +1954,7 @@ msgstr "下一张"
 msgid "Next session waiting on you"
 msgstr "下一个等你处理的会话"
 
-#: src/features/session-info.tsx:97
+#: src/features/session-info.tsx:100
 msgid "no"
 msgstr "否"
 
@@ -1900,7 +1966,7 @@ msgstr "当前没有远控会话"
 msgid "No activity for a while"
 msgstr "有一阵子没动静了"
 
-#: src/features/console-activity.tsx:217
+#: src/features/console-activity.tsx:218
 msgid "No activity yet"
 msgstr "还没有动态"
 
@@ -1908,7 +1974,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:418
+#: src/features/session-list.tsx:408
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1933,9 +1999,8 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:65
-#: src/features/session-switcher.tsx:195
-#: src/features/session-switcher.tsx:196
+#: src/features/session-list.tsx:64
+#: src/features/session-switcher.tsx:185
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -1943,7 +2008,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/console-diagnostics.tsx:102
+#: src/features/console-diagnostics.tsx:103
 msgid "No matching log entries"
 msgstr "没有匹配的日志条目"
 
@@ -1963,7 +2028,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/session-list.tsx:405
+#: src/features/session-list.tsx:395
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -1975,8 +2040,8 @@ msgstr "未选中工单"
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
-#: src/features/session-git.tsx:57
-#: src/features/session-git.tsx:283
+#: src/features/session-git.tsx:58
+#: src/features/session-git.tsx:284
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
@@ -1985,15 +2050,15 @@ msgstr "没有未提交的改动。"
 msgid "no upstream"
 msgstr "无上游"
 
-#: src/features/session-git.tsx:59
+#: src/features/session-git.tsx:60
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:126
-#: src/features/session-new-panels.tsx:135
+#: src/features/me-agents.tsx:127
+#: src/features/session-new-panels.tsx:151
 msgid "Not configured"
 msgstr "未配置"
 
@@ -2013,19 +2078,19 @@ msgstr "未实现"
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:330
+#: src/features/console-me.tsx:333
 msgid "Not paired"
 msgstr "未配对"
 
-#: src/features/session-git.tsx:301
+#: src/features/session-git.tsx:302
 msgid "Not pulled"
 msgstr "未拉取"
 
-#: src/features/session-git.tsx:296
+#: src/features/session-git.tsx:297
 msgid "Not pushed"
 msgstr "未推送"
 
-#: src/features/console-shell.tsx:420
+#: src/features/console-shell.tsx:426
 msgid "Not running"
 msgstr "未运行"
 
@@ -2054,7 +2119,7 @@ msgstr "确认之前不会建任何单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-skills.tsx:219
+#: src/features/session-skills.tsx:236
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2066,7 +2131,7 @@ msgstr "这个仓库暂时没有要跟进的事。"
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-me.tsx:305
+#: src/features/console-me.tsx:306
 msgid "Off"
 msgstr "未启用"
 
@@ -2082,7 +2147,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:291
+#: src/features/session-switcher.tsx:271
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -2090,7 +2155,7 @@ msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
 
-#: src/features/console-diagnostics.tsx:358
+#: src/features/console-diagnostics.tsx:360
 msgid "Only this trace"
 msgstr "只看这个 trace"
 
@@ -2110,7 +2175,7 @@ msgstr "在终端中打开"
 msgid "Open in terminal: switch WezTerm to this session's tmux window"
 msgstr "在终端中打开：把 WezTerm 切到这个会话的 tmux 窗口"
 
-#: src/features/session-info.tsx:392
+#: src/features/session-info.tsx:425
 msgid "Open in VS Code"
 msgstr "在 VS Code 中打开"
 
@@ -2118,7 +2183,7 @@ msgstr "在 VS Code 中打开"
 msgid "Open now"
 msgstr "在线"
 
-#: src/features/console-sessions.tsx:528
+#: src/features/console-sessions.tsx:544
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2147,8 +2212,8 @@ msgid "Opening…"
 msgstr "正在打开…"
 
 #: src/features/session-new-direction.tsx:185
-msgid "opens one more"
-msgstr "将新开"
+#~ msgid "opens one more"
+#~ msgstr "将新开"
 
 #: src/features/host-quick-controls.tsx:85
 msgid "OPPO remote control"
@@ -2166,15 +2231,20 @@ msgstr "Opus 档"
 msgid "Origin session"
 msgstr "发起会话"
 
+#: src/features/session-commands.tsx:219
+#: src/features/session-skills.tsx:75
+msgid "outline a plan before editing"
+msgstr "修改前先制定计划"
+
 #: src/features/session-header.tsx:123
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
-#: src/features/session-info.tsx:85
+#: src/features/session-info.tsx:88
 msgid "Output rate"
 msgstr "输出速率"
 
-#: src/features/session-info.tsx:84
+#: src/features/session-info.tsx:87
 msgid "Output tokens"
 msgstr "输出 token"
 
@@ -2194,11 +2264,11 @@ msgstr "需重新配对"
 msgid "Pairing command"
 msgstr "配对命令"
 
-#: src/features/session-info.tsx:66
+#: src/features/session-info.tsx:69
 msgid "Pane"
 msgstr "窗格"
 
-#: src/features/session-info.tsx:64
+#: src/features/session-info.tsx:67
 msgid "Pane role"
 msgstr "窗格角色"
 
@@ -2239,8 +2309,8 @@ msgstr "选择会话（按仓库分组）"
 #~ msgid "Pick a session on the left. j / k move through the list."
 #~ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
-#: src/features/session-commands.tsx:217
-#: src/features/session-skills.tsx:61
+#: src/features/session-commands.tsx:254
+#: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
@@ -2256,11 +2326,11 @@ msgstr "计划模式"
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
-#: src/features/session-info.tsx:90
+#: src/features/session-info.tsx:93
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-skills.tsx:47
+#: src/features/session-skills.tsx:48
 msgid "Plugin"
 msgstr "插件"
 
@@ -2342,17 +2412,17 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:433
+#: src/features/console-shell.tsx:439
 #: src/features/me-host.tsx:59
 #: src/features/me-host.tsx:142
 msgid "Ready"
 msgstr "就绪"
 
-#: src/features/session-info.tsx:77
+#: src/features/session-info.tsx:80
 msgid "Reason"
 msgstr "原因"
 
-#: src/features/session-git.tsx:305
+#: src/features/session-git.tsx:306
 msgid "Recent commits"
 msgstr "最近提交"
 
@@ -2388,11 +2458,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:231
+#: src/features/console-shell.tsx:232
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:396
+#: src/features/console-shell.tsx:402
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -2408,7 +2478,7 @@ msgstr "移除"
 msgid "Remove image"
 msgstr "移除图片"
 
-#: src/features/session-info.tsx:309
+#: src/features/session-info.tsx:314
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
@@ -2472,18 +2542,19 @@ msgstr "仓库"
 msgid "Repo filter"
 msgstr "仓库筛选"
 
-#: src/features/session-info.tsx:57
-#: src/features/session-new-panels.tsx:229
+#: src/features/session-info.tsx:60
+#: src/features/session-new-panels.tsx:91
+#: src/features/session-new-panels.tsx:97
 msgid "Repository"
 msgstr "仓库"
 
-#: src/features/console-me.tsx:319
-#: src/features/me-agents.tsx:59
-#: src/features/session-new-panels.tsx:126
+#: src/features/console-me.tsx:322
+#: src/features/me-agents.tsx:60
+#: src/features/session-new-panels.tsx:142
 msgid "Repository default"
 msgstr "按仓库设置"
 
-#: src/features/session-info.tsx:58
+#: src/features/session-info.tsx:61
 msgid "Repository root"
 msgstr "仓库根目录"
 
@@ -2519,7 +2590,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new.tsx:200
+#: src/features/session-new-panels.tsx:26
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -2545,7 +2616,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/session-chat-group.tsx:90
+#: src/features/session-chat-group.tsx:89
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -2566,14 +2637,14 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:538
+#: src/features/console-shell.tsx:544
 #: src/features/me-host.tsx:100
 msgid "Retry"
 msgstr "重试"
 
 #: src/features/session-new-direction.tsx:185
-msgid "reuse idle"
-msgstr "复用空闲"
+#~ msgid "reuse idle"
+#~ msgstr "复用空闲"
 
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
@@ -2584,8 +2655,8 @@ msgid "Reuses"
 msgstr "复用"
 
 #: src/features/session-new-direction.tsx:174
-msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
-msgstr "复用 {slot}：重置到最新主分支，起一个全新的 agent（上一轮对话仍可恢复）。"
+#~ msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
+#~ msgstr "复用 {slot}：重置到最新主分支，起一个全新的 agent（上一轮对话仍可恢复）。"
 
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
@@ -2637,22 +2708,21 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
 #: src/features/console-collab.tsx:396
-#: src/features/session-new-direction.tsx:67
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "运行中"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:420
+#: src/features/console-shell.tsx:426
 msgid "Running"
 msgstr "运行中"
 
-#: src/features/session-info.tsx:65
+#: src/features/session-info.tsx:68
 msgid "Running in pane"
 msgstr "窗格里在跑"
 
-#: src/features/session-info.tsx:78
+#: src/features/session-info.tsx:81
 msgid "Running substate"
 msgstr "运行子状态"
 
@@ -2682,8 +2752,8 @@ msgstr "运行时"
 
 #: src/features/session-focus.tsx:64
 #: src/features/session-focus.tsx:67
-#: src/features/session-info.tsx:375
-#: src/features/session-info.tsx:378
+#: src/features/session-info.tsx:408
+#: src/features/session-info.tsx:411
 msgid "Runtime action failed"
 msgstr "Runtime 操作失败"
 
@@ -2691,7 +2761,7 @@ msgstr "Runtime 操作失败"
 msgid "Runtime API"
 msgstr "Runtime API"
 
-#: src/features/console-diagnostics.tsx:103
+#: src/features/console-diagnostics.tsx:104
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime 离线时无法获取诊断数据。"
 
@@ -2742,7 +2812,7 @@ msgstr "保存中…"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-skills.tsx:209
+#: src/features/session-skills.tsx:226
 msgid "Search name or description"
 msgstr "搜索名称或描述"
 
@@ -2750,16 +2820,16 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:300
-#: src/features/session-list.tsx:301
+#: src/features/session-list.tsx:286
+#: src/features/session-list.tsx:287
 msgid "Search sessions"
 msgstr "搜索会话"
 
-#: src/features/session-skills.tsx:210
+#: src/features/session-skills.tsx:227
 msgid "Search skills"
 msgstr "搜索能力"
 
-#: src/features/console-shell.tsx:332
+#: src/features/console-shell.tsx:338
 msgid "Sections"
 msgstr "栏目"
 
@@ -2768,7 +2838,7 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:488
+#: src/features/session-composer.tsx:489
 msgid "Send"
 msgstr "发送"
 
@@ -2788,7 +2858,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:207
+#: src/features/session-new-panels.tsx:35
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -2799,7 +2869,7 @@ msgstr "正在发送接续 brief…"
 #: src/features/console-collab-run.tsx:116
 #: src/features/console-collab.tsx:278
 #: src/features/session-empty.tsx:50
-#: src/features/session-info.tsx:42
+#: src/features/session-info.tsx:45
 msgid "Session"
 msgstr "会话"
 
@@ -2807,12 +2877,32 @@ msgstr "会话"
 msgid "Session active"
 msgstr "远控会话进行中"
 
-#: src/features/session-info.tsx:50
+#: src/features/session-delete.ts:43
+msgid "Session deleted"
+msgstr "会话已删除"
+
+#: src/features/session-delete.ts:38
+msgid "Session deleted and worktree removed"
+msgstr "会话已删除，工作树已移除"
+
+#: src/features/session-delete.ts:40
+msgid "Session deleted. Another process is using the worktree."
+msgstr "会话已删除，仍有进程正在使用此工作树。"
+
+#: src/features/session-delete.ts:41
+msgid "Session deleted. The worktree has changes outside the default branch."
+msgstr "会话已删除，工作树还有未合入默认分支的提交。"
+
+#: src/features/session-delete.ts:39
+msgid "Session deleted. The worktree has local changes."
+msgstr "会话已删除，工作树还有本地改动。"
+
+#: src/features/session-info.tsx:53
 msgid "Session id"
 msgstr "会话 ID"
 
 #: src/features/session-header.tsx:251
-#: src/features/session-info.tsx:240
+#: src/features/session-info.tsx:245
 msgid "Session info"
 msgstr "会话信息"
 
@@ -2824,20 +2914,20 @@ msgstr "会话"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:81
+#: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:377
+#: src/features/session-list.tsx:363
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:395
+#: src/features/session-list.tsx:385
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/console-me.tsx:313
-#: src/features/console-shell.tsx:100
+#: src/features/console-me.tsx:315
+#: src/features/console-shell.tsx:101
 msgid "Settings"
 msgstr "我的"
 
@@ -2853,7 +2943,7 @@ msgstr "键盘快捷键"
 msgid "Show all tags"
 msgstr "显示全部标签"
 
-#: src/features/console-sessions.tsx:451
+#: src/features/console-sessions.tsx:467
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -2865,27 +2955,27 @@ msgstr "查看初始消息"
 msgid "Show the call"
 msgstr "跳到发起的调用"
 
-#: src/features/console-activity.tsx:210
+#: src/features/console-activity.tsx:211
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
 
-#: src/features/session-info.tsx:68
+#: src/features/session-info.tsx:71
 msgid "Size"
 msgstr "大小"
 
-#: src/features/session-skills.tsx:157
+#: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "能力"
 
-#: src/features/session-skills.tsx:196
+#: src/features/session-skills.tsx:213
 msgid "Skills · {count}"
 msgstr "能力 · {count}"
 
-#: src/features/session-skills.tsx:152
+#: src/features/session-skills.tsx:169
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
-#: src/features/console-shell.tsx:303
+#: src/features/console-shell.tsx:309
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -2905,7 +2995,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:512
+#: src/features/console-sessions.tsx:528
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -2914,7 +3004,7 @@ msgid "Sonnet tier"
 msgstr "Sonnet 档"
 
 #: src/features/console-collab-run.tsx:160
-#: src/features/console-diagnostics.tsx:318
+#: src/features/console-diagnostics.tsx:320
 msgid "Source"
 msgstr "来源"
 
@@ -2926,14 +3016,17 @@ msgstr "本机来源"
 msgid "Split proposal {pid}"
 msgstr "拆分提案 {pid}"
 
-#: src/features/session-git.tsx:183
+#: src/features/session-git.tsx:184
 msgctxt "git"
 msgid "Staged"
 msgstr "已暂存"
 
 #: src/features/session-commands.tsx:214
-#: src/features/session-skills.tsx:59
+#: src/features/session-commands.tsx:251
 #: src/features/session-skills.tsx:60
+#: src/features/session-skills.tsx:61
+#: src/features/session-skills.tsx:73
+#: src/features/session-skills.tsx:74
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
@@ -2957,11 +3050,12 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:209
+#: src/features/session-new-panels.tsx:37
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:203
+#: src/features/session-new-panels.tsx:28
+#: src/features/session-new-panels.tsx:31
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -2969,18 +3063,18 @@ msgstr "正在启动 agent…"
 msgid "Starting…"
 msgstr "正在启动…"
 
-#: src/features/session-info.tsx:45
+#: src/features/session-info.tsx:48
 msgid "State"
 msgstr "状态"
 
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:138
-#: src/features/session-info.tsx:75
+#: src/features/session-info.tsx:78
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
 
-#: src/features/session-info.tsx:80
+#: src/features/session-info.tsx:83
 msgid "Status updated"
 msgstr "状态更新于"
 
@@ -3000,8 +3094,10 @@ msgstr "已提交"
 msgid "Submitting your answer…"
 msgstr "正在提交答案……"
 
-#: src/features/session-commands.tsx:204
-#: src/features/session-skills.tsx:58
+#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:241
+#: src/features/session-skills.tsx:59
+#: src/features/session-skills.tsx:72
 msgid "summarise the context"
 msgstr "压缩上下文"
 
@@ -3009,7 +3105,7 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:275
+#: src/features/session-switcher.tsx:255
 msgid "Switch chat"
 msgstr "切换对话"
 
@@ -3025,7 +3121,9 @@ msgstr "切换模式"
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
-#: src/features/session-skills.tsx:64
+#: src/features/session-commands.tsx:234
+#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:76
 msgid "switch the model"
 msgstr "切换模型"
 
@@ -3051,7 +3149,7 @@ msgid "Synced"
 msgstr "已同步"
 
 #: src/features/console-me.tsx:218
-#: src/features/console-me.tsx:309
+#: src/features/console-me.tsx:310
 #: src/features/console-shared.tsx:384
 msgid "System"
 msgstr "跟随系统"
@@ -3060,7 +3158,7 @@ msgstr "跟随系统"
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
-#: src/features/session-info.tsx:315
+#: src/features/session-info.tsx:348
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 
@@ -3072,7 +3170,7 @@ msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
-#: src/features/session-info.tsx:89
+#: src/features/session-info.tsx:92
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
 
@@ -3080,7 +3178,7 @@ msgstr "问答可点选项"
 msgid "Technical details"
 msgstr "技术细节"
 
-#: src/features/session-permission.tsx:97
+#: src/features/session-permission.tsx:105
 msgid "Terminal"
 msgstr "终端画面"
 
@@ -3135,7 +3233,7 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 
-#: src/features/console-shell.tsx:484
+#: src/features/console-shell.tsx:490
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
@@ -3143,7 +3241,7 @@ msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
-#: src/features/session-new.tsx:168
+#: src/features/session-new.tsx:176
 msgid "The previous session request expired. Start a new one."
 msgstr "上一个会话请求已过期，请重新开始。"
 
@@ -3158,7 +3256,12 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/session-skills.tsx:219
+#: src/features/chat-command.tsx:181
+#: src/features/chat-command.tsx:187
+msgid "Thinking"
+msgstr "思考"
+
+#: src/features/session-skills.tsx:236
 msgid "This agent lists no skills yet"
 msgstr "这个 agent 还没有列出能力"
 
@@ -3167,8 +3270,8 @@ msgid "This browser"
 msgstr "当前浏览器"
 
 #: src/features/console-me.tsx:123
-#: src/features/console-me.tsx:328
-#: src/features/console-shell.tsx:229
+#: src/features/console-me.tsx:331
+#: src/features/console-shell.tsx:230
 msgid "This computer"
 msgstr "本机"
 
@@ -3190,7 +3293,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:506
+#: src/features/console-sessions.tsx:522
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -3202,7 +3305,7 @@ msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:533
+#: src/features/console-shell.tsx:539
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -3210,7 +3313,7 @@ msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 msgid "This pane switched sessions"
 msgstr "这个窗格已切换会话，已跟过去"
 
-#: src/features/session-skills.tsx:45
+#: src/features/session-skills.tsx:46
 msgid "This repo"
 msgstr "本仓库"
 
@@ -3228,8 +3331,8 @@ msgid "Ticket"
 msgstr "工单编号"
 
 #: src/features/console-activity.tsx:206
-#: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:91
+#: src/features/console-activity.tsx:294
+#: src/features/console-shell.tsx:92
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -3241,7 +3344,7 @@ msgstr "工单"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:86
+#: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3255,7 +3358,7 @@ msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 msgid "Tidy up the phone interactions"
 msgstr "整理手机端交互"
 
-#: src/features/console-diagnostics.tsx:315
+#: src/features/console-diagnostics.tsx:317
 msgid "Time"
 msgstr "时间"
 
@@ -3267,20 +3370,20 @@ msgstr "只在中转忙碌时计时；消息间隙它会休眠，即使设备一
 msgid "Time the relay was actually handling messages; while idle it hibernates and is not counted."
 msgstr "中转真正在处理消息的时间；空闲时休眠，不计时长。"
 
-#: src/features/session-info.tsx:52
+#: src/features/session-info.tsx:55
 #: src/features/ticket-new.tsx:176
 msgid "Title"
 msgstr "标题"
 
-#: src/features/session-info.tsx:63
+#: src/features/session-info.tsx:66
 msgid "tmux pane"
 msgstr "tmux 窗格"
 
-#: src/features/session-info.tsx:62
+#: src/features/session-info.tsx:65
 msgid "tmux session"
 msgstr "tmux 会话"
 
-#: src/features/session-info.tsx:54
+#: src/features/session-info.tsx:57
 msgid "tmux window"
 msgstr "tmux 窗口"
 
@@ -3334,18 +3437,18 @@ msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 msgid "Took {took}"
 msgstr "用时 {took}"
 
-#: src/features/console-diagnostics.tsx:319
+#: src/features/console-diagnostics.tsx:321
 msgid "Trace"
 msgstr "Trace"
 
-#: src/features/console-diagnostics.tsx:118
 #: src/features/console-diagnostics.tsx:119
+#: src/features/console-diagnostics.tsx:120
 msgid "Trace ID or text"
 msgstr "Trace ID 或文本"
 
 #: src/features/console-collab-run.tsx:46
 #: src/features/console-collab-run.tsx:56
-#: src/features/session-info.tsx:44
+#: src/features/session-info.tsx:47
 msgid "Transcript"
 msgstr "过程记录"
 
@@ -3354,11 +3457,11 @@ msgstr "过程记录"
 msgid "Trigger"
 msgstr "触发来源"
 
-#: src/features/session-new-panels.tsx:181
+#: src/features/session-new-panels.tsx:183
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
-#: src/features/session-commands.tsx:237
+#: src/features/session-commands.tsx:274
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
@@ -3381,8 +3484,8 @@ msgid "Unavailable"
 msgstr "不可用"
 
 #: src/features/session-new-direction.tsx:69
-msgid "uncommitted changes"
-msgstr "有未提交的改动"
+#~ msgid "uncommitted changes"
+#~ msgstr "有未提交的改动"
 
 #: src/features/console-me.tsx:233
 msgid "Underscore"
@@ -3398,11 +3501,10 @@ msgstr "未知"
 
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:176
-#: src/features/session-switcher.tsx:180
 msgid "Untitled session"
 msgstr "未命名会话"
 
-#: src/features/session-git.tsx:185
+#: src/features/session-git.tsx:186
 msgctxt "git"
 msgid "Untracked"
 msgstr "未跟踪"
@@ -3424,17 +3526,17 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:475
+#: src/features/console-shell.tsx:481
 #: src/features/me-host.tsx:115
 msgid "Uptime"
 msgstr "运行时长"
 
 #: src/features/console-me.tsx:120
-#: src/features/session-info.tsx:46
+#: src/features/session-info.tsx:49
 msgid "Usage"
 msgstr "用量"
 
-#: src/features/session-info.tsx:91
+#: src/features/session-info.tsx:94
 msgid "Usage from"
 msgstr "用量来源"
 
@@ -3447,7 +3549,7 @@ msgstr "使用 CLI 默认模型"
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。"
 
-#: src/features/session-skills.tsx:46
+#: src/features/session-skills.tsx:47
 msgid "User"
 msgstr "用户级"
 
@@ -3464,15 +3566,15 @@ msgstr "版本"
 msgid "View the source"
 msgstr "查看源码"
 
-#: src/features/session-info.tsx:376
+#: src/features/session-info.tsx:409
 msgid "VS Code window focused"
 msgstr "已切到 VS Code 窗口"
 
-#: src/features/session-info.tsx:79
+#: src/features/session-info.tsx:82
 msgid "Waiting for"
 msgstr "等待类型"
 
-#: src/features/console-me.tsx:303
+#: src/features/console-me.tsx:304
 msgid "Waiting for the host"
 msgstr "等电脑确认"
 
@@ -3480,7 +3582,6 @@ msgstr "等电脑确认"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
-#: src/features/session-new-direction.tsx:68
 #: src/features/session-status-text.ts:25
 msgid "waiting for you"
 msgstr "在等你"
@@ -3506,8 +3607,8 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/session-chat-group.tsx:94
-#: src/features/session-list.tsx:61
+#: src/features/session-chat-group.tsx:93
+#: src/features/session-list.tsx:60
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "等你处理"
@@ -3517,7 +3618,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "等你"
 
-#: src/features/console-shell.tsx:444
+#: src/features/console-shell.tsx:450
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3534,7 +3635,7 @@ msgstr "耗时 p50 / p95"
 msgid "Wall total"
 msgstr "总耗时"
 
-#: src/features/console-diagnostics.tsx:132
+#: src/features/console-diagnostics.tsx:133
 msgid "Warnings"
 msgstr "警告"
 
@@ -3558,9 +3659,9 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:226
-#: src/features/console-shell.tsx:315
-#: src/features/session-skills.tsx:44
+#: src/features/console-shell.tsx:227
+#: src/features/console-shell.tsx:321
+#: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
 
@@ -3572,11 +3673,15 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
+#: src/features/session-new-panels.tsx:106
+msgid "What do you want to solve?"
+msgstr "你想解决什么问题？"
+
 #: src/features/ticket-proposals.tsx:116
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new-panels.tsx:111
+#: src/features/session-new-panels.tsx:113
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -3592,11 +3697,10 @@ msgstr "要对方仓库做什么"
 msgid "What the terminal shows"
 msgstr "终端画面"
 
-#: src/features/session-skills.tsx:203
+#: src/features/session-skills.tsx:220
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
-#: src/features/session-new-panels.tsx:316
 #: src/features/session-purpose.tsx:73
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
@@ -3609,11 +3713,11 @@ msgstr "你的假设"
 msgid "What you saw"
 msgstr "你看到的现象"
 
-#: src/features/session-new.tsx:241
-msgid "Where"
-msgstr "选择位置"
+#: src/features/session-new.tsx:232
+#~ msgid "Where"
+#~ msgstr "选择位置"
 
-#: src/features/session-info.tsx:43
+#: src/features/session-info.tsx:46
 msgid "Where it runs"
 msgstr "运行位置"
 
@@ -3629,7 +3733,7 @@ msgstr "理由（必填，提议方会看到）"
 msgid "Why reject"
 msgstr "驳回理由"
 
-#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:246
 msgid "with what to keep"
 msgstr "说明要保留什么"
 
@@ -3655,8 +3759,8 @@ msgid "working"
 msgstr "运行中"
 
 #: src/features/chat-turn.tsx:143
-#: src/features/session-chat-group.tsx:93
-#: src/features/session-list.tsx:64
+#: src/features/session-chat-group.tsx:92
+#: src/features/session-list.tsx:63
 msgid "Working"
 msgstr "运行中"
 
@@ -3669,30 +3773,30 @@ msgstr "运行中"
 msgid "Workstation description"
 msgstr "工作站描述"
 
-#: src/features/session-info.tsx:260
-msgid "Workstation purpose"
-msgstr "工作站用途"
+#: src/features/session-info.tsx:265
+#~ msgid "Workstation purpose"
+#~ msgstr "工作站用途"
 
 #: src/features/console-collab.tsx:125
-#: src/features/session-info.tsx:59
+#: src/features/session-info.tsx:62
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new-panels.tsx:304
-msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
-msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
+#: src/features/session-new-panels.tsx:326
+#~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
+#~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
 #: src/features/me-host.tsx:40
 #: src/features/me-host.tsx:136
 msgid "WSL bridge"
 msgstr "WSL 通道"
 
-#: src/features/session-info.tsx:96
+#: src/features/session-info.tsx:99
 msgid "yes"
 msgstr "是"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:77
+#: src/features/session-list.tsx:76
 msgid "Yesterday"
 msgstr "昨天"
 

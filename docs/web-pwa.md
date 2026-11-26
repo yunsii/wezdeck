@@ -47,8 +47,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: an IM chat list (one row per workstation; multi-session
-   worktrees: compact foldable header, one line for empty idle sessions, preview rows for active conversations;
+   会话 is the home: an IM chat list (single-session groups show the session title; multi-session
+   groups: compact foldable header with the group name, one line for empty idle sessions, preview rows for active conversations;
    agent brand avatar, Kimi/gateway as a corner badge; unread badge; row + for a new round; no status Segmented), then the
    repo → worktree → pane tree ordered by **visits**, never output — the
    later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
@@ -99,7 +99,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    ticket or waiting on the other side ○): cross-repo ticket events as sentences — one card per
    ticket run of events under its title and from → to repo, day headings,
    a clock time per line; tool calls, checkouts, session init and worktree
-   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one row per workstation,
+   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one titled row for a single session,
    multi-session ones adding per-session sub-rows; repo section heads; unread = needs-you badge; no status Segmented);
    opening resolves the focus session (sub-rows open their own). Grok Ask shows tappable options
    from `elicitation`) · 我的 (an index of groups, each row showing
@@ -119,7 +119,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    writes it newest first; the initiator on the right, the newest question
    ringed while it waits on you; a note when the API cut the oldest off at
    8000 characters); the reply box keeps a draft and sends with Ctrl+Enter.
-   诊断 (local Runtime) is the same split too (console-diagnostics.tsx):
+   诊断 (local Runtime) uses the same fixed-head split (console-diagnostics.tsx):
    levels with counts, search, a category select; an entry's facts as Field
    rows, copy raw line, only this trace; entry ids are stable, so the 5 s
    refresh does not move the selection; mobile opens an entry in a sheet.
@@ -133,7 +133,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    as its left edge (no card).
    工单's run / cache / cost band opens from the head in a dialog. Session
    groups carry icons: repo `FolderGit2`, worktree `GitFork`.
-   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): zero outer padding, equal head padding, and session bars within pane edges. 工单
+   On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): zero outer padding, equal head padding, flat status notices, and session bars within pane edges. 工单
    remembers its status filter; 会话 has none (IM list). With no item in
    the URL, reopen the last opened item if it still exists, else the top
    (`lib/last-opened.tsx` `pickLast`). The list sticky on the left, the
@@ -163,8 +163,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    2026-11-24); the current row is highlighted, picking another replaces the
    history entry, j / k move through the list's order and the URL follows,
    y copies the open session's reference;
-   no back button. 我的 shows its groups on the left, the chosen one past
-   会话's full-height divider (default 连接; group links replace). Sheets: a
+   no back button. 我的 shows separated groups on the left, the chosen one past
+   会话's full-height divider (default 连接; group links replace); its inner interaction and agent lists split again at ≥1280 px and share the overlay scroller. 工单动态 uses a full-width head and a readable timeline. Sheets: a
    centred dialog (fade + scale, no grab handle). 工单's run / cache / cost
    band opens in a dialog from the list head (sidebar links 工单动态).
 6. **Desktop keyboard**: `j`/`k` move, `Esc` closes a sheet and, with none

@@ -124,6 +124,27 @@ describe('Interaction debugging page', () => {
     await context.close()
   })
 
+  it('tablet opens one interaction at a time and returns to its list', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 900, height: 850 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions`)
+    const item = page.locator('button[data-interaction=grok-plan]')
+    await item.waitFor({ timeout: 20_000 })
+    await expect.poll(() => page.getByTestId('me-pane').count()).toBe(1)
+    expect(await page.getByTestId('interaction-detail').count()).toBe(0)
+    await item.click()
+    await page.getByTestId('interaction-detail').waitFor()
+    await page.getByRole('button', { name: '返回', exact: true }).click()
+    await expect
+      .poll(() => page.getByTestId('interaction-detail').count())
+      .toBe(0)
+    expect(await item.isVisible()).toBe(true)
+    await context.close()
+  })
+
   it('转到后台 sits top-right; the command flows around it', async () => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -242,7 +263,7 @@ describe('Interaction debugging page', () => {
     await card.getByTestId('grok-ask-submit').click()
     await expect
       .poll(() => card.getByTestId('grok-ask-loading').textContent())
-      .toContain('已提交，等待 Grok 继续')
+      .toContain('答案已发送，等待 Grok 继续')
     await page.waitForTimeout(250)
     await card.getByTestId('grok-ask-loading').waitFor()
     await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')

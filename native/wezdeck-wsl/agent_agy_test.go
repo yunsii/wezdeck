@@ -161,3 +161,127 @@ func TestAgyWorkspaceTrustIsExact(t *testing.T) {
 		t.Fatal("Agy trust must be confirmed for each worktree")
 	}
 }
+
+func TestAgyPendingAskAndSettlement(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "transcript_full.jsonl")
+	openAsk := strings.Join([]string{
+		`{"step_index":0,"type":"USER_INPUT","content":"<USER_REQUEST>\nHelp\n</USER_REQUEST>"}`,
+		`{"step_index":1,"type":"PLANNER_RESPONSE","tool_calls":[{"name":"ask_question","args":{"questions":[{"question":"Which mode?","options":["(Recommended) Auto","Manual"],"is_multi_select":false},{"question":"Extras?","options":["Logs","Metrics"],"is_multi_select":true}]}}]}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(path, []byte(openAsk), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	el := (agyAdapter{}).PendingAsk(path, "")
+	if el == nil || el.ToolCallID != "agy-step-1" || len(el.Questions) != 2 {
+		t.Fatalf("pending ask: %+v", el)
+	}
+	if el.Questions[0].Question != "Which mode?" || len(el.Questions[0].Options) != 2 || el.Questions[0].Options[0].Label != "(Recommended) Auto" || el.Questions[0].MultiSelect {
+		t.Fatalf("q0: %+v", el.Questions[0])
+	}
+	if !el.Questions[1].MultiSelect || len(el.Questions[1].Options) != 2 {
+		t.Fatalf("q1: %+v", el.Questions[1])
+	}
+	// Once GENERIC arrives for that ask_question, PendingAsk clears.
+	answered := openAsk + `{"step_index":2,"type":"GENERIC","content":"User selected: Auto"}` + "\n"
+	if err := os.WriteFile(path, []byte(answered), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := (agyAdapter{}).PendingAsk(path, ""); got != nil {
+		t.Fatalf("answered ask must clear: %+v", got)
+	}
+	if messagesRevFor("agy") != agyMessagesRev || agyMessagesRev < 1 {
+		t.Fatalf("agy messages_rev: %d", messagesRevFor("agy"))
+	}
+}
+
+func TestAgySkillsDiscoveryAndPrecedence(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	cwd := filepath.Join(t.TempDir(), "proj")
+	mkSkill := func(dir, content string) {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mkSkill(filepath.Join(cwd, ".agents", "skills", "shared"), "---\nname: shared\ndescription: project override\n---\n")
+	mkSkill(filepath.Join(home, ".agents", "skills", "shared"), "---\nname: shared\ndescription: user copy\n---\n")
+	mkSkill(filepath.Join(home, ".gemini", "config", "skills", "custom"), "---\nname: custom\ndescription: >-\n  multi-line\n  description\n---\n")
+	mkSkill(filepath.Join(home, ".gemini", "antigravity-cli", "builtin", "skills", "guide"), "---\nname: guide\ndescription: built in\n---\n")
+
+	raw, err := (agyAdapter{}).Skills("", cwd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list := classifySkills(raw, cwd)
+	byName := map[string]skillInfo{}
+	for _, s := range list {
+		byName[s.Name] = s
+	}
+	if byName["shared"].Origin != "project" || byName["shared"].Description != "project override" {
+		t.Fatalf("project precedence failed: %+v", byName["shared"])
+	}
+	if byName["custom"].Origin != "user" || byName["custom"].Description != "multi-line description" {
+		t.Fatalf("user skill failed: %+v", byName["custom"])
+	}
+	if byName["guide"].Origin != "builtin" || byName["guide"].Description != "built in" {
+		t.Fatalf("builtin skill failed: %+v", byName["guide"])
+	}
+}
+
+func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "transcript_full.jsonl")
+	lines := []string{
+		`{"step_index":0,"type":"USER_INPUT","content":"<USER_REQUEST>\nPush branch\n</USER_REQUEST>"}`,
+		`{"step_index":1,"type":"PLANNER_RESPONSE","thinking":"Checking git push.\nNeeds bypass sandbox.","tool_calls":[{"name":"run_command","args":{"CommandLine":"git push origin master","toolSummary":"Push branch","BypassSandbox":true}}]}`,
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	tr, err := loadTranscript(path, "agy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tr.messages) != 3 || tr.messages[1].Role != "system" || tr.messages[1].Kind != "thought" ||
+		tr.messages[1].Text != "Checking git push." || !strings.Contains(tr.messages[1].Body, "Needs bypass sandbox.") {
+		t.Fatalf("thought message: %+v", tr.messages)
+	}
+	if !agyPermissionPromptVisible("Run this command?\n> Yes, run command\n  No, deny" + strings.Repeat("\n", 30)) {
+		t.Fatal("Run this command? with trailing blank rows should be detected")
+	}
+	if !agyPermissionPromptVisible("Allow calling this tool?\n> Yes, allow tool call\n  No, deny tool call") {
+		t.Fatal("Allow calling this tool? should be detected")
+	}
+	if !agyPermissionPromptVisible("Do you want to proceed?\n> 1. Yes\n  2. Yes, and always allow 'git push'") {
+		t.Fatal("Do you want to proceed? + always allow should be detected")
+	}
+	if agyPermissionPromptVisible("确认项（Yes, run command / Yes, allow access）+ 拒绝项（No, deny / Run this command?）\n>\n? for shortcuts") {
+		t.Fatal("assistant prose quoting option strings must not trigger permission card")
+	}
+	if agyPermissionPromptVisible("Do you trust the contents of this project?\n> Yes, I trust this folder") {
+		t.Fatal("workspace trust prompt must not be treated as permission prompt")
+	}
+	// Incremental polls pass an empty out["messages"] slice; pending must still come from full transcript.
+	out := map[string]any{"status": "running", "waiting_kind": "", "messages": []chatMessage{}}
+	applyAgyScreenPermission(out, pendingPermission(tr.messages, ""), "Run this command?\n> Yes, run command\n  No, deny")
+	if out["status"] != "waiting" || out["waiting_kind"] != "permission_prompt" {
+		t.Fatalf("status not escalated to waiting: %+v", out)
+	}
+	perm, ok := out["permission"].(*pendingCall)
+	if !ok || perm == nil || perm.Tool != "run_command" || !strings.Contains(perm.Body, "git push origin master") {
+		t.Fatalf("permission card: %+v", out["permission"])
+	}
+	// Idle/completed turns or turns without an unanswered tool call must NEVER lock the composer.
+	outIdle := map[string]any{"status": "done", "waiting_kind": ""}
+	applyAgyScreenPermission(outIdle, pendingPermission(tr.messages, ""), "Run this command?\n> Yes, run command\n  No, deny")
+	if _, locked := outIdle["permission"]; locked {
+		t.Fatalf("completed turn must not surface permission card: %+v", outIdle)
+	}
+	outNoPending := map[string]any{"status": "running", "waiting_kind": ""}
+	applyAgyScreenPermission(outNoPending, nil, "Run this command?\n> Yes, run command\n  No, deny")
+	if _, locked := outNoPending["permission"]; locked {
+		t.Fatalf("turn without unanswered tool call must not surface permission card: %+v", outNoPending)
+	}
+}

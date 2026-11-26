@@ -20,7 +20,7 @@ import {
   needsYou,
   useSessions,
 } from './console-sessions'
-import { AgentAvatar } from './agent-avatar'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import type { SessionCard } from './console-sessions'
 import { buildChatGroups, flattenChats } from './session-chats'
 import type { SessionChat } from './session-chats'
@@ -133,22 +133,17 @@ function SwitcherRow({
   chat,
   session,
   current,
-  currentKey,
   single,
   onSelect,
 }: {
   chat: SessionChat
   session: SessionCard
   current: string
-  currentKey: string
-  /** one-session chat: the row's title is the worktree, not the session */
   single: boolean
   onSelect: (session: SessionCard) => void
 }) {
   const { t } = useLingui()
-  const selected = single
-    ? chat.key === currentKey || session.id === current
-    : session.id === current
+  const selected = session.id === current
   const unread = single ? chat.unread : needsAttention(session) ? 1 : 0
   return (
     <Button
@@ -174,16 +169,12 @@ function SwitcherRow({
           <span
             className={cn(
               'truncate text-body font-medium',
-              !single && !session.title && 'text-brand-muted',
+              !session.title && 'text-brand-muted',
             )}
           >
-            {single ? chat.title : session.title || t`Untitled session`}
+            {session.title?.trim() ||
+              agentLabel(session.agent, session.agent_profile)}
           </span>
-          {single && chat.purpose ? (
-            <span className="min-w-0 truncate text-meta text-brand-label">
-              · {chat.purpose}
-            </span>
-          ) : null}
           {unread > 0 ? (
             <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
               {unread}
@@ -191,9 +182,7 @@ function SwitcherRow({
           ) : null}
         </span>
         <span className="truncate text-meta text-brand-label">
-          {single
-            ? session.title || session.last_prompt || t`No human message yet`
-            : session.last_prompt || t`No human message yet`}
+          {session.last_prompt || t`No human message yet`}
         </span>
       </span>
     </Button>
@@ -211,8 +200,6 @@ export function SessionSwitcher({
 }) {
   const { t } = useLingui()
   const nav = useSessionNav(current)
-  const currentRow = nav.rows.find((r) => r.id === current)
-  const currentKey = currentRow ? worktreeKey(currentRow) : ''
   if (typeof document === 'undefined') return null
   const onSelect = (session: SessionCard) => {
     onClose()
@@ -224,12 +211,7 @@ export function SessionSwitcher({
       return (
         <li key={chat.key}>
           <div className="flex items-baseline gap-1.5 px-4 pt-2 text-caption font-medium text-brand-muted">
-            <span className="truncate">{chat.title}</span>
-            {chat.purpose ? (
-              <span className="min-w-0 truncate text-meta">
-                · {chat.purpose}
-              </span>
-            ) : null}
+            <span className="truncate">{chat.purpose || chat.title}</span>
             {chat.unread > 0 ? (
               <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
                 {chat.unread}
@@ -243,7 +225,6 @@ export function SessionSwitcher({
                   chat={chat}
                   session={session}
                   current={current}
-                  currentKey={currentKey}
                   single={false}
                   onSelect={onSelect}
                 />
@@ -259,7 +240,6 @@ export function SessionSwitcher({
           chat={chat}
           session={chat.focus}
           current={current}
-          currentKey={currentKey}
           single
           onSelect={onSelect}
         />

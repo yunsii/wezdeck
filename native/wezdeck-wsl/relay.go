@@ -345,7 +345,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	switch f.Action {
 	case "usage":
 		return fetchUsage()
-	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart",
+	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart", "session.delete",
 		"session.handoff", "ticket.new", "worktree.describe", "host.warp.set":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
@@ -361,7 +361,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 // they need no hello.
 var signedActions = map[string]bool{
 	"send": true, "key": true, "reply": true, "attach": true, "upload": true,
-	"todo": true, "clear": true, "session.new": true, "session.new.trust": true, "agent.profile.configure": true, "agent.profile.model": true, "agent.profile.settings": true, "session.restart": true,
+	"todo": true, "clear": true, "session.new": true, "session.new.trust": true, "agent.profile.configure": true, "agent.profile.model": true, "agent.profile.settings": true, "session.restart": true, "session.delete": true,
 	"session.handoff": true, "ticket.new": true, "worktree.describe": true, "host.warp.set": true,
 }
 

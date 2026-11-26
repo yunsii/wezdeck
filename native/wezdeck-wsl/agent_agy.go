@@ -131,6 +131,7 @@ func (t *transcript) feedAgy(raw []byte) {
 	var row struct {
 		Type            string `json:"type"`
 		Content         string `json:"content"`
+		Thinking        string `json:"thinking"`
 		CreatedAt       string `json:"created_at"`
 		Model           string `json:"model"`
 		InputTokens     int    `json:"input_tokens"`
@@ -156,6 +157,12 @@ func (t *transcript) feedAgy(raw []byte) {
 		}
 	case "PLANNER_RESPONSE":
 		t.settleAgyPending()
+		if thought := strings.TrimSpace(row.Thinking); thought != "" {
+			t.messages = append(t.messages, chatMessage{
+				Role: "system", Kind: "thought",
+				Text: clip(firstLine(thought), 160), Body: clip(thought, 4000), TS: row.CreatedAt,
+			})
+		}
 		if text := strings.TrimSpace(row.Content); text != "" {
 			t.messages = append(t.messages, chatMessage{Role: "assistant", Text: clip(text, 8000), TS: row.CreatedAt})
 		}
@@ -386,85 +393,6 @@ func agyToolBody(name string, input map[string]any) string {
 		return clipLines(strings.Join(lines, "\n"), 40)
 	}
 	return ""
-}
-
-func normalizeAgyMode(raw string) string {
-	s := strings.ToLower(strings.TrimSpace(strings.Trim(raw, "`'\"")))
-	switch s {
-	case "":
-		return ""
-	case "auto", "auto mode":
-		return "auto"
-	case "accept-edits", "accept edits", "acceptedits":
-		return "accept-edits"
-	case "plan", "plan mode":
-		return "plan"
-	case "full-access", "full access", "yolo", "bypasspermissions", "dangerously-skip-permissions":
-		return "full-access"
-	case "default", "default mode", "manual", "none":
-		return "default"
-	default:
-		return s
-	}
-}
-
-func agySettingsPath() string {
-	if dir := strings.TrimSpace(os.Getenv("AGY_CONFIG_DIR")); dir != "" {
-		return filepath.Join(dir, "settings.json")
-	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".gemini", "antigravity-cli", "settings.json")
-}
-
-func agyModeFromSettings() string {
-	body, err := os.ReadFile(agySettingsPath())
-	if err != nil {
-		return ""
-	}
-	var settings struct {
-		AgentMode string `json:"agentMode"`
-	}
-	if json.Unmarshal(body, &settings) != nil {
-		return ""
-	}
-	return normalizeAgyMode(settings.AgentMode)
-}
-
-func agyModeFromArgs(argv []string) string {
-	mode := ""
-	for i := 0; i < len(argv); i++ {
-		arg := argv[i]
-		if arg == "--dangerously-skip-permissions" {
-			return "full-access"
-		}
-		if arg == "--mode" && i+1 < len(argv) {
-			mode = normalizeAgyMode(argv[i+1])
-			i++
-			continue
-		}
-		if strings.HasPrefix(arg, "--mode=") {
-			mode = normalizeAgyMode(strings.TrimPrefix(arg, "--mode="))
-		}
-	}
-	return mode
-}
-
-// resolveAgyMode returns Agy's effective execution mode so the web console can
-// always tell whether auto mode is on: in-session toggle > CLI flag > settings.json > default.
-func resolveAgyMode(e attentionEntry, t *transcript) string {
-	if t != nil && t.mode != "" {
-		return t.mode
-	}
-	if e.TmuxPane != "" {
-		argv := paneDescendantArgs(e.TmuxSocket, e.TmuxPane, func(comm string) bool { return comm == "agy" })
-		if mode := agyModeFromArgs(argv); mode != "" {
-			return mode
-		}
-	}
-	if mode := agyModeFromSettings(); mode != "" {
-		return mode
-	}
-	return "default"
 }
 
 func handoffDigestAgy(raw []byte, users *[]string, files map[string]struct{}, lastAssist *string) {

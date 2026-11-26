@@ -267,7 +267,8 @@ function EntryRow({
         data-me={page}
         className={cn(
           'key-press flex min-h-13 items-center gap-3 px-4 py-2.5',
-          active && 'bg-brand-soft',
+          wide && 'list-row',
+          active && (wide ? 'row-selected' : 'bg-brand-soft'),
         )}
       >
         <span className="flex-1 text-body">{title}</span>
@@ -307,10 +308,12 @@ function MeIndex({ active }: { active?: MePage }) {
   const hostSummary = useHostSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
-  const group = 'overflow-hidden rounded-2xl bg-brand-surface'
+  const group = 'overflow-hidden rounded-2xl bg-brand-surface md:rounded-none'
   return (
-    <div className="grid max-w-2xl content-start gap-4">
-      <h1 className="hidden text-body font-semibold md:block">{t`Settings`}</h1>
+    <div className="grid max-w-2xl content-start gap-4 md:max-w-none md:gap-0">
+      <h1 className="hidden text-body font-semibold md:block md:border-b md:border-brand-edge md:px-[var(--page-x)] md:py-3">
+        {t`Settings`}
+      </h1>
       <ul className={group}>
         <EntryRow
           page="agents"
@@ -347,7 +350,7 @@ function MeIndex({ active }: { active?: MePage }) {
           />
         )}
       </ul>
-      <ul className={group}>
+      <ul className={cn(group, 'md:mt-3')}>
         <EntryRow
           page="appearance"
           active={active === 'appearance'}
@@ -381,7 +384,7 @@ function MeIndex({ active }: { active?: MePage }) {
           </Link>
         </li>
       </ul>
-      <ul className={group}>
+      <ul className={cn(group, 'md:mt-3')}>
         <EntryRow
           page="host"
           active={active === 'host'}
@@ -445,9 +448,19 @@ function MeSubPage({ page }: { page: MePage }) {
       )}
       data-me-page={page}
     >
-      <div className="-ml-2 flex items-center gap-1 pt-1 md:ml-0 md:min-h-11">
+      <div
+        className={cn(
+          '-ml-2 flex items-center gap-1 pt-1 md:ml-0 md:min-h-11',
+          (page === 'interactions' || page === 'agents') &&
+            'md:px-[var(--page-x)]',
+        )}
+      >
         {/* beside the list on a wide screen there is nothing to go back to */}
-        <BackButton onClick={back} label={t`Back`} className="md:hidden" />
+        <BackButton
+          onClick={back}
+          label={t`Back`}
+          className={page === 'interactions' ? 'xl:hidden' : 'md:hidden'}
+        />
         <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
           {titles[page]}
         </h1>
@@ -460,7 +473,9 @@ function MeSubPage({ page }: { page: MePage }) {
       {page === 'interactions' || page === 'agents' ? (
         body
       ) : (
-        <section className="key grid gap-3 rounded-2xl p-4">{body}</section>
+        <section className="grid gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">
+          {body}
+        </section>
       )}
     </div>
   )
@@ -474,18 +489,18 @@ export function ConsoleMePage() {
   if (wide)
     return (
       // the divider runs the window's height, as beside 会话 and 工单
-      <div
-        className={cn(
-          'grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)]',
-          known === 'agents' ? 'max-w-none' : 'max-w-5xl',
-        )}
-      >
-        <div className="vt-split-list self-start pr-[var(--page-x)]">
+      <div className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] items-stretch">
+        <div className="vt-split-list self-start">
           <MeIndex active={known ?? 'connection'} />
         </div>
         <div
           data-testid="me-pane"
-          className="vt-split-pane -my-4 min-h-[100cqh] min-w-0 border-l border-brand-edge py-4 pl-[var(--page-x)]"
+          className={cn(
+            'vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge',
+            known === 'interactions' || known === 'agents'
+              ? 'py-[var(--page-x)] pr-[var(--page-x)]'
+              : 'p-[var(--page-x)]',
+          )}
         >
           <MeSubPage page={known ?? 'connection'} />
         </div>

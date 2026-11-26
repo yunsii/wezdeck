@@ -167,7 +167,7 @@ function Freshness({
       className={cn(
         'flex items-center gap-2 text-meta',
         stale
-          ? 'rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 px-3 py-2 text-brand-text'
+          ? 'border-l-[3px] border-brand-waiting bg-brand-waiting/10 px-3 py-2 text-brand-text'
           : 'text-brand-label',
       )}
     >
@@ -388,7 +388,7 @@ export function TicketsView({
         </SplitColumn>
         {/* flat like 会话's pane: the divider is its left edge, page tall */}
         <div
-          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge pl-[var(--page-x)]"
+          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge px-[var(--page-x)]"
           data-testid="ticket-pane"
         >
           {current ? (

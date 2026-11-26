@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronRight, Hash } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import { Select } from '#/components/ui/select'
 import { useMediaQuery } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
@@ -17,7 +18,7 @@ export function AgentsPage() {
   const [preferred, setPreferred] = usePreferredAgentProfile()
   const [picked, setPicked] = useState('')
   const [mobileDetail, setMobileDetail] = useState(false)
-  const desktop = useMediaQuery('(min-width: 1024px)', false)
+  const desktop = useMediaQuery('(min-width: 1280px)', false)
   const rows = profiles.data?.profiles ?? []
   const selected = rows.find((profile) => profile.id === picked) ?? rows[0]
   const copyReference = useCopyAgentReference(rows)
@@ -37,7 +38,7 @@ export function AgentsPage() {
       ) : null}
       <div
         className={cn(
-          'mb-4 grid gap-1.5',
+          'mb-4 grid max-w-lg gap-1.5 md:ml-[var(--page-x)]',
           mobileDetail && !desktop && 'hidden',
         )}
       >
@@ -71,10 +72,10 @@ export function AgentsPage() {
           ]}
         />
       </div>
-      <div className="grid min-h-[26rem] min-w-0 lg:grid-cols-[minmax(180px,240px)_minmax(0,1fr)] lg:border-t lg:border-brand-edge">
-        <div
+      <div className="grid min-h-[26rem] min-w-0 xl:grid-cols-[15rem_minmax(0,1fr)] xl:border-t xl:border-brand-edge">
+        <OverlayScroll
           className={cn(
-            'min-w-0 lg:border-r lg:border-brand-edge lg:pr-3',
+            'min-w-0 xl:border-r xl:border-brand-edge',
             mobileDetail && !desktop && 'hidden',
           )}
         >
@@ -86,8 +87,8 @@ export function AgentsPage() {
                 <div
                   key={profile.id}
                   className={cn(
-                    'flex min-w-0 items-center border-b border-brand-edge',
-                    selected.id === profile.id && 'bg-brand-soft',
+                    'list-row flex min-w-0 items-center border-b border-brand-edge',
+                    selected.id === profile.id && 'row-selected',
                   )}
                 >
                   <Button
@@ -128,7 +129,7 @@ export function AgentsPage() {
                     <ChevronRight
                       size={16}
                       aria-hidden
-                      className="shrink-0 text-brand-label lg:hidden"
+                      className="shrink-0 text-brand-label xl:hidden"
                     />
                   </Button>
                   <Button
@@ -139,7 +140,7 @@ export function AgentsPage() {
                     title={t`Copy reference`}
                     data-testid="agent-copy-reference"
                     onClick={() => void copyReference(profile.id)}
-                    className="mr-1 grid size-10 shrink-0 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running lg:size-8"
+                    className="mr-1 grid size-10 shrink-0 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running xl:size-8"
                   >
                     <Hash size={16} aria-hidden />
                   </Button>
@@ -147,10 +148,10 @@ export function AgentsPage() {
               ))}
             </div>
           )}
-        </div>
+        </OverlayScroll>
         <div
           className={cn(
-            'min-w-0 pt-3 lg:pl-5',
+            'min-w-0 pt-3 md:max-xl:pl-[var(--page-x)] xl:pl-4',
             !desktop && !mobileDetail && 'hidden',
           )}
         >

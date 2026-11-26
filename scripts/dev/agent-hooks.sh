@@ -246,7 +246,7 @@ check_agy() {
     printf 'agent-hooks provider=agy status=missing file=%s\n' "$file"
     return 1
   fi
-  for pair in 'SessionStart:pane-evict' 'PreInvocation:running' 'PostToolUse:resolved' 'Stop:done'; do
+  for pair in 'SessionStart:pane-evict' 'PreInvocation:running' 'PreToolUse:ask-waiting' 'PostToolUse:ask-resolved' 'PostToolUse:resolved' 'Stop:done'; do
     event="${pair%%:*}"; action="${pair#*:}"
     if ! jq -e --arg event "$event" --arg command "$expected $action" '
       [ .["wezdeck-attention"][$event][]?

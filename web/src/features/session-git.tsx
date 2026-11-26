@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { GitStatusTag, NoExpand } from '#/components/deck/session-tags'
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import type { GitStatus } from '#/components/deck/session-tags'
 import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
@@ -242,9 +243,9 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
       />
       {/* one height for both tabs (the sheet held still while switching);
           a long list scrolls inside */}
-      <div
+      <OverlayScroll
         data-testid="git-tab-body"
-        className="h-[min(50dvh,24rem)] overflow-y-auto overscroll-contain"
+        className="h-[min(50dvh,24rem)]"
       >
         {tab === 'changes' ? (
           <div className="grid content-start gap-3">
@@ -305,7 +306,7 @@ export function GitDetailView({ detail }: { detail: GitDetail }) {
             <Commits title={t`Recent commits`} commits={detail.recent} />
           </div>
         )}
-      </div>
+      </OverlayScroll>
     </div>
   )
 }

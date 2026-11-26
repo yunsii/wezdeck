@@ -42,7 +42,7 @@ export function TicketKeys({
   const [showOlder, setShowOlder] = useState(false)
   if (tickets.length === 0 && older.length === 0) {
     return (
-      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
+      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted md:rounded-none md:bg-transparent md:px-[var(--split-pad)]">
         {empty}
       </p>
     )

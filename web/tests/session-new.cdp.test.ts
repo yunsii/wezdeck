@@ -1,26 +1,23 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
 // covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
 // covers: web/src/features/session-info.tsx
-// covers: web/src/features/session-new-direction.tsx native/wezdeck-wsl/workstations.go
 // covers: native/wezdeck-wsl/session_new.go native/wezdeck-wsl/worktree_description.go
 // covers: scripts/runtime/worktree/lib/core-describe.sh
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
 import type {
   Browser,
-  BrowserContext,
   BrowserContextOptions,
   Locator,
   Page,
 } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-// 新会话 from the phone (session-new.tsx → host session_new.go): pick the
-// repository, name a workstation (its direction) with a one-line purpose and
-// write the first message; the host runs open-task-window
+// 新会话 accepts a question and a group name. The host allocates the checkout
+// through open-task-window.
 // — on the test stack its stand-in, a real `git worktree add` in a throwaway
 // repo and a `cat` pane on the stack's tmux socket — pastes the message into
 // the pane, and the sheet opens the session once it is listed.
@@ -113,39 +110,55 @@ describe.runIf(attention && devicesFile && stack)(
     })
 
     /**
-     * 新会话 › a workstation named `name` with `description`; once the pane
+     * 新会话 › a new session without a group name; once the pane
      * has the message, list it as id (the agent's first-prompt hook) and
      * wait for the page to open it. Returns the worktree and the pane.
      */
-    const createSession = async (
-      page: Page,
-      name: string,
-      id: string,
-      description = '',
-    ) => {
+    const createSession = async (page: Page, id: string) => {
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
-      // compose first: tap the place bar → directions → + new direction
-      await sheet.getByTestId('new-session-place').click()
-      // the repository picker (Base UI Select) preselects the visited repo
-      await expect
-        .poll(() => sheet.getByRole('combobox').textContent())
-        .toContain('phone-repo')
-      await sheet.locator('[data-direction="+new"]').click()
-      await sheet.getByPlaceholder('例如 ux、ci、i18n').fill(name)
-      await expect
-        .poll(() => sheet.getByTestId('new-session-slug').textContent())
-        .toContain(`工作站 ${name}，分支 dev/${name}`)
-      await sheet.getByPlaceholder('这个工作站做什么，一行').fill(description)
-      await sheet.getByTestId('new-session-direction-done').click()
-      await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
+      const listSessions = () =>
+        execFileSync('tmux', [
+          '-S',
+          socket,
+          'list-sessions',
+          '-F',
+          '#{session_name}',
+        ])
+          .toString()
+          .trim()
+          .split('\n')
+      const before = new Set<string>()
+      try {
+        for (const existing of listSessions()) before.add(existing)
+      } catch {
+        // The first creation starts the private tmux server.
+      }
+      const repository = sheet.getByRole('combobox', { name: '仓库' })
+      await expect.poll(() => repository.textContent()).toContain('phone-repo')
+      const prompt = sheet.getByPlaceholder('要它做什么？')
+      const promptElement = await prompt.elementHandle()
+      expect(
+        await repository.evaluate(
+          (element, next) =>
+            Boolean(
+              element.compareDocumentPosition(next) &
+              Node.DOCUMENT_POSITION_FOLLOWING,
+            ),
+          promptElement,
+        ),
+      ).toBe(true)
+      await prompt.fill('从手机开的新会话')
+      expect(await sheet.getByTestId('new-session-group-name').count()).toBe(0)
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
       await expect
         .poll(() => stage.getAttribute('data-stage'), { timeout: 20_000 })
         .toBe('done')
-      const session = name
+      const session = listSessions().find((existing) => !before.has(existing))
+      if (!session) throw new Error('Expected a new tmux session')
+      expect(session).toMatch(/^session-[a-f0-9]+$/)
       const pane = execFileSync('tmux', [
         '-S',
         socket,
@@ -177,55 +190,24 @@ describe.runIf(attention && devicesFile && stack)(
 
     it('creates the workstation, hands the agent the message, opens the session', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
-      const { worktree } = await createSession(
-        page,
-        'phone',
-        'new-1',
-        '手机端体验',
-      )
+      const { worktree, session } = await createSession(page, 'new-1')
       const git = (...args: Array<string>) =>
         execFileSync('git', ['-C', worktree, ...args])
           .toString()
           .trim()
-      expect(git('branch', '--show-current')).toBe('dev/phone')
+      expect(git('branch', '--show-current')).toBe(`dev/${session}`)
       // the purpose is the branch description; the list no longer shows it
-      expect(git('config', 'branch.dev/phone.description')).toBe('手机端体验')
+      expect(
+        git('config', '--default', '', `branch.dev/${session}.description`),
+      ).toBe('')
       await page.goto(`${base}/zh/console/sessions`)
-      const group = page.locator('[data-worktree=phone]')
+      const group = page.locator(`[data-worktree=${session}]`)
       await group.waitFor({ timeout: 15_000 })
       expect(await group.getByTestId('worktree-description').count()).toBe(0)
 
-      await editPurposeInSessionInfo(page, group, worktree)
+      await editPurposeInSessionInfo(page, group, worktree, session)
       await context.close()
     }, 90_000)
-
-    // runs after the first test made the phone workstation: once its agent
-    // is idle, 新会话 offers phone as idle and reuses it — and opens the new
-    // session, not phone's last round (still listed in the same worktree)
-    it('reuses an idle workstation of the chosen direction', async () => {
-      await reuseIdleDirection({ repo, socket, listEntry, approvedPage })
-    }, 90_000)
-
-    it('chat row 新一轮 opens a locked place sheet for that direction', async () => {
-      await newRoundLockedSheet({ approvedPage })
-    }, 60_000)
-
-    it('a name without letters or digits is refused before anything runs', async () => {
-      const { context, page } = await approvedPage(devices['iPhone 13'])
-      await page.goto(`${base}/zh/console/sessions`)
-      await page.getByTestId('new-session').click()
-      const sheet = page.getByTestId('new-session-sheet')
-      await sheet.getByTestId('new-session-place').click()
-      await sheet.locator('[data-direction="+new"]').click()
-      await sheet.getByPlaceholder('例如 ux、ci、i18n').fill('网页体验')
-      await expect
-        .poll(() => sheet.getByTestId('new-session-slug').textContent())
-        .toContain('需要包含字母或数字')
-      expect(
-        await sheet.getByTestId('new-session-direction-done').isDisabled(),
-      ).toBe(true)
-      await context.close()
-    }, 60_000)
 
     it('opens the new session once: switching away stays switched (wide)', async () => {
       // on a wide window the list — and its 新会话 sheet — stays mounted
@@ -235,7 +217,7 @@ describe.runIf(attention && devicesFile && stack)(
       const { context, page } = await approvedPage({
         viewport: { width: 1440, height: 900 },
       })
-      const { pane, session } = await createSession(page, 'desk', 'new-2')
+      const { pane, session } = await createSession(page, 'new-2')
       const other = execFileSync('tmux', [
         '-S',
         socket,
@@ -276,30 +258,6 @@ describe.runIf(attention && devicesFile && stack)(
   },
 )
 
-/** chat row + → 新一轮 sheet with place locked to that direction */
-async function newRoundLockedSheet({
-  approvedPage,
-}: {
-  approvedPage: (
-    options: BrowserContextOptions,
-  ) => Promise<{ context: BrowserContext; page: Page }>
-}) {
-  const { context, page } = await approvedPage(devices['iPhone 13'])
-  await page.goto(`${base}/zh/console/sessions`)
-  const row = page.locator('[data-worktree=phone]')
-  await row.waitFor({ timeout: 15_000 })
-  await row.getByTestId('chat-row-menu').click({ button: 'right' })
-  await page.getByTestId('chat-new-round').click()
-  const sheet = page.getByTestId('new-session-sheet')
-  await sheet.waitFor({ timeout: 5_000 })
-  const place = sheet.getByTestId('new-session-place')
-  await expect.poll(() => place.getAttribute('data-locked')).toBe('')
-  await expect.poll(() => place.textContent()).toMatch(/phone/)
-  await place.click({ force: true })
-  expect(await sheet.getByTestId('new-session-directions').count()).toBe(0)
-  await context.close()
-}
-
 /**
  * Purpose edited from 会话信息 (list stays read-only).
  * session-purpose.tsx → relay worktree.describe → worktree-task describe.
@@ -308,6 +266,7 @@ async function editPurposeInSessionInfo(
   page: Page,
   group: Locator,
   worktree: string,
+  session: string,
 ) {
   const purpose = () =>
     execFileSync('git', [
@@ -316,7 +275,7 @@ async function editPurposeInSessionInfo(
       'config',
       '--default',
       '',
-      'branch.dev/phone.description',
+      `branch.dev/${session}.description`,
     ])
       .toString()
       .trim()
@@ -326,7 +285,7 @@ async function editPurposeInSessionInfo(
   await info.waitFor({ timeout: 5_000 })
   const block = info.getByTestId('session-info-purpose')
   const input = block.getByTestId('worktree-purpose-input')
-  await block.getByTestId('worktree-description').click()
+  await block.getByTestId('worktree-purpose-add').click()
   await input.fill('手机端新建与收尾')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')
@@ -358,121 +317,4 @@ async function editPurposeInSessionInfo(
   await group.waitFor({ timeout: 15_000 })
   expect(await group.getByTestId('worktree-description').count()).toBe(0)
   expect(purpose()).toBe('再补一句')
-}
-
-/**
- * 新会话 on a direction with an idle workstation: phone (made by the first
- * test) shows 空闲 and is the default; creating reuses it through the test
- * stack's reuse-workstation stand-in, and the page opens the new round's
- * session — not phone's last round, still listed in the same worktree.
- */
-async function reuseIdleDirection({
-  repo,
-  socket,
-  listEntry,
-  approvedPage,
-}: {
-  repo: string
-  socket: string
-  listEntry: (id: string, pane: string, session: string) => object
-  approvedPage: (
-    options: BrowserContextOptions,
-  ) => Promise<{ context: BrowserContext; page: Page }>
-}) {
-  const phone = join(repo, '.worktrees', 'phone')
-  const oldPane = execFileSync('tmux', [
-    '-S',
-    socket,
-    'display-message',
-    '-p',
-    '-t',
-    'phone',
-    '#{pane_id}',
-  ])
-    .toString()
-    .trim()
-  writeFileSync(
-    attention,
-    JSON.stringify({
-      entries: {
-        'new-1': {
-          ...listEntry('new-1', oldPane, 'phone'),
-          status: 'done',
-        },
-      },
-    }),
-  )
-  const { context, page } = await approvedPage(devices['iPhone 13'])
-  await page.goto(`${base}/zh/console/sessions`)
-  await page.getByTestId('new-session').click()
-  const sheet = page.getByTestId('new-session-sheet')
-  // compose defaults to the idle direction; open place to confirm
-  const place = sheet.getByTestId('new-session-place')
-  await expect
-    .poll(() => place.textContent(), { timeout: 15_000 })
-    .toMatch(/phone/)
-  await expect.poll(() => place.textContent()).toMatch(/复用空闲|reuse idle/)
-  await place.click()
-  const row = sheet.locator('[data-direction="phone"]')
-  await expect
-    .poll(() => row.getByTestId('direction-state').textContent(), {
-      timeout: 15_000,
-    })
-    .toBe('空闲')
-  expect(await row.getAttribute('aria-checked')).toBe('true')
-  expect(await sheet.getByTestId('new-session-plan').textContent()).toContain(
-    '复用 phone',
-  )
-  // pick confirms and returns to compose (message only)
-  await row.click()
-  expect(await sheet.getByPlaceholder('例如 ux、ci、i18n').count()).toBe(0)
-  await sheet.getByPlaceholder('要它做什么？').fill('下一轮')
-  await sheet.getByRole('button', { name: '创建会话' }).click()
-  const stage = page.getByTestId('new-session-stage')
-  await expect
-    .poll(() => stage.getAttribute('data-stage'), { timeout: 20_000 })
-    .toBe('done')
-  const reused = readFileSync(join(stack, 'reused'), 'utf8').trim().split('\n')
-  expect(reused.at(-1)).toBe(phone)
-  // the new round's agent answers: list it beside the old one
-  const newSession =
-    execFileSync('tmux', [
-      '-S',
-      socket,
-      'list-sessions',
-      '-F',
-      '#{session_created} #{session_name}',
-    ])
-      .toString()
-      .trim()
-      .split('\n')
-      .filter((l) => l.includes(' reuse-'))
-      .sort()
-      .at(-1)
-      ?.split(' ')[1] ?? ''
-  const newPane = execFileSync('tmux', [
-    '-S',
-    socket,
-    'display-message',
-    '-p',
-    '-t',
-    newSession,
-    '#{pane_id}',
-  ])
-    .toString()
-    .trim()
-  writeFileSync(
-    attention,
-    JSON.stringify({
-      entries: {
-        'new-1': {
-          ...listEntry('new-1', oldPane, 'phone'),
-          status: 'done',
-        },
-        'new-3': listEntry('new-3', newPane, newSession),
-      },
-    }),
-  )
-  await page.waitForURL('**/console/sessions/new-3', { timeout: 20_000 })
-  await context.close()
 }
