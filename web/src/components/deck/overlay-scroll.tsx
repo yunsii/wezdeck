@@ -1,7 +1,7 @@
 // Overlay scrollbar host for list columns: native scroll feel, custom track
 // that does not take layout width (no classic-scrollbar width jitter), hidden
 // until hover / focus-within / scroll. Wraps OverlayScrollbars.
-import 'overlayscrollbars/overlayscrollbars.css'
+import 'overlayscrollbars/styles/overlayscrollbars.css'
 
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react'
 import type { OverlayScrollbarsComponentProps } from 'overlayscrollbars-react'
