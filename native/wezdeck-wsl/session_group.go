@@ -160,6 +160,22 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	newJobsMu.Unlock()
 	defer releaseSessionWorktree(tree)
 
+	// An archived row may still point to a pane that now hosts a different
+	// conversation. Close only that record, even while the pane is in use.
+	if !request.Force && entry.archivedID == request.ID {
+		pinned, err := sessionPanePin(entry)
+		if err != nil {
+			return nil, err
+		}
+		if pinned != "" && pinned != request.ID && pinned != entry.ReplacedFrom {
+			if err := markSessionClosed(request.ID); err != nil {
+				return nil, err
+			}
+			relayLogf("session_delete", "id=%s worktree=%q outcome=archive_only", request.ID, tree)
+			return map[string]any{"v": 1, "ok": true, "worktree_outcome": "archive_only"}, nil
+		}
+	}
+
 	if _, err := guardSession(request.ID); err != nil {
 		return nil, err
 	}
@@ -194,22 +210,18 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	} else if request.Force {
 		return nil, errors.New("the primary checkout cannot be removed")
 	}
-	marker := closedSessionMarker(request.ID)
-	if err := os.MkdirAll(filepath.Dir(marker), 0700); err != nil {
+	pinned, err := sessionPanePin(entry)
+	if err != nil {
 		return nil, err
 	}
-	pin, err := tmuxCmd(entry.TmuxSocket, "display-message", "-p", "-t", entry.TmuxPane, "#{@wezterm_agent_session_id}").Output()
-	if err != nil {
-		return nil, errors.New("cannot verify the session pane")
-	}
-	if pinned := strings.TrimSpace(string(pin)); pinned != "" && pinned != request.ID && pinned != entry.ReplacedFrom {
+	if pinned != "" && pinned != request.ID && pinned != entry.ReplacedFrom {
 		return nil, errors.New("the pane is pinned to another session")
 	}
-	if err := os.WriteFile(marker, nil, 0600); err != nil {
+	if err := markSessionClosed(request.ID); err != nil {
 		return nil, err
 	}
 	if err := tmuxCmd(entry.TmuxSocket, "kill-pane", "-t", entry.TmuxPane).Run(); err != nil {
-		_ = os.Remove(marker)
+		_ = os.Remove(closedSessionMarker(request.ID))
 		return nil, fmt.Errorf("close session pane: %w", err)
 	}
 	outcome := "primary"
@@ -222,6 +234,22 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	}
 	relayLogf("session_delete", "id=%s worktree=%q outcome=%s", request.ID, tree, outcome)
 	return map[string]any{"v": 1, "ok": true, "worktree_outcome": outcome}, nil
+}
+
+func sessionPanePin(entry attentionEntry) (string, error) {
+	pin, err := tmuxCmd(entry.TmuxSocket, "display-message", "-p", "-t", entry.TmuxPane, "#{@wezterm_agent_session_id}").Output()
+	if err != nil {
+		return "", errors.New("cannot verify the session pane")
+	}
+	return strings.TrimSpace(string(pin)), nil
+}
+
+func markSessionClosed(id string) error {
+	marker := closedSessionMarker(id)
+	if err := os.MkdirAll(filepath.Dir(marker), 0700); err != nil {
+		return err
+	}
+	return os.WriteFile(marker, nil, 0600)
 }
 
 func closedSessionMarker(id string) string {

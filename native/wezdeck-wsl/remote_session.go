@@ -217,7 +217,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 	sort.Slice(recent, func(i, j int) bool { return recent[i].ArchivedTS > recent[j].ArchivedTS })
 	for _, r := range recent {
 		key := r.TmuxSocket + "|" + r.TmuxPane
-		if r.SessionID == "" || r.TmuxPane == "" || panes[key] {
+		if r.SessionID == "" || r.TmuxPane == "" || panes[key] || sessionWasClosed(r.SessionID) {
 			continue
 		}
 		panes[key] = true
