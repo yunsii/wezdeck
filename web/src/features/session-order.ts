@@ -49,6 +49,13 @@ export function isWorkstation(row: SessionCard) {
   return !/^(ticket|claw)-/.test(base)
 }
 
+export function hasEditableGroupName(row: SessionCard) {
+  return (
+    Boolean(row.repo_root && row.worktree === row.repo_root) ||
+    isWorkstation(row)
+  )
+}
+
 /** the repo as the desk names it: its alias when one is set */
 export const repoName = (row: { repo?: string; repo_label?: string }) =>
   row.repo_label || row.repo || ''

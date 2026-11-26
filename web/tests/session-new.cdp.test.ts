@@ -205,6 +205,15 @@ describe.runIf(attention && devicesFile && stack)(
       await group.waitFor({ timeout: 15_000 })
       expect(await group.getByTestId('worktree-description').count()).toBe(0)
 
+      await group.getByTestId('chat-edit-group-name').tap()
+      const editor = page.getByRole('dialog', { name: '修改组名' })
+      await editor.getByRole('textbox', { name: '组名' }).fill('从列表改名')
+      await editor.getByRole('button', { name: '保存' }).tap()
+      await editor.waitFor({ state: 'hidden' })
+      await expect
+        .poll(() => git('config', `branch.dev/${session}.description`))
+        .toBe('从列表改名')
+
       await editPurposeInSessionInfo(page, group, worktree, session)
       await context.close()
     }, 90_000)
@@ -285,7 +294,7 @@ async function editPurposeInSessionInfo(
   await info.waitFor({ timeout: 5_000 })
   const block = info.getByTestId('session-info-purpose')
   const input = block.getByTestId('worktree-purpose-input')
-  await block.getByTestId('worktree-purpose-add').click()
+  await block.getByTestId('worktree-description').click()
   await input.fill('手机端新建与收尾')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')

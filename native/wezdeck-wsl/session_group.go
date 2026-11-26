@@ -262,18 +262,5 @@ func saveSessionGroupName(repo, tree, name string) error {
 		_, err = describeWorktree(args)
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "git", "-C", tree, "symbolic-ref", "--quiet", "--short", "HEAD").Output()
-	if err != nil {
-		return errors.New("cannot name a session group on a detached checkout")
-	}
-	branch := strings.TrimSpace(string(out))
-	if err := exec.CommandContext(ctx, "git", "-C", repo, "config", "branch."+branch+".description", name).Run(); err != nil {
-		return fmt.Errorf("save group name: %w", err)
-	}
-	worktreeDescMu.Lock()
-	delete(worktreeDescCache, repo)
-	worktreeDescMu.Unlock()
-	return nil
+	return describePrimaryCheckout(repo, name)
 }
