@@ -418,6 +418,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
+			TimeSource:  "attention",
 			RunningKind: e.RunningKind, RestartPending: e.RestartPending, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
 			AgentProfile: profile}
@@ -464,13 +465,18 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			// without one (remote_activity.go: Claude touches idle files)
 			if at := lastTurnAt(path, agent); at > 0 {
 				card.TS = at
+				card.TimeSource = "transcript_turn"
 			} else if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
+				card.TimeSource = "transcript_mtime"
 			}
 		} else if act := windowActivity(e); act > card.TS {
 			card.TS = act
+			card.TimeSource = "window_activity"
 		}
 		card.OrderAt = sessionOrderAt(e, card.TS)
+		card.OrderSource = sessionOrderSource(e, card.TimeSource)
+		observeSessionOrder(card, e.TS)
 		if act := deskActivity(e); act > 0 {
 			card.DeskIdleS = now.Unix() - act
 		} else {

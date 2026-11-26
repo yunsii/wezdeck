@@ -69,3 +69,43 @@ func TestSessionOrderAtUsesTurnBoundaries(t *testing.T) {
 		t.Fatalf("opening a completed session changed order time: %d", got)
 	}
 }
+
+func TestSessionOrderSource(t *testing.T) {
+	cases := []struct {
+		entry attentionEntry
+		want  string
+	}{
+		{attentionEntry{Status: "idle"}, "window_activity"},
+		{attentionEntry{Status: "running", TurnStarted: 100}, "turn_started"},
+		{attentionEntry{Status: "done", TS: 200}, "completion"},
+		{attentionEntry{archivedOrderAt: 300}, "archived_live"},
+	}
+	for _, tc := range cases {
+		if got := sessionOrderSource(tc.entry, "window_activity"); got != tc.want {
+			t.Errorf("status=%s: got %s want %s", tc.entry.Status, got, tc.want)
+		}
+	}
+}
+
+func TestSessionOrderChanged(t *testing.T) {
+	old := sessionOrderObservation{100, "transcript_turn", 100, "transcript_turn"}
+	if sessionOrderChanged(old, false, old) {
+		t.Fatal("first ordinary poll should be quiet")
+	}
+	if !sessionOrderChanged(old, false, sessionOrderObservation{200, "window_activity", 200, "window_activity"}) {
+		t.Fatal("first window activity fallback must be recorded")
+	}
+	if sessionOrderChanged(old, true, old) {
+		t.Fatal("repeated poll should be quiet")
+	}
+	if !sessionOrderChanged(old, true, sessionOrderObservation{200, "window_activity", 200, "window_activity"}) {
+		t.Fatal("changed time and source must be recorded")
+	}
+	if sessionOrderChanged(old, true, sessionOrderObservation{101, "transcript_turn", 100, "transcript_turn"}) {
+		t.Fatal("transcript output should not flood ordering logs")
+	}
+	if !sessionOrderChanged(sessionOrderObservation{100, "window_activity", 100, "window_activity"}, true,
+		sessionOrderObservation{101, "window_activity", 100, "window_activity"}) {
+		t.Fatal("fallback display time changes must be recorded")
+	}
+}

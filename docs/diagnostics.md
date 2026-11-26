@@ -369,6 +369,17 @@ scrape system skill catalogs from chat prompts; session chrome slashes
 (`/clear`, `/new`, `/home`, …) are filtered out of skill totals; WakaTime
 heartbeats ≠ pane concurrency.
 
+## Session list ordering
+
+When a session's fallback time or list position moves unexpectedly, search
+`~/.local/state/wezterm-runtime/logs/relay.log` for
+`event=session_order id=<session_id>`. Compare `old_time_at_ms` / `time_at_ms`
+and `old_order_at_ms` / `order_at_ms`; `time_source` and `order_source` identify
+the chosen inputs. `window_activity` means tmux reported activity in the
+window, which does not prove a new message. The `sessions` response carries
+the same source fields for the current card. A relay restart resets the
+in-memory comparison; a first fallback row has zero old values.
+
 ## Workflow timeline
 
 Derived **day loop** projection over WezDeck / helper / OpenClaw logs — for

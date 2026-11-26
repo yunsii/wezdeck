@@ -86,6 +86,20 @@ and agent across **all** of a worktree's sessions, not only the focus;
 purpose on the row is read-only (edit in 会话信息 via
 `worktree.describe`); pane index still orders sessions inside a worktree.
 
+Each `sessions` card reports `ts` with `time_source` and `order_at` with
+`order_source`. Display time comes from a transcript turn, transcript mtime,
+attention state, or tmux `window_activity`; active turns order by their start,
+completed turns by attention completion, and archived cards by their live
+timestamp. A card with no transcript may fall back to tmux window activity,
+which can advance without a new user message. The relay writes
+`event=session_order` to `relay.log` when ordering or source changes, when a
+fallback display time changes, and on the first observed mtime/window fallback.
+Ordinary transcript output with stable ordering is omitted. Rows include
+previous and current values, both sources, attention timestamp, status, id,
+and pane; they contain no message text. The first observation after a relay
+restart has no previous value, so it cannot establish what changed before
+that restart.
+
 Chat focus keeps waiting, unread-done and running sessions ahead of idle ones.
 Between ordinary idle sessions in one worktree, the card whose tmux session has
 an attached client wins over a newer detached conversation, so the session on

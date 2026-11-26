@@ -18,8 +18,12 @@ export type SessionCard = {
   last_prompt: string
   draft?: string
   ts: number
+  /** Source of the displayed timestamp. */
+  time_source?: string
   /** stable ordering time: turn start while active, completion after done */
   order_at?: number
+  /** Source of the ordering timestamp. */
+  order_source?: string
   transcript: boolean
   desk_idle_s: number
   running_kind?: string
