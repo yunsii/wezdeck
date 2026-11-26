@@ -126,7 +126,7 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
   return workstationLabel(base) || wtKey
 }
 
-/** which session a chat opens: waiting → done → running → attached idle → newest activity */
+/** which session a chat opens: terminal's active primary pane → waiting → done → running → newest activity */
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
   phone: Record<string, number> = {},
@@ -135,6 +135,16 @@ export function resolveChatFocus(
   if (!sessions.length) return undefined
   const byVisit = (a: SessionCard, b: SessionCard) =>
     visitOf(b, phone) - visitOf(a, phone) || b.ts - a.ts
+  const terminal = sessions
+    .filter(
+      (row) =>
+        row.pane_role === 'primary' &&
+        row.status === 'running' &&
+        !row.restart_pending &&
+        !row.detached,
+    )
+    .sort(byVisit)
+  if (terminal[0]) return terminal[0]
   const waiting = sessions.filter(needsYou).sort(byVisit)
   if (waiting[0]) return waiting[0]
   const done = sessions.filter((row) => row.status === 'done').sort(byVisit)

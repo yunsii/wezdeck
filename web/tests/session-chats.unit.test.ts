@@ -79,6 +79,22 @@ describe('resolveChatFocus', () => {
       ).toBe('detached')
     }
   })
+  it('follows the active primary terminal over an archived done session', () => {
+    const archived = card({
+      id: 'old-grok',
+      agent: 'grok',
+      status: 'done',
+      ts: 30,
+    })
+    const terminal = card({
+      id: 'agy-live',
+      agent: 'agy',
+      status: 'running',
+      pane_role: 'primary',
+      ts: 20,
+    })
+    expect(resolveChatFocus([archived, terminal])?.id).toBe('agy-live')
+  })
 })
 
 describe('buildChatGroups', () => {
