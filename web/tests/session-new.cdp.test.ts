@@ -188,18 +188,12 @@ describe.runIf(attention && devicesFile && stack)(
           .toString()
           .trim()
       expect(git('branch', '--show-current')).toBe('dev/phone')
-      // the purpose is the branch description
+      // the purpose is the branch description; the list no longer shows it
       expect(git('config', 'branch.dev/phone.description')).toBe('手机端体验')
-      // list shows purpose read-only; editing lives in 会话信息
       await page.goto(`${base}/zh/console/sessions`)
       const group = page.locator('[data-worktree=phone]')
-      await expect
-        .poll(() => group.getByTestId('worktree-description').textContent(), {
-          timeout: 15_000,
-        })
-        .toContain('手机端体验')
-      expect(await group.getByTestId('worktree-purpose-add').count()).toBe(0)
-      expect(await group.getByTestId('worktree-purpose-input').count()).toBe(0)
+      await group.waitFor({ timeout: 15_000 })
+      expect(await group.getByTestId('worktree-description').count()).toBe(0)
 
       await editPurposeInSessionInfo(page, group, worktree)
       await context.close()
@@ -358,14 +352,12 @@ async function editPurposeInSessionInfo(
   expect(await input.count()).toBe(0)
   expect(purpose()).toBe('再补一句')
 
-  // list still shows the purpose read-only after closing the sheet
+  // list no longer shows the purpose; it stays on the branch + 会话信息
   await page.keyboard.press('Escape')
   await page.goto(`${base}/zh/console/sessions`)
-  await expect
-    .poll(() => group.getByTestId('worktree-description').textContent(), {
-      timeout: 15_000,
-    })
-    .toContain('再补一句')
+  await group.waitFor({ timeout: 15_000 })
+  expect(await group.getByTestId('worktree-description').count()).toBe(0)
+  expect(purpose()).toBe('再补一句')
 }
 
 /**

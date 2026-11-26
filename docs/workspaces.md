@@ -114,7 +114,7 @@ The current adapters are:
 | Claude / `claude_sub2api` / `claude_kimi` | base Claude settings | `--permission-mode bypassPermissions` |
 | Codex | `~/.codex/auto.config.toml` | `~/.codex/full-access.config.toml` |
 | Grok | base Grok settings | `--always-approve` |
-| Agy | base Antigravity CLI settings | `--dangerously-skip-permissions` |
+| Agy | `--mode auto` | `--dangerously-skip-permissions` |
 
 Codex overlays are host-owned regular files maintained by
 `scripts/dev/apply-codex-permission-profiles.sh` (permission-key upsert from

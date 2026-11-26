@@ -174,24 +174,13 @@ function ChatRow({
             />
             <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
               <span className="flex items-baseline justify-between gap-2">
-                <span className="flex min-w-0 items-baseline gap-1.5">
-                  <span
-                    className={cn(
-                      'truncate text-title',
-                      chat.unread > 0 ? 'font-semibold' : 'font-medium',
-                    )}
-                  >
-                    {chat.title}
-                  </span>
-                  {chat.purpose ? (
-                    <span
-                      className="min-w-0 truncate text-brand-muted"
-                      data-testid="worktree-description"
-                      title={chat.purpose}
-                    >
-                      · {chat.purpose}
-                    </span>
-                  ) : null}
+                <span
+                  className={cn(
+                    'min-w-0 truncate text-title',
+                    chat.unread > 0 ? 'font-semibold' : 'font-medium',
+                  )}
+                >
+                  {chat.title}
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   {chat.unread > 0 ? (

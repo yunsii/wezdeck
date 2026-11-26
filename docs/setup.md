@@ -301,8 +301,10 @@ The `agy` managed profile uses the locally installed Antigravity CLI, not
 or select Antigravity in the web console. The launcher passes a model override
 from `~/.config/wezdeck/agent-models/agy.env` when set, resumes a typed
 conversation with `agy --conversation <id>`, and otherwise uses `agy --continue`.
-`full-access` maps to `--dangerously-skip-permissions`; `auto` uses Agy's own
-default permissions.
+`auto` explicitly passes `--mode auto` (workspace edits and sandboxed commands
+can proceed automatically; risky actions still ask). An unset permission
+profile keeps Agy's own default. `full-access` maps to
+`--dangerously-skip-permissions` and skips permission prompts.
 
 Install the global lifecycle hook once after syncing the runtime:
 

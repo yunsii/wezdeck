@@ -359,7 +359,7 @@ export function TicketsView({
     const current =
       id ?? held.current ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
     return (
-      <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-start">
+      <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-stretch">
         <TicketListKeys
           ids={[...recent, ...older].map((ticket) => ticket.id)}
           current={current}

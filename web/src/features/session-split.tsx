@@ -132,7 +132,7 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
   const switched = useRef(false)
   if (id && first.current && id !== first.current) switched.current = true
   return (
-    <div className="max-md:contents md:grid md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-start">
+    <div className="max-md:contents md:grid md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-stretch">
       {wide ? <DeskKeys id={id} /> : null}
       <div
         data-testid="session-list-column"
@@ -144,9 +144,8 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
         <SessionList selected={id ?? ''} split={wide} />
       </div>
       <div
-        // the divider is the pane's left edge, top to bottom of the page: the
-        // pane steps over the page's own padding (-my-4 / py-4) and is at
-        // least the window tall, whatever the conversation's length
+        // the divider is the pane's left edge, top to bottom of the page;
+        // the pane is at least the window tall, whatever the conversation's length
         className={cn(
           'vt-split-pane max-md:contents md:flex md:min-h-[100cqh] md:min-w-0 md:flex-col md:border-l md:border-brand-edge md:pl-[var(--page-x)]',
           !id && 'max-md:hidden',

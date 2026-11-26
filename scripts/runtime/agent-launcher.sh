@@ -442,9 +442,11 @@ case "$agent" in
     ensure_agy_workspace_trust "$PWD"
     agy_args=()
     agy_permission="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
+    agy_permission_resolution=base
     case "$agy_permission" in
-      ''|auto) ;;
-      full-access) agy_args+=(--dangerously-skip-permissions) ;;
+      '') ;;
+      auto) agy_args+=(--mode auto); agy_permission_resolution=cli ;;
+      full-access) agy_args+=(--dangerously-skip-permissions); agy_permission_resolution=cli ;;
       *)
         runtime_log_warn primary_pane "unknown Agy permission profile; using base config" \
           "profile=$agy_permission" "allowed=auto,full-access" || true
@@ -454,7 +456,7 @@ case "$agent" in
     load_managed_model_override agy
     agy_args+=("${managed_model_args[@]}")
     export WEZDECK_AGY_MANAGED=1
-    log_resume_boot agy "${agy_permission:-base}" base
+    log_resume_boot agy "${agy_permission:-base}" "$agy_permission_resolution"
     exec bash "$script_dir/agent-resume.sh" agy "$fallback_log_script" \
       "$agy_bin" "${agy_permission:-base}" "${agy_args[@]}"
     ;;
