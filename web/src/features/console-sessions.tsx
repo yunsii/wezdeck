@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -336,10 +336,17 @@ function useComposerBlock(data: Detail | undefined, approved: boolean) {
       : ''
 }
 
-function useLeaveMissingSession(gone: boolean, back: () => void) {
+function useLeaveMissingSession(gone: boolean) {
+  const { locale } = useLocale()
+  const navigate = useNavigate()
   useEffect(() => {
-    if (gone) back()
-  }, [back, gone])
+    if (!gone) return
+    void navigate({
+      to: '/{-$locale}/console/sessions',
+      params: { locale: locale === 'en' ? undefined : locale },
+      replace: true,
+    })
+  }, [gone, locale, navigate])
 }
 
 export function SessionDetail({ id }: { id: string }) {
@@ -385,7 +392,7 @@ export function SessionDetail({ id }: { id: string }) {
   const gone =
     detail.isError &&
     /session not found|ended or not tracked/i.test(String(detail.error.message))
-  useLeaveMissingSession(gone, back)
+  useLeaveMissingSession(gone)
   const blocked = useComposerBlock(data, device.state === 'approved')
   const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({

@@ -32,6 +32,8 @@ so a web page still on the fresh session switches back to the resumed one.
 The `sessions` poll also carries `redirects: [{from,to}]` (cleared_to and
 `ReplacedFrom` edges whose `to` is still listed) so a detail URL that missed
 `replaced_by` still follows on the next list tick (`useFollowSessionRedirect`).
+If the host reports that a session has ended without a replacement, its
+detail route returns to the sessions list using a history replacement.
 The page breaks redirect cycles: once it has left a session id by following,
 it will not auto-navigate back to it (`canFollowSession`; client trace
 `session-follow` with `skipped=cycle`). A session id still pinned on another

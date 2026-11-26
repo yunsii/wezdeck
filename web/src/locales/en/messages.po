@@ -143,7 +143,7 @@ msgstr "{staleCount} subagents silent for a while"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:438
+#: src/features/console-sessions.tsx:445
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -571,7 +571,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:514
+#: src/features/console-sessions.tsx:521
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -1658,7 +1658,7 @@ msgstr "list available commands"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:468
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1674,7 +1674,7 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:458
+#: src/features/console-sessions.tsx:465
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:82
@@ -2163,7 +2163,7 @@ msgstr "Open in VS Code"
 msgid "Open now"
 msgstr "Open now"
 
-#: src/features/console-sessions.tsx:537
+#: src/features/console-sessions.tsx:544
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2922,7 +2922,7 @@ msgstr "Shortcuts"
 msgid "Show all tags"
 msgstr "Show all tags"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:467
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -2974,7 +2974,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:521
+#: src/features/console-sessions.tsx:528
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3264,7 +3264,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:515
+#: src/features/console-sessions.tsx:522
 msgid "this device is offline"
 msgstr "this device is offline"
 
