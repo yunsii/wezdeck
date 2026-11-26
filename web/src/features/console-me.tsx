@@ -381,14 +381,14 @@ function MeIndex({ active }: { active?: MePage }) {
           </Link>
         </li>
       </ul>
-      {consoleMode === 'local' ? (
-        <ul className={group}>
-          <EntryRow
-            page="host"
-            active={active === 'host'}
-            title={titles.host}
-            value={hostSummary}
-          />
+      <ul className={group}>
+        <EntryRow
+          page="host"
+          active={active === 'host'}
+          title={titles.host}
+          value={consoleMode === 'local' ? hostSummary : undefined}
+        />
+        {consoleMode === 'local' ? (
           <li className="border-b border-brand-edge last:border-b-0">
             <Link
               to="/{-$locale}/console/diagnostics"
@@ -403,8 +403,8 @@ function MeIndex({ active }: { active?: MePage }) {
               />
             </Link>
           </li>
-        </ul>
-      ) : null}
+        ) : null}
+      </ul>
     </div>
   )
 }

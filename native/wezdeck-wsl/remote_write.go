@@ -66,6 +66,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = startSessionHandoff(args)
 	case "ticket.new":
 		result, err = createTicket(args)
+	case "host.warp.set":
+		result, err = setWarp(args)
 	case "worktree.describe":
 		result, err = describeWorktree(args)
 	default:

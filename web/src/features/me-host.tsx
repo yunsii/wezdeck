@@ -9,6 +9,8 @@ import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { SectionHeading } from '#/components/ui/section-heading'
 import { Field, FieldList } from '#/components/ui/field'
+import { useConsoleMode } from './console-mode'
+import { HostQuickControls } from './host-quick-controls'
 import { runtimeQuery, useRuntimeData } from './console-data'
 import {
   ImeDetail,
@@ -58,6 +60,16 @@ export function useHostSummary() {
 }
 
 export function HostPage() {
+  const mode = useConsoleMode()
+  return (
+    <div className="grid gap-4">
+      <HostQuickControls />
+      {mode === 'local' ? <LocalHostDetails /> : null}
+    </div>
+  )
+}
+
+function LocalHostDetails() {
   const { t } = useLingui()
   const runtime = useRuntimeData()
   const { data, error, loading, refreshAll } = runtime

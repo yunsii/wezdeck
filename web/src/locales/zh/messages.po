@@ -106,7 +106,7 @@ msgstr "{n} 秒"
 msgid "{name} is ready, no conversation yet."
 msgstr "{name} 已就绪，还没有对话。"
 
-#: src/features/me-host.tsx:57
+#: src/features/me-host.tsx:59
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
@@ -332,7 +332,7 @@ msgstr "全部标签"
 msgid "All tiers"
 msgstr "全部档位"
 
-#: src/features/me-host.tsx:117
+#: src/features/me-host.tsx:129
 msgid "All time"
 msgstr "累计"
 
@@ -402,6 +402,10 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 #: src/features/session-permission.tsx:78
 msgid "Approve the plan"
 msgstr "批准计划"
+
+#: src/features/host-quick-controls.tsx:122
+msgid "Approve this device in Device access to use host controls."
+msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
 
 #: src/features/me-devices.tsx:273
 msgid "Approved"
@@ -561,7 +565,7 @@ msgstr "取消（Esc）"
 msgid "Capabilities"
 msgstr "能力"
 
-#: src/features/me-host.tsx:139
+#: src/features/me-host.tsx:151
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
@@ -583,6 +587,10 @@ msgctxt "git"
 msgid "Changes"
 msgstr "变更"
 
+#: src/features/host-quick-controls.tsx:109
+msgid "Changing One Client…"
+msgstr "正在切换 One Client…"
+
 #: src/features/console-me.tsx:90
 msgid "Check again"
 msgstr "重新检查"
@@ -595,7 +603,7 @@ msgstr "检查更新"
 #: src/features/me-app.tsx:87
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
-#: src/features/me-host.tsx:56
+#: src/features/me-host.tsx:58
 msgid "Checking…"
 msgstr "检查中…"
 
@@ -781,6 +789,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
 
+#: src/features/host-quick-controls.tsx:112
+msgid "Connect One Client"
+msgstr "连接 One Client"
+
+#: src/features/host-quick-controls.tsx:63
+#: src/features/host-quick-controls.tsx:72
+msgid "Connected"
+msgstr "已连接"
+
+#: src/features/host-quick-controls.tsx:65
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
 msgid "Connecting…"
@@ -793,6 +811,10 @@ msgstr "连接"
 #: src/features/console-shell.tsx:320
 msgid "Connection details"
 msgstr "连接详情"
+
+#: src/features/host-quick-controls.tsx:74
+msgid "Connection failed"
+msgstr "连接失败"
 
 #: src/features/me-devices.tsx:53
 msgid "Console ({origin})"
@@ -1056,6 +1078,18 @@ msgstr "停用此 Agent"
 msgid "Disabled"
 msgstr "已停用"
 
+#: src/features/host-quick-controls.tsx:111
+msgid "Disconnect One Client"
+msgstr "断开 One Client"
+
+#: src/features/host-quick-controls.tsx:64
+msgid "Disconnected"
+msgstr "已断开"
+
+#: src/features/host-quick-controls.tsx:66
+msgid "Disconnecting…"
+msgstr "正在断开…"
+
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/session-list.tsx:62
@@ -1111,7 +1145,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "已结束"
 
-#: src/features/me-host.tsx:102
+#: src/features/me-host.tsx:114
 msgid "Endpoint"
 msgstr "端点"
 
@@ -1134,7 +1168,7 @@ msgstr "Esc"
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
 
-#: src/features/me-host.tsx:34
+#: src/features/me-host.tsx:36
 msgid "Event stream"
 msgstr "事件流"
 
@@ -1301,7 +1335,7 @@ msgstr "主机默认"
 msgid "Host offline"
 msgstr "主机离线"
 
-#: src/features/me-host.tsx:36
+#: src/features/me-host.tsx:38
 msgid "Host signals"
 msgstr "主机信号"
 
@@ -1395,8 +1429,8 @@ msgstr "发起方"
 msgid "Input cleared"
 msgstr "已清空输入"
 
-#: src/features/me-host.tsx:107
-#: src/features/me-host.tsx:108
+#: src/features/me-host.tsx:119
+#: src/features/me-host.tsx:120
 msgid "Input method"
 msgstr "输入法"
 
@@ -1408,7 +1442,7 @@ msgstr "安装 WezDeck"
 msgid "Installed"
 msgstr "已安装"
 
-#: src/features/me-host.tsx:101
+#: src/features/me-host.tsx:113
 msgid "Instance"
 msgstr "实例"
 
@@ -1494,7 +1528,7 @@ msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-shell.tsx:469
-#: src/features/me-host.tsx:104
+#: src/features/me-host.tsx:116
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -1503,9 +1537,13 @@ msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/console-sessions.tsx:193
-#: src/features/me-host.tsx:118
+#: src/features/me-host.tsx:130
 msgid "Latest"
 msgstr "回到最新"
+
+#: src/features/host-quick-controls.tsx:95
+msgid "Latest OPPO connection"
+msgstr "最近一次 OPPO 连接"
 
 #: src/features/session-background.tsx:95
 msgid "Latest output"
@@ -1808,6 +1846,10 @@ msgstr "下一个等你处理的会话"
 msgid "no"
 msgstr "否"
 
+#: src/features/host-quick-controls.tsx:90
+msgid "No active session"
+msgstr "当前没有远控会话"
+
 #: src/features/session-subagents.tsx:78
 msgid "No activity for a while"
 msgstr "有一阵子没动静了"
@@ -1871,6 +1913,10 @@ msgstr "还没有输出"
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
+#: src/features/host-quick-controls.tsx:75
+msgid "No recent result"
+msgstr "暂无最近的连接结果"
+
 #: src/features/session-list.tsx:399
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
@@ -1917,7 +1963,7 @@ msgstr "未送达：agent 已空闲，没收到这条"
 msgid "not done"
 msgstr "未实现"
 
-#: src/features/me-host.tsx:128
+#: src/features/me-host.tsx:140
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
@@ -2058,6 +2104,10 @@ msgstr "正在打开…"
 msgid "opens one more"
 msgstr "将新开"
 
+#: src/features/host-quick-controls.tsx:85
+msgid "OPPO remote control"
+msgstr "OPPO 远控"
+
 #: src/features/session-handoff.tsx:253
 msgid "Optional note"
 msgstr "补充说明"
@@ -2172,7 +2222,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/me-host.tsx:134
+#: src/features/me-host.tsx:146
 msgid "Process"
 msgstr "进程"
 
@@ -2212,6 +2262,10 @@ msgstr "把光标放进输入框"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
+#: src/features/host-quick-controls.tsx:80
+msgid "Quick controls"
+msgstr "快捷控制"
+
 #: src/features/session-composer.tsx:245
 #: src/features/session-key-panel.tsx:64
 msgid "Quick keys"
@@ -2235,8 +2289,8 @@ msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
 #: src/features/console-shell.tsx:433
-#: src/features/me-host.tsx:57
-#: src/features/me-host.tsx:130
+#: src/features/me-host.tsx:59
+#: src/features/me-host.tsx:142
 msgid "Ready"
 msgstr "就绪"
 
@@ -2455,7 +2509,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:538
-#: src/features/me-host.tsx:88
+#: src/features/me-host.tsx:100
 msgid "Retry"
 msgstr "重试"
 
@@ -2483,7 +2537,7 @@ msgstr "撤销"
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝。主机命令行也能做同样的事：scripts/dev/install-remote-relay.sh --approve / --revoke <id>。"
 
-#: src/features/me-host.tsx:35
+#: src/features/me-host.tsx:37
 msgid "Rime collector"
 msgstr "Rime 采集器"
 
@@ -2564,7 +2618,7 @@ msgstr "运行与花费"
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
-#: src/features/me-host.tsx:100
+#: src/features/me-host.tsx:112
 msgid "Runtime"
 msgstr "运行时"
 
@@ -2575,7 +2629,7 @@ msgstr "运行时"
 msgid "Runtime action failed"
 msgstr "Runtime 操作失败"
 
-#: src/features/me-host.tsx:33
+#: src/features/me-host.tsx:35
 msgid "Runtime API"
 msgstr "Runtime API"
 
@@ -2691,6 +2745,10 @@ msgstr "正在发送接续 brief…"
 msgid "Session"
 msgstr "会话"
 
+#: src/features/host-quick-controls.tsx:88
+msgid "Session active"
+msgstr "远控会话进行中"
+
 #: src/features/session-info.tsx:50
 msgid "Session id"
 msgstr "会话 ID"
@@ -2777,7 +2835,7 @@ msgstr "跳到内容"
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
-#: src/features/me-host.tsx:133
+#: src/features/me-host.tsx:145
 msgid "Socket"
 msgstr "套接字"
 
@@ -2858,7 +2916,7 @@ msgid "State"
 msgstr "状态"
 
 #: src/features/console-collab.tsx:361
-#: src/features/me-host.tsx:126
+#: src/features/me-host.tsx:138
 #: src/features/session-info.tsx:75
 #: src/features/tickets-view.tsx:197
 msgid "Status"
@@ -3189,7 +3247,7 @@ msgid "To-dos of this repo"
 msgstr "这个仓库的待办"
 
 #: src/features/console-activity.tsx:165
-#: src/features/me-host.tsx:110
+#: src/features/me-host.tsx:122
 msgid "Today"
 msgstr "今日"
 
@@ -3197,7 +3255,7 @@ msgstr "今日"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
-#: src/features/me-host.tsx:114
+#: src/features/me-host.tsx:126
 msgid "Today events"
 msgstr "今日事件"
 
@@ -3260,7 +3318,7 @@ msgstr "TURN 中继"
 msgid "Turns"
 msgstr "轮数"
 
-#: src/features/me-host.tsx:69
+#: src/features/me-host.tsx:81
 msgid "Unavailable"
 msgstr "不可用"
 
@@ -3275,6 +3333,10 @@ msgstr "下划线"
 #: src/features/session-composer.tsx:170
 msgid "Undo"
 msgstr "撤销"
+
+#: src/features/host-quick-controls.tsx:61
+msgid "Unknown"
+msgstr "未知"
 
 #: src/features/session-chat-group.tsx:171
 #: src/features/session-commands.tsx:161
@@ -3306,7 +3368,7 @@ msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-shell.tsx:475
-#: src/features/me-host.tsx:103
+#: src/features/me-host.tsx:115
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -3561,8 +3623,8 @@ msgstr "工作树"
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
-#: src/features/me-host.tsx:38
-#: src/features/me-host.tsx:124
+#: src/features/me-host.tsx:40
+#: src/features/me-host.tsx:136
 msgid "WSL bridge"
 msgstr "WSL 通道"
 
