@@ -78,10 +78,13 @@ if ((!fresh)); then
   exit 1
 fi
 
-new_id=""
+new_id="$(cat /proc/sys/kernel/random/uuid)"
 if [[ "$agent" == claude* ]]; then
-  new_id="$(cat /proc/sys/kernel/random/uuid)"
   tmux set-option -p -t "$pane" @wezdeck_fresh_session_id "$new_id"
+else
+  # Codex and Grok choose their own id after the first prompt. Until then,
+  # this id lets the web console address the fresh, empty pane.
+  new_id="pending-$new_id"
 fi
 out="$(AGENT_CTRL_N_PRINT_OUTCOME=1 bash "$SCRIPT_DIR/agent-ctrl-n.sh" --fresh "$pane" 2>/dev/null)" || true
 outcome="$(sed -n 's/^outcome=//p' <<<"$out" | tail -1)"

@@ -366,6 +366,32 @@ func TestReplacementForArchivedUsesPaneWhenClearedToMissing(t *testing.T) {
 	}
 }
 
+func TestPendingFreshSessionFollowsFirstPrompt(t *testing.T) {
+	dir := t.TempDir()
+	attention := filepath.Join(dir, "attention.json")
+	doc, err := json.Marshal(map[string]any{
+		"entries": map[string]any{
+			"real-session": map[string]any{"session_id": "real-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "status": "running"},
+		},
+		"recent": []map[string]any{
+			{"session_id": "old-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "archived_ts": int64(100), "cleared_to": "pending-fresh"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(attention, doc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", attention)
+	for _, id := range []string{"old-session", "pending-fresh"} {
+		got, err := sessionDetail(json.RawMessage(`{"id":"` + id + `"}`))
+		if err != nil || got.(map[string]any)["replaced_by"] != "real-session" {
+			t.Fatalf("%s: want real-session replacement, got %v, %v", id, got, err)
+		}
+	}
+}
+
 func TestSessionDetailFollowsNewRolloutWithoutClearedTo(t *testing.T) {
 	dir := t.TempDir()
 	attention := filepath.Join(dir, "attention.json")

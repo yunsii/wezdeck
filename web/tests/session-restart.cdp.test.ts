@@ -169,6 +169,32 @@ describe.runIf(attention && devicesFile && stack)(
       await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
         timeout: 20_000,
       })
+      // Codex / Grok cannot name their own fresh id at startup. The host
+      // gives the empty pane a pending id, then follows the first prompt's id.
+      const pending = 'pending-00000000-0000-4000-8000-000000000002'
+      writeFileSync(
+        attention,
+        JSON.stringify({
+          entries: {},
+          recent: [{ ...entry(), status: 'idle', cleared_to: pending }],
+        }),
+      )
+      await page.goto(`${base}/zh/console/sessions/restart-s1`)
+      await page.waitForURL(`**/console/sessions/${pending}`, {
+        timeout: 20_000,
+      })
+      writeFileSync(
+        attention,
+        JSON.stringify({
+          entries: {
+            'codex-real': { ...entry(), session_id: 'codex-real' },
+          },
+          recent: [{ ...entry(), status: 'idle', cleared_to: pending }],
+        }),
+      )
+      await page.waitForURL('**/console/sessions/codex-real', {
+        timeout: 20_000,
+      })
       expect(dialogs).toBe(0)
       await context.close()
     }, 90_000)

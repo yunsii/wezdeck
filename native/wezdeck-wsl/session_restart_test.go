@@ -158,6 +158,36 @@ func TestSessionRestartScriptFreshMarksClearedTo(t *testing.T) {
 	}
 }
 
+func TestSessionRestartScriptCodexNamesPendingSession(t *testing.T) {
+	dir, socket, pane, attention := restartFixture(t)
+	fresh := filepath.Join(dir, "fresh-stub")
+	_ = os.WriteFile(fresh, []byte("#!/usr/bin/env bash\n"), 0o755)
+	cmd := exec.Command("bash", filepath.Join(repoRoot(), "scripts", "runtime", "session-restart.sh"),
+		"--pane", pane, "--agent", "codex", "--fresh")
+	cmd.Env = append(os.Environ(), "TMUX="+socket+",0,0", "AGENT_CTRL_N_FRESH_SH="+fresh,
+		"WEZDECK_ATTENTION_STATE_PATH="+attention, "WEZTERM_ATTENTION_LOCK_FILE="+attention+".lock")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("script: %v\n%s", err, out)
+	}
+	match := regexp.MustCompile(`(?m)^session_id=(pending-[0-9a-f-]+)$`).FindStringSubmatch(string(out))
+	if len(match) != 2 || !uuidPattern.MatchString(strings.TrimPrefix(match[1], "pending-")) {
+		t.Fatalf("want pending session id: %q", out)
+	}
+	var state struct {
+		Recent []map[string]any `json:"recent"`
+	}
+	raw, _ := os.ReadFile(attention)
+	_ = json.Unmarshal(raw, &state)
+	if len(state.Recent) == 0 || state.Recent[0]["cleared_to"] != match[1] {
+		t.Fatalf("old session did not point to pending session: %s", raw)
+	}
+	detail, err := sessionDetail([]byte(`{"id":"s1"}`))
+	if err != nil || detail.(map[string]any)["replaced_by"] != match[1] {
+		t.Fatalf("old session should open pending session: %v, %v", detail, err)
+	}
+}
+
 // agent-resume.sh's fresh start reads the id once and starts
 // `claude --session-id <it>`
 func TestAgentResumeFreshUsesHandedID(t *testing.T) {

@@ -231,12 +231,11 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 }
 
 // replacementForArchived finds the live session that took over an archived
-// session's pane. The attention hook normally records cleared_to, but a
-// provider can start a new rollout without emitting that marker. In that
-// case the pane identity is the reliable handoff signal.
+// session's pane, including a pending id created for a fresh restart.
+// The pane identity also handles rollouts without a cleared_to marker.
 func replacementForArchived(id string, recent []recentEntry, entries map[string]attentionEntry) string {
 	for _, r := range recent {
-		if r.SessionID != id || r.TmuxPane == "" {
+		if (r.SessionID != id && r.ClearedTo != id) || r.TmuxPane == "" {
 			continue
 		}
 		for next, e := range entries {
