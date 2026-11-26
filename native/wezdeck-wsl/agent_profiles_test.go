@@ -18,6 +18,7 @@ func TestAgentProfilesExposeRegisteredIDsWithoutCommands(t *testing.T) {
 	}
 	config := "WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=claude\n" +
 		"WT_PROVIDER_AGENT_PROFILE_CLAUDE_KIMI_RESUME_COMMAND=/secret/command\n" +
+		"WT_PROVIDER_AGENT_PROFILE_AGY_RESUME_COMMAND=agy\n" +
 		"WT_PROVIDER_AGENT_PROFILE_EMPTY_RESUME_COMMAND=\n"
 	if err := os.WriteFile(filepath.Join(root, "config", "worktree-task.env"), []byte(config), 0o644); err != nil {
 		t.Fatal(err)
@@ -33,7 +34,7 @@ func TestAgentProfilesExposeRegisteredIDsWithoutCommands(t *testing.T) {
 	}
 	data := result.(map[string]any)
 	profiles := data["profiles"].([]agentProfile)
-	if data["default"] != "claude_kimi" || len(profiles) != 2 {
+	if data["default"] != "claude_kimi" || len(profiles) != 3 {
 		t.Fatalf("profiles: %+v", data)
 	}
 	body, _ := json.Marshal(result)

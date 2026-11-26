@@ -1,0 +1,18 @@
+{
+  "wezdeck-attention": {
+    "SessionStart": [
+      { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh pane-evict" }
+    ],
+    "PreInvocation": [
+      { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh running" }
+    ],
+    "PostToolUse": [
+      { "matcher": "*", "hooks": [
+        { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh resolved" }
+      ] }
+    ],
+    "Stop": [
+      { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh done" }
+    ]
+  }
+}

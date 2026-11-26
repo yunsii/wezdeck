@@ -12,8 +12,8 @@ quiet=0
 usage() {
   cat <<'EOF'
 usage:
-  scripts/dev/agent-hooks.sh check [--provider all|claude|codex|grok] [--quiet]
-  scripts/dev/agent-hooks.sh install --provider claude|codex|grok|all
+  scripts/dev/agent-hooks.sh check [--provider all|claude|codex|grok|agy] [--quiet]
+  scripts/dev/agent-hooks.sh install --provider claude|codex|grok|agy|all
   scripts/dev/agent-hooks.sh probe
 
 AGENT_HOOKS_HOME overrides the home directory used for user hook settings.
@@ -236,11 +236,81 @@ install_provider() {
   printf 'agent-hooks provider=%s status=installed file=%s\n' "$name" "$target"
 }
 
+agy_hooks_file() { printf '%s/.gemini/config/hooks.json\n' "$hooks_home"; }
+
+check_agy() {
+  local file expected action event status=healthy
+  file="$(agy_hooks_file)"
+  expected="$repo_root/scripts/runtime/agent-attention/adapters/agy.sh"
+  if [[ ! -f "$file" ]]; then
+    printf 'agent-hooks provider=agy status=missing file=%s\n' "$file"
+    return 1
+  fi
+  for pair in 'SessionStart:pane-evict' 'PreInvocation:running' 'PostToolUse:resolved' 'Stop:done'; do
+    event="${pair%%:*}"; action="${pair#*:}"
+    if ! jq -e --arg event "$event" --arg command "$expected $action" '
+      [ .["wezdeck-attention"][$event][]?
+        | if .hooks then .hooks[] else . end
+        | select(.type? == "command") | .command ] | any(. == $command)
+    ' "$file" >/dev/null 2>&1; then
+      status=partial
+    fi
+  done
+  [[ -x "$expected" ]] || status=source-missing
+  if [[ "$status" != healthy || "$quiet" != 1 ]]; then
+    printf 'agent-hooks provider=agy status=%s file=%s\n' "$status" "$file"
+  fi
+  [[ "$status" == healthy ]]
+}
+
+install_agy() {
+  local target template source output backup
+  target="$(agy_hooks_file)"
+  template="$template_dir/agy-hooks.json"
+  mkdir -p "$(dirname "$target")"
+  source="$(mktemp)"
+  output="$(mktemp)"
+  if [[ -f "$target" ]]; then
+    cp "$target" "$source"
+  else
+    printf '{}\n' >"$source"
+  fi
+  if ! jq -e 'type == "object"' "$source" >/dev/null 2>&1; then
+    printf 'agent-hooks provider=agy status=invalid-config file=%s\n' "$target" >&2
+    rm -f "$source" "$output"
+    return 1
+  fi
+  if ! jq -s --arg repo "$repo_root" '
+    (.[1] | walk(if type == "string" then gsub("__WEZDECK_REPO__"; $repo) else . end)) as $addition
+    | .[0] + $addition
+  ' "$source" "$template" >"$output"; then
+    rm -f "$source" "$output"
+    return 1
+  fi
+  if [[ -f "$target" ]] && cmp -s "$source" "$output"; then
+    printf 'agent-hooks provider=agy status=unchanged file=%s\n' "$target"
+    rm -f "$source" "$output"
+    return 0
+  fi
+  if [[ -f "$target" ]]; then
+    backup="$target.bak.$(date '+%Y%m%dT%H%M%S').$$"
+    cp -p "$target" "$backup"
+    printf 'agent-hooks provider=agy backup=%s\n' "$backup"
+  fi
+  chmod 600 "$output"
+  mv "$output" "$target"
+  rm -f "$source"
+  printf 'agent-hooks provider=agy status=installed file=%s\n' "$target"
+}
+
 check_all() {
   local rc=0 name
   for name in claude codex grok; do
     check_provider "$name" || rc=1
   done
+  if command -v agy >/dev/null 2>&1; then
+    check_agy || rc=1
+  fi
   return "$rc"
 }
 
@@ -266,14 +336,19 @@ case "$action" in
     case "$provider" in
       all) check_all ;;
       claude|codex|grok) check_provider "$provider" ;;
+      agy) check_agy ;;
       *) die "unsupported provider: $provider" ;;
     esac
     ;;
   install)
     require_jq
     case "$provider" in
-      all) install_provider claude; install_provider codex; install_provider grok ;;
+      all)
+        install_provider claude; install_provider codex; install_provider grok
+        if command -v agy >/dev/null 2>&1; then install_agy; fi
+        ;;
       claude|codex|grok) install_provider "$provider" ;;
+      agy) install_agy ;;
       *) die "unsupported provider: $provider" ;;
     esac
     ;;

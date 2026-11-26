@@ -283,6 +283,32 @@ home. Hooks/permissions still come from a symlink to
 - Status bar should **not** say `Claude Max` once isolation is working.
 - The “claude.ai connectors are disabled…” line is expected under gateway
   auth; it is not the extra-usage failure.
+
+### Antigravity CLI (agy)
+
+The `agy` managed profile uses the locally installed Antigravity CLI, not
+`--remote-agent`. Choose `MANAGED_AGENT_PROFILE='agy'` for new managed panes,
+or select Antigravity in the web console. The launcher passes a model override
+from `~/.config/wezdeck/agent-models/agy.env` when set, resumes a typed
+conversation with `agy --conversation <id>`, and otherwise uses `agy --continue`.
+`full-access` maps to `--dangerously-skip-permissions`; `auto` uses Agy's own
+default permissions.
+
+Install the global lifecycle hook once after syncing the runtime:
+
+```bash
+scripts/dev/agent-hooks.sh install --provider agy
+scripts/dev/agent-hooks.sh check --provider agy
+```
+
+The installer merges only the named `wezdeck-attention` entry into
+`~/.gemini/config/hooks.json`. The hook reads `conversationId` and maps
+SessionStart, PreInvocation, PostToolUse and Stop to pane eviction, running,
+resolved and done. It emits only for WezDeck managed tmux panes. Agy itself
+asks whether to trust each new worktree; the web console pauses before the
+first message and exposes a separate signed confirmation for that visible
+prompt. Other approval prompts remain in Agy's TUI.
+
 ## Repo-Local Runtime Wrappers
 
 - When your automation can already resolve the repository root, prefer repo-local wrappers under `scripts/runtime/` over rebuilding helper IPC or Windows bootstrap logic.

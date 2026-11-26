@@ -22,7 +22,7 @@
 # stdout: key=value lines — outcome=<respawned|…> and, for a named fresh
 # start, session_id=<uuid>. Exit 1 when nothing was respawned.
 #
-#   session-restart.sh [--fresh] [--agent claude|codex|grok] --pane %N
+#   session-restart.sh [--fresh] [--agent claude|codex|grok|agy] --pane %N
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

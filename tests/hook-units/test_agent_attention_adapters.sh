@@ -16,6 +16,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 claude_adapter="$repo_root/scripts/runtime/agent-attention/adapters/claude.sh"
 codex_adapter="$repo_root/scripts/runtime/agent-attention/adapters/codex.sh"
 grok_adapter="$repo_root/scripts/runtime/agent-attention/adapters/grok.sh"
+agy_adapter="$repo_root/scripts/runtime/agent-attention/adapters/agy.sh"
 
 pass=0
 fail=0
@@ -227,6 +228,21 @@ assert_eq "Grok Stop becomes done" "done" "$(field_for "$sandbox" "grok-session-
 printf '%s' '{"sessionId":"grok-session-1","hookEventName":"Notification","message":"Turn complete"}' \
   | "$claude_adapter" waiting >/dev/null 2>&1 || true
 assert_eq "Grok turn_complete Notification does not overwrite done" "done" "$(field_for "$sandbox" "grok-session-1" "status")"
+rm -rf "$sandbox"
+
+# Agy's hook payload uses conversationId, and its Stop handler must return a
+# valid decision object while still emitting the shared attention state.
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+export WEZDECK_AGY_MANAGED=1
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","workspacePaths":["/tmp"]}' \
+  | "$agy_adapter" running >/dev/null 2>&1 || true
+assert_eq "Agy PreInvocation becomes running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy provider field" "agy" "$(field_for "$sandbox" "agy-session-1" "agent_name")"
+decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","fullyIdle":true}' | "$agy_adapter" done)"
+assert_eq "Agy Stop becomes done" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop returns decision" '{"decision":"stop"}' "$decision"
+unset WEZDECK_AGY_MANAGED
 rm -rf "$sandbox"
 
 # Dedicated adapters/grok.sh (native ~/.grok/hooks install).

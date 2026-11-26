@@ -34,8 +34,8 @@ done
 
 [[ "$pane" =~ ^%[0-9]+$ ]] || { echo "session-handoff: bad pane '$pane'" >&2; exit 2; }
 case "$to" in
-  claude|claude_*|codex|grok) ;;
-  *) echo "session-handoff: unsupported --to '$to' (claude|codex|grok)" >&2; exit 2 ;;
+  claude|claude_*|codex|grok|agy) ;;
+  *) echo "session-handoff: unsupported --to '$to' (claude|codex|grok|agy)" >&2; exit 2 ;;
 esac
 # Normalize profile base for role tags / sticky window option
 to_base="${to%-resume}"

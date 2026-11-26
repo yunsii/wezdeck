@@ -11,8 +11,10 @@ NVM_DIR="$TEST_ROOT/.nvm"
 FAKE_BIN="$NVM_DIR/versions/node/v22.21.1/bin"
 FAKE_CODEX="$FAKE_BIN/codex"
 FAKE_CLAUDE="$FAKE_BIN/claude"
+FAKE_AGY="$FAKE_BIN/agy"
 LOG="$TEST_ROOT/codex.args"
 CLAUDE_LOG="$TEST_ROOT/claude.args"
+AGY_LOG="$TEST_ROOT/agy.args"
 mkdir -p "$FAKE_BIN" "$NVM_DIR/alias" "$TEST_ROOT/home" "$TEST_ROOT/codex-home"
 mkdir -p "$TEST_ROOT/shell-env"
 printf '22\n' > "$NVM_DIR/alias/default"
@@ -20,6 +22,8 @@ printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" > "${CODEX_TEST_LOG:?}"\n' > "
 chmod +x "$FAKE_CODEX"
 printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" > "${CLAUDE_TEST_LOG:?}"\n' > "$FAKE_CLAUDE"
 chmod +x "$FAKE_CLAUDE"
+printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" > "${AGY_TEST_LOG:?}"\nprintf "managed=%%s\\n" "${WEZDECK_AGY_MANAGED:-}" >> "${AGY_TEST_LOG:?}"\n' > "$FAKE_AGY"
+chmod +x "$FAKE_AGY"
 
 # Tracked default in wezterm-x/local.example/shared.env is auto; local/shared.env
 # (loaded by runtime_env_load_managed) should match on this machine.
@@ -190,6 +194,15 @@ env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" CLAUDE_TEST_LOG="$CLAUDE_LOG" \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
 grep -Fxq -- '--model sonnet --continue' "$CLAUDE_LOG"
 printf 'PASS managed model overrides reach Codex and Claude resume commands\n'
+
+printf "MODEL='gemini-4-neon-medium'\n" > "$TEST_ROOT/home/.config/wezdeck/agent-models/agy.env"
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" SHELL_ENV_DIR="$TEST_ROOT/shell-env" \
+  AGY_TEST_LOG="$AGY_LOG" WEZDECK_RESUME_SESSION_ID=agy-session-001 \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" agy
+grep -Fxq -- '--dangerously-skip-permissions --model gemini-4-neon-medium --conversation agy-session-001' "$AGY_LOG"
+grep -Fxq -- 'managed=1' "$AGY_LOG"
+printf 'PASS managed Agy profile resumes with model and permission intent\n'
 
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'

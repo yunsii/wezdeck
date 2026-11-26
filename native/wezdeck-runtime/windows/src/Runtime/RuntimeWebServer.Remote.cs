@@ -30,7 +30,7 @@ internal sealed partial class RuntimeWebServer
 
     private static readonly HashSet<string> RemoteWriteActions = new(StringComparer.Ordinal)
     {
-        "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "agent.profile.configure", "agent.profile.model", "session.restart",
+        "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "session.restart",
         "session.handoff", "ticket.new", "worktree.describe",
         // local only (serve.go): 批准 / 撤销 from the console on the host
         "device.approve", "device.revoke",

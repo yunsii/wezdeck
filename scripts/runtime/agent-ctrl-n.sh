@@ -82,6 +82,10 @@ agent_ctrl_n_detect_from_cmdline() {
         printf 'codex\n'
         return 0
         ;;
+      */bin/agy*|*/agy[[:space:]]*|*/agy|*" agy "*|*" agy")
+        printf 'agy\n'
+        return 0
+        ;;
     esac
     while IFS= read -r child; do
       [[ "$child" =~ ^[0-9]+$ ]] || continue

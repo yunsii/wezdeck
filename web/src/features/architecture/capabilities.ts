@@ -269,6 +269,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Start a session in a repository: a new workstation for one direction (name + one-line purpose)',
       ),
       c(
+        'session.new.trust',
+        '用户确认后只批准该新会话中 Agy 正显示的工作树信任提示',
+        'Confirm only the Agy workspace trust prompt currently shown for that new session',
+      ),
+      c(
         'agent.profile.configure',
         '写入 Kimi API key 与模型到主机独立凭据文件，不回传密钥',
         'Write the Kimi API key and model to the host credential file without returning the key',

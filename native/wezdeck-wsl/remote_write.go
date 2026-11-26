@@ -40,6 +40,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = clearAttention(args)
 	case "session.new":
 		result, err = startNewSession(args)
+	case "session.new.trust":
+		result, err = approveNewSessionTrust(args)
 	case "agent.profile.configure":
 		result, err = configureKimiProfile(args)
 	case "agent.profile.model":

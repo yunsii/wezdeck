@@ -6,13 +6,14 @@ import { cn } from '#/lib/utils'
 
 const ICONS = '/icons/agents'
 
-export type AgentFamily = 'claude' | 'codex' | 'grok' | 'agent'
+export type AgentFamily = 'claude' | 'codex' | 'grok' | 'agy' | 'agent'
 
 /** official raster marks */
 const AVATAR_SRC: Record<AgentFamily, string> = {
   claude: `${ICONS}/claude.png`,
   codex: `${ICONS}/codex.png`,
   grok: `${ICONS}/grok.png`,
+  agy: `${ICONS}/agent.png`,
   agent: `${ICONS}/agent.png`,
 }
 
@@ -24,11 +25,12 @@ const BADGE_SRC: Record<'kimi' | 'gateway', string> = {
 /** family for the main mark: prefer the live agent, else the profile prefix */
 export function agentFamily(agent?: string, profile?: string): AgentFamily {
   const a = (agent || '').replace(/\.real$/, '').toLowerCase()
-  if (a === 'claude' || a === 'codex' || a === 'grok') return a
+  if (a === 'claude' || a === 'codex' || a === 'grok' || a === 'agy') return a
   const p = (profile || '').toLowerCase()
   if (p.startsWith('claude')) return 'claude'
   if (p.startsWith('codex')) return 'codex'
   if (p.startsWith('grok')) return 'grok'
+  if (p.startsWith('agy')) return 'agy'
   return 'agent'
 }
 
@@ -54,6 +56,7 @@ const LABEL: Record<AgentFamily, string> = {
   claude: 'Claude',
   codex: 'Codex',
   grok: 'Grok',
+  agy: 'Antigravity',
   agent: 'Agent',
 }
 

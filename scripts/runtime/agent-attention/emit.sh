@@ -611,7 +611,7 @@ elif [[ "$status" == "pane-evict" ]]; then
       && agent_session_id_usable "${session_id:-}"; then
       _pin_agent="$provider"
       case "$_pin_agent" in
-        claude|codex|grok) ;;
+        claude|codex|grok|agy) ;;
         *) _pin_agent="" ;;
       esac
       agent_session_pin_pane "$tmux_pane" "$session_id" "${_pin_agent:-}" "${git_dir:-}" \
@@ -884,7 +884,7 @@ else
       fi
       _pin_agent="$provider"
       case "$_pin_agent" in
-        claude|codex|grok) ;;
+        claude|codex|grok|agy) ;;
         *) _pin_agent="" ;;
       esac
       agent_session_pin_pane "$tmux_pane" "$session_id" "${_pin_agent:-}" "${_pin_cwd:-}" \

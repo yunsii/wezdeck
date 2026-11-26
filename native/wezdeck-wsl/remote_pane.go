@@ -62,7 +62,7 @@ func normalizeAgentProfile(raw string) string {
 }
 
 func profileFamily(profile string) string {
-	for _, fam := range []string{"claude", "codex", "grok"} {
+	for _, fam := range []string{"claude", "codex", "grok", "agy"} {
 		if profile == fam || strings.HasPrefix(profile, fam+"_") {
 			return fam
 		}

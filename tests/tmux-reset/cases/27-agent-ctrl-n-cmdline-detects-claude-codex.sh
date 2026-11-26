@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hand-started Claude / Codex in a secondary pane: no role tag; leaf may be
+# Hand-started Claude / Codex / Agy in a secondary pane: no role tag; leaf may be
 # sleep/node-shaped. Ctrl+n must detect via process cmdline (same path as Grok).
 set -euo pipefail
 
@@ -45,7 +45,7 @@ run_one() {
     "$1" '"$argv_marker"' &
     exec sleep 300
   ' bash "$keeper"
-  tmux set -g @agent_pane_match '#{&&:#{||:#{m:agent-cli:*,#{@wezterm_pane_role}},#{m:claude*,#{pane_current_command}},#{m:codex*,#{pane_current_command}},#{m:grok*,#{pane_current_command}}},#{!=:1,#{||:#{m:bash*,#{pane_current_command}},#{m:zsh*,#{pane_current_command}},#{m:fish*,#{pane_current_command}}}}}'
+  tmux set -g @agent_pane_match '#{&&:#{||:#{m:agent-cli:*,#{@wezterm_pane_role}},#{m:claude*,#{pane_current_command}},#{m:codex*,#{pane_current_command}},#{m:grok*,#{pane_current_command}},#{m:agy*,#{pane_current_command}}},#{!=:1,#{||:#{m:bash*,#{pane_current_command}},#{m:zsh*,#{pane_current_command}},#{m:fish*,#{pane_current_command}}}}}'
   local pane
   pane="$(tmux list-panes -t "$session" -F '#{pane_id}' | head -n 1)"
   tmux set-option -p -t "$pane" -u @wezterm_pane_role 2>/dev/null || true
@@ -77,5 +77,6 @@ run_one() {
 run_one "claude" "-- /home/yuns/.local/bin/claude" "claude"
 # Codex: node-style module path (common when leaf is node / keeper).
 run_one "codex" "-- /x/node_modules/@openai/codex/bin/codex.js" "codex"
+run_one "agy" "-- /home/yuns/.local/bin/agy" "agy"
 
 printf 'PASS agent-ctrl-n-cmdline-detects-claude-codex\n'

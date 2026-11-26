@@ -64,6 +64,7 @@ async function pageWithProfiles(
             model_override: codexModel,
           },
           { id: 'grok', label: 'Grok', default_model: 'grok-4.5' },
+          { id: 'agy', label: 'Antigravity' },
         ],
       })
     if (url.pathname === '/api/v1/remote/agent.profile.model') {
@@ -78,8 +79,17 @@ async function pageWithProfiles(
     return route.abort()
   })
   const page: Page = await context.newPage()
-  await page.goto(`${base}/zh/console/me/agents`)
-  await page.locator('[data-agent-profile=codex]').waitFor({ timeout: 20_000 })
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(`${base}/zh/console/me/agents`)
+    try {
+      await page
+        .locator('[data-agent-profile=codex]')
+        .waitFor({ timeout: 6_000 })
+      break
+    } catch (error) {
+      if (attempt === 2) throw error
+    }
+  }
   return { context, page, writes }
 }
 
@@ -104,7 +114,7 @@ describe('Agent settings layout', () => {
     expect(before?.width).toBeGreaterThan(300)
     if (process.env.WEZDECK_VISUAL_SHOTS)
       await page.screenshot({ path: '/tmp/wezdeck-agents-desktop.png' })
-    for (const id of ['claude', 'claude_sub2api', 'grok']) {
+    for (const id of ['claude', 'claude_sub2api', 'grok', 'agy']) {
       await page.locator(`[data-agent-profile=${id}]`).click()
       await expect.poll(() => detail.locator('h2').count()).toBe(1)
       expect(

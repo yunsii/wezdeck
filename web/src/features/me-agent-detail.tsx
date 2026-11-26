@@ -198,7 +198,9 @@ export function AgentDetail({ profile }: { profile: AgentProfile }) {
       </div>
       {profile.id === 'claude_kimi' ? (
         <KimiSettings profile={profile} />
-      ) : ['claude', 'claude_sub2api', 'codex', 'grok'].includes(profile.id) ? (
+      ) : ['claude', 'claude_sub2api', 'codex', 'grok', 'agy'].includes(
+          profile.id,
+        ) ? (
         <ModelSettings profile={profile} />
       ) : (
         <p className="text-caption text-brand-muted">{t`Managed in host configuration`}</p>

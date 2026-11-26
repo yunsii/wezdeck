@@ -7,10 +7,12 @@ describe('agentFamily', () => {
     expect(agentFamily('claude', 'claude_kimi')).toBe('claude')
     expect(agentFamily('codex', '')).toBe('codex')
     expect(agentFamily('grok.real', '')).toBe('grok')
+    expect(agentFamily('agy', '')).toBe('agy')
   })
   it('falls back to the profile prefix', () => {
     expect(agentFamily('agent', 'claude_kimi')).toBe('claude')
     expect(agentFamily('', 'grok')).toBe('grok')
+    expect(agentFamily('', 'agy')).toBe('agy')
   })
 })
 

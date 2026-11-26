@@ -108,6 +108,69 @@ func TestNewSessionValidates(t *testing.T) {
 	}
 }
 
+func TestAgyTrustRequiresVisiblePromptAndExplicitConfirmation(t *testing.T) {
+	if !agyTrustPrompt("Do you trust the contents of this project?\n> Yes, I trust this folder\n  No, exit") {
+		t.Fatal("Agy trust screen was not detected")
+	}
+	if agyTrustPrompt("Welcome to Antigravity CLI") {
+		t.Fatal("ordinary Agy screen was treated as a trust prompt")
+	}
+	if _, err := approveNewSessionTrust(json.RawMessage(`{"job":"missing"}`)); err == nil || !strings.Contains(err.Error(), "explicit confirmation") {
+		t.Fatalf("trust without confirmation: %v", err)
+	}
+	if _, err := approveNewSessionTrust(json.RawMessage(`{"job":"missing","confirm":true}`)); err == nil || !strings.Contains(err.Error(), "no pending") {
+		t.Fatalf("trust without pending job: %v", err)
+	}
+}
+
+func TestAgyTrustConfirmationTargetsPendingPane(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux missing")
+	}
+	socket := filepath.Join(t.TempDir(), "trust.sock")
+	command := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", "trust", "-x", "100", "-y", "20",
+		"sh -c 'printf \"Do you trust the contents of this project?\\n> Yes, I trust this folder\\n  No, exit\\n\"; exec cat'")
+	if out, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("tmux: %v: %s", err, out)
+	}
+	t.Cleanup(func() { _ = exec.Command("tmux", "-S", socket, "kill-server").Run() })
+	pane, err := tmuxCmd(socket, "display-message", "-p", "-t", "trust", "#{pane_id}").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "agy-trust-test"
+	ready := make(chan struct{}, 1)
+	newJobsMu.Lock()
+	newJobs[id] = &newSessionJob{ID: id, Stage: "waiting_trust", socket: socket, pane: strings.TrimSpace(string(pane)), trustCh: ready}
+	newJobsMu.Unlock()
+	t.Cleanup(func() { newJobsMu.Lock(); delete(newJobs, id); newJobsMu.Unlock() })
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		screen, _ := tmuxCmd(socket, "capture-pane", "-p", "-t", strings.TrimSpace(string(pane))).Output()
+		if agyTrustPrompt(string(screen)) {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("fake Agy trust prompt did not paint")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if _, err := approveNewSessionTrust(json.RawMessage(`{"job":"agy-trust-test","confirm":true}`)); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-ready:
+	default:
+		t.Fatal("trust confirmation did not release the waiting job")
+	}
+	newJobsMu.Lock()
+	stage := newJobs[id].Stage
+	newJobsMu.Unlock()
+	if stage != "starting" {
+		t.Fatalf("stage after trust: %s", stage)
+	}
+}
+
 func TestNewSessionFailureIsReported(t *testing.T) {
 	repo, _ := newSessionFixture(t)
 	fake := filepath.Join(t.TempDir(), "failing")

@@ -17,7 +17,7 @@ import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useSessions } from './console-sessions'
 import { seedQueuedPending } from './session-send'
 
-const AGENTS = ['claude', 'codex', 'grok'] as const
+const AGENTS = ['claude', 'codex', 'grok', 'agy'] as const
 type Agent = (typeof AGENTS)[number]
 
 type Job = {

@@ -157,7 +157,7 @@ var codexToolKinds = map[string]string{
 }
 
 // agentAdapters, in lookup order (a session id is unique to one agent).
-var agentAdapters = []agentAdapter{claudeAdapter{}, grokAdapter{}, codexAdapter{}}
+var agentAdapters = []agentAdapter{claudeAdapter{}, grokAdapter{}, codexAdapter{}, agyAdapter{}}
 
 func adapterFor(name string) agentAdapter {
 	for _, a := range agentAdapters {

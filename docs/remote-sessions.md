@@ -73,7 +73,8 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `repos` | read | repositories a remote web console may create a session in: main checkouts of visited worktrees (access ledger) and of running sessions, newest visit first (`session_new.go`) |
 | `agent.profiles` | read | registered profile ids, configured/model state, provider defaults (Claude JSON, Codex/Grok TOML, gateway env) and masked gateway key suffixes; never returns raw credentials or command strings (`agent_profiles.go`). `session.new` accepts an optional `agent_profile`; omission keeps the repository default. |
 | `agent.profile.configure {token, model}` | write | replace the Kimi profile's private `kimi.env` (mode 600, atomic rename); fixed endpoint, one model across all Claude tiers; response and logs omit the key (`agent_profiles.go`) |
-| `agent.profile.model {profile, model}` | write | set or clear a managed model override for Claude, Claude gateway, Codex or Grok; each profile has a private scalar file under `~/.config/wezdeck/agent-models/`, read by `agent-launcher.sh` on the next launch (`agent_profiles.go`) |
+| `agent.profile.model {profile, model}` | write | set or clear a managed model override for Claude, Claude gateway, Codex, Grok or Agy; each profile has a private scalar file under `~/.config/wezdeck/agent-models/`, read by `agent-launcher.sh` on the next launch (`agent_profiles.go`) |
+| `session.new.trust {job, confirm:true}` | write | after Agy's trust screen is observed in a newly created pane, a separately signed user action confirms only that pane's still-visible prompt; the first message is sent after the screen clears (`session_new.go`) |
 | `session.new {repo, name, description, prompt}` | write | 新会话 by direction (`session_new.go`; web UI is message-first with a place layer for repo/direction and a third layer for a new name + purpose): `name` an existing direction (as `workstations` lists it) with an idle slot → that slot is reused, `reuse-workstation --no-attach <slot>` (job `mode` `reuse`; a slot a running job is reusing is skipped); all its slots busy → one more parallel slot (`parallel`); else a new workstation (`new`) — both through `open-task-window --no-attach --description <description> -- <name>` in `repo` (must be one of `repos`; name one line ≤ 60 with at least one ASCII letter or digit — it becomes the directory and `dev/<name>` branch; description one line ≤ 120, stored as the branch description; message 1–8000), then the message is pasted into the new agent once its pane runs a non-shell and the screen holds still 1.5 s. Answers `{job}` at once — git fetch + agent start outlast an RPC. The message is required: a session is listed only from its first prompt's attention entry. `WEZDECK_SESSION_NEW_CMD` replaces open-task-window (test stack stand-in) |
 | `workstations {repo}` | read | the repo's workstations grouped by direction (`workstations.go`): `{name, description, idle, visited, slots: [{path, name, branch, state, reason, visited}]}`, newest visit first; `state` idle / running / waiting (attention) or dirty / undelivered / detached (`worktree-task idle`, no fetch — a just-merged tip may still read undelivered, the safe side; the reuse fetches and checks again) |
 | `session.new.job {job}` | read | that job: `stage` creating → starting → sending → done, or failed with `error`; `worktree`, `branch` (kept an hour) |
@@ -355,16 +356,18 @@ context only; Grok's transcript has no token counts.
 Everything that differs between agent CLIs stays on the host, behind one
 interface (`native/wezdeck-wsl/agent_adapter.go`); the relay, the transport
 and the web page only see the shared contract. Each agent is one file —
-`agent_claude.go`, `agent_grok.go`, `agent_codex.go` — implementing:
+`agent_claude.go`, `agent_grok.go`, `agent_codex.go`, `agent_agy.go` — implementing:
 
 | Method | Does |
 |---|---|
-| `Name()` | agent id the web console sees (`claude` / `grok` / `codex`) |
+| `Name()` | agent id the web console sees (`claude` / `grok` / `codex` / `agy`) |
 | `Locate(home, id)` | the session's transcript path, or `""` |
 | `Feed(t, line)` | one transcript line → shared messages / usage |
 | `Title(path)` | agent-generated or `/rename`'d title |
 | `ToolKind(name, input)` | the shared kind of a tool call (below) |
 | `Capabilities()` | declared features with no code here (usage source, account limits, mid-turn input, titles) |
+
+Agy uses `~/.gemini/antigravity-cli/brain/<conversationId>/.system_generated/logs/transcript_full.jsonl` for user/assistant text, tool-call summaries and token usage. Its JSONL has no tool-result IDs, so the web console does not invent paired results; the Agy TUI remains the source for detailed tool output and permission prompts.
 
 Optional parts, called through their interface (never `if agent == …`):
 `askReader.PendingAsk(path, screen)` (the unanswered Ask) and

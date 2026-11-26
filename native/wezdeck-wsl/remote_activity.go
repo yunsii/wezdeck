@@ -35,7 +35,7 @@ const (
 // lastTurnAt returns the newest conversation timestamp in a transcript (unix
 // ms), or 0 when the format has none or none was found.
 func lastTurnAt(path, agent string) int64 {
-	if agent != "claude" && agent != "codex" {
+	if agent != "claude" && agent != "codex" && agent != "agy" {
 		return 0
 	}
 	info, err := os.Stat(path)
@@ -82,14 +82,24 @@ func scanTail(path string, size, tail int64, agent string) int64 {
 	}
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := bytes.TrimSpace(lines[i])
-		if len(line) == 0 || !bytes.Contains(line, []byte(`"timestamp"`)) {
+		if len(line) == 0 || (agent == "agy" && !bytes.Contains(line, []byte(`"created_at"`))) || (agent != "agy" && !bytes.Contains(line, []byte(`"timestamp"`))) {
 			continue
 		}
 		var head struct {
 			Type      string `json:"type"`
 			Timestamp string `json:"timestamp"`
+			CreatedAt string `json:"created_at"`
 		}
-		if json.Unmarshal(line, &head) != nil || head.Timestamp == "" {
+		if json.Unmarshal(line, &head) != nil {
+			continue
+		}
+		if agent == "agy" {
+			if head.Type != "USER_INPUT" && head.Type != "PLANNER_RESPONSE" {
+				continue
+			}
+			head.Timestamp = head.CreatedAt
+		}
+		if head.Timestamp == "" {
 			continue
 		}
 		if agent == "claude" && head.Type != "user" && head.Type != "assistant" {

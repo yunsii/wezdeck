@@ -180,7 +180,7 @@ msgid "+ Description"
 msgstr "+ Description"
 
 #: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:296
+#: src/features/session-new.tsx:355
 msgid "+ New direction"
 msgstr "+ New direction"
 
@@ -232,7 +232,7 @@ msgstr "A local-first workbench for AI coding agents. Every session keeps its We
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
-#: src/features/session-new-panels.tsx:275
+#: src/features/session-new-panels.tsx:294
 msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 msgstr "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 
@@ -280,8 +280,8 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:109
-#: src/features/session-new-panels.tsx:115
+#: src/features/session-new-panels.tsx:114
+#: src/features/session-new-panels.tsx:120
 msgid "Agent"
 msgstr "Agent"
 
@@ -298,6 +298,10 @@ msgstr "Agent sessions"
 #: src/features/me-agents.tsx:66
 msgid "Agents"
 msgstr "Agents"
+
+#: src/features/session-new.tsx:128
+msgid "Agy is waiting for this worktree to be trusted."
+msgstr "Agy is waiting for this worktree to be trusted."
 
 #: src/features/console-diagnostics.tsx:131
 msgid "All"
@@ -415,11 +419,11 @@ msgstr "Back"
 msgid "Back to agents"
 msgstr "Back to agents"
 
-#: src/features/session-new.tsx:330
+#: src/features/session-new.tsx:159
 msgid "Back to message"
 msgstr "Back to message"
 
-#: src/features/session-new.tsx:330
+#: src/features/session-new.tsx:159
 msgid "Back to place"
 msgstr "Back to place"
 
@@ -770,7 +774,7 @@ msgstr "Context compactions"
 msgid "context usage"
 msgstr "context usage"
 
-#: src/features/session-new-panels.tsx:300
+#: src/features/session-new-panels.tsx:319
 msgid "Continue"
 msgstr "Continue"
 
@@ -859,7 +863,7 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
-#: src/features/session-new.tsx:106
+#: src/features/session-new.tsx:133
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -879,7 +883,7 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new-panels.tsx:171
+#: src/features/session-new-panels.tsx:189
 msgid "Create session"
 msgstr "Create session"
 
@@ -887,7 +891,7 @@ msgstr "Create session"
 msgid "Create ticket"
 msgstr "Create ticket"
 
-#: src/features/session-new.tsx:99
+#: src/features/session-new.tsx:124
 msgid "Creating the worktree…"
 msgstr "Creating the worktree…"
 
@@ -947,7 +951,7 @@ msgstr "Deny"
 msgid "Depends on"
 msgstr "Depends on"
 
-#: src/features/session-new-panels.tsx:282
+#: src/features/session-new-panels.tsx:301
 msgid "Description"
 msgstr "Description"
 
@@ -970,8 +974,8 @@ msgid "Direct"
 msgstr "Direct"
 
 #: src/features/session-new-direction.tsx:121
-#: src/features/session-new-panels.tsx:215
-#: src/features/session-new.tsx:297
+#: src/features/session-new-panels.tsx:234
+#: src/features/session-new.tsx:356
 msgid "Direction"
 msgstr "Direction"
 
@@ -993,7 +997,7 @@ msgstr "Done ({doneCount})"
 msgid "done {when}"
 msgstr "done {when}"
 
-#: src/features/session-new-panels.tsx:264
+#: src/features/session-new-panels.tsx:283
 msgid "e.g. ux, ci, i18n"
 msgstr "e.g. ux, ci, i18n"
 
@@ -1114,7 +1118,7 @@ msgstr "Finished"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new-panels.tsx:97
+#: src/features/session-new-panels.tsx:102
 msgid "First message to the agent"
 msgstr "First message to the agent"
 
@@ -1192,7 +1196,7 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/session-new-panels.tsx:124
+#: src/features/session-new-panels.tsx:129
 msgid "host default"
 msgstr "host default"
 
@@ -1493,7 +1497,7 @@ msgstr "Log stream"
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/me-agent-detail.tsx:204
+#: src/features/me-agent-detail.tsx:206
 msgid "Managed in host configuration"
 msgstr "Managed in host configuration"
 
@@ -1581,8 +1585,8 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-new-panels.tsx:137
-#: src/features/session-new-panels.tsx:278
+#: src/features/session-new-panels.tsx:142
+#: src/features/session-new-panels.tsx:297
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
@@ -1604,8 +1608,8 @@ msgstr "New conversation"
 msgid "new direction"
 msgstr "new direction"
 
-#: src/features/session-new-panels.tsx:256
-#: src/features/session-new.tsx:335
+#: src/features/session-new-panels.tsx:275
+#: src/features/session-new.tsx:164
 msgid "New direction"
 msgstr "New direction"
 
@@ -1615,12 +1619,12 @@ msgstr "New line"
 
 #: src/features/session-list.tsx:137
 #: src/features/session-list.tsx:138
-#: src/features/session-new.tsx:323
+#: src/features/session-new.tsx:155
 msgid "New round"
 msgstr "New round"
 
-#: src/features/session-new.tsx:174
-#: src/features/session-new.tsx:325
+#: src/features/session-new.tsx:155
+#: src/features/session-new.tsx:234
 msgid "New session"
 msgstr "New session"
 
@@ -1628,7 +1632,7 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:170
+#: src/features/session-new.tsx:230
 msgid "New session (c)"
 msgstr "New session (c)"
 
@@ -1774,7 +1778,7 @@ msgstr "No upstream branch: nothing to compare with."
 #: src/features/me-agent-detail.tsx:137
 #: src/features/me-agent-detail.tsx:195
 #: src/features/me-agents.tsx:91
-#: src/features/session-new-panels.tsx:122
+#: src/features/session-new-panels.tsx:127
 msgid "Not configured"
 msgstr "Not configured"
 
@@ -2201,13 +2205,13 @@ msgid "Repo filter"
 msgstr "Repo filter"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new-panels.tsx:202
+#: src/features/session-new-panels.tsx:221
 msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:319
 #: src/features/me-agents.tsx:48
-#: src/features/session-new-panels.tsx:117
+#: src/features/session-new-panels.tsx:122
 msgid "Repository default"
 msgstr "Repository default"
 
@@ -2247,7 +2251,7 @@ msgstr "resets {reset}"
 msgid "Resets {reset}"
 msgstr "Resets {reset}"
 
-#: src/features/session-new.tsx:98
+#: src/features/session-new.tsx:123
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
@@ -2490,7 +2494,7 @@ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
-#: src/features/session-new.tsx:103
+#: src/features/session-new.tsx:130
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -2647,11 +2651,11 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new.tsx:105
+#: src/features/session-new.tsx:132
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new.tsx:101
+#: src/features/session-new.tsx:126
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -3015,6 +3019,10 @@ msgstr "Transcript"
 msgid "Trigger"
 msgstr "Trigger"
 
+#: src/features/session-new-panels.tsx:173
+msgid "Trust this worktree and continue"
+msgstr "Trust this worktree and continue"
+
 #: src/features/session-commands.tsx:237
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
@@ -3222,7 +3230,7 @@ msgstr "What confirming starts"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new-panels.tsx:104
+#: src/features/session-new-panels.tsx:109
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -3242,7 +3250,7 @@ msgstr "What the terminal shows"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
-#: src/features/session-new-panels.tsx:289
+#: src/features/session-new-panels.tsx:308
 #: src/features/session-purpose.tsx:74
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
@@ -3255,7 +3263,7 @@ msgstr "What you assume"
 msgid "What you saw"
 msgstr "What you saw"
 
-#: src/features/session-new.tsx:335
+#: src/features/session-new.tsx:164
 msgid "Where"
 msgstr "Where"
 
@@ -3318,7 +3326,7 @@ msgstr "Workstation description"
 msgid "Worktree"
 msgstr "Worktree"
 
-#: src/features/session-new-panels.tsx:277
+#: src/features/session-new-panels.tsx:296
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 

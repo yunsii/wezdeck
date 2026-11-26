@@ -81,12 +81,37 @@ export function workstationSlug(name: string) {
 }
 type Job = {
   job: string
-  stage: 'creating' | 'starting' | 'sending' | 'done' | 'failed'
+  stage:
+    'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
   /** new direction, one more parallel slot, or an idle slot reused */
   mode?: 'new' | 'parallel' | 'reuse'
   worktree?: string
   branch?: string
   error?: string
+}
+
+const pendingJobKey = 'wezdeck.pending-new-session-job'
+
+function readPendingJob(): { job: string; before: string[] } | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const value: unknown = JSON.parse(
+      sessionStorage.getItem(pendingJobKey) || 'null',
+    )
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      'job' in value &&
+      typeof value.job === 'string' &&
+      'before' in value &&
+      Array.isArray(value.before) &&
+      value.before.every((id) => typeof id === 'string')
+    )
+      return { job: value.job, before: value.before }
+  } catch {
+    sessionStorage.removeItem(pendingJobKey)
+  }
+  return null
 }
 
 function useStageText() {
@@ -99,12 +124,47 @@ function useStageText() {
         : t`Creating the worktree…`
       : job.stage === 'starting'
         ? t`Starting the agent…`
-        : job.stage === 'sending'
-          ? t`Sending the first message…`
-          : job.stage === 'done'
-            ? t`Started. Opening the session when the agent picks it up…`
-            : t`Could not create it: ${reason}`
+        : job.stage === 'waiting_trust'
+          ? t`Agy is waiting for this worktree to be trusted.`
+          : job.stage === 'sending'
+            ? t`Sending the first message…`
+            : job.stage === 'done'
+              ? t`Started. Opening the session when the agent picks it up…`
+              : t`Could not create it: ${reason}`
   }
+}
+
+function useAgyTrust(jobId: string, setError: (message: string) => void) {
+  const [trusting, setTrusting] = useState(false)
+  const trust = async () => {
+    setTrusting(true)
+    setError('')
+    try {
+      await hostWrite('session.new.trust', { job: jobId, confirm: true })
+    } catch (error) {
+      setError((error as Error).message)
+    } finally {
+      setTrusting(false)
+    }
+  }
+  return { trust, trusting }
+}
+
+function useSheetTitle(layer: Layer, placeLocked: boolean, onBack: () => void) {
+  const { t } = useLingui()
+  if (layer === 'compose') return placeLocked ? t`New round` : t`New session`
+  return (
+    <span className="flex min-w-0 items-center gap-0.5">
+      <BackButton
+        label={layer === 'new' ? t`Back to place` : t`Back to message`}
+        onClick={onBack}
+        className="-ml-2"
+      />
+      <span className="truncate">
+        {layer === 'place' ? t`Where` : t`New direction`}
+      </span>
+    </span>
+  )
 }
 
 export function NewSessionButton() {
@@ -218,18 +278,16 @@ function NewSessionSheet({
   const [layer, setLayer] = useState<Layer>('compose')
   const [repo, setRepo] = useState(preset?.repo ?? '')
   const [name, setName] = useState('')
-  // the chosen direction: null until picked (then the default applies),
-  // '' for a new one; a preset locks it
   const [picked, setPicked] = useState<DirectionPick | null>(
     preset?.direction ?? null,
   )
-  // sessions already in the worktree when submitted: a reused one has its
-  // last round listed, which is not the new session
-  const before = useRef<Set<string>>(new Set())
+  const [pending] = useState(readPendingJob)
+  const before = useRef<Set<string>>(new Set(pending?.before ?? []))
   const [description, setDescription] = useState('')
   const [prompt, setPrompt] = useState('')
   const [error, setError] = useState('')
-  const [jobId, setJobId] = useState('')
+  const [jobId, setJobId] = useState(pending?.job ?? '')
+  const { trust, trusting } = useAgyTrust(jobId, setError)
   const job = useQuery({
     queryKey: ['remote', 'session.new.job', jobId],
     enabled: Boolean(jobId),
@@ -254,6 +312,10 @@ function NewSessionSheet({
   const pickedDir = dirs.find((d) => d.name === pick)
   const isNew = pick === ''
   const current = job.data?.job
+  useEffect(() => {
+    if (current?.stage === 'done' || current?.stage === 'failed')
+      sessionStorage.removeItem(pendingJobKey)
+  }, [current?.stage])
   const listed =
     current?.stage === 'done' && current.worktree
       ? sessions.data?.sessions.find(
@@ -261,10 +323,7 @@ function NewSessionSheet({
             row.worktree === current.worktree && !before.current.has(row.id),
         )
       : undefined
-  // once per job: `listed` is a new row on every sessions poll, and this
-  // sheet stays mounted beside the session on a wide window, so without
-  // this each poll opened the new session again — switching to another one
-  // bounced straight back (2026-11-25)
+  // A poll must not reopen a completed job after the user switches away.
   const opened = useRef('')
   useEffect(() => {
     if (!listed || opened.current === jobId) return
@@ -312,30 +371,18 @@ function NewSessionSheet({
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
+      sessionStorage.setItem(
+        pendingJobKey,
+        JSON.stringify({ job: res.job, before: [...before.current] }),
+      )
       setJobId(res.job)
     } catch (e) {
       setError((e as Error).message)
     }
   }
-  const title =
-    layer === 'compose' ? (
-      placeLocked ? (
-        t`New round`
-      ) : (
-        t`New session`
-      )
-    ) : (
-      <span className="flex min-w-0 items-center gap-0.5">
-        <BackButton
-          label={layer === 'new' ? t`Back to place` : t`Back to message`}
-          onClick={() => setLayer(layer === 'new' ? 'place' : 'compose')}
-          className="-ml-2"
-        />
-        <span className="truncate">
-          {layer === 'place' ? t`Where` : t`New direction`}
-        </span>
-      </span>
-    )
+  const title = useSheetTitle(layer, placeLocked, () =>
+    setLayer(layer === 'new' ? 'place' : 'compose'),
+  )
   return (
     <Sheet
       open={open}
@@ -367,6 +414,8 @@ function NewSessionSheet({
               if (!placeLocked) setLayer('place')
             }}
             onSubmit={() => void submit()}
+            onTrust={() => void trust()}
+            trusting={trusting}
             agentProfiles={agentProfiles.data?.profiles ?? []}
             agentProfile={selectedAgent}
             onAgentProfile={setAgentProfile}

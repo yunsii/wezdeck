@@ -361,7 +361,7 @@
   {
     "id": "agent.new-conversation",
     "label": "Agent CLI: Start a new conversation (/new) / shell clear",
-    "description": "When the current pane's foreground process is a known agent CLI (claude / codex / grok), type `/new`, briefly pause, then press Enter to start a fresh conversation in the same process. Codex then selects `1. Current checkout` when its chooser is visible. Otherwise inject `clear` and Enter to clear the shell screen. For a new agent process (slower cold-respawn), use Ctrl+Shift+n / agent.fresh-process.",
+    "description": "When the current pane's foreground process is a known agent CLI (claude / codex / grok / agy), type `/new`, briefly pause, then press Enter to start a fresh conversation in the same process. Codex then selects `1. Current checkout` when its chooser is visible. Otherwise inject `clear` and Enter to clear the shell screen. For a new agent process (slower cold-respawn), use Ctrl+Shift+n / agent.fresh-process.",
     "scope": "project-navigation",
     "context": "any",
     "binding": {
@@ -384,7 +384,7 @@
   {
     "id": "agent.fresh-process",
     "label": "Agent CLI: Cold-respawn blank agent process",
-    "description": "When the current pane is a known agent CLI (claude / codex / grok), unpin typed resume and cold-respawn a blank agent process (same path as recycle --fresh-agent / WEZDECK_FORCE_FRESH_SESSION=1). Slower than Ctrl+n typed `/new`; use when you need a new process. Non-agent panes are a no-op.",
+    "description": "When the current pane is a known agent CLI (claude / codex / grok / agy), unpin typed resume and cold-respawn a blank agent process (same path as recycle --fresh-agent / WEZDECK_FORCE_FRESH_SESSION=1). Slower than Ctrl+n typed `/new`; use when you need a new process. Non-agent panes are a no-op.",
     "scope": "project-navigation",
     "context": "any",
     "binding": {

@@ -33,7 +33,7 @@ const (
 )
 
 var handoffAgents = map[string]bool{
-	"claude": true, "codex": true, "grok": true,
+	"claude": true, "codex": true, "grok": true, "agy": true,
 }
 
 type handoffJob struct {
@@ -77,7 +77,7 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	a.To = strings.ToLower(strings.TrimSpace(a.To))
 	a.Note = strings.TrimSpace(a.Note)
 	if !handoffAgents[a.To] {
-		return nil, errors.New("session.handoff: to must be claude, codex or grok")
+		return nil, errors.New("session.handoff: to must be claude, codex, grok or agy")
 	}
 	if utf8.RuneCountInString(a.Note) > handoffNoteMax || strings.ContainsAny(a.Note, "\x00") {
 		return nil, fmt.Errorf("session.handoff: note is at most %d characters", handoffNoteMax)
@@ -101,6 +101,9 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	_, cwd, _, _, _, alive := paneState(e)
 	if !alive {
 		return nil, errors.New("session.handoff: the pane is gone")
+	}
+	if a.To == "agy" && !agyWorkspaceTrusted(cwd) {
+		return nil, errors.New("session.handoff: trust this worktree in Agy at the terminal before handoff")
 	}
 	job := &handoffJob{
 		ID: newDiagID(), Stage: "starting", FromID: a.ID, FromAgent: fromAgent,
@@ -343,6 +346,8 @@ func handoffTranscriptDigest(path, agent string) (users []string, files []string
 			handoffDigestGrok(line, &userBuf, fileSet, &lastAssist)
 		case "codex":
 			handoffDigestCodex(line, &userBuf, fileSet, &lastAssist)
+		case "agy":
+			handoffDigestAgy(line, &userBuf, fileSet, &lastAssist)
 		}
 	}
 	// last up to 6 user turns, each clipped

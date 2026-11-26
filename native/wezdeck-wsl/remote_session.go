@@ -148,7 +148,7 @@ func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
 }
 
 // agentCommands: what an agent TUI pane runs (pane_current_command).
-var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true}
+var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true, "agy": true}
 
 // isAgentPane: true when the pane still hosts an agent TUI. Grok is started
 // under grok-focus-filter.py, so pane_current_command is often "python3"

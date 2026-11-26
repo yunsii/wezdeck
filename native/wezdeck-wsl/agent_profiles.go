@@ -44,6 +44,8 @@ func agentProfileLabel(id string) string {
 		return "Codex"
 	case "grok":
 		return "Grok"
+	case "agy":
+		return "Antigravity"
 	default:
 		return id
 	}
@@ -116,6 +118,8 @@ func listAgentProfiles() (any, error) {
 			profile.DefaultModel = readTOMLModel(codexConfigPath(), "", "model")
 		case "grok":
 			profile.DefaultModel = readTOMLModel(grokConfigPath(), "models", "default")
+		case "agy":
+			profile.DefaultModel = agyDefaultModel()
 		case "claude_kimi":
 			profile.Configured = kimiConfigured()
 			if profile.Configured {
@@ -197,6 +201,43 @@ func grokConfigPath() string {
 	return filepath.Join(home, ".grok", "config.toml")
 }
 
+func agyDefaultModel() string {
+	home, _ := os.UserHomeDir()
+	path := filepath.Join(home, ".gemini", "antigravity-cli", "settings.json")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var settings struct {
+		Model string `json:"model"`
+	}
+	if json.Unmarshal(body, &settings) != nil {
+		return ""
+	}
+	return settings.Model
+}
+
+func agyWorkspaceTrusted(cwd string) bool {
+	home, _ := os.UserHomeDir()
+	body, err := os.ReadFile(filepath.Join(home, ".gemini", "antigravity-cli", "settings.json"))
+	if err != nil {
+		return false
+	}
+	var settings struct {
+		TrustedWorkspaces []string `json:"trustedWorkspaces"`
+	}
+	if json.Unmarshal(body, &settings) != nil {
+		return false
+	}
+	cwd = filepath.Clean(cwd)
+	for _, trusted := range settings.TrustedWorkspaces {
+		if filepath.Clean(trusted) == cwd {
+			return true
+		}
+	}
+	return false
+}
+
 const readTOMLModelScript = `import sys, tomllib
 try:
     with open(sys.argv[1], "rb") as f:
@@ -230,7 +271,7 @@ var agentProfileIDPattern = regexp.MustCompile(`^[a-z0-9_]+$`)
 
 func editableModelProfile(id string) bool {
 	switch id {
-	case "claude", "claude_sub2api", "codex", "grok":
+	case "claude", "claude_sub2api", "codex", "grok", "agy":
 		return true
 	}
 	return false

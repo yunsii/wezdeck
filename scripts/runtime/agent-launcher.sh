@@ -23,7 +23,7 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>
+#   agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok|agy>
 #
 # Claude auth profiles:
 #   claude            OAuth / subscription (team or individual). Gateway
@@ -91,7 +91,7 @@ _launcher_log_error() {
 
 if [[ -n "${2:-}" ]]; then
   printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
-  printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>\n' >&2
+  printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok|agy>\n' >&2
   _launcher_log_error "agent launcher failed" \
     "reason=unexpected_argument" "arg=$2" "agent=${agent:-}" "cwd=$PWD"
   exit 1
@@ -402,9 +402,29 @@ case "$agent" in
       "$grok_bin" "${GROK_PERMISSION_PROFILE:-base}" \
       "${GROK_PERMISSION_ARGS[@]}"
     ;;
+  agy)
+    agy_bin="$(require_agent_binary agy)"
+    agy_args=()
+    agy_permission="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
+    case "$agy_permission" in
+      ''|auto) ;;
+      full-access) agy_args+=(--dangerously-skip-permissions) ;;
+      *)
+        runtime_log_warn primary_pane "unknown Agy permission profile; using base config" \
+          "profile=$agy_permission" "allowed=auto,full-access" || true
+        agy_permission=''
+        ;;
+    esac
+    load_managed_model_override agy
+    agy_args+=("${managed_model_args[@]}")
+    export WEZDECK_AGY_MANAGED=1
+    log_resume_boot agy "${agy_permission:-base}" base
+    exec bash "$script_dir/agent-resume.sh" agy "$fallback_log_script" \
+      "$agy_bin" "${agy_permission:-base}" "${agy_args[@]}"
+    ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-    printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>\n' >&2
+    printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok|agy>\n' >&2
     _launcher_log_error "agent launcher failed" \
       "reason=unknown_agent" "agent=${agent:-}" "cwd=$PWD"
     exit 1

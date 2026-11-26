@@ -3,7 +3,7 @@
 // session-new.tsx so the sheet's wiring stays under the per-function line
 // budget.
 import { useLingui } from '@lingui/react/macro'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, ShieldCheck } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -16,7 +16,8 @@ import type { AgentProfile } from './agent-profiles'
 type Repo = { root: string; label: string; visited?: number }
 
 type StageJob = {
-  stage: 'creating' | 'starting' | 'sending' | 'done' | 'failed'
+  stage:
+    'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
   branch?: string
   error?: string
   mode?: 'new' | 'parallel' | 'reuse'
@@ -39,6 +40,8 @@ export function ComposeLayer({
   ready,
   onPlace,
   onSubmit,
+  onTrust,
+  trusting,
   agentProfiles,
   agentProfile,
   onAgentProfile,
@@ -60,6 +63,8 @@ export function ComposeLayer({
   ready: boolean
   onPlace: () => void
   onSubmit: () => void
+  onTrust: () => void
+  trusting: boolean
   agentProfiles: Array<AgentProfile>
   agentProfile: string
   onAgentProfile: (next: string) => void
@@ -156,20 +161,34 @@ export function ComposeLayer({
           ) : null}
         </p>
       ) : null}
+      {current?.stage === 'waiting_trust' ? (
+        <Button
+          type="button"
+          onClick={onTrust}
+          disabled={trusting}
+          className="min-h-11 justify-self-start gap-2 px-3"
+          data-testid="agy-trust-worktree"
+        >
+          <ShieldCheck size={16} aria-hidden />
+          {t`Trust this worktree and continue`}
+        </Button>
+      ) : null}
       {error ? (
         <p role="alert" className="text-caption text-brand-error">
           {error}
         </p>
       ) : null}
-      <Button
-        variant="solid"
-        type="button"
-        disabled={!ready || busy}
-        onClick={onSubmit}
-        className="min-h-12 px-3 text-body disabled:opacity-40"
-      >
-        {t`Create session`}
-      </Button>
+      {current?.stage !== 'waiting_trust' ? (
+        <Button
+          variant="solid"
+          type="button"
+          disabled={!ready || busy}
+          onClick={onSubmit}
+          className="min-h-12 px-3 text-body disabled:opacity-40"
+        >
+          {t`Create session`}
+        </Button>
+      ) : null}
     </>
   )
 }

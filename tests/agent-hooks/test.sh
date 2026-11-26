@@ -23,6 +23,23 @@ assert_check_passes() {
 }
 
 assert_check_fails codex
+
+mkdir -p "$TEST_HOME/.gemini/config"
+printf '{"other-hook":{"enabled":false}}\n' > "$TEST_HOME/.gemini/config/hooks.json"
+assert_check_fails agy
+"$CHECKER" install --provider agy >/dev/null
+assert_check_passes agy
+jq -e '.["other-hook"].enabled == false and .["wezdeck-attention"].Stop[0].command != null' \
+  "$TEST_HOME/.gemini/config/hooks.json" >/dev/null
+before="$(sha256sum "$TEST_HOME/.gemini/config/hooks.json" | awk '{print $1}')"
+"$CHECKER" install --provider agy >/dev/null
+after="$(sha256sum "$TEST_HOME/.gemini/config/hooks.json" | awk '{print $1}')"
+[[ "$before" == "$after" ]] || { printf 'agy install is not idempotent\n' >&2; exit 1; }
+agy_adapter="$REPO_ROOT/scripts/runtime/agent-attention/adapters/agy.sh"
+hook_payload='{"conversationId":"11111111-2222-4333-8444-555555555555","workspacePaths":["/tmp"]}'
+[[ "$(printf '%s' "$hook_payload" | "$agy_adapter" running)" == '{}' ]]
+[[ "$(printf '%s' "$hook_payload" | "$agy_adapter" done)" == '{"decision":"stop"}' ]]
+
 "$CHECKER" install --provider codex >/dev/null
 assert_check_passes codex
 before="$(sha256sum "$TEST_HOME/.codex/hooks.json" | awk '{print $1}')"

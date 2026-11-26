@@ -98,6 +98,7 @@ agent_session_normalize_agent() {
     claude|claude-sub2api|claude_sub2api|claude-kimi|claude_kimi) printf 'claude\n' ;;
     codex) printf 'codex\n' ;;
     grok) printf 'grok\n' ;;
+    agy) printf 'agy\n' ;;
     *) return 1 ;;
   esac
 }
@@ -482,7 +483,7 @@ agent_session_resolve_for_pane() {
   fi
 }
 
-# Print agent profile (claude|codex|grok) for a pane, or empty.
+# Print the known agent profile for a pane, or empty.
 agent_session_agent_for_pane() {
   local pane_id="${1:-}"
   local role="" cmd="" detected="" cwd="" slot="" pin="" agent=""
@@ -505,6 +506,7 @@ agent_session_agent_for_pane() {
     claude*) agent_session_normalize_agent claude && return 0 ;;
     codex*) agent_session_normalize_agent codex && return 0 ;;
     grok*) agent_session_normalize_agent grok && return 0 ;;
+    agy*) agent_session_normalize_agent agy && return 0 ;;
   esac
 
   detected="$(agent_session_detect_agent_from_cmdline "$pane_id" || true)"
@@ -521,7 +523,7 @@ agent_session_agent_for_pane() {
   fi
 }
 
-# Walk pane_pid + descendants; print grok|claude|codex on first hit.
+# Walk pane_pid + descendants; print the first known agent.
 # Same contract as agent-ctrl-n.sh (hand-started secondary panes).
 agent_session_detect_agent_from_cmdline() {
   local pane_id="${1:-}"
@@ -547,6 +549,8 @@ agent_session_detect_agent_from_cmdline() {
         printf 'claude\n'; return 0 ;;
       *codex.js*|*/@openai/codex*|*/bin/codex*|*/codex[[:space:]]*|*/codex|*" codex "*|*" codex")
         printf 'codex\n'; return 0 ;;
+      */bin/agy*|*/agy[[:space:]]*|*/agy|*" agy "*|*" agy")
+        printf 'agy\n'; return 0 ;;
     esac
     while IFS= read -r child; do
       [[ "$child" =~ ^[0-9]+$ ]] || continue

@@ -88,6 +88,9 @@ if agent_session_id_usable "${session_id:-}"; then
     if [[ -n "${TMUX_PANE:-}" ]]; then
       agent_session_pin_pane "$TMUX_PANE" "$session_id" "$agent" "$PWD"
     fi
+    if [[ "$agent" == agy ]]; then
+      exec "$agent_bin" "${agent_args[@]+"${agent_args[@]}"}" --conversation "$session_id"
+    fi
     exec "$agent_bin" "${agent_args[@]+"${agent_args[@]}"}" --resume "$session_id"
   fi
 fi

@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
 
-const AGENTS = new Set(['claude', 'codex', 'grok'])
+const AGENTS = new Set(['claude', 'codex', 'grok', 'agy'])
 
 export function RestartActions({
   agent,
