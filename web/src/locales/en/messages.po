@@ -607,10 +607,15 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
+#: src/features/session-composer.tsx:474
+#: src/features/session-composer.tsx:475
+msgid "Clear input"
+msgstr "Clear input"
+
 #: src/features/session-composer.tsx:478
 #: src/features/session-composer.tsx:479
-msgid "Clear input (Esc Esc)"
-msgstr "Clear input (Esc Esc)"
+#~ msgid "Clear input (Esc Esc)"
+#~ msgstr "Clear input (Esc Esc)"
 
 #: src/features/session-list.tsx:272
 #: src/features/session-list.tsx:369
@@ -1571,7 +1576,7 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:470
+#: src/features/session-composer.tsx:466
 msgid "Message"
 msgstr "Message"
 
@@ -2562,7 +2567,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:492
+#: src/features/session-composer.tsx:488
 msgid "Send"
 msgstr "Send"
 

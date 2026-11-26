@@ -156,7 +156,7 @@ export function useComposer({
     if (!(await onSend({ text: typed.trim(), attachments, note }))) giveBack()
     picked.forEach((image) => URL.revokeObjectURL(image.url))
   }
-  /** empty the composer (× or Esc Esc), with an undo */
+  /** empty the composer (×), with an undo */
   const clear = (via: string) => {
     const typed = text
     const picked = images
@@ -339,7 +339,7 @@ export function ComposerBox({
   // mouse and keyboard Enter sends, Shift+Enter breaks the line
   const touch = useMediaQuery('(hover: none) and (pointer: coarse)', false)
   const canSend = !composer.progress && composer.ready && !blocked
-  const lastEsc = useRef(0)
+
   useSpaceToFocus()
   return (
     <>
@@ -429,14 +429,10 @@ export function ComposerBox({
           onKeyDown={(event) => {
             if (complete.key(event)) return
             if (tokenKey(event, composer.setText)) return
-            // Esc Esc empties the composer, as in Claude Code's own prompt
+            // Esc blurs (IM); clear stays on the × button with undo
             if (event.key === 'Escape') {
-              const now = performance.now()
-              if (now - lastEsc.current < 600) {
-                event.preventDefault()
-                lastEsc.current = 0
-                composer.clear('esc-esc')
-              } else lastEsc.current = now
+              event.preventDefault()
+              event.currentTarget.blur()
               return
             }
             if (event.key !== 'Enter') return
@@ -475,8 +471,8 @@ export function ComposerBox({
             variant="plain"
             type="button"
             data-testid="composer-clear"
-            aria-label={t`Clear input (Esc Esc)`}
-            title={t`Clear input (Esc Esc)`}
+            aria-label={t`Clear input`}
+            title={t`Clear input`}
             onClick={() => composer.clear('button')}
             className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-label"
           >

@@ -480,7 +480,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared the moment send is
   tapped (back in mid-upload found the sent draft), put back on a failed
   upload / send, synced across mounted copies (`use-draft.ts` events); ×
-  or Esc Esc clears with an undo (`composer-clear` trace); errors have a
+  clears with an undo (`composer-clear` trace); Esc blurs the field; errors have a
   one-tap copy; a "terminal was just used" refusal counts down and resends
   (`session-send.ts`)
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller

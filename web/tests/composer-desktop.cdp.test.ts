@@ -235,7 +235,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await context.close()
   })
 
-  it('clear: × with undo, Esc Esc; a send left mid-upload keeps no draft', async () => {
+  it('clear: × with undo, Esc blurs; a send left mid-upload keeps no draft', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -349,7 +349,7 @@ async function shortcutsSheet(page: Page) {
 }
 
 /**
- * × clears with an undo, Esc Esc clears; a send with an image left at once
+ * × clears with an undo, Esc blurs; a send with an image left at once
  * (upload still running) keeps no draft — the composer cleared through a
  * state updater that never ran once the page was gone.
  */
@@ -412,11 +412,12 @@ async function clearThenLeaveMidUpload(page: Page) {
     .toBe(true)
   await page.getByRole('button', { name: '撤销' }).click()
   await expect.poll(() => box.inputValue()).toBe('要清掉的草稿')
-  // Esc Esc (a keyboard on the phone): one Esc keeps it, two clear it
+  // Esc blurs the composer (IM); draft stays until × clears it
   await box.press('Escape')
+  await expect
+    .poll(() => box.evaluate((el) => el !== document.activeElement))
+    .toBe(true)
   expect(await box.inputValue()).toBe('要清掉的草稿')
-  await box.press('Escape')
-  await expect.poll(() => box.inputValue()).toBe('')
 
   // the clear toasts sit under the header: move the pointer off them (a
   // hovered toast holds its timer) and let them go before the send
