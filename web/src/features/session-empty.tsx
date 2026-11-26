@@ -35,7 +35,12 @@ export function EmptySession({ data }: { data: Detail }) {
   const { t } = useLingui()
   const agent = data.agent && data.agent !== 'agent' ? data.agent : ''
   const known = Boolean(agent)
-  const name = agent ? agent.charAt(0).toUpperCase() + agent.slice(1) : 'Agent'
+  const name =
+    agent === 'agy'
+      ? 'Antigravity'
+      : agent
+        ? agent.charAt(0).toUpperCase() + agent.slice(1)
+        : 'Agent'
   const model = data.usage?.model || metaValue(data, 'session', 'model')
   const effort = metaValue(data, 'session', 'effort')
   const facts: Array<[string, string, boolean]> = [

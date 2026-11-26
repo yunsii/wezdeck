@@ -476,6 +476,9 @@ func contextLimit(model string) int {
 	if v, ok := catalogLimit[strings.TrimSuffix(model, "[1m]")]; ok {
 		return v
 	}
+	if strings.HasPrefix(strings.ToLower(model), "gemini-") {
+		return 1000000
+	}
 	return 200000
 }
 

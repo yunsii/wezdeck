@@ -10,6 +10,7 @@ import {
   Bot,
   FolderGit2,
   GitBranch,
+  Sparkles,
   SquareTerminal,
   Zap,
 } from 'lucide-react'
@@ -32,8 +33,15 @@ import type { LedTone } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { PopoverContent } from '#/components/ui/popover'
 
-type Tone =
-  'neutral' | 'accent' | 'waiting' | 'done' | 'claude' | 'codex' | 'grok'
+export type Tone =
+  | 'neutral'
+  | 'accent'
+  | 'waiting'
+  | 'done'
+  | 'claude'
+  | 'codex'
+  | 'grok'
+  | 'agy'
 
 export function SessionTag({
   tone = 'neutral',
@@ -41,6 +49,7 @@ export function SessionTag({
   mono = false,
   hint,
   label,
+  testId,
   className,
   children,
 }: {
@@ -51,6 +60,7 @@ export function SessionTag({
   hint?: string
   /** what a reader says when the tag shows only an icon */
   label?: string
+  testId?: string
   className?: string
   children: string
 }) {
@@ -94,6 +104,7 @@ export function SessionTag({
           openOnHover
           delay={250}
           data-tone={tone}
+          data-testid={testId}
           aria-label={hint ?? children}
           className={cn(
             classes,
@@ -117,6 +128,7 @@ export function SessionTag({
   return (
     <span
       data-tone={tone}
+      data-testid={testId}
       title={hint ?? children}
       aria-label={label}
       role={label ? 'img' : undefined}
@@ -165,6 +177,7 @@ export const AGENT_MARKS: Partial<
   claude: { tone: 'claude', icon: Asterisk },
   codex: { tone: 'codex', icon: SquareTerminal },
   grok: { tone: 'grok', icon: Zap },
+  agy: { tone: 'agy', icon: Sparkles },
 }
 
 /** compact: the agent's mark alone (the status bar), its name on hover */

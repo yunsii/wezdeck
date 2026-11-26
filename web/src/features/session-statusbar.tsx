@@ -9,7 +9,16 @@
 // the thread, so nothing in it moves. The git tag keeps its width.
 import { useLingui } from '@lingui/react/macro'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
-import { Bot, Layers, Radio, SquareTerminal } from 'lucide-react'
+import {
+  Bot,
+  Layers,
+  Radio,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
+  SquareTerminal,
+} from 'lucide-react'
 
 import {
   AGENT_MARKS,
@@ -17,6 +26,7 @@ import {
   SessionTag,
   TagLine,
 } from '#/components/deck/session-tags'
+import type { Tone } from '#/components/deck/session-tags'
 import { Led } from '#/components/deck/led'
 import { PopoverContent } from '#/components/ui/popover'
 import type { Detail } from './console-sessions'
@@ -33,13 +43,103 @@ export type StatusFields = {
 const trigger =
   'session-tag cursor-pointer text-meta outline-none focus-visible:ring-2 focus-visible:ring-brand-running'
 
-/** claude-opus-5-5 → Opus 5.5 (claude-sonnet-4-5-20250929 → Sonnet 4.5) */
+/** claude-opus-5-5 → Opus 5.5; gemini-4-neon-high → Gemini 4 Neon (high) */
 export function modelName(id?: string) {
   if (!id) return ''
-  const m = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-|$)/.exec(id)
-  if (!m) return id
-  const family = m[1]
-  return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${m[2]}${m[3] ? `.${m[3]}` : ''}`
+  const claude = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-|$)/.exec(id)
+  if (claude) {
+    const family = claude[1]
+    return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${claude[2]}${claude[3] ? `.${claude[3]}` : ''}`
+  }
+  const gemini = /^gemini-(.+)$/.exec(id)
+  if (gemini) {
+    const parts = gemini[1].split('-').filter(Boolean)
+    const efforts = new Set(['low', 'medium', 'high', 'xhigh', 'max'])
+    const last = parts.at(-1)
+    const effort = last && efforts.has(last) ? parts.pop() : ''
+    const title = parts
+      .map((part) =>
+        /^[a-z]/.test(part)
+          ? part.charAt(0).toUpperCase() + part.slice(1)
+          : part,
+      )
+      .join(' ')
+    return effort ? `Gemini ${title} (${effort})` : `Gemini ${title}`
+  }
+  return id
+}
+
+export type ModeKind =
+  'auto' | 'full-access' | 'accept-edits' | 'plan' | 'default' | 'other'
+
+export function normalizeMode(mode?: string): ModeKind | '' {
+  const s = (mode ?? '').trim().toLowerCase()
+  if (!s) return ''
+  if (s === 'auto') return 'auto'
+  if (s === 'full-access' || s === 'bypasspermissions' || s === 'dontask')
+    return 'full-access'
+  if (s === 'accept-edits' || s === 'acceptedits') return 'accept-edits'
+  if (s === 'plan') return 'plan'
+  if (s === 'default') return 'default'
+  return 'other'
+}
+
+function ModeTag({ mode }: { mode: string }) {
+  const { t } = useLingui()
+  const kind = normalizeMode(mode)
+  if (!kind) return null
+  const config: Record<
+    ModeKind,
+    { label: string; hint: string; tone: Tone; icon: typeof Shield }
+  > = {
+    auto: {
+      label: t`Auto`,
+      hint: t`Auto mode enabled`,
+      tone: 'done',
+      icon: ShieldCheck,
+    },
+    'full-access': {
+      label: t`Full access`,
+      hint: t`Full access: auto-approves all actions`,
+      tone: 'waiting',
+      icon: ShieldAlert,
+    },
+    'accept-edits': {
+      label: t`Accept edits`,
+      hint: t`Auto-approves edits; auto mode off`,
+      tone: 'accent',
+      icon: Shield,
+    },
+    plan: {
+      label: t`Plan`,
+      hint: t`Plan mode`,
+      tone: 'accent',
+      icon: Shield,
+    },
+    default: {
+      label: t`Auto off`,
+      hint: t`Default mode: auto mode is off`,
+      tone: 'neutral',
+      icon: ShieldOff,
+    },
+    other: {
+      label: mode,
+      hint: t`Execution mode: ${mode}`,
+      tone: 'neutral',
+      icon: Shield,
+    },
+  }
+  const item = config[kind]
+  return (
+    <SessionTag
+      testId="status-mode"
+      tone={item.tone}
+      icon={item.icon}
+      hint={item.hint}
+    >
+      {item.label}
+    </SessionTag>
+  )
 }
 
 /** monitor (a Monitor stream) or shell (a background Bash) */
@@ -141,19 +241,21 @@ export function SessionStatusBar({
   const agent = data.agent && data.agent !== 'agent' ? data.agent : ''
   const mark = AGENT_MARKS[agent.replace(/\.real$/, '')]
   const model = modelName(data.usage?.model) || agent
+  const mode = data.mode?.trim() || ''
   const metrics = usageMetrics(data.usage, data.account)
   const worktrees = data.worktrees ?? []
   const background = data.background ?? []
   const shells = background.filter((task) => kindOf(task) === 'shell')
   const monitors = background.filter((task) => kindOf(task) === 'monitor')
   const custom = Boolean(data.branch || data.git || worktrees.length > 1)
-  if (!model && !background.length && !metrics.length && !custom) return null
+  if (!model && !mode && !background.length && !metrics.length && !custom)
+    return null
   return (
     // mt-1: 10 px under the composer, as the toolbar's buttons sit 10 px
     // above it (the toolbar box pads its 32 px buttons by 4 px)
     <div data-testid="session-statusbar" className="mt-1 grid gap-1">
-      {model || background.length || metrics.length ? (
-        // the agent: its model, what runs in the background by kind
+      {model || mode || background.length || metrics.length ? (
+        // the agent: its model, execution mode, what runs in the background by kind
         <TagLine
           testId="statusbar-agent"
           maxLines={1}
@@ -170,6 +272,7 @@ export function SessionStatusBar({
               {model}
             </SessionTag>
           ) : null}
+          {mode ? <ModeTag mode={mode} /> : null}
           {shells.length ? <Background kind="shell" tasks={shells} /> : null}
           {monitors.length ? (
             <Background kind="monitor" tasks={monitors} />
