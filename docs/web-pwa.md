@@ -47,7 +47,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: an IM chat list (one row per workstation; multi-session
+   会话 is the home: an IM chat list (single-session worktrees show the session title; multi-session
    worktrees: compact foldable header, one line for empty idle sessions, preview rows for active conversations;
    agent brand avatar, Kimi/gateway as a corner badge; unread badge; row + for a new round; no status Segmented), then the
    repo → worktree → pane tree ordered by **visits**, never output — the
@@ -99,7 +99,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    ticket or waiting on the other side ○): cross-repo ticket events as sentences — one card per
    ticket run of events under its title and from → to repo, day headings,
    a clock time per line; tool calls, checkouts, session init and worktree
-   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one row per workstation,
+   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one titled row for a single session,
    multi-session ones adding per-session sub-rows; repo section heads; unread = needs-you badge; no status Segmented);
    opening resolves the focus session (sub-rows open their own). Grok Ask shows tappable options
    from `elicitation`) · 我的 (an index of groups, each row showing

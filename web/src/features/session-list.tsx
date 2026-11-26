@@ -17,7 +17,7 @@ import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { AgentAvatar } from './agent-avatar'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import { ChatGroupRow } from './session-chat-group'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
@@ -80,19 +80,20 @@ function useChatTimeLabel() {
 
 function ChatRow({
   chat,
-  selectedWorktree,
+  selectedId,
+  replace,
   preview,
   timeLabel,
 }: {
   chat: SessionChat
-  selectedWorktree?: string
+  selectedId?: string
+  replace: boolean
   preview: string
   timeLabel: string
 }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
-  const wide = useIsWide()
   const device = useDeviceState()
   const copyReference = useCopySessionReference()
   const { clear } = useClearSession()
@@ -101,7 +102,7 @@ function ChatRow({
   const row = chat.focus
   const tone = chatTone(row)
   const warm = () => prefetchSession(client, row.id)
-  const selected = Boolean(selectedWorktree && selectedWorktree === chat.key)
+  const selected = row.id === selectedId
   const canClear =
     device.state === 'approved' && clearable(row.status, row.waiting_kind)
   const startNewRound = () => {
@@ -158,7 +159,7 @@ function ChatRow({
             params={{ locale: localeParam, id: row.id }}
             data-session={row.id}
             data-chat={chat.key}
-            replace={wide && Boolean(selectedWorktree)}
+            replace={replace}
             aria-current={selected ? 'page' : undefined}
             onClick={() => recordVisit(chat.key)}
             onPointerEnter={warm}
@@ -184,7 +185,8 @@ function ChatRow({
                     chat.unread > 0 ? 'font-semibold' : 'font-medium',
                   )}
                 >
-                  {chat.title}
+                  {row.title?.trim() ||
+                    agentLabel(row.agent, row.agent_profile)}
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   {chat.unread > 0 ? (
@@ -444,7 +446,8 @@ export function SessionList({
                     ) : (
                       <ChatRow
                         chat={chat}
-                        selectedWorktree={selectedWorktree}
+                        selectedId={selected}
+                        replace={wide && Boolean(selectedWorktree)}
                         preview={previewOf(chat)}
                         timeLabel={timeOf(chat.focus.ts)}
                       />
