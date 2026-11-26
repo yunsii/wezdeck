@@ -47,7 +47,15 @@ still be open in another pane because hooks from a shared app-server can
 inherit its original pane environment. Agy remains visible after a turn ends
 while its managed pane's bash launcher still has an `agy` child process;
 `pane_current_command` alone reports `bash`. The Web session list is an IM chat rail:
-one row per worktree, with known brand avatars (including
+one row per worktree — a worktree running several agent sessions gets a
+foldable header plus one stable sub-row per session
+(`web/src/features/session-chat-group.tsx`): own avatar, tone, preview,
+unread and direct link, so two busy agents no longer take turns repainting
+one shared focus row and every session stays reachable; the header folds
+back to the focus preview (the old single-row look), remembered per worktree
+(`session-collapse.ts`, localStorage best-effort). The switcher sheet and
+`Alt+j` / `Alt+k` / `Alt+l` jumps likewise target every session, not just
+each worktree's focus. Rows carry known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /
@@ -57,7 +65,8 @@ session with no human prompt is never called `Replying…` merely because its
 timestamp falls inside the recent-turn grace period, and it cannot become the
 chat's running focus ahead of a real recent turn; list time is clock-today /
 yesterday / weekday / date; a top search filters by title, purpose, preview,
-and agent; purpose on the row is read-only (edit in 会话信息 via
+and agent across **all** of a worktree's sessions, not only the focus;
+purpose on the row is read-only (edit in 会话信息 via
 `worktree.describe`); pane index still orders sessions inside a worktree.
 
 ## Session RPCs

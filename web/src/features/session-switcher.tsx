@@ -2,8 +2,10 @@
 // session waiting on you / finished / running (Alt+Shift+l: previous
 // running) — on the phone a "N more need you ›" chip in the header and the
 // switcher sheet; on a keyboard the same Alt keys. Alt+g / Alt+x pick a
-// chat — sheet grouped like the IM list (repo → workstation). Switching
-// replaces the history entry, so back still returns to the list.
+// chat — sheet grouped like the IM list (repo → workstation); a worktree
+// with several sessions lists each of them, in the sheet and in the jump
+// cycle. Switching replaces the history entry, so back still returns to the
+// list.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
@@ -12,7 +14,12 @@ import { Led } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { cn } from '#/lib/utils'
-import { isBusy, needsYou, useSessions } from './console-sessions'
+import {
+  isBusy,
+  needsAttention,
+  needsYou,
+  useSessions,
+} from './console-sessions'
 import { AgentAvatar } from './agent-avatar'
 import type { SessionCard } from './console-sessions'
 import { buildChatGroups, flattenChats } from './session-chats'
@@ -37,11 +44,14 @@ export function useSessionNav(current: string) {
   const phone = consoleVisits()
   const groups = buildChatGroups(rows, phone)
   const chats = flattenChats(groups)
-  // jump targets: focus session of each matching chat (one id per workstation)
+  // jump targets: every session, not just each worktree's focus — two agents
+  // in one worktree each get their own stop (Alt+l cycles both). `ordered`
+  // keeps one focus id per worktree for the split's default pick.
   const ordered = chats.map((c) => c.focus)
-  const waiting = chats.filter((c) => c.unread > 0).map((c) => c.focus)
+  const allSessions = chats.flatMap((c) => c.sessions)
+  const waiting = allSessions.filter(needsAttention)
   const ids = (kind: JumpKind) =>
-    ordered.filter(KINDS[kind]).map((row) => row.id)
+    allSessions.filter(KINDS[kind]).map((row) => row.id)
   const go = useCallback(
     (row: SessionCard | string) => {
       const target =
@@ -119,6 +129,77 @@ export function NextWaitingChip({
   )
 }
 
+function SwitcherRow({
+  chat,
+  session,
+  current,
+  currentKey,
+  single,
+  onSelect,
+}: {
+  chat: SessionChat
+  session: SessionCard
+  current: string
+  currentKey: string
+  /** one-session chat: the row's title is the worktree, not the session */
+  single: boolean
+  onSelect: (session: SessionCard) => void
+}) {
+  const { t } = useLingui()
+  const selected = single
+    ? chat.key === currentKey || session.id === current
+    : session.id === current
+  const unread = single ? chat.unread : needsAttention(session) ? 1 : 0
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      aria-current={selected ? 'page' : undefined}
+      data-session-id={session.id}
+      data-chat={chat.key}
+      onClick={() => onSelect(session)}
+      className={cn(
+        'flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left',
+        !single && 'pl-8',
+        selected && 'bg-brand-soft',
+      )}
+    >
+      <AgentAvatar
+        agent={session.agent}
+        profile={session.agent_profile}
+        size={single ? 36 : 32}
+      />
+      <span className="grid min-w-0 flex-1">
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          <span
+            className={cn(
+              'truncate text-body font-medium',
+              !single && !session.title && 'text-brand-muted',
+            )}
+          >
+            {single ? chat.title : session.title || t`Untitled session`}
+          </span>
+          {single && chat.purpose ? (
+            <span className="min-w-0 truncate text-meta text-brand-label">
+              · {chat.purpose}
+            </span>
+          ) : null}
+          {unread > 0 ? (
+            <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
+              {unread}
+            </span>
+          ) : null}
+        </span>
+        <span className="truncate text-meta text-brand-label">
+          {single
+            ? session.title || session.last_prompt || t`No human message yet`
+            : session.last_prompt || t`No human message yet`}
+        </span>
+      </span>
+    </Button>
+  )
+}
+
 export function SessionSwitcher({
   current,
   open,
@@ -133,52 +214,55 @@ export function SessionSwitcher({
   const currentRow = nav.rows.find((r) => r.id === current)
   const currentKey = currentRow ? worktreeKey(currentRow) : ''
   if (typeof document === 'undefined') return null
+  const onSelect = (session: SessionCard) => {
+    onClose()
+    if (session.id !== current) nav.go(session)
+  }
   const row = (chat: SessionChat) => {
-    const session = chat.focus
-    const selected = chat.key === currentKey || session.id === current
+    // several agents in one worktree: a quiet header, then every session
+    if (chat.sessions.length > 1) {
+      return (
+        <li key={chat.key}>
+          <div className="flex items-baseline gap-1.5 px-4 pt-2 text-caption font-medium text-brand-muted">
+            <span className="truncate">{chat.title}</span>
+            {chat.purpose ? (
+              <span className="min-w-0 truncate text-meta">
+                · {chat.purpose}
+              </span>
+            ) : null}
+            {chat.unread > 0 ? (
+              <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
+                {chat.unread}
+              </span>
+            ) : null}
+          </div>
+          <ul>
+            {chat.sessions.map((session) => (
+              <li key={session.id}>
+                <SwitcherRow
+                  chat={chat}
+                  session={session}
+                  current={current}
+                  currentKey={currentKey}
+                  single={false}
+                  onSelect={onSelect}
+                />
+              </li>
+            ))}
+          </ul>
+        </li>
+      )
+    }
     return (
       <li key={chat.key}>
-        <Button
-          variant="plain"
-          type="button"
-          aria-current={selected ? 'page' : undefined}
-          data-session-id={session.id}
-          data-chat={chat.key}
-          onClick={() => {
-            onClose()
-            if (session.id !== current) nav.go(session)
-          }}
-          className={cn(
-            'flex min-h-12 w-full items-center gap-3 px-4 py-2 text-left',
-            selected && 'bg-brand-soft',
-          )}
-        >
-          <AgentAvatar
-            agent={session.agent}
-            profile={session.agent_profile}
-            size={36}
-          />
-          <span className="grid min-w-0 flex-1">
-            <span className="flex min-w-0 items-baseline gap-1.5">
-              <span className="truncate text-body font-medium">
-                {chat.title}
-              </span>
-              {chat.purpose ? (
-                <span className="min-w-0 truncate text-meta text-brand-label">
-                  · {chat.purpose}
-                </span>
-              ) : null}
-              {chat.unread > 0 ? (
-                <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
-                  {chat.unread}
-                </span>
-              ) : null}
-            </span>
-            <span className="truncate text-meta text-brand-label">
-              {session.title || session.last_prompt || t`No human message yet`}
-            </span>
-          </span>
-        </Button>
+        <SwitcherRow
+          chat={chat}
+          session={chat.focus}
+          current={current}
+          currentKey={currentKey}
+          single
+          onSelect={onSelect}
+        />
       </li>
     )
   }

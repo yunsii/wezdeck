@@ -1,20 +1,23 @@
 // 会话 left rail as an IM chat list (Telegram Web orientation): one row per
 // workstation, repo as a quiet section head, unread = waiting or done-unseen.
-// No status Segmented. Opening a row resolves the focus session (session-chats)
-// and navigates to /sessions/$id. Order: unread first within a repo, then
-// activity time — frozen while you work (session-stable).
+// A workstation with several sessions becomes a foldable header plus one
+// stable sub-row per session (session-chat-group) — no focus repaint, every
+// session directly reachable. No status Segmented. Opening a single-session
+// row resolves the focus session (session-chats) and navigates to
+// /sessions/$id. Order: unread first within a repo, then activity time —
+// frozen while you work (session-stable).
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { FolderGit2, Plus, Search, X } from 'lucide-react'
+import { FolderGit2, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { SyntheticEvent } from 'react'
 
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { AgentAvatar } from './agent-avatar'
+import { ChatGroupRow, ChatNewRoundButton } from './session-chat-group'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -23,7 +26,7 @@ import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, SwipeToClear } from './session-clear'
-import { NewSessionButton, requestNewSession } from './session-new'
+import { NewSessionButton } from './session-new'
 import { worktreeKey } from './session-order'
 import {
   buildChatGroups,
@@ -39,8 +42,8 @@ import {
   formatChatDate,
   formatChatWeekday,
 } from './chat-time'
-import { directionForWorktree, useDirections } from './session-new-direction'
 import { useFrozenVisits, useStickyMembers } from './session-stable'
+
 import { RowCopyButton, useCopySessionReference } from './copy-reference'
 import { prefetchSession, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
@@ -80,28 +83,15 @@ function ChatRow({
   preview: string
   timeLabel: string
 }) {
-  const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
   const wide = useIsWide()
   const copyReference = useCopySessionReference()
   const client = useQueryClient()
-  const directions = useDirections(chat.repoKey)
   const row = chat.focus
   const tone = chatTone(row)
   const warm = () => prefetchSession(client, row.id)
   const selected = Boolean(selectedWorktree && selectedWorktree === chat.key)
-  const newRound = (event: SyntheticEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    const direction = directionForWorktree(
-      directions.data?.directions ?? [],
-      chat.key,
-      chat.title,
-    )
-    if (!direction) return
-    requestNewSession({ repo: chat.repoKey, direction })
-  }
   return (
     <SwipeToClear id={row.id} enabled={clearable(row.status, row.waiting_kind)}>
       <div className="group/row relative">
@@ -182,21 +172,7 @@ function ChatRow({
             </span>
           </span>
         </Link>
-        {chat.editable ? (
-          <Button
-            variant="plain"
-            size="none"
-            type="button"
-            data-testid="chat-new-round"
-            title={t`New round`}
-            aria-label={t`New round`}
-            onClick={newRound}
-            onPointerDown={(event) => event.stopPropagation()}
-            className="absolute top-2 right-2 inline-flex size-9 items-center justify-center rounded-full text-brand-muted opacity-0 outline-none group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand-running max-md:opacity-70"
-          >
-            <Plus size={16} aria-hidden />
-          </Button>
-        ) : null}
+        <ChatNewRoundButton chat={chat} />
         <RowCopyButton id={row.id} copy={copyReference} />
       </div>
     </SwipeToClear>
@@ -266,9 +242,11 @@ export function SessionList({
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')
+  const wide = useIsWide()
 
   const previewOf = (chat: SessionChat) =>
     chatPreview(chat.focus, previewLabels)
+  const sessionPreview = (row: SessionCard) => chatPreview(row, previewLabels)
 
   // unread set sticky: clearing one does not reshuffle the rest mid-pass
   const unreadKeys = flattenChats(groups)
@@ -371,12 +349,22 @@ export function SessionList({
                     className="border-b border-brand-edge last:border-b-0"
                     data-worktree={chat.title}
                   >
-                    <ChatRow
-                      chat={chat}
-                      selectedWorktree={selectedWorktree}
-                      preview={previewOf(chat)}
-                      timeLabel={timeOf(chat.focus.ts)}
-                    />
+                    {chat.sessions.length > 1 ? (
+                      <ChatGroupRow
+                        chat={chat}
+                        selectedId={selected}
+                        replace={wide && Boolean(selectedWorktree)}
+                        previewOf={sessionPreview}
+                        timeOf={timeOf}
+                      />
+                    ) : (
+                      <ChatRow
+                        chat={chat}
+                        selectedWorktree={selectedWorktree}
+                        preview={previewOf(chat)}
+                        timeLabel={timeOf(chat.focus.ts)}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

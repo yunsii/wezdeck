@@ -53,7 +53,7 @@ msgstr "{count} images"
 msgid "{count} monitors running"
 msgstr "{count} monitors running"
 
-#: src/features/session-switcher.tsx:117
+#: src/features/session-switcher.tsx:127
 msgid "{count} more need you"
 msgstr "{count} more need you"
 
@@ -289,8 +289,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:353
-#: src/features/session-list.tsx:393
+#: src/features/session-list.tsx:331
+#: src/features/session-list.tsx:381
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -633,8 +633,8 @@ msgstr "Clear input"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "Clear input (Esc Esc)"
 
-#: src/features/session-list.tsx:246
-#: src/features/session-list.tsx:343
+#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:321
 msgid "Clear search"
 msgstr "Clear search"
 
@@ -697,6 +697,11 @@ msgstr "Collab metrics"
 #: src/features/tickets-view.tsx:371
 msgid "Collab tickets"
 msgstr "Collab tickets"
+
+#: src/features/session-chat-group.tsx:198
+#: src/features/session-chat-group.tsx:199
+msgid "Collapse sessions"
+msgstr "Collapse sessions"
 
 #: src/features/console-collab-run.tsx:114
 #: src/features/session-skills.tsx:49
@@ -1047,7 +1052,7 @@ msgstr "Disabled"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:150
-#: src/features/session-list.tsx:53
+#: src/features/session-list.tsx:56
 msgid "Done"
 msgstr "Done"
 
@@ -1142,6 +1147,11 @@ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jum
 #: src/features/console-collab.tsx:284
 msgid "Exit"
 msgstr "Exit"
+
+#: src/features/session-chat-group.tsx:198
+#: src/features/session-chat-group.tsx:199
+msgid "Expand sessions"
+msgstr "Expand sessions"
 
 #: src/features/chat-images.tsx:58
 msgid "Expired"
@@ -1677,7 +1687,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-list.tsx:52
+#: src/features/session-list.tsx:55
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -1713,8 +1723,8 @@ msgstr "New direction"
 msgid "New line"
 msgstr "New line"
 
-#: src/features/session-list.tsx:191
-#: src/features/session-list.tsx:192
+#: src/features/session-chat-group.tsx:50
+#: src/features/session-chat-group.tsx:51
 #: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "New round"
@@ -1798,7 +1808,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:348
+#: src/features/session-list.tsx:326
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1823,8 +1833,9 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:55
-#: src/features/session-switcher.tsx:178
+#: src/features/session-list.tsx:58
+#: src/features/session-switcher.tsx:195
+#: src/features/session-switcher.tsx:196
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -1848,7 +1859,7 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/session-list.tsx:335
+#: src/features/session-list.tsx:313
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -1967,7 +1978,7 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/session-switcher.tsx:207
+#: src/features/session-switcher.tsx:291
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
@@ -2607,8 +2618,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:236
-#: src/features/session-list.tsx:237
+#: src/features/session-list.tsx:212
+#: src/features/session-list.tsx:213
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -2680,12 +2691,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:307
+#: src/features/session-list.tsx:285
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:325
+#: src/features/session-list.tsx:303
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2862,7 +2873,7 @@ msgstr "summarise the context"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/session-switcher.tsx:191
+#: src/features/session-switcher.tsx:275
 msgid "Switch chat"
 msgstr "Switch chat"
 
@@ -3245,8 +3256,10 @@ msgstr "Underscore"
 msgid "Undo"
 msgstr "Undo"
 
+#: src/features/session-chat-group.tsx:148
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:176
+#: src/features/session-switcher.tsx:180
 msgid "Untitled session"
 msgstr "Untitled session"
 
@@ -3354,7 +3367,7 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/session-list.tsx:51
+#: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3502,7 +3515,7 @@ msgid "working"
 msgstr "working"
 
 #: src/features/chat-turn.tsx:136
-#: src/features/session-list.tsx:54
+#: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "Working"
 
@@ -3538,7 +3551,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:66
+#: src/features/session-list.tsx:69
 msgid "Yesterday"
 msgstr "Yesterday"
 

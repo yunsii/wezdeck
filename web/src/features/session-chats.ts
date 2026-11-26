@@ -66,7 +66,9 @@ export function chatPreview(
   return prompt || labels.empty
 }
 
-/** Local filter for the list search box. */
+/** Local filter for the list search box. Every session of a multi-session
+ * worktree matches, not just the focus — "codex" finds the row even while
+ * the focus preview shows grok. */
 export function chatMatchesQuery(
   chat: SessionChat,
   query: string,
@@ -79,9 +81,13 @@ export function chatMatchesQuery(
     chat.purpose,
     chat.repoLabel,
     preview,
-    chat.focus.agent,
-    chat.focus.agent_profile,
-    chat.focus.name,
+    ...chat.sessions.flatMap((row) => [
+      row.title,
+      row.agent,
+      row.agent_profile,
+      row.name,
+      row.last_prompt,
+    ]),
   ]
     .filter(Boolean)
     .join('\n')

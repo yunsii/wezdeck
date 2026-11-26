@@ -47,9 +47,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: an IM chat list (one row per workstation; agent brand
-   avatar, Kimi/gateway as a corner badge; unread badge; row + for a new
-   round; no status Segmented), then the
+   会话 is the home: an IM chat list (one row per workstation; multi-session
+   worktrees: foldable header + per-session sub-rows, folded state remembered;
+   agent brand avatar, Kimi/gateway as a corner badge; unread badge; row + for a new round; no status Segmented), then the
    repo → worktree → pane tree ordered by **visits**, never output — the
    later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
    `Alt+x`, `session_visits.go`) and a visit from this web console
@@ -99,9 +99,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    ticket or waiting on the other side ○): cross-repo ticket events as sentences — one card per
    ticket run of events under its title and from → to repo, day headings,
    a clock time per line; tool calls, checkouts, session init and worktree
-   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one row per workstation;
-   repo section heads; unread = needs-you badge; no status Segmented);
-   opening resolves the focus session. Grok Ask shows tappable options
+   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one row per workstation,
+   multi-session ones adding per-session sub-rows; repo section heads; unread = needs-you badge; no status Segmented);
+   opening resolves the focus session (sub-rows open their own). Grok Ask shows tappable options
    from `elicitation`) · 我的 (an index of groups, each row showing
    how it stands — 连接 / 写入权限 / 用量 / 外观 / 应用 — each group a pushed
    page `/console/me/$page` with a back bar; the tab bar stays, re-tapping
