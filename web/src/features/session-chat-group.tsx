@@ -85,7 +85,7 @@ function SessionSubRow({
   const prompt = humanPrompt(session.last_prompt).trim()
   const draft = session.draft?.trim()
   const compact =
-    tone === 'idle' && !title && !prompt && !session.restart_pending
+    tone === 'idle' && !title && !prompt && !draft && !session.restart_pending
   const statusLabel = session.restart_pending
     ? t`Restarting…`
     : {
@@ -196,7 +196,7 @@ function SessionSubRow({
                   </span>
                 )}
               </span>
-              {prompt || statusLabel ? (
+              {draft || prompt || statusLabel ? (
                 <span
                   data-testid="session-preview"
                   data-tone={tone}
@@ -278,6 +278,9 @@ export function ChatGroupRow({
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
     ? 'waiting'
     : 'done'
+  const hasDraft = chat.sessions.some((session) =>
+    Boolean(session.draft?.trim()),
+  )
   return (
     <div>
       <Button
@@ -308,6 +311,9 @@ export function ChatGroupRow({
         <span className="min-w-0 flex-1 truncate font-medium">
           {chat.title}
         </span>
+        {collapsed && hasDraft ? (
+          <span className="shrink-0 text-meta text-brand-label">{t`Draft`}</span>
+        ) : null}
         {collapsed && chat.unread > 0 ? (
           <UnreadBadge tone={tone} n={chat.unread} />
         ) : null}

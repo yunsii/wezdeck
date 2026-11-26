@@ -728,7 +728,7 @@ msgstr "Collab metrics"
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
-#: src/features/session-chat-group.tsx:290
+#: src/features/session-chat-group.tsx:293
 msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
@@ -1129,6 +1129,7 @@ msgid "done {when}"
 msgstr "done {when}"
 
 #: src/features/session-chat-group.tsx:212
+#: src/features/session-chat-group.tsx:315
 #: src/features/session-list.tsx:66
 msgid "Draft"
 msgstr "Draft"
@@ -1225,7 +1226,7 @@ msgstr "Execution mode: {mode}"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/session-chat-group.tsx:290
+#: src/features/session-chat-group.tsx:293
 msgid "Expand sessions"
 msgstr "Expand sessions"
 

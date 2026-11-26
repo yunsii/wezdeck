@@ -37,12 +37,12 @@ function announce(storageKey: string, value: string, from: string) {
       detail: { key: storageKey, value, from },
     }),
   )
+  notifyRevision()
 }
 
 function persist(storageKey: string, value: string, from: string) {
   store(storageKey, value)
   announce(storageKey, value, from)
-  notifyRevision()
 }
 
 export const sessionDraftKey = (id: string) => `wezdeck.draft.${id}`

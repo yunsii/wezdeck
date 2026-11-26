@@ -65,7 +65,10 @@ one shared focus row and every session stays reachable; the header folds
 back to the focus preview (the old single-row look), remembered per worktree
 (`session-collapse.ts`, localStorage best-effort). The switcher sheet and
 `Alt+j` / `Alt+k` / `Alt+l` jumps likewise target every session, not just
-each worktree's focus. Rows carry known brand avatars (including
+each worktree's focus. Browser-local unsent composer text appears as 草稿 in
+each session row, with an indicator on a collapsed group. Chat order follows
+frozen worktree visits, with unread first within each repo; attention status
+refreshes do not reorder rows. Rows carry known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /

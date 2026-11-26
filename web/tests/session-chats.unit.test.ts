@@ -241,6 +241,15 @@ describe('chatTone / chatPreview', () => {
       )?.id,
     ).toBe('fresh-empty')
   })
+
+  it('shows unsent text as the chat preview', () => {
+    expect(
+      chatPreview(
+        card({ status: 'done', last_prompt: 'sent', draft: 'unsent reply' }),
+        { ...previewLabels, draft: '草稿' },
+      ),
+    ).toBe('草稿 · unsent reply')
+  })
 })
 
 describe('unreadChatCount', () => {
