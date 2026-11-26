@@ -114,6 +114,7 @@ func TestConfigureKimiProfileWritesPrivateFileWithoutReturningKey(t *testing.T) 
 		!strings.Contains(got, "CLAUDE_CODE_AUTO_COMPACT_WINDOW='262144'") ||
 		!strings.Contains(got, "CLAUDE_CODE_MAX_CONTEXT_TOKENS='262144'") ||
 		!strings.Contains(got, "CLAUDE_CODE_EFFORT_LEVEL='high'") ||
+		!strings.Contains(got, "CLAUDE_CODE_AUTO_MODE_SERVER='0'") ||
 		!kimiConfigured() {
 		t.Fatalf("credential file was not configured: %s", got)
 	}
