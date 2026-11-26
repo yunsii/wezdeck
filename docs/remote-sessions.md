@@ -32,6 +32,8 @@ so a web page still on the fresh session switches back to the resumed one.
 The `sessions` poll also carries `redirects: [{from,to}]` (cleared_to and
 `ReplacedFrom` edges whose `to` is still listed) so a detail URL that missed
 `replaced_by` still follows on the next list tick (`useFollowSessionRedirect`).
+A session id still pinned on another live agent pane is listed there and is
+not redirected away (two windows on one worktree).
 
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived entry remains in the local-mode session list for three

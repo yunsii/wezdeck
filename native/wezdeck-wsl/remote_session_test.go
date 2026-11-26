@@ -376,6 +376,59 @@ func TestSessionRedirectsFromClearedToAndReplacedFrom(t *testing.T) {
 	}
 }
 
+// A session cleared_to on pane A must stay listed when the same id is still
+// the agent pin on pane B (two windows on one worktree).
+func TestClearedSessionStillListedWhenPinnedElsewhere(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "bin")
+	_ = os.MkdirAll(bin, 0o755)
+	cat, _ := exec.LookPath("cat")
+	if err := os.Symlink(cat, filepath.Join(bin, "claude")); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "s")
+	for _, name := range []string{"a", "b"} {
+		if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", name, filepath.Join(bin, "claude")).CombinedOutput(); err != nil {
+			t.Fatalf("tmux %s: %s", name, out)
+		}
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOf := func(session string) string {
+		out, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_id}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	paneA, paneB := paneOf("a"), paneOf("b")
+	_ = exec.Command("tmux", "-S", socket, "set-option", "-p", "-t", paneB, "@wezterm_agent_session_id", "old-still-live").Run()
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
+		{"session_id": "old-still-live", "tmux_socket": socket, "tmux_session": "a", "tmux_pane": paneA,
+			"last_status": "done", "archived_ts": 100, "cleared_to": "fresh-on-a"},
+	}})
+	_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	time.Sleep(200 * time.Millisecond)
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	ids := map[string]bool{}
+	for _, c := range cards {
+		ids[c.ID] = true
+	}
+	if !ids["fresh-on-a"] || !ids["old-still-live"] {
+		t.Fatalf("want both fresh-on-a and old-still-live, got %+v", cards)
+	}
+	redirects, _ := list.(map[string]any)["redirects"].([]sessionRedirect)
+	for _, r := range redirects {
+		if r.From == "old-still-live" {
+			t.Fatalf("must not redirect a session still pinned elsewhere: %+v", redirects)
+		}
+	}
+}
+
 func TestReplacementForArchivedUsesPaneWhenClearedToMissing(t *testing.T) {
 	recent := []recentEntry{{attentionEntry: attentionEntry{
 		SessionID:  "old-session",

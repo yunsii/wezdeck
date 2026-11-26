@@ -187,10 +187,22 @@ func liveSessions() (map[string]attentionEntry, error) {
 func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) map[string]attentionEntry {
 	out := map[string]attentionEntry{}
 	panes := map[string]bool{}
+	sockets := map[string]bool{}
 	for id, e := range entries {
 		out[id] = e
 		panes[e.TmuxSocket+"|"+e.TmuxPane] = true
+		if e.TmuxSocket != "" {
+			sockets[e.TmuxSocket] = true
+		}
 	}
+	for _, r := range recent {
+		if r.TmuxSocket != "" {
+			sockets[r.TmuxSocket] = true
+		}
+	}
+	// session_id → pane still advertising that pin (another window may keep
+	// running a session this pane's cleared_to replaced).
+	pins := agentSessionPins(sockets)
 	sort.Slice(recent, func(i, j int) bool { return recent[i].ArchivedTS > recent[j].ArchivedTS })
 	for _, r := range recent {
 		key := r.TmuxSocket + "|" + r.TmuxPane
@@ -223,9 +235,51 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 				e.AgentName = ""
 				out[next] = e
 			}
+			// Same session id may still be the live pin on another pane
+			// (two worktree windows): keep listing it there.
+			if pin, ok := pins[r.SessionID]; ok &&
+				(pin.TmuxSocket != r.TmuxSocket || pin.TmuxPane != r.TmuxPane) {
+				if _, taken := out[r.SessionID]; !taken {
+					out[r.SessionID] = pin
+					panes[pin.TmuxSocket+"|"+pin.TmuxPane] = true
+				}
+			}
 			continue
 		}
 		out[r.SessionID] = e
+	}
+	return out
+}
+
+// agentSessionPins reads @wezterm_agent_session_id from every pane on the
+// given tmux sockets. Used so a cleared_to on pane A does not hide the same
+// session id still running on pane B.
+func agentSessionPins(sockets map[string]bool) map[string]attentionEntry {
+	out := map[string]attentionEntry{}
+	for socket := range sockets {
+		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
+			"#{pane_id}\t#{session_name}\t#{pane_current_command}\t#{@wezterm_agent_session_id}").Output()
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
+			parts := strings.Split(line, "\t")
+			if len(parts) < 4 {
+				continue
+			}
+			pane, sess, cmd, sid := parts[0], parts[1], parts[2], strings.TrimSpace(parts[3])
+			if !sessionIDPattern.MatchString(sid) {
+				continue
+			}
+			e := attentionEntry{
+				SessionID: sid, TmuxSocket: socket, TmuxSession: sess, TmuxPane: pane,
+				Status: "idle",
+			}
+			if !isAgentPane(cmd, e) {
+				continue
+			}
+			out[sid] = e
+		}
 	}
 	return out
 }
@@ -499,9 +553,21 @@ type sessionRedirect struct {
 }
 
 func sessionRedirects(recent []recentEntry, entries map[string]attentionEntry) []sessionRedirect {
+	sockets := map[string]bool{}
+	for _, e := range entries {
+		if e.TmuxSocket != "" {
+			sockets[e.TmuxSocket] = true
+		}
+	}
+	for _, r := range recent {
+		if r.TmuxSocket != "" {
+			sockets[r.TmuxSocket] = true
+		}
+	}
+	pins := agentSessionPins(sockets)
 	seen := map[string]bool{}
 	var out []sessionRedirect
-	add := func(from, to string) {
+	add := func(from, to, fromPane, fromSocket string) {
 		if from == "" || to == "" || from == to || !sessionIDPattern.MatchString(from) ||
 			!sessionIDPattern.MatchString(to) || seen[from] {
 			return
@@ -509,17 +575,22 @@ func sessionRedirects(recent []recentEntry, entries map[string]attentionEntry) [
 		if _, ok := entries[to]; !ok {
 			return
 		}
+		// Still the live pin on another pane: not a handoff the web should follow.
+		if pin, ok := pins[from]; ok &&
+			(pin.TmuxPane != fromPane || pin.TmuxSocket != fromSocket) {
+			return
+		}
 		seen[from] = true
 		out = append(out, sessionRedirect{From: from, To: to})
 	}
 	for _, r := range recent {
 		if next := r.ClearedTo; sessionIDPattern.MatchString(next) {
-			add(r.SessionID, next)
+			add(r.SessionID, next, r.TmuxPane, r.TmuxSocket)
 		}
 	}
 	for id, e := range entries {
 		if e.ReplacedFrom != "" {
-			add(e.ReplacedFrom, id)
+			add(e.ReplacedFrom, id, e.TmuxPane, e.TmuxSocket)
 		}
 	}
 	return out
