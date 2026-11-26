@@ -3,9 +3,8 @@
 //   agent:    the model · shell N · monitor N (background tasks by kind)
 //   checkout: branch · git changes · linked N
 //
-// (a phone has little room: ctx and the account limits stay in the header,
-// shown only when close to full; the permission mode and node stay at the
-// terminal). Each line holds one row — the branch truncates first, the rest
+// Usage tags follow the background tasks when they fit. Each line holds
+// one row — the branch truncates first, the rest
 // folds behind +N opening upward; the task lists and linked open upward over
 // the thread, so nothing in it moves. The git tag keeps its width.
 import { useLingui } from '@lingui/react/macro'
@@ -23,6 +22,7 @@ import { PopoverContent } from '#/components/ui/popover'
 import type { Detail } from './console-sessions'
 import { BackgroundTasks } from './session-background'
 import { GitStatusButton } from './session-git'
+import { UsageTag, usageMetrics } from './session-usage'
 
 /** what the status bar adds to the session reply (session_env.go) */
 export type StatusFields = {
@@ -129,24 +129,36 @@ function Linked({ list }: { list: NonNullable<Detail['worktrees']> }) {
   )
 }
 
-export function SessionStatusBar({ data }: { data?: Detail }) {
+export function SessionStatusBar({
+  data,
+  onVisibleUsage,
+}: {
+  data?: Detail
+  onVisibleUsage?: (ids: string) => void
+}) {
   if (!data) return null
   const agent = data.agent && data.agent !== 'agent' ? data.agent : ''
   const mark = AGENT_MARKS[agent.replace(/\.real$/, '')]
   const model = modelName(data.usage?.model) || agent
+  const metrics = usageMetrics(data.usage, data.account)
   const worktrees = data.worktrees ?? []
   const background = data.background ?? []
   const shells = background.filter((task) => kindOf(task) === 'shell')
   const monitors = background.filter((task) => kindOf(task) === 'monitor')
   const custom = Boolean(data.branch || data.git || worktrees.length > 1)
-  if (!model && !background.length && !custom) return null
+  if (!model && !background.length && !metrics.length && !custom) return null
   return (
     // mt-1: 10 px under the composer, as the toolbar's buttons sit 10 px
     // above it (the toolbar box pads its 32 px buttons by 4 px)
     <div data-testid="session-statusbar" className="mt-1 grid gap-1">
-      {model || background.length ? (
+      {model || background.length || metrics.length ? (
         // the agent: its model, what runs in the background by kind
-        <TagLine testId="statusbar-agent" maxLines={1} panelSide="top">
+        <TagLine
+          testId="statusbar-agent"
+          maxLines={1}
+          panelSide="top"
+          onVisibleTags={onVisibleUsage}
+        >
           {model ? (
             <SessionTag
               tone={mark?.tone ?? 'neutral'}
@@ -161,6 +173,9 @@ export function SessionStatusBar({ data }: { data?: Detail }) {
           {monitors.length ? (
             <Background kind="monitor" tasks={monitors} />
           ) : null}
+          {metrics.map((metric) => (
+            <UsageTag key={metric.id} metric={metric} usage={data.usage} />
+          ))}
         </TagLine>
       ) : null}
       {custom ? (

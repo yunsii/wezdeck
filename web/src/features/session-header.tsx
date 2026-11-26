@@ -3,7 +3,7 @@
 // the Claude account's 5-hour and 7-day limits (reported by Claude Code to
 // its status line, scripts/runtime/claude-statusline-tap.sh). Tapping the
 // meters shows the spend (model, output, cache hit), how fresh the limits
-// are, and the background tasks (counted in the meter row). The header's height is shared
+// are. The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
 import { ChevronDown, Info } from 'lucide-react'
@@ -13,16 +13,15 @@ import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import { useStatusText } from './console-sessions'
-import type {
-  AccountLimits,
-  BgTask,
-  Detail,
-  RateWindow,
-  Usage,
-} from './console-sessions'
+import type { Detail } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
-import { BackgroundTasks } from './session-background'
+import {
+  NEAR_FULL,
+  usageMetrics,
+  usagePercent,
+  useUsageLabel,
+} from './session-usage'
 import {
   NextWaitingChip,
   SessionSwitcher,
@@ -30,9 +29,6 @@ import {
   useSessionNav,
 } from './session-switcher'
 import { Button } from '#/components/ui/button'
-
-/** a meter appears once its share reaches this (amber from here on) */
-const NEAR_FULL = 75
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
@@ -50,7 +46,7 @@ function Meter({
   percent: number
   note?: string
 }) {
-  const used = Math.max(0, Math.min(100, Math.round(percent)))
+  const used = usagePercent(percent)
   const fill =
     used >= 90
       ? 'bg-brand-error'
@@ -71,36 +67,23 @@ function Meter({
   )
 }
 
-function Meters({
-  usage,
-  account,
-  background,
+export function SessionUsageAlerts({
+  data,
+  visibleUsage,
 }: {
-  usage?: Usage
-  account?: AccountLimits
-  background: Array<BgTask>
+  data?: Detail
+  visibleUsage?: string
 }) {
   const { t } = useLingui()
+  const label = useUsageLabel()
   const ago = useAgo()
   const [open, setOpen] = useState(false)
-  const context =
-    usage?.context_limit && usage.context
-      ? (usage.context / usage.context_limit) * 100
-      : 0
-  // a snapshot taken before its window reset says nothing about now
-  const current = (w?: RateWindow) =>
-    w && !(w.resets_at && w.resets_at * 1000 < Date.now()) ? w : undefined
-  const five = current(account?.five_hour)
-  const week = current(account?.seven_day)
-  // meters only appear once something is close to full; the numbers are
-  // always in 会话信息 (ⓘ)
-  const showContext = context >= NEAR_FULL
-  const showFive = Boolean(five && five.used_percentage >= NEAR_FULL)
-  const showWeek = Boolean(week && week.used_percentage >= NEAR_FULL)
-  if (!showContext && !showFive && !showWeek && !background.length) return null
-  const fiveReset = ago(isoOf(five?.resets_at))
-  const weekReset = ago(isoOf(week?.resets_at))
-  const tasks = background.length
+  const { usage, account } = data ?? {}
+  const visible = visibleUsage?.split(' ')
+  const alerts = usageMetrics(usage, account).filter(
+    (metric) => metric.percent >= NEAR_FULL && !visible?.includes(metric.id),
+  )
+  if (!alerts.length) return null
   const usedTokens = tokens(usage?.context ?? 0)
   const limitTokens = tokens(usage?.context_limit ?? 0)
   const outputTokens = tokens(usage?.output ?? 0)
@@ -119,27 +102,17 @@ function Meters({
         onClick={() => setOpen(!open)}
         className="flex min-w-0 flex-wrap items-center gap-1.5 text-left"
       >
-        {showContext ? <Meter label={t`Context`} percent={context} /> : null}
-        {showFive && five ? (
-          <Meter
-            label={t`5 h`}
-            percent={five.used_percentage}
-            note={fiveReset ? t`resets ${fiveReset}` : undefined}
-          />
-        ) : null}
-        {showWeek && week ? (
-          <Meter
-            label={t`7 d`}
-            percent={week.used_percentage}
-            note={weekReset ? t`resets ${weekReset}` : undefined}
-          />
-        ) : null}
-        {background.length ? (
-          <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2 text-meta text-brand-muted">
-            <Led tone="running" size={8} className="led-running" />
-            {t`${tasks} background tasks`}
-          </span>
-        ) : null}
+        {alerts.map((metric) => {
+          const reset = ago(isoOf(metric.resetsAt))
+          return (
+            <Meter
+              key={metric.id}
+              label={label(metric.id)}
+              percent={metric.percent}
+              note={reset ? t`resets ${reset}` : undefined}
+            />
+          )
+        })}
       </Button>
       {open ? (
         <p className="flex flex-wrap gap-x-3 px-1 text-meta text-brand-label">
@@ -152,9 +125,6 @@ function Meters({
           {account ? <span>{t`limits as of ${limitsAt}`}</span> : null}
         </p>
       ) : null}
-      {open && background.length ? (
-        <BackgroundTasks tasks={background} />
-      ) : null}
     </div>
   )
 }
@@ -165,12 +135,14 @@ export function SessionHeader({
   onBack,
   onRename,
   renameDisabled,
+  visibleUsage,
 }: {
   id: string
   data: Detail | undefined
   onBack: () => void
   /** Paste `/rename <title>` into the agent TUI (Claude and Grok both honor it). */
   onRename?: (title: string) => void
+  visibleUsage?: string
   renameDisabled?: boolean
 }) {
   const { t } = useLingui()
@@ -284,12 +256,7 @@ export function SessionHeader({
           </Button>
         ) : null}
       </div>
-      <Meters
-        usage={data?.usage}
-        account={data?.account}
-        // background tasks: the status bar under the composer
-        background={[]}
-      />
+      <SessionUsageAlerts data={data} visibleUsage={visibleUsage} />
       {data ? (
         <SessionInfo
           data={data}

@@ -38,7 +38,7 @@ msgstr "(pick any)"
 #~ msgstr "{0} staged, {1} modified, {2} untracked"
 
 #: src/components/deck/session-tags.tsx:269
-#: src/components/deck/session-tags.tsx:495
+#: src/components/deck/session-tags.tsx:508
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -117,6 +117,11 @@ msgstr "{earlier} earlier calls"
 msgid "{hours} h ago"
 msgstr "{hours} h ago"
 
+#: src/features/session-usage.tsx:75
+#: src/features/session-usage.tsx:89
+msgid "{label} {percent}% used"
+msgstr "{label} {percent}% used"
+
 #: src/features/session-statusbar.tsx:125
 #~ msgid "{label} limit, resets in {reset}"
 #~ msgstr "{label} limit, resets in {reset}"
@@ -182,7 +187,7 @@ msgid "{staged} staged"
 msgstr "{staged} staged"
 
 #: src/components/deck/session-tags.tsx:267
-#: src/components/deck/session-tags.tsx:493
+#: src/components/deck/session-tags.tsx:506
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -191,8 +196,8 @@ msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
 #: src/features/session-header.tsx:140
-msgid "{tasks} background tasks"
-msgstr "{tasks} background tasks"
+#~ msgid "{tasks} background tasks"
+#~ msgstr "{tasks} background tasks"
 
 #: src/features/chat-thread.tsx:275
 #~ msgid "{tokens} tokens"
@@ -202,7 +207,7 @@ msgstr "{tasks} background tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:466
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -221,6 +226,10 @@ msgstr "{unstaged} modified"
 #: src/features/session-git.tsx:54
 msgid "{untracked} untracked"
 msgstr "{untracked} untracked"
+
+#: src/features/session-usage.tsx:91
+msgid "{usedTokens} / {limitTokens} tokens"
+msgstr "{usedTokens} / {limitTokens} tokens"
 
 #: src/features/landing-example.tsx:71
 #~ msgid "{waitingCount} waiting"
@@ -250,7 +259,7 @@ msgstr "+ New direction"
 msgid "24h · no runs"
 msgstr "24h · no runs"
 
-#: src/features/session-header.tsx:125
+#: src/features/session-usage.tsx:46
 msgid "5 h"
 msgstr "5 h"
 
@@ -258,7 +267,7 @@ msgstr "5 h"
 msgid "5-hour limit"
 msgstr "5-hour limit"
 
-#: src/features/session-header.tsx:132
+#: src/features/session-usage.tsx:46
 msgid "7 d"
 msgstr "7 d"
 
@@ -421,7 +430,7 @@ msgstr "All repos"
 #~ msgid "All statuses"
 #~ msgstr "All statuses"
 
-#: src/components/deck/session-tags.tsx:450
+#: src/components/deck/session-tags.tsx:463
 msgid "All tags"
 msgstr "All tags"
 
@@ -610,11 +619,11 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:151
+#: src/features/session-header.tsx:124
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:536
+#: src/features/console-sessions.tsx:542
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -876,12 +885,12 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/session-header.tsx:122
 #: src/features/session-info.tsx:78
+#: src/features/session-usage.tsx:46
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:148
+#: src/features/session-header.tsx:121
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1714,7 +1723,7 @@ msgstr "Light"
 #~ msgid "Light theme"
 #~ msgstr "Light theme"
 
-#: src/features/session-header.tsx:152
+#: src/features/session-header.tsx:125
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1722,7 +1731,7 @@ msgstr "limits as of {limitsAt}"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:483
+#: src/features/console-sessions.tsx:489
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1738,12 +1747,12 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:480
+#: src/features/console-sessions.tsx:486
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
-#: src/features/session-header.tsx:248
+#: src/features/session-header.tsx:220
 #: src/features/session-skeleton.tsx:14
 #: src/features/session-skills.tsx:216
 #: src/features/tickets-view.tsx:288
@@ -1854,7 +1863,7 @@ msgstr "Names sessions"
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
-#: src/features/session-header.tsx:265
+#: src/features/session-header.tsx:237
 #: src/features/session-list.tsx:274
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
@@ -2040,7 +2049,7 @@ msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
 #: src/components/deck/session-tags.tsx:270
-#: src/components/deck/session-tags.tsx:496
+#: src/components/deck/session-tags.tsx:509
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -2189,7 +2198,7 @@ msgstr "Open now"
 #~ msgid "Open Runtime Console"
 #~ msgstr "Open Runtime Console"
 
-#: src/features/console-sessions.tsx:559
+#: src/features/console-sessions.tsx:565
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2247,7 +2256,7 @@ msgstr "Origin session"
 #~ msgid "Output"
 #~ msgstr "Output"
 
-#: src/features/session-header.tsx:150
+#: src/features/session-header.tsx:123
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2584,12 +2593,20 @@ msgid "Resend"
 msgstr "Resend"
 
 #: src/features/session-header.tsx:127
-msgid "resets {fiveReset}"
-msgstr "resets {fiveReset}"
+#~ msgid "resets {fiveReset}"
+#~ msgstr "resets {fiveReset}"
+
+#: src/features/session-header.tsx:112
+msgid "resets {reset}"
+msgstr "resets {reset}"
+
+#: src/features/session-usage.tsx:93
+msgid "Resets {reset}"
+msgstr "Resets {reset}"
 
 #: src/features/session-header.tsx:134
-msgid "resets {weekReset}"
-msgstr "resets {weekReset}"
+#~ msgid "resets {weekReset}"
+#~ msgstr "resets {weekReset}"
 
 #: src/features/session-new.tsx:66
 msgid "Resetting the workstation onto the latest main branch…"
@@ -2900,7 +2917,7 @@ msgstr "Session"
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:278
+#: src/features/session-header.tsx:250
 #: src/features/session-info.tsx:220
 msgid "Session info"
 msgstr "Session info"
@@ -2920,7 +2937,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:79
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:227
+#: src/features/session-header.tsx:199
 #: src/features/session-list.tsx:218
 msgctxt "nav"
 msgid "Sessions"
@@ -2951,11 +2968,11 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#: src/components/deck/session-tags.tsx:438
+#: src/components/deck/session-tags.tsx:451
 msgid "Show all tags"
 msgstr "Show all tags"
 
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:488
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -3007,7 +3024,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:543
+#: src/features/console-sessions.tsx:549
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3112,7 +3129,7 @@ msgstr "Summary"
 msgid "Switch session"
 msgstr "Switch session"
 
-#: src/features/session-header.tsx:239
+#: src/features/session-header.tsx:211
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3184,7 +3201,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:411
+#: src/features/console-sessions.tsx:372
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -3278,7 +3295,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 #~ msgid "This computer, not paired"
 #~ msgstr "This computer, not paired"
 
-#: src/features/console-sessions.tsx:409
+#: src/features/console-sessions.tsx:368
 #: src/features/ticket-proposals.tsx:184
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
@@ -3288,7 +3305,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:537
+#: src/features/console-sessions.tsx:543
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -3535,7 +3552,7 @@ msgid "Undo"
 msgstr "Undo"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:204
+#: src/features/session-header.tsx:176
 #: src/features/session-list.tsx:103
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"

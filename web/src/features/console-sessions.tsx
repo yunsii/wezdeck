@@ -362,10 +362,22 @@ function SessionInputUnavailable() {
   )
 }
 
+function useComposerBlock(data: Detail | undefined, approved: boolean) {
+  const { t } = useLingui()
+  return !approved
+    ? t`This device is not approved yet (Settings › Device access).`
+    : data?.waiting_kind &&
+        !data.elicitation?.questions.length &&
+        !data.plan?.awaiting_approval
+      ? t`The agent is asking for a confirmation: answer it with the keys above.`
+      : ''
+}
+
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()
+  const [visibleUsage, setVisibleUsage] = useState('')
   const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id)
   const writes = useSessionWrites(id, transcriptEnd(detail.data))
   const { sending, error, setError, retryIn, pendingRaw, send, run } = writes
@@ -402,14 +414,7 @@ export function SessionDetail({ id }: { id: string }) {
     to: '/{-$locale}/console/sessions',
     params: { locale: locale === 'en' ? undefined : locale },
   })
-  const asking = (data?.elicitation?.questions.length ?? 0) > 0
-  const planReview = Boolean(data?.plan?.awaiting_approval)
-  const blocked =
-    device.state !== 'approved'
-      ? t`This device is not approved yet (Settings › Device access).`
-      : data?.waiting_kind && !asking && !planReview
-        ? t`The agent is asking for a confirmation: answer it with the keys above.`
-        : ''
+  const blocked = useComposerBlock(data, device.state === 'approved')
   const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({
     id,
@@ -424,6 +429,7 @@ export function SessionDetail({ id }: { id: string }) {
       <SessionHeader
         id={id}
         data={data}
+        visibleUsage={visibleUsage}
         onBack={back}
         renameDisabled={readOnly || sending || device.state !== 'approved'}
         onRename={(title) =>
@@ -582,7 +588,7 @@ export function SessionDetail({ id }: { id: string }) {
             session={data}
           />
         )}
-        <SessionStatusBar data={data} />
+        <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
         {!readOnly && resume.element}
       </form>
     </div>

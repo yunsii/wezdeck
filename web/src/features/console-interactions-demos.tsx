@@ -18,6 +18,7 @@ import { useChatScroll } from './chat-scroll'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
+import { SessionUsageAlerts } from './session-header'
 import { SessionStatusBar } from './session-statusbar'
 import type { Detail } from './console-sessions'
 import { BACKGROUND } from './console-interactions-samples'
@@ -475,7 +476,7 @@ const STATUS_SAMPLE: Detail = {
   account: {
     five_hour: { used_percentage: 23, resets_at: Date.now() / 1000 + 3 * 3600 },
     seven_day: {
-      used_percentage: 47,
+      used_percentage: 83,
       resets_at: Date.now() / 1000 + 111 * 3600,
     },
     at: Date.now(),
@@ -512,14 +513,16 @@ const STATUS_SAMPLE: Detail = {
  * tasks open upward over the conversation.
  */
 export function StatusBarDemo() {
+  const [visibleUsage, setVisibleUsage] = useState('')
   return (
     <div className="grid gap-1.5 rounded-2xl border-t border-brand-edge px-1 pt-2 pb-3">
+      <SessionUsageAlerts data={STATUS_SAMPLE} visibleUsage={visibleUsage} />
       <div className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5">
         <span className="min-h-10 flex-1 px-3 py-2 text-body text-brand-label">
           发消息
         </span>
       </div>
-      <SessionStatusBar data={STATUS_SAMPLE} />
+      <SessionStatusBar data={STATUS_SAMPLE} onVisibleUsage={setVisibleUsage} />
     </div>
   )
 }

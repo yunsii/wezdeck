@@ -308,6 +308,7 @@ export function TagLine({
   expandable = true,
   maxLines,
   panelSide = 'bottom',
+  onVisibleTags,
 }: {
   children: React.ReactNode
   className?: string
@@ -317,6 +318,7 @@ export function TagLine({
   maxLines?: number
   /** where the +N panel opens: under the line, or above it (a bottom bar) */
   panelSide?: 'top' | 'bottom'
+  onVisibleTags?: (ids: string) => void
 }) {
   const { t } = useLingui()
   const line = useRef<HTMLSpanElement>(null)
@@ -352,6 +354,17 @@ export function TagLine({
       })
       const firstHidden = rows.findIndex((r) => r >= maxLines)
       const shown = tags.filter((_, k) => rows[k] < maxLines)
+      if (onVisibleTags) {
+        tags.forEach((tag, index) => {
+          tag.inert = rows[index] >= maxLines
+        })
+        onVisibleTags(
+          shown
+            .map((tag) => tag.dataset.tagId)
+            .filter(Boolean)
+            .join(' '),
+        )
+      }
       const bottom = Math.max(
         ...shown.map((tag) => tag.offsetTop + tag.offsetHeight),
       )
@@ -387,7 +400,7 @@ export function TagLine({
       observer.disconnect()
       added.disconnect()
     }
-  }, [maxLines, children])
+  }, [maxLines, children, onVisibleTags])
   useEffect(() => {
     if (!panel) return
     const onKey = (event: KeyboardEvent) => {

@@ -1,4 +1,4 @@
-// covers: web/src/features/session-statusbar.tsx
+// covers: web/src/features/session-statusbar.tsx web/src/features/session-usage.tsx
 // covers: web/src/features/session-header.tsx web/src/features/console-sessions.tsx
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
@@ -49,12 +49,13 @@ describe('Status bar', () => {
     expect(agent).toContain('shell 1')
     expect(agent).toContain('monitor 1')
     const all = (await bar.innerText()).replace(/\s+/g, ' ')
-    // ctx and limits live in the header (only near full); no mode, no node
-    expect(all).not.toContain('ctx')
     expect(all).not.toContain('auto')
     const opensUp = async (testId: string, list: string) => {
       const button = page.getByTestId(testId)
-      if (!(await button.first().isVisible())) {
+      if (
+        !(await button.first().isVisible()) ||
+        (await button.first().getAttribute('inert')) !== null
+      ) {
         // folded away: it lives in the +N panel
         await page
           .getByTestId(
@@ -77,6 +78,46 @@ describe('Status bar', () => {
     await opensUp('status-monitor', 'background-tasks')
     expect(await page.getByTestId('status-worktree-list').count()).toBe(0)
     await context.close()
+  })
+
+  it('shows a folded quota alert in the header and clears it when the tag fits', async () => {
+    const page = await browser.newPage({
+      viewport: { width: 1100, height: 850 },
+    })
+    try {
+      await page.goto(`${base}/console/me/interactions#status-bar`)
+      const row = page.getByTestId('statusbar-agent')
+      const alert = page.getByTestId('session-usage')
+      const quota = row.locator('[data-tag-id="seven-day"]')
+      const bar = page.getByTestId('session-statusbar')
+      await bar.evaluate((el) => {
+        el.style.width = '550px'
+      })
+      await expect.poll(() => quota.getAttribute('inert')).toBeNull()
+      await alert.waitFor({ state: 'detached' })
+      expect(await row.locator('[data-tag-id]:not([inert])').count()).toBe(3)
+      await bar.evaluate((el) => {
+        el.style.width = '235px'
+      })
+      await alert.waitFor()
+      expect(await alert.innerText()).toContain('83%')
+      expect(await quota.getAttribute('inert')).not.toBeNull()
+      const more = page.getByTestId('statusbar-agent-more')
+      await more.focus()
+      await page.keyboard.press('Enter')
+      const panel = page.getByTestId('statusbar-agent-panel')
+      await panel.locator('[data-tag-id="seven-day"]').click()
+      await page.getByText('7 d 83% used', { exact: true }).waitFor()
+      await page.keyboard.press('Escape')
+      await page.keyboard.press('Escape')
+      await bar.evaluate((el) => {
+        el.style.width = '550px'
+      })
+      await alert.waitFor({ state: 'detached' })
+      expect(await quota.getAttribute('inert')).toBeNull()
+    } finally {
+      await page.close()
+    }
   })
 
   it(

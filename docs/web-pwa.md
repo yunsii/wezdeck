@@ -316,14 +316,13 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   back, session title (tap to `/rename`) over an agent chip + branch, a
   「需要你处理」 chip only while the agent waits for the human (running and
   done are visible in the thread itself: the working line, the reply), and **ⓘ
-  会话信息** at the far right; then meters, each shown only once it is close
-  to full (≥ 75 %, `NEAR_FULL`) — context, Claude 5 h / 7 d limits with
-  reset time ([`remote-sessions.md` Account limits](remote-sessions.md#account-limits));
-  a limit snapshot whose reset time has passed is ignored — plus background
-  tasks when there are any; the row disappears when nothing qualifies (all
-  numbers stay in 会话信息). Fill is amber from 75 %, red from 90 %; tapping
-  the meters shows model, tokens, cache hit, limit freshness and the
-  background task list. Its height is
+  会话信息** at the far right. The composer agent row shows context used
+  and the available 5 h and 7 d limits after the model and background tasks.
+  Tags that do not fit are available in the upward `+N` panel. A metric at
+  or above 75% appears in the header when it is folded out of the bottom
+  row. Expired limit snapshots are skipped. Tags open token counts or
+  reset times, and the conversation info keeps the full usage details.
+  The header height is
   `--session-head`, which the sticky prompt sits under.
 - Back from a detail page (`lib/go-back.ts` `useGoBack`, adapted from
   forge's `TopBar`): came from inside the app → `history.back()` (the list
