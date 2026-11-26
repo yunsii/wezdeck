@@ -99,7 +99,7 @@ function SessionSubRow({
   const canClear =
     device.state === 'approved' &&
     clearable(session.status, session.waiting_kind)
-  const deleteSession = useDeleteSession()
+  const { ask: deleteSession, confirmation } = useDeleteSession()
   const canManage = device.state === 'approved' && Boolean(session.tmux_pane)
   const copy = () => copyReference(session.id)
   return (
@@ -238,7 +238,7 @@ function SessionSubRow({
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className={menuItemClass}
-                    onClick={() => void deleteSession(session, selected)}
+                    onClick={() => deleteSession(session, selected)}
                   >
                     {t`Delete session`}
                   </ContextMenu.Item>
@@ -258,6 +258,7 @@ function SessionSubRow({
           </ContextMenu.Positioner>
         </ContextMenu.Portal>
       </ContextMenu.Root>
+      {confirmation}
     </SwipeActions>
   )
 }

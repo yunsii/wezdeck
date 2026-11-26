@@ -65,7 +65,7 @@ func TestGroupedSessionStartsInSameCheckoutAndDeletesOnlyItsPane(t *testing.T) {
 }
 
 func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
-	dir := t.TempDir()
+	dir, socket, pane, _ := restartFixture(t)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "config"))
 	t.Setenv("XDG_STATE_HOME", filepath.Join(dir, "state"))
 	platform, err := filepath.Abs("../..")
@@ -93,11 +93,23 @@ func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
 	if got := reclaimEmptySessionWorktree(repo, tree); got != "dirty" {
 		t.Fatalf("dirty worktree outcome: %s", got)
 	}
-	if err := os.Remove(localFile); err != nil {
-		t.Fatal(err)
+	if out, err := tmuxCmd(socket, "respawn-pane", "-k", "-t", pane, "-c", tree,
+		filepath.Join(dir, "pane-bin", "claude"), "600").CombinedOutput(); err != nil {
+		t.Fatalf("tmux respawn: %v: %s", err, out)
 	}
-	if got := reclaimEmptySessionWorktree(repo, tree); got != "removed" {
-		t.Fatalf("clean worktree outcome: %s", got)
+	result, err := deleteGroupedSession([]byte(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "review_required" {
+		t.Fatalf("normal delete: %v, %v", result, err)
+	}
+	if sessionWasClosed("s1") {
+		t.Fatal("normal delete closed the session before review")
+	}
+	if _, err := os.Stat(localFile); err != nil {
+		t.Fatalf("normal delete touched the worktree: %v", err)
+	}
+	result, err = deleteGroupedSession([]byte(`{"id":"s1","confirm":true,"force":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "removed" {
+		t.Fatalf("force delete: %v, %v", result, err)
 	}
 	if _, err := os.Stat(tree); !os.IsNotExist(err) {
 		t.Fatalf("worktree still exists: %v", err)

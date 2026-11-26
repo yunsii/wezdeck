@@ -106,7 +106,7 @@ function ChatRow({
   const selected = row.id === selectedId
   const canClear =
     device.state === 'approved' && clearable(row.status, row.waiting_kind)
-  const deleteSession = useDeleteSession()
+  const { ask: deleteSession, confirmation } = useDeleteSession()
   const canManage = device.state === 'approved' && Boolean(row.tmux_pane)
   const copy = () => copyReference(row.id)
   return (
@@ -251,7 +251,7 @@ function ChatRow({
                   </ContextMenu.Item>
                   <ContextMenu.Item
                     className={menuItemClass}
-                    onClick={() => void deleteSession(row, selected)}
+                    onClick={() => deleteSession(row, selected)}
                   >
                     {t`Delete session`}
                   </ContextMenu.Item>
@@ -271,6 +271,7 @@ function ChatRow({
           </ContextMenu.Positioner>
         </ContextMenu.Portal>
       </ContextMenu.Root>
+      {confirmation}
     </SwipeActions>
   )
 }
