@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAgyTranscriptAdapter(t *testing.T) {
@@ -283,5 +286,95 @@ func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
 	applyAgyScreenPermission(outNoPending, nil, "Run this command?\n> Yes, run command\n  No, deny")
 	if _, locked := outNoPending["permission"]; locked {
 		t.Fatalf("turn without unanswered tool call must not surface permission card: %+v", outNoPending)
+	}
+}
+
+func TestAgyScreenPermissionEscalatesSessionListAndMeta(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	id := "22222222-3333-4444-8555-666666666666"
+	transcriptPath := filepath.Join(home, ".gemini", "antigravity-cli", "brain", id,
+		".system_generated", "logs", "transcript_full.jsonl")
+	if err := os.MkdirAll(filepath.Dir(transcriptPath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	transcriptLines := strings.Join([]string{
+		`{"step_index":0,"type":"USER_INPUT","content":"<USER_REQUEST>\nDeploy\n</USER_REQUEST>"}`,
+		`{"step_index":1,"type":"PLANNER_RESPONSE","tool_calls":[{"name":"run_command","args":{"CommandLine":"git push origin master","toolSummary":"Push branch","BypassSandbox":true}}]}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(transcriptPath, []byte(transcriptLines), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+
+	bin := filepath.Join(dir, "bin")
+	if err := os.MkdirAll(bin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sh, _ := exec.LookPath("sh")
+	if err := os.Symlink(sh, filepath.Join(bin, "agy")); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "s")
+	cmd := "printf 'Run this command?\\n> Yes, run command\\n  No, deny\\n'; sleep 30"
+	if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", "agy-perm",
+		filepath.Join(bin, "agy"), "-c", cmd).CombinedOutput(); err != nil {
+		t.Fatalf("tmux: %s", out)
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOut, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", "agy-perm", "#{pane_id}").Output()
+	pane := strings.TrimSpace(string(paneOut))
+	_ = exec.Command("tmux", "-S", socket, "set-option", "-p", "-t", pane, "@wezterm_pane_role", "agent-cli:agy").Run()
+
+	attentionPath := filepath.Join(dir, "attention.json")
+	doc, _ := json.Marshal(map[string]any{
+		"entries": map[string]any{
+			id: map[string]any{
+				"session_id": id, "agent_name": "agy", "tmux_socket": socket,
+				"tmux_session": "agy-perm", "tmux_pane": pane, "status": "running",
+			},
+		},
+	})
+	if err := os.WriteFile(attentionPath, doc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", attentionPath)
+	time.Sleep(250 * time.Millisecond)
+
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].Status != "waiting" || cards[0].WaitingKind != "permission_prompt" {
+		t.Fatalf("running Agy pane with visible permission prompt must list as waiting/permission_prompt, got %+v", cards)
+	}
+
+	detail, err := sessionDetail(json.RawMessage(`{"id":"` + id + `"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := detail.(map[string]any)
+	if m["status"] != "waiting" || m["waiting_kind"] != "permission_prompt" {
+		t.Fatalf("detail status not escalated: %+v", m)
+	}
+	var metaStatus, metaWaiting string
+	for _, g := range m["meta"].([]metaGroup) {
+		if g.Name == "state" {
+			for _, r := range g.Rows {
+				if r.Key == "status" {
+					metaStatus = r.Value
+				}
+				if r.Key == "waiting_kind" {
+					metaWaiting = r.Value
+				}
+			}
+		}
+	}
+	if metaStatus != "waiting" || metaWaiting != "permission_prompt" {
+		t.Fatalf("detail meta state must reflect escalated waiting/permission_prompt, got status=%q waiting_kind=%q", metaStatus, metaWaiting)
 	}
 }

@@ -170,21 +170,46 @@ func agyScreenTail(screen string, maxLines int) string {
 // prompt card when the TUI is blocked on a confirmation dialog (Agy has no
 // PermissionRequest lifecycle hook). Requires an active turn and an unanswered
 // tool call from the full transcript so completed turns or quoted prose never
-// lock the web composer.
-func applyAgyScreenPermission(out map[string]any, pending *pendingCall, screen string) {
+// lock the web composer. Reports whether status was escalated.
+func applyAgyScreenPermission(out map[string]any, pending *pendingCall, screen string) bool {
 	if _, already := out["permission"]; already || pending == nil {
-		return
+		return false
 	}
 	status, _ := out["status"].(string)
 	if status != "running" && status != "waiting" {
-		return
+		return false
 	}
 	if !agyPermissionPromptVisible(screen) {
-		return
+		return false
 	}
 	out["permission"] = pending
 	out["status"] = "waiting"
 	out["waiting_kind"] = "permission_prompt"
+	return true
+}
+
+// agyListCardWaiting reports whether a running Agy session with an unanswered
+// tool call is currently displaying a permission confirmation dialog in its
+// tmux pane, so the session list / unread badge / Alt+j match the detail page.
+func agyListCardWaiting(e attentionEntry, path string) bool {
+	if e.Status != "running" || e.WaitingKind != "" || e.TmuxPane == "" || path == "" {
+		return false
+	}
+	tr, err := loadTranscript(path, "agy")
+	if err != nil || tr == nil {
+		return false
+	}
+	transcriptsMu.Lock()
+	pending := pendingPermission(tr.messages, "")
+	transcriptsMu.Unlock()
+	if pending == nil {
+		return false
+	}
+	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-30").Output()
+	if err != nil {
+		return false
+	}
+	return agyPermissionPromptVisible(strings.TrimRight(string(screen), "\n "))
 }
 
 func normalizeAgyMode(raw string) string {

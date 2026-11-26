@@ -1,4 +1,5 @@
 // covers: web/src/features/console-interactions*
+// covers: web/src/features/prompt-action-state.tsx
 // covers: web/src/features/session-permission.tsx
 // covers: web/src/features/session-elicitation.tsx
 // covers: web/src/features/session-ask-claude.tsx
@@ -82,6 +83,13 @@ describe('Interaction debugging page', () => {
       .toBe('permission-bash')
     await detail.getByRole('button', { name: '允许' }).click()
     await expect
+      .poll(() =>
+        detail
+          .getByTestId('prompt-action-loading')
+          .getAttribute('data-prompt-loading'),
+      )
+      .toBe('waiting')
+    await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('permission-bash → 1')
     // the selection is in the hash: a link opens that one
@@ -97,8 +105,49 @@ describe('Interaction debugging page', () => {
       .getByRole('button', { name: '允许' })
       .click()
     await expect
+      .poll(() =>
+        page
+          .getByTestId('interaction-detail')
+          .getByTestId('prompt-action-loading')
+          .textContent(),
+      )
+      .toContain('操作已发送，等待 Agent 继续')
+    await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('agy-permission → Enter')
+    await page.goto(`${base}/zh/console/me/interactions#grok-plan`)
+    await expect
+      .poll(() =>
+        page.getByTestId('interaction-detail').getAttribute('data-interaction'),
+      )
+      .toBe('grok-plan')
+    await page
+      .getByTestId('interaction-detail')
+      .getByRole('button', { name: '批准计划' })
+      .click()
+    await expect
+      .poll(() =>
+        page
+          .getByTestId('interaction-detail')
+          .getByTestId('prompt-action-loading')
+          .getAttribute('data-prompt-loading'),
+      )
+      .toBe('waiting')
+    await page.goto(`${base}/zh/console/me/interactions#claude-ask-review`)
+    await expect
+      .poll(() =>
+        page.getByTestId('interaction-detail').getAttribute('data-interaction'),
+      )
+      .toBe('claude-ask-review')
+    await page.getByTestId('ask-submit').click()
+    await expect
+      .poll(() =>
+        page
+          .getByTestId('interaction-detail')
+          .getByTestId('prompt-action-loading')
+          .textContent(),
+      )
+      .toContain('答案已发送，等待 Agent 继续')
     await page.goto(`${base}/zh/console/me/interactions#plan-approval`)
     await expect
       .poll(() =>
@@ -280,7 +329,7 @@ describe('Interaction debugging page', () => {
     await card.getByTestId('grok-ask-submit').click()
     await expect
       .poll(() => card.getByTestId('grok-ask-loading').textContent())
-      .toContain('答案已发送，等待 Grok 继续')
+      .toContain('答案已发送，等待 Agent 继续')
     await page.waitForTimeout(250)
     await card.getByTestId('grok-ask-loading').waitFor()
     await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')

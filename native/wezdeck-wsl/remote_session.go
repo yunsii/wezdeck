@@ -467,6 +467,12 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			} else if info, err := os.Stat(path); err == nil {
 				card.TS = info.ModTime().UnixMilli()
 			}
+			// Agy has no PermissionRequest hook: mirror the detail page's screen
+			// permission detection so the list, unread badge, and Alt+j show waiting.
+			if agent == "agy" && card.Status == "running" && card.WaitingKind == "" && agyListCardWaiting(e, path) {
+				card.Status = "waiting"
+				card.WaitingKind = "permission_prompt"
+			}
 		} else if act := windowActivity(e); act > card.TS {
 			card.TS = act
 		}
@@ -739,6 +745,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	}
 	out["meta"] = sessionMeta(e, path, agent, nil)
 	var agyPending *pendingCall
+	var loadedTranscript *transcript
 	if path != "" {
 		out["agent"] = agent
 		if title := readSessionTitle(path, agent); title != "" {
@@ -764,6 +771,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+		loadedTranscript = t
 		out["meta"] = sessionMeta(e, path, agent, t)
 		transcriptsMu.Lock()
 		total := len(t.messages)
@@ -848,8 +856,10 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	if err == nil {
 		trimmed := strings.TrimRight(string(screen), "\n ")
 		out["screen"] = trimmed
-		if agent == "agy" {
-			applyAgyScreenPermission(out, agyPending, trimmed)
+		if agent == "agy" && applyAgyScreenPermission(out, agyPending, trimmed) {
+			e.Status = "waiting"
+			e.WaitingKind = "permission_prompt"
+			out["meta"] = sessionMeta(e, path, agent, loadedTranscript)
 		}
 	}
 	if r, ok := adapterFor(agent).(askReader); ok && path != "" {
