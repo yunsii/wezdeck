@@ -62,10 +62,15 @@ export function Select({
       </BaseSelect.Trigger>
       <BaseSelect.Portal>
         {/* above the z-50 bottom sheets a select can sit in */}
-        <BaseSelect.Positioner sideOffset={4} className="z-[60]">
+        <BaseSelect.Positioner
+          side="bottom"
+          align="start"
+          sideOffset={6}
+          className="z-[60] w-[var(--anchor-width)] max-w-[calc(100vw-4rem)]"
+        >
           {/* enter only (@starting-style): Base UI keeps a closed select popup
               mounted, and an exit transition left it in the DOM, unhidden */}
-          <BaseSelect.Popup className="origin-[var(--transform-origin)] transition-[opacity,scale] duration-[var(--motion-short)] ease-[var(--ease-enter)] starting:scale-[0.96] starting:opacity-0 motion-reduce:starting:scale-100 z-30 min-w-40 overflow-hidden rounded-lg border border-brand-border bg-brand-deck p-1 text-brand-text shadow-lg">
+          <BaseSelect.Popup className="origin-[var(--transform-origin)] transition-[opacity,scale] duration-[var(--motion-short)] ease-[var(--ease-enter)] starting:scale-[0.96] starting:opacity-0 motion-reduce:starting:scale-100 z-30 max-h-[min(22rem,calc(100dvh-12rem))] min-w-40 overflow-y-auto rounded-xl border border-brand-border bg-brand-deck p-1.5 text-brand-text shadow-[0_14px_32px_rgb(0_0_0/0.28)]">
             <BaseSelect.List>
               {options.map((option) => (
                 <BaseSelect.Item
@@ -73,7 +78,7 @@ export function Select({
                   value={option.value}
                   disabled={option.disabled}
                   className={cn(
-                    'flex items-center justify-between gap-3 rounded px-2 text-brand-text outline-none data-disabled:opacity-40 data-highlighted:bg-brand-soft data-highlighted:text-brand-running',
+                    'flex items-center justify-between gap-3 rounded-lg px-3 text-brand-text outline-none data-disabled:opacity-40 data-highlighted:bg-brand-soft data-highlighted:text-brand-running data-selected:bg-brand-soft',
                     lg ? 'min-h-11 text-body' : 'min-h-8 text-meta',
                   )}
                 >
