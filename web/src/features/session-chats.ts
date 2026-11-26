@@ -40,7 +40,6 @@ export function chatPreview(
     | 'waiting_kind'
     | 'ts'
     | 'last_prompt'
-    | 'draft'
     | 'restart_pending'
   >,
   labels: {
@@ -49,13 +48,10 @@ export function chatPreview(
     done?: string
     working: string
     empty: string
-    draft?: string
   },
   _now = Date.now(),
 ): string {
   const prompt = humanPrompt(focus.last_prompt)
-  if (focus.draft?.trim())
-    return `${labels.draft ?? 'Draft'} · ${focus.draft.trim()}`
   if (focus.restart_pending) return 'Restarting…'
   const tone = chatTone(focus, _now)
   if (tone === 'waiting') {

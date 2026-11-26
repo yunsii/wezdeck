@@ -293,8 +293,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:413
-#: src/features/session-list.tsx:463
+#: src/features/session-list.tsx:423
+#: src/features/session-list.tsx:473
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -682,14 +682,14 @@ msgstr "Clear input"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "Clear input (Esc Esc)"
 
-#: src/features/session-list.tsx:296
-#: src/features/session-list.tsx:403
+#: src/features/session-list.tsx:306
+#: src/features/session-list.tsx:413
 msgid "Clear search"
 msgstr "Clear search"
 
 #: src/features/session-chat-group.tsx:116
 #: src/features/session-clear.tsx:114
-#: src/features/session-list.tsx:124
+#: src/features/session-list.tsx:123
 msgid "Clearing…"
 msgstr "Clearing…"
 
@@ -749,7 +749,7 @@ msgstr "Collab metrics"
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
-#: src/features/session-chat-group.tsx:291
+#: src/features/session-chat-group.tsx:294
 msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
@@ -944,9 +944,9 @@ msgstr "Copy raw line"
 #: src/features/me-agents.tsx:139
 #: src/features/me-agents.tsx:140
 #: src/features/session-chat-group.tsx:107
-#: src/features/session-chat-group.tsx:217
-#: src/features/session-list.tsx:115
-#: src/features/session-list.tsx:223
+#: src/features/session-chat-group.tsx:220
+#: src/features/session-list.tsx:114
+#: src/features/session-list.tsx:233
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"
@@ -1078,9 +1078,9 @@ msgstr "Degraded"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
-#: src/features/session-chat-group.tsx:238
+#: src/features/session-chat-group.tsx:241
 #: src/features/session-info.tsx:341
-#: src/features/session-list.tsx:244
+#: src/features/session-list.tsx:254
 msgid "Delete session"
 msgstr "Delete session"
 
@@ -1163,9 +1163,9 @@ msgstr "Done ({doneCount})"
 msgid "done {when}"
 msgstr "done {when}"
 
-#: src/features/session-chat-group.tsx:194
-#: src/features/session-chat-group.tsx:313
-#: src/features/session-list.tsx:65
+#: src/features/session-chat-group.tsx:198
+#: src/features/session-chat-group.tsx:321
+#: src/features/session-list.tsx:200
 msgid "Draft"
 msgstr "Draft"
 
@@ -1261,7 +1261,7 @@ msgstr "Execution mode: {mode}"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/session-chat-group.tsx:291
+#: src/features/session-chat-group.tsx:294
 msgid "Expand sessions"
 msgstr "Expand sessions"
 
@@ -1745,11 +1745,11 @@ msgid "Mark done"
 msgstr "Mark done"
 
 #: src/features/session-chat-group.tsx:115
-#: src/features/session-chat-group.tsx:249
+#: src/features/session-chat-group.tsx:252
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
-#: src/features/session-list.tsx:123
-#: src/features/session-list.tsx:255
+#: src/features/session-list.tsx:122
+#: src/features/session-list.tsx:265
 msgid "Mark read"
 msgstr "Mark read"
 
@@ -1877,7 +1877,7 @@ msgstr "New line"
 #~ msgid "New round"
 #~ msgstr "New round"
 
-#: src/features/session-chat-group.tsx:167
+#: src/features/session-chat-group.tsx:168
 #: src/features/session-new.tsx:282
 #: src/features/session-new.tsx:453
 msgid "New session"
@@ -1895,11 +1895,11 @@ msgstr "New session (c)"
 msgid "New session group"
 msgstr "New session group"
 
-#: src/features/session-chat-group.tsx:232
-#: src/features/session-chat-group.tsx:323
-#: src/features/session-chat-group.tsx:324
+#: src/features/session-chat-group.tsx:235
+#: src/features/session-chat-group.tsx:333
+#: src/features/session-chat-group.tsx:334
 #: src/features/session-info.tsx:334
-#: src/features/session-list.tsx:238
+#: src/features/session-list.tsx:248
 #: src/features/session-new.tsx:453
 msgid "New session in this group"
 msgstr "New session in this group"
@@ -1974,7 +1974,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:408
+#: src/features/session-list.tsx:418
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2028,7 +2028,7 @@ msgstr "No plan written yet"
 msgid "No recent result"
 msgstr "No recent result"
 
-#: src/features/session-list.tsx:395
+#: src/features/session-list.tsx:405
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2820,8 +2820,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:286
-#: src/features/session-list.tsx:287
+#: src/features/session-list.tsx:296
+#: src/features/session-list.tsx:297
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -2917,12 +2917,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:363
+#: src/features/session-list.tsx:373
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:385
+#: src/features/session-list.tsx:395
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -3796,7 +3796,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:76
+#: src/features/session-list.tsx:75
 msgid "Yesterday"
 msgstr "Yesterday"
 

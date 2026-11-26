@@ -62,7 +62,6 @@ function useChatPreviewLabels() {
     done: t`Done`,
     working: t`Working`,
     empty: t`No human message yet`,
-    draft: t`Draft`,
   }
 }
 
@@ -163,6 +162,7 @@ function ChatRow({
             <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
               <span className="flex items-baseline justify-between gap-2">
                 <span
+                  data-testid="chat-title"
                   className={cn(
                     'min-w-0 truncate text-title',
                     chat.unread > 0 ? 'font-semibold' : 'font-medium',
@@ -191,18 +191,28 @@ function ChatRow({
                   </span>
                 </span>
               </span>
-              <span
-                data-testid="chat-preview"
-                data-tone={tone}
-                className={cn(
-                  'truncate text-caption',
-                  tone === 'waiting' && 'text-brand-waiting',
-                  tone === 'done' && 'text-brand-done',
-                  tone === 'running' && 'text-brand-running',
-                  tone === 'idle' && 'text-brand-muted',
-                )}
-              >
-                {preview}
+              <span className="flex min-w-0 items-center gap-1.5 text-caption">
+                {row.draft?.trim() ? (
+                  <span
+                    data-testid="chat-draft"
+                    className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+                  >
+                    {t`Draft`}
+                  </span>
+                ) : null}
+                <span
+                  data-testid="chat-preview"
+                  data-tone={tone}
+                  className={cn(
+                    'min-w-0 truncate',
+                    tone === 'waiting' && 'text-brand-waiting',
+                    tone === 'done' && 'text-brand-done',
+                    tone === 'running' && 'text-brand-running',
+                    tone === 'idle' && 'text-brand-muted',
+                  )}
+                >
+                  {preview}
+                </span>
               </span>
             </span>
           </Link>

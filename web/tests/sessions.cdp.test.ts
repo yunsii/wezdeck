@@ -37,6 +37,18 @@ const repo = join(import.meta.dirname, '..', '..')
 const room = process.env.WEZDECK_REMOTE_ROOM ?? ''
 const roomQuery = room ? `&room=${room}` : ''
 
+async function assertDraftInSecondLine(page: Page) {
+  const row = page.locator('[data-session=demo-session]')
+  await row.waitFor()
+  const badge = row.getByTestId('chat-draft')
+  await badge.waitFor()
+  const titleBox = await row.getByTestId('chat-title').boundingBox()
+  const badgeBox = await badge.boundingBox()
+  expect(titleBox && badgeBox && badgeBox.y > titleBox.y).toBe(true)
+  expect(await row.innerText()).toContain('运行中')
+  expect(await row.innerText()).not.toContain('还没发的草稿')
+}
+
 describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-tmux-')), 'sock')
@@ -154,6 +166,11 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     const box = page.getByLabel('发给 Agent 的消息')
     // an unsent draft survives leaving the page
     await box.fill('还没发的草稿')
+    setStatus('running')
+    await page.goto(`${base}/zh/console/sessions`)
+    await assertDraftInSecondLine(page)
+    await page.locator('[data-session=demo-session]').click()
+    setStatus('done')
     await page.reload()
     await expect
       .poll(() => page.getByLabel('发给 Agent 的消息').inputValue(), {
