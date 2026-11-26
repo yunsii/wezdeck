@@ -175,7 +175,7 @@ msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} 
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
-#: src/features/session-purpose.tsx:140
+#: src/features/session-purpose.tsx:146
 msgid "+ Description"
 msgstr "+ Description"
 
@@ -289,8 +289,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:298
-#: src/features/session-list.tsx:351
+#: src/features/session-list.tsx:197
+#: src/features/session-list.tsx:232
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -302,7 +302,6 @@ msgstr "Agents"
 msgid "All"
 msgstr "All"
 
-#: src/features/session-list.tsx:232
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -720,7 +719,7 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:319
+#: src/features/console-shell.tsx:320
 msgid "Connection details"
 msgstr "Connection details"
 
@@ -728,7 +727,7 @@ msgstr "Connection details"
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
-#: src/features/console-shell.tsx:237
+#: src/features/console-shell.tsx:238
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -944,7 +943,7 @@ msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:398
-#: src/features/console-shell.tsx:95
+#: src/features/console-shell.tsx:96
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -988,7 +987,7 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/session-purpose.tsx:113
+#: src/features/session-purpose.tsx:118
 msgid "Edit the description"
 msgstr "Edit the description"
 
@@ -1218,9 +1217,9 @@ msgid "idle"
 msgstr "idle"
 
 #: src/features/session-list.tsx:247
-msgctxt "filter"
-msgid "Idle"
-msgstr "Idle"
+#~ msgctxt "filter"
+#~ msgid "Idle"
+#~ msgstr "Idle"
 
 #: src/features/console-sessions.tsx:154
 msgctxt "session status"
@@ -1334,7 +1333,7 @@ msgstr "Just compacted; updates after the next reply"
 msgid "just now"
 msgstr "just now"
 
-#: src/features/console-shell.tsx:486
+#: src/features/console-shell.tsx:487
 msgid "just restarted"
 msgstr "just restarted"
 
@@ -1378,7 +1377,7 @@ msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:468
+#: src/features/console-shell.tsx:469
 #: src/features/me-host.tsx:104
 msgid "Last sample"
 msgstr "Last sample"
@@ -1562,15 +1561,14 @@ msgid "Needs letters or digits: it becomes the directory and branch. Put the res
 msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
 #: src/features/session-header.tsx:237
-#: src/features/session-list.tsx:274
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "Needs you"
 
 #: src/features/session-list.tsx:237
-msgctxt "filter"
-msgid "Needs you"
-msgstr "Needs you"
+#~ msgctxt "filter"
+#~ msgid "Needs you"
+#~ msgstr "Needs you"
 
 #: src/features/session-restart.tsx:54
 #: src/features/session-restart.tsx:124
@@ -1666,10 +1664,10 @@ msgid "No activity yet"
 msgstr "No activity yet"
 
 #: src/features/session-list.tsx:211
-msgid "No agent is working right now."
-msgstr "No agent is working right now."
+#~ msgid "No agent is working right now."
+#~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:192
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1694,13 +1692,13 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:151
+#: src/features/session-list.tsx:117
 msgid "No human message yet"
 msgstr "No human message yet"
 
 #: src/features/session-list.tsx:213
-msgid "No idle sessions."
-msgstr "No idle sessions."
+#~ msgid "No idle sessions."
+#~ msgstr "No idle sessions."
 
 #: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
@@ -1773,7 +1771,7 @@ msgstr "Not pulled"
 msgid "Not pushed"
 msgstr "Not pushed"
 
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:420
 msgid "Not running"
 msgstr "Not running"
 
@@ -1782,8 +1780,8 @@ msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
 #: src/features/session-list.tsx:209
-msgid "Nothing is waiting on you."
-msgstr "Nothing is waiting on you."
+#~ msgid "Nothing is waiting on you."
+#~ msgstr "Nothing is waiting on you."
 
 #: src/features/tickets-view.tsx:523
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
@@ -1946,13 +1944,17 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
+#: src/features/session-split.tsx:171
+msgid "Pick a chat on the left. j / k move through the list."
+msgstr "Pick a chat on the left. j / k move through the list."
+
 #: src/features/console-keys.tsx:66
 msgid "Pick a session (grouped by repository)"
 msgstr "Pick a session (grouped by repository)"
 
 #: src/features/session-split.tsx:185
-msgid "Pick a session on the left. j / k move through the list."
-msgstr "Pick a session on the left. j / k move through the list."
+#~ msgid "Pick a session on the left. j / k move through the list."
+#~ msgstr "Pick a session on the left. j / k move through the list."
 
 #: src/features/session-commands.tsx:217
 #: src/features/session-skills.tsx:61
@@ -2045,7 +2047,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:432
+#: src/features/console-shell.tsx:433
 #: src/features/me-host.tsx:57
 #: src/features/me-host.tsx:130
 msgid "Ready"
@@ -2091,11 +2093,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:230
+#: src/features/console-shell.tsx:231
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:395
+#: src/features/console-shell.tsx:396
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -2245,7 +2247,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:537
+#: src/features/console-shell.tsx:538
 #: src/features/me-host.tsx:88
 msgid "Retry"
 msgstr "Retry"
@@ -2323,7 +2325,7 @@ msgstr "running"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:420
 msgid "Running"
 msgstr "Running"
 
@@ -2418,7 +2420,7 @@ msgstr "Search or filter the list"
 msgid "Search skills"
 msgstr "Search skills"
 
-#: src/features/console-shell.tsx:331
+#: src/features/console-shell.tsx:332
 msgid "Sections"
 msgstr "Sections"
 
@@ -2479,20 +2481,20 @@ msgstr "Session pages"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:80
+#: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:218
+#: src/features/session-list.tsx:165
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:264
+#: src/features/session-list.tsx:183
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/console-me.tsx:313
-#: src/features/console-shell.tsx:99
+#: src/features/console-shell.tsx:100
 msgid "Settings"
 msgstr "Settings"
 
@@ -2540,7 +2542,7 @@ msgstr "Skills · {count}"
 msgid "Skills this agent was given"
 msgstr "Skills this agent was given"
 
-#: src/features/console-shell.tsx:302
+#: src/features/console-shell.tsx:303
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -2623,7 +2625,6 @@ msgstr "State"
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:71
-#: src/features/session-list.tsx:224
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "Status"
@@ -2754,7 +2755,7 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "The local Runtime restarted (about {gone} s without it)"
 
-#: src/features/console-shell.tsx:483
+#: src/features/console-shell.tsx:484
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
@@ -2783,7 +2784,7 @@ msgstr "This browser"
 
 #: src/features/console-me.tsx:123
 #: src/features/console-me.tsx:328
-#: src/features/console-shell.tsx:228
+#: src/features/console-shell.tsx:229
 msgid "This computer"
 msgstr "This computer"
 
@@ -2817,7 +2818,7 @@ msgstr "This device sees nothing from the host until it is approved — the pair
 msgid "This list of shortcuts"
 msgstr "This list of shortcuts"
 
-#: src/features/console-shell.tsx:532
+#: src/features/console-shell.tsx:533
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -2844,7 +2845,7 @@ msgstr "Ticket"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:90
+#: src/features/console-shell.tsx:91
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -2856,7 +2857,7 @@ msgstr "Ticket pages"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:85
+#: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3005,7 +3006,6 @@ msgstr "Undo"
 
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:176
-#: src/features/session-list.tsx:103
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "Untitled session"
@@ -3028,7 +3028,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:474
+#: src/features/console-shell.tsx:475
 #: src/features/me-host.tsx:103
 msgid "Uptime"
 msgstr "Uptime"
@@ -3114,7 +3114,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/console-shell.tsx:443
+#: src/features/console-shell.tsx:444
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3155,8 +3155,8 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:225
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:226
+#: src/features/console-shell.tsx:315
 #: src/features/session-skills.tsx:44
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -3194,7 +3194,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
 #: src/features/session-new-panels.tsx:283
-#: src/features/session-purpose.tsx:73
+#: src/features/session-purpose.tsx:74
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
@@ -3256,11 +3256,11 @@ msgid "Working"
 msgstr "Working"
 
 #: src/features/session-list.tsx:242
-msgctxt "filter"
-msgid "Working"
-msgstr "Working"
+#~ msgctxt "filter"
+#~ msgid "Working"
+#~ msgstr "Working"
 
-#: src/features/session-purpose.tsx:72
+#: src/features/session-purpose.tsx:73
 msgid "Workstation description"
 msgstr "Workstation description"
 

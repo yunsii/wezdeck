@@ -27,7 +27,8 @@ import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { KeysEntry } from './console-keys'
 import { RemoteBadge } from './remote-badge'
-import { needsYou, useSessions } from './console-sessions'
+import { useSessions } from './console-sessions'
+import { unreadChatCount } from './session-chats'
 import { useFollowSessionRedirect } from './session-follow'
 import { installClientTrace } from '#/lib/client-trace'
 import { RECENT_START_MS } from './runtime-restart'
@@ -156,7 +157,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   useFollowSessionRedirect()
   const badges: Partial<Record<Section, number>> = {
     collab: health.data?.waiting_human ?? 0,
-    sessions: (sessions.data?.sessions ?? []).filter(needsYou).length,
+    sessions: unreadChatCount(sessions.data?.sessions ?? []),
   }
   const scroller = useRef<HTMLDivElement>(null)
   const router = useRouter()

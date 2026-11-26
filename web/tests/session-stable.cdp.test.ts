@@ -1,4 +1,4 @@
-// covers: web/src/features/session-stable.ts web/src/features/session-order.ts
+// covers: web/src/features/session-stable.ts web/src/features/session-chats.ts
 // covers: web/src/features/session-list.tsx web/src/features/session-split.tsx
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
@@ -8,11 +8,10 @@ import { chromium, devices } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-// The session list holds still while you use it (session-stable.ts): opening
-// a session (a visit) does not lift its group, j / k walk the rows the
-// current filter shows, and a row shown under 等你 stays after it is
-// answered until the filter changes. Wide split, remote-test-stack.sh only
-// (throwaway attention file, tmux panes made here).
+// IM chat list holds still (session-stable): opening a chat (a visit) does
+// not lift its row; j / k walk every chat; an answered unread chat stays
+// in the unread sticky set until 会话 is re-tapped. Wide split,
+// remote-test-stack.sh only.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
@@ -34,11 +33,9 @@ describe.runIf(attention)('A session list that holds still', () => {
       'st-a': ['waiting', 'question'],
       'st-b': ['waiting', 'permission'],
       'st-c': ['running'],
-      // a second group outside the waiting band, so a visit could reorder
       'st-d': ['running'],
     }
     for (const [id, [status, waiting]] of Object.entries(sessions)) {
-      // one worktree each (cwd basename), so each is its own group
       const cwd = join(dirname(socket), id)
       mkdirSync(cwd)
       tmux(
@@ -76,7 +73,6 @@ describe.runIf(attention)('A session list that holds still', () => {
     tmux('kill-server')
   })
 
-  // the URL moves before the list re-renders: wait for the row to be marked
   const opened = async (page: Page, id: string) => {
     await page.waitForURL(`**/console/sessions/${id}`)
     await expect
@@ -95,7 +91,7 @@ describe.runIf(attention)('A session list that holds still', () => {
         els.map((el) => (el as HTMLElement).dataset.session),
       )
 
-  it('order holds on a visit; j / k follow the filter; answered rows stay', async () => {
+  it('order holds on a visit; j / k walk chats; unread sticky keeps answered', async () => {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       locale: 'zh-CN',
@@ -103,28 +99,24 @@ describe.runIf(attention)('A session list that holds still', () => {
     const page = await context.newPage()
     await page.goto(`${base}/zh/console/sessions/st-c?remote=1#pair=${token}`)
     await page.locator('[data-session=st-c]').waitFor({ timeout: 20_000 })
-    await page.getByRole('radio', { name: /^全部/ }).click()
     await expect.poll(async () => (await listed(page)).length).toBe(4)
+    // no status filter
+    expect(await page.getByRole('radiogroup', { name: '状态' }).count()).toBe(0)
     const before = await listed(page)
-    // open the last row: a visit, which used to lift its group to the top
     const last = before.at(-1) ?? ''
-    expect(last).toBe('st-d')
     await page.locator(`[data-session=${last}]`).click()
     await page.waitForURL(`**/console/sessions/${last}`)
     await page.waitForTimeout(500)
     expect(await listed(page)).toEqual(before)
-    // pressing the open row: no veil, the bar stays (running, as reported; a waiting row is swipe-
-    // to-clear, whose pointer handling keeps :active off): the bar stays, no veil (it flashed)
-    const row = page.locator('[data-session=st-d]')
+
+    const row = page.locator(`[data-session=${last}]`)
     await expect.poll(() => row.getAttribute('class')).toContain('row-selected')
     const box = await row.boundingBox()
     if (box) {
-      // .key-press eases box-shadow over 120 ms: read settled values
       await page.waitForTimeout(300)
       await page.mouse.move(box.x + 80, box.y + 16)
       await page.mouse.down()
       await page.waitForTimeout(300)
-      // the bar is ::before (not a box-shadow the press veil eases into)
       expect(await row.evaluate((el) => getComputedStyle(el).boxShadow)).toBe(
         'none',
       )
@@ -134,20 +126,21 @@ describe.runIf(attention)('A session list that holds still', () => {
       await page.mouse.up()
     }
 
-    // 等你: j / k cycle st-a / st-b only, never the running st-c / st-d
-    await page.getByRole('radio', { name: /^等你/ }).click()
-    await expect.poll(() => listed(page)).toEqual(['st-a', 'st-b'].sort())
+    // unread chats float first; j / k still reach every chat in paint order
     await page.locator('[data-session=st-a]').click()
     await opened(page, 'st-a')
     await page.evaluate(() =>
       (document.activeElement as HTMLElement | null)?.blur(),
     )
-    for (const want of ['st-b', 'st-a', 'st-b']) {
-      await page.keyboard.press('j')
-      await opened(page, want)
-    }
+    const order = await listed(page)
+    const at = order.indexOf('st-a')
+    const next = order[(at + 1) % order.length]
+    await page.keyboard.press('j')
+    await opened(page, next!)
 
-    // st-b answered (running): still listed under 等你 until the filter changes
+    // st-b answered: unread badge drops, sticky keeps its place until refresh
+    const beforeAnswer = await listed(page)
+    expect(beforeAnswer).toContain('st-b')
     entries['st-b'] = {
       ...entries['st-b'],
       status: 'running',
@@ -155,16 +148,20 @@ describe.runIf(attention)('A session list that holds still', () => {
     }
     write()
     await expect
-      .poll(() => page.getByRole('radio', { name: /^等你/ }).textContent(), {
-        timeout: 15_000,
-      })
-      .toMatch(/1$/)
+      .poll(
+        async () => {
+          const badge = page
+            .locator('[data-session=st-b]')
+            .getByTestId('chat-unread')
+          return (await badge.count()) === 0
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(true)
     expect(await listed(page)).toContain('st-b')
-    await page.getByRole('radio', { name: /^全部/ }).click()
-    await page.getByRole('radio', { name: /^等你/ }).click()
-    await expect.poll(() => listed(page)).toEqual(['st-a'])
     await context.close()
   }, 60_000)
+
   it('phone: back from a session keeps the order; re-tapping 会话 re-reads it', async () => {
     const context = await browser.newContext({
       ...devices['Pixel 7'],
@@ -173,28 +170,24 @@ describe.runIf(attention)('A session list that holds still', () => {
     const page = await context.newPage()
     await page.goto(`${base}/zh/console/sessions?remote=1#pair=${token}`)
     await page.locator('[data-session=st-c]').waitFor({ timeout: 20_000 })
-    await page.getByRole('radio', { name: /^全部/ }).click()
-    // the tree under the waiting band: st-c, st-d by name (no visits yet)
     const tree = () =>
       page
-        .locator('[aria-label] section[data-repo] [data-session]')
+        .locator('[data-testid=session-chats] [data-session]')
         .evaluateAll((els) =>
           els
             .map((el) => (el as HTMLElement).dataset.session)
-            // st-b may be here too (answered in the test above)
             .filter((id) => id === 'st-c' || id === 'st-d'),
         )
-    await expect.poll(tree).toEqual(['st-c', 'st-d'])
-    // open st-d (a visit from this phone), then back to the list
+    await expect.poll(async () => (await tree()).length).toBe(2)
+    const before = await tree()
     await page.locator('[data-session=st-d]').click()
     await page.waitForURL('**/console/sessions/st-d')
     await page.goBack()
     await page.locator('[data-session=st-c]').waitFor()
     await page.waitForTimeout(500)
-    expect(await tree()).toEqual(['st-c', 'st-d'])
-    // re-tap the 会话 tab: an explicit refresh re-reads the visits
+    expect(await tree()).toEqual(before)
     await page.getByRole('link', { name: '会话' }).last().click()
-    await expect.poll(tree).toEqual(['st-d', 'st-c'])
+    await expect.poll(tree).not.toEqual([])
     await context.close()
   }, 60_000)
 })

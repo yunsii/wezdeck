@@ -175,7 +175,7 @@ msgstr "起 {workers} 个后台工人，最多同时 {parallel} 个，分 {stage
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
-#: src/features/session-purpose.tsx:140
+#: src/features/session-purpose.tsx:146
 msgid "+ Description"
 msgstr "+ 描述"
 
@@ -289,8 +289,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:298
-#: src/features/session-list.tsx:351
+#: src/features/session-list.tsx:197
+#: src/features/session-list.tsx:232
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -302,7 +302,6 @@ msgstr "智能体"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:232
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -720,7 +719,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:319
+#: src/features/console-shell.tsx:320
 msgid "Connection details"
 msgstr "连接详情"
 
@@ -728,7 +727,7 @@ msgstr "连接详情"
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
-#: src/features/console-shell.tsx:237
+#: src/features/console-shell.tsx:238
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -944,7 +943,7 @@ msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:168
 #: src/features/console-me.tsx:398
-#: src/features/console-shell.tsx:95
+#: src/features/console-shell.tsx:96
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -988,7 +987,7 @@ msgstr "这个项目里更早的会话。选中后窗格会切换过去，本页
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 
-#: src/features/session-purpose.tsx:113
+#: src/features/session-purpose.tsx:118
 msgid "Edit the description"
 msgstr "修改描述"
 
@@ -1218,9 +1217,9 @@ msgid "idle"
 msgstr "空闲"
 
 #: src/features/session-list.tsx:247
-msgctxt "filter"
-msgid "Idle"
-msgstr "空闲"
+#~ msgctxt "filter"
+#~ msgid "Idle"
+#~ msgstr "空闲"
 
 #: src/features/console-sessions.tsx:154
 msgctxt "session status"
@@ -1334,7 +1333,7 @@ msgstr "刚压缩，下一次回复后更新"
 msgid "just now"
 msgstr "刚刚"
 
-#: src/features/console-shell.tsx:486
+#: src/features/console-shell.tsx:487
 msgid "just restarted"
 msgstr "刚重启"
 
@@ -1378,7 +1377,7 @@ msgid "Last direct attempt"
 msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:468
+#: src/features/console-shell.tsx:469
 #: src/features/me-host.tsx:104
 msgid "Last sample"
 msgstr "最近采样"
@@ -1562,15 +1561,14 @@ msgid "Needs letters or digits: it becomes the directory and branch. Put the res
 msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
 #: src/features/session-header.tsx:237
-#: src/features/session-list.tsx:274
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "需要你处理"
 
 #: src/features/session-list.tsx:237
-msgctxt "filter"
-msgid "Needs you"
-msgstr "等你"
+#~ msgctxt "filter"
+#~ msgid "Needs you"
+#~ msgstr "等你"
 
 #: src/features/session-restart.tsx:54
 #: src/features/session-restart.tsx:124
@@ -1666,10 +1664,10 @@ msgid "No activity yet"
 msgstr "还没有动态"
 
 #: src/features/session-list.tsx:211
-msgid "No agent is working right now."
-msgstr "没有正在干活的 agent。"
+#~ msgid "No agent is working right now."
+#~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:214
+#: src/features/session-list.tsx:192
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1694,13 +1692,13 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:151
+#: src/features/session-list.tsx:117
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
 #: src/features/session-list.tsx:213
-msgid "No idle sessions."
-msgstr "没有空闲的会话。"
+#~ msgid "No idle sessions."
+#~ msgstr "没有空闲的会话。"
 
 #: src/features/console-diagnostics.tsx:102
 msgid "No matching log entries"
@@ -1773,7 +1771,7 @@ msgstr "未拉取"
 msgid "Not pushed"
 msgstr "未推送"
 
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:420
 msgid "Not running"
 msgstr "未运行"
 
@@ -1782,8 +1780,8 @@ msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
 #: src/features/session-list.tsx:209
-msgid "Nothing is waiting on you."
-msgstr "没有等你处理的工单。"
+#~ msgid "Nothing is waiting on you."
+#~ msgstr "没有等你处理的工单。"
 
 #: src/features/tickets-view.tsx:523
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
@@ -1946,13 +1944,17 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
+#: src/features/session-split.tsx:171
+msgid "Pick a chat on the left. j / k move through the list."
+msgstr "从左边选一个对话。j / k 在列表里上下切换。"
+
 #: src/features/console-keys.tsx:66
 msgid "Pick a session (grouped by repository)"
 msgstr "选择会话（按仓库分组）"
 
 #: src/features/session-split.tsx:185
-msgid "Pick a session on the left. j / k move through the list."
-msgstr "从左边选一个会话。j / k 在列表里上下切换。"
+#~ msgid "Pick a session on the left. j / k move through the list."
+#~ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
 #: src/features/session-commands.tsx:217
 #: src/features/session-skills.tsx:61
@@ -2045,7 +2047,7 @@ msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:432
+#: src/features/console-shell.tsx:433
 #: src/features/me-host.tsx:57
 #: src/features/me-host.tsx:130
 msgid "Ready"
@@ -2091,11 +2093,11 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:230
+#: src/features/console-shell.tsx:231
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-shell.tsx:395
+#: src/features/console-shell.tsx:396
 msgid "Remote access"
 msgstr "远程访问"
 
@@ -2245,7 +2247,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:537
+#: src/features/console-shell.tsx:538
 #: src/features/me-host.tsx:88
 msgid "Retry"
 msgstr "重试"
@@ -2323,7 +2325,7 @@ msgstr "运行中"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:419
+#: src/features/console-shell.tsx:420
 msgid "Running"
 msgstr "运行中"
 
@@ -2418,7 +2420,7 @@ msgstr "搜索或筛选列表"
 msgid "Search skills"
 msgstr "搜索能力"
 
-#: src/features/console-shell.tsx:331
+#: src/features/console-shell.tsx:332
 msgid "Sections"
 msgstr "栏目"
 
@@ -2479,20 +2481,20 @@ msgstr "会话"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:80
+#: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:218
+#: src/features/session-list.tsx:165
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:264
+#: src/features/session-list.tsx:183
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
 #: src/features/console-me.tsx:313
-#: src/features/console-shell.tsx:99
+#: src/features/console-shell.tsx:100
 msgid "Settings"
 msgstr "我的"
 
@@ -2540,7 +2542,7 @@ msgstr "能力 · {count}"
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
-#: src/features/console-shell.tsx:302
+#: src/features/console-shell.tsx:303
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -2623,7 +2625,6 @@ msgstr "状态"
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:71
-#: src/features/session-list.tsx:224
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
@@ -2754,7 +2755,7 @@ msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 
-#: src/features/console-shell.tsx:483
+#: src/features/console-shell.tsx:484
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
@@ -2783,7 +2784,7 @@ msgstr "当前浏览器"
 
 #: src/features/console-me.tsx:123
 #: src/features/console-me.tsx:328
-#: src/features/console-shell.tsx:228
+#: src/features/console-shell.tsx:229
 msgid "This computer"
 msgstr "本机"
 
@@ -2817,7 +2818,7 @@ msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:532
+#: src/features/console-shell.tsx:533
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -2844,7 +2845,7 @@ msgstr "工单编号"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:292
-#: src/features/console-shell.tsx:90
+#: src/features/console-shell.tsx:91
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -2856,7 +2857,7 @@ msgstr "工单"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-shell.tsx:85
+#: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3005,7 +3006,6 @@ msgstr "撤销"
 
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:176
-#: src/features/session-list.tsx:103
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "未命名会话"
@@ -3028,7 +3028,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:474
+#: src/features/console-shell.tsx:475
 #: src/features/me-host.tsx:103
 msgid "Uptime"
 msgstr "运行时长"
@@ -3114,7 +3114,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "等你"
 
-#: src/features/console-shell.tsx:443
+#: src/features/console-shell.tsx:444
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3155,8 +3155,8 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:225
-#: src/features/console-shell.tsx:314
+#: src/features/console-shell.tsx:226
+#: src/features/console-shell.tsx:315
 #: src/features/session-skills.tsx:44
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -3194,7 +3194,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
 #: src/features/session-new-panels.tsx:283
-#: src/features/session-purpose.tsx:73
+#: src/features/session-purpose.tsx:74
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
 
@@ -3256,11 +3256,11 @@ msgid "Working"
 msgstr "运行中"
 
 #: src/features/session-list.tsx:242
-msgctxt "filter"
-msgid "Working"
-msgstr "运行中"
+#~ msgctxt "filter"
+#~ msgid "Working"
+#~ msgstr "运行中"
 
-#: src/features/session-purpose.tsx:72
+#: src/features/session-purpose.tsx:73
 msgid "Workstation description"
 msgstr "工作站描述"
 

@@ -47,8 +47,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: a status filter like `Alt+/` (全部 / 等你 / 运行中 /
-   空闲, remembered per device), a 等你 band on top under 全部, then the
+   会话 is the home: an IM chat list (one row per workstation, unread =
+   needs-you badge; no status Segmented), then the
    repo → worktree → pane tree ordered by **visits**, never output — the
    later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
    `Alt+x`, `session_visits.go`) and a visit from this web console
@@ -98,9 +98,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    ticket or waiting on the other side ○): cross-repo ticket events as sentences — one card per
    ticket run of events under its title and from → to repo, day headings,
    a clock time per line; tool calls, checkouts, session init and worktree
-   moves left out; sessions are not in it. 会话 rows: repo →
-   worktree → pane tree; primary/secondary when tmux-mounted; path-based
-   so ticket worktrees can join later; Grok Ask shows tappable options
+   moves left out; sessions are not in it. 会话 left rail is an IM chat list (one row per workstation;
+   repo section heads; unread = needs-you badge; no status Segmented);
+   opening resolves the focus session. Grok Ask shows tappable options
    from `elicitation`) · 我的 (an index of groups, each row showing
    how it stands — 连接 / 写入权限 / 用量 / 外观 / 应用 — each group a pushed
    page `/console/me/$page` with a back bar; the tab bar stays, re-tapping
@@ -131,12 +131,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    工单's run / cache / cost band opens from the head in a dialog. Session
    groups carry icons: repo `FolderGit2`, worktree `GitFork`.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx). Both
-   remember their status filter (工单 gained 全部) and, with no item in the
-   URL, open: the item last opened under the current filter if still listed
-   there; else the item last opened at all if it still exists, switching to
-   全部; else the top of the list (`lib/last-opened.tsx` `pickLast`, chosen
-   once per visit — switching to 全部 must not re-pick 全部's own last). The
-   list sticky on the left, the ticket beside it in the
+   remember status filter on 工单; 会话 has none (IM list). With no item in
+   the URL, reopen the last opened item if it still exists, else the top
+   (`lib/last-opened.tsx` `pickLast`). The list sticky on the left, the
+   ticket beside it in the
    page scroll, j / k move through the list and y copies the open ticket's
    reference (not while typing or a sheet is open), rows replace instead of
    push. Every ticket and session row has a copy key beside its link

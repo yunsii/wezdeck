@@ -8,6 +8,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import type { SyntheticEvent } from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { hostWrite } from '#/lib/runtime-client'
@@ -98,7 +99,10 @@ export function WorktreePurpose({
     )
   }
 
-  const open = () => {
+  const open = (event?: SyntheticEvent) => {
+    // may sit inside a chat Link — do not navigate
+    event?.preventDefault()
+    event?.stopPropagation()
     setDraft(shown)
     setError('')
     setEditing(true)
@@ -110,6 +114,7 @@ export function WorktreePurpose({
         size="none"
         type="button"
         onClick={open}
+        onPointerDown={(event) => event.stopPropagation()}
         title={t`Edit the description`}
         data-testid="worktree-description"
         className="min-w-0 truncate text-left text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
@@ -132,6 +137,7 @@ export function WorktreePurpose({
       size="none"
       type="button"
       onClick={open}
+      onPointerDown={(event) => event.stopPropagation()}
       data-testid="worktree-purpose-add"
       className={cn(
         'shrink-0 text-brand-label opacity-70 outline-none hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand-running',
