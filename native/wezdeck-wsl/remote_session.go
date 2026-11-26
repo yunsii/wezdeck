@@ -218,7 +218,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 			continue
 		}
 		panes[key] = true
-		_, _, cmd, _, _, alive := paneState(r.attentionEntry)
+		_, _, cmd, _, profile, alive := paneState(r.attentionEntry)
 		if !alive || !isAgentPane(cmd, r.attentionEntry) {
 			continue
 		}
@@ -236,7 +236,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 		// first prompt. List the new session in its place (idle, empty,
 		// sendable) so the phone can follow; the old id answers replaced_by.
 		if next := r.ClearedTo; sessionIDPattern.MatchString(next) && next != r.SessionID {
-			if _, taken := out[next]; !taken {
+			if current, taken := out[next]; !taken || current.TmuxPane == "" {
 				e.ReplacedFrom = r.SessionID
 				e.SessionID = next
 				e.LastUserPrompt = ""
@@ -252,6 +252,9 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 					panes[pin.TmuxSocket+"|"+pin.TmuxPane] = true
 				}
 			}
+			continue
+		}
+		if !paneOwnsSessionAgent(cmd, profile, r.AgentName) {
 			continue
 		}
 		out[r.SessionID] = e
@@ -415,6 +418,7 @@ type sessionCard struct {
 	// AgentProfile: managed profile on the pane (@wezterm_agent_profile),
 	// e.g. claude_kimi — web chat avatars use it for the corner badge
 	AgentProfile string `json:"agent_profile,omitempty"`
+	Detached     bool   `json:"detached,omitempty"`
 }
 
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
@@ -432,13 +436,14 @@ func listSessionsFor(includeArchived bool) (any, error) {
 	now := time.Now()
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
+	attachments := map[string]map[string]bool{}
 	visits := worktreeVisits()
 	aliases := parseRepoAliases(repoAliasSpec())
 	for id, e := range entries {
 		if e.TmuxPane == "" {
 			continue
 		}
-		_, cwd, _, index, profile, alive := paneState(e)
+		_, cwd, cmd, index, profile, alive := paneState(e)
 		if !alive {
 			continue
 		}
@@ -447,6 +452,14 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			RunningKind: e.RunningKind, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
 			AgentProfile: profile}
+		states, cached := attachments[e.TmuxSocket]
+		if !cached {
+			states = attachedTmuxSessions(e.TmuxSocket)
+			attachments[e.TmuxSocket] = states
+		}
+		if states != nil && e.TmuxSession != "" {
+			card.Detached = !states[e.TmuxSession]
+		}
 		if meta, ok := gitCache[cwd]; ok {
 			card.Repo, card.RepoRoot, card.Worktree = meta[0], meta[1], meta[2]
 		} else {
@@ -465,6 +478,9 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		// window, TUI redraws) would reorder idle sessions, so they are only
 		// the fallback for agents without a transcript.
 		if path, agent := findTranscript(e.SessionID); path != "" {
+			if !paneOwnsSessionAgent(cmd, profile, agent) {
+				continue
+			}
 			card.Agent = agent
 			card.Transcript = true
 			card.Title = readSessionTitle(path, agent)

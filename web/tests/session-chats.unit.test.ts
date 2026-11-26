@@ -65,6 +65,20 @@ describe('resolveChatFocus', () => {
       ])?.id,
     ).toBe('newer')
   })
+  it('prefers attached idle sessions without hiding detached work', () => {
+    const attached = card({ id: 'attached', ts: 10 })
+    const detached = card({ id: 'detached', ts: 30, detached: true })
+    expect(resolveChatFocus([detached, attached])?.id).toBe('attached')
+    for (const over of [
+      { status: 'running' },
+      { status: 'done' },
+      { status: 'waiting', waiting_kind: 'permission' },
+    ]) {
+      expect(
+        resolveChatFocus([attached, card({ ...detached, ...over })])?.id,
+      ).toBe('detached')
+    }
+  })
 })
 
 describe('buildChatGroups', () => {

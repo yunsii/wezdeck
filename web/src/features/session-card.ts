@@ -32,6 +32,8 @@ export type SessionCard = {
   /** The workstation's one-line purpose (git branch description). */
   worktree_description?: string
   tmux_session?: string
+  /** no tmux client currently shows this session */
+  detached?: boolean
   tmux_pane?: string
   pane_index?: number
   /** primary | secondary when mounted in tmux; absent for future ticket agents. */
