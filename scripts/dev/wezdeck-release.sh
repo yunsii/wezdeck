@@ -255,17 +255,31 @@ relay_running_version() {
 job_relay() {
   phase "build (skipped when current)"
   PATH="$HOME/.local/go/bin:$PATH" native/wezdeck-wsl/build.sh || return 1
-  local want running
+  local want running installed expected seen i
   want="$(cat native/wezdeck-wsl/bin/.version)"
   running="$(relay_running_version)"
-  if [[ "$running" == "$want" && $force == 0 ]]; then
+  expected="$REPO/native/wezdeck-wsl/bin/wezdeck-wsl relay"
+  installed="$(systemctl --user cat "$UNIT" 2>/dev/null | sed -n 's/^ExecStart=//p' | tail -1)"
+  if [[ "$running" == "$want" && "$installed" == "$expected" && $force == 0 ]]; then
     echo "skip: relay already runs $want"
     return 0
   fi
-  phase "restarting $UNIT with $want"
-  systemctl --user restart "$UNIT" || return 1
+  if [[ "$installed" != "$expected" ]]; then
+    phase "repairing $UNIT ExecStart before restart"
+    scripts/dev/install-remote-relay.sh || return 1
+  else
+    phase "restarting $UNIT with $want"
+    systemctl --user restart "$UNIT" || return 1
+  fi
   systemctl --user is-active -q "$UNIT" || { echo "relay: $UNIT not active after restart"; return 1; }
-  echo "ok: restarted relay with $want (was ${running:-?})"
+  seen=''
+  for ((i = 0; i < 30; i++)); do
+    seen="$(relay_running_version || true)"
+    [[ "$seen" == "$want" ]] && break
+    sleep 0.5
+  done
+  [[ "$seen" == "$want" ]] || { echo "relay: expected $want, observed ${seen:-none} after restart" >&2; return 1; }
+  echo "ok: running relay $want (was ${running:-?})"
 }
 
 deployed_build() {
