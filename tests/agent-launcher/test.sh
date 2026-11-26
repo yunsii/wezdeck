@@ -36,7 +36,7 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile auto resume --last' "$LOG"
+grep -Fxq -- '--no-daemon --profile auto resume --last' "$LOG"
 test -f "$TEST_ROOT/codex-home/auto.config.toml"
 test ! -L "$TEST_ROOT/codex-home/auto.config.toml"
 grep -Eq '^approval_policy = "on-request"$' "$TEST_ROOT/codex-home/auto.config.toml"
@@ -54,7 +54,7 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile auto resume --last' "$LOG"
+grep -Fxq -- '--no-daemon --profile auto resume --last' "$LOG"
 grep -Eq '^model = "gpt-test-keep"$' "$TEST_ROOT/codex-home/auto.config.toml"
 grep -Eq '^approval_policy = "on-request"$' "$TEST_ROOT/codex-home/auto.config.toml"
 printf 'PASS agent-launcher re-applies Auto overlay and preserves host Codex keys\n'
@@ -87,7 +87,7 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile full-access resume --last' "$LOG"
+grep -Fxq -- '--no-daemon --profile full-access resume --last' "$LOG"
 test -f "$TEST_ROOT/codex-home/full-access.config.toml"
 test ! -L "$TEST_ROOT/codex-home/full-access.config.toml"
 grep -Eq '^approval_policy = "never"$' "$TEST_ROOT/codex-home/full-access.config.toml"
@@ -117,7 +117,7 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile full-access resume codex-sid-typed-001' "$LOG"
+grep -Fxq -- '--no-daemon --profile full-access resume codex-sid-typed-001' "$LOG"
 printf 'PASS agent-launcher typed resume uses codex resume <session_id>\n'
 
 # Claude typed resume refuses when the transcript jsonl is missing; plant one
@@ -158,7 +158,7 @@ env -i \
   WEZTERM_NO_LOADING_BANNER=1 \
   bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
 
-grep -Fxq -- '--profile full-access' "$LOG"
+grep -Fxq -- '--no-daemon --profile full-access' "$LOG"
 ! grep -Eq 'resume' "$LOG"
 printf 'PASS agent-launcher FORCE_FRESH skips Codex resume\n'
 
