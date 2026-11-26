@@ -280,6 +280,43 @@ if command -v zsh >/dev/null; then
   printf 'PASS interactive Codex uses --no-daemon in tmux and preserves explicit remote\n'
 fi
 
+# OTel loopback injection: active when forced (or collector status+port live),
+# skipped when WEZDECK_OTEL_ENABLED=0.
+OTEL_ENV_LOG="$TEST_ROOT/otel.env"
+cat > "$FAKE_CLAUDE" <<'EOF'
+#!/usr/bin/env bash
+printf 'args=%s\n' "$*" > "${OTEL_ENV_LOG:?}"
+printf 'telemetry=%s\n' "${CLAUDE_CODE_ENABLE_TELEMETRY:-}" >> "${OTEL_ENV_LOG:?}"
+printf 'endpoint=%s\n' "${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:-}" >> "${OTEL_ENV_LOG:?}"
+printf 'protocol=%s\n' "${OTEL_EXPORTER_OTLP_LOGS_PROTOCOL:-}" >> "${OTEL_ENV_LOG:?}"
+printf 'resource=%s\n' "${OTEL_RESOURCE_ATTRIBUTES:-}" >> "${OTEL_ENV_LOG:?}"
+EOF
+chmod +x "$FAKE_CLAUDE"
+
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" OTEL_ENV_LOG="$OTEL_ENV_LOG" \
+  WEZDECK_OTEL_FORCE=1 WEZDECK_OTEL_PORT=43188 TMUX_PANE=%7 \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+grep -Fxq -- 'telemetry=1' "$OTEL_ENV_LOG"
+grep -Fxq -- 'endpoint=http://127.0.0.1:43188/v1/logs' "$OTEL_ENV_LOG"
+grep -Fxq -- 'protocol=http/json' "$OTEL_ENV_LOG"
+grep -Fq -- 'wezdeck.profile=claude' "$OTEL_ENV_LOG"
+grep -Fq -- 'wezdeck.pane=%7' "$OTEL_ENV_LOG"
+
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" OTEL_ENV_LOG="$OTEL_ENV_LOG" \
+  WEZDECK_OTEL_FORCE=1 WEZDECK_OTEL_ENABLED=0 \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+grep -Fxq -- 'telemetry=' "$OTEL_ENV_LOG"
+
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" CODEX_HOME="$TEST_ROOT/codex-home" \
+  CODEX_TEST_LOG="$LOG" WEZDECK_OTEL_FORCE=1 WEZDECK_OTEL_PORT=43188 \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+grep -Fq -- 'otel.log_user_prompt=false' "$LOG"
+grep -Fq -- 'http://127.0.0.1:43188/v1/logs' "$LOG"
+printf 'PASS agent-launcher wires OTel loopback env/args and honors opt-out\n'
+
 mkdir -p "$TEST_ROOT/home/.config/wezdeck/agent-profiles"
 printf '{"disabled":true,"note":"currently unavailable"}\n' \
   > "$TEST_ROOT/home/.config/wezdeck/agent-profiles/claude.json"

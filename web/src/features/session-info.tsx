@@ -27,6 +27,7 @@ import { SectionHeading } from '#/components/ui/section-heading'
 import { Field, FieldList } from '#/components/ui/field'
 import { copyText } from '#/lib/clipboard'
 import { postRuntimeAction } from '#/lib/runtime-client'
+import { formatTokenRate, formatTtft } from '#/lib/turn-progress'
 import { toast } from 'sonner'
 import { useConsoleMode } from './console-mode'
 
@@ -80,6 +81,7 @@ function useLabels() {
     background_tasks: t`Background tasks`,
     context: t`Context`,
     output: t`Output tokens`,
+    output_rate: t`Output rate`,
     cache_hit: t`Cache hit`,
     five_hour: t`5-hour limit`,
     seven_day: t`7-day limit`,
@@ -136,6 +138,18 @@ function extraGroups(
     })
   if (u?.output)
     usage.rows.push({ key: 'output', value: u.output.toLocaleString() })
+  const r = data.token_rate
+  if (r && r.tok_per_s > 0) {
+    const parts = [
+      r.decode_tok_per_s ? `decode ${formatTokenRate(r.decode_tok_per_s)}` : '',
+      r.ttft_ms ? `TTFT ${formatTtft(r.ttft_ms)}` : '',
+      r.source,
+    ].filter(Boolean)
+    usage.rows.push({
+      key: 'output_rate',
+      value: `${formatTokenRate(r.tok_per_s)} (${parts.join(' · ')})`,
+    })
+  }
   if (u && u.input + u.cache_read)
     usage.rows.push({
       key: 'cache_hit',

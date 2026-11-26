@@ -15,6 +15,7 @@ import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
 import { PAGE, mergeReply } from '#/lib/session-cache'
+import type { TokenRate } from '#/lib/turn-progress'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
@@ -133,6 +134,8 @@ export type Detail = StatusFields & {
   compact_started?: number
   /** output tokens of the running turn (transcript usage) */
   turn_output?: number
+  /** host-side token output rate (OTel primary, transcript fallback) */
+  token_rate?: TokenRate
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
   /** a permission prompt: the call it is about (host permission.go) */
@@ -304,6 +307,7 @@ const activityOf = (data?: Detail) => ({
   since: data?.turn_started,
   compactSince: data?.compact_started,
   tokens: data?.turn_output,
+  rate: data?.token_rate?.tok_per_s,
 })
 
 /** absolute index just past the newest message the page has */

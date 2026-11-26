@@ -62,4 +62,9 @@ WSL_WORKFLOW_DIR="$WSL_RUNTIME_STATE_DIR/workflow"
 # attention.json. See docs/agent-attention.md (observability).
 WSL_ATTENTION_JOURNAL_FILE="$WSL_RUNTIME_LOGS_DIR/attention-transitions.jsonl"
 WSL_ATTENTION_SNAPSHOTS_DIR="$WSL_RUNTIME_STATE_DIR/agent-attention/snapshots"
+# Host-side agent token output-rate collector (wezdeck-wsl otel).
+# WSL-native (ext4): loopback OTLP receiver writes samples + rolling status.
+WSL_AGENT_TOKEN_RATE_DIR="$WSL_RUNTIME_STATE_DIR/agent-token-rate"
+WSL_AGENT_TOKEN_RATE_STATUS_FILE="$WSL_AGENT_TOKEN_RATE_DIR/status.json"
+WSL_AGENT_TOKEN_RATE_LOG_FILE="$WSL_RUNTIME_LOGS_DIR/agent-token-rate.jsonl"
 WSL_WINDOWS_PATHS_CACHE_FILE="$WSL_RUNTIME_CACHE_ROOT/windows-paths.env"

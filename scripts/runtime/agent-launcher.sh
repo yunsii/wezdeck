@@ -136,6 +136,8 @@ print_loading_banner() {
 . "$script_dir/agent-claude-sub2api-lib.sh"
 # shellcheck disable=SC1091
 . "$script_dir/agent-workspace-trust-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/agent-otel-lib.sh"
 
 loading_mode="base"
 if [[ -n "${MANAGED_AGENT_PERMISSION_PROFILE:-}" ]]; then
@@ -312,6 +314,7 @@ case "$agent" in
     ensure_claude_workspace_trust "$PWD"
     resolve_claude_permission
     load_managed_model_override claude
+    wezdeck_otel_configure_agent claude
     CLAUDE_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot claude "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
@@ -325,6 +328,7 @@ case "$agent" in
     # keeps the identity visible during the multi-second resume window.
     resolve_claude_permission
     load_managed_model_override claude-sub2api
+    wezdeck_otel_configure_agent claude-sub2api
     CLAUDE_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot claude-sub2api "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
@@ -335,6 +339,7 @@ case "$agent" in
   claude-kimi)
     load_claude_kimi_env
     resolve_claude_permission
+    wezdeck_otel_configure_agent claude-kimi
     log_resume_boot claude-kimi "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
     exec bash "$script_dir/agent-resume.sh" claude-kimi "$fallback_log_script" \
@@ -372,7 +377,8 @@ case "$agent" in
     # A shared app-server keeps its original TMUX_PANE across clients.
     # Attention hooks must use this TUI's own environment.
     load_managed_model_override codex
-    codex_profile_args=(--no-daemon "${codex_profile_args[@]}" "${managed_model_args[@]}")
+    wezdeck_otel_configure_agent codex
+    codex_profile_args=(--no-daemon "${codex_profile_args[@]}" "${managed_model_args[@]}" "${WEZDECK_OTEL_CODEX_ARGS[@]}")
     log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
     # Recycle --fresh-agent / forced F5: skip typed id and resume --last.
     if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
@@ -424,6 +430,7 @@ case "$agent" in
     fi
     resolve_grok_permission
     load_managed_model_override grok
+    wezdeck_otel_configure_agent grok
     GROK_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot grok "${GROK_PERMISSION_PROFILE:-base}" "$GROK_PERMISSION_RESOLUTION"
     exec bash "$script_dir/agent-resume.sh" grok "$fallback_log_script" \

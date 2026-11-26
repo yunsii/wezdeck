@@ -8,12 +8,11 @@ import { chromium, devices } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-// 复制引用 from the session list (copy-reference.tsx): a row's copy key on a
-// phone — for a session never opened here, so the relay's one-message
-// `session` read supplies the block — and y beside the open session on a
-// wide screen. The ticket list's side is in collab.cdp.test.ts. Runs
-// against remote-test-stack.sh only (throwaway attention file, tmux panes
-// made here).
+// 复制引用 from the session list: long-press / right-click opens the row
+// context menu (session-list.tsx) — for a session never opened here, so the
+// relay's one-message `session` read supplies the block — and y beside the
+// open session on a wide screen. The ticket list's side is in
+// collab.cdp.test.ts. Runs against remote-test-stack.sh only.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
@@ -80,11 +79,11 @@ describe.runIf(attention)('Session references from the list', () => {
     const page = await phone.newPage()
     await openList(page)
     // a session never opened here: the relay's one-message read carries it
-    await page
-      .locator('[data-session=nav-b]')
-      .locator('..')
-      .getByTestId('row-copy-reference')
-      .click()
+    const menu = page
+      .getByTestId('chat-row-menu')
+      .filter({ has: page.locator('[data-session=nav-b]') })
+    await menu.click({ button: 'right' })
+    await page.getByTestId('chat-row-copy-reference').click()
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
       .toMatch(/^\[wezdeck 会话\] .*\nsession_id: nav-b\n/)

@@ -388,7 +388,7 @@ export function TicketsView({
         </SplitColumn>
         {/* flat like 会话's pane: the divider is its left edge, page tall */}
         <div
-          className="vt-split-pane -my-4 min-h-[100cqh] min-w-0 border-l border-brand-edge py-4 pl-[calc(var(--page-x)*1.5)]"
+          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge pl-[var(--page-x)]"
           data-testid="ticket-pane"
         >
           {current ? (

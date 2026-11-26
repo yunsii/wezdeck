@@ -148,7 +148,7 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
         // pane steps over the page's own padding (-my-4 / py-4) and is at
         // least the window tall, whatever the conversation's length
         className={cn(
-          'vt-split-pane max-md:contents md:-my-4 md:flex md:min-h-[100cqh] md:min-w-0 md:flex-col md:border-l md:border-brand-edge md:py-4 md:pl-[var(--page-x)]',
+          'vt-split-pane max-md:contents md:flex md:min-h-[100cqh] md:min-w-0 md:flex-col md:border-l md:border-brand-edge md:pl-[var(--page-x)]',
           !id && 'max-md:hidden',
         )}
         data-testid="session-pane"
