@@ -21,7 +21,7 @@ export function SplitColumn({
     <aside
       aria-label={label}
       className={cn(
-        'vt-split-list sticky top-0 -mt-4 -ml-[var(--page-x)] flex h-[100cqh] min-h-0 flex-col [--split-pad:max(12px,var(--page-x))]',
+        'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 flex-col [--split-pad:max(12px,var(--page-x))]',
         className,
       )}
     >

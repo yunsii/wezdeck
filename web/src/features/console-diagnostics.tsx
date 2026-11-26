@@ -166,7 +166,7 @@ export function ConsoleDiagnosticsPage() {
     return (
       <div className="grid content-start gap-3">
         <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
-        <div className="-mt-4 -ml-[var(--page-x)] grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
+        <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Log stream`}
             className="sticky top-0 grid h-[100cqh] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pb-0 [scrollbar-gutter:stable_both-edges]"
