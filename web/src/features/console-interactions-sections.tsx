@@ -171,7 +171,7 @@ function promptSections(
           call={BASH}
           screen={SCREEN}
           disabled={false}
-          onKey={(key) => void keyFor('permission-bash')(key)}
+          onKey={keyFor('permission-bash')}
         />
       ),
     },
@@ -194,7 +194,7 @@ function promptSections(
         <PermissionCard
           call={EDIT}
           disabled={false}
-          onKey={(key) => void keyFor('permission-edit')(key)}
+          onKey={keyFor('permission-edit')}
         />
       ),
     },
@@ -214,7 +214,7 @@ function promptSections(
         <PermissionCard
           call={PLAN}
           disabled={false}
-          onKey={(key) => void keyFor('plan-approval')(key)}
+          onKey={keyFor('plan-approval')}
         />
       ),
     },
@@ -235,7 +235,7 @@ function promptSections(
           excerpt={PLAN.body}
           awaitingApproval
           disabled={false}
-          onKey={(key) => void keyFor('grok-plan')(key)}
+          onKey={keyFor('grok-plan')}
         />
       ),
     },
@@ -255,7 +255,7 @@ function promptSections(
         <SessionPermissionKeys
           screen={SCREEN}
           disabled={false}
-          onKey={(key) => void keyFor('generic-keys')(key)}
+          onKey={keyFor('generic-keys')}
         />
       ),
     },

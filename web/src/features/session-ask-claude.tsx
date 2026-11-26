@@ -1,17 +1,22 @@
 // Claude's AskUserQuestion on the phone (host agent_claude_ask.go). The TUI
 // takes one question at a time: a digit picks the option and moves to the
 // next question; with several questions it ends on a review page that waits
-// for Enter ("Submit answers"). Grok's dialog (digit + Enter per question)
-// stays in session-elicitation.tsx. Without this card the phone showed only
-// the generic key strip, and after the last digit nothing said that Enter
-// was still needed — the agent sat waiting.
+// for Enter ("Submit answers"). Every action goes through usePromptAction so
+// tapping an option, submitting or cancelling gives immediate loading →
+// waiting feedback until the next step or host poll settles.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
-import { SessionElicitation } from './session-elicitation'
-import type { Elicitation } from './session-elicitation'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { cn } from '#/lib/utils'
+import {
+  PromptActionSpinner,
+  PromptActionStatus,
+  usePromptAction,
+} from './prompt-action-state'
+import { SessionElicitation } from './session-elicitation'
+import type { Elicitation } from './session-elicitation'
 
 const KEY_DIGITS = 4 // the host key allowlist: 1–4 (AskUserQuestion has ≤ 4)
 
@@ -24,7 +29,7 @@ export function ClaudeAsk({
   elicitation: Elicitation
   screen?: string
   disabled: boolean
-  onKey: (key: string) => void
+  onKey: (key: string) => Promise<unknown> | void
 }) {
   const { t } = useLingui()
   const questions = elicitation.questions
@@ -41,18 +46,30 @@ export function ClaudeAsk({
     (questions.length > 1 && labels.length >= questions.length)
   const step = Math.min(labels.length, questions.length - 1)
   const current = questions.at(step)
-  const pick = (index: number, label: string) => {
-    onKey(String(index + 1))
-    setPicked({ id: askId, labels: [...labels, label] })
-  }
   const total = questions.length
   const number = step + 1
+  const promptKey = `${askId}:${step}:${review ? 'review' : 'ask'}`
+  const { pending, run } = usePromptAction(promptKey)
+
+  const pick = async (index: number, label: string) => {
+    const stayWaiting = total <= 1
+    const ok = await run(`opt-${index}`, () => onKey(String(index + 1)), {
+      stayWaiting,
+    })
+    if (ok && !stayWaiting) {
+      setPicked({ id: askId, labels: [...labels, label] })
+    }
+  }
 
   return (
     <div
-      className="grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3"
+      className={cn(
+        'grid gap-3 rounded-2xl border border-brand-waiting/40 bg-brand-waiting/10 p-3',
+        pending && 'pointer-events-none',
+      )}
       data-testid="session-ask"
       data-write
+      aria-busy={Boolean(pending)}
     >
       <p className="text-body font-medium">
         {total > 1 && !review
@@ -82,11 +99,18 @@ export function ClaudeAsk({
           <Button
             variant="solid"
             type="button"
-            disabled={disabled}
-            onClick={() => onKey('Enter')}
+            disabled={disabled || Boolean(pending)}
+            onClick={() => void run('submit', () => onKey('Enter'))}
             data-testid="ask-submit"
-            className="min-h-12 px-3 text-body disabled:opacity-40"
+            className={cn(
+              'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+              pending && 'disabled:opacity-100',
+              pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
+            )}
           >
+            {pending?.action === 'submit' ? (
+              <PromptActionSpinner className="border-white/35 border-t-white" />
+            ) : null}
             {t`Submit answers`}
           </Button>
         </div>
@@ -105,13 +129,20 @@ export function ClaudeAsk({
               variant="key"
               key={`${oi}-${opt.label}`}
               type="button"
-              disabled={disabled}
+              disabled={disabled || Boolean(pending)}
               onClick={() =>
                 current.multi_select
-                  ? onKey(String(oi + 1))
-                  : pick(oi, opt.label)
+                  ? void run(`opt-${oi}`, () => onKey(String(oi + 1)), {
+                      kind: 'toggle',
+                      stayWaiting: false,
+                    })
+                  : void pick(oi, opt.label)
               }
-              className="grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40"
+              className={cn(
+                'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
+                pending && 'disabled:opacity-100',
+                pending?.action === `opt-${oi}` && 'border-brand-running',
+              )}
             >
               <span className="text-body font-medium">
                 {oi + 1}. {opt.label}
@@ -127,13 +158,25 @@ export function ClaudeAsk({
             <Button
               variant="key"
               type="button"
-              disabled={disabled}
-              onClick={() => {
-                onKey('Enter')
-                setPicked({ id: askId, labels: [...labels, '✓'] })
-              }}
-              className="min-h-11 px-3 text-body disabled:opacity-40"
+              disabled={disabled || Boolean(pending)}
+              onClick={() =>
+                void (async () => {
+                  const stayWaiting = total <= 1
+                  const ok = await run('enter', () => onKey('Enter'), {
+                    stayWaiting,
+                  })
+                  if (ok && !stayWaiting) {
+                    setPicked({ id: askId, labels: [...labels, '✓'] })
+                  }
+                })()
+              }
+              className={cn(
+                'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+                pending && 'disabled:opacity-100',
+                pending?.action === 'enter' && 'border-brand-running',
+              )}
             >
+              {pending?.action === 'enter' ? <PromptActionSpinner /> : null}
               {t`Enter`}
             </Button>
           ) : null}
@@ -143,16 +186,30 @@ export function ClaudeAsk({
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => {
-            onKey('Escape')
-            setPicked({ id: askId, labels: [] })
-          }}
-          className="min-h-11 px-3 text-body disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() =>
+            void (async () => {
+              const ok = await run('cancel', () => onKey('Escape'), {
+                kind: 'cancel',
+              })
+              if (ok) setPicked({ id: askId, labels: [] })
+            })()
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'cancel' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'cancel' ? <PromptActionSpinner /> : null}
           {t`Cancel (Esc)`}
         </Button>
       </div>
+      <PromptActionStatus
+        pending={pending}
+        sendingText={t`Submitting your answer…`}
+        waitingText={t`Answer sent; waiting for the agent to continue…`}
+      />
       {screen ? (
         <Disclosure
           triggerClassName="min-h-9 text-meta font-normal text-brand-label"
@@ -167,7 +224,7 @@ export function ClaudeAsk({
   )
 }
 
-/** the agent's question card: Claude's step by step, Grok's dialog */
+/** the agent's question card: Claude's step by step, Grok / Agy's dialog */
 export function AskCard({
   agent,
   elicitation,
@@ -187,7 +244,7 @@ export function AskCard({
         elicitation={elicitation}
         screen={screen}
         disabled={disabled}
-        onKey={(key) => void sendKey(key)}
+        onKey={sendKey}
       />
     )
   return (

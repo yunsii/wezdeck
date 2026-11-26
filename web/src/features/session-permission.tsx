@@ -1,16 +1,21 @@
-// A Claude permission prompt as a card (host permission.go): the call the
-// agent is blocked on — the command, the diff, or for ExitPlanMode the plan —
-// from the transcript, not the screen. Only the answers whose keys hold
-// whatever the dialog offers: 1 is the first "Yes" (the plan dialog's first
-// "Yes …" option, which varies by mode), Esc is "No, and tell Claude what to
-// do differently" / "No, keep planning". The middle options (don't ask
-// again, edit modes) depend on the tool and mode — answer those at the desk.
+// A Claude / Agy permission prompt as a card (host permission.go /
+// agent_agy_state.go): the call the agent is blocked on — the command, the
+// diff, or for ExitPlanMode the plan — from the transcript, not the screen.
+// Clicking Allow / Deny locks the card, shows immediate sending → waiting
+// feedback (prompt-action-state.tsx), and clears once the host poll dismisses
+// or replaces the prompt.
 import { useLingui } from '@lingui/react/macro'
 
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
 import { ChatMarkdown } from './chat-markdown'
+import {
+  PromptActionSpinner,
+  PromptActionStatus,
+  usePromptAction,
+} from './prompt-action-state'
 
 export type PendingCall = {
   tool: string
@@ -34,19 +39,31 @@ export function PermissionCard({
   call: PendingCall
   screen?: string
   disabled: boolean
-  onKey: (key: string) => void
+  onKey: (key: string) => Promise<unknown> | void
 }) {
   const { t } = useLingui()
   const isAgy = agent === 'agy'
   const allowKey = isAgy ? 'Enter' : PERMISSION_KEYS.allow
+  const promptKey = `${agent ?? ''}:${call.tool}:${call.text}:${call.body ?? ''}`
+  const { pending, run } = usePromptAction(promptKey)
   const target = call.text.startsWith(`${call.tool} `)
     ? call.text.slice(call.tool.length + 1)
     : ''
+  const idleHint = call.plan
+    ? t`Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change.`
+    : isAgy
+      ? t`Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal.`
+      : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`
+
   return (
     <div
       data-write
       data-testid="permission-card"
-      className="grid gap-2.5 rounded-2xl bg-brand-surface p-3"
+      aria-busy={Boolean(pending)}
+      className={cn(
+        'grid gap-2.5 rounded-2xl bg-brand-surface p-3',
+        pending && 'pointer-events-none',
+      )}
     >
       <p className="text-body font-medium">
         {call.plan
@@ -77,29 +94,39 @@ export function PermissionCard({
         <Button
           variant="solid"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey(allowKey)}
-          className="min-h-11 px-3 text-body disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void run('allow', () => onKey(allowKey))}
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'allow' && 'ring-2 ring-brand-running/50',
+          )}
         >
+          {pending?.action === 'allow' ? (
+            <PromptActionSpinner className="border-white/35 border-t-white" />
+          ) : null}
           {call.plan ? t`Approve the plan` : t`Allow`}
         </Button>
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey(PERMISSION_KEYS.deny)}
-          className="min-h-11 px-3 text-body disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() =>
+            void run('deny', () => onKey(PERMISSION_KEYS.deny), {
+              kind: 'cancel',
+            })
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'deny' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'deny' ? <PromptActionSpinner /> : null}
           {call.plan ? t`Keep planning` : t`Deny`}
         </Button>
       </div>
-      <p className="text-meta leading-relaxed text-brand-label">
-        {call.plan
-          ? t`Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change.`
-          : isAgy
-            ? t`Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal.`
-            : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`}
-      </p>
+      <PromptActionStatus pending={pending} idle={idleHint} />
       {screen ? (
         <Disclosure
           title={t`Terminal`}

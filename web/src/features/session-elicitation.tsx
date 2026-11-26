@@ -1,13 +1,17 @@
-// Grok Ask (ask_user_question / elicitation_dialog): structured questions with
-// tappable options. Grok shows one question at a time: digits 1–9 select (or
-// toggle a multi-select), arrows cover later options, and Enter advances or
-// submits. Local pending state gives immediate feedback through the key writes
-// and the host poll that closes the card.
+// Grok / Agy Ask (ask_user_question / ask_question), Grok plan review, and the
+// generic permission key strip. All interactive cards share usePromptAction +
+// PromptActionStatus (prompt-action-state.tsx) so every user tap transitions
+// cleanly from sending → waiting for the agent until the host poll settles.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
+import {
+  PromptActionSpinner,
+  PromptActionStatus,
+  usePromptAction,
+} from './prompt-action-state'
 import { AskCard } from './session-ask-claude'
 import type { Detail } from './console-sessions'
 import { PermissionCard } from './session-permission'
@@ -24,14 +28,6 @@ export type Elicitation = {
   questions: Array<ElicitQuestion>
   /** Claude: all answered, the TUI waits on its "Submit answers" page */
   review?: boolean
-}
-
-type AskPending = {
-  id: string
-  step: number
-  option?: number
-  phase: 'sending' | 'waiting'
-  toggle: boolean
 }
 
 export function SessionElicitation({
@@ -51,39 +47,24 @@ export function SessionElicitation({
     id: string
     byStep: Record<number, Array<number>>
   }>({ id: askId, byStep: {} })
-  const [pendingBy, setPendingBy] = useState<AskPending | null>(null)
   const step =
     progress.id === askId ? Math.min(progress.step, questions.length - 1) : 0
   const current = questions[step]
-  const pending = pendingBy?.id === askId ? pendingBy : null
   const selections = selected.id === askId ? selected.byStep : {}
   const picked = selections[step] ?? []
   const total = questions.length
   const last = step === total - 1
+  const { pending, run } = usePromptAction(`${askId}:${step}`)
 
-  const advance = () => {
-    if (last) {
-      setPendingBy((now) => (now ? { ...now, phase: 'waiting' } : now))
-      return
-    }
-    setPendingBy(null)
-    setProgress({ id: askId, step: step + 1 })
-  }
   const pick = async (optionIndex: number) => {
-    if (pending) return
     const toggle = Boolean(current.multi_select)
-    setPendingBy({
-      id: askId,
-      step,
-      option: optionIndex,
-      phase: 'sending',
-      toggle,
-    })
-    const ok = await pickElicitationOption(optionIndex, sendKey, toggle)
-    if (!ok) {
-      setPendingBy(null)
-      return
-    }
+    const stayWaiting = !toggle && last
+    const ok = await run(
+      `opt-${optionIndex}`,
+      () => pickElicitationOption(optionIndex, sendKey, toggle),
+      { kind: toggle ? 'toggle' : 'submit', stayWaiting },
+    )
+    if (!ok) return
     if (toggle) {
       const next = picked.includes(optionIndex)
         ? picked.filter((index) => index !== optionIndex)
@@ -92,19 +73,16 @@ export function SessionElicitation({
         id: askId,
         byStep: { ...selections, [step]: next },
       })
-      setPendingBy(null)
       return
     }
-    advance()
+    if (!last) setProgress({ id: askId, step: step + 1 })
   }
+
   const submit = async () => {
-    if (pending) return
-    setPendingBy({ id: askId, step, phase: 'sending', toggle: false })
-    if ((await sendKey('Enter')) === false) {
-      setPendingBy(null)
-      return
-    }
-    advance()
+    const ok = await run('submit', () => sendKey('Enter'), {
+      stayWaiting: last,
+    })
+    if (ok && !last) setProgress({ id: askId, step: step + 1 })
   }
 
   return (
@@ -141,7 +119,7 @@ export function SessionElicitation({
                   'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
                   pending && 'disabled:opacity-100',
                   isPicked && 'border-brand-running bg-brand-running/10',
-                  pending?.option === oi && 'border-brand-running',
+                  pending?.action === `opt-${oi}` && 'border-brand-running',
                 )}
               >
                 <span className="text-body font-medium">
@@ -168,10 +146,14 @@ export function SessionElicitation({
             disabled={disabled || Boolean(pending)}
             onClick={() => void submit()}
             className={cn(
-              'min-h-11 px-3 text-body disabled:opacity-40',
+              'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
               pending && 'disabled:opacity-100',
+              pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
             )}
           >
+            {pending?.action === 'submit' ? (
+              <PromptActionSpinner className="border-white/35 border-t-white" />
+            ) : null}
             {t`Enter`}
           </Button>
         ) : null}
@@ -179,45 +161,46 @@ export function SessionElicitation({
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() => void sendKey('Escape')}
-          className="min-h-11 px-3 text-body disabled:opacity-40"
+          onClick={() =>
+            void run('escape', () => sendKey('Escape'), { kind: 'cancel' })
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'escape' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'escape' ? <PromptActionSpinner /> : null}
           {t`Esc`}
         </Button>
         <Button
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() => void sendKey('C-c')}
-          className="min-h-11 px-3 text-body disabled:opacity-40"
+          onClick={() =>
+            void run('ctrl-c', () => sendKey('C-c'), { kind: 'cancel' })
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'ctrl-c' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'ctrl-c' ? <PromptActionSpinner /> : null}
           {t`Ctrl+C`}
         </Button>
       </div>
-      <p
-        role={pending ? 'status' : undefined}
-        aria-live={pending ? 'polite' : undefined}
-        data-testid={pending ? 'grok-ask-loading' : undefined}
-        className={cn(
-          'flex min-h-5 items-center gap-2 text-meta',
-          pending ? 'text-brand-running' : 'text-brand-label',
-        )}
-      >
-        {pending ? (
-          <>
-            <span className="inline-block size-3.5 animate-spin rounded-full border-2 border-brand-border border-t-brand-running" />
-            {pending.phase === 'waiting'
-              ? t`Answer sent; waiting for the agent to continue…`
-              : pending.toggle
-                ? t`Updating your selection…`
-                : t`Submitting your answer…`}
-          </>
-        ) : current.multi_select ? (
-          t`Multiple choice: tap to toggle options, then press Enter.`
-        ) : (
-          t`Tap an option to send its number and Enter into the agent pane.`
-        )}
-      </p>
+      <PromptActionStatus
+        pending={pending}
+        loadingTestId="grok-ask-loading"
+        sendingText={t`Submitting your answer…`}
+        waitingText={t`Answer sent; waiting for the agent to continue…`}
+        idle={
+          current.multi_select
+            ? t`Multiple choice: tap to toggle options, then press Enter.`
+            : t`Tap an option to send its number and Enter into the agent pane.`
+        }
+      />
     </div>
   )
 }
@@ -258,11 +241,21 @@ export function SessionPermissionKeys({
 }: {
   screen?: string
   disabled: boolean
-  onKey: (key: string) => void
+  onKey: (key: string) => Promise<unknown> | void
 }) {
   const { t } = useLingui()
+  // Keyed on screen so if the terminal moves to a follow-up screen the keys unlock.
+  const { pending, run } = usePromptAction(screen ?? 'keys')
   return (
-    <div data-write className="grid gap-2 rounded-2xl bg-brand-surface p-3">
+    <div
+      data-write
+      data-testid="session-permission-keys"
+      aria-busy={Boolean(pending)}
+      className={cn(
+        'grid gap-2 rounded-2xl bg-brand-surface p-3',
+        pending && 'pointer-events-none',
+      )}
+    >
       <p className="text-body font-medium">{t`The agent asks:`}</p>
       <pre className="max-h-48 overflow-auto font-mono text-meta leading-snug text-brand-muted">
         {(screen ?? '').split('\n').slice(-14).join('\n')}
@@ -280,14 +273,24 @@ export function SessionPermissionKeys({
             variant="key"
             key={key}
             type="button"
-            disabled={disabled}
-            onClick={() => onKey(key)}
-            className="min-h-11 min-w-11 px-3 text-body disabled:opacity-40"
+            disabled={disabled || Boolean(pending)}
+            onClick={() =>
+              void run(key, () => onKey(key), {
+                kind: key === 'Escape' || key === 'C-c' ? 'cancel' : 'submit',
+              })
+            }
+            className={cn(
+              'flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-3 text-body disabled:opacity-40',
+              pending && 'disabled:opacity-100',
+              pending?.action === key && 'border-brand-running',
+            )}
           >
+            {pending?.action === key ? <PromptActionSpinner /> : null}
             {label}
           </Button>
         ))}
       </div>
+      <PromptActionStatus pending={pending} />
     </div>
   )
 }
@@ -302,17 +305,22 @@ export function SessionPlanReview({
   excerpt?: string
   awaitingApproval?: boolean
   disabled: boolean
-  onKey: (key: string) => void
+  onKey: (key: string) => Promise<unknown> | void
 }) {
   const { t } = useLingui()
+  const { pending, run } = usePromptAction(excerpt ?? 'plan')
   // Only while the TUI is on the plan-approval bar — not while plan.md is
   // still being written under plan mode Active.
   if (!awaitingApproval) return null
   return (
     <div
-      className="grid gap-3 rounded-2xl border border-brand-running/40 bg-brand-running/10 p-3"
+      className={cn(
+        'grid gap-3 rounded-2xl border border-brand-running/40 bg-brand-running/10 p-3',
+        pending && 'pointer-events-none',
+      )}
       data-testid="session-plan-review"
       data-write
+      aria-busy={Boolean(pending)}
     >
       <p className="text-body font-medium">{t`Plan ready for review`}</p>
       {excerpt ? (
@@ -326,34 +334,52 @@ export function SessionPlanReview({
         <Button
           variant="solid"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey('a')}
-          className="min-h-12 px-3 text-body disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void run('approve', () => onKey('a'))}
+          className={cn(
+            'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'approve' && 'ring-2 ring-brand-running/50',
+          )}
         >
+          {pending?.action === 'approve' ? (
+            <PromptActionSpinner className="border-white/35 border-t-white" />
+          ) : null}
           {t`Approve plan`}
         </Button>
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey('s')}
-          className="min-h-12 px-3 text-body disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void run('changes', () => onKey('s'))}
+          className={cn(
+            'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'changes' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'changes' ? <PromptActionSpinner /> : null}
           {t`Request changes`}
         </Button>
         <Button
           variant="key"
           type="button"
-          disabled={disabled}
-          onClick={() => onKey('q')}
-          className="min-h-11 px-3 text-body text-brand-muted disabled:opacity-40"
+          disabled={disabled || Boolean(pending)}
+          onClick={() => void run('quit', () => onKey('q'), { kind: 'cancel' })}
+          className={cn(
+            'flex min-h-11 items-center justify-center gap-2 px-3 text-body text-brand-muted disabled:opacity-40',
+            pending && 'disabled:opacity-100',
+            pending?.action === 'quit' && 'border-brand-running',
+          )}
         >
+          {pending?.action === 'quit' ? <PromptActionSpinner /> : null}
           {t`Quit plan`}
         </Button>
       </div>
-      <p className="text-meta text-brand-label">
-        {t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
-      </p>
+      <PromptActionStatus
+        pending={pending}
+        idle={t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
+      />
     </div>
   )
 }
@@ -416,7 +442,7 @@ export function PromptPanels({
           excerpt={data?.plan?.excerpt}
           awaitingApproval
           disabled={!canWrite}
-          onKey={(key) => void onKey(key)}
+          onKey={onKey}
         />
       ) : null}
       {data?.permission && !asking && !planReview ? (
@@ -425,13 +451,13 @@ export function PromptPanels({
           call={data.permission}
           screen={data.screen}
           disabled={!canWrite}
-          onKey={(key) => void onKey(key)}
+          onKey={onKey}
         />
       ) : data?.waiting_kind && !asking && !planReview ? (
         <SessionPermissionKeys
           screen={data.screen}
           disabled={!canWrite}
-          onKey={(key) => void onKey(key)}
+          onKey={onKey}
         />
       ) : null}
     </div>

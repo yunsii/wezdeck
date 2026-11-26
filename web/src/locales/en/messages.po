@@ -268,6 +268,10 @@ msgstr "Accept edits"
 msgid "Account limits"
 msgstr "Account limits"
 
+#: src/features/prompt-action-state.tsx:96
+msgid "Action sent; waiting for the agent to continue…"
+msgstr "Action sent; waiting for the agent to continue…"
+
 #: src/features/session-todos.tsx:130
 msgid "Add"
 msgstr "Add"
@@ -284,7 +288,7 @@ msgstr "added"
 msgid "after"
 msgstr "after"
 
-#: src/features/session-permission.tsx:101
+#: src/features/session-permission.tsx:56
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
@@ -329,7 +333,7 @@ msgstr "All"
 msgid "All categories"
 msgstr "All categories"
 
-#: src/features/session-ask-claude.tsx:80
+#: src/features/session-ask-claude.tsx:97
 msgid "All questions answered. The agent waits until you submit."
 msgstr "All questions answered. The agent waits until you submit."
 
@@ -349,11 +353,11 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:84
+#: src/features/session-permission.tsx:108
 msgid "Allow"
 msgstr "Allow"
 
-#: src/features/session-permission.tsx:100
+#: src/features/session-permission.tsx:55
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
@@ -373,11 +377,12 @@ msgstr "Already the latest"
 #~ msgid "Answer sent; waiting for Grok to continue…"
 #~ msgstr "Answer sent; waiting for Grok to continue…"
 
-#: src/features/session-elicitation.tsx:210
+#: src/features/session-ask-claude.tsx:211
+#: src/features/session-elicitation.tsx:197
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
 
-#: src/features/session-permission.tsx:55
+#: src/features/session-permission.tsx:72
 msgid "Antigravity asks to run this"
 msgstr "Antigravity asks to run this"
 
@@ -420,19 +425,19 @@ msgstr "Appearance"
 msgid "Approve"
 msgstr "Approve"
 
-#: src/features/session-elicitation.tsx:333
+#: src/features/session-elicitation.tsx:348
 msgid "Approve plan"
 msgstr "Approve plan"
 
-#: src/features/session-elicitation.tsx:355
+#: src/features/session-elicitation.tsx:381
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/session-permission.tsx:98
+#: src/features/session-permission.tsx:53
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:84
+#: src/features/session-permission.tsx:108
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -608,9 +613,13 @@ msgstr "cancel"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/features/session-ask-claude.tsx:153
+#: src/features/session-ask-claude.tsx:205
 msgid "Cancel (Esc)"
 msgstr "Cancel (Esc)"
+
+#: src/features/prompt-action-state.tsx:100
+msgid "Cancelling…"
+msgstr "Cancelling…"
 
 #: src/features/session-info.tsx:49
 msgid "Capabilities"
@@ -670,7 +679,7 @@ msgstr "Children"
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/session-permission.tsx:56
+#: src/features/session-permission.tsx:73
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
@@ -682,7 +691,7 @@ msgstr "Claude commands"
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
-#: src/features/session-permission.tsx:53
+#: src/features/session-permission.tsx:70
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
@@ -782,7 +791,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:242
+#: src/features/session-send.ts:241
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1058,8 +1067,8 @@ msgstr "Creating…"
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
-#: src/features/session-elicitation.tsx:194
-#: src/features/session-elicitation.tsx:277
+#: src/features/session-elicitation.tsx:190
+#: src/features/session-elicitation.tsx:270
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
@@ -1112,7 +1121,7 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
-#: src/features/session-permission.tsx:93
+#: src/features/session-permission.tsx:126
 msgid "Deny"
 msgstr "Deny"
 
@@ -1248,9 +1257,9 @@ msgstr "Ended"
 msgid "Endpoint"
 msgstr "Endpoint"
 
-#: src/features/session-ask-claude.tsx:137
-#: src/features/session-elicitation.tsx:175
-#: src/features/session-elicitation.tsx:275
+#: src/features/session-ask-claude.tsx:180
+#: src/features/session-elicitation.tsx:157
+#: src/features/session-elicitation.tsx:268
 msgid "Enter"
 msgstr "Enter"
 
@@ -1258,8 +1267,8 @@ msgstr "Enter"
 msgid "Errors"
 msgstr "Errors"
 
-#: src/features/session-elicitation.tsx:185
-#: src/features/session-elicitation.tsx:276
+#: src/features/session-elicitation.tsx:174
+#: src/features/session-elicitation.tsx:269
 msgid "Esc"
 msgstr "Esc"
 
@@ -1619,7 +1628,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:93
+#: src/features/session-permission.tsx:126
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -1861,11 +1870,11 @@ msgstr "Modified"
 msgid "More files changed than listed here."
 msgstr "More files changed than listed here."
 
-#: src/features/session-ask-claude.tsx:100
+#: src/features/session-ask-claude.tsx:124
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 
-#: src/features/session-elicitation.tsx:216
+#: src/features/session-elicitation.tsx:200
 msgid "Multiple choice: tap to toggle options, then press Enter."
 msgstr "Multiple choice: tap to toggle options, then press Enter."
 
@@ -2075,7 +2084,7 @@ msgstr "No Origin (script, curl, another app)"
 msgid "No output yet"
 msgstr "No output yet"
 
-#: src/features/session-elicitation.tsx:323
+#: src/features/session-elicitation.tsx:331
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
@@ -2396,7 +2405,7 @@ msgstr "Plan"
 msgid "Plan mode"
 msgstr "Plan mode"
 
-#: src/features/session-elicitation.tsx:317
+#: src/features/session-elicitation.tsx:325
 msgid "Plan ready for review"
 msgstr "Plan ready for review"
 
@@ -2482,7 +2491,7 @@ msgstr "Quick keys unavailable"
 msgid "Quiet for over a week ({count})"
 msgstr "Quiet for over a week ({count})"
 
-#: src/features/session-elicitation.tsx:351
+#: src/features/session-elicitation.tsx:376
 msgid "Quit plan"
 msgstr "Quit plan"
 
@@ -2665,7 +2674,7 @@ msgstr "Repository root"
 msgid "Request access"
 msgstr "Request access"
 
-#: src/features/session-elicitation.tsx:342
+#: src/features/session-elicitation.tsx:362
 msgid "Request changes"
 msgstr "Request changes"
 
@@ -2970,6 +2979,10 @@ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
+#: src/features/prompt-action-state.tsx:101
+msgid "Sending action…"
+msgstr "Sending action…"
+
 #: src/features/session-new-panels.tsx:35
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
@@ -3202,7 +3215,7 @@ msgstr "Status updated"
 msgid "Sub-agent"
 msgstr "Sub-agent"
 
-#: src/features/session-ask-claude.tsx:90
+#: src/features/session-ask-claude.tsx:114
 msgid "Submit answers"
 msgstr "Submit answers"
 
@@ -3210,7 +3223,8 @@ msgstr "Submit answers"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/session-elicitation.tsx:213
+#: src/features/session-ask-claude.tsx:210
+#: src/features/session-elicitation.tsx:196
 msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
@@ -3282,7 +3296,7 @@ msgstr "Take over in tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "Tap a row to copy its value; long-press or right-click for more."
 
-#: src/features/session-elicitation.tsx:218
+#: src/features/session-elicitation.tsx:201
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
@@ -3298,7 +3312,7 @@ msgstr "Tappable Ask options"
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/features/session-permission.tsx:105
+#: src/features/session-permission.tsx:132
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3311,7 +3325,7 @@ msgstr "Terminal screen"
 msgid "Text caret"
 msgstr "Text caret"
 
-#: src/features/session-elicitation.tsx:266
+#: src/features/session-elicitation.tsx:259
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
@@ -3319,17 +3333,17 @@ msgstr "The agent asks:"
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
-#: src/features/session-ask-claude.tsx:60
-#: src/features/session-elicitation.tsx:123
+#: src/features/session-ask-claude.tsx:77
+#: src/features/session-elicitation.tsx:101
 msgid "The agent is asking you"
 msgstr "The agent is asking you"
 
 #. placeholder {0}: step + 1
-#: src/features/session-elicitation.tsx:122
+#: src/features/session-elicitation.tsx:100
 msgid "The agent is asking you (question {0} of {total})"
 msgstr "The agent is asking you (question {0} of {total})"
 
-#: src/features/session-ask-claude.tsx:59
+#: src/features/session-ask-claude.tsx:76
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "The agent is asking you (question {number} of {total})"
 
@@ -3654,7 +3668,7 @@ msgstr "Updated {time}"
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 
-#: src/features/session-elicitation.tsx:212
+#: src/features/prompt-action-state.tsx:98
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
@@ -3834,7 +3848,7 @@ msgstr "What should the next agent do first?"
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
-#: src/features/session-ask-claude.tsx:159
+#: src/features/session-ask-claude.tsx:216
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 

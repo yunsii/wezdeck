@@ -147,7 +147,7 @@ export function agySections(
           call={AGY_RUN_COMMAND}
           screen={AGY_PERMISSION_SCREEN}
           disabled={false}
-          onKey={(key) => void keyFor('agy-permission')(key)}
+          onKey={keyFor('agy-permission')}
         />
       ),
     },
