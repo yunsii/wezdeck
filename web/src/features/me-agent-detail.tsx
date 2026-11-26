@@ -71,6 +71,10 @@ function KimiStatus({ profile }: { profile: AgentProfile }) {
         label={t`Auto compact`}
         value={profile.auto_compact_window || t`Not set`}
       />
+      <StatusRow
+        label={t`Max context`}
+        value={profile.max_context_tokens || t`Not set`}
+      />
       {sameTier ? (
         <StatusRow label={t`All tiers`} value={tiers[0] || ''} />
       ) : (
@@ -99,7 +103,7 @@ function KimiStatus({ profile }: { profile: AgentProfile }) {
 function KimiSettings({ profile }: { profile: AgentProfile }) {
   const { t } = useLingui()
   const [token, setToken] = useState('')
-  const [model, setModel] = useState(profile.model || '')
+  const [model, setModel] = useState(profile.model || 'k3.1-pro')
   const { saving, message, save } = useSaveState()
   return (
     <div className="grid max-w-lg gap-6">
@@ -133,13 +137,13 @@ function KimiSettings({ profile }: { profile: AgentProfile }) {
           <Input
             variant="field"
             value={model}
-            placeholder="kimi-k3[1m]"
+            placeholder="k3.1-pro"
             onChange={(event) => setModel(event.target.value)}
             required
           />
         </label>
         <p className="text-meta text-brand-label">
-          {t`Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh.`}
+          {t`Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh.`}
         </p>
         {message ? (
           <p role="status" className="text-meta text-brand-muted">
