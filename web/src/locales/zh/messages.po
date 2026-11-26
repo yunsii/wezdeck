@@ -143,7 +143,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:438
+#: src/features/console-sessions.tsx:445
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -584,7 +584,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:514
+#: src/features/console-sessions.tsx:521
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -1671,7 +1671,7 @@ msgstr "查看可用命令"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:461
+#: src/features/console-sessions.tsx:468
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1687,7 +1687,7 @@ msgstr "正在加载原图…"
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:100
-#: src/features/console-sessions.tsx:458
+#: src/features/console-sessions.tsx:465
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:82
@@ -2177,7 +2177,7 @@ msgstr "在 VS Code 中打开"
 msgid "Open now"
 msgstr "在线"
 
-#: src/features/console-sessions.tsx:537
+#: src/features/console-sessions.tsx:544
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2937,7 +2937,7 @@ msgstr "键盘快捷键"
 msgid "Show all tags"
 msgstr "显示全部标签"
 
-#: src/features/console-sessions.tsx:460
+#: src/features/console-sessions.tsx:467
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -2989,7 +2989,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:521
+#: src/features/console-sessions.tsx:528
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -3287,7 +3287,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:515
+#: src/features/console-sessions.tsx:522
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
