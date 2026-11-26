@@ -38,7 +38,7 @@ func restartSession(args json.RawMessage) (any, error) {
 	}
 	_, agent := findTranscript(e.SessionID)
 	if agent == "" {
-		if _, _, cmd, _, alive := paneState(e); alive && agentCommands[cmd] {
+		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
 			agent = strings.TrimSuffix(cmd, ".real")
 		}
 	}

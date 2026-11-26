@@ -210,7 +210,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 			continue
 		}
 		panes[key] = true
-		_, _, cmd, _, alive := paneState(r.attentionEntry)
+		_, _, cmd, _, _, alive := paneState(r.attentionEntry)
 		if !alive || !isAgentPane(cmd, r.attentionEntry) {
 			continue
 		}
@@ -299,51 +299,6 @@ func replacementForArchived(id string, recent []recentEntry, entries map[string]
 		}
 	}
 	return ""
-}
-
-func tmuxCmd(socket string, args ...string) *exec.Cmd {
-	full := args
-	if socket != "" {
-		full = append([]string{"-S", socket}, args...)
-	}
-	return exec.Command("tmux", full...)
-}
-
-// paneState: the pane's id, cwd, current command, index, and whether it exists.
-func paneState(e attentionEntry) (id, cwd, cmd string, index int, alive bool) {
-	if e.TmuxPane == "" {
-		return "", "", "", 0, false
-	}
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
-		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}").Output()
-	if err != nil {
-		return "", "", "", 0, false
-	}
-	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 4)
-	if len(parts) != 4 || parts[0] != e.TmuxPane {
-		return "", "", "", 0, false
-	}
-	index, _ = strconv.Atoi(parts[3])
-	return parts[0], parts[1], parts[2], index, true
-}
-
-// windowActivity: last output in the session's tmux window (unix ms), 0 if unknown.
-func windowActivity(e attentionEntry) int64 {
-	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{window_activity}").Output()
-	if err != nil {
-		return 0
-	}
-	v, err := strconv.ParseInt(strings.TrimSpace(string(out)), 10, 64)
-	if err != nil {
-		return 0
-	}
-	return v * 1000
-}
-
-// paneInfo: cwd and whether the pane still exists.
-func paneInfo(e attentionEntry) (cwd string, alive bool) {
-	_, cwd, _, _, alive = paneState(e)
-	return cwd, alive
 }
 
 // gitRepoMeta: repo family label + main checkout root + this worktree path.
@@ -449,6 +404,9 @@ type sessionCard struct {
 	// Visited: when you last visited this worktree at the desk (ms, access
 	// ledger, session_visits.go); the phone sorts by it, not by output
 	Visited int64 `json:"visited,omitempty"`
+	// AgentProfile: managed profile on the pane (@wezterm_agent_profile),
+	// e.g. claude_kimi — web chat avatars use it for the corner badge
+	AgentProfile string `json:"agent_profile,omitempty"`
 }
 
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
@@ -472,14 +430,15 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		if e.TmuxPane == "" {
 			continue
 		}
-		_, cwd, _, index, alive := paneState(e)
+		_, cwd, _, index, profile, alive := paneState(e)
 		if !alive {
 			continue
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
 			RunningKind: e.RunningKind, Background: backgroundOf(e),
-			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index)}
+			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
+			AgentProfile: profile}
 		if meta, ok := gitCache[cwd]; ok {
 			card.Repo, card.RepoRoot, card.Worktree = meta[0], meta[1], meta[2]
 		} else {
@@ -744,7 +703,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	if path == "" {
 		// no transcript yet (a fresh session after /new): the pane's command
 		// still says which agent it is, so the page can offer its commands
-		if _, _, cmd, _, alive := paneState(e); alive && agentCommands[cmd] {
+		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
 			out["agent"] = strings.TrimSuffix(cmd, ".real")
 		}
 	}

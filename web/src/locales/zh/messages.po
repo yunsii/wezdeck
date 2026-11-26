@@ -53,7 +53,7 @@ msgstr "{count} 张图片"
 msgid "{count} monitors running"
 msgstr "{count} 个 Monitor 运行中"
 
-#: src/features/session-switcher.tsx:116
+#: src/features/session-switcher.tsx:117
 msgid "{count} more need you"
 msgstr "还有 {count} 个等你"
 
@@ -289,8 +289,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:227
-#: src/features/session-list.tsx:262
+#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:257
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -1596,8 +1596,8 @@ msgstr "新方向"
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-list.tsx:142
-#: src/features/session-list.tsx:143
+#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:138
 #: src/features/session-new.tsx:323
 msgid "New round"
 msgstr "新一轮"
@@ -1681,7 +1681,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:217
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1706,8 +1706,8 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:132
-#: src/features/session-switcher.tsx:180
+#: src/features/session-list.tsx:127
+#: src/features/session-switcher.tsx:178
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -1827,7 +1827,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:209
+#: src/features/session-switcher.tsx:207
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -2502,12 +2502,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:195
+#: src/features/session-list.tsx:190
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:213
+#: src/features/session-list.tsx:208
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -2668,7 +2668,7 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:193
+#: src/features/session-switcher.tsx:191
 msgid "Switch chat"
 msgstr "切换对话"
 

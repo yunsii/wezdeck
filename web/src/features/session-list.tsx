@@ -9,10 +9,10 @@ import { Link } from '@tanstack/react-router'
 import { FolderGit2, Plus } from 'lucide-react'
 import type { SyntheticEvent } from 'react'
 
-import { Led } from '#/components/deck/led'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
+import { AgentAvatar } from './agent-avatar'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -34,7 +34,6 @@ import {
   humanPrompt,
   needsYou,
   prefetchSession,
-  sessionTone,
   useSessions,
 } from './console-sessions'
 import type { SessionCard } from './console-sessions'
@@ -90,16 +89,12 @@ function ChatRow({
             selected && 'row-selected',
           )}
         >
-          <span className="pt-1.5">
-            <Led
-              tone={
-                chat.unread
-                  ? 'waiting'
-                  : sessionTone(row.status, row.waiting_kind)
-              }
-              size={12}
-            />
-          </span>
+          <AgentAvatar
+            agent={row.agent}
+            profile={row.agent_profile}
+            size={40}
+            className="mt-0.5"
+          />
           <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
             <span className="flex items-baseline justify-between gap-2">
               <span className="flex min-w-0 items-baseline gap-1.5">

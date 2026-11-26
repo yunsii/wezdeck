@@ -30,7 +30,7 @@ func guardSession(id string) (attentionEntry, error) {
 	if !ok {
 		return attentionEntry{}, errors.New("session not found (ended or not tracked)")
 	}
-	_, _, cmd, _, alive := paneState(e)
+	_, _, cmd, _, _, alive := paneState(e)
 	if !alive {
 		return attentionEntry{}, errors.New("the session's tmux pane is gone")
 	}

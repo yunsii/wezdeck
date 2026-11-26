@@ -178,7 +178,7 @@ func busyWorktrees() map[string]string {
 		if status != "running" && status != "waiting" {
 			continue
 		}
-		_, cwd, _, _, alive := paneState(e)
+		_, cwd, _, _, _, alive := paneState(e)
 		if !alive || cwd == "" {
 			continue
 		}

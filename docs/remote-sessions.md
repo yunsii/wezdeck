@@ -44,9 +44,9 @@ minutes unless a new session has taken over the same pane. In local mode,
 the detail page can read its transcript while the entry is in the attention
 archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
-inherit its original pane environment. The Web session list is an IM chat rail: one row per worktree (focus session
-resolved for open/preview); pane index still orders sessions inside a
-worktree.
+inherit its original pane environment. The Web session list is an IM chat rail: one row per worktree (agent brand
+avatar, profile badge when not the bare family; focus session for
+open/preview); pane index still orders sessions inside a worktree.
 
 ## Session RPCs
 

@@ -20,7 +20,7 @@ func sessionReference(e attentionEntry, transcript, agent string) string {
 		}
 		return p
 	}
-	_, cwd, _, _, _ := paneState(e)
+	_, cwd, _, _, _, _ := paneState(e)
 	name := e.AgentName
 	if title := readSessionTitle(transcript, agent); title != "" {
 		name = title

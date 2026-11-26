@@ -53,7 +53,7 @@ msgstr "{count} images"
 msgid "{count} monitors running"
 msgstr "{count} monitors running"
 
-#: src/features/session-switcher.tsx:116
+#: src/features/session-switcher.tsx:117
 msgid "{count} more need you"
 msgstr "{count} more need you"
 
@@ -289,8 +289,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:227
-#: src/features/session-list.tsx:262
+#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:257
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -1596,8 +1596,8 @@ msgstr "New direction"
 msgid "New line"
 msgstr "New line"
 
-#: src/features/session-list.tsx:142
-#: src/features/session-list.tsx:143
+#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:138
 #: src/features/session-new.tsx:323
 msgid "New round"
 msgstr "New round"
@@ -1681,7 +1681,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:222
+#: src/features/session-list.tsx:217
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1706,8 +1706,8 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:132
-#: src/features/session-switcher.tsx:180
+#: src/features/session-list.tsx:127
+#: src/features/session-switcher.tsx:178
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -1827,7 +1827,7 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/session-switcher.tsx:209
+#: src/features/session-switcher.tsx:207
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
@@ -2502,12 +2502,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:195
+#: src/features/session-list.tsx:190
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:213
+#: src/features/session-list.tsx:208
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -2668,7 +2668,7 @@ msgstr "summarise the context"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/session-switcher.tsx:193
+#: src/features/session-switcher.tsx:191
 msgid "Switch chat"
 msgstr "Switch chat"
 

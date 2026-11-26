@@ -47,9 +47,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: an IM chat list (one row per workstation, unread =
-   needs-you badge; row + starts a new round on that direction; no status
-   Segmented), then the
+   会话 is the home: an IM chat list (one row per workstation; agent brand
+   avatar, Kimi/gateway as a corner badge; unread badge; row + for a new
+   round; no status Segmented), then the
    repo → worktree → pane tree ordered by **visits**, never output — the
    later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
    `Alt+x`, `session_visits.go`) and a visit from this web console

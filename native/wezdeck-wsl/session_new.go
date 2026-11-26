@@ -52,7 +52,7 @@ func knownRepos() []repoChoice {
 	}
 	if entries, err := liveSessions(); err == nil {
 		for _, e := range entries {
-			if _, cwd, _, _, alive := paneState(e); alive && cwd != "" {
+			if _, cwd, _, _, _, alive := paneState(e); alive && cwd != "" {
 				if _, ok := paths[cwd]; !ok {
 					paths[cwd] = 0
 				}

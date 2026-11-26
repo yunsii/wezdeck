@@ -54,7 +54,7 @@ func sessionHistory(args json.RawMessage) (any, error) {
 			return nil, errors.New("only Claude sessions can be resumed from here")
 		}
 		dir = filepath.Dir(path)
-	} else if _, cwd, _, _, alive := paneState(e); alive && cwd != "" {
+	} else if _, cwd, _, _, _, alive := paneState(e); alive && cwd != "" {
 		home, _ := os.UserHomeDir()
 		root := filepath.Join(home, ".claude")
 		for _, candidate := range []string{

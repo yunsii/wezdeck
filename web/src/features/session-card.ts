@@ -38,4 +38,6 @@ export type SessionCard = {
   pane_role?: string
   /** last visit to this worktree at the desk (ms, access ledger behind Alt+g) */
   visited?: number
+  /** managed profile on the pane (claude_kimi, …); avatar corner badge */
+  agent_profile?: string
 }

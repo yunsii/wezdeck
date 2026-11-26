@@ -34,7 +34,7 @@ func sessionCwd(id string) (string, error) {
 	if !ok {
 		return "", errors.New("session not found (ended or not tracked)")
 	}
-	_, cwd, _, _, _ := paneState(e)
+	_, cwd, _, _, _, _ := paneState(e)
 	if cwd == "" {
 		return "", errors.New("the session's directory is unknown")
 	}

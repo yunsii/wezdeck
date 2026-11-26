@@ -12,7 +12,8 @@ import { Led } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { cn } from '#/lib/utils'
-import { isBusy, needsYou, sessionTone, useSessions } from './console-sessions'
+import { isBusy, needsYou, useSessions } from './console-sessions'
+import { AgentAvatar } from './agent-avatar'
 import type { SessionCard } from './console-sessions'
 import { buildChatGroups, flattenChats } from './session-chats'
 import type { SessionChat } from './session-chats'
@@ -152,13 +153,10 @@ export function SessionSwitcher({
             selected && 'bg-brand-soft',
           )}
         >
-          <Led
-            tone={
-              chat.unread
-                ? 'waiting'
-                : sessionTone(session.status, session.waiting_kind)
-            }
-            size={10}
+          <AgentAvatar
+            agent={session.agent}
+            profile={session.agent_profile}
+            size={36}
           />
           <span className="grid min-w-0 flex-1">
             <span className="flex min-w-0 items-baseline gap-1.5">

@@ -70,7 +70,7 @@ func sessionSkills(args json.RawMessage) (any, error) {
 	path, agent := findTranscript(e.SessionID)
 	cwd, _ := paneInfo(e)
 	if path == "" {
-		if _, _, cmd, _, alive := paneState(e); alive && agentCommands[cmd] {
+		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
 			agent = strings.TrimSuffix(cmd, ".real")
 		}
 	}

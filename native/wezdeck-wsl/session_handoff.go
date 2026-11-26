@@ -88,7 +88,7 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	}
 	path, fromAgent := findTranscript(e.SessionID)
 	if fromAgent == "" {
-		if _, _, cmd, _, alive := paneState(e); alive && agentCommands[cmd] {
+		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
 			fromAgent = strings.TrimSuffix(cmd, ".real")
 		}
 	}
@@ -98,7 +98,7 @@ func startSessionHandoff(args json.RawMessage) (any, error) {
 	if fromAgent == a.To {
 		return nil, fmt.Errorf("session.handoff: already on %s — use 新开会话 for a blank process of the same agent", a.To)
 	}
-	_, cwd, _, _, alive := paneState(e)
+	_, cwd, _, _, _, alive := paneState(e)
 	if !alive {
 		return nil, errors.New("session.handoff: the pane is gone")
 	}

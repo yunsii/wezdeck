@@ -59,7 +59,7 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 	session.add("effort", effort)
 
 	location := metaGroup{Name: "location"}
-	_, cwd, cmd, index, alive := paneState(e)
+	_, cwd, cmd, index, _, alive := paneState(e)
 	location.add("cwd", cwd)
 	if cwd != "" {
 		repo, root, worktree := gitRepoMeta(cwd)
