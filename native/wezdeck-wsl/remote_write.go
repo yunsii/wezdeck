@@ -14,9 +14,21 @@ package main
 // hold, the ticket targets allowlist …) applies either way, and every write
 // leaves one `event=write via=… device=…` row in relay.log.
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"regexp"
+)
+
+var clientOpPattern = regexp.MustCompile(`^[0-9a-f-]{36}$`)
 
 func runWrite(action string, args json.RawMessage, via, device string, logf func(event, format string, args ...any)) (any, error) {
+	var meta struct {
+		ClientOp string `json:"client_op"`
+	}
+	_ = json.Unmarshal(args, &meta)
+	if !clientOpPattern.MatchString(meta.ClientOp) {
+		meta.ClientOp = ""
+	}
 	var result any
 	var err error
 	switch action {
@@ -57,6 +69,10 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 	default:
 		result, err = replyTicket(args)
 	}
-	logf("write", "via=%s action=%q device=%s ok=%t err=%q", via, action, device, err == nil, errText(err))
+	if meta.ClientOp != "" {
+		logf("write", "via=%s action=%q device=%s op_id=%s ok=%t err=%q", via, action, device, meta.ClientOp, err == nil, errText(err))
+	} else {
+		logf("write", "via=%s action=%q device=%s ok=%t err=%q", via, action, device, err == nil, errText(err))
+	}
 	return result, err
 }

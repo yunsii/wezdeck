@@ -14,7 +14,7 @@ import type { GitStatus } from '#/components/deck/session-tags'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
-import { PAGE, mergeReply, pollArgs } from '#/lib/session-cache'
+import { PAGE, mergeReply } from '#/lib/session-cache'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
@@ -36,6 +36,7 @@ import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
 import type { PendingCall } from './session-permission'
 import type { SessionCard } from './session-card'
+import { detailKey, readDetail } from './session-detail-read'
 
 export type { SessionCard }
 
@@ -251,24 +252,7 @@ function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
  * A failed refetch keeps the cached data on screen (same key), with a stale
  * note below.
  */
-const detailKey = (id: string) => ['remote', 'session', id] as const
-
-/** one poll of a conversation, merged into what the cache holds */
-async function readDetail(client: QueryClient, id: string) {
-  const key = detailKey(id)
-  const reply = (await hostRead(
-    'session',
-    pollArgs(id, client.getQueryData<Detail>(key)),
-  )) as Detail
-  // merge into what is there now: an earlier page may have landed meanwhile
-  return mergeReply(client.getQueryData<Detail>(key), reply)
-}
-
-/**
- * Warm a conversation before it opens (a row hovered, focused or pressed;
- * j / k's neighbours): a session not yet in this browser's cache showed a
- * Loading… frame with the page collapsed to nothing between two sessions.
- */
+/** Warm a conversation before navigation so the detail need not collapse to Loading. */
 export function prefetchSession(client: QueryClient, id: string) {
   void client.prefetchQuery({
     queryKey: detailKey(id),

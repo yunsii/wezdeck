@@ -90,6 +90,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Sources on the host that used the Runtime (Origin + browser, requests / writes, live sockets), kept in memory',
       ),
       c(
+        '/api/v1/web-events',
+        '本机控制台的限量事件批次，写入独立轮转日志供诊断',
+        'Bounded local console events, written to a separate rotating diagnostic log',
+      ),
+      c(
         '/api/v1/collab/<命令>',
         '工单：health / list / show / events / run / prompt / transcript / metrics',
         'Tickets: health / list / show / events / run / prompt / transcript / metrics',

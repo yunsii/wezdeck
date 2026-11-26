@@ -79,6 +79,7 @@ internal sealed partial class RuntimeWebServer
             ("windows:helper.log", helperPath),
             ("windows:wezterm.log", Path.Combine(logDir, "wezterm.log")),
             ("windows:manager-bootstrap.log", Path.Combine(logDir, "manager-bootstrap.log")),
+            ("windows:web-client.log", Path.Combine(config.RuntimeDir, "logs", "web-client.log")),
         };
     }
 
