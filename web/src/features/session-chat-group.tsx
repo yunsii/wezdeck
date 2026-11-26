@@ -31,7 +31,7 @@ import { chatTone } from './session-chats'
 import { useChatCollapsed } from './session-collapse'
 import { requestNewSession } from './session-new'
 import { hasEditableGroupName } from './session-order'
-import { WorktreePurpose } from './session-purpose'
+import { useGroupNameEditor } from './session-purpose'
 import { SwipeActions } from './session-row-swipe'
 
 const menuItemClass =
@@ -68,12 +68,14 @@ function SessionSubRow({
   selected,
   replace,
   timeLabel,
+  onEditGroupName,
 }: {
   chat: SessionChat
   session: SessionCard
   selected: boolean
   replace: boolean
   timeLabel: string
+  onEditGroupName?: () => void
 }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -221,6 +223,14 @@ function SessionSubRow({
                 <Hash size={14} aria-hidden />
                 {t`Copy reference`}
               </ContextMenu.Item>
+              {onEditGroupName ? (
+                <ContextMenu.Item
+                  className={menuItemClass}
+                  onClick={onEditGroupName}
+                >
+                  {t`Edit group name`}
+                </ContextMenu.Item>
+              ) : null}
               {canManage ? (
                 <>
                   <ContextMenu.Item
@@ -276,6 +286,12 @@ export function ChatGroupRow({
 }) {
   const { t } = useLingui()
   const device = useDeviceState()
+  const canEditGroup =
+    device.state === 'approved' && hasEditableGroupName(chat.focus)
+  const { edit, sheet } = useGroupNameEditor({
+    worktree: chat.key,
+    description: chat.purpose,
+  })
   const anchor = chat.sessions.find((session) => session.tmux_pane)
   const [collapsed, toggle] = useChatCollapsed(chat.key)
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
@@ -284,75 +300,91 @@ export function ChatGroupRow({
   const hasDraft = chat.sessions.some((session) =>
     Boolean(session.draft?.trim()),
   )
+  const header = (
+    <Button
+      variant="plain"
+      size="none"
+      type="button"
+      data-testid="chat-group-toggle"
+      data-chat={chat.key}
+      aria-expanded={!collapsed}
+      title={collapsed ? t`Expand sessions` : t`Collapse sessions`}
+      aria-label={chat.purpose || chat.title}
+      onClick={toggle}
+      className="flex min-h-10 w-full min-w-0 select-none items-center gap-1.5 px-4 py-1 text-left text-caption text-brand-label md:px-[var(--split-pad)]"
+    >
+      {collapsed ? (
+        <ChevronRight
+          size={16}
+          className="shrink-0 text-brand-label"
+          aria-hidden
+        />
+      ) : (
+        <ChevronDown
+          size={16}
+          className="shrink-0 text-brand-label"
+          aria-hidden
+        />
+      )}
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate font-medium">
+          {chat.purpose || chat.title}
+        </span>
+        {collapsed && hasDraft ? (
+          <span
+            data-testid="chat-draft"
+            className="w-fit rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+          >
+            {t`Draft`}
+          </span>
+        ) : null}
+      </span>
+      {collapsed && chat.unread > 0 ? (
+        <UnreadBadge tone={tone} n={chat.unread} />
+      ) : null}
+    </Button>
+  )
+  const canStart = Boolean(anchor) && device.state === 'approved'
   return (
     <div>
-      <div className="flex items-center">
-        <Button
-          variant="plain"
-          size="none"
-          type="button"
-          data-testid="chat-group-toggle"
-          data-chat={chat.key}
-          aria-expanded={!collapsed}
-          title={collapsed ? t`Expand sessions` : t`Collapse sessions`}
-          aria-label={chat.purpose || chat.title}
-          onClick={toggle}
-          className="flex min-h-10 min-w-0 flex-1 items-center gap-1.5 px-4 py-1 text-left text-caption text-brand-label md:px-[var(--split-pad)]"
-        >
-          {collapsed ? (
-            <ChevronRight
-              size={16}
-              className="shrink-0 text-brand-label"
-              aria-hidden
-            />
-          ) : (
-            <ChevronDown
-              size={16}
-              className="shrink-0 text-brand-label"
-              aria-hidden
-            />
-          )}
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="truncate font-medium">
-              {chat.purpose || chat.title}
-            </span>
-            {collapsed && hasDraft ? (
-              <span
-                data-testid="chat-draft"
-                className="w-fit rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+      {canEditGroup || canStart ? (
+        <ContextMenu.Root>
+          <ContextMenu.Trigger render={header} />
+          <ContextMenu.Portal>
+            <ContextMenu.Positioner className="z-[60]">
+              <ContextMenu.Popup
+                data-deck
+                data-testid="chat-group-menu"
+                className="motion-pop min-w-44 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none"
               >
-                {t`Draft`}
-              </span>
-            ) : null}
-          </span>
-          {collapsed && chat.unread > 0 ? (
-            <UnreadBadge tone={tone} n={chat.unread} />
-          ) : null}
-        </Button>
-        <WorktreePurpose
-          worktree={chat.key}
-          description={chat.purpose}
-          editable={hasEditableGroupName(chat.focus)}
-        />
-        {anchor && device.state === 'approved' ? (
-          <Button
-            variant="plain"
-            type="button"
-            aria-label={t`New session in this group`}
-            title={t`New session in this group`}
-            onClick={() =>
-              requestNewSession({
-                repo: chat.repoKey,
-                anchor: anchor.id,
-                group: chat.purpose || chat.title,
-              })
-            }
-            className="mr-2 size-10 shrink-0 text-brand-muted"
-          >
-            <Plus size={16} aria-hidden />
-          </Button>
-        ) : null}
-      </div>
+                {canEditGroup ? (
+                  <ContextMenu.Item className={menuItemClass} onClick={edit}>
+                    {t`Edit group name`}
+                  </ContextMenu.Item>
+                ) : null}
+                {canStart && anchor ? (
+                  <ContextMenu.Item
+                    className={menuItemClass}
+                    onClick={() =>
+                      requestNewSession({
+                        repo: chat.repoKey,
+                        anchor: anchor.id,
+                        group: chat.purpose || chat.title,
+                      })
+                    }
+                  >
+                    <Plus size={14} aria-hidden />
+                    {t`New session in this group`}
+                  </ContextMenu.Item>
+                ) : null}
+              </ContextMenu.Popup>
+            </ContextMenu.Positioner>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+      ) : (
+        header
+      )}
+      {sheet}
       {collapsed ? null : (
         <ul>
           {chat.sessions.map((session) => (
@@ -363,6 +395,7 @@ export function ChatGroupRow({
                 selected={selectedId === session.id}
                 replace={replace}
                 timeLabel={timeOf(session.ts)}
+                onEditGroupName={canEditGroup ? edit : undefined}
               />
             </li>
           ))}

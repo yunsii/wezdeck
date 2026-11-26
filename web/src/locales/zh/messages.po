@@ -594,7 +594,7 @@ msgstr "取消"
 
 #: src/features/session-delete.tsx:119
 #: src/features/session-handoff.tsx:274
-#: src/features/session-purpose.tsx:135
+#: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
@@ -689,7 +689,7 @@ msgstr "清空输入"
 msgid "Clear search"
 msgstr "清除搜索"
 
-#: src/features/session-chat-group.tsx:118
+#: src/features/session-chat-group.tsx:120
 #: src/features/session-clear.tsx:114
 #: src/features/session-list.tsx:123
 msgid "Clearing…"
@@ -751,7 +751,7 @@ msgstr "协作指标"
 msgid "Collab tickets"
 msgstr "协作工单"
 
-#: src/features/session-chat-group.tsx:297
+#: src/features/session-chat-group.tsx:311
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
@@ -945,8 +945,8 @@ msgstr "复制原始日志"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:139
 #: src/features/me-agents.tsx:140
-#: src/features/session-chat-group.tsx:109
-#: src/features/session-chat-group.tsx:222
+#: src/features/session-chat-group.tsx:111
+#: src/features/session-chat-group.tsx:224
 #: src/features/session-list.tsx:114
 #: src/features/session-list.tsx:233
 #: src/features/ticket-copy-reference.tsx:31
@@ -1080,7 +1080,7 @@ msgstr "受限"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
-#: src/features/session-chat-group.tsx:243
+#: src/features/session-chat-group.tsx:253
 #: src/features/session-delete.tsx:86
 #: src/features/session-info.tsx:326
 #: src/features/session-list.tsx:254
@@ -1153,7 +1153,7 @@ msgstr "正在断开…"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
-#: src/features/session-chat-group.tsx:96
+#: src/features/session-chat-group.tsx:98
 #: src/features/session-list.tsx:62
 msgid "Done"
 msgstr "已完成"
@@ -1166,8 +1166,8 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:200
-#: src/features/session-chat-group.tsx:324
+#: src/features/session-chat-group.tsx:202
+#: src/features/session-chat-group.tsx:338
 #: src/features/session-list.tsx:200
 msgid "Draft"
 msgstr "草稿"
@@ -1184,7 +1184,9 @@ msgstr "这个项目里更早的会话。选中后窗格会切换过去，本页
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 
-#: src/features/session-purpose.tsx:68
+#: src/features/session-chat-group.tsx:231
+#: src/features/session-chat-group.tsx:362
+#: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "修改组名"
 
@@ -1268,7 +1270,7 @@ msgstr "执行模式：{mode}"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/session-chat-group.tsx:297
+#: src/features/session-chat-group.tsx:311
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -1369,7 +1371,7 @@ msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
 #: src/features/session-new-panels.tsx:118
-#: src/features/session-purpose.tsx:109
+#: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
 
@@ -1760,8 +1762,8 @@ msgstr "受管模型覆盖"
 msgid "Mark done"
 msgstr "标为完成"
 
-#: src/features/session-chat-group.tsx:117
-#: src/features/session-chat-group.tsx:254
+#: src/features/session-chat-group.tsx:119
+#: src/features/session-chat-group.tsx:264
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 #: src/features/session-list.tsx:122
@@ -1893,7 +1895,7 @@ msgstr "换行"
 #~ msgid "New round"
 #~ msgstr "新一轮"
 
-#: src/features/session-chat-group.tsx:170
+#: src/features/session-chat-group.tsx:172
 #: src/features/session-new.tsx:282
 #: src/features/session-new.tsx:453
 msgid "New session"
@@ -1911,9 +1913,8 @@ msgstr "新会话（c）"
 msgid "New session group"
 msgstr "新会话组"
 
-#: src/features/session-chat-group.tsx:237
-#: src/features/session-chat-group.tsx:341
-#: src/features/session-chat-group.tsx:342
+#: src/features/session-chat-group.tsx:247
+#: src/features/session-chat-group.tsx:377
 #: src/features/session-info.tsx:315
 #: src/features/session-list.tsx:248
 #: src/features/session-new.tsx:453
@@ -2636,7 +2637,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/session-chat-group.tsx:91
+#: src/features/session-chat-group.tsx:93
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -2803,7 +2804,7 @@ msgstr "终端同键"
 
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
-#: src/features/session-purpose.tsx:138
+#: src/features/session-purpose.tsx:118
 msgid "Save"
 msgstr "保存"
 
@@ -3640,7 +3641,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/session-chat-group.tsx:95
+#: src/features/session-chat-group.tsx:97
 #: src/features/session-list.tsx:60
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
@@ -3734,7 +3735,7 @@ msgstr "终端画面"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
-#: src/features/session-purpose.tsx:110
+#: src/features/session-purpose.tsx:90
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
 
@@ -3792,7 +3793,7 @@ msgid "working"
 msgstr "运行中"
 
 #: src/features/chat-turn.tsx:143
-#: src/features/session-chat-group.tsx:94
+#: src/features/session-chat-group.tsx:96
 #: src/features/session-list.tsx:63
 msgid "Working"
 msgstr "运行中"
