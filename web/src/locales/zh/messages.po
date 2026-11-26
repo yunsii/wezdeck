@@ -295,7 +295,7 @@ msgid "Agent sessions"
 msgstr "Agent 会话"
 
 #: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:65
+#: src/features/me-agents.tsx:66
 msgid "Agents"
 msgstr "智能体"
 
@@ -411,7 +411,7 @@ msgstr "终端：{host}"
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:115
+#: src/features/me-agents.tsx:117
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
@@ -686,7 +686,7 @@ msgstr "输入框"
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/me-agent-detail.tsx:165
+#: src/features/me-agent-detail.tsx:169
 msgid "Configured"
 msgstr "已配置"
 
@@ -855,7 +855,7 @@ msgstr "复制引用失败：{reason}"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-agents.tsx:27
+#: src/features/me-agents.tsx:28
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
@@ -914,11 +914,11 @@ msgstr "数据截至 {time}"
 msgid "Decision"
 msgstr "决定"
 
-#: src/features/me-agents.tsx:40
+#: src/features/me-agents.tsx:41
 msgid "Default agent"
 msgstr "默认智能体"
 
-#: src/features/me-agents.tsx:38
+#: src/features/me-agents.tsx:39
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
@@ -1353,7 +1353,7 @@ msgstr "键盘快捷键"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/me-agent-detail.tsx:49
+#: src/features/me-agent-detail.tsx:50
 msgid "Kimi API key"
 msgstr "Kimi API 密钥"
 
@@ -1403,7 +1403,7 @@ msgstr "最新输出"
 msgid "Launch details"
 msgstr "启动详情"
 
-#: src/features/me-agent-detail.tsx:59
+#: src/features/me-agent-detail.tsx:60
 msgid "Leave blank to keep current key"
 msgstr "留空以保留当前密钥"
 
@@ -1457,7 +1457,7 @@ msgstr "正在加载原图…"
 #: src/features/console-sessions.tsx:487
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:63
+#: src/features/me-agents.tsx:64
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:220
@@ -1480,7 +1480,7 @@ msgstr "日志流"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/me-agent-detail.tsx:174
+#: src/features/me-agent-detail.tsx:178
 msgid "Managed in host configuration"
 msgstr "由主机配置管理"
 
@@ -1530,8 +1530,8 @@ msgstr "模式"
 msgid "Model"
 msgstr "模型"
 
-#: src/features/me-agent-detail.tsx:64
-#: src/features/me-agent-detail.tsx:106
+#: src/features/me-agent-detail.tsx:65
+#: src/features/me-agent-detail.tsx:107
 msgid "Model ID"
 msgstr "模型 ID"
 
@@ -1753,8 +1753,8 @@ msgstr "无上游"
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
-#: src/features/me-agent-detail.tsx:165
-#: src/features/me-agents.tsx:89
+#: src/features/me-agent-detail.tsx:169
+#: src/features/me-agents.tsx:91
 #: src/features/session-new-panels.tsx:122
 msgid "Not configured"
 msgstr "未配置"
@@ -2183,7 +2183,7 @@ msgid "Repository"
 msgstr "仓库"
 
 #: src/features/console-me.tsx:319
-#: src/features/me-agents.tsx:47
+#: src/features/me-agents.tsx:48
 #: src/features/session-new-panels.tsx:117
 msgid "Repository default"
 msgstr "按仓库设置"
@@ -2408,17 +2408,17 @@ msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 msgid "Same at the desk"
 msgstr "终端同键"
 
-#: src/features/me-agent-detail.tsx:87
-#: src/features/me-agent-detail.tsx:125
+#: src/features/me-agent-detail.tsx:88
+#: src/features/me-agent-detail.tsx:126
 msgid "Save"
 msgstr "保存"
 
-#: src/features/me-agent-detail.tsx:20
+#: src/features/me-agent-detail.tsx:21
 msgid "Saved"
 msgstr "已保存"
 
-#: src/features/me-agent-detail.tsx:87
-#: src/features/me-agent-detail.tsx:125
+#: src/features/me-agent-detail.tsx:88
+#: src/features/me-agent-detail.tsx:126
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -3063,8 +3063,8 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-agent-detail.tsx:110
-#: src/features/me-agent-detail.tsx:142
+#: src/features/me-agent-detail.tsx:111
+#: src/features/me-agent-detail.tsx:143
 msgid "Use CLI default"
 msgstr "使用 CLI 默认模型"
 

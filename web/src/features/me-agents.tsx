@@ -6,6 +6,7 @@ import { Button } from '#/components/ui/button'
 import { Select } from '#/components/ui/select'
 import { useMediaQuery } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
+import { AgentAvatar } from './agent-avatar'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import { AgentDetail } from './me-agent-detail'
 
@@ -76,12 +77,13 @@ export function AgentsPage() {
                     setMobileDetail(true)
                   }}
                   className={cn(
-                    'flex min-h-14 w-full min-w-0 items-center gap-2 border-b border-brand-edge px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                    'flex min-h-14 w-full min-w-0 items-center gap-2.5 border-b border-brand-edge px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
                     selected.id === profile.id
                       ? 'bg-brand-soft text-brand-text'
                       : 'text-brand-muted',
                   )}
                 >
+                  <AgentAvatar profile={profile.id} size={36} />
                   <span className="min-w-0 flex-1 truncate text-body">
                     {profile.label}
                   </span>

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { hostWrite } from '#/lib/runtime-client'
+import { AgentAvatar } from './agent-avatar'
 import type { AgentProfile } from './agent-profiles'
 
 function useSaveState() {
@@ -152,13 +153,16 @@ export function AgentDetail({ profile }: { profile: AgentProfile }) {
   return (
     <section className="min-h-[24rem] min-w-0 pb-6" data-testid="agent-detail">
       <div className="mb-5 flex min-h-14 min-w-0 items-center justify-between gap-3 border-b border-brand-edge pb-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-body font-semibold text-brand-text">
-            {profile.label}
-          </h2>
-          <p className="truncate font-mono text-meta text-brand-label">
-            {profile.id}
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          <AgentAvatar profile={profile.id} size={44} />
+          <div className="min-w-0">
+            <h2 className="truncate text-body font-semibold text-brand-text">
+              {profile.label}
+            </h2>
+            <p className="truncate font-mono text-meta text-brand-label">
+              {profile.id}
+            </p>
+          </div>
         </div>
         {profile.id === 'claude_kimi' ? (
           <span className="shrink-0 text-meta text-brand-muted">
