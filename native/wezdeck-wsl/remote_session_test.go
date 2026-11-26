@@ -795,6 +795,81 @@ func TestArchivedGrokPython3PaneStaysListed(t *testing.T) {
 	}
 }
 
+func TestArchivedAgyUnderBashStaysListedOnlyWhileAgyRuns(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	sleep, err := exec.LookPath("sleep")
+	if err != nil {
+		t.Skip("sleep not installed")
+	}
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "agy")
+	body, err := os.ReadFile(sleep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(bin, body, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	socket := filepath.Join(dir, "tmux.sock")
+	for _, session := range []struct{ name, command string }{
+		{"agy", "bash -c '" + bin + " 60 & wait'"},
+		{"plain", "bash -c 'sleep 60 & wait'"},
+	} {
+		if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", session.name, session.command).CombinedOutput(); err != nil {
+			t.Fatalf("tmux %s: %s: %v", session.name, out, err)
+		}
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOf := func(session string) string {
+		out, err := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_id}").Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	agyPane, plainPane := paneOf("agy"), paneOf("plain")
+	agyEntry := attentionEntry{SessionID: "agy-session", AgentName: "agy", TmuxSocket: socket, TmuxPane: agyPane}
+	deadline := time.Now().Add(5 * time.Second)
+	for !paneHasProcess(agyEntry, "agy") && time.Now().Before(deadline) {
+		time.Sleep(50 * time.Millisecond)
+	}
+	if _, _, cmd, _, _, alive := paneState(agyEntry); !alive || cmd != "bash" {
+		t.Fatalf("expected a bash pane wrapping agy, got command %q alive=%t", cmd, alive)
+	}
+	if !paneHasProcess(agyEntry, "agy") {
+		t.Fatal("fake agy process did not start below the bash pane")
+	}
+	home := filepath.Join(dir, "home")
+	logDir := filepath.Join(home, ".gemini", "antigravity-cli", "brain", "agy-session", ".system_generated", "logs")
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(logDir, "transcript_full.jsonl"), []byte(`{"type":"USER_INPUT","content":"test"}`+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	now := time.Now().UnixMilli()
+	doc, _ := json.Marshal(map[string]any{"entries": map[string]any{}, "recent": []map[string]any{
+		{"session_id": "agy-session", "tmux_socket": socket, "tmux_session": "agy", "tmux_pane": agyPane, "agent_name": "agy", "last_status": "done", "archived_ts": now},
+		{"session_id": "plain-session", "tmux_socket": socket, "tmux_session": "plain", "tmux_pane": plainPane, "agent_name": "agy", "last_status": "done", "archived_ts": now - 1},
+	}})
+	attention := filepath.Join(dir, "attention.json")
+	if err := os.WriteFile(attention, doc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", attention)
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != "agy-session" || cards[0].Agent != "agy" || cards[0].Status != "idle" {
+		t.Fatalf("want only completed Agy with a live child process, got %+v", cards)
+	}
+}
+
 func TestTranscriptKeepsToolDetailsAndParsesIncrementally(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "s.jsonl")
 	write := func(lines ...string) {

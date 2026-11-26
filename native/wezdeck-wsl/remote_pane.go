@@ -4,6 +4,8 @@ package main
 // index, managed agent profile, alive.
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -15,6 +17,36 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 		full = append([]string{"-S", socket}, args...)
 	}
 	return exec.Command("tmux", full...)
+}
+
+// A managed Agy pane may report its launcher shell while agy runs below it.
+func paneHasProcess(e attentionEntry, name string) bool {
+	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane, "#{pane_pid}").Output()
+	if err != nil {
+		return false
+	}
+	root, err := strconv.Atoi(strings.TrimSpace(string(out)))
+	if err != nil || root <= 0 {
+		return false
+	}
+	pids := []int{root}
+	for i := 0; i < len(pids) && i < 64; i++ {
+		pid := pids[i]
+		comm, err := os.ReadFile(fmt.Sprintf("/proc/%d/comm", pid))
+		if err == nil && strings.TrimSpace(string(comm)) == name {
+			return true
+		}
+		children, err := os.ReadFile(fmt.Sprintf("/proc/%d/task/%d/children", pid, pid))
+		if err != nil {
+			continue
+		}
+		for _, child := range strings.Fields(string(children)) {
+			if next, err := strconv.Atoi(child); err == nil && next > 0 {
+				pids = append(pids, next)
+			}
+		}
+	}
+	return false
 }
 
 // paneState: the pane's id, cwd, current command, index, managed profile, and
@@ -114,4 +146,3 @@ func paneInfo(e attentionEntry) (cwd string, alive bool) {
 	_, cwd, _, _, _, alive = paneState(e)
 	return cwd, alive
 }
-

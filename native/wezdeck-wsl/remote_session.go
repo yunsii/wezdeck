@@ -159,6 +159,14 @@ func isAgentPane(cmd string, e attentionEntry) bool {
 	if agentCommands[cmd] {
 		return true
 	}
+	if cmd == "bash" || cmd == "zsh" || cmd == "sh" {
+		if strings.EqualFold(e.AgentName, "agy") {
+			return paneHasProcess(e, "agy")
+		}
+		if _, agent := findTranscript(e.SessionID); agent == "agy" {
+			return paneHasProcess(e, "agy")
+		}
+	}
 	if cmd != "python3" {
 		return false
 	}

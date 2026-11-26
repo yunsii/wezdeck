@@ -44,7 +44,9 @@ minutes unless a new session has taken over the same pane. In local mode,
 the detail page can read its transcript while the entry is in the attention
 archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
-inherit its original pane environment. The Web session list is an IM chat rail:
+inherit its original pane environment. Agy remains visible after a turn ends
+while its managed pane's bash launcher still has an `agy` child process;
+`pane_current_command` alone reports `bash`. The Web session list is an IM chat rail:
 one row per worktree, with known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
