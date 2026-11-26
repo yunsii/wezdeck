@@ -366,6 +366,32 @@ func TestReplacementForArchivedUsesPaneWhenClearedToMissing(t *testing.T) {
 	}
 }
 
+func TestSessionDetailFollowsNewRolloutWithoutClearedTo(t *testing.T) {
+	dir := t.TempDir()
+	attention := filepath.Join(dir, "attention.json")
+	doc, err := json.Marshal(map[string]any{
+		"entries": map[string]any{
+			"new-session": map[string]any{"session_id": "new-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "status": "running"},
+		},
+		"recent": []map[string]any{
+			{"session_id": "old-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "archived_ts": int64(100)},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(attention, doc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", attention)
+	for _, includeArchived := range []bool{false, true} {
+		got, err := sessionDetailFor(json.RawMessage(`{"id":"old-session"}`), includeArchived)
+		if err != nil || got.(map[string]any)["replaced_by"] != "new-session" {
+			t.Fatalf("includeArchived=%t: want replacement, got %v, %v", includeArchived, got, err)
+		}
+	}
+}
+
 func TestSessionFocusLiveEntry(t *testing.T) {
 	if got := sessionFocus("live-1", attentionEntry{SessionID: "live-1", Status: "running"}); !reflect.DeepEqual(got, map[string]any{"session_id": "live-1"}) {
 		t.Fatalf("live focus: %#v", got)

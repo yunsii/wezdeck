@@ -20,6 +20,12 @@ The session list, header and metadata use Codex's latest saved
 and manual renames. The relay caches the index until its file changes and
 logs refreshes without recording the titles.
 
+When a provider starts a new rollout in the same pane without leaving the
+attention hook's `cleared_to` marker, the relay follows the handoff by
+matching the archived session to the live session on that pane. A web page
+holding the old URL is redirected to the new session instead of continuing to
+show its persisted transcript.
+
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived entry remains in the local-mode session list for three
 minutes. In local mode, the detail page can read its transcript while the

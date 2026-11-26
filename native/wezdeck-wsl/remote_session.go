@@ -230,6 +230,24 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 	return out
 }
 
+// replacementForArchived finds the live session that took over an archived
+// session's pane. The attention hook normally records cleared_to, but a
+// provider can start a new rollout without emitting that marker. In that
+// case the pane identity is the reliable handoff signal.
+func replacementForArchived(id string, recent []recentEntry, entries map[string]attentionEntry) string {
+	for _, r := range recent {
+		if r.SessionID != id || r.TmuxPane == "" {
+			continue
+		}
+		for next, e := range entries {
+			if next != id && e.TmuxPane == r.TmuxPane && e.TmuxSocket == r.TmuxSocket {
+				return next
+			}
+		}
+	}
+	return ""
+}
+
 func tmuxCmd(socket string, args ...string) *exec.Cmd {
 	full := args
 	if socket != "" {
@@ -503,6 +521,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	path, agent := "", ""
 	readOnly := false
 	if !ok {
+		if next := replacementForArchived(a.ID, recent, entries); next != "" {
+			return map[string]any{"v": 1, "ok": true, "id": a.ID, "replaced_by": next, "status": "idle"}, nil
+		}
 		// cleared in its pane (/new, /clear): point the page at the session
 		// that took its place
 		for id, other := range entries {
