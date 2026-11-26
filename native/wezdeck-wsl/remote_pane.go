@@ -110,6 +110,34 @@ func profileFamily(profile string) string {
 	return profile
 }
 
+// paneOwnsSessionAgent rejects an archived transcript from a different agent
+// after a fresh cross-agent respawn. Unknown families fail open.
+func paneOwnsSessionAgent(cmd, profile, archived string) bool {
+	current := profileFamily(cmd)
+	if !agentCommands[cmd] {
+		current = profileFamily(profile)
+	}
+	archived = profileFamily(archived)
+	return current == "" || archived == "" || !agentCommands[archived] || current == archived
+}
+
+// attachedTmuxSessions reads all attachment states with one call per socket.
+// A nil map means unknown; callers must not mark those sessions detached.
+func attachedTmuxSessions(socket string) map[string]bool {
+	out, err := tmuxCmd(socket, "list-sessions", "-F", "#{session_name}\t#{session_attached}").Output()
+	if err != nil {
+		return nil
+	}
+	states := map[string]bool{}
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		parts := strings.Split(line, "\t")
+		if len(parts) == 2 {
+			states[parts[0]] = parts[1] != "0"
+		}
+	}
+	return states
+}
+
 // pickManagedAgentProfile: among pane pin, window sticky, and agent-cli role,
 // keep the most specific id in the same family (claude_kimi over claude).
 func pickManagedAgentProfile(paneProfile, windowProfile, paneRole string) string {

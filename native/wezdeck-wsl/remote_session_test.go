@@ -295,6 +295,85 @@ func TestArchivedSessionStaysListedWhilePaneRunsAnAgent(t *testing.T) {
 	}
 }
 
+func TestCrossAgentTranscriptsDoNotFollowFreshPane(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux not installed")
+	}
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	for _, id := range []string{"active-grok", "detached-grok"} {
+		grokDir := filepath.Join(home, ".grok", "sessions", "%2Fwork", id)
+		_ = os.MkdirAll(grokDir, 0o755)
+		_ = os.WriteFile(filepath.Join(grokDir, "chat_history.jsonl"), []byte("{}\n"), 0o600)
+	}
+	t.Setenv("HOME", home)
+	bin := filepath.Join(dir, "bin")
+	_ = os.MkdirAll(bin, 0o755)
+	cat, _ := exec.LookPath("cat")
+	for _, name := range []string{"agy", "grok"} {
+		if err := os.Symlink(cat, filepath.Join(bin, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	socket := filepath.Join(dir, "s")
+	for _, s := range []struct{ name, cmd string }{
+		{"fresh-recent", filepath.Join(bin, "agy")},
+		{"fresh-active", filepath.Join(bin, "agy")},
+		{"detached", filepath.Join(bin, "grok")},
+	} {
+		if out, err := exec.Command("tmux", "-S", socket, "new-session", "-d", "-s", s.name, s.cmd).CombinedOutput(); err != nil {
+			t.Fatalf("tmux %s: %s", s.name, out)
+		}
+	}
+	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
+	paneOf := func(session string) string {
+		out, _ := exec.Command("tmux", "-S", socket, "display-message", "-p", "-t", session, "#{pane_id}").Output()
+		return strings.TrimSpace(string(out))
+	}
+	for _, session := range []string{"fresh-recent", "fresh-active"} {
+		_ = exec.Command("tmux", "-S", socket, "set-option", "-p", "-t", paneOf(session), "@wezterm_pane_role", "agent-cli:agy").Run()
+	}
+	write := func(cleared string) {
+		doc, _ := json.Marshal(map[string]any{
+			"entries": map[string]any{"active-grok": map[string]any{
+				"session_id": "active-grok", "agent_name": "grok", "tmux_socket": socket,
+				"tmux_session": "fresh-active", "tmux_pane": paneOf("fresh-active"), "status": "running"}},
+			"recent": []map[string]any{
+				{"session_id": "recent-grok", "agent_name": "grok", "tmux_socket": socket, "tmux_session": "fresh-recent",
+					"tmux_pane": paneOf("fresh-recent"), "last_status": "done", "archived_ts": 200, "cleared_to": cleared},
+				{"session_id": "detached-grok", "agent_name": "grok", "tmux_socket": socket, "tmux_session": "detached",
+					"tmux_pane": paneOf("detached"), "last_status": "done", "archived_ts": 100},
+			}})
+		_ = os.WriteFile(filepath.Join(dir, "attention.json"), doc, 0o600)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+	time.Sleep(200 * time.Millisecond)
+	write("")
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 2 || cards[0].ID != "active-grok" || cards[0].Agent != "agy" ||
+		cards[1].ID != "detached-grok" || cards[1].Agent != "grok" || !cards[1].Detached {
+		t.Fatalf("live Agy pane must override stale Grok attention name, got %+v", cards)
+	}
+	write("pending-fresh-agy")
+	list, err = listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards = list.(map[string]any)["sessions"].([]sessionCard)
+	byID := map[string]sessionCard{}
+	for _, card := range cards {
+		byID[card.ID] = card
+	}
+	if len(cards) != 2 || byID["pending-fresh-agy"].AgentProfile != "agy" ||
+		byID["pending-fresh-agy"].Agent != "agent" || byID["detached-grok"].Agent != "grok" {
+		t.Fatalf("cleared fresh pane must become an empty Agy card, got %+v", cards)
+	}
+}
+
 // /new or /clear: the hook marked the archived session cleared_to a new
 // one with no entry yet. The list shows the new one in its place, the old id
 // answers replaced_by, and the new one takes input.
@@ -1057,6 +1136,9 @@ func TestSessionFocusMarksDetachedTmuxSession(t *testing.T) {
 	}
 	defer exec.Command("tmux", "-S", socket, "kill-server").Run()
 	e := attentionEntry{TmuxSocket: socket, TmuxSession: "lonely"}
+	if states := attachedTmuxSessions(socket); states["lonely"] {
+		t.Fatalf("new session must start detached: %#v", states)
+	}
 	if got := sessionFocus("s1", e); !reflect.DeepEqual(got, map[string]any{"session_id": "s1", "detached": true, "tmux_session": "lonely"}) {
 		t.Fatalf("detached focus: %#v", got)
 	}
@@ -1070,6 +1152,9 @@ func TestSessionFocusMarksDetachedTmuxSession(t *testing.T) {
 	deadline := time.Now().Add(3 * time.Second)
 	for !tmuxSessionAttached(socket, "lonely") && time.Now().Before(deadline) {
 		time.Sleep(50 * time.Millisecond)
+	}
+	if states := attachedTmuxSessions(socket); !states["lonely"] {
+		t.Fatalf("control client must mark the session attached: %#v", states)
 	}
 	if got := sessionFocus("s1", e); !reflect.DeepEqual(got, map[string]any{"session_id": "s1"}) {
 		t.Fatalf("attached focus: %#v", got)

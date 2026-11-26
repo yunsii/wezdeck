@@ -114,7 +114,7 @@ The current adapters are:
 | Claude / `claude_sub2api` / `claude_kimi` | base Claude settings | `--permission-mode bypassPermissions` |
 | Codex | `~/.codex/auto.config.toml` | `~/.codex/full-access.config.toml` |
 | Grok | base Grok settings | `--always-approve` |
-| Agy | base Antigravity CLI settings | `--dangerously-skip-permissions` |
+| Agy | `--mode auto` | `--dangerously-skip-permissions` |
 
 Codex overlays are host-owned regular files maintained by
 `scripts/dev/apply-codex-permission-profiles.sh` (permission-key upsert from
@@ -208,7 +208,7 @@ Behavior:
 - Writes a `backup/<branch-slug>-<timestamp>` tip before reset when HEAD is not already on the base (or when the branch name will change).
 - `git reset --hard` / `git switch -C` onto `origin/HEAD` at the target branch; linked trees never track the default branch. Default remote sync then pushes `origin/<branch>` to the same tip and sets upstream there.
 - `--task` / `--title` prints the next-round text in recycle stdout and `runtime.log` only; it does **not** write a worktree file (legacy `.task-brief.md` is deleted if still present) and does **not** inject an agent prompt.
-- Does not delete Claude transcripts. **`--fresh-agent`** unpins typed resume for the worktree’s live tmux window and cold-respawns the primary agent pane with `WEZDECK_FORCE_FRESH_SESSION=1` (skips typed id and cwd `--continue` / `resume --last`) — one step instead of manual `Ctrl+Shift+n`. Soft-skips when no tmux window is open. Does not run `sync-runtime`.
+- Does not delete Claude transcripts. **`--fresh-agent`** unpins typed resume for the worktree’s live tmux window and cold-respawns its active pane with `WEZDECK_FORCE_FRESH_SESSION=1` (skips typed id and cwd `--continue` / `resume --last`) — one step instead of manual `Ctrl+Shift+n`. An agent active pane goes through `session-restart.sh --fresh`, so its blank session immediately has a real / `pending-<uuid>` card and the old entry points to it with `cleared_to`; a non-agent secondary shell keeps the original `tmux-reset` path. Soft-skips when no tmux window is open. Does not run `sync-runtime`.
 
 ### Reclaim safety
 

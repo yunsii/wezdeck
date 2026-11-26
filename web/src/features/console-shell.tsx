@@ -212,7 +212,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           <RemoteBand />
         ) : null}
       </div>
-      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)]">
+      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)] md:items-stretch">
         <aside className="vt-sidebar hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
           {/* the brand is the way home (the landing page); language and
               theme live in 我的 › 外观, not in a second set of buttons here */}
@@ -305,7 +305,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           <div
             id="console-main"
             className={cn(
-              'flex min-h-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:p-0 md:[--page-x:0px]',
+              'flex min-h-full w-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:min-h-full md:p-0',
               chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]',
             )}
           >

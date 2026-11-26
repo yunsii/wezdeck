@@ -77,73 +77,54 @@ wt_core_recycle_find_tmux_window() {
   return 1
 }
 
-# After git recycle: unpin typed resume and cold-respawn the primary agent pane.
-# Soft-fail (print hint, return 0) when tmux/window is missing — recycle itself
-# already succeeded. May kill the calling agent if it lives in that pane.
+# After git recycle: cold-respawn the active pane. Agent panes also get a
+# pending session + cleared_to; secondary shells keep the tmux-reset behavior.
 wt_core_recycle_fresh_agent_pane() {
-  local worktree_path="${1:?missing worktree path}"
-  local session_name=""
-  local window_id=""
-  local found=""
-  local reset_bin=""
-  local reset_out=""
-  local ec=0
+  local worktree_path="${1:?missing worktree path}" found="" session_name="" window_id=""
+  local repo="${WEZDECK_REPO:-${WR_WEZDECK_REPO:-}}" reset_bin="" restart_bin=""
+  local pane_info="" pane="" role="" cmd="" reset_out="" session_id="" ec=0
 
   found="$(wt_core_recycle_find_tmux_window "$worktree_path" || true)"
   if [[ -z "$found" ]]; then
     printf '  fresh-agent: no live tmux window for this worktree; open it and F5 if needed\n'
-    runtime_log_info task "recycle fresh-agent skipped; no tmux window" \
-      "worktree=$worktree_path" || true
+    runtime_log_info task "recycle fresh-agent skipped; no tmux window" "worktree=$worktree_path" || true
     return 0
   fi
   IFS=$'\t' read -r session_name window_id <<<"$found"
   [[ -n "$session_name" && -n "$window_id" ]] || return 0
-
-  reset_bin=""
-  if [[ -n "${WEZDECK_REPO:-}" && -f "${WEZDECK_REPO}/scripts/runtime/tmux-reset.sh" ]]; then
-    reset_bin="${WEZDECK_REPO}/scripts/runtime/tmux-reset.sh"
-  elif [[ -n "${WR_WEZDECK_REPO:-}" && -f "${WR_WEZDECK_REPO}/scripts/runtime/tmux-reset.sh" ]]; then
-    reset_bin="${WR_WEZDECK_REPO}/scripts/runtime/tmux-reset.sh"
-  else
-    # core-recycle.sh lives at scripts/runtime/worktree/lib/ → ../../../tmux-reset.sh
-    reset_bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/tmux-reset.sh"
+  if [[ -z "$repo" || ! -f "$repo/scripts/runtime/tmux-reset.sh" ]]; then
+    repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   fi
+  reset_bin="$repo/scripts/runtime/tmux-reset.sh"
+  restart_bin="$repo/scripts/runtime/session-restart.sh"
   if [[ ! -f "$reset_bin" ]]; then
     printf '  fresh-agent: tmux-reset.sh missing; run Ctrl+Shift+n manually\n'
-    runtime_log_warn task "recycle fresh-agent missing tmux-reset" \
-      "worktree=$worktree_path" || true
+    runtime_log_warn task "recycle fresh-agent missing tmux-reset" "worktree=$worktree_path" || true
     return 0
   fi
 
+  pane_info="$(tmux display-message -p -t "$window_id" '#{pane_id} #{@wezterm_pane_role} #{pane_current_command}' 2>/dev/null || true)"
+  read -r pane role cmd <<<"$pane_info"
   wt_tmux_progress "[worktree-task] recycle: fresh-agent respawn…"
-  # Capture status token; do not print it (view-mode hazard for run-shell callers).
-  reset_out="$(bash "$reset_bin" refresh-current-window \
-    --session-name "$session_name" \
-    --window-id "$window_id" \
-    --cwd "$worktree_path" \
-    --fresh-agent 2>/dev/null)" || ec=$?
+  if [[ -f "$restart_bin" && ( "$role" == agent-cli:* || "$cmd" == claude* || "$cmd" == codex* || "$cmd" == grok* || "$cmd" == agy* ) ]]; then
+    reset_out="$(bash "$restart_bin" --fresh --agent "${role#agent-cli:}" --pane "$pane" 2>/dev/null)" || ec=$?
+    session_id="$(sed -n 's/^session_id=//p' <<<"$reset_out" | head -1)"
+  else
+    reset_out="$(bash "$reset_bin" refresh-current-window --session-name "$session_name" \
+      --window-id "$window_id" --cwd "$worktree_path" --fresh-agent 2>/dev/null)" || ec=$?
+  fi
   reset_out="${reset_out//$'\r'/}"
   reset_out="${reset_out##*$'\n'}"
-
-  if [[ "$ec" -eq 0 && "$reset_out" == "reset_window_in_place" ]]; then
-    printf '  fresh-agent: primary pane cold-respawned (session=%s window=%s)\n' \
-      "$session_name" "$window_id"
-    runtime_log_info task "recycle fresh-agent respawned" \
-      "worktree=$worktree_path" \
-      "session_name=$session_name" \
-      "window_id=$window_id" \
-      "outcome=respawned" || true
+  if [[ "$ec" -eq 0 && ( "$reset_out" == "reset_window_in_place" || "$reset_out" == "outcome=respawned" ) ]]; then
+    printf '  fresh-agent: active pane cold-respawned (session=%s window=%s)\n' "$session_name" "$window_id"
+    [[ -z "$session_id" ]] || printf 'session_id=%s\n' "$session_id"
+    runtime_log_info task "recycle fresh-agent respawned" "worktree=$worktree_path" \
+      "session_name=$session_name" "window_id=$window_id" "session_id=$session_id" "outcome=respawned" || true
     return 0
   fi
-
-  printf '  fresh-agent: respawn failed (exit=%s out=%s); try F5 on the agent pane\n' \
-    "$ec" "${reset_out:-}"
-  runtime_log_warn task "recycle fresh-agent respawn failed" \
-    "worktree=$worktree_path" \
-    "session_name=$session_name" \
-    "window_id=$window_id" \
-    "exit_code=$ec" \
-    "reset_out=${reset_out:-}" || true
+  printf '  fresh-agent: respawn failed (exit=%s out=%s); try F5 on the agent pane\n' "$ec" "${reset_out:-}"
+  runtime_log_warn task "recycle fresh-agent respawn failed" "worktree=$worktree_path" \
+    "session_name=$session_name" "window_id=$window_id" "exit_code=$ec" "reset_out=${reset_out:-}" || true
   return 0
 }
 

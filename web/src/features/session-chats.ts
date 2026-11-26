@@ -132,7 +132,7 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
   return workstationLabel(base) || wtKey
 }
 
-/** which session a chat opens: waiting → running → newest activity */
+/** which session a chat opens: waiting → done → running → attached idle → newest activity */
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
   phone: Record<string, number> = {},
@@ -149,7 +149,12 @@ export function resolveChatFocus(
     .filter((row) => row.status === 'running' && !row.restart_pending)
     .sort(byVisit)
   if (running[0]) return running[0]
-  return [...sessions].sort((a, b) => b.ts - a.ts || byVisit(a, b))[0]
+  return [...sessions].sort(
+    (a, b) =>
+      Number(a.detached === true) - Number(b.detached === true) ||
+      b.ts - a.ts ||
+      byVisit(a, b),
+  )[0]
 }
 
 /**

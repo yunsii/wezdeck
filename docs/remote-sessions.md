@@ -41,6 +41,13 @@ one worktree). An idle empty splash that only appeared as that pane's
 listed with visible chat (resume landed on the home screen while the
 previous conversation still runs elsewhere).
 
+After a cross-agent fresh respawn, an archived entry or late active hook from
+a different known agent family no longer resurrects that transcript on the
+pane. A valid `cleared_to` still produces the blank replacement card; unknown
+families fail open so an unrecognized agent is not hidden. The same-family
+check uses the managed profile when wrappers hide the real process name
+(`python3` for Grok, `bash` for Agy).
+
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived entry remains in the local-mode session list for three
 minutes unless a new session has taken over the same pane. In local mode,
@@ -72,6 +79,14 @@ yesterday / weekday / date; a top search filters by title, purpose, preview,
 and agent across **all** of a worktree's sessions, not only the focus;
 purpose on the row is read-only (edit in 会话信息 via
 `worktree.describe`); pane index still orders sessions inside a worktree.
+
+Chat focus keeps waiting, unread-done and running sessions ahead of idle ones.
+Between ordinary idle sessions in one worktree, the card whose tmux session has
+an attached client wins over a newer detached conversation, so the session on
+the terminal is the one the row opens; activity time breaks ties within each
+group. `sessions` computes each card's `detached` flag with one batched
+`list-sessions` read per tmux socket. A detached waiting / running session is
+still real work and is never hidden by an attached blank pane.
 
 ## Session RPCs
 

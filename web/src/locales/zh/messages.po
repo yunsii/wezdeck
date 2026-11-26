@@ -289,8 +289,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:428
-#: src/features/session-list.tsx:478
+#: src/features/session-list.tsx:417
+#: src/features/session-list.tsx:467
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -633,8 +633,8 @@ msgstr "清空输入"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "清空输入（Esc Esc）"
 
-#: src/features/session-list.tsx:319
-#: src/features/session-list.tsx:418
+#: src/features/session-list.tsx:308
+#: src/features/session-list.tsx:407
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -884,7 +884,7 @@ msgstr "复制原始日志"
 #: src/features/session-chat-group.tsx:111
 #: src/features/session-chat-group.tsx:205
 #: src/features/session-list.tsx:130
-#: src/features/session-list.tsx:249
+#: src/features/session-list.tsx:238
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "复制引用"
@@ -1613,7 +1613,7 @@ msgstr "标为完成"
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 #: src/features/session-list.tsx:139
-#: src/features/session-list.tsx:268
+#: src/features/session-list.tsx:257
 msgid "Mark read"
 msgstr "标为已读"
 
@@ -1736,7 +1736,7 @@ msgstr "换行"
 #: src/features/session-chat-group.tsx:105
 #: src/features/session-chat-group.tsx:214
 #: src/features/session-list.tsx:124
-#: src/features/session-list.tsx:258
+#: src/features/session-list.tsx:247
 #: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "新一轮"
@@ -1820,7 +1820,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:423
+#: src/features/session-list.tsx:412
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1871,7 +1871,7 @@ msgstr "还没有输出"
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
-#: src/features/session-list.tsx:410
+#: src/features/session-list.tsx:399
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2131,7 +2131,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:171
+#: src/features/session-split.tsx:170
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -2638,8 +2638,8 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:309
-#: src/features/session-list.tsx:310
+#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:299
 msgid "Search sessions"
 msgstr "搜索会话"
 
@@ -2711,12 +2711,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:382
+#: src/features/session-list.tsx:371
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:400
+#: src/features/session-list.tsx:389
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
