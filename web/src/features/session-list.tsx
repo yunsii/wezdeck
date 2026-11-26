@@ -18,6 +18,8 @@ import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { AgentAvatar, agentLabel } from './agent-avatar'
+import { WorktreePurpose } from './session-purpose'
+import { hasEditableGroupName } from './session-order'
 import { ChatGroupRow } from './session-chat-group'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
@@ -449,13 +451,21 @@ export function SessionList({
                         timeOf={timeOf}
                       />
                     ) : (
-                      <ChatRow
-                        chat={chat}
-                        selectedId={selected}
-                        replace={replaceSession}
-                        preview={previewOf(chat)}
-                        timeLabel={timeOf(chat.focus.ts)}
-                      />
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center">
+                        <ChatRow
+                          chat={chat}
+                          selectedId={selected}
+                          replace={replaceSession}
+                          preview={previewOf(chat)}
+                          timeLabel={timeOf(chat.focus.ts)}
+                        />
+                        <WorktreePurpose
+                          compact
+                          worktree={chat.key}
+                          description={chat.purpose}
+                          editable={hasEditableGroupName(chat.focus)}
+                        />
+                      </div>
                     )}
                   </li>
                 ))}

@@ -91,8 +91,15 @@ func TestDescribeWorktreeSetsAndClears(t *testing.T) {
 	if got := worktreeDescription(repo, "dev/ux"); got != "" {
 		t.Fatalf("after clear: %q", got)
 	}
+	for _, name := range []string{"主会话组", "", ""} {
+		if err := call(repo, name); err != nil {
+			t.Fatal(err)
+		}
+		if got := worktreeDescription(repo, "main"); got != name {
+			t.Fatalf("primary group name: got %q, want %q", got, name)
+		}
+	}
 	for name, c := range map[string][2]string{
-		"primary":   {repo, "x"},
 		"ticket":    {ticket, "x"},
 		"multiline": {ws, "a\nb"},
 		"unknown":   {t.TempDir(), "x"},

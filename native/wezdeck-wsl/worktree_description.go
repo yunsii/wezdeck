@@ -87,9 +87,8 @@ func readBranchDescriptions(repoRoot string) map[string]string {
 // `worktree.describe {worktree, text}` (signed write): set — or with empty
 // text, clear — a workstation's purpose from the web console, through the
 // same `worktree-task describe` the CLI and the Alt+g editor run. The
-// worktree must be a linked worktree of a repository you work in (one of
-// knownRepos), not its primary checkout and not an agent-collab ticket-* /
-// OpenClaw claw-* one.
+// checkout must belong to a known repository. Ticket and OpenClaw worktrees
+// keep their own naming rules.
 func describeWorktree(args json.RawMessage) (any, error) {
 	var a struct {
 		Worktree string `json:"worktree"`
@@ -103,10 +102,10 @@ func describeWorktree(args json.RawMessage) (any, error) {
 		return nil, fmt.Errorf("worktree.describe: the purpose is one line of at most %d characters", descriptionMax)
 	}
 	_, root, wt := gitRepoMeta(a.Worktree)
-	if wt == "" || filepath.Clean(wt) != filepath.Clean(a.Worktree) || root == "" || root == wt {
-		return nil, errors.New("worktree.describe: not a workstation (a linked worktree)")
+	if wt == "" || filepath.Clean(wt) != filepath.Clean(a.Worktree) || root == "" {
+		return nil, errors.New("worktree.describe: not a checkout root")
 	}
-	if base := filepath.Base(wt); strings.HasPrefix(base, "ticket-") || strings.HasPrefix(base, "claw-") {
+	if base := filepath.Base(wt); wt != root && (strings.HasPrefix(base, "ticket-") || strings.HasPrefix(base, "claw-")) {
 		return nil, errors.New("worktree.describe: ticket-* / claw-* worktrees belong to agent-collab / OpenClaw")
 	}
 	known := false
@@ -115,6 +114,12 @@ func describeWorktree(args json.RawMessage) (any, error) {
 	}
 	if !known {
 		return nil, errors.New("worktree.describe: not a repository you work in")
+	}
+	if root == wt {
+		if err := describePrimaryCheckout(root, a.Text); err != nil {
+			return nil, err
+		}
+		return map[string]any{"v": 1, "ok": true, "description": a.Text}, nil
 	}
 	cmdPath := os.Getenv("WEZDECK_WORKTREE_TASK_CMD") // the test stack's stand-in
 	if cmdPath == "" {
@@ -136,4 +141,29 @@ func describeWorktree(args json.RawMessage) (any, error) {
 	worktreeDescMu.Unlock()
 	relayLogf("worktree_describe", "worktree=%q chars=%d", wt, utf8.RuneCountInString(a.Text))
 	return map[string]any{"v": 1, "ok": true, "description": a.Text}, nil
+}
+
+func describePrimaryCheckout(repo, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", repo, "symbolic-ref", "--quiet", "--short", "HEAD").Output()
+	if err != nil {
+		return errors.New("cannot name a session group on a detached checkout")
+	}
+	branch := strings.TrimSpace(string(out))
+	key := "branch." + branch + ".description"
+	args := []string{"-C", repo, "config", "--local", key, name}
+	if name == "" {
+		args = []string{"-C", repo, "config", "--local", "--unset-all", key}
+	}
+	var exitErr *exec.ExitError
+	if err := exec.CommandContext(ctx, "git", args...).Run(); err != nil &&
+		!(name == "" && errors.As(err, &exitErr) && exitErr.ExitCode() == 5) {
+		return fmt.Errorf("save group name: %w", err)
+	}
+	relayLogf("worktree_describe", "worktree=%q chars=%d", repo, utf8.RuneCountInString(name))
+	worktreeDescMu.Lock()
+	delete(worktreeDescCache, repo)
+	worktreeDescMu.Unlock()
+	return nil
 }

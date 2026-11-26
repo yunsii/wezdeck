@@ -16,7 +16,7 @@ import { requestNewSession } from './session-new'
 import { useDeviceState } from './device-state'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
-import { isWorkstation, worktreeKey } from './session-order'
+import { hasEditableGroupName, worktreeKey } from './session-order'
 import { WorktreePurpose } from './session-purpose'
 import {
   AgentTag,
@@ -257,7 +257,7 @@ export function SessionInfo({
             {data.git ? <GitStatusTag git={data.git} /> : null}
           </TagLine>
         ) : null}
-        {card && isWorkstation(card) ? (
+        {card && hasEditableGroupName(card) ? (
           <div
             className="rounded-xl border border-brand-edge px-3 py-2"
             data-testid="session-info-purpose"

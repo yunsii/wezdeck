@@ -30,6 +30,8 @@ import type { ChatTone, SessionChat } from './session-chats'
 import { chatTone } from './session-chats'
 import { useChatCollapsed } from './session-collapse'
 import { requestNewSession } from './session-new'
+import { hasEditableGroupName } from './session-order'
+import { WorktreePurpose } from './session-purpose'
 import { SwipeActions } from './session-row-swipe'
 
 const menuItemClass =
@@ -326,6 +328,12 @@ export function ChatGroupRow({
             <UnreadBadge tone={tone} n={chat.unread} />
           ) : null}
         </Button>
+        <WorktreePurpose
+          compact
+          worktree={chat.key}
+          description={chat.purpose}
+          editable={hasEditableGroupName(chat.focus)}
+        />
         {anchor && device.state === 'approved' ? (
           <Button
             variant="plain"
