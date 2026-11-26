@@ -353,11 +353,11 @@ const activityOf = (data?: Detail) => ({
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
 
-function ArchivedSessionNotice() {
+function SessionInputUnavailable() {
   const { t } = useLingui()
   return (
     <p role="status" className="text-meta text-brand-label">
-      {t`Archived session · Read only`}
+      {t`Web sending is unavailable for this session.`}
     </p>
   )
 }
@@ -562,7 +562,7 @@ export function SessionDetail({ id }: { id: string }) {
           </p>
         ) : null}
         {readOnly ? (
-          <ArchivedSessionNotice />
+          <SessionInputUnavailable />
         ) : (
           <ComposerBox
             composer={composer}

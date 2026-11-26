@@ -69,17 +69,19 @@ describe('session order follows visits, not output', () => {
       'alpha',
     ])
   })
-  it('within a worktree: primary before secondary', () => {
+  it('within a worktree: orders all panes by index before unbound sessions', () => {
     const tree = buildSessionTree([
-      card({
-        id: 's',
-        worktree: '/r/a',
-        pane_role: 'secondary',
-        pane_index: 2,
-      }),
-      card({ id: 'p', worktree: '/r/a', pane_role: 'primary', pane_index: 1 }),
+      card({ id: 'lower-right', worktree: '/r/a', pane_index: 3 }),
+      card({ id: 'transcript', worktree: '/r/a' }),
+      card({ id: 'upper-right', worktree: '/r/a', pane_index: 2 }),
+      card({ id: 'left', worktree: '/r/a', tmux_pane: '%10' }),
     ])
-    expect(tree[0].worktrees[0].rows.map((row) => row.id)).toEqual(['p', 's'])
+    expect(tree[0].worktrees[0].rows.map((row) => row.id)).toEqual([
+      'left',
+      'upper-right',
+      'lower-right',
+      'transcript',
+    ])
   })
 })
 

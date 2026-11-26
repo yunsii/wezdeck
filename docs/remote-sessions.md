@@ -23,7 +23,11 @@ logs refreshes without recording the titles.
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived entry remains in the local-mode session list for three
 minutes. In local mode, the detail page can read its transcript while the
-entry is in the attention archive. The detail is read-only.
+entry is in the attention archive. The page reports that Web sending is
+unavailable. A Codex TUI can still be open in another pane because hooks
+from a shared app-server can inherit its original pane environment. The Web
+session list orders sessions by tmux pane index within each worktree and
+displays the agent and session state.
 
 ## Session RPCs
 

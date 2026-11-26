@@ -138,6 +138,27 @@
     }
   },
   {
+    "id": "pane.select-by-number",
+    "label": "Pane: Jump by number",
+    "description": "Show tmux pane numbers in the current window. Press a displayed number to focus that pane.",
+    "scope": "commands-and-splits",
+    "context": "tmux-backed",
+    "binding": {
+      "kind": "tmux-chord-leaf",
+      "table": "command-chord",
+      "exec": "display-panes -d 3000"
+    },
+    "hotkeys": [
+      {
+        "keys": "Ctrl+k q",
+        "layer": "tmux-chord"
+      }
+    ],
+    "palette": {
+      "display_only": true
+    }
+  },
+  {
     "id": "pane.rotate-next",
     "label": "Pane: Rotate focus to next",
     "description": "Rotate focus to the next pane in the current tmux window (same semantics as tmux `prefix o`).",

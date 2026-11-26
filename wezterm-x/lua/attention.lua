@@ -661,7 +661,7 @@ M.PICKER_RECENT_CAP = 20
 -- Single source of truth for picker rows and badge counts. Returns a
 -- table { rows = [...], counts = { waiting, done, running } } where
 -- rows is a flat array (active rows ordered waiting → done → running
--- by ts; recent rows appended after, deduped by tmux_session+window,
+-- by ts; recent rows appended after, deduped by tmux socket and pane,
 -- ordered by archived_ts desc, capped at PICKER_RECENT_CAP). The
 -- picker reads rows directly; the badge reads counts. Both surfaces
 -- therefore agree by construction.
@@ -701,19 +701,19 @@ function M.compute_picker_data(panes_map, sessions_map)
   end
 
   -- ── Recent entries ─────────────────────────────────────────────────
-  -- Dedupe by (tmux_session, tmux_window). One WezTerm tab = one tmux
-  -- session = many worktree windows; collapsing to session alone hid
-  -- every sibling worktree under a single ○ RCNT row. Window is the
-  -- worktree identity Alt+g / operators already use. Split panes in
-  -- the same window still collapse (one jump target).
+  -- Older rows without a pane retain their window fallback.
   local recent_by_key = {}
   for _, r in ipairs(state_cache.recent or {}) do
     if not active_sids[r.session_id or ''] then
       local sess = r.tmux_session or ''
       local win = r.tmux_window or ''
+      local pane = r.tmux_pane or ''
+      local socket = r.tmux_socket or ''
       local key
-      if nonempty_str(sess) and nonempty_str(win) then
-        key = sess .. '\0' .. win
+      if nonempty_str(pane) then
+        key = socket .. '\0pane\0' .. pane
+      elseif nonempty_str(sess) and nonempty_str(win) then
+        key = socket .. '\0' .. sess .. '\0' .. win
       elseif nonempty_str(sess) then
         key = sess
       else

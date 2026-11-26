@@ -56,7 +56,7 @@ export const repoName = (row: { repo?: string; repo_label?: string }) =>
 /**
  * Group by repo family → worktree path. Groups sort by the latest visit;
  * never-visited ones (ticket agents) sink and order by name, so nothing
- * moves unless you go somewhere. Within a worktree: primary, secondary.
+ * moves unless you go somewhere. Within a worktree: tmux pane order.
  */
 export function buildSessionTree(
   rows: Array<SessionCard>,
@@ -108,8 +108,8 @@ export function buildSessionTree(
     a: { visit: number; label: string },
     b: { visit: number; label: string },
   ) => b.visit - a.visit || a.label.localeCompare(b.label)
-  const roleRank = (role?: string) =>
-    role === 'primary' ? 0 : role === 'secondary' ? 1 : 2
+  const paneIndex = (row: SessionCard) =>
+    row.pane_index ?? (row.tmux_pane ? 0 : Infinity)
   return [...repos.entries()]
     .map(([key, repo]) => ({
       key,
@@ -119,10 +119,7 @@ export function buildSessionTree(
         .map((tree) => ({
           ...tree,
           rows: [...tree.rows].sort(
-            (a, b) =>
-              roleRank(a.pane_role) - roleRank(b.pane_role) ||
-              (a.pane_index ?? 0) - (b.pane_index ?? 0) ||
-              a.id.localeCompare(b.id),
+            (a, b) => paneIndex(a) - paneIndex(b) || a.id.localeCompare(b.id),
           ),
         }))
         .sort(byVisit),

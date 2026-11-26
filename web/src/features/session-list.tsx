@@ -15,7 +15,6 @@ import {
   BranchTag,
   TagLine,
   RepoTag,
-  RoleTag,
   StatusTag,
 } from '#/components/deck/session-tags'
 import { StickyBar } from '#/components/deck/sticky-bar'
@@ -99,8 +98,6 @@ function SessionRow({
   const copyReference = useCopySessionReference()
   const client = useQueryClient()
   const warm = () => prefetchSession(client, row.id)
-  const paneLabel = (role?: string) =>
-    role === 'primary' ? t`Primary` : role === 'secondary' ? t`Secondary` : ''
 
   // untitled until the agent names it (or a /clear dropped the old name)
   const title = row.title || t`Untitled session`
@@ -120,7 +117,6 @@ function SessionRow({
           to="/{-$locale}/console/sessions/$id"
           params={{ locale: localeParam, id: row.id }}
           data-session={row.id}
-          data-pane-role={row.pane_role || undefined}
           replace={wide && Boolean(selected)}
           aria-current={row.id === selected ? 'page' : undefined}
           onClick={() => recordVisit(worktreeKey(row))}
@@ -158,12 +154,6 @@ function SessionRow({
             <TagLine expandable={false}>
               {showRepo && repoName(row) ? (
                 <RepoTag repo={repoName(row)} />
-              ) : null}
-              {row.pane_role ? (
-                <RoleTag
-                  role={row.pane_role}
-                  label={paneLabel(row.pane_role)}
-                />
               ) : null}
               {row.agent && row.agent !== 'agent' ? (
                 <AgentTag agent={row.agent} />

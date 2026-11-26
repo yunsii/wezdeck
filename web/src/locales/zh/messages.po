@@ -370,8 +370,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:308
-#: src/features/session-list.tsx:361
+#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:351
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -387,7 +387,7 @@ msgstr "Agent 会话"
 msgid "All"
 msgstr "全部"
 
-#: src/features/session-list.tsx:242
+#: src/features/session-list.tsx:232
 #: src/features/tickets-view.tsx:207
 msgctxt "filter"
 msgid "All"
@@ -495,8 +495,8 @@ msgid "Approved. This device can read the host's sessions and tickets, send mess
 msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
 
 #: src/features/console-sessions.tsx:360
-msgid "Archived session · Read only"
-msgstr "会话已归档 · 只读"
+#~ msgid "Archived session · Read only"
+#~ msgstr "会话已归档 · 只读"
 
 #: src/features/ticket-reply.tsx:325
 msgid "Assumptions"
@@ -1456,7 +1456,7 @@ msgstr "WebSocket 怎么计费"
 msgid "idle"
 msgstr "空闲"
 
-#: src/features/session-list.tsx:257
+#: src/features/session-list.tsx:247
 msgctxt "filter"
 msgid "Idle"
 msgstr "空闲"
@@ -1855,12 +1855,12 @@ msgid "Needs letters or digits: it becomes the directory and branch. Put the res
 msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
 #: src/features/session-header.tsx:265
-#: src/features/session-list.tsx:284
+#: src/features/session-list.tsx:274
 #: src/features/session-switcher.tsx:202
 msgid "Needs you"
 msgstr "需要你处理"
 
-#: src/features/session-list.tsx:247
+#: src/features/session-list.tsx:237
 msgctxt "filter"
 msgid "Needs you"
 msgstr "等你"
@@ -1961,11 +1961,11 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:221
+#: src/features/session-list.tsx:211
 msgid "No agent is working right now."
 msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:224
+#: src/features/session-list.tsx:214
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1994,11 +1994,11 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:155
+#: src/features/session-list.tsx:151
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
-#: src/features/session-list.tsx:223
+#: src/features/session-list.tsx:213
 msgid "No idle sessions."
 msgstr "没有空闲的会话。"
 
@@ -2096,7 +2096,7 @@ msgstr "未运行"
 msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
-#: src/features/session-list.tsx:219
+#: src/features/session-list.tsx:209
 msgid "Nothing is waiting on you."
 msgstr "没有等你处理的工单。"
 
@@ -2363,8 +2363,8 @@ msgid "Previous image"
 msgstr "上一张"
 
 #: src/features/session-list.tsx:103
-msgid "Primary"
-msgstr "主"
+#~ msgid "Primary"
+#~ msgstr "主"
 
 #: src/features/me-host.tsx:134
 msgid "Process"
@@ -2829,8 +2829,8 @@ msgid "Search skills"
 msgstr "搜索能力"
 
 #: src/features/session-list.tsx:103
-msgid "Secondary"
-msgstr "副"
+#~ msgid "Secondary"
+#~ msgstr "副"
 
 #: src/features/console-shell.tsx:327
 msgid "Sections"
@@ -2921,12 +2921,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:79
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:227
-#: src/features/session-list.tsx:228
+#: src/features/session-list.tsx:218
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:274
+#: src/features/session-list.tsx:264
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -3078,7 +3078,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:126
 #: src/features/session-info.tsx:71
-#: src/features/session-list.tsx:234
+#: src/features/session-list.tsx:224
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
@@ -3536,7 +3536,7 @@ msgstr "撤销"
 
 #: src/features/session-commands.tsx:161
 #: src/features/session-header.tsx:204
-#: src/features/session-list.tsx:106
+#: src/features/session-list.tsx:103
 #: src/features/session-switcher.tsx:173
 msgid "Untitled session"
 msgstr "未命名会话"
@@ -3707,6 +3707,10 @@ msgstr "总耗时"
 msgid "Warnings"
 msgstr "警告"
 
+#: src/features/console-sessions.tsx:360
+msgid "Web sending is unavailable for this session."
+msgstr "此会话暂时无法从网页发送消息。"
+
 #: src/features/remote-badge.tsx:91
 msgid "WebRTC direct"
 msgstr "WebRTC 直连"
@@ -3836,7 +3840,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:252
+#: src/features/session-list.tsx:242
 msgctxt "filter"
 msgid "Working"
 msgstr "运行中"
