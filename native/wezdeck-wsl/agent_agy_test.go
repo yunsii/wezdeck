@@ -16,9 +16,9 @@ func TestAgyTranscriptAdapter(t *testing.T) {
 		t.Fatal(err)
 	}
 	data := strings.Join([]string{
-		`{"type":"USER_INPUT","source":"USER_EXPLICIT","content":"Read sample.txt","created_at":"2026-11-26T07:57:37Z"}`,
-		`{"type":"PLANNER_RESPONSE","source":"MODEL","created_at":"2026-11-26T07:57:38Z","model":"gemini-4-neon-medium","input_tokens":12,"cache_read_tokens":3,"output_tokens":7,"tool_calls":[{"name":"read_file","args":{"path":"sample.txt"}}]}`,
-		`{"type":"GENERIC","source":"MODEL","content":"tool output","created_at":"2026-11-26T07:57:39Z"}`,
+		`{"type":"USER_INPUT","source":"USER_EXPLICIT","content":"<USER_REQUEST>\nRead sample.txt\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nThe current local time is: 2026-11-26.\n</ADDITIONAL_METADATA>","created_at":"2026-11-26T07:57:37Z"}`,
+		`{"type":"PLANNER_RESPONSE","source":"MODEL","created_at":"2026-11-26T07:57:38Z","model":"gemini-4-neon-medium","input_tokens":12,"cache_read_tokens":3,"output_tokens":7,"tool_calls":[{"name":"read_file","args":{"Path":"sample.txt","StartLine":10,"EndLine":25}}]}`,
+		`{"type":"GENERIC","source":"MODEL","content":"Created At: 2026-11-26\nCompleted At: 2026-11-26\nCreated At: 2026-11-26\nCompleted At: 2026-11-26\n10: hello world","created_at":"2026-11-26T07:57:39Z"}`,
 		`{"type":"PLANNER_RESPONSE","source":"MODEL","content":"OK","created_at":"2026-11-26T07:57:40Z","model":"gemini-4-neon-medium","input_tokens":20,"cache_read_tokens":4,"output_tokens":2}`,
 	}, "\n") + "\n"
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
@@ -35,11 +35,22 @@ func TestAgyTranscriptAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(tr.messages) != 3 || tr.messages[0].Role != "user" || tr.messages[1].Tool != "read_file" || tr.messages[1].Kind != toolKindRead || tr.messages[1].Pending || tr.messages[2].Text != "OK" {
-		t.Fatalf("messages: %+v", tr.messages)
+	if len(tr.messages) != 3 || tr.messages[0].Role != "user" || tr.messages[0].Text != "Read sample.txt" {
+		t.Fatalf("user message not unwrapped: %+v", tr.messages)
+	}
+	read := tr.messages[1]
+	if read.Tool != "read_file" || read.Kind != toolKindRead || read.Pending ||
+		read.File != "sample.txt" || read.Text != "read_file sample.txt:10-25" || read.Result != "10: hello world" {
+		t.Fatalf("read_file details: %+v", read)
+	}
+	if tr.messages[2].Text != "OK" {
+		t.Fatalf("assistant message: %+v", tr.messages[2])
 	}
 	if tr.usage.Model != "gemini-4-neon-medium" || tr.usage.Context != 24 || tr.usage.Output != 9 || tr.usage.Turns != 2 {
 		t.Fatalf("usage: %+v", tr.usage)
+	}
+	if got := contextLimit(tr.usage.Model); got != 1000000 {
+		t.Fatalf("gemini context limit: got %d want 1000000", got)
 	}
 	if got := adapter.Title(path); got != "Read sample.txt" {
 		t.Fatalf("title: %q", got)
@@ -53,9 +64,92 @@ func TestAgyTranscriptAdapter(t *testing.T) {
 	}
 }
 
+func TestAgyToolDetailsAndFIFOGenericResults(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "transcript_full.jsonl")
+	lines := []string{
+		`{"type":"USER_INPUT","content":"<USER_REQUEST>\nFix bug\n</USER_REQUEST>\n<USER_SETTINGS_CHANGE>\nThe user changed setting ` + "`Agent Mode`" + ` from Default to Auto.\n</USER_SETTINGS_CHANGE>","created_at":"2026-11-26T08:00:00Z"}`,
+		`{"type":"PLANNER_RESPONSE","created_at":"2026-11-26T08:00:01Z","model":"gemini-4-neon-high","tool_calls":[` +
+			`{"name":"run_command","args":{"CommandLine":"go test ./...","toolSummary":"Run Go tests","BypassSandbox":true}},` +
+			`{"name":"edit_file","args":{"Path":"app.go","Target":"oldA\noldB","Replacement":"newA\nnewB\nnewC"}},` +
+			`{"name":"write_file","args":{"Path":"new.go","Content":"package main\nfunc x() {}\n"}},` +
+			`{"name":"update_steps","args":{"steps":[{"title":"Inspect","status":"done"},{"title":"Fix","status":"in_progress"}]}}` +
+			`]}`,
+		`{"type":"GENERIC","content":"Created At: 2026-11-26\nCompleted At: 2026-11-26\nCommand exited with code 0\nok pkg","created_at":"2026-11-26T08:00:02Z"}`,
+		`{"type":"GENERIC","content":"Made 1 replacement in app.go","created_at":"2026-11-26T08:00:03Z"}`,
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	tr, err := loadTranscript(path, "agy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tr.mode != "auto" {
+		t.Fatalf("mode from settings change: got %q want auto", tr.mode)
+	}
+	if len(tr.messages) != 5 {
+		t.Fatalf("messages count: got %d (%+v)", len(tr.messages), tr.messages)
+	}
+	cmd := tr.messages[1]
+	if cmd.Kind != toolKindCommand || cmd.Pending || !strings.Contains(cmd.Text, "[unsandboxed] Run Go tests · go test ./...") ||
+		!strings.Contains(cmd.Body, "go test ./...") || !strings.Contains(cmd.Body, "[bypass-sandbox]") ||
+		!strings.Contains(cmd.Result, "Command exited with code 0") {
+		t.Fatalf("run_command: %+v", cmd)
+	}
+	edit := tr.messages[2]
+	if edit.Kind != toolKindEdit || edit.Pending || edit.File != "app.go" || edit.Removed != 2 || edit.Added != 3 ||
+		!strings.Contains(edit.Body, "- oldA") || !strings.Contains(edit.Body, "+ newC") ||
+		edit.Result != "Made 1 replacement in app.go" {
+		t.Fatalf("edit_file: %+v", edit)
+	}
+	write := tr.messages[3]
+	if write.Kind != toolKindWrite || !write.Pending || write.File != "new.go" || write.Added != 2 ||
+		!strings.Contains(write.Body, "package main") {
+		t.Fatalf("write_file (still pending): %+v", write)
+	}
+	steps := tr.messages[4]
+	if steps.Kind != toolKindTodo || !steps.Pending || steps.Text != "update_steps 1/2 · Fix" ||
+		!strings.Contains(steps.Body, "✓ Inspect") || !strings.Contains(steps.Body, "● Fix") {
+		t.Fatalf("update_steps: %+v", steps)
+	}
+	// A subsequent PLANNER_RESPONSE settles any lingering pending calls.
+	tr.feedAgy([]byte(`{"type":"PLANNER_RESPONSE","content":"Done","created_at":"2026-11-26T08:00:05Z"}`))
+	if tr.messages[3].Pending || tr.messages[4].Pending {
+		t.Fatalf("lingering pending not settled: %+v %+v", tr.messages[3], tr.messages[4])
+	}
+}
+
+func TestAgyModeResolution(t *testing.T) {
+	if got := agyModeFromArgs([]string{"agy", "--mode", "auto"}); got != "auto" {
+		t.Fatalf("--mode auto: %q", got)
+	}
+	if got := agyModeFromArgs([]string{"agy", "--mode=accept-edits"}); got != "accept-edits" {
+		t.Fatalf("--mode=accept-edits: %q", got)
+	}
+	if got := agyModeFromArgs([]string{"agy", "--mode", "auto", "--dangerously-skip-permissions"}); got != "full-access" {
+		t.Fatalf("full-access precedence: %q", got)
+	}
+
+	dir := t.TempDir()
+	t.Setenv("AGY_CONFIG_DIR", dir)
+	if got := resolveAgyMode(attentionEntry{}, nil); got != "default" {
+		t.Fatalf("missing settings.json should resolve to default, got %q", got)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "settings.json"), []byte(`{"agentMode":"auto"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := resolveAgyMode(attentionEntry{}, nil); got != "auto" {
+		t.Fatalf("settings.json agentMode=auto: got %q", got)
+	}
+	if got := resolveAgyMode(attentionEntry{}, &transcript{mode: "plan"}); got != "plan" {
+		t.Fatalf("transcript mode should win over settings.json: got %q", got)
+	}
+}
+
 func TestAgyWorkspaceTrustIsExact(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("AGY_CONFIG_DIR", "")
 	path := filepath.Join(home, ".gemini", "antigravity-cli", "settings.json")
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		t.Fatal(err)

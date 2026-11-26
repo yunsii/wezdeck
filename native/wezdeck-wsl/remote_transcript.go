@@ -60,11 +60,13 @@ func inputString(m map[string]any, keys ...string) string {
 }
 
 func toolFile(input map[string]any) string {
-	return inputString(input, "file_path", "target_file", "path", "filename")
+	return inputString(input, "file_path", "target_file", "path", "filename", "Path", "AbsolutePath", "TargetFile", "FilePath")
 }
 
 func editPairs(input map[string]any) [][2]string {
-	if o, n := inputString(input, "old_string", "old_str"), inputString(input, "new_string", "new_str"); o != "" || n != "" {
+	o := inputString(input, "old_string", "old_str", "Target", "TargetContent")
+	n := inputString(input, "new_string", "new_str", "Replacement", "ReplacementContent")
+	if o != "" || n != "" {
 		return [][2]string{{o, n}}
 	}
 	var out [][2]string
@@ -73,12 +75,19 @@ func editPairs(input map[string]any) [][2]string {
 		m, _ := e.(map[string]any)
 		out = append(out, [2]string{inputString(m, "old_string", "old_str"), inputString(m, "new_string", "new_str")})
 	}
+	chunks, _ := input["ReplacementChunks"].([]any)
+	for _, c := range chunks {
+		m, _ := c.(map[string]any)
+		if m != nil {
+			out = append(out, [2]string{inputString(m, "TargetContent"), inputString(m, "ReplacementContent")})
+		}
+	}
 	return out
 }
 
-// writes: a whole-file write (Claude Write, Grok write/create_file, …).
+// writes: a whole-file write (Claude Write, Grok write/create_file, Agy write_file…).
 func writeContent(name string, input map[string]any) (string, bool) {
-	content := inputString(input, "content", "contents", "file_text")
+	content := inputString(input, "content", "contents", "file_text", "Content", "CodeContent")
 	lower := strings.ToLower(name)
 	if content == "" || toolFile(input) == "" || !(strings.Contains(lower, "write") || strings.Contains(lower, "create")) {
 		return "", false
@@ -148,7 +157,17 @@ func toolBody(name string, input map[string]any) string {
 	if content, ok := writeContent(name, input); ok {
 		return clipLines(content, 40)
 	}
-	if cmd := inputString(input, "command", "cmd"); cmd != "" {
+	if cmd := inputString(input, "command", "cmd", "CommandLine"); cmd != "" {
+		var flags []string
+		if input["BypassSandbox"] == true {
+			flags = append(flags, "bypass-sandbox")
+		}
+		if input["IsDaemon"] == true {
+			flags = append(flags, "daemon")
+		}
+		if len(flags) > 0 {
+			return clip("# ["+strings.Join(flags, ", ")+"]\n"+cmd, 2000)
+		}
 		return clip(cmd, 2000)
 	}
 	if list, ok := input["command"].([]any); ok { // codex shell: ["bash","-lc","…"]
@@ -160,12 +179,40 @@ func toolBody(name string, input map[string]any) string {
 		}
 		return clip(strings.Join(words, " "), 2000)
 	}
+	if body := agyToolBody(name, input); body != "" {
+		return body
+	}
 	return ""
 }
 
+func inputInt(m map[string]any, keys ...string) (int, bool) {
+	for _, k := range keys {
+		switch v := m[k].(type) {
+		case float64:
+			return int(v), true
+		case int:
+			return v, true
+		}
+	}
+	return 0, false
+}
+
+func firstLine(s string) string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return strings.TrimSpace(s[:i])
+	}
+	return s
+}
+
 func toolSummary(name string, input map[string]any) string {
-	if v := inputString(input, "file_path", "target_file", "path", "description", "command", "cmd", "pattern", "query", "url", "prompt"); v != "" {
-		return clip(name+" "+v, 160)
+	if s := agyToolSummary(name, input); s != "" {
+		return s
+	}
+	if v := inputString(input, "file_path", "target_file", "path", "Path", "AbsolutePath", "TargetFile", "FilePath",
+		"description", "Description", "toolSummary", "command", "cmd", "CommandLine",
+		"pattern", "query", "Query", "url", "Url", "prompt", "Prompt", "Role", "Message", "Action"); v != "" {
+		return clip(name+" "+firstLine(v), 160)
 	}
 	return name
 }
@@ -189,6 +236,7 @@ type transcript struct {
 	outputs     []outputMark       // per reply: when, how many output tokens (turnOutput)
 	stepStartMS int64              // trigger timestamp for next reply's step-rate window
 	pendingAgy  *pendingStepOutput // open Agy PLANNER_RESPONSE waiting on next step's created_at
+	agyPending  []int              // FIFO indices of Agy tool calls awaiting GENERIC results
 	stepRates   []stepRateMark     // per-step (outputTokens, durationMS) fallback rates
 	lineOff     int64              // file offset of the line being fed
 	skills      []skillInfo        // the skills the agent was shown (session_skills.go)
@@ -285,7 +333,7 @@ func (t *transcript) addTool(id, name, argsJSON, ts string) {
 	file, added, removed := toolStats(name, input)
 	t.messages = append(t.messages, chatMessage{Role: "tool", Tool: name, Text: toolSummary(name, input),
 		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed,
-		Kind: t.toolKind(name, input)})
+		Kind: t.toolKind(name, input), Background: input["run_in_background"] == true || input["IsDaemon"] == true})
 	if id != "" {
 		t.tools[id] = len(t.messages) - 1
 		t.messages[len(t.messages)-1].Pending = true

@@ -737,7 +737,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		// no transcript yet (a fresh session after /new): the pane's command
 		// still says which agent it is, so the page can offer its commands
 		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
-			out["agent"] = strings.TrimSuffix(cmd, ".real")
+			agent = strings.TrimSuffix(cmd, ".real")
+			out["agent"] = agent
+		}
+		if agent == "agy" {
+			out["mode"] = resolveAgyMode(e, nil)
 		}
 	}
 	if cwd, alive := paneInfo(e); alive {
@@ -816,9 +820,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 				out["permission"] = p
 			}
 		}
-		if t.mode != "" {
-			out["mode"] = t.mode
-		}
+		mode := t.mode
 		// the page refetches session.skills when this changes
 		if rev := skillsRev(t.skills); rev != "" {
 			out["skills_rev"] = rev
@@ -828,6 +830,12 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 			out["background"] = enrichBackground(bg, t, e.SessionID)
 		}
 		transcriptsMu.Unlock()
+		if agent == "agy" && mode == "" {
+			mode = resolveAgyMode(e, nil)
+		}
+		if mode != "" {
+			out["mode"] = mode
+		}
 		out["total"] = total
 		out["start"] = start
 		out["span"] = span
@@ -839,6 +847,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		usage := t.usage
 		if usage.Model == "" && agent == "grok" {
 			usage.Model, _ = grokSummaryModel(path)
+		}
+		if usage.Model == "" && agent == "agy" {
+			usage.Model = agyDefaultModel()
 		}
 		if usage.ContextLimit == 0 {
 			usage.ContextLimit = contextLimit(usage.Model)

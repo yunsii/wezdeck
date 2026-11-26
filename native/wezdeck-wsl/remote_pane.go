@@ -29,20 +29,36 @@ func paneHasAgentProcess(socket, pane string) bool {
 }
 
 func paneHasDescendant(socket, pane string, match func(string) bool) bool {
+	return paneDescendantArgs(socket, pane, match) != nil
+}
+
+// paneDescendantArgs walks processes inside pane and returns the argv of the
+// first matching process (from /proc/<pid>/cmdline), or nil if none matched.
+func paneDescendantArgs(socket, pane string, match func(string) bool) []string {
 	out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_pid}").Output()
 	if err != nil {
-		return false
+		return nil
 	}
 	root, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil || root <= 0 {
-		return false
+		return nil
 	}
 	pids := []int{root}
 	for i := 0; i < len(pids) && i < 64; i++ {
 		pid := pids[i]
 		comm, err := os.ReadFile(fmt.Sprintf("/proc/%d/comm", pid))
 		if err == nil && match(strings.TrimSpace(string(comm))) {
-			return true
+			raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+			if err != nil {
+				return []string{}
+			}
+			var argv []string
+			for _, part := range strings.Split(string(raw), "\x00") {
+				if part != "" {
+					argv = append(argv, part)
+				}
+			}
+			return argv
 		}
 		children, err := os.ReadFile(fmt.Sprintf("/proc/%d/task/%d/children", pid, pid))
 		if err != nil {
@@ -54,7 +70,7 @@ func paneHasDescendant(socket, pane string, match func(string) bool) bool {
 			}
 		}
 	}
-	return false
+	return nil
 }
 
 // paneState: the pane's id, cwd, current command, index, managed profile, and
