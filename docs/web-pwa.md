@@ -81,9 +81,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    mobile a 「还有 N 个等你 ›」 chip in the header when another one waits;
    `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
    like the list. Switching replaces the history entry, so back returns to
-   the list. Swiping a running / waiting / done row left offers 标为已读
-   (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The + beside
-   the filter (`c` on a keyboard) is 新会话 — message first; location bar for
+   the list. Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
+   phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
+   filter (`c` on a keyboard) is 新会话 — message first; location bar for
    repo/direction (idle reuses; "+ New direction" deeper); the sheet
    follows the job and opens the session once the agent has the message; managed worktrees are pre-trusted (with `session.new.trust` only as fallback), and 我的 › Agents shows every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you

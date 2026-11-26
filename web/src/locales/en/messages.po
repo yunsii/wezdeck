@@ -289,8 +289,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:353
-#: src/features/session-list.tsx:393
+#: src/features/session-list.tsx:422
+#: src/features/session-list.tsx:462
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -633,12 +633,13 @@ msgstr "Clear input"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "Clear input (Esc Esc)"
 
-#: src/features/session-list.tsx:246
-#: src/features/session-list.tsx:343
+#: src/features/session-list.tsx:315
+#: src/features/session-list.tsx:412
 msgid "Clear search"
 msgstr "Clear search"
 
-#: src/features/session-clear.tsx:130
+#: src/features/session-clear.tsx:114
+#: src/features/session-list.tsx:136
 msgid "Clearing…"
 msgstr "Clearing…"
 
@@ -874,6 +875,8 @@ msgstr "Copy raw line"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:138
 #: src/features/me-agents.tsx:139
+#: src/features/session-list.tsx:126
+#: src/features/session-list.tsx:245
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"
@@ -1047,7 +1050,7 @@ msgstr "Disabled"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:150
-#: src/features/session-list.tsx:53
+#: src/features/session-list.tsx:58
 msgid "Done"
 msgstr "Done"
 
@@ -1592,12 +1595,14 @@ msgstr "Managed override"
 msgid "Mark done"
 msgstr "Mark done"
 
-#: src/features/session-clear.tsx:130
-#: src/features/session-clear.tsx:215
+#: src/features/session-clear.tsx:113
+#: src/features/session-clear.tsx:157
+#: src/features/session-list.tsx:135
+#: src/features/session-list.tsx:264
 msgid "Mark read"
 msgstr "Mark read"
 
-#: src/features/session-clear.tsx:215
+#: src/features/session-clear.tsx:157
 msgid "Marked read"
 msgstr "Marked read"
 
@@ -1677,7 +1682,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-list.tsx:52
+#: src/features/session-list.tsx:57
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -1713,8 +1718,8 @@ msgstr "New direction"
 msgid "New line"
 msgstr "New line"
 
-#: src/features/session-list.tsx:191
-#: src/features/session-list.tsx:192
+#: src/features/session-list.tsx:120
+#: src/features/session-list.tsx:254
 #: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "New round"
@@ -1798,7 +1803,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:348
+#: src/features/session-list.tsx:417
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1823,7 +1828,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:55
+#: src/features/session-list.tsx:60
 #: src/features/session-switcher.tsx:178
 msgid "No human message yet"
 msgstr "No human message yet"
@@ -1848,7 +1853,7 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/session-list.tsx:335
+#: src/features/session-list.tsx:404
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2560,7 +2565,7 @@ msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 msgid "Runtime reported reason:"
 msgstr "Runtime reported reason:"
 
-#: src/features/session-clear.tsx:211
+#: src/features/session-clear.tsx:153
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "Same as Ctrl+X in the Alt+/ picker"
 
@@ -2611,8 +2616,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:236
-#: src/features/session-list.tsx:237
+#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:306
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -2684,12 +2689,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:307
+#: src/features/session-list.tsx:376
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:325
+#: src/features/session-list.tsx:394
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -3358,7 +3363,7 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/session-list.tsx:51
+#: src/features/session-list.tsx:56
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3506,7 +3511,7 @@ msgid "working"
 msgstr "working"
 
 #: src/features/chat-turn.tsx:136
-#: src/features/session-list.tsx:54
+#: src/features/session-list.tsx:59
 msgid "Working"
 msgstr "Working"
 
@@ -3542,7 +3547,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:66
+#: src/features/session-list.tsx:71
 msgid "Yesterday"
 msgstr "Yesterday"
 
