@@ -293,6 +293,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = listTicketTargets()
 	case "session.new.job":
 		result, err = newSessionJobStatus(args)
+	case "session.handoff.job":
+		result, err = handoffJobStatus(args)
 	case "session.history":
 		result, err = sessionHistory(args)
 	case "session.git":
@@ -337,8 +339,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	switch f.Action {
 	case "usage":
 		return fetchUsage()
-	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.restart", "ticket.new",
-		"worktree.describe":
+	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.restart",
+		"session.handoff", "ticket.new", "worktree.describe":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
@@ -353,8 +355,8 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 // they need no hello.
 var signedActions = map[string]bool{
 	"send": true, "key": true, "reply": true, "attach": true, "upload": true,
-	"todo": true, "clear": true, "session.new": true, "session.restart": true, "ticket.new": true,
-	"worktree.describe": true,
+	"todo": true, "clear": true, "session.new": true, "session.restart": true,
+	"session.handoff": true, "ticket.new": true, "worktree.describe": true,
 }
 
 // handleRPC answers one request frame and logs it.

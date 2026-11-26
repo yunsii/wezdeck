@@ -307,6 +307,24 @@ resume_command_apply_permission_profile() {
   printf 'env %s %s\n' "$assignment" "$command"
 }
 
+# resolve_profile_resume_command <wezterm_config_repo> <profile> [cwd]
+# Resume argv for an explicit agent profile (session handoff sticky window
+# agent), independent of MANAGED_AGENT_PROFILE / workspace-agent-map.
+resolve_profile_resume_command() {
+  local wezterm_repo="${1:-}"
+  local profile="${2:-}"
+  local cwd="${3:-}"
+  local normalized key resolved
+  profile="$(resume_command_strip_resume_suffix "$profile")"
+  normalized="$(resume_command_normalize_profile_key "$profile")"
+  [[ -n "$normalized" ]] || return 1
+  key="WT_PROVIDER_AGENT_PROFILE_${normalized}_RESUME_COMMAND"
+  resolved="$(resume_command_lookup_profile_key "$wezterm_repo" "$key" || true)"
+  [[ -n "$resolved" ]] || return 1
+  resume_command_apply_permission_profile \
+    "$resolved" "$(resume_command_active_permission_profile "$wezterm_repo" "$cwd")"
+}
+
 # resolve_resume_primary_command <wezterm_config_repo> [cwd]
 # Prints the resume command on stdout, or nothing if it cannot be
 # resolved (caller should fall back to the source pane's primary command).

@@ -392,6 +392,46 @@ func TestSessionDetailFollowsNewRolloutWithoutClearedTo(t *testing.T) {
 	}
 }
 
+func TestLocalListOmitsArchivedCodexReplacedInSamePane(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	for _, id := range []string{"old-session", "other-session"} {
+		path := filepath.Join(dir, ".codex", "sessions", "2026", "11", "26", "rollout-2026-11-26T11-40-02-"+id+".jsonl")
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("{}\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	attention := filepath.Join(dir, "attention.json")
+	now := time.Now().UnixMilli()
+	doc, err := json.Marshal(map[string]any{
+		"entries": map[string]any{
+			"new-session": map[string]any{"session_id": "new-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "status": "running"},
+		},
+		"recent": []map[string]any{
+			{"session_id": "old-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%107", "last_status": "done", "archived_ts": now},
+			{"session_id": "other-session", "tmux_socket": "/tmp/wezdeck.sock", "tmux_pane": "%108", "last_status": "done", "archived_ts": now},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(attention, doc, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_ATTENTION_FILE", attention)
+	list, err := listSessionsFor(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != "other-session" {
+		t.Fatalf("only unrelated archived pane should remain: %+v", cards)
+	}
+}
+
 func TestSessionFocusLiveEntry(t *testing.T) {
 	if got := sessionFocus("live-1", attentionEntry{SessionID: "live-1", Status: "running"}); !reflect.DeepEqual(got, map[string]any{"session_id": "live-1"}) {
 		t.Fatalf("live focus: %#v", got)

@@ -37,6 +37,7 @@ import {
 import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
 import { useSkillCompletion } from './composer-complete'
+import { HandoffActions } from './session-handoff'
 import { RestartActions } from './session-restart'
 import { KeyPanel } from './session-key-panel'
 
@@ -352,6 +353,12 @@ export function ComposerBox({
             agent={session?.agent}
             disabled={keysDisabled}
             onRestart={(fresh) => onRun('session.restart', { fresh })}
+            onDone={() => setPanel(null)}
+          />
+          <HandoffActions
+            id={composer.id}
+            agent={session?.agent}
+            disabled={keysDisabled}
             onDone={() => setPanel(null)}
           />
         </KeyPanel>

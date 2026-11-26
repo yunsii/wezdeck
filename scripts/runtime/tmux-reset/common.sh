@@ -171,10 +171,19 @@ ensure_primary_pane_role_tag() {
   local cwd="${4:-}"
   local agent_profile=""
   local previous_role=""
+  local window_id="" sticky=""
 
   [[ -n "$pane_id" ]] || return 0
   previous_role="$(tmux show-options -p -t "$pane_id" -v -q @wezterm_pane_role 2>/dev/null || true)"
-  if [[ "$role" == managed* ]]; then
+  window_id="$(tmux display-message -p -t "$pane_id" '#{window_id}' 2>/dev/null || true)"
+  if [[ -n "$window_id" ]]; then
+    sticky="$(tmux show-window-options -v -t "$window_id" \
+      @wezterm_window_agent_profile 2>/dev/null || true)"
+  fi
+  if [[ -n "$sticky" ]]; then
+    agent_profile="${sticky%-resume}"
+    agent_profile="${agent_profile%_resume}"
+  elif [[ "$role" == managed* ]]; then
     agent_profile="$(agent_profile_for_managed_pane "$wezterm_repo" "$cwd" 2>/dev/null || true)"
   fi
   if [[ -n "$agent_profile" ]]; then
@@ -185,7 +194,8 @@ ensure_primary_pane_role_tag() {
         "cwd=$cwd" \
         "window_role=$role" \
         "previous_role=${previous_role:-}" \
-        "pane_role=agent-cli:$agent_profile"
+        "pane_role=agent-cli:$agent_profile" \
+        "sticky_agent=${sticky:-}"
     fi
   else
     tmux set-option -p -t "$pane_id" -u @wezterm_pane_role 2>/dev/null || true

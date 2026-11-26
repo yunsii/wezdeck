@@ -45,7 +45,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/session-composer.tsx:154
+#: src/features/session-composer.tsx:155
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -488,6 +488,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
+#: src/features/session-handoff.tsx:195
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
@@ -559,8 +560,8 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer.tsx:471
-#: src/features/session-composer.tsx:472
+#: src/features/session-composer.tsx:478
+#: src/features/session-composer.tsx:479
 msgid "Clear input (Esc Esc)"
 msgstr "Clear input (Esc Esc)"
 
@@ -630,7 +631,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:252
-#: src/features/session-composer.tsx:262
+#: src/features/session-composer.tsx:263
 msgid "Commands"
 msgstr "Commands"
 
@@ -659,7 +660,7 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:236
+#: src/features/session-composer.tsx:237
 msgid "Composer tools"
 msgstr "Composer tools"
 
@@ -735,7 +736,7 @@ msgstr "Context compactions"
 msgid "context usage"
 msgstr "context usage"
 
-#: src/features/session-composer.tsx:89
+#: src/features/session-composer.tsx:90
 #: src/features/session-info.tsx:252
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
@@ -758,7 +759,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:89
+#: src/features/session-composer.tsx:90
 msgid "Copy"
 msgstr "Copy"
 
@@ -770,7 +771,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:81
+#: src/features/session-composer.tsx:82
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1069,7 +1070,7 @@ msgstr "First message to the agent"
 msgid "First turn"
 msgstr "First turn"
 
-#: src/features/session-composer.tsx:269
+#: src/features/session-composer.tsx:270
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1094,9 +1095,30 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
+#: src/features/session-handoff.tsx:161
+#: src/features/session-handoff.tsx:220
+msgid "Hand off"
+msgstr "Hand off"
+
+#: src/features/session-handoff.tsx:206
+msgid "Hand off to {to}"
+msgstr "Hand off to {to}"
+
+#: src/features/session-handoff.tsx:216
+msgid "Hand off to another agent"
+msgstr "Hand off to another agent"
+
 #: src/features/landing-page.tsx:89
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
+
+#: src/features/session-handoff.tsx:102
+msgid "Handed off to {toAgent}"
+msgstr "Handed off to {toAgent}"
+
+#: src/features/session-handoff.tsx:111
+msgid "Handoff failed"
+msgstr "Handoff failed"
 
 #: src/features/tickets-view.tsx:490
 msgid "Headless worker"
@@ -1177,7 +1199,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:288
+#: src/features/session-composer.tsx:289
 msgid "Images"
 msgstr "Images"
 
@@ -1210,7 +1232,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/session-composer.tsx:167
+#: src/features/session-composer.tsx:168
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -1280,7 +1302,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:250
+#: src/features/session-composer.tsx:251
 msgid "Keys"
 msgstr "Keys"
 
@@ -1423,11 +1445,11 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:463
+#: src/features/session-composer.tsx:470
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:406
+#: src/features/session-composer.tsx:413
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1787,6 +1809,10 @@ msgstr "Opening the connection is one request."
 msgid "Opening…"
 msgstr "Opening…"
 
+#: src/features/session-handoff.tsx:175
+msgid "Optional note"
+msgstr "Optional note"
+
 #: src/features/console-collab-run.tsx:111
 msgid "Origin session"
 msgstr "Origin session"
@@ -1925,7 +1951,7 @@ msgstr "Put the caret in the composer"
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/session-composer.tsx:244
+#: src/features/session-composer.tsx:245
 #: src/features/session-key-panel.tsx:64
 msgid "Quick keys"
 msgstr "Quick keys"
@@ -2020,6 +2046,14 @@ msgstr "Rename via /rename in the agent pane"
 #: src/features/session-todos.tsx:221
 msgid "Reopen"
 msgstr "Reopen"
+
+#: src/features/session-handoff.tsx:229
+msgid "Replace this pane with {target} and paste a continuation brief"
+msgstr "Replace this pane with {target} and paste a continuation brief"
+
+#: src/features/session-handoff.tsx:172
+msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
+msgstr "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 
 #: src/features/console-activity.tsx:103
 msgid "replied"
@@ -2299,7 +2333,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:485
+#: src/features/session-composer.tsx:492
 msgid "Send"
 msgstr "Send"
 
@@ -2311,7 +2345,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:245
+#: src/features/session-composer.tsx:246
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -2322,6 +2356,10 @@ msgstr "Send the first message below."
 #: src/features/session-new.tsx:71
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
+
+#: src/features/session-handoff.tsx:127
+msgid "Sending the handoff brief…"
+msgstr "Sending the handoff brief…"
 
 #: src/features/console-collab-run.tsx:116
 #: src/features/console-collab.tsx:278
@@ -2412,7 +2450,7 @@ msgstr "Skills this agent was given"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:257
+#: src/features/session-composer.tsx:258
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -2532,6 +2570,10 @@ msgstr "switch the model"
 #: src/features/session-focus.tsx:65
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
+
+#: src/features/session-handoff.tsx:128
+msgid "Switching agent…"
+msgstr "Switching agent…"
 
 #: src/components/deck/session-tags.tsx:288
 msgctxt "git"
@@ -2771,7 +2813,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:274
+#: src/features/session-composer.tsx:275
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -2863,7 +2905,7 @@ msgstr "uncommitted changes"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-composer.tsx:169
+#: src/features/session-composer.tsx:170
 msgid "Undo"
 msgstr "Undo"
 
@@ -2887,7 +2929,7 @@ msgstr "Updated {time}"
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 
-#: src/features/session-composer.tsx:143
+#: src/features/session-composer.tsx:144
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -3040,6 +3082,10 @@ msgstr "What it solves"
 #: src/features/session-new.tsx:331
 msgid "What should it work on?"
 msgstr "What should it work on?"
+
+#: src/features/session-handoff.tsx:181
+msgid "What should the next agent do first?"
+msgstr "What should the next agent do first?"
 
 #: src/features/ticket-new.tsx:183
 msgid "What the other repository should do"

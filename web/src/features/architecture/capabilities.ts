@@ -201,6 +201,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Progress of a session being started',
       ),
       c(
+        'session.handoff.job',
+        '跨 agent 接力任务的进度',
+        'Progress of a cross-agent handoff',
+      ),
+      c(
         'session.history',
         '同一项目里更早的 Claude 会话，供「恢复会话」选择',
         'Earlier Claude conversations of the project, for 恢复会话',
@@ -267,6 +272,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'session.restart',
         '重启会话所在窗格（等同终端 F5，agent 恢复原会话）或新开全新进程（等同 Ctrl+Shift+n）',
         'Respawn the session pane (the desk F5: the agent resumes) or start a blank agent process (Ctrl+Shift+n)',
+      ),
+      c(
+        'session.handoff',
+        '跨 agent 接力：本格替换为目标 agent，粘贴接续 brief（不 recycle、不迁 transcript；之后 F5 跟目标 agent）',
+        'Cross-agent handoff: replace this pane with the target agent and paste a continuation brief (no recycle, no transcript migrate; later F5 keeps the target)',
       ),
       c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
     ],

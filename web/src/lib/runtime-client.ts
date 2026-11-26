@@ -383,6 +383,7 @@ export type HostReadAction =
   | 'workstations'
   | 'ticket.targets'
   | 'session.new.job'
+  | 'session.handoff.job'
   | 'session.image'
   | 'session.history'
   | 'session.git'

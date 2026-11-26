@@ -42,6 +42,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = startNewSession(args)
 	case "session.restart":
 		result, err = restartSession(args)
+	case "session.handoff":
+		result, err = startSessionHandoff(args)
 	case "ticket.new":
 		result, err = createTicket(args)
 	case "worktree.describe":

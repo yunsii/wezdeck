@@ -224,14 +224,24 @@ window_refresh_spec() {
   # worktree. Resolver returns "" when MANAGED_AGENT_PROFILE has no
   # `_RESUME_COMMAND` configured; in that case we keep the metadata
   # command (the existing behavior).
+  # Session handoff pins @wezterm_window_agent_profile so later F5 keeps
+  # the target agent instead of snapping back to MANAGED_AGENT_PROFILE.
   if [[ "$role" == managed* ]]; then
-    if declare -F resolve_resume_primary_command >/dev/null 2>&1; then
+    window_agent="$(tmux show-window-options -v -t "$window_target" \
+      @wezterm_window_agent_profile 2>/dev/null || true)"
+    resume_command=""
+    if [[ -n "$window_agent" ]] && declare -F resolve_profile_resume_command >/dev/null 2>&1; then
+      resume_command="$(resolve_profile_resume_command "${wezterm_config_repo:-}" \
+        "$window_agent" "$worktree_root" 2>/dev/null || true)"
+    fi
+    if [[ -z "$resume_command" ]] && declare -F resolve_resume_primary_command >/dev/null 2>&1; then
       resume_command="$(resolve_resume_primary_command "${wezterm_config_repo:-}" "$worktree_root" 2>/dev/null || true)"
-      if [[ -n "$resume_command" ]]; then
-        primary_command="$resume_command"
-      fi
+    fi
+    if [[ -n "$resume_command" ]]; then
+      primary_command="$resume_command"
     fi
     primary_command="$(build_primary_agent_command "$primary_command")"
+    unset window_agent
   fi
 
   layout="$(window_layout_for_target "$window_target")"

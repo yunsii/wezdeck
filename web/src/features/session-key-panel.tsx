@@ -1,6 +1,6 @@
 // The composer's 按键 panel: Enter / Esc / Ctrl+C into the agent pane, and
-// below them whatever the composer adds (重启会话 / 新开会话, session-restart.tsx).
-// Split from session-composer.tsx.
+// below them whatever the composer adds (重启会话 / 新开会话 / 接力,
+// session-restart.tsx · session-handoff.tsx). Split from session-composer.tsx.
 import { useLingui } from '@lingui/react/macro'
 import { X } from 'lucide-react'
 
@@ -36,7 +36,7 @@ export function KeyPanel({
   disabled: boolean
   onKey: (key: string) => void
   onClose: () => void
-  /** under the keys: 重启会话 / 新开会话 */
+  /** under the keys: 重启会话 / 新开会话 / 接力 */
   children?: React.ReactNode
 }) {
   const { t } = useLingui()

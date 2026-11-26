@@ -472,6 +472,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		}
 		for _, r := range recent {
 			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
+				replacementForArchived(r.SessionID, recent, entries) != "" ||
 				now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
 				continue
 			}
