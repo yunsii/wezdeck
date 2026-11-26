@@ -34,7 +34,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
       string,
       { cwd: string; status: string; agent: string; waiting?: string }
     > = {
-      'grp-grok': { cwd: shared, status: 'running', agent: 'grok' },
+      'grp-grok': { cwd: shared, status: 'idle', agent: 'grok' },
       'grp-codex': {
         cwd: shared,
         status: 'waiting',
@@ -67,7 +67,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
         waiting_kind: s.waiting ?? '',
         agent_name: s.agent,
         tmux_window_name: id,
-        last_user_prompt: `prompt ${id}`,
+        last_user_prompt: s.status === 'idle' ? '' : `prompt ${id}`,
         ts: Date.now(),
       }
     }
@@ -101,6 +101,10 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
       .toBe(1)
     const toggle = page.getByTestId('chat-group-toggle')
     await expect.poll(() => toggle.getAttribute('aria-expanded')).toBe('true')
+    const emptyRow = page.locator('[data-session=grp-grok]')
+    await expect.poll(() => emptyRow.textContent()).toContain('Grok')
+    expect(await emptyRow.getByTestId('session-preview').count()).toBe(0)
+    expect(await toggle.getByTestId('chat-unread').count()).toBe(0)
     // the waiting session is the unread one, on its own sub-row
     await expect
       .poll(() =>
@@ -123,10 +127,9 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     await expect
       .poll(() => page.locator('[data-session=grp-codex]').count())
       .toBe(0)
-    // folded = the old single-row look: the focus preview (waiting codex)
     await expect
-      .poll(() => toggle.getByTestId('chat-preview').textContent())
-      .toContain('prompt grp-codex')
+      .poll(() => toggle.getByTestId('chat-unread').textContent())
+      .toBe('1')
     // the choice survives a reload
     await page.reload()
     await page.locator('[data-session=grp-solo]').waitFor({ timeout: 20_000 })
