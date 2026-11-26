@@ -49,7 +49,7 @@ msgstr "{by} 提议拆出一张单"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/session-statusbar.tsx:161
+#: src/features/session-statusbar.tsx:167
 msgid "{count} monitors running"
 msgstr "{count} 个 Monitor 运行中"
 
@@ -57,7 +57,11 @@ msgstr "{count} 个 Monitor 运行中"
 #~ msgid "{count} more need you"
 #~ msgstr "还有 {count} 个等你"
 
-#: src/features/session-statusbar.tsx:162
+#: src/features/session-statusbar.tsx:355
+msgid "{count} sessions"
+msgstr "{count} 个会话"
+
+#: src/features/session-statusbar.tsx:168
 msgid "{count} shells running"
 msgstr "{count} 个 Shell 运行中"
 
@@ -82,7 +86,7 @@ msgstr "{hours} 小时前"
 msgid "{label} {percent}% used"
 msgstr "{label}已用 {percent}%"
 
-#: src/features/session-statusbar.tsx:200
+#: src/features/session-statusbar.tsx:254
 msgid "{linked} linked worktrees"
 msgstr "{linked} 个关联 worktree"
 
@@ -260,7 +264,7 @@ msgstr "工单要发给另一个仓库。"
 msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 msgstr "每个约 {minLow}–{minHigh} 分钟，内存峰值约 {gb} GB"
 
-#: src/features/session-statusbar.tsx:108
+#: src/features/session-statusbar.tsx:114
 msgid "Accept edits"
 msgstr "自动编辑"
 
@@ -465,7 +469,7 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/session-statusbar.tsx:96
+#: src/features/session-statusbar.tsx:102
 msgid "Auto"
 msgstr "Auto"
 
@@ -473,7 +477,7 @@ msgstr "Auto"
 msgid "Auto compact"
 msgstr "自动压缩窗口"
 
-#: src/features/session-statusbar.tsx:97
+#: src/features/session-statusbar.tsx:103
 msgid "Auto mode enabled"
 msgstr "已开启 Auto 模式"
 
@@ -481,11 +485,11 @@ msgstr "已开启 Auto 模式"
 msgid "Auto mode server"
 msgstr "Auto mode 服务端"
 
-#: src/features/session-statusbar.tsx:120
+#: src/features/session-statusbar.tsx:126
 msgid "Auto off"
 msgstr "未开 Auto"
 
-#: src/features/session-statusbar.tsx:109
+#: src/features/session-statusbar.tsx:115
 msgid "Auto-approves edits; auto mode off"
 msgstr "自动批准编辑（未开启 Auto 模式）"
 
@@ -593,7 +597,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:121
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -899,7 +903,7 @@ msgstr "控制台导航"
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:120
+#: src/features/session-header.tsx:118
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -1102,7 +1106,7 @@ msgstr "默认智能体"
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
-#: src/features/session-statusbar.tsx:121
+#: src/features/session-statusbar.tsx:127
 msgid "Default mode: auto mode is off"
 msgstr "默认模式：未开启 Auto 模式"
 
@@ -1296,7 +1300,7 @@ msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终�
 msgid "Execution mode"
 msgstr "执行模式"
 
-#: src/features/session-statusbar.tsx:127
+#: src/features/session-statusbar.tsx:133
 msgid "Execution mode: {mode}"
 msgstr "执行模式：{mode}"
 
@@ -1387,11 +1391,11 @@ msgstr "发起仓库"
 msgid "From anywhere"
 msgstr "随处可用"
 
-#: src/features/session-statusbar.tsx:102
+#: src/features/session-statusbar.tsx:108
 msgid "Full access"
 msgstr "完全访问"
 
-#: src/features/session-statusbar.tsx:103
+#: src/features/session-statusbar.tsx:109
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
@@ -1721,7 +1725,7 @@ msgstr "与上游一致。"
 msgid "Light"
 msgstr "浅色"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:122
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -1756,9 +1760,10 @@ msgstr "正在加载原图…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:220
+#: src/features/session-header.tsx:206
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
+#: src/features/session-statusbar.tsx:301
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
@@ -1788,6 +1793,10 @@ msgstr "管理 MCP 服务"
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "管理工具权限规则"
+
+#: src/features/session-statusbar.tsx:289
+msgid "Manage worktrees"
+msgstr "管理工作树"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -1900,8 +1909,8 @@ msgstr "需要确认"
 #~ msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
 #: src/features/session-header.tsx:237
-msgid "Needs you"
-msgstr "需要你处理"
+#~ msgid "Needs you"
+#~ msgstr "需要你处理"
 
 #: src/features/session-list.tsx:237
 #~ msgctxt "filter"
@@ -2064,6 +2073,10 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
+#: src/features/session-statusbar.tsx:345
+msgid "No linked worktrees"
+msgstr "没有关联的工作树"
+
 #: src/features/repo-links.tsx:315
 msgid "No links match that search."
 msgstr "没有匹配的外链。"
@@ -2091,6 +2104,10 @@ msgstr "还没有写计划"
 #: src/features/host-quick-controls.tsx:75
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
+
+#: src/features/session-statusbar.tsx:335
+msgid "No session"
+msgstr "无会话"
 
 #: src/features/session-list.tsx:409
 msgid "No sessions match that search."
@@ -2319,7 +2336,7 @@ msgstr "其他"
 msgid "outline a plan before editing"
 msgstr "修改前先制定计划"
 
-#: src/features/session-header.tsx:122
+#: src/features/session-header.tsx:120
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -2397,11 +2414,11 @@ msgstr "选择会话（按仓库分组）"
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
-#: src/features/session-statusbar.tsx:114
+#: src/features/session-statusbar.tsx:120
 msgid "Plan"
 msgstr "计划模式"
 
-#: src/features/session-statusbar.tsx:115
+#: src/features/session-statusbar.tsx:121
 msgid "Plan mode"
 msgstr "计划模式"
 
@@ -2694,7 +2711,7 @@ msgstr "调研失败"
 msgid "Resend"
 msgstr "重发"
 
-#: src/features/session-header.tsx:111
+#: src/features/session-header.tsx:109
 msgid "resets {reset}"
 msgstr "{reset}重置"
 
@@ -3030,7 +3047,7 @@ msgstr "会话已删除，工作树还有本地改动。"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:245
+#: src/features/session-header.tsx:222
 #: src/features/session-info.tsx:249
 msgid "Session info"
 msgstr "会话信息"
@@ -3045,7 +3062,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:199
+#: src/features/session-header.tsx:185
 #: src/features/session-list.tsx:377
 msgctxt "nav"
 msgid "Sessions"
@@ -3251,7 +3268,7 @@ msgstr "切换模式"
 #~ msgid "Switch session"
 #~ msgstr "切换会话"
 
-#: src/features/session-header.tsx:211
+#: src/features/session-header.tsx:197
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3651,7 +3668,7 @@ msgid "Unknown"
 msgstr "未知"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:175
+#: src/features/session-header.tsx:172
 msgid "Untitled session"
 msgstr "未命名会话"
 
@@ -3941,6 +3958,10 @@ msgstr "工作树"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
+#: src/features/session-statusbar.tsx:296
+msgid "Worktrees"
+msgstr "工作树"
+
 #: src/features/me-host.tsx:40
 #: src/features/me-host.tsx:136
 msgid "WSL bridge"
@@ -3966,3 +3987,36 @@ msgstr "你的决定、补充信息，或对质疑的答复"
 #: src/features/ticket-reply.tsx:173
 msgid "Your reply"
 msgstr "你的回复"
+
+#: src/features/session-statusbar.tsx:246
+msgid "仍在使用"
+msgstr "仍在使用"
+
+#: src/features/session-statusbar.tsx:240
+msgid "可复用"
+msgstr "可复用"
+
+#: src/features/session-statusbar.tsx:243
+msgid "有本地改动"
+msgstr "有本地改动"
+
+#: src/features/session-statusbar.tsx:244
+msgid "未交付"
+msgstr "未交付"
+
+#: src/features/session-statusbar.tsx:311
+msgid "未命名工作树"
+msgstr "未命名工作树"
+
+#: src/features/session-statusbar.tsx:245
+#: src/features/session-statusbar.tsx:320
+msgid "游离分支"
+msgstr "游离分支"
+
+#: src/features/session-statusbar.tsx:242
+msgid "等待处理"
+msgstr "等待处理"
+
+#: src/features/session-statusbar.tsx:241
+msgid "运行中"
+msgstr "运行中"

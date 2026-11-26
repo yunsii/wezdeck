@@ -49,7 +49,7 @@ msgstr "{by} proposes splitting off a ticket"
 msgid "{count} images"
 msgstr "{count} images"
 
-#: src/features/session-statusbar.tsx:161
+#: src/features/session-statusbar.tsx:167
 msgid "{count} monitors running"
 msgstr "{count} monitors running"
 
@@ -57,7 +57,11 @@ msgstr "{count} monitors running"
 #~ msgid "{count} more need you"
 #~ msgstr "{count} more need you"
 
-#: src/features/session-statusbar.tsx:162
+#: src/features/session-statusbar.tsx:355
+msgid "{count} sessions"
+msgstr "{count} sessions"
+
+#: src/features/session-statusbar.tsx:168
 msgid "{count} shells running"
 msgstr "{count} shells running"
 
@@ -82,7 +86,7 @@ msgstr "{hours} h ago"
 msgid "{label} {percent}% used"
 msgstr "{label} {percent}% used"
 
-#: src/features/session-statusbar.tsx:200
+#: src/features/session-statusbar.tsx:254
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
@@ -260,7 +264,7 @@ msgstr "A ticket goes to another repository."
 msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 msgstr "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 
-#: src/features/session-statusbar.tsx:108
+#: src/features/session-statusbar.tsx:114
 msgid "Accept edits"
 msgstr "Accept edits"
 
@@ -465,7 +469,7 @@ msgstr "assumptions challenged"
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
-#: src/features/session-statusbar.tsx:96
+#: src/features/session-statusbar.tsx:102
 msgid "Auto"
 msgstr "Auto"
 
@@ -473,7 +477,7 @@ msgstr "Auto"
 msgid "Auto compact"
 msgstr "Auto compact"
 
-#: src/features/session-statusbar.tsx:97
+#: src/features/session-statusbar.tsx:103
 msgid "Auto mode enabled"
 msgstr "Auto mode enabled"
 
@@ -481,11 +485,11 @@ msgstr "Auto mode enabled"
 msgid "Auto mode server"
 msgstr "Auto mode server"
 
-#: src/features/session-statusbar.tsx:120
+#: src/features/session-statusbar.tsx:126
 msgid "Auto off"
 msgstr "Auto off"
 
-#: src/features/session-statusbar.tsx:109
+#: src/features/session-statusbar.tsx:115
 msgid "Auto-approves edits; auto mode off"
 msgstr "Auto-approves edits; auto mode off"
 
@@ -593,7 +597,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:121
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -899,7 +903,7 @@ msgstr "Console navigation"
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:120
+#: src/features/session-header.tsx:118
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1102,7 +1106,7 @@ msgstr "Default agent"
 msgid "Default agent for new sessions in this browser"
 msgstr "Default agent for new sessions in this browser"
 
-#: src/features/session-statusbar.tsx:121
+#: src/features/session-statusbar.tsx:127
 msgid "Default mode: auto mode is off"
 msgstr "Default mode: auto mode is off"
 
@@ -1296,7 +1300,7 @@ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jum
 msgid "Execution mode"
 msgstr "Execution mode"
 
-#: src/features/session-statusbar.tsx:127
+#: src/features/session-statusbar.tsx:133
 msgid "Execution mode: {mode}"
 msgstr "Execution mode: {mode}"
 
@@ -1387,11 +1391,11 @@ msgstr "From"
 msgid "From anywhere"
 msgstr "From anywhere"
 
-#: src/features/session-statusbar.tsx:102
+#: src/features/session-statusbar.tsx:108
 msgid "Full access"
 msgstr "Full access"
 
-#: src/features/session-statusbar.tsx:103
+#: src/features/session-statusbar.tsx:109
 msgid "Full access: auto-approves all actions"
 msgstr "Full access: auto-approves all actions"
 
@@ -1721,7 +1725,7 @@ msgstr "Level with upstream."
 msgid "Light"
 msgstr "Light"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:122
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1756,9 +1760,10 @@ msgstr "Loading original…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:220
+#: src/features/session-header.tsx:206
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
+#: src/features/session-statusbar.tsx:301
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "Loading…"
@@ -1788,6 +1793,10 @@ msgstr "manage MCP servers"
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "manage tool permission rules"
+
+#: src/features/session-statusbar.tsx:289
+msgid "Manage worktrees"
+msgstr "Manage worktrees"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -1900,8 +1909,8 @@ msgstr "Needs a decision"
 #~ msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
 #: src/features/session-header.tsx:237
-msgid "Needs you"
-msgstr "Needs you"
+#~ msgid "Needs you"
+#~ msgstr "Needs you"
 
 #: src/features/session-list.tsx:237
 #~ msgctxt "filter"
@@ -2064,6 +2073,10 @@ msgstr "No human message yet"
 #~ msgid "No idle sessions."
 #~ msgstr "No idle sessions."
 
+#: src/features/session-statusbar.tsx:345
+msgid "No linked worktrees"
+msgstr "No linked worktrees"
+
 #: src/features/repo-links.tsx:315
 msgid "No links match that search."
 msgstr "No links match that search."
@@ -2091,6 +2104,10 @@ msgstr "No plan written yet"
 #: src/features/host-quick-controls.tsx:75
 msgid "No recent result"
 msgstr "No recent result"
+
+#: src/features/session-statusbar.tsx:335
+msgid "No session"
+msgstr "No session"
 
 #: src/features/session-list.tsx:409
 msgid "No sessions match that search."
@@ -2319,7 +2336,7 @@ msgstr "Other"
 msgid "outline a plan before editing"
 msgstr "outline a plan before editing"
 
-#: src/features/session-header.tsx:122
+#: src/features/session-header.tsx:120
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2397,11 +2414,11 @@ msgstr "Pick a session (grouped by repository)"
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
-#: src/features/session-statusbar.tsx:114
+#: src/features/session-statusbar.tsx:120
 msgid "Plan"
 msgstr "Plan"
 
-#: src/features/session-statusbar.tsx:115
+#: src/features/session-statusbar.tsx:121
 msgid "Plan mode"
 msgstr "Plan mode"
 
@@ -2694,7 +2711,7 @@ msgstr "research failed"
 msgid "Resend"
 msgstr "Resend"
 
-#: src/features/session-header.tsx:111
+#: src/features/session-header.tsx:109
 msgid "resets {reset}"
 msgstr "resets {reset}"
 
@@ -3030,7 +3047,7 @@ msgstr "Session deleted. The worktree has local changes."
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:245
+#: src/features/session-header.tsx:222
 #: src/features/session-info.tsx:249
 msgid "Session info"
 msgstr "Session info"
@@ -3045,7 +3062,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:199
+#: src/features/session-header.tsx:185
 #: src/features/session-list.tsx:377
 msgctxt "nav"
 msgid "Sessions"
@@ -3251,7 +3268,7 @@ msgstr "Switch mode"
 #~ msgid "Switch session"
 #~ msgstr "Switch session"
 
-#: src/features/session-header.tsx:211
+#: src/features/session-header.tsx:197
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3651,7 +3668,7 @@ msgid "Unknown"
 msgstr "Unknown"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:175
+#: src/features/session-header.tsx:172
 msgid "Untitled session"
 msgstr "Untitled session"
 
@@ -3941,6 +3958,10 @@ msgstr "Worktree"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 
+#: src/features/session-statusbar.tsx:296
+msgid "Worktrees"
+msgstr "Worktrees"
+
 #: src/features/me-host.tsx:40
 #: src/features/me-host.tsx:136
 msgid "WSL bridge"
@@ -3966,3 +3987,36 @@ msgstr "Your decision, extra context, or an answer to the challenge"
 #: src/features/ticket-reply.tsx:173
 msgid "Your reply"
 msgstr "Your reply"
+
+#: src/features/session-statusbar.tsx:246
+msgid "仍在使用"
+msgstr "仍在使用"
+
+#: src/features/session-statusbar.tsx:240
+msgid "可复用"
+msgstr "可复用"
+
+#: src/features/session-statusbar.tsx:243
+msgid "有本地改动"
+msgstr "有本地改动"
+
+#: src/features/session-statusbar.tsx:244
+msgid "未交付"
+msgstr "未交付"
+
+#: src/features/session-statusbar.tsx:311
+msgid "未命名工作树"
+msgstr "未命名工作树"
+
+#: src/features/session-statusbar.tsx:245
+#: src/features/session-statusbar.tsx:320
+msgid "游离分支"
+msgstr "游离分支"
+
+#: src/features/session-statusbar.tsx:242
+msgid "等待处理"
+msgstr "等待处理"
+
+#: src/features/session-statusbar.tsx:241
+msgid "运行中"
+msgstr "运行中"
