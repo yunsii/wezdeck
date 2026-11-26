@@ -489,7 +489,7 @@ export function ComposerBox({
           type="submit"
           aria-label={t`Send`}
           disabled={!canSend}
-          className="absolute bottom-1.5 right-1.5 inline-flex size-10 items-center justify-center rounded-full disabled:opacity-30"
+          className="absolute right-1.5 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full disabled:opacity-30"
         >
           <SendHorizontal
             size={20}
