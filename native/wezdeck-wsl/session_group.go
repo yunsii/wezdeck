@@ -160,6 +160,9 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	newJobsMu.Unlock()
 	defer releaseSessionWorktree(tree)
 
+	if err := rememberSessionRepo(repo); err != nil {
+		relayLogf("session_repo_remember", "repo=%q outcome=failed err=%q", repo, err)
+	}
 	// An archived row may still point to a pane that now hosts a different
 	// conversation. Close only that record, even while the pane is in use.
 	if !request.Force && entry.archivedID == request.ID {

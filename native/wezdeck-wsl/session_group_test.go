@@ -11,6 +11,7 @@ import (
 
 func TestGroupedSessionStartsInSameCheckoutAndDeletesOnlyItsPane(t *testing.T) {
 	dir, socket, original, _ := restartFixture(t)
+	t.Setenv("WEZDECK_ACCESS_LEDGER", filepath.Join(dir, "ledger.json"))
 	run := func(name string, args ...string) string {
 		t.Helper()
 		out, err := exec.Command(name, args...).CombinedOutput()
@@ -67,6 +68,7 @@ func TestGroupedSessionStartsInSameCheckoutAndDeletesOnlyItsPane(t *testing.T) {
 
 func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
 	dir, socket, pane, _ := restartFixture(t)
+	t.Setenv("WEZDECK_ACCESS_LEDGER", filepath.Join(dir, "ledger.json"))
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "config"))
 	t.Setenv("XDG_STATE_HOME", filepath.Join(dir, "state"))
 	platform, err := filepath.Abs("../..")
@@ -116,10 +118,15 @@ func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
 		t.Fatalf("worktree still exists: %v", err)
 	}
 	git("-C", repo, "show-ref", "--verify", "refs/heads/dev/group")
+	if repos := knownRepos(); len(repos) != 1 || repos[0].Root != repo {
+		t.Fatalf("repository missing after deleting its last session: %+v", repos)
+	}
+
 }
 
 func TestDeleteArchivedSessionPreservesReusedPane(t *testing.T) {
 	dir, socket, pane, attention := restartFixture(t)
+	t.Setenv("WEZDECK_ACCESS_LEDGER", filepath.Join(dir, "ledger.json"))
 	run := func(name string, args ...string) {
 		t.Helper()
 		if out, err := exec.Command(name, args...).CombinedOutput(); err != nil {

@@ -44,11 +44,11 @@ type repoChoice struct {
 	Visited int64  `json:"visited,omitempty"`
 }
 
-// knownRepos: main checkouts of visited worktrees and running sessions.
+// knownRepos includes remembered repositories even after their last session closes.
 func knownRepos() []repoChoice {
-	paths := map[string]int64{}
+	paths := rememberedSessionRepos()
 	for path, ms := range worktreeVisits() {
-		paths[path] = ms
+		paths[path] = max(paths[path], ms)
 	}
 	if entries, err := liveSessions(); err == nil {
 		for _, e := range entries {

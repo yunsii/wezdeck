@@ -40,6 +40,7 @@ import type { SessionCard } from './session-card'
 import { detailKey, readDetail } from './session-detail-read'
 
 export type { SessionCard }
+export { useSessions } from './session-delete-state'
 
 /** waiting on a human: a permission / question prompt, or the turn asked you */
 export const needsYou = (row: { status: string; waiting_kind?: string }) =>
@@ -154,19 +155,6 @@ export function sessionTone(status: string, kind?: string): LedTone {
   if (status === 'waiting') return 'waiting'
   if (status === 'done') return 'done'
   return 'muted'
-}
-
-export function useSessions() {
-  return useQuery({
-    queryKey: ['remote', 'sessions'],
-    enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
-    queryFn: async () =>
-      (await hostRead('sessions', {})) as {
-        sessions: Array<SessionCard>
-        redirects?: Array<{ from: string; to: string }>
-      },
-  })
 }
 
 function JumpLatest({

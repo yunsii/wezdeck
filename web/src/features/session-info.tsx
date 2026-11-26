@@ -13,6 +13,7 @@ import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
 import { GitStatusButton } from './session-git'
 import { useDeleteSession } from './session-delete'
+import { useSessionDeleteReview } from './session-delete-state'
 import { requestNewSession } from './session-new'
 import { useDeviceState } from './device-state'
 import { ClearButton } from './session-clear'
@@ -208,7 +209,7 @@ export function SessionInfo({
   const card = sessions.data?.sessions.find((row) => row.id === data.id)
   const { ask: deleteSession, confirmation } = useDeleteSession()
   const device = useDeviceState()
-  const [reviewId, setReviewId] = useState('')
+  const reviewRequired = useSessionDeleteReview(data.id)
   const [copiedRef, setCopiedRef] = useState(false)
   useFocusKey(data.focus)
   // stays mounted while closed: the sheet plays its exit before it unmounts
@@ -317,15 +318,11 @@ export function SessionInfo({
             <Button
               type="button"
               variant="key"
-              onClick={() =>
-                deleteSession(card, true, {
-                  onReview: () => setReviewId(card.id),
-                })
-              }
+              onClick={() => deleteSession(card, true)}
             >
               {t`Delete session`}
             </Button>
-            {reviewId === card.id ? (
+            {reviewRequired ? (
               <div className="grid gap-2 rounded-xl bg-brand-deck p-3">
                 <p role="status" className="text-caption text-brand-muted">
                   {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}
