@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -115,4 +116,37 @@ func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
 		t.Fatalf("worktree still exists: %v", err)
 	}
 	git("-C", repo, "show-ref", "--verify", "refs/heads/dev/group")
+}
+
+func TestDeleteArchivedSessionPreservesReusedPane(t *testing.T) {
+	dir, socket, pane, attention := restartFixture(t)
+	run := func(name string, args ...string) {
+		t.Helper()
+		if out, err := exec.Command(name, args...).CombinedOutput(); err != nil {
+			t.Fatalf("%s: %v: %s", name, err, out)
+		}
+	}
+	run("git", "init", "-q", dir)
+	run("tmux", "-S", socket, "respawn-pane", "-k", "-t", pane, "-c", dir,
+		filepath.Join(dir, "pane-bin", "claude"), "600")
+	run("tmux", "-S", socket, "set-option", "-p", "-t", pane, "@wezterm_agent_session_id", "new-session")
+	doc := fmt.Sprintf(`{"recent":[{"session_id":"s1","tmux_socket":%q,"tmux_pane":%q,"agent_name":"claude","archived_ts":100}]}`, socket, pane)
+	if err := os.WriteFile(attention, []byte(doc), 0600); err != nil {
+		t.Fatal(err)
+	}
+	entry, _, _, err := sessionGroupTarget("s1")
+	if err != nil || entry.archivedID != "s1" {
+		t.Fatalf("archive fixture: %v", err)
+	}
+	result, err := deleteGroupedSession([]byte(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "archive_only" {
+		t.Fatalf("archive delete: %v, %v", result, err)
+	}
+	if pin, err := sessionPanePin(entry); err != nil || pin != "new-session" {
+		t.Fatalf("current pane changed: %q, %v", pin, err)
+	}
+	visible, err := liveSessions()
+	if err != nil || visible["s1"].SessionID != "" {
+		t.Fatalf("deleted archive still listed: %v", err)
+	}
 }
