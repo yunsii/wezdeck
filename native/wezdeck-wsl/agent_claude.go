@@ -288,6 +288,9 @@ func (t *transcript) feedLine(raw []byte) {
 	if line.Type != "user" && line.Type != "assistant" {
 		return
 	}
+	if line.Type == "user" {
+		t.markStepStart(line.Timestamp)
+	}
 	if u := line.Message.Usage; line.Type == "assistant" && u != nil && line.Message.ID != t.lastMsg {
 		t.lastMsg = line.Message.ID
 		if line.Message.Model != "" && !strings.HasPrefix(line.Message.Model, "<") {

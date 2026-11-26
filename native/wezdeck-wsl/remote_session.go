@@ -785,6 +785,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if e.TurnStarted > 0 && (e.Status == "running" || e.Status == "waiting") {
 			out["turn_output"] = t.turnOutput(e.TurnStarted)
 		}
+		if rate := sessionTokenRateFor(e.SessionID, t); rate != nil {
+			out["token_rate"] = rate
+		}
 		if e.Status == "waiting" && e.WaitingKind == "permission_prompt" {
 			if p := pendingPermission(t.messages, planToolOf(agent)); p != nil {
 				out["permission"] = p

@@ -10,7 +10,12 @@ import { useLingui } from '@lingui/react/macro'
 import { useRef } from 'react'
 
 import { Led } from '#/components/deck/led'
-import { formatElapsed, formatTokens, useNow } from '#/lib/turn-progress'
+import {
+  formatElapsed,
+  formatTokenRate,
+  formatTokens,
+  useNow,
+} from '#/lib/turn-progress'
 import { cn } from '#/lib/utils'
 import type { Message, Pending } from './chat-thread'
 
@@ -22,6 +27,8 @@ export type Activity = {
   compactSince?: number
   /** output tokens of the turn so far */
   tokens?: number
+  /** effective output rate in tok/s (OTel primary, transcript fallback) */
+  rate?: number
 }
 
 export type TurnState =
@@ -136,9 +143,12 @@ export function TurnLine({ state }: { state: TurnState | null }) {
     label = compacting ? t`Compacting conversation` : t`Working`
     const tokens =
       !compacting && activity?.tokens ? formatTokens(activity.tokens) : ''
+    const rate =
+      !compacting && activity?.rate ? formatTokenRate(activity.rate) : ''
     detail = [
       from !== undefined ? formatElapsed(Math.max(0, now - from)) : '',
       tokens ? t`↓ ${tokens} tokens` : '',
+      rate,
     ]
       .filter(Boolean)
       .join(' · ')

@@ -111,8 +111,8 @@ Same "presence is the signal" contract as `WslDisk·` / `Memory·`. Classificati
 
 ### Local Web events
 
-The local Web event trail, its storage limits and agent query command are in
-[`web-observability.md`](./web-observability.md).
+- Local Web events: [`web-observability.md`](./web-observability.md).
+- Agent token output rate (loopback OTLP collector `wezdeck-wsl otel` + transcript fallback, `scripts/dev/token-rate-report.sh`): [`agent-token-rate.md`](./agent-token-rate.md).
 
 - When `WEZTERM_RUNTIME_LOG_ENABLED=1`, the runtime scripts append structured lines to `WEZTERM_RUNTIME_LOG_FILE`.
 - `sync-runtime.sh` prints a one-line tmux reload result to the terminal, while the full structured detail still goes to `WEZTERM_RUNTIME_LOG_FILE`.

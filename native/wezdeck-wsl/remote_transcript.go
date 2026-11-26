@@ -185,10 +185,13 @@ type transcript struct {
 	mode     string // Claude's permission mode, from the newest user line
 	// task notifications already shown (a queued one can be delivered too)
 	seenNotes map[string]bool
-	lastMsg   string       // message id whose usage was counted (one reply spans several lines)
-	outputs   []outputMark // per reply: when, how many output tokens (turnOutput)
-	lineOff   int64        // file offset of the line being fed
-	skills    []skillInfo  // the skills the agent was shown (session_skills.go)
+	lastMsg     string             // message id whose usage was counted (one reply spans several lines)
+	outputs     []outputMark       // per reply: when, how many output tokens (turnOutput)
+	stepStartMS int64              // trigger timestamp for next reply's step-rate window
+	pendingAgy  *pendingStepOutput // open Agy PLANNER_RESPONSE waiting on next step's created_at
+	stepRates   []stepRateMark     // per-step (outputTokens, durationMS) fallback rates
+	lineOff     int64              // file offset of the line being fed
+	skills      []skillInfo        // the skills the agent was shown (session_skills.go)
 }
 
 // markCompact appends a context-compaction marker (role system, kind compact;

@@ -76,6 +76,7 @@ func (t *transcript) feedAgy(raw []byte) {
 	if json.Unmarshal(raw, &row) != nil {
 		return
 	}
+	t.advanceAgyStep(row.Type, row.CreatedAt)
 	switch row.Type {
 	case "USER_INPUT":
 		if text := strings.TrimSpace(row.Content); text != "" {
@@ -99,7 +100,7 @@ func (t *transcript) feedAgy(raw []byte) {
 		t.usage.Input += row.InputTokens
 		t.usage.CacheRead += row.CacheReadTokens
 		t.usage.Output += row.OutputTokens
-		t.markOutput(row.CreatedAt, row.OutputTokens)
+		t.markAgyStepOpen(row.CreatedAt, row.OutputTokens, len(row.ToolCalls))
 	}
 }
 
