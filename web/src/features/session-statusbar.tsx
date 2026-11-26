@@ -235,6 +235,16 @@ function WorktreeManager({
       : state === 'running' || state === 'waiting'
         ? 'text-brand-waiting'
         : 'text-brand-muted'
+  const stateLabel = (state: string) =>
+    ({
+      idle: t`可复用`,
+      running: t`运行中`,
+      waiting: t`等待处理`,
+      dirty: t`有本地改动`,
+      undelivered: t`未交付`,
+      detached: t`游离分支`,
+      in_use: t`仍在使用`,
+    })[state] ?? state
   return (
     <>
       <PopoverPrimitive.Root>
@@ -298,7 +308,7 @@ function WorktreeManager({
           {(workstations.data?.directions ?? []).map((direction) => (
             <section key={direction.name} className="grid gap-1">
               <h3 className="text-meta font-semibold text-brand-text">
-                {direction.name}
+                {direction.description || t`未命名工作树`}
               </h3>
               {direction.slots.map((slot) => (
                 <div
@@ -307,12 +317,12 @@ function WorktreeManager({
                 >
                   <div className="flex min-w-0 items-center justify-between gap-2">
                     <span className="truncate font-mono text-meta text-brand-text">
-                      {slot.branch || t`detached`}
+                      {slot.branch || t`游离分支`}
                     </span>
                     <span
                       className={cn('shrink-0 text-meta', tone(slot.state))}
                     >
-                      {slot.state}
+                      {stateLabel(slot.state)}
                     </span>
                   </div>
                   <span className="truncate font-mono text-caption text-brand-label">
