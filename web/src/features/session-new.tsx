@@ -73,6 +73,28 @@ type Job = {
   error?: string
 }
 
+const preferenceKeys = {
+  repo: 'wezdeck.new-session.repo',
+  agent: 'wezdeck.new-session.agent',
+}
+
+function readPreference(key: string) {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function rememberSessionChoices(repo: string | undefined, agent: string) {
+  try {
+    if (repo) localStorage.setItem(preferenceKeys.repo, repo)
+    localStorage.setItem(preferenceKeys.agent, agent)
+  } catch {
+    // Creating a session still works if the browser blocks local storage.
+  }
+}
+
 const pendingJobKey = 'wezdeck.pending-new-session-job'
 
 function isUnknownJob(error: unknown) {
@@ -301,13 +323,19 @@ function NewSessionSheet({
   const sessions = useSessions()
   const agentProfiles = useAgentProfiles()
   const [preferredAgent] = usePreferredAgentProfile()
+  const [lastAgent] = useState(() => readPreference(preferenceKeys.agent))
   const {
     available: availableProfiles,
     defaultDisabled,
     selected: selectedAgent,
     setPicked: setAgentProfile,
-  } = useAgentSelection(agentProfiles.data?.profiles ?? [], preferredAgent)
-  const [repo, setRepo] = useState(preset?.repo ?? '')
+  } = useAgentSelection(
+    agentProfiles.data?.profiles ?? [],
+    lastAgent ?? preferredAgent,
+  )
+  const [repo, setRepo] = useState(
+    () => readPreference(preferenceKeys.repo) ?? '',
+  )
   const submitting = useRef(false)
   const [sending, setSending] = useState(false)
   const [pending] = useState(readPendingJob)
@@ -330,9 +358,14 @@ function NewSessionSheet({
         job: Job
       },
   })
-  const chosen = repo || repos.data?.repos[0]?.root || ''
+  const repositories = repos.data?.repos ?? []
+  const chosen =
+    preset?.repo ??
+    (repositories.some(({ root }) => root === repo)
+      ? repo
+      : repositories[0]?.root || '')
   const repoLabel =
-    (repos.data?.repos ?? []).find((r) => r.root === chosen)?.label ||
+    repositories.find((r) => r.root === chosen)?.label ||
     chosen.split('/').pop() ||
     ''
   const current = job.data?.job
@@ -373,6 +406,7 @@ function NewSessionSheet({
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
+      rememberSessionChoices(anchor ? undefined : chosen, selectedAgent)
       sessionStorage.setItem(
         pendingJobKey,
         JSON.stringify({ job: res.job, before: [...before.current] }),
@@ -399,7 +433,7 @@ function NewSessionSheet({
         <ComposeLayer
           busy={busy}
           repoLabel={repoLabel}
-          repositories={repos.data?.repos ?? []}
+          repositories={repositories}
           repo={chosen}
           onRepo={setRepo}
           group={preset?.group}

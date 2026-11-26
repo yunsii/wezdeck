@@ -1857,8 +1857,8 @@ msgstr "换行"
 #~ msgstr "新一轮"
 
 #: src/features/session-chat-group.tsx:166
-#: src/features/session-new.tsx:255
-#: src/features/session-new.tsx:394
+#: src/features/session-new.tsx:277
+#: src/features/session-new.tsx:428
 msgid "New session"
 msgstr "新会话"
 
@@ -1866,11 +1866,11 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:251
+#: src/features/session-new.tsx:273
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:348
+#: src/features/session-new.tsx:381
 msgid "New session group"
 msgstr "新会话组"
 
@@ -1879,7 +1879,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:311
 #: src/features/session-info.tsx:334
 #: src/features/session-list.tsx:236
-#: src/features/session-new.tsx:394
+#: src/features/session-new.tsx:428
 msgid "New session in this group"
 msgstr "在此组新建会话"
 
@@ -3216,7 +3216,7 @@ msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
-#: src/features/session-new.tsx:149
+#: src/features/session-new.tsx:171
 msgid "The previous session request expired. Start a new one."
 msgstr "上一个会话请求已过期，请重新开始。"
 

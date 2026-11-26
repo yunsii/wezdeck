@@ -1857,8 +1857,8 @@ msgstr "New line"
 #~ msgstr "New round"
 
 #: src/features/session-chat-group.tsx:166
-#: src/features/session-new.tsx:255
-#: src/features/session-new.tsx:394
+#: src/features/session-new.tsx:277
+#: src/features/session-new.tsx:428
 msgid "New session"
 msgstr "New session"
 
@@ -1866,11 +1866,11 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:251
+#: src/features/session-new.tsx:273
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:348
+#: src/features/session-new.tsx:381
 msgid "New session group"
 msgstr "New session group"
 
@@ -1879,7 +1879,7 @@ msgstr "New session group"
 #: src/features/session-chat-group.tsx:311
 #: src/features/session-info.tsx:334
 #: src/features/session-list.tsx:236
-#: src/features/session-new.tsx:394
+#: src/features/session-new.tsx:428
 msgid "New session in this group"
 msgstr "New session in this group"
 
@@ -3216,7 +3216,7 @@ msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
-#: src/features/session-new.tsx:149
+#: src/features/session-new.tsx:171
 msgid "The previous session request expired. Start a new one."
 msgstr "The previous session request expired. Start a new one."
 
