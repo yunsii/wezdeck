@@ -250,9 +250,9 @@ This writes `~/.grok/hooks/wezdeck-attention.json` from
 `scripts/runtime/agent-attention/adapters/grok.sh` for
 `UserPromptSubmit → running`, `Notification → waiting` (whitelist in
 `emit.sh`), `Stop → done`, `Pre/PostToolUse → resolved`, and
-`SessionStart` matcher **`new`** → `pane-evict` (Grok's `/new` and
-`/clear` both use start source `new`; Claude's `clear` matcher never
-matches on Grok).
+`SessionStart` **`new`** / **`load`** → `pane-evict` (`/new`·`/clear` vs
+`/resume`·`--resume`·`--continue`; Claude's `clear`/`resume` never match
+on Grok — web follow-through in [`remote-sessions.md`](./remote-sessions.md)).
 
 Grok still discovers Claude/Cursor settings by default. When it loads the
 Claude install block, `adapters/claude.sh` may also run and set

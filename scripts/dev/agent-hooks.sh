@@ -64,8 +64,13 @@ load_requirements() {
       session_start_matcher=clear
       ;;
     grok)
-      events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart)
-      actions=(running waiting done resolved resolved pane-evict)
+      # SessionStart load: /resume / --resume / --continue reopen a saved
+      # session (Grok's start source is "load"; Claude's "resume" never
+      # matches — see Grok hooks guide). Same pane-evict as new so the
+      # web console follows.
+      events=(UserPromptSubmit Notification Stop PreToolUse PostToolUse SessionStart
+        SessionStart:load)
+      actions=(running waiting done resolved resolved pane-evict pane-evict)
       adapter_fragment='scripts/runtime/agent-attention/adapters/grok.sh'
       adapter_path="$repo_root/scripts/runtime/agent-attention/adapters/grok.sh"
       # Grok SessionStart matcher: new covers /new and /clear (Claude's

@@ -270,6 +270,15 @@ if jq -e --arg cmd "$grok_adapter pane-evict" '
 else
   fail=$((fail+1)); echo "FAIL Grok SessionStart matcher=new missing" >&2
 fi
+if jq -e --arg cmd "$grok_adapter pane-evict" '
+    [.hooks.SessionStart[]? | select(.matcher=="load") | .hooks[]?
+      | select(.type=="command") | .command]
+    | any(. == $cmd)
+  ' "$hooks_file" >/dev/null; then
+  pass=$((pass+1)); echo "  ✓ Grok SessionStart matcher=load pane-evict"
+else
+  fail=$((fail+1)); echo "FAIL Grok SessionStart matcher=load missing" >&2
+fi
 if AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" check --provider grok --quiet; then
   pass=$((pass+1)); echo "  ✓ Grok agent-hooks check healthy"
 else

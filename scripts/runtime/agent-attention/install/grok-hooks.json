@@ -67,6 +67,15 @@
             "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh pane-evict"
           }
         ]
+      },
+      {
+        "matcher": "load",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/grok.sh pane-evict"
+          }
+        ]
       }
     ]
   }

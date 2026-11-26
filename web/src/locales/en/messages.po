@@ -875,10 +875,6 @@ msgstr "Cross-repo collab"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-elicitation.tsx:176
-#~ msgid "Current plan"
-#~ msgstr "Current plan"
-
 #: src/features/console-shared.tsx:349
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
@@ -2760,8 +2756,8 @@ msgid "This page hit a rendering error. The rest of the console is still availab
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
 #: src/features/session-send.ts:59
-msgid "This pane started a new session"
-msgstr "This pane started a new session"
+msgid "This pane switched sessions"
+msgstr "This pane switched sessions"
 
 #: src/features/session-skills.tsx:45
 msgid "This repo"

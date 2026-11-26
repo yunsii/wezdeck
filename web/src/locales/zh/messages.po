@@ -875,10 +875,6 @@ msgstr "跨仓协作"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-elicitation.tsx:176
-#~ msgid "Current plan"
-#~ msgstr "当前计划"
-
 #: src/features/console-shared.tsx:349
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
@@ -2760,8 +2756,8 @@ msgid "This page hit a rendering error. The rest of the console is still availab
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
 #: src/features/session-send.ts:59
-msgid "This pane started a new session"
-msgstr "这个窗格已开始新会话，已切换过去"
+msgid "This pane switched sessions"
+msgstr "这个窗格已切换会话，已跟过去"
 
 #: src/features/session-skills.tsx:45
 msgid "This repo"

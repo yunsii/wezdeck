@@ -578,10 +578,10 @@ if [[ "$status" == "cleared" ]]; then
   attention_audit_prepare "remove" "" "$_prev_st" "cleared" 0
   attention_state_remove "$session_id" 2>/dev/null || true
 elif [[ "$status" == "pane-evict" ]]; then
-  # SessionStart source=clear: the new session_id in stdin is for the
-  # fresh post-/clear session; any entry still parked on this tmux
-  # PANE belongs to the discarded pre-/clear session and will never
-  # get its own Stop. Evict it, but preserve the new session_id
+  # SessionStart clear/new/resume/load: the session_id in stdin is the
+  # conversation that now owns this pane; any entry still parked on
+  # this tmux PANE belongs to the previous conversation and will never
+  # get its own Stop. Evict it, but preserve the current session_id
   # defensively in case a race re-creates it before we hold the lock.
   #
   # Eviction key is (tmux_socket, tmux_session, tmux_pane): /clear

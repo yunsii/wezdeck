@@ -164,6 +164,17 @@ check "old entry left .entries" "$(entry "$sb" '.status // "none"')" "none"
 check "archived entry points at the new session" "$(recent "$sb" s1 '.cleared_to // ""')" "s2"
 rm -rf "$sb"
 
+echo "/resume after /new overwrites cleared_to and stubs the phantom"
+sb="$(new_sandbox)"
+hook "$sb" running UserPromptSubmit
+hook "$sb" done Stop
+hook "$sb" pane-evict SessionStart s2
+# Terminal resumes s1 while the web is still on phantom s2.
+hook "$sb" pane-evict SessionStart s1
+check "resumed session drops cleared_to" "$(recent "$sb" s1 '.cleared_to // ""')" ""
+check "phantom fresh id points at resumed" "$(recent "$sb" s2 '.cleared_to // ""')" "s1"
+rm -rf "$sb"
+
 echo
 echo "compaction / turn: $pass passed, $fail failed"
 (( fail == 0 ))

@@ -115,23 +115,53 @@ attention_promote_to_turn() {
   return 0
 }
 
-# emit.sh pane-evict (SessionStart source=clear: /clear, /new): the old
-# session was just archived into recent[]; mark it cleared_to the new id so
-# the relay lists the new session in its place before its first prompt
-# makes an entry, and answers the old id with replaced_by. A pane pin alone
-# cannot say this: it is also set at launch and goes stale after /resume.
+# emit.sh pane-evict (SessionStart: /clear, /new, /resume): the prior
+# tenant of this pane was just archived into recent[]; mark it cleared_to
+# the current id so the relay lists that session before its first prompt
+# makes an entry, and answers the previous id with replaced_by. A pane pin
+# alone cannot say this: it is also set at launch and goes stale after
+# /resume.
+#
+# Resume/load must overwrite an earlier cleared_to (e.g. A→B from /new,
+# then /resume A): keep pointing every other row on the pane at the
+# current id, drop cleared_to on the current id itself, and leave a
+# stub for any phantom id that only existed as someone's cleared_to so
+# a web page still on that URL gets replaced_by.
 attention_mark_cleared() {
   local socket="$1" pane="$2" new_sid="$3"
   [[ -n "$pane" && -n "$new_sid" ]] || return 0
   (
     flock -x 9
-    local cur next
+    local cur next now
     cur="$(attention_state_read)"
-    next="$(jq -c --arg tsk "$socket" --arg tp "$pane" --arg sid "$new_sid" '
-      .recent = ((.recent // []) | map(
-        if (.tmux_pane // "") == $tp and (.tmux_socket // "") == $tsk
-           and (.session_id // "") != $sid and (.cleared_to // "") == ""
-        then . + {cleared_to: $sid} else . end))
+    now="$(attention_state_now_ms)"
+    next="$(jq -c --arg tsk "$socket" --arg tp "$pane" --arg sid "$new_sid" --argjson now "$now" '
+      (.recent // []) as $recent
+      | ($recent
+          | map(select(
+              (.tmux_pane // "") == $tp and (.tmux_socket // "") == $tsk
+              and (.cleared_to // "") != "" and (.cleared_to // "") != $sid
+            ) | .cleared_to)
+          | unique) as $phantoms
+      | ($recent | map(.session_id // "") | unique) as $known
+      | .recent = (
+          ($recent | map(
+            if (.tmux_pane // "") != $tp or (.tmux_socket // "") != $tsk then .
+            elif (.session_id // "") == $sid then del(.cleared_to)
+            else . + {cleared_to: $sid}
+            end
+          ))
+          + ($phantoms
+              | map(select(. as $p | ($known | index($p) | not)))
+              | map({
+                  session_id: .,
+                  tmux_socket: $tsk,
+                  tmux_pane: $tp,
+                  last_status: "idle",
+                  archived_ts: $now,
+                  cleared_to: $sid
+                }))
+        )
     ' <<<"$cur")" || return 0
     attention_state_write "$next"
   ) 9>"$(attention_state_lock_path)"

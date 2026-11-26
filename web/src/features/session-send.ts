@@ -46,9 +46,9 @@ export const commandOf = (text: string) =>
   /^\/[a-z][\w:-]*(?=\s|$)/i.exec(text.trim())?.[0] ?? ''
 
 /**
- * /new or /clear in the pane starts another session there; the host then
- * answers the old id with replaced_by (relay liveSessions). Follow it, in
- * place of this page in history, and say so.
+ * /new, /clear or /resume in the pane switches the conversation there; the
+ * host then answers the previous id with replaced_by (relay liveSessions).
+ * Follow it, in place of this page in history, and say so.
  */
 export function useFollowReplacement(replacedBy?: string) {
   const { t } = useLingui()
@@ -56,7 +56,7 @@ export function useFollowReplacement(replacedBy?: string) {
   const { locale } = useLocale()
   useEffect(() => {
     if (!replacedBy) return
-    toast(t`This pane started a new session`)
+    toast(t`This pane switched sessions`)
     void navigate({
       to: '/{-$locale}/console/sessions/$id',
       params: { locale: locale === 'en' ? undefined : locale, id: replacedBy },
