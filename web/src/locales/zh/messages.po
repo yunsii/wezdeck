@@ -57,7 +57,7 @@ msgstr "{count} 个 Monitor 运行中"
 #~ msgid "{count} more need you"
 #~ msgstr "还有 {count} 个等你"
 
-#: src/features/session-statusbar.tsx:355
+#: src/features/session-statusbar.tsx:358
 msgid "{count} sessions"
 msgstr "{count} 个会话"
 
@@ -2073,7 +2073,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/session-statusbar.tsx:345
+#: src/features/session-statusbar.tsx:348
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
 
@@ -2105,7 +2105,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/session-statusbar.tsx:335
+#: src/features/session-statusbar.tsx:338
 msgid "No session"
 msgstr "无会话"
 
@@ -4004,12 +4004,12 @@ msgstr "有本地改动"
 msgid "未交付"
 msgstr "未交付"
 
-#: src/features/session-statusbar.tsx:311
+#: src/features/session-statusbar.tsx:314
 msgid "未命名工作树"
 msgstr "未命名工作树"
 
 #: src/features/session-statusbar.tsx:245
-#: src/features/session-statusbar.tsx:320
+#: src/features/session-statusbar.tsx:323
 msgid "游离分支"
 msgstr "游离分支"
 

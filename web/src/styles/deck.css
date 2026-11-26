@@ -312,8 +312,13 @@ html[data-theme='dark'] .list-row.row-selected::after {
   flex: 1;
   font-weight: 500;
 }
-.deck-toast-description {
-  opacity: 0.75;
+/* sonner's injected stylesheet leaks `[data-sonner-toaster][data-sonner-theme='dark'] [data-description]`
+   (missing `[data-styled='true']`, specificity 0,3,0) even when unstyled:true, painting light
+   grey (#e8e8e8) onto our inverted dark-theme ink card (#f1f3f6). Beat its specificity so the
+   secondary line stays readable in both light and dark themes. */
+.deck-toast .deck-toast-description,
+[data-sonner-toaster] .deck-toast [data-description].deck-toast-description {
+  color: color-mix(in srgb, var(--brand-deck) 76%, transparent);
 }
 .deck-toast-icon {
   display: flex;
