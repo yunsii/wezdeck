@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useSessions } from './console-sessions'
 import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
+import { GitStatusButton } from './session-git'
 import { useDeleteSession } from './session-delete'
 import { requestNewSession } from './session-new'
 import { useDeviceState } from './device-state'
@@ -18,12 +19,7 @@ import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
 import { hasEditableGroupName, worktreeKey } from './session-order'
 import { WorktreePurpose } from './session-purpose'
-import {
-  AgentTag,
-  BranchTag,
-  GitStatusTag,
-  TagLine,
-} from '#/components/deck/session-tags'
+import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { SectionHeading } from '#/components/ui/section-heading'
@@ -211,8 +207,9 @@ export function SessionInfo({
   const statusText = useStatusText()
   const sessions = useSessions()
   const card = sessions.data?.sessions.find((row) => row.id === data.id)
-  const deleteSession = useDeleteSession()
+  const { ask: deleteSession, confirmation } = useDeleteSession()
   const device = useDeviceState()
+  const [reviewId, setReviewId] = useState('')
   const [copiedRef, setCopiedRef] = useState(false)
   useFocusKey(data.focus)
   // stays mounted while closed: the sheet plays its exit before it unmounts
@@ -254,7 +251,7 @@ export function SessionInfo({
               <AgentTag agent={data.agent} />
             ) : null}
             {data.branch ? <BranchTag branch={data.branch} /> : null}
-            {data.git ? <GitStatusTag git={data.git} /> : null}
+            {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
           </TagLine>
         ) : null}
         {card && hasEditableGroupName(card) ? (
@@ -336,12 +333,32 @@ export function SessionInfo({
             <Button
               type="button"
               variant="key"
-              onClick={() => void deleteSession(card, true)}
+              onClick={() =>
+                deleteSession(card, true, {
+                  onReview: () => setReviewId(card.id),
+                })
+              }
             >
               {t`Delete session`}
             </Button>
+            {reviewId === card.id ? (
+              <div className="grid gap-2 rounded-xl bg-brand-deck p-3">
+                <p role="status" className="text-caption text-brand-muted">
+                  {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}
+                </p>
+                <Button
+                  type="button"
+                  variant="plain"
+                  className="min-h-11 text-brand-error"
+                  onClick={() => deleteSession(card, true, { force: true })}
+                >
+                  {t`Force delete session and worktree`}
+                </Button>
+              </div>
+            ) : null}
           </>
         ) : null}
+        {confirmation}
         <FocusInTerminal focus={data.focus} />
         <OpenInVsCode cwd={metaValue(data, 'cwd')} />
         <p className="px-1 text-meta text-brand-label">

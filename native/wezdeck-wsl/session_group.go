@@ -137,6 +137,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	var request struct {
 		ID      string `json:"id"`
 		Confirm bool   `json:"confirm"`
+		Force   bool   `json:"force"`
 	}
 	if json.Unmarshal(args, &request) != nil || !request.Confirm {
 		return nil, errors.New("session.delete requires confirmation")
@@ -166,6 +167,33 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	if err != nil || checkout != tree || current.TmuxPane != entry.TmuxPane || current.TmuxSocket != entry.TmuxSocket {
 		return nil, errors.New("the pane changed before deletion")
 	}
+	// Check before stopping the last agent so the user can still ask it to
+	// review or preserve local changes. The checkout lock also covers starts.
+	if tree != repo {
+		otherAgent, otherPane, err := checkoutOtherPanes(entry, tree)
+		if err != nil {
+			return nil, err
+		}
+		if request.Force && otherPane {
+			return nil, errors.New("another pane is using this worktree")
+		}
+		if !otherAgent {
+			switch state := sessionWorktreeStatus(tree); state {
+			case "dirty":
+				if !request.Force {
+					relayLogf("session_delete", "id=%s worktree=%q outcome=review_required", request.ID, tree)
+					return map[string]any{"v": 1, "ok": true, "worktree_outcome": "review_required"}, nil
+				}
+			case "unavailable":
+				return nil, errors.New("cannot verify the worktree changes")
+			}
+		}
+		if request.Force && !managedSessionBranch(tree) {
+			return nil, errors.New("only a managed development worktree can be forcibly removed")
+		}
+	} else if request.Force {
+		return nil, errors.New("the primary checkout cannot be removed")
+	}
 	marker := closedSessionMarker(request.ID)
 	if err := os.MkdirAll(filepath.Dir(marker), 0700); err != nil {
 		return nil, err
@@ -189,7 +217,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 		outcome = "in_use"
 		paths, err := tmuxCmd(entry.TmuxSocket, "list-panes", "-a", "-F", "#{pane_start_path}").Output()
 		if err != nil || !strings.Contains("\n"+string(paths), "\n"+tree+"\n") {
-			outcome = reclaimEmptySessionWorktree(repo, tree)
+			outcome = reclaimSessionWorktree(repo, tree, request.Force)
 		}
 	}
 	relayLogf("session_delete", "id=%s worktree=%q outcome=%s", request.ID, tree, outcome)
@@ -208,25 +236,83 @@ func sessionWasClosed(id string) bool {
 	return err == nil
 }
 
+func checkoutOtherPanes(target attentionEntry, tree string) (agent, pane bool, err error) {
+	entries, err := liveSessions()
+	if err != nil {
+		return false, false, err
+	}
+	sockets := map[string]bool{target.TmuxSocket: true}
+	for _, e := range entries {
+		sockets[e.TmuxSocket] = true
+	}
+	inTree := func(path string) bool { return path == tree || strings.HasPrefix(path, tree+"/") }
+	for socket := range sockets {
+		out, err := tmuxCmd(socket, "list-panes", "-a", "-F",
+			"#{pane_id}\t#{pane_start_path}\t#{pane_current_path}\t#{pane_current_command}").Output()
+		if err != nil {
+			if socket == target.TmuxSocket {
+				return false, false, errors.New("cannot verify the other panes")
+			}
+			continue
+		}
+		for _, line := range strings.Split(string(out), "\n") {
+			fields := strings.Split(line, "\t")
+			if len(fields) != 4 || (socket == target.TmuxSocket && fields[0] == target.TmuxPane) ||
+				(!inTree(fields[1]) && !inTree(fields[2])) {
+				continue
+			}
+			pane = true
+			agent = agent || agentCommands[fields[3]] || paneHasAgentProcess(socket, fields[0])
+		}
+	}
+	return agent, pane, nil
+}
+
+func sessionWorktreeStatus(tree string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	status, err := exec.CommandContext(ctx, "git", "-C", tree, "status",
+		"--porcelain", "--untracked-files=all", "--ignored=matching").Output()
+	if err != nil {
+		return "unavailable"
+	}
+	if len(status) > 0 {
+		return "dirty"
+	}
+	return "clean"
+}
+
+func managedSessionBranch(tree string) bool {
+	base := filepath.Base(tree)
+	if strings.HasPrefix(base, "ticket-") || strings.HasPrefix(base, "claw-") {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	branch, err := exec.CommandContext(ctx, "git", "-C", tree, "symbolic-ref", "--quiet", "--short", "HEAD").Output()
+	return err == nil && strings.HasPrefix(string(branch), "dev/")
+}
+
 func reclaimEmptySessionWorktree(repo, tree string) string {
+	return reclaimSessionWorktree(repo, tree, false)
+}
+
+func reclaimSessionWorktree(repo, tree string, force bool) string {
 	if tree == repo {
 		return "primary"
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	defer cancel()
-	git := func(args ...string) *exec.Cmd {
-		return exec.CommandContext(ctx, "git", append([]string{"-C", tree}, args...)...)
-	}
-	branch, err := git("symbolic-ref", "--quiet", "--short", "HEAD").Output()
-	if err != nil || !strings.HasPrefix(string(branch), "dev/") {
+	if !managedSessionBranch(tree) {
 		return "unmanaged"
 	}
-	if git("merge-base", "--is-ancestor", "HEAD", "origin/HEAD").Run() != nil {
-		return "undelivered"
-	}
-	status, err := git("status", "--porcelain", "--untracked-files=all", "--ignored=matching").Output()
-	if err != nil || len(status) > 0 {
-		return "dirty"
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	if !force {
+		if exec.CommandContext(ctx, "git", "-C", tree, "merge-base", "--is-ancestor", "HEAD", "origin/HEAD").Run() != nil {
+			return "undelivered"
+		}
+		if sessionWorktreeStatus(tree) != "clean" {
+			return "dirty"
+		}
 	}
 	// Check processes as well as sessions. A shell or an agent before its
 	// first attention event can still be using the checkout.
@@ -241,8 +327,11 @@ func reclaimEmptySessionWorktree(repo, tree string) string {
 		}
 	}
 	reclaim := filepath.Join(repoRoot(), "scripts", "runtime", "worktree", "worktree-task")
-	cmd := exec.CommandContext(ctx, "bash", reclaim, "reclaim", "--worktree-root", tree,
-		"--provider-mode", "off", "--keep-branch")
+	args := []string{reclaim, "reclaim", "--worktree-root", tree, "--provider-mode", "off", "--keep-branch"}
+	if force {
+		args = append(args, "--force")
+	}
+	cmd := exec.CommandContext(ctx, "bash", args...)
 	cmd.Dir = repo
 	if err := cmd.Run(); err != nil {
 		return "retained"
