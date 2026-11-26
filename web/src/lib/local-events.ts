@@ -23,6 +23,7 @@ const KINDS = new Set([
   'chat-catch-up',
   'session-seen-ack',
   'session-focus',
+  'session-follow',
   'composer-clear',
   'web-write',
   'session-sync',

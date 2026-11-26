@@ -12,7 +12,7 @@ internal sealed partial class RuntimeWebServer
     {
         "boot", "popstate", "after-back", "visibility", "link", "nav",
         "nav-collapse", "nav-frames", "chat-pin", "chat-catch-up",
-        "session-seen-ack", "session-focus", "composer-clear",
+        "session-seen-ack", "session-focus", "session-follow", "composer-clear",
         "web-write", "session-sync", "chat-render", "error", "rejection",
     };
     private static readonly HashSet<string> WebEventFields = new(StringComparer.Ordinal)
