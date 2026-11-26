@@ -1,4 +1,4 @@
-// 新会话 collects the first question, optional group name and agent.
+// 新会话 collects the first question, repository and agent.
 // The host allocates the checkout and starts the agent as an observable job.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -308,7 +308,6 @@ function NewSessionSheet({
     setPicked: setAgentProfile,
   } = useAgentSelection(agentProfiles.data?.profiles ?? [], preferredAgent)
   const [repo, setRepo] = useState(preset?.repo ?? '')
-  const [customName, setCustomName] = useState('')
   const submitting = useRef(false)
   const [sending, setSending] = useState(false)
   const [pending] = useState(readPendingJob)
@@ -346,7 +345,7 @@ function NewSessionSheet({
     onClose,
   })
   const busy = sending || (Boolean(jobId) && current?.stage !== 'failed')
-  const suggestedName = suggestGroupName(prompt) || t`New session group`
+  const fallbackGroupName = t`New session group`
   const ready =
     Boolean((anchor || chosen) && prompt.trim()) &&
     (!agentProfiles.data || availableProfiles.length > 0)
@@ -367,7 +366,10 @@ function NewSessionSheet({
       const res = (await hostWrite('session.new', {
         ...(anchor
           ? { anchor_session_id: anchor }
-          : { repo: chosen, group_name: customName.trim() || suggestedName }),
+          : {
+              repo: chosen,
+              group_name: suggestGroupName(prompt) || fallbackGroupName,
+            }),
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
@@ -401,9 +403,6 @@ function NewSessionSheet({
           repo={chosen}
           onRepo={setRepo}
           group={preset?.group}
-          suggestedName={suggestedName}
-          customName={customName}
-          onName={setCustomName}
           prompt={prompt}
           setPrompt={setPrompt}
           current={current}

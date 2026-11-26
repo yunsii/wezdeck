@@ -110,11 +110,11 @@ describe.runIf(attention && devicesFile && stack)(
     })
 
     /**
-     * 新会话 › a workstation named `name` with `description`; once the pane
+     * 新会话 › a new group named from its first question; once the pane
      * has the message, list it as id (the agent's first-prompt hook) and
      * wait for the page to open it. Returns the worktree and the pane.
      */
-    const createSession = async (page: Page, id: string, description = '') => {
+    const createSession = async (page: Page, id: string) => {
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
@@ -136,11 +136,9 @@ describe.runIf(attention && devicesFile && stack)(
         // The first creation starts the private tmux server.
       }
       await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
-      const groupName = sheet.getByTestId('new-session-group-name')
-      expect(await groupName.getAttribute('placeholder')).toBe(
-        '从手机开的新会话',
-      )
-      if (description) await groupName.fill(description)
+      const repository = sheet.getByRole('combobox', { name: '仓库' })
+      await expect.poll(() => repository.textContent()).toContain('phone-repo')
+      expect(await sheet.getByTestId('new-session-group-name').count()).toBe(0)
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
       await expect
@@ -180,11 +178,7 @@ describe.runIf(attention && devicesFile && stack)(
 
     it('creates the workstation, hands the agent the message, opens the session', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
-      const { worktree, session } = await createSession(
-        page,
-        'new-1',
-        '手机端体验',
-      )
+      const { worktree, session } = await createSession(page, 'new-1')
       const git = (...args: Array<string>) =>
         execFileSync('git', ['-C', worktree, ...args])
           .toString()
@@ -192,7 +186,7 @@ describe.runIf(attention && devicesFile && stack)(
       expect(git('branch', '--show-current')).toBe(`dev/${session}`)
       // the purpose is the branch description; the list no longer shows it
       expect(git('config', `branch.dev/${session}.description`)).toBe(
-        '手机端体验',
+        '从手机开的新会话',
       )
       await page.goto(`${base}/zh/console/sessions`)
       const group = page.locator(`[data-worktree=${session}]`)
