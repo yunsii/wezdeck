@@ -1520,7 +1520,7 @@ msgstr "Loading original…"
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:220
-#: src/features/session-skeleton.tsx:14
+#: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:216
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"

@@ -24,7 +24,10 @@ export function SplitColumn({
     <aside
       aria-label={label}
       className={cn(
-        'vt-split-list sticky top-4 flex h-[calc(100cqh-2rem)] min-h-0 flex-col [--split-pad:max(0px,calc(var(--page-x)-10px))]',
+        // Floor split-pad at 12px: with chat-route --page-x (0.625rem) the
+        // old max(0, page-x - 10px) became 0 and list cards kissed the pane
+        // divider — worst on the loading skeleton (one full-bleed card).
+        'vt-split-list sticky top-4 flex h-[calc(100cqh-2rem)] min-h-0 flex-col [--split-pad:max(12px,calc(var(--page-x)-10px))]',
         className,
       )}
     >
