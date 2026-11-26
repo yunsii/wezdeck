@@ -2,6 +2,7 @@ import { useLingui } from '@lingui/react/macro'
 import { ShieldCheck } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
+import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
 import type { AgentProfile } from './agent-profiles'
@@ -45,6 +46,8 @@ export function ComposeLayer({
   repo,
   onRepo,
   group,
+  groupName,
+  onGroupName,
   prompt,
   setPrompt,
   current,
@@ -65,6 +68,8 @@ export function ComposeLayer({
   repo: string
   onRepo: (repo: string) => void
   group?: string
+  groupName?: string
+  onGroupName: (name: string) => void
   prompt: string
   setPrompt: (next: string) => void
   current?: StageJob
@@ -93,7 +98,18 @@ export function ComposeLayer({
           placeholder={t`What should it work on?`}
         />
       </label>
-      {group ? (
+      {groupName !== undefined ? (
+        <label className="grid gap-1 text-caption text-brand-muted">
+          {t`Group name`}
+          <Input
+            value={groupName}
+            onChange={(event) => onGroupName(event.target.value)}
+            disabled={busy}
+            maxLength={60}
+            data-testid="new-session-group-name"
+          />
+        </label>
+      ) : group ? (
         <p className="truncate text-caption text-brand-muted">{group}</p>
       ) : null}
       <label className="grid gap-1 text-caption text-brand-muted">

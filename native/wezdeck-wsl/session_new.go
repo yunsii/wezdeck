@@ -102,6 +102,7 @@ type newSessionJob struct {
 	Branch    string `json:"branch,omitempty"`
 	SessionID string `json:"session_id,omitempty"`
 	Error     string `json:"error,omitempty"`
+	Warning   string `json:"warning,omitempty"`
 	// Mode: new (a new direction), parallel (one more slot of a direction
 	// whose slots are all busy) or reuse (an idle slot starts a new round)
 	Mode     string `json:"mode,omitempty"`
@@ -166,6 +167,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 		Agent       string  `json:"agent_profile"`
 		Anchor      string  `json:"anchor_session_id"`
 		GroupName   *string `json:"group_name"`
+		NewGroup    bool    `json:"new_group"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.new: bad arguments")
@@ -206,15 +208,22 @@ func startNewSession(args json.RawMessage) (any, error) {
 			return nil, errors.New("session.new: default agent is disabled; select another agent")
 		}
 	}
+	groupName := ""
 	if a.GroupName != nil {
-		if a.Name != "" || a.Description != "" || a.Anchor != "" {
-			return nil, errors.New("session.new: group name is for a new group")
-		}
-		a.Description = strings.TrimSpace(*a.GroupName)
-		if !validSubject(a.Description) {
+		groupName = strings.TrimSpace(*a.GroupName)
+		if !validSubject(groupName) {
 			return nil, fmt.Errorf("session.new: the group name needs 1–%d characters, one line", subjectMax)
 		}
+	}
+	allocate := a.Anchor == "" && (a.NewGroup || a.GroupName != nil)
+	if allocate {
+		if a.Name != "" || a.Description != "" {
+			return nil, errors.New("session.new: a new group allocates its own checkout")
+		}
+		a.Description = groupName
 		a.Name = "session-" + newDiagID()
+	} else if a.NewGroup {
+		return nil, errors.New("session.new: cannot allocate a checkout for an existing session")
 	}
 	if a.Anchor == "" && !validSubject(a.Name) {
 		return nil, fmt.Errorf("session.new: the name needs 1–%d characters, one line", subjectMax)
@@ -232,7 +241,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 		if a.Agent == "" {
 			a.Agent = activeAgentProfile()
 		}
-		return startGroupedSession(a.Anchor, a.Agent, a.Prompt)
+		return startGroupedSession(a.Anchor, a.Agent, a.Prompt, groupName)
 	}
 	allowed := false
 	for _, r := range knownRepos() {
@@ -246,7 +255,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	// a new direction
 	mode, reuse := "new", ""
 	direction := directionSlug(a.Name)
-	if dirs, err := repoWorkstations(a.Repo); a.GroupName == nil && err == nil {
+	if dirs, err := repoWorkstations(a.Repo); !allocate && err == nil {
 		newJobsMu.Lock()
 		for _, d := range dirs {
 			if d.Name != direction {
@@ -550,7 +559,7 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 		return
 	}
 	target := strings.TrimSpace(string(pane))
-	if err := sendNewSessionPrompt(ctx, id, socket, target, prompt); err != nil {
+	if err := sendNewSessionPrompt(ctx, id, socket, target, prompt, nil); err != nil {
 		fail(err)
 		return
 	}
@@ -558,7 +567,7 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 		id, reuse != "", result["worktree_path"], result["branch_name"])
 }
 
-func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string) error {
+func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string, afterSend func() string) error {
 	if err := waitAgentReady(socket, target, 90*time.Second); err != nil {
 		return err
 	}
@@ -576,9 +585,14 @@ func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string
 	if os.Getenv("WEZDECK_SESSION_NEW_CMD") != "" {
 		waitFor = 400 * time.Millisecond
 	}
+	warning := ""
+	if afterSend != nil {
+		warning = afterSend()
+	}
 	newID := waitNewSessionID(socket, target, beforeIDs, waitFor)
 	setJob(id, func(j *newSessionJob) {
 		j.SessionID = newID
+		j.Warning = warning
 		j.Stage = "done"
 	})
 	return nil

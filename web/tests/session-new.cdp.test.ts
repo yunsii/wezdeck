@@ -110,7 +110,7 @@ describe.runIf(attention && devicesFile && stack)(
     })
 
     /**
-     * 新会话 › a new group named from its first question; once the pane
+     * 新会话 › a new session without a group name; once the pane
      * has the message, list it as id (the agent's first-prompt hook) and
      * wait for the page to open it. Returns the worktree and the pane.
      */
@@ -185,9 +185,9 @@ describe.runIf(attention && devicesFile && stack)(
           .trim()
       expect(git('branch', '--show-current')).toBe(`dev/${session}`)
       // the purpose is the branch description; the list no longer shows it
-      expect(git('config', `branch.dev/${session}.description`)).toBe(
-        '从手机开的新会话',
-      )
+      expect(
+        git('config', '--default', '', `branch.dev/${session}.description`),
+      ).toBe('')
       await page.goto(`${base}/zh/console/sessions`)
       const group = page.locator(`[data-worktree=${session}]`)
       await group.waitFor({ timeout: 15_000 })
@@ -273,7 +273,7 @@ async function editPurposeInSessionInfo(
   await info.waitFor({ timeout: 5_000 })
   const block = info.getByTestId('session-info-purpose')
   const input = block.getByTestId('worktree-purpose-input')
-  await block.getByTestId('worktree-description').click()
+  await block.getByTestId('worktree-purpose-add').click()
   await input.fill('手机端新建与收尾')
   await input.press('Enter')
   await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')

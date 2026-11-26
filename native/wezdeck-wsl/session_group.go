@@ -39,7 +39,7 @@ func sessionGroupTarget(id string) (attentionEntry, string, string, error) {
 	return entry, repo, tree, nil
 }
 
-func startGroupedSession(id, agent, prompt string) (any, error) {
+func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 	entry, repo, tree, err := sessionGroupTarget(id)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func startGroupedSession(id, agent, prompt string) (any, error) {
 	go func() {
 		defer unlock()
 		defer releaseSessionWorktree(tree)
-		err := runGroupedSession(job.ID, id, entry, tree, agent, prompt)
+		err := runGroupedSession(job.ID, id, entry, repo, tree, agent, prompt, groupName)
 		if err != nil {
 			setJob(job.ID, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
 		}
@@ -100,7 +100,7 @@ func releaseSessionWorktree(tree string) {
 	newJobsMu.Unlock()
 }
 
-func runGroupedSession(jobID, anchorID string, anchor attentionEntry, tree, agent, prompt string) error {
+func runGroupedSession(jobID, anchorID string, anchor attentionEntry, repo, tree, agent, prompt, groupName string) error {
 	current, _, checkout, err := sessionGroupTarget(anchorID)
 	if err != nil || checkout != tree || current.TmuxPane != anchor.TmuxPane || current.TmuxSocket != anchor.TmuxSocket {
 		return errors.New("the source session changed before launch")
@@ -121,7 +121,16 @@ func runGroupedSession(jobID, anchorID string, anchor attentionEntry, tree, agen
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	setJob(jobID, func(j *newSessionJob) { j.Stage = "starting" })
-	return sendNewSessionPrompt(ctx, jobID, anchor.TmuxSocket, pane, prompt)
+	return sendNewSessionPrompt(ctx, jobID, anchor.TmuxSocket, pane, prompt, func() string {
+		if groupName == "" {
+			return ""
+		}
+		if err := saveSessionGroupName(repo, tree, groupName); err != nil {
+			relayLogf("session_group_name", "job=%s outcome=failed err=%q", jobID, err)
+			return clip(err.Error(), 300)
+		}
+		return ""
+	})
 }
 
 func deleteGroupedSession(args json.RawMessage) (any, error) {
@@ -239,4 +248,32 @@ func reclaimEmptySessionWorktree(repo, tree string) string {
 		return "retained"
 	}
 	return "removed"
+}
+
+// The group belongs to the checkout. Managed workstations share the same
+// description writer as the terminal. The primary checkout uses its branch
+// description because the workstation command only accepts linked checkouts.
+func saveSessionGroupName(repo, tree, name string) error {
+	if repo != tree {
+		args, err := json.Marshal(map[string]string{"worktree": tree, "text": name})
+		if err != nil {
+			return err
+		}
+		_, err = describeWorktree(args)
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", tree, "symbolic-ref", "--quiet", "--short", "HEAD").Output()
+	if err != nil {
+		return errors.New("cannot name a session group on a detached checkout")
+	}
+	branch := strings.TrimSpace(string(out))
+	if err := exec.CommandContext(ctx, "git", "-C", repo, "config", "branch."+branch+".description", name).Run(); err != nil {
+		return fmt.Errorf("save group name: %w", err)
+	}
+	worktreeDescMu.Lock()
+	delete(worktreeDescCache, repo)
+	worktreeDescMu.Unlock()
+	return nil
 }

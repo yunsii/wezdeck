@@ -30,13 +30,17 @@ func TestGroupedSessionStartsInSameCheckoutAndDeletesOnlyItsPane(t *testing.T) {
 	}
 	t.Setenv("WEZDECK_REPO", dir)
 	t.Setenv("WEZDECK_SESSION_NEW_CMD", "fixture")
-	result, err := startGroupedSession("s1", "grok", "answer in a separate conversation")
+	result, err := startGroupedSession("s1", "grok", "answer in a separate conversation", "会话列表答疑")
 	if err != nil {
 		t.Fatal(err)
 	}
 	job := waitJob(t, result.(map[string]any)["job"].(string))
-	if job.Stage != "done" || job.Worktree != dir {
+	if job.Stage != "done" || job.Worktree != dir || job.Warning != "" {
 		t.Fatalf("job: %+v", job)
+	}
+	branch := run("git", "-C", dir, "symbolic-ref", "--short", "HEAD")
+	if got := worktreeDescription(dir, branch); got != "会话列表答疑" {
+		t.Fatalf("unexpected group name: %q", got)
 	}
 	pane := tmux("display-message", "-p", "-t", "work:"+filepath.Base(dir)+"-grok", "#{pane_id}")
 	if pane == original || tmux("display-message", "-p", "-t", pane, "#{pane_current_path}") != dir {

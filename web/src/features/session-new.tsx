@@ -4,12 +4,14 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
+import { worktreeKey } from './session-order'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
@@ -71,6 +73,7 @@ type Job = {
   branch?: string
   session_id?: string
   error?: string
+  warning?: string
 }
 
 const preferenceKeys = {
@@ -139,6 +142,7 @@ function useAutoOpenNewSession({
     sessionStorage.removeItem(pendingJobKey)
     const visitPath = listed?.worktree || listed?.cwd || current?.worktree
     if (visitPath) recordVisit(visitPath)
+    if (current?.warning) toast.warning(current.warning)
     void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
     onClose()
     void navigate({
@@ -149,6 +153,7 @@ function useAutoOpenNewSession({
     targetId,
     listed,
     current?.worktree,
+    current?.warning,
     jobId,
     navigate,
     locale,
@@ -341,6 +346,7 @@ function NewSessionSheet({
   const [pending] = useState(readPendingJob)
   const before = useRef<Set<string>>(new Set(pending?.before ?? []))
   const [prompt, setPrompt] = useState('')
+  const [groupName, setGroupName] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [jobId, setJobId] = useState(pending?.job ?? '')
   const { trust, trusting } = useAgyTrust(jobId, setError)
@@ -368,6 +374,22 @@ function NewSessionSheet({
     repositories.find((r) => r.root === chosen)?.label ||
     chosen.split('/').pop() ||
     ''
+  const sessionRows = sessions.data?.sessions ?? []
+  const source = sessionRows.find((row) => row.id === anchor)
+  const firstSibling =
+    source &&
+    sessionRows.filter((row) => worktreeKey(row) === worktreeKey(source))
+      .length === 1
+  const managedName =
+    source &&
+    !/^(ticket|claw)-/.test(worktreeKey(source).split('/').at(-1) ?? '')
+  const nameGroup = Boolean(firstSibling && managedName)
+  const suggestedName =
+    suggestGroupName(source?.title ?? '') ||
+    suggestGroupName(source?.last_prompt ?? '') ||
+    suggestGroupName(source?.worktree_description ?? '') ||
+    t`New session group`
+  const resolvedGroupName = groupName ?? suggestedName
   const current = job.data?.job
   usePendingJobRecovery(jobId, job.error, setJobId, setError)
   useAutoOpenNewSession({
@@ -378,9 +400,12 @@ function NewSessionSheet({
     onClose,
   })
   const busy = sending || (Boolean(jobId) && current?.stage !== 'failed')
-  const fallbackGroupName = t`New session group`
   const ready =
-    Boolean((anchor || chosen) && prompt.trim()) &&
+    Boolean(
+      (anchor || chosen) &&
+      prompt.trim() &&
+      (!nameGroup || resolvedGroupName.trim()),
+    ) &&
     (!agentProfiles.data || availableProfiles.length > 0)
   const submit = async () => {
     if (submitting.current || busy || !ready) return
@@ -398,11 +423,11 @@ function NewSessionSheet({
       )
       const res = (await hostWrite('session.new', {
         ...(anchor
-          ? { anchor_session_id: anchor }
-          : {
-              repo: chosen,
-              group_name: suggestGroupName(prompt) || fallbackGroupName,
-            }),
+          ? {
+              anchor_session_id: anchor,
+              group_name: nameGroup ? resolvedGroupName.trim() : undefined,
+            }
+          : { repo: chosen, new_group: true }),
         prompt: prompt.trim(),
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
@@ -437,6 +462,8 @@ function NewSessionSheet({
           repo={chosen}
           onRepo={setRepo}
           group={preset?.group}
+          groupName={nameGroup ? resolvedGroupName : undefined}
+          onGroupName={setGroupName}
           prompt={prompt}
           setPrompt={setPrompt}
           current={current}
