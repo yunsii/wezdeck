@@ -24,6 +24,8 @@ const KINDS = new Set([
   'session-seen-ack',
   'session-focus',
   'session-follow',
+  'host-diag',
+  'host-reload',
   'composer-clear',
   'web-write',
   'session-sync',
@@ -53,6 +55,8 @@ const FIELDS = new Set([
   'chars',
   'images',
   'busy',
+  'reason',
+  'deferred',
 ])
 const ROUTE_EVENTS = new Set([
   'boot',
@@ -78,13 +82,22 @@ export function recordLocalEvent(
   if (!page && typeof crypto !== 'undefined') page = crypto.randomUUID()
   if (!KINDS.has(kind) || !page) return
   const safe = Object.fromEntries(
-    Object.entries(data).filter(
-      ([key, value]) =>
-        FIELDS.has(key) &&
-        (typeof value === 'boolean' ||
-          (typeof value === 'number' && Number.isFinite(value)) ||
-          (typeof value === 'string' && /^[\w.:-]{0,80}$/.test(value))),
-    ),
+    Object.entries(data).filter(([key, value]) => {
+      if (!FIELDS.has(key)) return false
+      if (typeof value === 'boolean') return true
+      if (typeof value === 'number') return Number.isFinite(value)
+      if (typeof value !== 'string') return false
+      // host `--reason` may be Chinese / spaces; still no control chars
+      if (key === 'reason') {
+        if (value.length > 120) return false
+        for (let i = 0; i < value.length; i++) {
+          const code = value.charCodeAt(i)
+          if (code < 32 || code === 127) return false
+        }
+        return true
+      }
+      return /^[\w.:-]{0,80}$/.test(value)
+    }),
   ) as Event['data']
   if (ROUTE_EVENTS.has(kind)) {
     const raw = data.path ?? data.url ?? data.to

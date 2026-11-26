@@ -216,6 +216,36 @@ type Submit = (args: Record<string, unknown>) => Promise<unknown>
 /** a paired device answers over the relay link */
 const overRelay: Submit = (args) => remoteLink.rpc('diag.submit', args)
 
+/** Clip host `--reason` for toast / sessionStorage (one line, short). */
+export function clipDiagReason(reason?: string): string {
+  return (reason ?? '').trim().replace(/\s+/g, ' ').slice(0, 120)
+}
+
+/**
+ * Toast copy for a host diag request. `kind: 'reload'` is the pre-reload
+ * notice; after reload `pwa-boot.tsx` says 已更新到新版本 with the same reason.
+ */
+export function diagToastMessage(
+  zh: boolean,
+  steps: number,
+  reason: string,
+  kind: 'diag' | 'reload',
+): string {
+  const base =
+    kind === 'reload'
+      ? zh
+        ? '即将刷新到新版本'
+        : 'Reloading onto the new build'
+      : steps > 0
+        ? zh
+          ? `调试中：正在这个页面复现问题（${steps} 步）`
+          : `Debugging: reproducing a problem on this page (${steps} steps)`
+        : zh
+          ? '已读取这个页面的诊断信息'
+          : 'Diagnostics read from this page'
+  return reason ? `${base} · ${reason}` : base
+}
+
 async function answer(
   router: AnyRouter,
   id: string,
@@ -223,25 +253,23 @@ async function answer(
   submit: Submit = overRelay,
 ) {
   const steps = Array.isArray(data.steps) ? data.steps.slice(0, MAX_STEPS) : []
-  trace('host-diag', { id, steps: steps.length, reason: data.reason })
+  const reason = clipDiagReason(data.reason)
+  const willReload = steps.some((step) => step.do === 'reload')
+  trace('host-diag', {
+    id,
+    steps: steps.length,
+    reason,
+    action: willReload ? 'reload' : steps.length ? 'steps' : 'snapshot',
+  })
   // outside React (no Lingui provider here): pick the page language
   const zh = document.documentElement.lang.startsWith('zh')
-  const reloadOnly = steps.length === 1 && steps[0].do === 'reload'
-  // a release reloading the page says so after the reload, on the new page
-  // (pwa-boot.tsx): a toast here vanished with the reload half-read
-  // no subject: on the host's own browser 「电脑读取了这台设备」 read as
-  // nonsense (the release toast dropped 「电脑发布了」 the same way)
-  if (!reloadOnly)
-    toast(
-      steps.length
-        ? zh
-          ? `调试中：正在这个页面复现问题（${steps.length} 步）`
-          : `Debugging: reproducing a problem on this page (${steps.length} steps)`
-        : zh
-          ? '已读取这个页面的诊断信息'
-          : 'Diagnostics read from this page',
-      { id: 'host-diag', duration: 4000 },
-    )
+  // Always say why: diag read / reproduce, and a short pre-reload notice
+  // (the post-reload toast in pwa-boot carries the same reason). No subject
+  // like 「电脑…」 — on the host browser that read as nonsense.
+  toast(
+    diagToastMessage(zh, steps.length, reason, willReload ? 'reload' : 'diag'),
+    { id: 'host-diag', duration: willReload ? 2500 : 4000 },
+  )
   const results: Array<Record<string, unknown>> = []
   for (const step of steps) {
     const frames = sampleFrames(Math.min(step.sample ?? 700, 5000))
@@ -280,10 +308,12 @@ async function answer(
   // `reload` step (`wezdeck-wsl diag --reload`): the host just shipped and
   // wants this phone on the new build without anyone tapping 刷新 — the
   // snapshot above still reports the build it ran
-  if (steps.some((step) => step.do === 'reload')) reloadWhenIdle()
+  if (willReload) reloadWhenIdle(reason)
 }
 
 export const UPDATED_KEY = 'wezdeck.updated-from'
+/** Why the host asked for a reload (`--reason`); shown after the new page loads. */
+export const UPDATED_REASON_KEY = 'wezdeck.updated-reason'
 
 /** typing in a text field (the composer, a reply box) */
 const typing = () => {
@@ -297,16 +327,19 @@ const typing = () => {
 /**
  * Onto the new build — but not under someone's fingers: while a text field
  * with text in it has focus, wait for it to blur (at most a minute; drafts
- * are kept anyway). The new page then says 已更新到新版本 once.
+ * are kept anyway). The new page then says 已更新到新版本 once (with `reason`
+ * when the host passed `--reason`).
  */
-function reloadWhenIdle() {
+function reloadWhenIdle(reason = '') {
   const go = () => {
     try {
       sessionStorage.setItem(UPDATED_KEY, buildId)
+      if (reason) sessionStorage.setItem(UPDATED_REASON_KEY, reason)
+      else sessionStorage.removeItem(UPDATED_REASON_KEY)
     } catch {
       // storage blocked: the reload still happens, just unannounced
     }
-    trace('host-reload', { deferred: Date.now() - asked })
+    trace('host-reload', { deferred: Date.now() - asked, reason })
     location.reload()
   }
   const asked = Date.now()

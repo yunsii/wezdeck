@@ -1735,7 +1735,7 @@ msgstr "新工单（n）"
 msgid "New to-do"
 msgstr "新待办"
 
-#: src/features/pwa-boot.tsx:35
+#: src/features/pwa-boot.tsx:42
 msgid "New version available"
 msgstr "有新版本"
 
@@ -2230,7 +2230,7 @@ msgstr "中转时长"
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
-#: src/features/pwa-boot.tsx:38
+#: src/features/pwa-boot.tsx:45
 msgid "Reload"
 msgstr "刷新"
 
@@ -3239,7 +3239,7 @@ msgstr "未跟踪"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/pwa-boot.tsx:31
+#: src/features/pwa-boot.tsx:34
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
 

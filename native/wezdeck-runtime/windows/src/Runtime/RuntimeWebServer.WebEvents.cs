@@ -13,6 +13,7 @@ internal sealed partial class RuntimeWebServer
         "boot", "popstate", "after-back", "visibility", "link", "nav",
         "nav-collapse", "nav-frames", "chat-pin", "chat-catch-up",
         "session-seen-ack", "session-focus", "session-follow", "composer-clear",
+        "host-diag", "host-reload",
         "web-write", "session-sync", "chat-render", "error", "rejection",
     };
     private static readonly HashSet<string> WebEventFields = new(StringComparer.Ordinal)
@@ -20,7 +21,7 @@ internal sealed partial class RuntimeWebServer
         "id", "op_id", "action", "stage", "outcome", "mode", "state",
         "status", "type", "index", "length", "count", "start", "total",
         "shown", "ms", "pinned", "skipped", "chars", "images", "busy",
-        "route",
+        "route", "reason", "deferred",
     };
     private readonly object webEventsLock = new();
     private StructuredLogger? webEventsLogger;
@@ -133,9 +134,21 @@ internal sealed partial class RuntimeWebServer
                     JsonValueKind.False => "false",
                     _ => null,
                 };
-                var max = field.Name == "route" ? 160 : 80;
-                if (value is null || value.Length > max ||
-                    !value.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '.' or '_' or '-' or ':' ||
+                var max = field.Name switch
+                {
+                    "route" => 160,
+                    "reason" => 120,
+                    _ => 80,
+                };
+                if (value is null || value.Length > max) continue;
+                // host `--reason` may be Chinese / spaces; still no control chars
+                if (field.Name == "reason")
+                {
+                    if (value.Any(char.IsControl)) continue;
+                    fields[field.Name] = value;
+                    continue;
+                }
+                if (!value.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '.' or '_' or '-' or ':' ||
                         (field.Name == "route" && ch == '/'))) continue;
                 fields[field.Name] = value;
             }

@@ -335,7 +335,7 @@ if ((reload_clients && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/de
   grep -q '^ok: restarted' "$RUN/relay.log" 2>/dev/null && tries=3
   for ((i = 1; i <= tries; i++)); do
     out="$(native/wezdeck-wsl/bin/wezdeck-wsl diag --reload --wait 10 \
-      --reason "new build $head" 2>&1 | tee -a "$RUN/clients.log")"
+      --reason "发布网页 $head" 2>&1 | tee -a "$RUN/clients.log")"
     clients="$(sed -n 's/.*"clients":\([0-9]*\).*/\1/p' <<<"$out")"
     [[ "${clients:-0}" -gt 0 ]] && break
     ((i < tries)) && { say '…' pages 'no console yet, waiting for reconnects'; sleep 5; }
@@ -346,7 +346,7 @@ if ((reload_clients && !failed)) && grep -q '^ok: deployed' "$RUN/web.log" 2>/de
   # answering page is current) — a retest before that sees the old code
   if ((${clients:-0} > 0)); then
     t0=$SECONDS
-    if dc="$(scripts/dev/device-check.sh --wait-current 30 --reason "verify $head" 2>/dev/null)"; then
+    if dc="$(scripts/dev/device-check.sh --wait-current 30 --reason "核对设备 $head" 2>/dev/null)"; then
       say '✓' devices "$(grep -c '  current  ' <<<"$dc") page(s) on $head ($((SECONDS - t0))s)"
       summary+=("devices=current")
     else

@@ -23,8 +23,10 @@ the same `op_id` on the host write. `session-sync` marks a changed total,
 status or replacement in the host snapshot; `chat-render` marks the reveal
 cursor after the page painted. `session-follow` records an auto-navigation
 from a replaced / redirected session id (`action` = from, `id` = to; with
-`skipped=cycle` when the page refuses a hop that would bounce back). An
-accepted `send` means tmux got the paste and Enter, not that the agent
-recorded it in the transcript. Compare these stages with `wezdeck-wsl diag`
-when a message is missing. The local diagnostics page also reads the current
-`web-client.log` alongside the Windows and WSL logs.
+`skipped=cycle` when the page refuses a hop that would bounce back).
+`host-diag` / `host-reload` carry the host's `--reason` (why a snapshot,
+reproduce steps, or page reload was requested). An accepted `send` means
+tmux got the paste and Enter, not that the agent recorded it in the
+transcript. Compare these stages with `wezdeck-wsl diag` when a message is
+missing. The local diagnostics page also reads the current `web-client.log`
+alongside the Windows and WSL logs.

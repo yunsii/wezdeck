@@ -1735,7 +1735,7 @@ msgstr "New ticket (n)"
 msgid "New to-do"
 msgstr "New to-do"
 
-#: src/features/pwa-boot.tsx:35
+#: src/features/pwa-boot.tsx:42
 msgid "New version available"
 msgstr "New version available"
 
@@ -2230,7 +2230,7 @@ msgstr "Relay duration"
 msgid "Relay requests (Durable Object)"
 msgstr "Relay requests (Durable Object)"
 
-#: src/features/pwa-boot.tsx:38
+#: src/features/pwa-boot.tsx:45
 msgid "Reload"
 msgstr "Reload"
 
@@ -3239,7 +3239,7 @@ msgstr "Untracked"
 msgid "Updated {time}"
 msgstr "Updated {time}"
 
-#: src/features/pwa-boot.tsx:31
+#: src/features/pwa-boot.tsx:34
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 

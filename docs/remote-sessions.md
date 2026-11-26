@@ -306,17 +306,20 @@ web console seen in the last 3 min (DataChannel when open, else the DO by cid;
 `selector`, `scroll`, `wait`, `query` — read only: `selector` + `attrs` → up to ten elements' attributes, box and text, to check a fix on the person's own device and session — `reload` — run after the snapshot is sent, the
 page reloads onto the newest deploy; `--reload` appends it, so after a
 release `wezdeck-wsl diag --reload` puts every connected web console on the new
-build — no toast before it (it vanished half-read); while a text field
+build — toast 即将刷新到新版本 · `<--reason>` first, then while a text field
 with text has focus the reload waits for it to blur (≤ 1 min, `host-reload`
-trace), and the new page says 已更新到新版本 once (`wezdeck.updated-from`,
-`pwa-boot.tsx`) (a build older than this step ignores it: get it there once through
-我的 › 应用 › 检查更新 and the toast's 刷新); never a control inside a form or under
+trace), and the new page says 已更新到新版本 once with the same reason
+(`wezdeck.updated-from` / `wezdeck.updated-reason`, `pwa-boot.tsx`) (a build
+older than this step ignores it: get it there once through 我的 › 应用 ›
+检查更新 and the toast's 刷新); never a control inside a form or under
 `[data-write]` — send, reply, take over, keys, options, rename), recording
 each step's frames (count, fps, longest gap, gaps > 50 ms). The host's own browser (local mode: reads and writes through the Runtime, no relay link) cannot be pushed to: while shown it polls `diag.pending` every 3 s (Runtime → bridge `remote.diag.pending` → the relay's control socket `GET /diag/pending`, which also makes it a target for requests from then on; a page that polled in the last 15 s is counted like a relay client) and hands its chunks back through `diag.submit` (`POST /diag/submit`), so `diag` reaches the page the person is looking at on the desktop too. Each CLI answer carries its gist (`diagGist`): `build` vs `deployed` (`/build.json`; `current` false = the page has not reloaded onto the fix yet — do not ask for a retest), `page` and the step results without frames. It answers with
 the snapshot as `diag.submit` chunks — accepted only for a live request id —
 stored as `diagnostics-<ts>-<id>-<client>.json` in the uploads dir; the CLI
-prints the paths. The web console shows a subject-less toast (已读取这个页面的诊断信息);
-relay log rows `diag_request` / `diag_received` / `diag_done`.
+prints the paths. The web console toast always carries `--reason` when set
+(已读取这个页面的诊断信息 · … / 调试中：… · … / 即将刷新到新版本 · …; client
+trace `host-diag` / `host-reload`); relay log rows `diag_request` /
+`diag_received` / `diag_done`.
 
 The snapshot (`lib/client-trace.ts`) holds build id, page path (no hash: it
 can carry the pairing token), user agent, standalone mode, screen / viewport
