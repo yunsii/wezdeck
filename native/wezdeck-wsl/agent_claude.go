@@ -113,6 +113,43 @@ func unwrapPasted(s string) string {
 	return strings.TrimSpace(pastedTag.ReplaceAllString(s, ""))
 }
 
+// claudeMessageText pulls plain text out of a Claude message content field
+// (string or [{type:text,text}…] blocks).
+func claudeMessageText(content json.RawMessage) string {
+	var s string
+	if json.Unmarshal(content, &s) == nil {
+		return strings.TrimSpace(s)
+	}
+	var blocks []struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	}
+	if json.Unmarshal(content, &blocks) != nil {
+		return ""
+	}
+	var parts []string
+	for _, b := range blocks {
+		if b.Type == "text" && strings.TrimSpace(b.Text) != "" {
+			parts = append(parts, b.Text)
+		}
+	}
+	return strings.TrimSpace(strings.Join(parts, "\n"))
+}
+
+// claudeAPIErrorText: Claude's synthetic API Error row (isApiErrorMessage),
+// same text the TUI prints. Empty when the line is not an API error.
+func claudeAPIErrorText(isAPIError bool, model, contentText string) string {
+	text := strings.TrimSpace(contentText)
+	if isAPIError && text != "" {
+		return text
+	}
+	// Older / partial rows: synthetic model + "API Error:" prefix.
+	if strings.HasPrefix(model, "<") && strings.HasPrefix(text, "API Error:") {
+		return text
+	}
+	return ""
+}
+
 func (t *transcript) feedLine(raw []byte) {
 	var line struct {
 		Type             string          `json:"type"`
@@ -121,6 +158,7 @@ func (t *transcript) feedLine(raw []byte) {
 		Content          json.RawMessage `json:"content"` // system lines (local_command)
 		IsMeta           bool            `json:"isMeta"`
 		IsCompactSummary bool            `json:"isCompactSummary"`
+		IsAPIErrorMessage bool           `json:"isApiErrorMessage"`
 		// on each user line: auto | plan | bypassPermissions | default …
 		PermissionMode  string `json:"permissionMode"`
 		CompactMetadata struct {
@@ -167,6 +205,17 @@ func (t *transcript) feedLine(raw []byte) {
 	}
 	if json.Unmarshal(raw, &line) != nil || line.IsMeta {
 		return
+	}
+	// API Error (500 / verification_required / …): the TUI prints it and
+	// returns to the prompt; Stop often never fires. Surface as system
+	// kind=error so the phone matches the terminal, not an assistant bubble.
+	if line.Type == "assistant" {
+		if errText := claudeAPIErrorText(line.IsAPIErrorMessage, line.Message.Model, claudeMessageText(line.Message.Content)); errText != "" {
+			t.messages = append(t.messages, chatMessage{
+				Role: "system", Kind: "error", Text: clip(errText, 4000), TS: line.Timestamp,
+			})
+			return
+		}
 	}
 	// the newest mode wins: the web status bar shows it like Claude's own
 	if line.PermissionMode != "" {

@@ -59,6 +59,55 @@ export function SlashCommandRow({
  * row like a slash command; a long event folds. The same text also lands on
  * the call that started the task.
  */
+/**
+ * Claude API Error (isApiErrorMessage): same text the TUI prints as a
+ * system line. kind "error" from native/wezdeck-wsl/agent_claude.go.
+ */
+export function ApiErrorRow({
+  message,
+  onShown,
+}: {
+  message: Message
+  onShown?: () => void
+}) {
+  const { t } = useLingui()
+  useEffect(() => {
+    onShown?.()
+  }, [onShown])
+  const text = message.text || t`API error`
+  const long = text.includes('\n') || text.length > 160
+  return (
+    <div
+      className="grid gap-1 rounded-xl border border-brand-error/30 bg-brand-error/10 px-3 py-2"
+      data-testid="api-error"
+      data-role="system"
+    >
+      <span className="text-caption font-medium text-brand-error">
+        {t`API error`}
+      </span>
+      {long ? (
+        <Disclosure
+          chevron={false}
+          title={
+            <span className="truncate font-mono text-caption text-brand-error">
+              {text.split('\n')[0]}
+            </span>
+          }
+          triggerClassName="w-auto text-left"
+        >
+          <pre className="mt-1 max-h-72 overflow-auto font-mono text-meta leading-snug whitespace-pre-wrap text-brand-error/90">
+            {text}
+          </pre>
+        </Disclosure>
+      ) : (
+        <pre className="font-mono text-meta leading-snug whitespace-pre-wrap text-brand-error/90">
+          {text}
+        </pre>
+      )}
+    </div>
+  )
+}
+
 export function TaskEventRow({
   message,
   onShown,

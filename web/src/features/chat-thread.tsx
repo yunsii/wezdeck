@@ -25,7 +25,7 @@ import { catchUp, useCatchUpSignal } from './chat-catchup'
 import { SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
-import { SlashCommandRow, TaskEventRow } from './chat-command'
+import { ApiErrorRow, SlashCommandRow, TaskEventRow } from './chat-command'
 
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
@@ -316,6 +316,14 @@ export function ChatThread({
       if (item.message.kind === 'task')
         return (
           <TaskEventRow
+            key={`m${at}`}
+            message={item.message}
+            onShown={stream ? () => advance(at + 1) : undefined}
+          />
+        )
+      if (item.message.kind === 'error')
+        return (
+          <ApiErrorRow
             key={`m${at}`}
             message={item.message}
             onShown={stream ? () => advance(at + 1) : undefined}

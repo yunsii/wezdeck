@@ -195,6 +195,23 @@ printf '%s' '{"session_id":"claude-idle-1","hook_event_name":"Notification","not
 assert_eq "Claude idle_prompt does not flip running" "running" "$(field_for "$sandbox" "claude-idle-1" "status")"
 rm -rf "$sandbox"
 
+# Claude API Error: TUI returns to the prompt but Stop often never fires.
+# idle_prompt + transcript isApiErrorMessage → done (match the terminal).
+sandbox="$(mktemp -d)"
+setup_sandbox "$sandbox" "$socket" "$session" "%5"
+mkdir -p "$sandbox/home/.claude/projects/enc"
+printf '%s\n' \
+  '{"type":"user","message":{"role":"user","content":"go"}}' \
+  '{"type":"assistant","isApiErrorMessage":true,"message":{"role":"assistant","model":"<synthetic>","content":[{"type":"text","text":"API Error: 500 boom"}]}}' \
+  > "$sandbox/home/.claude/projects/enc/claude-api-err-1.jsonl"
+printf '%s' '{"session_id":"claude-api-err-1","hook_event_name":"UserPromptSubmit","prompt":"go"}' \
+  | "$claude_adapter" running >/dev/null 2>&1 || true
+printf '%s' '{"session_id":"claude-api-err-1","hook_event_name":"Notification","notification_type":"idle_prompt","message":"Claude is waiting for your input"}' \
+  | "$claude_adapter" waiting >/dev/null 2>&1 || true
+assert_eq "Claude idle_prompt after API Error becomes done" "done" "$(field_for "$sandbox" "claude-api-err-1" "status")"
+assert_eq "Claude API Error done_kind" "api_error" "$(field_for "$sandbox" "claude-api-err-1" "done_kind")"
+rm -rf "$sandbox"
+
 # Grok loads Claude hooks via compat and sends camelCase payloads. Turn
 # complete fires Notification with message "Turn complete" — must NOT raise
 # ⚠ waiting after a correct Stop→done.

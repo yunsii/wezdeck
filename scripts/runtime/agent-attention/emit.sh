@@ -34,6 +34,8 @@ repo_root="$(cd "$script_dir/../../.." && pwd)"
 # shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/agent-attention/lib/tmux-coords.sh"
 # shellcheck disable=SC1091
+. "$repo_root/scripts/runtime/agent-attention/lib/claude-api-error.sh"
+# shellcheck disable=SC1091
 . "$repo_root/scripts/runtime/runtime-log-lib.sh"
 WEZTERM_RUNTIME_LOG_SOURCE="agent-attention-emit.sh"
 
@@ -294,18 +296,16 @@ if [[ "$status" == "waiting" ]]; then
   if [[ "$ntype" == "task_complete" ]]; then
     status="bg-complete"
   elif (( allow_waiting == 0 )); then
-    runtime_log_info attention "notification ignored" \
-      "provider=$provider" \
-      "raw_event=$raw_event" \
-      "status=$status" \
-      "notification_type=${notification_type:-}" \
-      "reason=${reason:-}" \
-      "gate=${ignore_gate:-}" \
-      "session_id=${session_id:-}" \
-      "wezterm_pane=${WEZTERM_PANE:-}" \
-      "tmux_pane=${TMUX_PANE:-}" \
-      "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
-    exit 0
+    # idle_prompt + Claude API Error → done; else ignore (lib/claude-api-error.sh).
+    if [[ "$ntype" != "idle_prompt" || -z "$session_id" ]] || ! claude_api_error_end_turn_from_idle "$session_id"; then
+      runtime_log_info attention "notification ignored" \
+        "provider=$provider" "raw_event=$raw_event" "status=$status" \
+        "notification_type=${notification_type:-}" "reason=${reason:-}" \
+        "gate=${ignore_gate:-}" "session_id=${session_id:-}" \
+        "wezterm_pane=${WEZTERM_PANE:-}" "tmux_pane=${TMUX_PANE:-}" \
+        "entry_ts_ms=$entry_ts_ms" 2>/dev/null || true
+      exit 0
+    fi
   fi
 fi
 
