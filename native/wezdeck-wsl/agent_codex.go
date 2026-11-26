@@ -17,9 +17,16 @@ func (t *transcript) feedCodex(raw []byte) {
 			Type    string `json:"type"`
 			Role    string `json:"role"`
 			Content []struct {
-				Type string `json:"type"`
 				Text string `json:"text"`
 			} `json:"content"`
+			Metadata struct {
+				Kinds []string `json:"content_item_kinds"`
+				Items []struct {
+					Provenance struct {
+						Type string `json:"type"`
+					} `json:"provenance"`
+				} `json:"content_item_metadata"`
+			} `json:"internal_chat_message_metadata_passthrough"`
 			Name      string          `json:"name"`
 			Arguments string          `json:"arguments"`
 			Input     string          `json:"input"`
@@ -57,15 +64,23 @@ func (t *transcript) feedCodex(raw []byte) {
 		}
 	case line.Type == "response_item" && p.Type == "message" && (p.Role == "user" || p.Role == "assistant"):
 		var parts []string
-		for _, c := range p.Content {
-			if c.Text != "" {
-				parts = append(parts, c.Text)
+		for i, c := range p.Content {
+			part := c.Text
+			if p.Role == "user" {
+				var kind, origin string
+				if len(p.Metadata.Kinds) == len(p.Content) {
+					kind = p.Metadata.Kinds[i]
+				}
+				if len(p.Metadata.Items) == len(p.Content) {
+					origin = p.Metadata.Items[i].Provenance.Type
+				}
+				part = codexUserPart(part, kind, origin)
+			}
+			if part != "" {
+				parts = append(parts, part)
 			}
 		}
 		text := strings.Join(parts, "\n")
-		if p.Role == "user" {
-			text = userText(text)
-		}
 		if strings.TrimSpace(text) != "" {
 			t.messages = append(t.messages, chatMessage{Role: p.Role, Text: clip(text, 8000), TS: line.Timestamp})
 		}
@@ -98,4 +113,25 @@ func (t *transcript) feedCodex(raw []byte) {
 		t.usage.CacheRead = p.Info.Total.Cached
 		t.usage.Input = p.Info.Total.Input - p.Info.Total.Cached
 	}
+}
+
+// Codex records some model context with role=user. Classify each content item
+// independently because actual user input may share the same message.
+func codexUserPart(text, kind, origin string) string {
+	if origin == "user" || strings.HasPrefix(kind, "user.") {
+		return text
+	}
+	switch origin {
+	case "agents_md", "harness":
+		return ""
+	}
+	switch kind {
+	case "agents_md.instructions", "environments.environment_context":
+		return ""
+	}
+	// Older rollouts lack per-item metadata.
+	if strings.HasPrefix(strings.TrimSpace(text), "# AGENTS.md instructions for ") {
+		return ""
+	}
+	return userText(text)
 }

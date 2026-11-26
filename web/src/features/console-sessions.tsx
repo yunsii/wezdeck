@@ -85,6 +85,7 @@ export type AgentCapabilities = {
 }
 
 export type Detail = StatusFields & {
+  messages_rev?: number
   id: string
   name?: string
   title?: string
@@ -293,6 +294,7 @@ function useSessionDetail(id: string) {
       const reply = (await hostRead('session', {
         id,
         before: have.start ?? 0,
+        messages_rev: have.messages_rev ?? 0,
         limit: count,
       })) as Detail
       client.setQueryData<Detail>(key, (now) => mergeReply(now, reply))

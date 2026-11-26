@@ -23,6 +23,7 @@ describe('session cache', () => {
     expect(pollArgs('s', page(40, 100, 'full'))).toEqual({
       id: 's',
       since: 100,
+      messages_rev: 0,
     })
   })
   it('since: keeps what came before, takes the rest and the new status', () => {
@@ -54,6 +55,18 @@ describe('session cache', () => {
     expect(mergeReply(have, page(50, 110, 'full')).start).toBe(50)
     const { span: _drop, ...old } = page(50, 110, 'full')
     expect(mergeReply(have, old).start).toBe(50)
+  })
+  it('replaces a cached transcript after its message revision changes', () => {
+    const old = page(0, 10, 'full')
+    const refreshed = { ...page(0, 9, 'full'), messages_rev: 1 }
+    const have = mergeReply(old, refreshed)
+    expect(have).toEqual(refreshed)
+    expect(pollArgs('s', have)).toEqual({
+      id: 's',
+      since: 9,
+      messages_rev: 1,
+    })
+    expect(mergeReply(have, page(0, 2, 'before'))).toBe(have)
   })
   it('disk copy keeps the newest messages with the right start', () => {
     const big = page(0, DISK_KEEP + 50, 'since')

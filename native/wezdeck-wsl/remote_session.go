@@ -547,7 +547,15 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		out["meta"] = sessionMeta(e, path, agent, t)
 		transcriptsMu.Lock()
 		total := len(t.messages)
-		start, end, span := sessionWindow(t.messages, a)
+		windowArgs := a
+		if agent == "codex" {
+			windowArgs = a.forMessagesRev(codexMessagesRev)
+			out["messages_rev"] = codexMessagesRev
+			if (a.Since != nil || a.Before != nil) && windowArgs.Since == nil && windowArgs.Before == nil {
+				relayLogf("session_cursor", "id=%s agent=codex outcome=revision_reset", a.ID)
+			}
+		}
+		start, end, span := sessionWindow(t.messages, windowArgs)
 		out["messages"] = append([]chatMessage(nil), t.messages[start:end]...)
 		compactions, lastCompact := t.compactions()
 		if e.TurnStarted > 0 && (e.Status == "running" || e.Status == "waiting") {

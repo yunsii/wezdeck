@@ -8,7 +8,12 @@
 // Everything else in the reply (status, screen, usage, subagents…) is the
 // latest; an earlier page only adds messages.
 
-type Indexed = { messages?: Array<unknown>; start?: number; span?: string }
+type Indexed = {
+  messages?: Array<unknown>
+  start?: number
+  span?: string
+  messages_rev?: number
+}
 
 export const PAGE = 60
 /** messages kept per session when the cache is written to disk */
@@ -17,7 +22,13 @@ export const DISK_KEEP = 300
 /** what to ask for next: the tail we lack, or a first page */
 export function pollArgs(id: string, have?: Indexed) {
   const n = have?.messages?.length ?? 0
-  return n > 0 ? { id, since: (have?.start ?? 0) + n } : { id, limit: PAGE }
+  return n > 0
+    ? {
+        id,
+        since: (have?.start ?? 0) + n,
+        messages_rev: have?.messages_rev ?? 0,
+      }
+    : { id, limit: PAGE }
 }
 
 export function mergeReply<T extends Indexed>(
@@ -39,6 +50,7 @@ export function mergeReply<T extends Indexed>(
     }
   }
   if (reply.span === 'before') {
+    if (have.messages_rev !== reply.messages_rev) return have
     // only the part that ends where ours begins; the rest is not news
     const front = got.slice(0, Math.max(hadStart - gotStart, 0))
     if (gotStart + got.length < hadStart) return have // not contiguous

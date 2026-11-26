@@ -28,3 +28,20 @@ func TestSessionWindow(t *testing.T) {
 		}
 	}
 }
+
+func TestSessionWindowResetsStaleCodexCursor(t *testing.T) {
+	msgs := make([]chatMessage, 10)
+	legacy, current, cursor := 0, codexMessagesRev, 7
+	for _, args := range []sessionArgs{
+		{Since: &cursor, MessagesRev: &legacy},
+		{Before: &cursor, MessagesRev: &legacy},
+	} {
+		if start, end, span := sessionWindow(msgs, args.forMessagesRev(current)); start != 0 || end != 10 || span != "full" {
+			t.Fatalf("got %d:%d %s, want 0:10 full", start, end, span)
+		}
+	}
+	args := sessionArgs{Since: &cursor, MessagesRev: &current}
+	if start, end, span := sessionWindow(msgs, args.forMessagesRev(current)); start != 7 || end != 10 || span != "since" {
+		t.Fatalf("got %d:%d %s, want 7:10 since", start, end, span)
+	}
+}

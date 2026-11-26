@@ -17,13 +17,24 @@ package main
 // message, so the page merges by index (lib/session-cache.ts).
 
 type sessionArgs struct {
-	ID     string `json:"id"`
-	Limit  int    `json:"limit"`
-	Since  *int   `json:"since"`
-	Before *int   `json:"before"`
+	ID          string `json:"id"`
+	Limit       int    `json:"limit"`
+	Since       *int   `json:"since"`
+	Before      *int   `json:"before"`
+	MessagesRev *int   `json:"messages_rev"`
 }
 
 const sessionPendingLookback = 40
+
+// Bump when a Codex parser change removes, adds or reorders historical rows.
+const codexMessagesRev = 1
+
+func (a sessionArgs) forMessagesRev(rev int) sessionArgs {
+	if a.MessagesRev != nil && *a.MessagesRev != rev {
+		a.Since, a.Before = nil, nil
+	}
+	return a
+}
 
 func sessionWindow(msgs []chatMessage, a sessionArgs) (start, end int, window string) {
 	total := len(msgs)
