@@ -93,6 +93,12 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `clear {id}` | write | mark a session read — Ctrl+X in `Alt+/`: `attention-jump.sh --forget <id> --only-if-ts <ts>` archives the live entry into `recent[]` and nudges the counters; only a listed session, and only while its entry still has the ts just read (a fresh question is never swallowed). A relay with `WEZDECK_ATTENTION_FILE` clears there (`WEZDECK_ATTENTION_STATE_PATH`), never in the live state (`remote_clear.go`). The web console: swipe a running / waiting / done row left → 标为已读, or the button in 会话信息 |
 | `device.register` | read-ish | records a remote web console's public key as pending |
 
+The Web new-session sheet stores a pending job id in the current tab so it
+can resume after closing. A relay restart loses its in-memory jobs: an
+`unknown job` response clears the stale id, re-enables the form and explains
+why another session must be created. Transient read errors keep the id so a
+temporary connection failure cannot trigger a duplicate creation.
+
 Guards on every write (`remote_writes.go`; signatures `remote_device_keys.go`): one writer — a tmux-hosted
 session only ever receives a paste into its own TUI, never a second process
 resuming the same session id; free text anytime, also mid-turn, for every

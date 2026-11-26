@@ -92,6 +92,28 @@ type Job = {
 
 const pendingJobKey = 'wezdeck.pending-new-session-job'
 
+function isUnknownJob(error: unknown) {
+  return (
+    error instanceof Error &&
+    error.message.includes('session.new.job: unknown job')
+  )
+}
+
+function usePendingJobRecovery(
+  jobId: string,
+  jobError: unknown,
+  setJobId: (id: string) => void,
+  setError: (message: string) => void,
+) {
+  const { t } = useLingui()
+  useEffect(() => {
+    if (!jobId || !isUnknownJob(jobError)) return
+    sessionStorage.removeItem(pendingJobKey)
+    setJobId('')
+    setError(t`The previous session request expired. Start a new one.`)
+  }, [jobId, jobError, setJobId, setError, t])
+}
+
 function readPendingJob(): { job: string; before: string[] } | null {
   if (typeof window === 'undefined') return null
   try {
@@ -291,6 +313,7 @@ function NewSessionSheet({
   const job = useQuery({
     queryKey: ['remote', 'session.new.job', jobId],
     enabled: Boolean(jobId),
+    retry: (count, failure) => !isUnknownJob(failure) && count < 2,
     refetchInterval: (query) =>
       query.state.data &&
       ['done', 'failed'].includes(query.state.data.job.stage)
@@ -312,6 +335,7 @@ function NewSessionSheet({
   const pickedDir = dirs.find((d) => d.name === pick)
   const isNew = pick === ''
   const current = job.data?.job
+  usePendingJobRecovery(jobId, job.error, setJobId, setError)
   useEffect(() => {
     if (current?.stage === 'done' || current?.stage === 'failed')
       sessionStorage.removeItem(pendingJobKey)
