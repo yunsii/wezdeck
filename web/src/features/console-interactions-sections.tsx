@@ -14,6 +14,7 @@ import {
   ToggleDemo,
   ToolsDemo,
 } from './console-interactions-demos'
+import { LongReplyLandingDemo } from './console-interactions-landing'
 import { BackgroundTasks } from './session-background'
 import {
   ASK_ONE,
@@ -410,6 +411,20 @@ function streamSections(
           ))}
         </div>
       ),
+    },
+    {
+      id: 'long-reply-land',
+      tags: ['common'],
+      title: { zh: '进入会话的长回复落点', en: 'Long-reply opening land' },
+      source: {
+        zh: '刚完成（done）或运行中（running）且无待确认卡片时，最新消息超过一屏则停在其开头；后续再看（idle）直接贴底（chat-landing.ts）',
+        en: 'when done or running with no prompt card, a latest message taller than the viewport lands at its top; later idle opens land directly at the bottom (chat-landing.ts)',
+      },
+      keys: {
+        zh: '无（点「最新」或向下滚到底重新贴底）',
+        en: 'None (tap Latest or scroll to the end to re-pin)',
+      },
+      demo: <LongReplyLandingDemo />,
     },
     {
       id: 'diff',

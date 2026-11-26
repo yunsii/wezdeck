@@ -81,8 +81,9 @@ export function StickyPrompt({
       el.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(frame)
     }
-    // re-measure when the thread changes under the reader
-  }, [end, messages.length, start])
+    // re-measure when the thread changes or pin state flips (e.g. landing
+    // unpinned at the start of a long latest reply before any user scroll)
+  }, [end, messages.length, start, following])
 
   const message =
     owner === null || following ? undefined : messages[owner - start]

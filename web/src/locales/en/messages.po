@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:471
+#: src/features/chat-thread.tsx:486
 msgid "· summary"
 msgstr "· summary"
 
@@ -143,7 +143,7 @@ msgstr "{staleCount} subagents silent for a while"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/console-sessions.tsx:433
+#: src/features/chat-controls.tsx:55
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -151,7 +151,7 @@ msgstr "{total} messages, showing {shown}"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
-#: src/features/console-sessions.tsx:183
+#: src/features/chat-controls.tsx:31
 msgid "{unread} new"
 msgstr "{unread} new"
 
@@ -584,7 +584,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:509
+#: src/features/console-sessions.tsx:455
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -880,11 +880,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:455
+#: src/features/chat-thread.tsx:470
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:456
+#: src/features/chat-thread.tsx:471
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1579,7 +1579,7 @@ msgstr "is queued"
 msgid "joins the current turn"
 msgstr "joins the current turn"
 
-#: src/features/chat-sticky.tsx:135
+#: src/features/chat-sticky.tsx:136
 msgid "Jump to your message: {text}"
 msgstr "Jump to your message: {text}"
 
@@ -1644,7 +1644,7 @@ msgstr "Last sample"
 msgid "Last turn"
 msgstr "Last turn"
 
-#: src/features/console-sessions.tsx:183
+#: src/features/chat-controls.tsx:31
 #: src/features/me-host.tsx:130
 msgid "Latest"
 msgstr "Latest"
@@ -1700,7 +1700,7 @@ msgstr "list available commands"
 msgid "live"
 msgstr "live"
 
-#: src/features/console-sessions.tsx:456
+#: src/features/chat-controls.tsx:68
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -1712,11 +1712,11 @@ msgstr "Loaded on this page"
 msgid "Loading original…"
 msgstr "Loading original…"
 
+#: src/features/chat-controls.tsx:65
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:101
-#: src/features/console-sessions.tsx:453
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:83
@@ -2210,7 +2210,7 @@ msgstr "Open now"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/console-sessions.tsx:532
+#: src/features/console-sessions.tsx:478
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2975,7 +2975,7 @@ msgstr "Shortcuts"
 msgid "Show all tags"
 msgstr "Show all tags"
 
-#: src/features/console-sessions.tsx:455
+#: src/features/chat-controls.tsx:67
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -3027,7 +3027,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:516
+#: src/features/console-sessions.tsx:462
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3227,7 +3227,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:323
+#: src/features/console-sessions.tsx:273
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -3315,7 +3315,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/console-sessions.tsx:319
+#: src/features/console-sessions.tsx:269
 #: src/features/ticket-proposals.tsx:184
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
@@ -3325,7 +3325,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:510
+#: src/features/console-sessions.tsx:456
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -3679,7 +3679,7 @@ msgstr "Wall total"
 msgid "Warnings"
 msgstr "Warnings"
 
-#: src/features/console-sessions.tsx:311
+#: src/features/console-sessions.tsx:261
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 

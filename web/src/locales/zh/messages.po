@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:471
+#: src/features/chat-thread.tsx:486
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -143,7 +143,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{tools} tool calls"
 msgstr "{tools} 次工具调用"
 
-#: src/features/console-sessions.tsx:433
+#: src/features/chat-controls.tsx:55
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
@@ -151,7 +151,7 @@ msgstr "共 {total} 条，已显示 {shown} 条"
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "还有 {unanswered} 个问题没选，agent 只会看到你选了的。"
 
-#: src/features/console-sessions.tsx:183
+#: src/features/chat-controls.tsx:31
 msgid "{unread} new"
 msgstr "{unread} 条新消息"
 
@@ -584,7 +584,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:509
+#: src/features/console-sessions.tsx:455
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -880,11 +880,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:455
+#: src/features/chat-thread.tsx:470
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:456
+#: src/features/chat-thread.tsx:471
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -1579,7 +1579,7 @@ msgstr "排队等这一轮结束"
 msgid "joins the current turn"
 msgstr "插入当前这一轮"
 
-#: src/features/chat-sticky.tsx:135
+#: src/features/chat-sticky.tsx:136
 msgid "Jump to your message: {text}"
 msgstr "跳到你的消息：{text}"
 
@@ -1644,7 +1644,7 @@ msgstr "最近采样"
 msgid "Last turn"
 msgstr "最后一轮"
 
-#: src/features/console-sessions.tsx:183
+#: src/features/chat-controls.tsx:31
 #: src/features/me-host.tsx:130
 msgid "Latest"
 msgstr "回到最新"
@@ -1700,7 +1700,7 @@ msgstr "查看可用命令"
 msgid "live"
 msgstr "实时"
 
-#: src/features/console-sessions.tsx:456
+#: src/features/chat-controls.tsx:68
 msgid "Load earlier"
 msgstr "加载更早"
 
@@ -1712,11 +1712,11 @@ msgstr "本页已加载"
 msgid "Loading original…"
 msgstr "正在加载原图…"
 
+#: src/features/chat-controls.tsx:65
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:197
 #: src/features/console-collab.tsx:95
 #: src/features/console-diagnostics.tsx:101
-#: src/features/console-sessions.tsx:453
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:83
@@ -2210,7 +2210,7 @@ msgstr "在线"
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/console-sessions.tsx:532
+#: src/features/console-sessions.tsx:478
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2975,7 +2975,7 @@ msgstr "键盘快捷键"
 msgid "Show all tags"
 msgstr "显示全部标签"
 
-#: src/features/console-sessions.tsx:455
+#: src/features/chat-controls.tsx:67
 msgid "Show history before compaction"
 msgstr "查看压缩前的记录"
 
@@ -3027,7 +3027,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:516
+#: src/features/console-sessions.tsx:462
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -3227,7 +3227,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:323
+#: src/features/console-sessions.tsx:273
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -3315,7 +3315,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/console-sessions.tsx:319
+#: src/features/console-sessions.tsx:269
 #: src/features/ticket-proposals.tsx:184
 #: src/features/ticket-reply.tsx:202
 msgid "This device is not approved yet (Settings › Device access)."
@@ -3325,7 +3325,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:510
+#: src/features/console-sessions.tsx:456
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -3679,7 +3679,7 @@ msgstr "总耗时"
 msgid "Warnings"
 msgstr "警告"
 
-#: src/features/console-sessions.tsx:311
+#: src/features/console-sessions.tsx:261
 msgid "Web sending is unavailable for this session."
 msgstr "此会话暂时无法从网页发送消息。"
 

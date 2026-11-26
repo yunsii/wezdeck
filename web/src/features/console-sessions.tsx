@@ -6,8 +6,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowDown } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
 import type { GitStatus } from '#/components/deck/session-tags'
@@ -18,7 +17,9 @@ import { PAGE, mergeReply } from '#/lib/session-cache'
 import type { TokenRate } from '#/lib/turn-progress'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
-import { useChatScroll } from './chat-scroll'
+import { useChatScroll, useKeepPlace } from './chat-scroll'
+import { JumpLatest, ThreadPagingBar } from './chat-controls'
+import { shouldLandLatestTop } from './chat-landing'
 import { useWhileShown } from './session-while-shown'
 import { ChatThread, settle } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
@@ -26,7 +27,7 @@ import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { EmptySession } from './session-empty'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
-import { PromptPanels } from './session-elicitation'
+import { PromptPanels, hasPromptPanel } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
 import { useResumeSheet } from './session-commands'
@@ -34,7 +35,6 @@ import { SessionStatusBar } from './session-statusbar'
 import type { StatusFields } from './session-statusbar'
 import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
-import { Button } from '#/components/ui/button'
 import type { PendingCall } from './session-permission'
 import type { SessionCard } from './session-card'
 import { detailKey, readDetail } from './session-detail-read'
@@ -155,56 +155,6 @@ export function sessionTone(status: string, kind?: string): LedTone {
   if (status === 'waiting') return 'waiting'
   if (status === 'done') return 'done'
   return 'muted'
-}
-
-function JumpLatest({
-  pinned,
-  unread,
-  onJump,
-}: {
-  pinned: boolean
-  unread: number
-  onJump: () => void
-}) {
-  const { t } = useLingui()
-  if (pinned) return null
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      onClick={onJump}
-      data-testid="jump-latest"
-      // a light chip with an edge and a deep shadow, not the dark solid
-      // style: it floats over the conversation, and over a user bubble
-      // (same dark fill) the solid chip vanished
-      className="key-press chat-in absolute -top-12 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full border border-brand-edge bg-brand-surface px-4 text-caption font-medium text-brand-text shadow-[0_8px_24px_rgb(0_0_0/0.22)]"
-    >
-      <ArrowDown size={15} aria-hidden />
-      {unread > 0 ? t`${unread} new` : t`Latest`}
-    </Button>
-  )
-}
-
-/**
- * Loading earlier messages grows the page above the reader: remember the
- * distance from the bottom before, restore it once the older ones render.
- */
-function useKeepPlace(
-  end: React.RefObject<HTMLDivElement | null>,
-  start: number,
-) {
-  const fromBottom = useRef<number | null>(null)
-  useLayoutEffect(() => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    if (!scroller || fromBottom.current === null) return
-    scroller.scrollTop = scroller.scrollHeight - fromBottom.current
-    fromBottom.current = null
-  }, [start, end])
-  return () => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    if (scroller)
-      fromBottom.current = scroller.scrollHeight - scroller.scrollTop
-  }
 }
 
 /** consecutive failed polls before the page says it can't get the latest */
@@ -353,9 +303,16 @@ export function SessionDetail({ id }: { id: string }) {
   const pending = settle(pendingRaw, messages, data?.start ?? 0, busy)
   // +1 once the detail has loaded: a new session with no messages yet shows
   // only the pane's screen, and a count of 0 never landed at the bottom
+  const syncing = detail.isFetching && !detail.isFetchedAfterMount
   const follow = useChatScroll(
     end,
     (data ? 1 : 0) + messages.length + pending.length + (busy ? 1 : 0),
+    shouldLandLatestTop({
+      status: data?.status,
+      pendingCount: pending.length,
+      hasPrompt: hasPromptPanel(data),
+    }),
+    syncing,
   )
   const staleAt = detail.dataUpdatedAt
     ? new Date(detail.dataUpdatedAt).toLocaleTimeString([], {
@@ -428,36 +385,23 @@ export function SessionDetail({ id }: { id: string }) {
               start={start}
               following={follow.pinned}
             />
-            {total > 0 ? (
-              <div className="flex items-center justify-between gap-2 px-1 text-meta text-brand-label">
-                <span>{t`${total} messages, showing ${shown}`}</span>
-                {start > 0 ? (
-                  <Button
-                    variant="plain"
-                    type="button"
-                    disabled={pagingIn}
-                    onClick={() => {
-                      keepPlace()
-                      // page back to the compaction marker first; past it only on request
-                      const count =
-                        atCompaction || compactedAt === undefined
-                          ? PAGE
-                          : Math.min(PAGE, start - compactedAt)
-                      loadEarlier(count).catch((e: unknown) => {
-                        setError((e as Error).message)
-                      })
-                    }}
-                    className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
-                  >
-                    {pagingIn
-                      ? t`Loading…`
-                      : atCompaction
-                        ? t`Show history before compaction`
-                        : t`Load earlier`}
-                  </Button>
-                ) : null}
-              </div>
-            ) : null}
+            <ThreadPagingBar
+              total={total}
+              shown={shown}
+              start={start}
+              pagingIn={pagingIn}
+              atCompaction={atCompaction}
+              onLoadEarlier={() => {
+                keepPlace()
+                const count =
+                  atCompaction || compactedAt === undefined
+                    ? PAGE
+                    : Math.min(PAGE, start - compactedAt)
+                loadEarlier(count).catch((e: unknown) => {
+                  setError((e as Error).message)
+                })
+              }}
+            />
             <ChatThread
               messages={messages}
               start={start}
@@ -470,6 +414,7 @@ export function SessionDetail({ id }: { id: string }) {
               statusTs={data?.ts}
               onBackground={toBackground(data, device.state, run)}
               sessionId={id}
+              syncing={syncing}
             />
           </>
         ) : data ? (
@@ -490,6 +435,7 @@ export function SessionDetail({ id }: { id: string }) {
           event.preventDefault()
           if (readOnly) return
           setError('')
+          if (composer.ready) follow.jump()
           composer.submit().catch((e: unknown) => {
             setError((e as Error).message)
           })

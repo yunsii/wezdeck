@@ -19,11 +19,17 @@ import {
 
 import { trace } from '#/lib/client-trace'
 import { CATCH_UP_EVENT } from './chat-catchup'
+import {
+  NEAR_BOTTOM,
+  measureLanding,
+  useHoldBottomOnResize,
+} from './chat-landing'
 import { BAR } from './chat-sticky'
+
+export { useKeepPlace } from './chat-landing'
 
 /** a panel's open / close animation (motion-collapse) and a margin */
 const TOGGLE_HOLD_MS = 450
-const NEAR_BOTTOM = 48
 /** finger travel that counts as a drag, not a tap */
 const DRAG = 8
 
@@ -223,15 +229,24 @@ function useLandBeforePaint(
   end: React.RefObject<HTMLDivElement | null>,
   count: number,
   landed: React.RefObject<boolean>,
-  pinned: React.RefObject<boolean>,
+  userInteracted: React.RefObject<boolean>,
+  syncing: boolean,
+  applyLanding: (el: HTMLElement) => void,
 ) {
   const landingUntil = useRef(0)
+  const wasSyncing = useRef(syncing)
   useLayoutEffect(() => {
-    if (!count || landed.current || !pinned.current) return
+    // Re-land once when the initial post-mount fetch finishes (e.g. cached
+    // snapshot updated to newly completed `done` messages), unless the reader
+    // already interacted.
+    const justSynced = wasSyncing.current && !syncing
+    wasSyncing.current = syncing
+    if (!count || userInteracted.current) return
+    if (landed.current && !syncing && !justSynced) return
     const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
-    if (el) el.scrollTop = endTop(el, end.current)
+    if (el) applyLanding(el)
     landingUntil.current = performance.now() + LANDING_MS
-  }, [count, end, landed, pinned])
+  }, [count, end, landed, userInteracted, syncing, applyLanding])
   return landingUntil
 }
 
@@ -243,13 +258,103 @@ function grewWhileLanding(landing: React.RefObject<number>) {
   return true
 }
 
+/**
+ * A streaming reply grows without changing the count, and the keyboard shrinks
+ * the scroller: either way a pinned thread follows its newest line, while
+ * landing keeps the chosen landing target in place before paint.
+ */
+function useFollowGrowth({
+  end,
+  pinnedRef,
+  landed,
+  landing,
+  touching,
+  holding,
+  userInteracted,
+  applyLanding,
+}: {
+  end: React.RefObject<HTMLDivElement | null>
+  pinnedRef: React.RefObject<boolean>
+  landed: React.RefObject<boolean>
+  landing: React.RefObject<number>
+  touching: React.RefObject<boolean>
+  holding: React.RefObject<boolean>
+  userInteracted: React.RefObject<boolean>
+  applyLanding: (el: HTMLElement) => void
+}) {
+  useEffect(() => {
+    const el = end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
+    const content = el ? [...el.children] : []
+    if (!el || !content.length || typeof ResizeObserver === 'undefined') return
+    const live = () => landed.current || performance.now() < landing.current
+    const following = () => pinnedRef.current && live() && !touching.current
+    const jumpDown = () => {
+      if (following() && !fitSpacer(el, end.current))
+        el.scrollTop = endTop(el, end.current)
+    }
+    let glide = 0
+    const glideDown = () => {
+      if (glide || !following()) return
+      const frame = () => {
+        const left = endTop(el, end.current) - el.scrollTop
+        if (!following() || left <= 0.5 || holding.current) {
+          glide = 0
+          return
+        }
+        el.scrollTop += Math.max(1, left * 0.2)
+        glide = requestAnimationFrame(frame)
+      }
+      glide = requestAnimationFrame(frame)
+    }
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const observer = new ResizeObserver((entries) => {
+      fitSpacer(el, end.current)
+      if (
+        !userInteracted.current &&
+        !touching.current &&
+        grewWhileLanding(landing)
+      ) {
+        if (!fitSpacer(el, end.current)) applyLanding(el)
+        return
+      }
+      const now = !smooth
+      if (now || easing(el) || entries.some((e) => e.target === el)) jumpDown()
+      else glideDown()
+    })
+    content.forEach((child) => observer.observe(child))
+    observer.observe(el)
+    const viewport = window.visualViewport
+    viewport?.addEventListener('resize', jumpDown)
+    return () => {
+      cancelAnimationFrame(glide)
+      observer.disconnect()
+      viewport?.removeEventListener('resize', jumpDown)
+    }
+  }, [
+    end,
+    pinnedRef,
+    landed,
+    landing,
+    touching,
+    holding,
+    userInteracted,
+    applyLanding,
+  ])
+}
+
 export function useChatScroll(
   end: React.RefObject<HTMLDivElement | null>,
   count: number,
+  preferLatestTop = false,
+  syncing = false,
 ) {
   const [pinned, setPinned] = useState(true)
   const pinnedRef = useRef(true)
   const landed = useRef(false)
+  const userInteracted = useRef(false)
+  const preferRef = useRef(preferLatestTop)
+  preferRef.current = preferLatestTop
+  const lastLandMode = useRef<string | null>(null)
   const userUntil = useRef(0)
   const touching = useRef(false)
   const holdUntil = useRef(0)
@@ -265,6 +370,31 @@ export function useChatScroll(
     setPinned(value)
     if (value) setUnread(0)
   }, [])
+  const applyLanding = useCallback(
+    (el: HTMLElement) => {
+      const decision = measureLanding(
+        el,
+        end.current,
+        endTop(el, end.current),
+        preferRef.current,
+      )
+      el.scrollTop = decision.top
+      if (pinnedRef.current !== decision.pinned) {
+        pinnedRef.current = decision.pinned
+        setPinned(decision.pinned)
+        if (decision.pinned) setUnread(0)
+      }
+      if (lastLandMode.current !== decision.mode) {
+        lastLandMode.current = decision.mode
+        trace('chat-land', {
+          mode: decision.mode,
+          top: Math.round(decision.top),
+          bottom: Math.round(decision.bottom),
+        })
+      }
+    },
+    [end],
+  )
   const toBottom = useCallback(
     (smooth: boolean) => {
       const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
@@ -284,6 +414,8 @@ export function useChatScroll(
     const el = scroller()
     if (!el) return
     const intent = () => {
+      userInteracted.current = true
+      landed.current = true
       userUntil.current = performance.now() + 400
       holdUntil.current = 0 // the reader takes over: stop holding the bottom
     }
@@ -380,23 +512,42 @@ export function useChatScroll(
     }
   }, [pin, end])
 
-  const landing = useLandBeforePaint(end, count, landed, pinnedRef)
+  const landing = useLandBeforePaint(
+    end,
+    count,
+    landed,
+    userInteracted,
+    syncing,
+    applyLanding,
+  )
 
   // first landing settles late layout (images, fonts), and new messages
   useEffect(() => {
     if (!count) return
     const added = count - seen.current
     seen.current = count
+    if (!landed.current || syncing) {
+      const go = () => {
+        if (touching.current || userInteracted.current) return
+        const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
+        if (el) applyLanding(el)
+        if (!syncing) landed.current = true
+      }
+      const frame = requestAnimationFrame(() => requestAnimationFrame(go))
+      const timer = setTimeout(go, 150)
+      return () => {
+        cancelAnimationFrame(frame)
+        clearTimeout(timer)
+      }
+    }
     if (!pinnedRef.current) {
       if (added > 0) setUnread((n) => n + added)
       return
     }
-    const smooth =
-      landed.current && !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
     const go = () => {
       if (touching.current) return
       toBottom(smooth)
-      landed.current = true
     }
     const frame = requestAnimationFrame(() => requestAnimationFrame(go))
     const timer = setTimeout(go, 150)
@@ -404,103 +555,35 @@ export function useChatScroll(
       cancelAnimationFrame(frame)
       clearTimeout(timer)
     }
-  }, [count, toBottom])
+  }, [count, end, syncing, applyLanding, toBottom])
 
-  // a streaming reply grows without changing the count, and the keyboard
-  // shrinks the scroller: either way a pinned thread follows its newest line
-  useEffect(() => {
-    const el = scroller()
-    // the scroller's content — on the session page #console-main: the thread
-    // and the composer (which grows with the toolbar, thumbnails, a
-    // multi-line draft or the subagents panel); 交互调试 demos bring their own
-    const content = el ? [...el.children] : []
-    if (!el || !content.length || typeof ResizeObserver === 'undefined') return
-    const live = () => landed.current || performance.now() < landing.current
-    const following = () => pinnedRef.current && live() && !touching.current
-    const jumpDown = () => {
-      // new content fills the borrowed room first: nothing on screen moves
-      if (following() && !fitSpacer(el, end.current))
-        el.scrollTop = endTop(el, end.current)
-    }
-    // content growth (a reply writing itself line by line) glides: each frame
-    // covers a fifth of what is left, so new lines push the thread up
-    // smoothly instead of the page jumping a line at a time
-    let glide = 0
-    const glideDown = () => {
-      if (glide || !following()) return
-      const frame = () => {
-        const left = endTop(el, end.current) - el.scrollTop
-        if (!following() || left <= 0.5 || holding.current) {
-          glide = 0
-          return
-        }
-        el.scrollTop += Math.max(1, left * 0.2)
-        glide = requestAnimationFrame(frame)
-      }
-      glide = requestAnimationFrame(frame)
-    }
-    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-    const observer = new ResizeObserver((entries) => {
-      // growth fills the borrowed room first (gliding would not consume it)
-      fitSpacer(el, end.current)
-      // keyboard resize, or still settling after it opened: bottom at once
-      const now = !smooth || grewWhileLanding(landing)
-      // a streaming reply eases its own height (chat-grow.tsx): hold the end
-      if (now || easing(el) || entries.some((e) => e.target === el)) jumpDown()
-      else glideDown()
-    })
-    content.forEach((child) => observer.observe(child))
-    observer.observe(el)
-    const viewport = window.visualViewport
-    viewport?.addEventListener('resize', jumpDown)
-    return () => {
-      cancelAnimationFrame(glide)
-      observer.disconnect()
-      viewport?.removeEventListener('resize', jumpDown)
-    }
-  }, [end])
-
-  // keyboard opening / closing: hold a pinned thread at the bottom every
-  // frame until the browser is done resizing and scrolling
-  useEffect(() => {
-    const el = scroller()
-    if (!el) return
-    const hold = (ms: number, why: string) => {
-      if (!pinnedRef.current || !landed.current) return
-      holdUntil.current = Math.max(holdUntil.current, performance.now() + ms)
-      if (holding.current) return
-      holding.current = true
-      trace('chat-hold', { why, ms })
-      const frame = () => {
-        // check first: a reader who scrolled away this frame wins
-        if (performance.now() >= holdUntil.current || !pinnedRef.current) {
-          holding.current = false
-          return
-        }
-        if (!touching.current) el.scrollTop = endTop(el, end.current)
-        requestAnimationFrame(frame)
-      }
-      requestAnimationFrame(frame)
-    }
-    const onFocus = (event: FocusEvent) => {
-      if (event.target instanceof HTMLTextAreaElement) hold(1_000, event.type)
-    }
-    const onViewport = () => {
-      hold(500, 'viewport')
-    }
-    el.addEventListener('focusin', onFocus)
-    el.addEventListener('focusout', onFocus)
-    window.visualViewport?.addEventListener('resize', onViewport)
-    window.addEventListener('resize', onViewport)
-    return () => {
-      el.removeEventListener('focusin', onFocus)
-      el.removeEventListener('focusout', onFocus)
-      window.visualViewport?.removeEventListener('resize', onViewport)
-      window.removeEventListener('resize', onViewport)
-    }
-  }, [])
+  useFollowGrowth({
+    end,
+    pinnedRef,
+    landed,
+    landing,
+    touching,
+    holding,
+    userInteracted,
+    applyLanding,
+  })
+  const bottomOf = useCallback(
+    (el: HTMLElement) => endTop(el, end.current),
+    [end],
+  )
+  useHoldBottomOnResize({
+    end,
+    pinnedRef,
+    landed,
+    touching,
+    holdUntil,
+    holding,
+    bottomOf,
+  })
 
   const jump = useCallback(() => {
+    userInteracted.current = true
+    landed.current = true
     pin(true)
     toBottom(!matchMedia('(prefers-reduced-motion: reduce)').matches)
   }, [pin, toBottom])

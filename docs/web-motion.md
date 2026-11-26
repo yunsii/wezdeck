@@ -70,10 +70,20 @@ thread keeps growing for a moment (markdown laid out, the progressive
 render adding earlier items), and a pinned thread used to glide after it —
 a scroll animation on every switch (1910 → 2694 over ~150 ms). For
 `LANDING_MS` after landing (extended while it grows) growth jumps to the
-bottom inside the ResizeObserver callback, which runs before paint
-(`useLandBeforePaint` / `grewWhileLanding`, `chat-scroll.ts`); the glide is
-kept for a streaming reply. web-frame-probe's `glide` finding checks it on
-painted frames.
+landing target inside the ResizeObserver callback, which runs before paint
+(`useLandBeforePaint` / `grewWhileLanding`, `chat-scroll.ts`; `chat-landing.ts`):
+normally the bottom, or — when newly completed (`status === 'done'`) or
+running (`status === 'running'`, with no waiting prompt card or pending send)
+and the latest message itself is taller than the viewport — the start of that
+latest message (leaving `StickyPrompt` clearance when unpinned, so the reader
+starts from the top instead of only seeing the tail, with `JumpLatest` to skip
+to the end; traced as `chat-land`; `chat-landing.cdp`, 交互调试 › 进入会话的长回复落点). Later
+opens (`idle`) land straight at the bottom. Messages brought in by the first
+post-mount fetch over a persisted IndexedDB cache also advance the reveal
+baseline (`nextBaseline`, `ChatThread` `syncing`) so already-finished replies
+render statically instead of replaying through the streaming animation. The
+glide is kept for a streaming reply. web-frame-probe's `glide` finding checks
+it on painted frames.
 
 The turn line (运行中… / 用时) at the thread's end stays mounted: it used to
 render only once every new message was revealed, so each poll of a running

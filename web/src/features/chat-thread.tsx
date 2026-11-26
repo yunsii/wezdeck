@@ -9,6 +9,7 @@ import {
   startTransition,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -23,6 +24,7 @@ import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { SmoothGrow } from './chat-grow'
 import { catchUp, useCatchUpSignal } from './chat-catchup'
+import { nextBaseline } from './chat-landing'
 import { SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -234,6 +236,7 @@ export function ChatThread({
   onResend,
   onDismiss,
   sessionId = '',
+  syncing = false,
 }: {
   /** a lost (未送达) bubble: send it again / drop it */
   onResend?: (item: Pending) => void
@@ -250,19 +253,31 @@ export function ChatThread({
   statusTs?: number
   /** resolves transcript image refs (session.image) */
   sessionId?: string
+  /** true while the first post-mount fetch is catching up from cached data */
+  syncing?: boolean
   /** absolute index of messages[0] in the whole transcript (pagination) */
   start: number
   busy: boolean
 }) {
-  // Messages present when the page opened render still. Later ones are
-  // revealed one at a time through `cursor` (absolute index of the first
-  // message not shown yet): a reply streams in, a user message or a run of
-  // tool calls just appears, then the next one goes. Absolute indices, so
-  // loading earlier messages neither re-keys nor replays anything.
+  // Messages present when the page opened — including the delta brought by
+  // the first fetch after mount when IndexedDB held a stale snapshot — render
+  // still. Later ones are revealed one at a time through `cursor` (absolute
+  // index of the first message not shown yet): a reply streams in, a user
+  // message or a run of tool calls just appears, then the next one goes.
   const end = start + messages.length
   const baseline = useRef<number | null>(null)
+  const wasSyncing = useRef(syncing)
   const [cursor, setCursor] = useState<number | null>(null)
-  if (baseline.current === null && messages.length > 0) baseline.current = end
+  baseline.current = nextBaseline(
+    baseline.current,
+    end,
+    messages.length,
+    syncing,
+    wasSyncing.current,
+  )
+  useLayoutEffect(() => {
+    wasSyncing.current = syncing
+  }, [syncing])
   const items = group(messages)
   // the first message not shown yet; a backlog (page was hidden, phone
   // locked) shows all but its newest reply at once (chat-catchup.ts)

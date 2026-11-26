@@ -365,6 +365,20 @@ export function SessionPlanReview({
  * times for an Ask answer sent as a run of keys. Dimmed means this device
  * cannot write.
  */
+/** True when PromptPanels renders an interactive confirmation / question / plan card. */
+export function hasPromptPanel(data?: Detail): boolean {
+  if (!data) return false
+  const waiting = data.status === 'waiting' || Boolean(data.waiting_kind)
+  const asking = Boolean(waiting && data.elicitation?.questions.length)
+  const planReview = Boolean(waiting && data.plan?.awaiting_approval)
+  return (
+    asking ||
+    planReview ||
+    Boolean(data.permission) ||
+    Boolean(data.waiting_kind)
+  )
+}
+
 export function PromptPanels({
   data,
   sending,
