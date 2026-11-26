@@ -83,6 +83,7 @@ function SessionSubRow({
   const tone = chatTone(session)
   const title = session.title?.trim()
   const prompt = humanPrompt(session.last_prompt).trim()
+  const draft = session.draft?.trim()
   const compact =
     tone === 'idle' && !title && !prompt && !session.restart_pending
   const statusLabel = session.restart_pending
@@ -206,7 +207,13 @@ function SessionSubRow({
                       {statusLabel}
                     </span>
                   ) : null}
-                  {prompt ? <span className="truncate">{prompt}</span> : null}
+                  {draft ? (
+                    <span className="truncate text-brand-label">
+                      {t`Draft`} · {draft}
+                    </span>
+                  ) : prompt ? (
+                    <span className="truncate">{prompt}</span>
+                  ) : null}
                 </span>
               ) : null}
             </span>

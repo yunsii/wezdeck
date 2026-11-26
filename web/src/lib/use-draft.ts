@@ -2,10 +2,23 @@
 // the caller: a session's composer, a ticket's reply box. Every write is
 // broadcast, so another mounted copy of the same box (the page left and
 // opened again while a send was still uploading) shows it too.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
 const EVENT = 'wezdeck:draft'
 type Change = { key: string; value: string; from: string }
+let revision = 0
+const revisionListeners = new Set<() => void>()
+
+function notifyRevision() {
+  revision += 1
+  for (const listener of revisionListeners) listener()
+}
 
 function store(storageKey: string, value: string) {
   // idempotent, so a StrictMode double call is harmless
@@ -29,6 +42,28 @@ function announce(storageKey: string, value: string, from: string) {
 function persist(storageKey: string, value: string, from: string) {
   store(storageKey, value)
   announce(storageKey, value, from)
+  notifyRevision()
+}
+
+export const sessionDraftKey = (id: string) => `wezdeck.draft.${id}`
+
+export function readDraft(storageKey: string) {
+  try {
+    return localStorage.getItem(storageKey) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function useDraftRevision() {
+  return useSyncExternalStore(
+    (listener) => {
+      revisionListeners.add(listener)
+      return () => revisionListeners.delete(listener)
+    },
+    () => revision,
+    () => revision,
+  )
 }
 
 /**

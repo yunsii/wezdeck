@@ -50,6 +50,7 @@ import { useCopySessionReference } from './copy-reference'
 import { SwipeActions } from './session-row-swipe'
 import { prefetchSession, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
+import { readDraft, sessionDraftKey, useDraftRevision } from '#/lib/use-draft'
 
 const menuItemClass =
   'flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft'
@@ -62,6 +63,7 @@ function useChatPreviewLabels() {
     done: t`Done`,
     working: t`Working`,
     empty: t`No human message yet`,
+    draft: t`Draft`,
   }
 }
 
@@ -324,7 +326,12 @@ export function SessionList({
   const sessions = useSessions()
   const phone = consoleVisits()
   const rows = useFrozenVisits(sessions.data?.sessions ?? [], phone)
-  const groups = buildChatGroups(rows, phone)
+  useDraftRevision()
+  const rowsWithDrafts = rows.map((row) => ({
+    ...row,
+    draft: readDraft(sessionDraftKey(row.id)),
+  }))
+  const groups = buildChatGroups(rowsWithDrafts, phone)
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')
@@ -354,7 +361,7 @@ export function SessionList({
             const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
             const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
             if (au !== bu) return bu - au
-            return b.activity - a.activity || b.visit - a.visit
+            return b.visit - a.visit || a.title.localeCompare(b.title)
           })
         return { ...repo, chats }
       })

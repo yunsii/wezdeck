@@ -37,7 +37,7 @@ const card = (over: Partial<SessionCard>): SessionCard => ({
 })
 
 describe('resolveChatFocus', () => {
-  it('prefers waiting, then done, then running, then newest ts', () => {
+  it('prefers waiting, then done, then running, then stable pane order', () => {
     const rows = [
       card({ id: 'old', ts: 10, status: 'idle' }),
       card({ id: 'run', ts: 20, status: 'running' }),
@@ -60,10 +60,10 @@ describe('resolveChatFocus', () => {
     ).toBe('run')
     expect(
       resolveChatFocus([
-        card({ id: 'old', ts: 10, status: 'idle' }),
-        card({ id: 'newer', ts: 30, status: 'idle' }),
+        card({ id: 'old', ts: 10, status: 'idle', pane_index: 0 }),
+        card({ id: 'newer', ts: 30, status: 'idle', pane_index: 1 }),
       ])?.id,
-    ).toBe('newer')
+    ).toBe('old')
   })
   it('prefers attached idle sessions without hiding detached work', () => {
     const attached = card({ id: 'attached', ts: 10 })
@@ -129,6 +129,36 @@ describe('buildChatGroups', () => {
       }),
     ])
     expect(groups[0].chats[0].title).toBe('wezdeck')
+  })
+
+  it('does not reorder chats when attention refresh timestamps change', () => {
+    const rows = [
+      card({
+        id: 'a',
+        worktree: '/r/a/.worktrees/a',
+        cwd: '/r/a/.worktrees/a',
+        ts: 100,
+      }),
+      card({
+        id: 'b',
+        worktree: '/r/a/.worktrees/b',
+        cwd: '/r/a/.worktrees/b',
+        ts: 200,
+      }),
+    ]
+    const refreshed = rows.map((row, index) => ({
+      ...row,
+      ts: 1_000_000 + index,
+    }))
+    expect(
+      buildChatGroups(rows).flatMap((repo) =>
+        repo.chats.map((chat) => chat.key),
+      ),
+    ).toEqual(
+      buildChatGroups(refreshed).flatMap((repo) =>
+        repo.chats.map((chat) => chat.key),
+      ),
+    )
   })
 })
 

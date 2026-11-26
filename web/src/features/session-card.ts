@@ -16,6 +16,7 @@ export type SessionCard = {
   status: string
   waiting_kind?: string
   last_prompt: string
+  draft?: string
   ts: number
   transcript: boolean
   desk_idle_s: number

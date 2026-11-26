@@ -40,6 +40,7 @@ export function chatPreview(
     | 'waiting_kind'
     | 'ts'
     | 'last_prompt'
+    | 'draft'
     | 'restart_pending'
   >,
   labels: {
@@ -48,10 +49,13 @@ export function chatPreview(
     done?: string
     working: string
     empty: string
+    draft?: string
   },
   _now = Date.now(),
 ): string {
   const prompt = humanPrompt(focus.last_prompt)
+  if (focus.draft?.trim())
+    return `${labels.draft ?? 'Draft'} · ${focus.draft.trim()}`
   if (focus.restart_pending) return 'Restarting…'
   const tone = chatTone(focus, _now)
   if (tone === 'waiting') {
@@ -90,6 +94,7 @@ export function chatMatchesQuery(
       row.agent_profile,
       row.name,
       row.last_prompt,
+      row.draft,
     ]),
   ]
     .filter(Boolean)
@@ -113,7 +118,7 @@ export type SessionChat = {
   focus: SessionCard
   unread: number
   visit: number
-  /** focus activity time — sorts non-unread rows */
+  /** retained for callers that render activity metadata; never used for order */
   activity: number
 }
 
@@ -132,15 +137,19 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
   return workstationLabel(base) || wtKey
 }
 
-/** which session a chat opens: waiting → done → running → attached idle → newest activity */
+/** which session a chat opens: waiting → done → running → attached idle → stable pane order */
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
   phone: Record<string, number> = {},
   _now = Date.now(),
 ): SessionCard | undefined {
   if (!sessions.length) return undefined
+  const paneIndex = (row: SessionCard) =>
+    row.pane_index ?? (row.tmux_pane ? 0 : Infinity)
   const byVisit = (a: SessionCard, b: SessionCard) =>
-    visitOf(b, phone) - visitOf(a, phone) || b.ts - a.ts
+    visitOf(b, phone) - visitOf(a, phone) ||
+    paneIndex(a) - paneIndex(b) ||
+    a.id.localeCompare(b.id)
   const waiting = sessions.filter(needsYou).sort(byVisit)
   if (waiting[0]) return waiting[0]
   const done = sessions.filter((row) => row.status === 'done').sort(byVisit)
@@ -152,15 +161,14 @@ export function resolveChatFocus(
   return [...sessions].sort(
     (a, b) =>
       Number(a.detached === true) - Number(b.detached === true) ||
-      b.ts - a.ts ||
       byVisit(a, b),
   )[0]
 }
 
 /**
  * Aggregate flat sessions into repo → chat rows. Unread chats float to the
- * top of each repo; the rest follow focus activity time. Visit still breaks
- * ties so a quiet phone visit can pin a chat without agent output.
+ * top of each repo; the rest follow the frozen visit order. Agent attention
+ * timestamps are state refreshes and must not reorder this navigation list.
  */
 export function buildChatGroups(
   rows: Array<SessionCard>,
@@ -235,11 +243,7 @@ export function buildChatGroups(
       const au = a.unread > 0 ? 1 : 0
       const bu = b.unread > 0 ? 1 : 0
       if (au !== bu) return bu - au
-      return (
-        b.activity - a.activity ||
-        b.visit - a.visit ||
-        a.title.localeCompare(b.title)
-      )
+      return b.visit - a.visit || a.title.localeCompare(b.title)
     })
     groups.push({
       key: repoKey,
