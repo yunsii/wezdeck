@@ -6,7 +6,7 @@ Transport, pairing, write signatures, cost and operations are in
 [`remote-access.md`](./remote-access.md); the web console UI is in
 [`web-pwa.md`](./web-pwa.md).
 
-## Codex chat messages
+## Codex chat messages and titles
 
 The relay drops Codex-injected instructions and environment context from the
 chat transcript per content item, using the item source in the rollout. For
@@ -14,6 +14,11 @@ older rollouts it recognizes the legacy context wrappers. The browser sends the
 transcript revision with its pagination cursor. A stale Codex cursor receives
 a full page and replaces the cached messages because filtering shifts indexes.
 The relay logs a `session_cursor` revision reset without the message text.
+
+The session list, header and metadata use Codex's latest saved
+`thread_name` from `~/.codex/session_index.jsonl`, including automatic names
+and manual renames. The relay caches the index until its file changes and
+logs refreshes without recording the titles.
 
 ## Session RPCs
 

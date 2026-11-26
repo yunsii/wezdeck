@@ -229,7 +229,7 @@ func (grokAdapter) Capabilities() agentCaps {
 	return agentCaps{Usage: "none", MidTurnInput: "queue", Title: true}
 }
 
-// Codex: ~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl; no title yet.
+// Codex: rollout-*-<id>.jsonl; title from the adjacent session index.
 type codexAdapter struct{}
 
 func (codexAdapter) Name() string { return "codex" }
@@ -237,10 +237,10 @@ func (codexAdapter) Locate(home, id string) string {
 	return globFirst(filepath.Join(home, ".codex", "sessions", "*", "*", "*", "rollout-*-"+id+".jsonl"))
 }
 func (codexAdapter) Feed(t *transcript, line []byte) { t.feedCodex(line) }
-func (codexAdapter) Title(string) string             { return "" }
+func (codexAdapter) Title(path string) string        { return codexSessionTitle(path) }
 func (codexAdapter) ToolKind(name string, input map[string]any) string {
 	return toolKindByName(codexToolKinds, name, input)
 }
 func (codexAdapter) Capabilities() agentCaps {
-	return agentCaps{Usage: "token_count", MidTurnInput: "steer"}
+	return agentCaps{Usage: "token_count", MidTurnInput: "steer", Title: true}
 }
