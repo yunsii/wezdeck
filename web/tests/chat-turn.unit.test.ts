@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { turnState, revealingTurnState } from '#/features/chat-turn'
 import type { Message } from '#/features/chat-thread'
+import { formatTokenRate, formatTtft } from '#/lib/turn-progress'
 
 const at = (s: number) =>
   new Date(Date.UTC(2026, 10, 24, 5, 0, s)).toISOString()
@@ -102,8 +103,23 @@ describe('revealingTurnState (the turn line never leaves mid-reveal)', () => {
     expect(revealingTurnState(done, false)).toBe(done)
   })
   it('working and nothing pass through', () => {
-    const working = { kind: 'working' as const, activity: { since: 1 } }
+    const working = {
+      kind: 'working' as const,
+      activity: { since: 1, rate: 88.6 },
+    }
     expect(revealingTurnState(working, true)).toBe(working)
     expect(revealingTurnState(null, true)).toBeNull()
+  })
+})
+
+describe('token rate formatting', () => {
+  it('formats effective tok/s and TTFT cleanly', () => {
+    expect(formatTokenRate(0)).toBe('')
+    expect(formatTokenRate(56.1)).toBe('56.1 tok/s')
+    expect(formatTokenRate(80.0)).toBe('80 tok/s')
+    expect(formatTokenRate(120.4)).toBe('120 tok/s')
+    expect(formatTtft(0)).toBe('')
+    expect(formatTtft(420)).toBe('420ms')
+    expect(formatTtft(2637)).toBe('2.6s')
   })
 })

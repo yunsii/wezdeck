@@ -84,6 +84,9 @@ func (t *transcript) feedCodex(raw []byte) {
 		if strings.TrimSpace(text) != "" {
 			t.messages = append(t.messages, chatMessage{Role: p.Role, Text: clip(text, 8000), TS: line.Timestamp})
 		}
+		if p.Role == "user" {
+			t.markStepStart(line.Timestamp)
+		}
 	case line.Type == "response_item" && (p.Type == "function_call" || p.Type == "custom_tool_call"):
 		args := p.Arguments
 		if args == "" {
@@ -91,6 +94,7 @@ func (t *transcript) feedCodex(raw []byte) {
 		}
 		t.addTool(p.CallID, p.Name, args, line.Timestamp)
 	case line.Type == "response_item" && (p.Type == "function_call_output" || p.Type == "custom_tool_call_output"):
+		t.markStepStart(line.Timestamp)
 		var out string
 		if json.Unmarshal(p.Output, &out) != nil {
 			var obj struct {
@@ -112,6 +116,9 @@ func (t *transcript) feedCodex(raw []byte) {
 		t.usage.Output = p.Info.Total.Output
 		t.usage.CacheRead = p.Info.Total.Cached
 		t.usage.Input = p.Info.Total.Input - p.Info.Total.Cached
+		if p.Info.Last.Output > 0 {
+			t.markOutput(line.Timestamp, p.Info.Last.Output)
+		}
 	}
 }
 

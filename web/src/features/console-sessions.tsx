@@ -15,6 +15,7 @@ import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { hostRead } from '#/lib/runtime-client'
 import { PAGE, mergeReply } from '#/lib/session-cache'
+import type { TokenRate } from '#/lib/turn-progress'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
@@ -133,6 +134,8 @@ export type Detail = StatusFields & {
   compact_started?: number
   /** output tokens of the running turn (transcript usage) */
   turn_output?: number
+  /** host-side token output rate (OTel primary, transcript fallback) */
+  token_rate?: TokenRate
   elicitation?: Elicitation
   plan?: { excerpt?: string; awaiting_approval?: boolean }
   /** a permission prompt: the call it is about (host permission.go) */
@@ -149,26 +152,6 @@ export function sessionTone(status: string, kind?: string): LedTone {
   if (status === 'waiting') return 'waiting'
   if (status === 'done') return 'done'
   return 'muted'
-}
-
-export function useStatusText() {
-  const { t } = useLingui()
-  return (status: string, kind?: string, runningKind?: string, bg = 0) =>
-    kind
-      ? t`waiting for your confirmation`
-      : status === 'running' && runningKind === 'background'
-        ? t`${bg} background tasks running`
-        : status === 'running' && runningKind === 'compacting'
-          ? t`compacting the context`
-          : status === 'idle'
-            ? t({ message: 'Idle', context: 'session status' })
-            : status === 'running'
-              ? t`working`
-              : status === 'waiting'
-                ? t`waiting for you`
-                : status === 'done'
-                  ? t`finished its turn`
-                  : status
 }
 
 export function useSessions() {
@@ -237,11 +220,6 @@ function useKeepPlace(
 /** consecutive failed polls before the page says it can't get the latest */
 const STALE_AFTER = 3
 
-/**
- * Polls that failed since the last one that worked (queries don't retry,
- * so each failed poll is one error update). One flaky poll on a phone link
- * is not worth a banner; three in a row are.
- */
 function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
   const [base, setBase] = useState({
     errors: errorUpdateCount,
@@ -249,19 +227,8 @@ function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
   })
   if (base.data !== dataUpdatedAt)
     setBase({ errors: errorUpdateCount, data: dataUpdatedAt })
-  // the render that saw new data: nothing failed since (state catches up)
   return base.data === dataUpdatedAt ? errorUpdateCount - base.errors : 0
 }
-
-/**
- * The conversation, polled — one cache entry per session (lib/session-cache):
- * each poll asks only for the tail it lacks and merges it by index, so a
- * poll is a few KB instead of the whole page, and reopening a session shows
- * the cached conversation at once. 加载更早 fetches just the earlier page.
- * A failed refetch keeps the cached data on screen (same key), with a stale
- * note below.
- */
-/** Warm a conversation before navigation so the detail need not collapse to Loading. */
 export function prefetchSession(client: QueryClient, id: string) {
   void client.prefetchQuery({
     queryKey: detailKey(id),
@@ -299,7 +266,6 @@ function useSessionDetail(id: string) {
   }
   return { detail, data: detail.data, pagingIn, loadEarlier }
 }
-
 /**
  * Claude Code's Ctrl+B (the running foreground command / subagent goes on
  * in the background), offered on the running call's own row when this device writes.
@@ -341,6 +307,7 @@ const activityOf = (data?: Detail) => ({
   since: data?.turn_started,
   compactSince: data?.compact_started,
   tokens: data?.turn_output,
+  rate: data?.token_rate?.tok_per_s,
 })
 
 /** absolute index just past the newest message the page has */

@@ -2,19 +2,47 @@
 // (/new, /clear, /resume, handoff). Two channels: detail `replaced_by` (fast
 // poll) and sessions `redirects` (list poll — works even if the detail never
 // mounted). Same toast, deduped so both channels do not fire twice.
+//
+// Cycle guard: once this page has left a session id by following, never
+// auto-navigate back to it. Mutual cleared_to / replaced_by (A→B and B→A)
+// used to bounce the URL forever; toast dedupe alone still called navigate.
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 
+import { trace } from '#/lib/client-trace'
 import { useLocale } from '#/lib/locale-context'
 
 import { useSessions } from './console-sessions'
 
 const toasted = new Set<string>()
+/** Session ids this page already left via an auto-follow (cycle break). */
+const leftViaFollow = new Set<string>()
 
 function followKey(from: string, to: string) {
   return `${from}>${to}`
+}
+
+/**
+ * Whether the page should auto-navigate `from` → `to`. Refuses a hop onto a
+ * session this page already left by following — that closes A↔B (and longer)
+ * redirect cycles without blocking a later handoff out of a fresh id.
+ */
+export function canFollowSession(
+  from: string,
+  to: string,
+  left: ReadonlySet<string> = leftViaFollow,
+): boolean {
+  if (!from || !to || from === to) return false
+  if (left.has(to)) return false
+  return true
+}
+
+/** Test helper: clear module follow state between cases. */
+export function resetSessionFollowState() {
+  toasted.clear()
+  leftViaFollow.clear()
 }
 
 export function sessionIdFromPath(path: string) {
@@ -27,12 +55,22 @@ function useNavigateToSession() {
   const { locale } = useLocale()
   return useCallback(
     (from: string, to: string) => {
+      if (!canFollowSession(from, to)) {
+        trace('session-follow', {
+          id: to,
+          action: from,
+          skipped: 'cycle',
+        })
+        return
+      }
+      leftViaFollow.add(from)
       const key = followKey(from, to)
       const first = !toasted.has(key)
       if (first) {
         toasted.add(key)
         toast(t`This pane switched sessions`)
       }
+      trace('session-follow', { id: to, action: from })
       void navigate({
         to: '/{-$locale}/console/sessions/$id',
         params: { locale: locale === 'en' ? undefined : locale, id: to },

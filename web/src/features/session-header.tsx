@@ -12,7 +12,7 @@ import { BackButton } from '#/components/deck/back-button'
 
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
-import { useStatusText } from './console-sessions'
+import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
@@ -182,6 +182,7 @@ export function SessionHeader({
         data.waiting_kind,
         data.running_kind,
         data.background?.length ?? 0,
+        data.restart_pending,
       )
     : undefined
   return (

@@ -23,7 +23,7 @@ set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 bin="$repo/native/wezdeck-wsl/bin/wezdeck-wsl"
 wait_current=40
-reason='device check'
+reason='设备核对'
 steps='[]'
 raw=0
 while [[ $# -gt 0 ]]; do

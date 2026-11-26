@@ -4,7 +4,7 @@ import { CircleAlert } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 
 import { buildId, registerServiceWorker, useUpdateAvailable } from '#/lib/pwa'
-import { UPDATED_KEY } from '#/lib/host-diag'
+import { UPDATED_KEY, UPDATED_REASON_KEY } from '#/lib/host-diag'
 import { useTheme } from '#/lib/theme-provider'
 
 /** top only (a string sets every side): the session bar's bottom, else the
@@ -18,17 +18,24 @@ export function PwaBoot() {
   const update = useUpdateAvailable()
   useEffect(() => registerServiceWorker(), [])
   // a release reloaded this page onto the new build (host-diag.ts): say so
-  // here, where the new version is what you see
+  // here, where the new version is what you see — and why (`--reason`)
   useEffect(() => {
     let from: string | null = null
+    let reason: string | null = null
     try {
       from = sessionStorage.getItem(UPDATED_KEY)
+      reason = sessionStorage.getItem(UPDATED_REASON_KEY)
       sessionStorage.removeItem(UPDATED_KEY)
+      sessionStorage.removeItem(UPDATED_REASON_KEY)
     } catch {
       return
     }
     if (from && from !== buildId)
-      toast(t`Updated to the new version`, { id: 'updated', duration: 2500 })
+      toast(t`Updated to the new version`, {
+        id: 'updated',
+        duration: 4000,
+        description: reason || undefined,
+      })
   }, [t])
   useEffect(() => {
     if (!update) return

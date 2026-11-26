@@ -26,6 +26,35 @@ export function formatTokens(n: number) {
   return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
 }
 
+/** Host-side token output rate (OTel primary, transcript step-window fallback). */
+export type TokenRate = {
+  source: 'otel' | 'transcript'
+  tok_per_s: number
+  last_tok_per_s: number
+  decode_tok_per_s?: number
+  ttft_ms?: number
+  samples: number
+  profile?: string
+  updated_at_ms?: number
+}
+
+/** 56.1 tok/s · 120 tok/s */
+export function formatTokenRate(tokPerS: number) {
+  if (!Number.isFinite(tokPerS) || tokPerS <= 0) return ''
+  const num =
+    tokPerS >= 100
+      ? String(Math.round(tokPerS))
+      : tokPerS.toFixed(1).replace(/\.0$/, '')
+  return `${num} tok/s`
+}
+
+/** 420ms · 2.6s */
+export function formatTtft(ms: number) {
+  if (!Number.isFinite(ms) || ms <= 0) return ''
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  return `${(ms / 1000).toFixed(1).replace(/\.0$/, '')}s`
+}
+
 /** now, re-read every second while `on` */
 export function useNow(on: boolean) {
   const [now, setNow] = useState(() => Date.now())

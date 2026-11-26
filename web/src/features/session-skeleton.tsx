@@ -10,22 +10,22 @@ export function SessionListSkeleton() {
   const { t } = useLingui()
   return (
     <div
-      className="grid grid-cols-[minmax(0,1fr)] gap-3"
+      className="grid grid-cols-[minmax(0,1fr)] gap-3 md:gap-0"
       data-testid="session-chats"
     >
       <div
         role="status"
         aria-label={t`Loading…`}
         data-testid="session-skeleton"
-        className="animate-pulse overflow-hidden rounded-2xl bg-brand-surface motion-reduce:animate-none"
+        className="animate-pulse overflow-hidden rounded-2xl bg-brand-surface motion-reduce:animate-none md:rounded-none"
       >
-        <div className="border-b border-brand-edge py-2 pr-14 pl-4">
+        <div className="border-b border-brand-edge py-2 pr-14 pl-4 md:px-[var(--split-pad)]">
           <div className={`${bar} h-3 w-24`} />
         </div>
         {[0.58, 0.42, 0.5].map((width, index) => (
           <div
             key={width}
-            className="flex items-start gap-3 border-b border-brand-edge py-2.5 pr-14 pl-4 last:border-b-0"
+            className="flex items-start gap-3 border-b border-brand-edge py-2.5 pr-14 pl-4 last:border-b-0 md:px-[var(--split-pad)] md:pr-[calc(var(--split-pad)+2.5rem)]"
           >
             <div className="mt-0.5 size-10 shrink-0 rounded-full bg-brand-deck" />
             <div className="grid min-w-0 flex-1 gap-1.5">

@@ -305,7 +305,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           <div
             id="console-main"
             className={cn(
-              'flex min-h-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:pt-4',
+              'flex min-h-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:p-0 md:[--page-x:0px]',
               chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]',
             )}
           >

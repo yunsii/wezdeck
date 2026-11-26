@@ -354,8 +354,9 @@ func TestCrossAgentTranscriptsDoNotFollowFreshPane(t *testing.T) {
 		t.Fatal(err)
 	}
 	cards := list.(map[string]any)["sessions"].([]sessionCard)
-	if len(cards) != 1 || cards[0].ID != "detached-grok" || cards[0].Agent != "grok" || !cards[0].Detached {
-		t.Fatalf("only the real detached Grok must remain, got %+v", cards)
+	if len(cards) != 2 || cards[0].ID != "active-grok" || cards[0].Agent != "agy" ||
+		cards[1].ID != "detached-grok" || cards[1].Agent != "grok" || !cards[1].Detached {
+		t.Fatalf("live Agy pane must override stale Grok attention name, got %+v", cards)
 	}
 	write("pending-fresh-agy")
 	list, err = listSessions()
