@@ -3,7 +3,7 @@
 // row like the compaction divider, not a bubble: nobody said it to the
 // agent. Long output folds.
 import { useLingui } from '@lingui/react/macro'
-import { Radio, SquareSlash, SquareTerminal } from 'lucide-react'
+import { Radio, Sparkles, SquareSlash, SquareTerminal } from 'lucide-react'
 import { useEffect } from 'react'
 
 import { Disclosure } from '#/components/ui/disclosure'
@@ -158,6 +158,46 @@ export function TaskEventRow({
             {event}
           </pre>
         </Disclosure>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Model reasoning summary (Agy PLANNER_RESPONSE.thinking, kind "thought"):
+ * one quiet collapsible line before its tool calls or reply.
+ */
+export function ThoughtRow({
+  message,
+  onShown,
+}: {
+  message: Message
+  onShown?: () => void
+}) {
+  const { t } = useLingui()
+  useEffect(() => {
+    onShown?.()
+  }, [onShown])
+  const preview = message.text || t`Thinking`
+  const full = message.body ?? ''
+  const expandable = Boolean(full && full !== preview)
+  const head = (
+    <span className="flex min-w-0 items-center gap-1.5 text-meta text-brand-label">
+      <Sparkles size={12} aria-hidden className="shrink-0 opacity-75" />
+      <span className="shrink-0 font-medium">{t`Thinking`}</span>
+      <span className="truncate text-brand-muted">{preview}</span>
+    </span>
+  )
+  return (
+    <div className="grid gap-1 py-0.5" data-testid="thought-row">
+      {expandable ? (
+        <Disclosure chevron={false} title={head} triggerClassName="w-auto">
+          <p className="mt-1 max-h-64 overflow-y-auto rounded-xl bg-brand-surface px-3 py-2 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
+            {full}
+          </p>
+        </Disclosure>
+      ) : (
+        head
       )}
     </div>
   )

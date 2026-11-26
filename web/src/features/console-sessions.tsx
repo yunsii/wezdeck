@@ -549,7 +549,7 @@ export function SessionDetail({ id }: { id: string }) {
             writable={device.state === 'approved'}
             onRun={run}
             commands={
-              data?.agent === 'claude'
+              data?.agent === 'claude' || data?.agent === 'agy'
                 ? {
                     send: (text) =>
                       void send({ text, attachments: [], note: '' }),

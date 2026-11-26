@@ -379,6 +379,7 @@ export function ComposerBox({
       ) : null}
       {panel === 'commands' && commands ? (
         <CommandPanel
+          agent={session?.agent}
           disabled={keysDisabled}
           onCommand={commands.send}
           onResume={commands.resume}
