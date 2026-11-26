@@ -117,7 +117,7 @@ function ChatRow({
           onPointerDown={warm}
           onFocus={warm}
           className={cn(
-            'list-row flex min-h-14 items-start gap-3 px-4 py-2.5 pr-14',
+            'list-row flex min-h-14 items-start gap-3 px-4 py-2.5 pr-14 md:px-[var(--split-pad)] md:pr-[calc(var(--split-pad)+2.5rem)]',
             selected && 'row-selected',
           )}
         >
@@ -351,16 +351,16 @@ export function SessionList({
       ) : (
         <div
           aria-label={t`Agent sessions`}
-          className="grid grid-cols-[minmax(0,1fr)] gap-3"
+          className="grid grid-cols-[minmax(0,1fr)] gap-3 md:gap-0"
           data-testid="session-chats"
         >
           {painted.map((repo) => (
             <section
               key={repo.key}
-              className="overflow-hidden rounded-2xl bg-brand-surface"
+              className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
               data-repo={repo.label}
             >
-              <h2 className="flex items-center gap-1.5 border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label">
+              <h2 className="flex items-center gap-1.5 border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label md:px-[var(--split-pad)]">
                 <FolderGit2 size={14} aria-hidden className="shrink-0" />
                 {repo.label}
               </h2>

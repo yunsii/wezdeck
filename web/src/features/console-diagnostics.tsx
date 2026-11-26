@@ -169,14 +169,14 @@ export function ConsoleDiagnosticsPage() {
         <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Log stream`}
-            className="sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pr-[var(--page-x)] pb-1 [scrollbar-gutter:stable_both-edges]"
+            className="sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pb-0 [scrollbar-gutter:stable_both-edges]"
           >
-            {filters}
+            <div className="md:px-[var(--page-x)]">{filters}</div>
             {list}
           </aside>
           <div
             data-testid="diagnostics-pane"
-            className="ml-[var(--page-x)] min-w-0 rounded-2xl bg-brand-surface p-5"
+            className="min-w-0 bg-brand-surface p-5"
           >
             {detail ?? (
               <p className="py-10 text-center text-caption text-brand-muted">
@@ -261,7 +261,7 @@ function EntryList({
   return (
     <ul
       aria-label={t`Log stream`}
-      className="overflow-hidden rounded-2xl bg-brand-surface"
+      className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
     >
       {entries.map((entry) => {
         const active = entry.id === selected
@@ -277,7 +277,7 @@ function EntryList({
               aria-current={active ? 'true' : undefined}
               onClick={() => onPick(entry.id)}
               className={cn(
-                'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
+                'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-[var(--page-x)]',
                 active && 'row-selected',
               )}
             >

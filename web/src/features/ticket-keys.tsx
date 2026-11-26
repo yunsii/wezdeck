@@ -54,11 +54,11 @@ export function TicketKeys({
   }
   const count = older.length
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 md:gap-0">
       {tickets.length ? (
         <ul
           aria-label={t`Collab tickets`}
-          className="overflow-hidden rounded-2xl bg-brand-surface"
+          className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
         >
           {tickets.map((ticket) => (
             <TicketKey
@@ -71,14 +71,14 @@ export function TicketKeys({
         </ul>
       ) : null}
       {count ? (
-        <section className="overflow-hidden rounded-2xl bg-brand-surface">
+        <section className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none">
           <Button
             variant="plain"
             type="button"
             aria-expanded={showOlder}
             onClick={() => setShowOlder(!showOlder)}
             data-testid="tickets-older"
-            className="flex min-h-11 w-full items-center justify-between px-4 text-left text-caption text-brand-muted"
+            className="flex min-h-11 w-full items-center justify-between px-4 text-left text-caption text-brand-muted md:px-[var(--split-pad)]"
           >
             {t`Quiet for over a week (${count})`}
             <span
@@ -136,7 +136,7 @@ function TicketKey({
         aria-current={active ? 'page' : undefined}
         className={cn(
           active && 'row-selected',
-          'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:py-2.5',
+          'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-[var(--split-pad)] md:py-2.5',
         )}
       >
         <span className="pt-1">
