@@ -102,7 +102,8 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     const toggle = page.getByTestId('chat-group-toggle')
     await expect.poll(() => toggle.getAttribute('aria-expanded')).toBe('true')
     const emptyRow = page.locator('[data-session=grp-grok]')
-    await expect.poll(() => emptyRow.textContent()).toContain('Grok')
+    // A cat fixture has no verified agent process or profile; its name is metadata.
+    await expect.poll(() => emptyRow.textContent()).toContain('Agent')
     expect(await emptyRow.getByTestId('session-preview').count()).toBe(0)
     expect(await toggle.getByTestId('chat-unread').count()).toBe(0)
     // the waiting session is the unread one, on its own sub-row

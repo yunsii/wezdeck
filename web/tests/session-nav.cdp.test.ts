@@ -12,8 +12,8 @@ import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // wezdeck's session keys on the phone (session-switcher.tsx): the header's
-// "N more need you" chip and Alt+j jump between sessions waiting on you, the
-// title opens the switcher sheet, and switching replaces the history entry
+// Alt+j jumps between sessions waiting on you; the title opens the switcher
+// sheet, and switching replaces the history entry
 // so back returns to the list. Runs against remote-test-stack.sh only
 // (throwaway attention file, tmux panes made here).
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
@@ -33,6 +33,7 @@ describe.runIf(attention)('Session keys on the phone', () => {
       'nav-a': ['waiting', 'permission'],
       'nav-b': ['waiting', 'question'],
       'nav-c': ['running'],
+      'nav-d': ['done'],
     }
     const entries: Record<string, unknown> = {}
     for (const [id, [status, waiting]] of Object.entries(sessions)) {
@@ -78,7 +79,7 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await page.locator('[data-session=nav-c]').waitFor({ timeout: 20_000 })
   }
 
-  it('chip and Alt+j cycle the waiting ones; back returns to the list', async () => {
+  it('Alt+j cycles waiting sessions without a redundant phone chip', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -91,10 +92,9 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect
       .poll(() => page.getByTestId('session-agent-name').count())
       .toBe(0)
-    // nav-c is running: the header offers the two waiting ones
-    const chip = page.getByTestId('next-waiting')
-    await expect.poll(() => chip.textContent()).toContain('还有 2 个等你')
-    await chip.click()
+    // A completed session is visible in the switcher but cannot inflate a waiting shortcut.
+    expect(await page.getByTestId('next-waiting').count()).toBe(0)
+    await page.keyboard.press('Alt+j')
     await page.waitForURL(/\/console\/sessions\/nav-[ab]$/)
     const first = page.url().split('/').at(-1) ?? ''
     // the page swaps in after the URL (view transition): press once the

@@ -266,11 +266,11 @@ export function flattenChats(groups: Array<ChatRepoGroup>): Array<SessionChat> {
   return groups.flatMap((repo) => repo.chats)
 }
 
-/** tab badge: how many chats wait on you */
+/** tab badge: how many chats actually wait on your input */
 export function unreadChatCount(rows: Array<SessionCard>): number {
   const keys = new Set<string>()
   for (const row of rows) {
-    if (needsYou(row) || row.status === 'done') keys.add(worktreeKey(row))
+    if (needsYou(row)) keys.add(worktreeKey(row))
   }
   return keys.size
 }

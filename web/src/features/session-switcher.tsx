@@ -1,8 +1,7 @@
 // wezdeck's session keys on the phone. Alt+j / Alt+k / Alt+l jump to the next
 // session waiting on you / finished / running (Alt+Shift+l: previous
-// running) — on the phone a "N more need you ›" chip in the header and the
-// switcher sheet; on a keyboard the same Alt keys. Alt+g / Alt+x pick a
-// chat — sheet grouped like the IM list (repo → workstation); a worktree
+// running). Alt+g / Alt+x or the session title opens the switcher sheet,
+// grouped like the IM list (repo → workstation); a worktree
 // with several sessions lists each of them, in the sheet and in the jump
 // cycle. Switching replaces the history entry, so back still returns to the
 // list.
@@ -10,7 +9,6 @@ import { useLingui } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
 
-import { Led } from '#/components/deck/led'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { cn } from '#/lib/utils'
@@ -49,7 +47,6 @@ export function useSessionNav(current: string) {
   // keeps one focus id per worktree for the split's default pick.
   const ordered = chats.map((c) => c.focus)
   const allSessions = chats.flatMap((c) => c.sessions)
-  const waiting = allSessions.filter(needsAttention)
   const ids = (kind: JumpKind) =>
     allSessions.filter(KINDS[kind]).map((row) => row.id)
   const go = useCallback(
@@ -70,8 +67,7 @@ export function useSessionNav(current: string) {
     const id = nextInCycle(ids(kind), current, step)
     if (id) go(id)
   }
-  const otherWaiting = waiting.filter((row) => row.id !== current)
-  return { rows, waiting, groups, chats, ordered, otherWaiting, jump, go }
+  return { rows, groups, chats, ordered, jump, go }
 }
 
 /**
@@ -103,30 +99,6 @@ export function useSessionKeys(
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [jump, openSwitcher])
-}
-
-export function NextWaitingChip({
-  count,
-  onNext,
-}: {
-  count: number
-  onNext: () => void
-}) {
-  const { t } = useLingui()
-  if (!count) return null
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      onClick={onNext}
-      data-testid="next-waiting"
-      title="Alt+j"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-waiting/15 px-2 py-0.5 text-caption text-brand-text"
-    >
-      <Led tone="waiting" size={10} />
-      {t`${count} more need you`} ›
-    </Button>
-  )
 }
 
 function SwitcherRow({

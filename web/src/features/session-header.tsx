@@ -23,7 +23,6 @@ import {
   useUsageLabel,
 } from './session-usage'
 import {
-  NextWaitingChip,
   SessionSwitcher,
   useSessionKeys,
   useSessionNav,
@@ -237,12 +236,7 @@ export function SessionHeader({
             <Led tone="waiting" size={10} />
             {t`Needs you`}
           </span>
-        ) : (
-          <NextWaitingChip
-            count={nav.otherWaiting.length}
-            onNext={() => nav.jump('waiting')}
-          />
-        )}
+        ) : null}
         {data ? (
           <Button
             variant="plain"

@@ -54,8 +54,8 @@ msgid "{count} monitors running"
 msgstr "{count} monitors running"
 
 #: src/features/session-switcher.tsx:127
-msgid "{count} more need you"
-msgstr "{count} more need you"
+#~ msgid "{count} more need you"
+#~ msgstr "{count} more need you"
 
 #: src/features/session-statusbar.tsx:162
 msgid "{count} shells running"
@@ -580,7 +580,7 @@ msgstr "Bytes"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:123
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -871,7 +871,7 @@ msgstr "Console navigation"
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:121
+#: src/features/session-header.tsx:120
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1684,7 +1684,7 @@ msgstr "Level with upstream."
 msgid "Light"
 msgstr "Light"
 
-#: src/features/session-header.tsx:125
+#: src/features/session-header.tsx:124
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1718,7 +1718,7 @@ msgstr "Loading original…"
 #: src/features/me-agents.tsx:83
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:221
+#: src/features/session-header.tsx:220
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/tickets-view.tsx:288
@@ -1861,7 +1861,7 @@ msgstr "Needs a decision"
 #~ msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 #~ msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 
-#: src/features/session-header.tsx:238
+#: src/features/session-header.tsx:237
 msgid "Needs you"
 msgstr "Needs you"
 
@@ -2019,7 +2019,7 @@ msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
 #: src/features/session-list.tsx:66
-#: src/features/session-switcher.tsx:185
+#: src/features/session-switcher.tsx:157
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2166,7 +2166,7 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/session-switcher.tsx:271
+#: src/features/session-switcher.tsx:243
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
@@ -2259,7 +2259,7 @@ msgstr "Origin session"
 msgid "outline a plan before editing"
 msgstr "outline a plan before editing"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:122
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2605,7 +2605,7 @@ msgstr "research failed"
 msgid "Resend"
 msgstr "Resend"
 
-#: src/features/session-header.tsx:112
+#: src/features/session-header.tsx:111
 msgid "resets {reset}"
 msgstr "resets {reset}"
 
@@ -2929,7 +2929,7 @@ msgstr "Session deleted. The worktree has local changes."
 msgid "Session id"
 msgstr "Session id"
 
-#: src/features/session-header.tsx:251
+#: src/features/session-header.tsx:245
 #: src/features/session-info.tsx:242
 msgid "Session info"
 msgstr "Session info"
@@ -2944,7 +2944,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:200
+#: src/features/session-header.tsx:199
 #: src/features/session-list.tsx:376
 msgctxt "nav"
 msgid "Sessions"
@@ -3133,7 +3133,7 @@ msgstr "summarise the context"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/session-switcher.tsx:255
+#: src/features/session-switcher.tsx:227
 msgid "Switch chat"
 msgstr "Switch chat"
 
@@ -3145,7 +3145,7 @@ msgstr "Switch mode"
 #~ msgid "Switch session"
 #~ msgstr "Switch session"
 
-#: src/features/session-header.tsx:212
+#: src/features/session-header.tsx:211
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
@@ -3536,7 +3536,7 @@ msgid "Unknown"
 msgstr "Unknown"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:176
+#: src/features/session-header.tsx:175
 msgid "Untitled session"
 msgstr "Untitled session"
 
