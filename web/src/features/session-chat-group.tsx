@@ -330,7 +330,6 @@ export function ChatGroupRow({
           ) : null}
         </Button>
         <WorktreePurpose
-          compact
           worktree={chat.key}
           description={chat.purpose}
           editable={hasEditableGroupName(chat.focus)}
