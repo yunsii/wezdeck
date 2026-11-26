@@ -95,12 +95,13 @@ func listRepos() (any, error) {
 }
 
 type newSessionJob struct {
-	ID       string `json:"job"`
-	Stage    string `json:"stage"` // creating | starting | waiting_trust | sending | done | failed
-	Repo     string `json:"repo"`
-	Worktree string `json:"worktree,omitempty"`
-	Branch   string `json:"branch,omitempty"`
-	Error    string `json:"error,omitempty"`
+	ID        string `json:"job"`
+	Stage     string `json:"stage"` // creating | starting | waiting_trust | sending | done | failed
+	Repo      string `json:"repo"`
+	Worktree  string `json:"worktree,omitempty"`
+	Branch    string `json:"branch,omitempty"`
+	SessionID string `json:"session_id,omitempty"`
+	Error     string `json:"error,omitempty"`
 	// Mode: new (a new direction), parallel (one more slot of a direction
 	// whose slots are all busy) or reuse (an idle slot starts a new round)
 	Mode     string `json:"mode,omitempty"`
@@ -285,48 +286,160 @@ func approveNewSessionTrust(args json.RawMessage) (any, error) {
 	j := newJobs[a.Job]
 	if j == nil || j.Stage != "waiting_trust" || j.trustCh == nil || j.trusting {
 		newJobsMu.Unlock()
-		return nil, errors.New("session.new.trust: no pending Agy trust prompt")
+		return nil, errors.New("session.new.trust: no pending workspace trust prompt")
 	}
 	j.trusting = true
 	socket, pane, ready := j.socket, j.pane, j.trustCh
 	newJobsMu.Unlock()
 	screen, err := tmuxCmd(socket, "capture-pane", "-p", "-t", pane).Output()
-	if err != nil || !agyTrustPrompt(string(screen)) {
+	kind, keys := detectWorkspaceTrustPrompt(string(screen))
+	if err != nil || kind == "" {
 		setJob(a.Job, func(j *newSessionJob) { j.trusting = false })
-		return nil, errors.New("session.new.trust: the Agy trust prompt is no longer shown")
+		return nil, errors.New("session.new.trust: the workspace trust prompt is no longer shown")
 	}
-	if err := tmuxCmd(socket, "send-keys", "-t", pane, "Up", "Enter").Run(); err != nil {
+	sendArgs := append([]string{"send-keys", "-t", pane}, keys...)
+	if err := tmuxCmd(socket, sendArgs...).Run(); err != nil {
 		setJob(a.Job, func(j *newSessionJob) { j.trusting = false })
-		return nil, errors.New("session.new.trust: the Agy pane is no longer available")
+		return nil, errors.New("session.new.trust: the agent pane is no longer available")
 	}
 	setJob(a.Job, func(j *newSessionJob) { j.Stage = "starting" })
 	ready <- struct{}{}
-	relayLogf("session_new_trust", "job=%s outcome=confirmed", a.Job)
+	relayLogf("session_new_trust", "job=%s kind=%s outcome=confirmed", a.Job, kind)
 	return map[string]any{"v": 1, "ok": true}, nil
 }
 
-func agyTrustPrompt(screen string) bool {
-	return strings.Contains(screen, "Do you trust the contents of this project?") &&
-		strings.Contains(screen, "Yes, I trust this folder")
+func lineHasSelectionMarker(screen, needle string) bool {
+	for _, line := range strings.Split(screen, "\n") {
+		if !strings.Contains(line, needle) {
+			continue
+		}
+		trimmed := strings.TrimSpace(line)
+		for _, prefix := range []string{">", "❯", "›", "●", "▸"} {
+			if strings.HasPrefix(trimmed, prefix) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
-func waitAgyTrustClear(ctx context.Context, socket, pane string) error {
+// detectWorkspaceTrustPrompt identifies first-open workspace trust dialogs
+// across Agy, Claude Code, and Codex, returning the agent kind and the tmux
+// send-keys sequence that confirms trust.
+func detectWorkspaceTrustPrompt(screen string) (string, []string) {
+	if strings.Contains(screen, "Do you trust the contents of this project?") &&
+		strings.Contains(screen, "Yes, I trust this folder") {
+		if lineHasSelectionMarker(screen, "Yes, I trust this folder") {
+			return "agy", []string{"Enter"}
+		}
+		return "agy", []string{"Up", "Enter"}
+	}
+	if (strings.Contains(screen, "Do you trust the files in this folder?") ||
+		strings.Contains(screen, "Is this a project you created or one you trust?")) &&
+		(strings.Contains(screen, "Yes, I trust this folder") ||
+			strings.Contains(screen, "Yes, proceed")) {
+		return "claude", []string{"Enter"}
+	}
+	if strings.Contains(screen, "Do you trust the contents of this directory?") &&
+		(strings.Contains(screen, "Yes, continue") ||
+			strings.Contains(screen, "Press enter to continue")) {
+		return "codex", []string{"Enter"}
+	}
+	return "", nil
+}
+
+func agyTrustPrompt(screen string) bool {
+	kind, _ := detectWorkspaceTrustPrompt(screen)
+	return kind == "agy"
+}
+
+func waitTrustPromptClear(ctx context.Context, socket, pane string) error {
 	ticker := time.NewTicker(300 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			return errors.New("Agy did not finish workspace trust in time")
+			return errors.New("workspace trust did not finish in time")
 		case <-ticker.C:
 			screen, err := tmuxCmd(socket, "capture-pane", "-p", "-t", pane).Output()
 			if err != nil {
-				return errors.New("the Agy pane closed during workspace trust")
+				return errors.New("the agent pane closed during workspace trust")
 			}
-			if !agyTrustPrompt(string(screen)) {
+			if kind, _ := detectWorkspaceTrustPrompt(string(screen)); kind == "" {
 				return nil
 			}
 		}
 	}
+}
+
+// clearWorkspaceTrust auto-confirms a workspace trust dialog on a newly created
+// session for a repository the user explicitly chose. If auto-confirm does not
+// clear the prompt in time, it falls back to waiting_trust for manual Web
+// confirmation instead of pasting the user's message into the dialog.
+func clearWorkspaceTrust(ctx context.Context, id, socket, pane string, allowManualFallback bool) error {
+	screen, err := tmuxCmd(socket, "capture-pane", "-p", "-t", pane).Output()
+	if err != nil {
+		return errors.New("the agent pane closed before trust could be checked")
+	}
+	kind, keys := detectWorkspaceTrustPrompt(string(screen))
+	if kind == "" {
+		return nil
+	}
+	sendArgs := append([]string{"send-keys", "-t", pane}, keys...)
+	if err := tmuxCmd(socket, sendArgs...).Run(); err != nil {
+		return errors.New("the agent pane closed while confirming workspace trust")
+	}
+	autoCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	clearErr := waitTrustPromptClear(autoCtx, socket, pane)
+	cancel()
+	if clearErr == nil {
+		relayLogf("session_new_trust", "job=%s kind=%s outcome=auto_confirmed", id, kind)
+		return waitAgentReady(socket, pane, 60*time.Second)
+	}
+	if !allowManualFallback {
+		return clearErr
+	}
+	ready := make(chan struct{}, 1)
+	setJob(id, func(j *newSessionJob) {
+		j.Stage, j.socket, j.pane, j.trustCh = "waiting_trust", socket, pane, ready
+	})
+	relayLogf("session_new_trust", "job=%s kind=%s outcome=waiting", id, kind)
+	select {
+	case <-ctx.Done():
+		return errors.New("workspace trust was not confirmed in time")
+	case <-ready:
+	}
+	if err := waitTrustPromptClear(ctx, socket, pane); err != nil {
+		return err
+	}
+	return waitAgentReady(socket, pane, 60*time.Second)
+}
+
+func paneAttentionIDs(socket, pane string) map[string]bool {
+	out := map[string]bool{}
+	entries, _, err := readAttentionDoc()
+	if err != nil {
+		return out
+	}
+	for id, ent := range entries {
+		if id != "" && ent.TmuxPane == pane && (socket == "" || ent.TmuxSocket == socket) {
+			out[id] = true
+		}
+	}
+	return out
+}
+
+func waitNewSessionID(socket, pane string, before map[string]bool, limit time.Duration) string {
+	deadline := time.Now().Add(limit)
+	for time.Now().Before(deadline) {
+		for id := range paneAttentionIDs(socket, pane) {
+			if !before[id] {
+				return id
+			}
+		}
+		time.Sleep(300 * time.Millisecond)
+	}
+	return ""
 }
 
 // directionSlug: the direction a typed name stands for, as the host names
@@ -402,41 +515,29 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 		fail(err)
 		return
 	}
-	if agent == "agy" {
-		screen, err := tmuxCmd(socket, "capture-pane", "-p", "-t", target).Output()
-		if err != nil {
-			fail(errors.New("the Agy pane closed before trust could be checked"))
-			return
-		}
-		if agyTrustPrompt(string(screen)) {
-			ready := make(chan struct{}, 1)
-			setJob(id, func(j *newSessionJob) {
-				j.Stage, j.socket, j.pane, j.trustCh = "waiting_trust", socket, target, ready
-			})
-			relayLogf("session_new_trust", "job=%s outcome=waiting", id)
-			select {
-			case <-ctx.Done():
-				fail(errors.New("Agy workspace trust was not confirmed in time"))
-				return
-			case <-ready:
-			}
-			if err := waitAgyTrustClear(ctx, socket, target); err != nil {
-				fail(err)
-				return
-			}
-			if err := waitAgentReady(socket, target, 60*time.Second); err != nil {
-				fail(err)
-				return
-			}
-		}
+	if err := clearWorkspaceTrust(ctx, id, socket, target, true); err != nil {
+		fail(err)
+		return
 	}
+	beforeIDs := paneAttentionIDs(socket, target)
 	setJob(id, func(j *newSessionJob) { j.Stage = "sending" })
 	if err := pasteToPane(socket, target, prompt); err != nil {
 		fail(err)
 		return
 	}
-	setJob(id, func(j *newSessionJob) { j.Stage = "done" })
-	relayLogf("session_new", "job=%s ok=true reuse=%t worktree=%q branch=%q", id, reuse != "", result["worktree_path"], result["branch_name"])
+	waitFor := 20 * time.Second
+	// test stubs set WEZDECK_SESSION_NEW_CMD and often write attention.json
+	// after stage=done; keep the wait short there so they never stall.
+	if os.Getenv("WEZDECK_SESSION_NEW_CMD") != "" {
+		waitFor = 400 * time.Millisecond
+	}
+	newID := waitNewSessionID(socket, target, beforeIDs, waitFor)
+	setJob(id, func(j *newSessionJob) {
+		j.SessionID = newID
+		j.Stage = "done"
+	})
+	relayLogf("session_new", "job=%s ok=true reuse=%t session_id=%s worktree=%q branch=%q",
+		id, reuse != "", newID, result["worktree_path"], result["branch_name"])
 }
 
 func newSessionCreateArgs(name, description, agent string) []string {
@@ -468,7 +569,7 @@ func waitAgentReady(socket, pane string, limit time.Duration) error {
 		if err != nil {
 			return errors.New("the agent pane closed while starting")
 		}
-		if shells[strings.TrimSpace(string(cmd))] {
+		if shells[strings.TrimSpace(string(cmd))] && !paneHasAgentProcess(socket, pane) {
 			last, stable = "", time.Time{}
 			continue
 		}

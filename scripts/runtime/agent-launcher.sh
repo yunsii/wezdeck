@@ -134,6 +134,8 @@ print_loading_banner() {
 
 # shellcheck disable=SC1091
 . "$script_dir/agent-claude-sub2api-lib.sh"
+# shellcheck disable=SC1091
+. "$script_dir/agent-workspace-trust-lib.sh"
 
 loading_mode="base"
 if [[ -n "${MANAGED_AGENT_PERMISSION_PROFILE:-}" ]]; then
@@ -283,6 +285,7 @@ resolve_grok_permission() {
 case "$agent" in
   claude)
     clear_anthropic_gateway_env
+    ensure_claude_workspace_trust "$PWD"
     resolve_claude_permission
     load_managed_model_override claude
     CLAUDE_PERMISSION_ARGS+=("${managed_model_args[@]}")
@@ -316,6 +319,7 @@ case "$agent" in
     ;;
   codex)
     codex_bin="$(require_agent_binary codex)"
+    ensure_codex_workspace_trust "$PWD"
     codex_profile_args=()
     if [[ -n "${MANAGED_CODEX_PROFILE:-}" ]] \
       && declare -F runtime_log_warn >/dev/null 2>&1; then
@@ -404,6 +408,7 @@ case "$agent" in
     ;;
   agy)
     agy_bin="$(require_agent_binary agy)"
+    ensure_agy_workspace_trust "$PWD"
     agy_args=()
     agy_permission="${MANAGED_AGENT_PERMISSION_PROFILE:-}"
     case "$agy_permission" in

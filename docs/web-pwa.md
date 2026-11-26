@@ -85,7 +85,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The + beside
    the filter (`c` on a keyboard) is 新会话 — message first; location bar for
    repo/direction (idle reuses; "+ New direction" deeper); the sheet
-   follows the job and opens the session once the agent has the message. For Agy, an explicit signed trust action confirms its still-visible worktree prompt before sending; 我的 › Agents shows its managed model alongside the other profiles. 工单 has the
+   follows the job and opens the session once the agent has the message; managed worktrees are pre-trusted (with `session.new.trust` only as fallback), and 我的 › Agents shows every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The
    agent's own name (`agent_name`, usually Claude's derived peer address

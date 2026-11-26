@@ -314,10 +314,15 @@ scripts/dev/agent-hooks.sh check --provider agy
 The installer merges only the named `wezdeck-attention` entry into
 `~/.gemini/config/hooks.json`. The hook reads `conversationId` and maps
 SessionStart, PreInvocation, PostToolUse and Stop to pane eviction, running,
-resolved and done. It emits only for WezDeck managed tmux panes. Agy itself
-asks whether to trust each new worktree; the web console pauses before the
-first message and exposes a separate signed confirmation for that visible
-prompt. Other approval prompts remain in Agy's TUI.
+resolved and done. It emits only for WezDeck managed tmux panes. Managed
+launches via `agent-launcher.sh` pre-trust the launch worktree in
+`~/.gemini/antigravity-cli/settings.json` (`trustedWorkspaces`), just as Claude
+(`~/.claude.json`) and Codex (`~/.codex/config.toml`) pre-trust managed
+worktrees, so explicitly created repository sessions open without stalling on a
+folder-trust dialog. If a workspace trust dialog still appears on a new Web
+session, `session_new.go` auto-confirms it and falls back to `session.new.trust`
+only if confirmation does not clear the prompt. Other tool approval prompts
+remain in Agy's TUI.
 
 ## Repo-Local Runtime Wrappers
 

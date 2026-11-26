@@ -8,7 +8,7 @@
 // the session once it is listed. `c` on the session list opens it with a
 // keyboard.
 import { useLingui } from '@lingui/react/macro'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
@@ -87,6 +87,7 @@ type Job = {
   mode?: 'new' | 'parallel' | 'reuse'
   worktree?: string
   branch?: string
+  session_id?: string
   error?: string
 }
 
@@ -97,6 +98,59 @@ function isUnknownJob(error: unknown) {
     error instanceof Error &&
     error.message.includes('session.new.job: unknown job')
   )
+}
+
+function useAutoOpenNewSession({
+  current,
+  jobId,
+  sessions,
+  before,
+  onClose,
+}: {
+  current?: Job
+  jobId: string
+  sessions?: Array<{ id: string; worktree?: string; cwd: string }>
+  before: Set<string>
+  onClose: () => void
+}) {
+  const { locale } = useLocale()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const opened = useRef('')
+  useEffect(() => {
+    if (current?.stage === 'failed') sessionStorage.removeItem(pendingJobKey)
+  }, [current?.stage])
+  const listed =
+    current?.stage === 'done' && current.worktree
+      ? sessions?.find(
+          (row) => row.worktree === current.worktree && !before.has(row.id),
+        )
+      : undefined
+  const targetId =
+    current?.stage === 'done' ? current.session_id || listed?.id : undefined
+  // A poll must not reopen a completed job after the user switches away.
+  useEffect(() => {
+    if (!targetId || opened.current === jobId) return
+    opened.current = jobId
+    sessionStorage.removeItem(pendingJobKey)
+    const visitPath = listed?.worktree || listed?.cwd || current?.worktree
+    if (visitPath) recordVisit(visitPath)
+    void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+    onClose()
+    void navigate({
+      to: '/{-$locale}/console/sessions/$id',
+      params: { locale: locale === 'en' ? undefined : locale, id: targetId },
+    })
+  }, [
+    targetId,
+    listed,
+    current?.worktree,
+    jobId,
+    navigate,
+    locale,
+    onClose,
+    queryClient,
+  ])
 }
 
 function usePendingJobRecovery(
@@ -277,8 +331,6 @@ function NewSessionSheet({
   preset?: NewSessionPreset
 }) {
   const { t } = useLingui()
-  const { locale } = useLocale()
-  const navigate = useNavigate()
   const stageText = useStageText()
   const plan = useDirectionPlan()
   const planShort = useDirectionPlanShort()
@@ -336,29 +388,13 @@ function NewSessionSheet({
   const isNew = pick === ''
   const current = job.data?.job
   usePendingJobRecovery(jobId, job.error, setJobId, setError)
-  useEffect(() => {
-    if (current?.stage === 'done' || current?.stage === 'failed')
-      sessionStorage.removeItem(pendingJobKey)
-  }, [current?.stage])
-  const listed =
-    current?.stage === 'done' && current.worktree
-      ? sessions.data?.sessions.find(
-          (row) =>
-            row.worktree === current.worktree && !before.current.has(row.id),
-        )
-      : undefined
-  // A poll must not reopen a completed job after the user switches away.
-  const opened = useRef('')
-  useEffect(() => {
-    if (!listed || opened.current === jobId) return
-    opened.current = jobId
-    recordVisit(listed.worktree || listed.cwd)
-    onClose()
-    void navigate({
-      to: '/{-$locale}/console/sessions/$id',
-      params: { locale: locale === 'en' ? undefined : locale, id: listed.id },
-    })
-  }, [listed, jobId, navigate, locale, onClose])
+  useAutoOpenNewSession({
+    current,
+    jobId,
+    sessions: sessions.data?.sessions,
+    before: before.current,
+    onClose,
+  })
   // Esc backs a layer before the drawer closes the sheet
   useEffect(() => {
     if (!open || layer === 'compose') return

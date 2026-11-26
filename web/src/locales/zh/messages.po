@@ -180,7 +180,7 @@ msgid "+ Description"
 msgstr "+ 描述"
 
 #: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:379
+#: src/features/session-new.tsx:415
 msgid "+ New direction"
 msgstr "+ 新方向"
 
@@ -299,7 +299,7 @@ msgstr "Agent 会话"
 msgid "Agents"
 msgstr "智能体"
 
-#: src/features/session-new.tsx:150
+#: src/features/session-new.tsx:204
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
@@ -436,11 +436,11 @@ msgstr "返回"
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
-#: src/features/session-new.tsx:181
+#: src/features/session-new.tsx:235
 msgid "Back to message"
 msgstr "返回写消息"
 
-#: src/features/session-new.tsx:181
+#: src/features/session-new.tsx:235
 msgid "Back to place"
 msgstr "返回选位置"
 
@@ -898,7 +898,7 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:155
+#: src/features/session-new.tsx:209
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -926,7 +926,7 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:146
+#: src/features/session-new.tsx:200
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
@@ -1009,7 +1009,7 @@ msgstr "直连"
 
 #: src/features/session-new-direction.tsx:121
 #: src/features/session-new-panels.tsx:234
-#: src/features/session-new.tsx:380
+#: src/features/session-new.tsx:416
 msgid "Direction"
 msgstr "方向"
 
@@ -1669,7 +1669,7 @@ msgid "new direction"
 msgstr "新方向"
 
 #: src/features/session-new-panels.tsx:275
-#: src/features/session-new.tsx:186
+#: src/features/session-new.tsx:240
 msgid "New direction"
 msgstr "新方向"
 
@@ -1679,12 +1679,12 @@ msgstr "换行"
 
 #: src/features/session-list.tsx:191
 #: src/features/session-list.tsx:192
-#: src/features/session-new.tsx:177
+#: src/features/session-new.tsx:231
 msgid "New round"
 msgstr "新一轮"
 
-#: src/features/session-new.tsx:177
-#: src/features/session-new.tsx:256
+#: src/features/session-new.tsx:231
+#: src/features/session-new.tsx:310
 msgid "New session"
 msgstr "新会话"
 
@@ -1692,7 +1692,7 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:252
+#: src/features/session-new.tsx:306
 msgid "New session (c)"
 msgstr "新会话（c）"
 
@@ -2336,7 +2336,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new.tsx:145
+#: src/features/session-new.tsx:199
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -2592,7 +2592,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:152
+#: src/features/session-new.tsx:206
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -2753,11 +2753,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:154
+#: src/features/session-new.tsx:208
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:148
+#: src/features/session-new.tsx:202
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -2918,7 +2918,7 @@ msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
-#: src/features/session-new.tsx:113
+#: src/features/session-new.tsx:167
 msgid "The previous session request expired. Start a new one."
 msgstr "上次新建会话请求已失效，请重新创建。"
 
@@ -3374,7 +3374,7 @@ msgstr "你的假设"
 msgid "What you saw"
 msgstr "你看到的现象"
 
-#: src/features/session-new.tsx:186
+#: src/features/session-new.tsx:240
 msgid "Where"
 msgstr "选择位置"
 
