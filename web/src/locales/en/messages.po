@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:458
+#: src/features/chat-thread.tsx:471
 msgid "· summary"
 msgstr "· summary"
 
@@ -280,7 +280,7 @@ msgstr "added"
 msgid "after"
 msgstr "after"
 
-#: src/features/session-permission.tsx:93
+#: src/features/session-permission.tsx:101
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
@@ -298,6 +298,7 @@ msgstr "Agent name"
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
+#: src/features/session-commands.tsx:224
 #: src/features/session-skills.tsx:77
 msgid "agent settings and execution mode"
 msgstr "agent settings and execution mode"
@@ -344,9 +345,13 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Allow"
 msgstr "Allow"
+
+#: src/features/session-permission.tsx:100
+msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
+msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
 #: src/features/remote-badge.tsx:135
 msgid "Allow LAN direct"
@@ -367,6 +372,14 @@ msgstr "Already the latest"
 #: src/features/session-elicitation.tsx:210
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
+
+#: src/features/session-permission.tsx:55
+msgid "Antigravity asks to run this"
+msgstr "Antigravity asks to run this"
+
+#: src/features/session-commands.tsx:276
+msgid "Antigravity commands, sent into the pane"
+msgstr "Antigravity commands, sent into the pane"
 
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
@@ -407,11 +420,11 @@ msgstr "Approve plan"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/session-permission.tsx:92
+#: src/features/session-permission.tsx:98
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -647,20 +660,20 @@ msgstr "Children"
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/session-permission.tsx:50
+#: src/features/session-permission.tsx:56
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
-#: src/features/session-commands.tsx:238
+#: src/features/session-commands.tsx:277
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
-#: src/features/session-permission.tsx:49
+#: src/features/session-permission.tsx:53
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer.tsx:474
 #: src/features/session-composer.tsx:475
+#: src/features/session-composer.tsx:476
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -697,7 +710,7 @@ msgstr "Close"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
-#: src/features/session-commands.tsx:244
+#: src/features/session-commands.tsx:283
 msgid "Close commands"
 msgstr "Close commands"
 
@@ -753,7 +766,7 @@ msgstr "Command output"
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
-#: src/features/session-commands.tsx:252
+#: src/features/session-commands.tsx:291
 #: src/features/session-composer.tsx:263
 msgid "Commands"
 msgstr "Commands"
@@ -860,11 +873,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:442
+#: src/features/chat-thread.tsx:455
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:443
+#: src/features/chat-thread.tsx:456
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -872,7 +885,7 @@ msgstr "Context compacted automatically"
 msgid "Context compactions"
 msgstr "Context compactions"
 
-#: src/features/session-commands.tsx:220
+#: src/features/session-commands.tsx:257
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "context usage"
@@ -961,7 +974,7 @@ msgstr "Copy value"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-commands.tsx:225
+#: src/features/session-commands.tsx:262
 #: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "cost and limits"
@@ -1071,7 +1084,7 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-permission.tsx:93
 msgid "Deny"
 msgstr "Deny"
 
@@ -1553,7 +1566,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-permission.tsx:93
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -1708,6 +1721,7 @@ msgstr "made progress"
 msgid "manage MCP servers"
 msgstr "manage MCP servers"
 
+#: src/features/session-commands.tsx:229
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "manage tool permission rules"
@@ -1749,11 +1763,11 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:466
+#: src/features/session-composer.tsx:467
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:413
+#: src/features/session-composer.tsx:414
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2211,6 +2225,7 @@ msgstr "Opus tier"
 msgid "Origin session"
 msgstr "Origin session"
 
+#: src/features/session-commands.tsx:219
 #: src/features/session-skills.tsx:75
 msgid "outline a plan before editing"
 msgstr "outline a plan before editing"
@@ -2288,7 +2303,7 @@ msgstr "Pick a session (grouped by repository)"
 #~ msgid "Pick a session on the left. j / k move through the list."
 #~ msgstr "Pick a session on the left. j / k move through the list."
 
-#: src/features/session-commands.tsx:217
+#: src/features/session-commands.tsx:254
 #: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
@@ -2817,7 +2832,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:488
+#: src/features/session-composer.tsx:489
 msgid "Send"
 msgstr "Send"
 
@@ -3001,6 +3016,7 @@ msgid "Staged"
 msgstr "Staged"
 
 #: src/features/session-commands.tsx:214
+#: src/features/session-commands.tsx:251
 #: src/features/session-skills.tsx:60
 #: src/features/session-skills.tsx:61
 #: src/features/session-skills.tsx:73
@@ -3072,7 +3088,8 @@ msgstr "submitted"
 msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
-#: src/features/session-commands.tsx:204
+#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:241
 #: src/features/session-skills.tsx:59
 #: src/features/session-skills.tsx:72
 msgid "summarise the context"
@@ -3098,6 +3115,7 @@ msgstr "Switch mode"
 msgid "Switch session (Alt+g)"
 msgstr "Switch session (Alt+g)"
 
+#: src/features/session-commands.tsx:234
 #: src/features/session-skills.tsx:65
 #: src/features/session-skills.tsx:76
 msgid "switch the model"
@@ -3154,7 +3172,7 @@ msgstr "Tappable Ask options"
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/features/session-permission.tsx:97
+#: src/features/session-permission.tsx:105
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3231,6 +3249,11 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 #: src/features/console-shared.tsx:379
 msgid "Theme"
 msgstr "Theme"
+
+#: src/features/chat-command.tsx:181
+#: src/features/chat-command.tsx:187
+msgid "Thinking"
+msgstr "Thinking"
 
 #: src/features/session-skills.tsx:236
 msgid "This agent lists no skills yet"
@@ -3432,7 +3455,7 @@ msgstr "Trigger"
 msgid "Trust this worktree and continue"
 msgstr "Trust this worktree and continue"
 
-#: src/features/session-commands.tsx:237
+#: src/features/session-commands.tsx:274
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
@@ -3704,7 +3727,7 @@ msgstr "Why — the planner reads this (required)"
 msgid "Why reject"
 msgstr "Why reject"
 
-#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:246
 msgid "with what to keep"
 msgstr "with what to keep"
 

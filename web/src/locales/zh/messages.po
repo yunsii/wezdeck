@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:458
+#: src/features/chat-thread.tsx:471
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -280,7 +280,7 @@ msgstr "登记于"
 msgid "after"
 msgstr "依赖"
 
-#: src/features/session-permission.tsx:93
+#: src/features/session-permission.tsx:101
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
@@ -298,6 +298,7 @@ msgstr "Agent 名"
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
+#: src/features/session-commands.tsx:224
 #: src/features/session-skills.tsx:77
 msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
@@ -344,9 +345,13 @@ msgstr "全部档位"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Allow"
 msgstr "允许"
+
+#: src/features/session-permission.tsx:100
+msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
+msgstr "允许会确认默认选中的 Yes（Enter）；拒绝发送 Esc。持久化白名单规则需在终端选择。"
 
 #: src/features/remote-badge.tsx:135
 msgid "Allow LAN direct"
@@ -367,6 +372,14 @@ msgstr "已是最新版本"
 #: src/features/session-elicitation.tsx:210
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "答案已发送，等待 Agent 继续……"
+
+#: src/features/session-permission.tsx:55
+msgid "Antigravity asks to run this"
+msgstr "Antigravity 请求执行此操作"
+
+#: src/features/session-commands.tsx:276
+msgid "Antigravity commands, sent into the pane"
+msgstr "Antigravity 命令，直接发到终端窗格"
 
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
@@ -407,11 +420,11 @@ msgstr "批准计划"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
-#: src/features/session-permission.tsx:92
+#: src/features/session-permission.tsx:98
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。选择继续规划后，可以在下面输入框里说明要改什么。"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:84
 msgid "Approve the plan"
 msgstr "批准计划"
 
@@ -647,20 +660,20 @@ msgstr "子单"
 msgid "claimed"
 msgstr "认领"
 
-#: src/features/session-permission.tsx:50
+#: src/features/session-permission.tsx:56
 msgid "Claude asks to run this"
 msgstr "Claude 请求执行"
 
-#: src/features/session-commands.tsx:238
+#: src/features/session-commands.tsx:277
 msgid "Claude commands, sent into the pane"
 msgstr "Claude 命令，发进窗格执行"
 
-#: src/features/session-permission.tsx:49
+#: src/features/session-permission.tsx:53
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-composer.tsx:474
 #: src/features/session-composer.tsx:475
+#: src/features/session-composer.tsx:476
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -697,7 +710,7 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/session-commands.tsx:244
+#: src/features/session-commands.tsx:283
 msgid "Close commands"
 msgstr "关闭命令"
 
@@ -753,7 +766,7 @@ msgstr "命令输出"
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
-#: src/features/session-commands.tsx:252
+#: src/features/session-commands.tsx:291
 #: src/features/session-composer.tsx:263
 msgid "Commands"
 msgstr "命令"
@@ -860,11 +873,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:442
+#: src/features/chat-thread.tsx:455
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:443
+#: src/features/chat-thread.tsx:456
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -872,7 +885,7 @@ msgstr "上下文已自动压缩"
 msgid "Context compactions"
 msgstr "上下文压缩次数"
 
-#: src/features/session-commands.tsx:220
+#: src/features/session-commands.tsx:257
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "上下文占用"
@@ -961,7 +974,7 @@ msgstr "复制值"
 msgid "Cost"
 msgstr "花费"
 
-#: src/features/session-commands.tsx:225
+#: src/features/session-commands.tsx:262
 #: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "费用与额度"
@@ -1071,7 +1084,7 @@ msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工�
 msgid "Delete session"
 msgstr "删除会话"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-permission.tsx:93
 msgid "Deny"
 msgstr "拒绝"
 
@@ -1553,7 +1566,7 @@ msgstr "刚刚"
 msgid "just restarted"
 msgstr "刚重启"
 
-#: src/features/session-permission.tsx:87
+#: src/features/session-permission.tsx:93
 msgid "Keep planning"
 msgstr "继续规划"
 
@@ -1708,6 +1721,7 @@ msgstr "有进展"
 msgid "manage MCP servers"
 msgstr "管理 MCP 服务"
 
+#: src/features/session-commands.tsx:229
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "管理工具权限规则"
@@ -1749,11 +1763,11 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:466
+#: src/features/session-composer.tsx:467
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:413
+#: src/features/session-composer.tsx:414
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -2211,6 +2225,7 @@ msgstr "Opus 档"
 msgid "Origin session"
 msgstr "发起会话"
 
+#: src/features/session-commands.tsx:219
 #: src/features/session-skills.tsx:75
 msgid "outline a plan before editing"
 msgstr "修改前先制定计划"
@@ -2288,7 +2303,7 @@ msgstr "选择会话（按仓库分组）"
 #~ msgid "Pick a session on the left. j / k move through the list."
 #~ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
-#: src/features/session-commands.tsx:217
+#: src/features/session-commands.tsx:254
 #: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
@@ -2817,7 +2832,7 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:488
+#: src/features/session-composer.tsx:489
 msgid "Send"
 msgstr "发送"
 
@@ -3001,6 +3016,7 @@ msgid "Staged"
 msgstr "已暂存"
 
 #: src/features/session-commands.tsx:214
+#: src/features/session-commands.tsx:251
 #: src/features/session-skills.tsx:60
 #: src/features/session-skills.tsx:61
 #: src/features/session-skills.tsx:73
@@ -3072,7 +3088,8 @@ msgstr "已提交"
 msgid "Submitting your answer…"
 msgstr "正在提交答案……"
 
-#: src/features/session-commands.tsx:204
+#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:241
 #: src/features/session-skills.tsx:59
 #: src/features/session-skills.tsx:72
 msgid "summarise the context"
@@ -3098,6 +3115,7 @@ msgstr "切换模式"
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
+#: src/features/session-commands.tsx:234
 #: src/features/session-skills.tsx:65
 #: src/features/session-skills.tsx:76
 msgid "switch the model"
@@ -3154,7 +3172,7 @@ msgstr "问答可点选项"
 msgid "Technical details"
 msgstr "技术细节"
 
-#: src/features/session-permission.tsx:97
+#: src/features/session-permission.tsx:105
 msgid "Terminal"
 msgstr "终端画面"
 
@@ -3231,6 +3249,11 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 #: src/features/console-shared.tsx:379
 msgid "Theme"
 msgstr "主题"
+
+#: src/features/chat-command.tsx:181
+#: src/features/chat-command.tsx:187
+msgid "Thinking"
+msgstr "思考"
 
 #: src/features/session-skills.tsx:236
 msgid "This agent lists no skills yet"
@@ -3432,7 +3455,7 @@ msgstr "触发来源"
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
-#: src/features/session-commands.tsx:237
+#: src/features/session-commands.tsx:274
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
@@ -3704,7 +3727,7 @@ msgstr "理由（必填，提议方会看到）"
 msgid "Why reject"
 msgstr "驳回理由"
 
-#: src/features/session-commands.tsx:209
+#: src/features/session-commands.tsx:246
 msgid "with what to keep"
 msgstr "说明要保留什么"
 

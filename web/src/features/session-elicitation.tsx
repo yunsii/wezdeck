@@ -407,6 +407,7 @@ export function PromptPanels({
       ) : null}
       {data?.permission && !asking && !planReview ? (
         <PermissionCard
+          agent={data.agent}
           call={data.permission}
           screen={data.screen}
           disabled={!canWrite}

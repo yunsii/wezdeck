@@ -184,12 +184,14 @@ function ResumeSheet({
  * conversation as a command row (chat-command.tsx).
  */
 export function CommandPanel({
+  agent,
   disabled,
   onCommand,
   onDraft,
   onResume,
   onClose,
 }: {
+  agent?: string
   disabled: boolean
   onCommand: (text: string) => void
   /** put text in the composer to add to before sending */
@@ -198,35 +200,70 @@ export function CommandPanel({
   onClose: () => void
 }) {
   const { t } = useLingui()
-  const commands: Array<{ label: string; hint: string; run: () => void }> = [
-    {
-      label: '/compact',
-      hint: t`summarise the context`,
-      run: () => onCommand('/compact'),
-    },
-    {
-      label: '/compact …',
-      hint: t`with what to keep`,
-      run: () => onDraft('/compact '),
-    },
-    {
-      label: '/new',
-      hint: t`start a fresh conversation`,
-      run: () => onCommand('/new'),
-    },
-    { label: '/resume', hint: t`pick an earlier one`, run: onResume },
-    {
-      label: '/context',
-      hint: t`context usage`,
-      run: () => onCommand('/context'),
-    },
-    {
-      label: '/usage',
-      hint: t`cost and limits`,
-      run: () => onCommand('/usage'),
-    },
-  ]
-  const models = ['opus', 'sonnet', 'haiku', 'default']
+  const isAgy = agent === 'agy'
+  const commands: Array<{ label: string; hint: string; run: () => void }> =
+    isAgy
+      ? [
+          {
+            label: '/compact',
+            hint: t`summarise the context`,
+            run: () => onCommand('/compact'),
+          },
+          {
+            label: '/new',
+            hint: t`start a fresh conversation`,
+            run: () => onCommand('/new'),
+          },
+          {
+            label: '/plan …',
+            hint: t`outline a plan before editing`,
+            run: () => onDraft('/plan '),
+          },
+          {
+            label: '/config',
+            hint: t`agent settings and execution mode`,
+            run: () => onCommand('/config'),
+          },
+          {
+            label: '/permissions',
+            hint: t`manage tool permission rules`,
+            run: () => onCommand('/permissions'),
+          },
+          {
+            label: '/model',
+            hint: t`switch the model`,
+            run: () => onDraft('/model '),
+          },
+        ]
+      : [
+          {
+            label: '/compact',
+            hint: t`summarise the context`,
+            run: () => onCommand('/compact'),
+          },
+          {
+            label: '/compact …',
+            hint: t`with what to keep`,
+            run: () => onDraft('/compact '),
+          },
+          {
+            label: '/new',
+            hint: t`start a fresh conversation`,
+            run: () => onCommand('/new'),
+          },
+          { label: '/resume', hint: t`pick an earlier one`, run: onResume },
+          {
+            label: '/context',
+            hint: t`context usage`,
+            run: () => onCommand('/context'),
+          },
+          {
+            label: '/usage',
+            hint: t`cost and limits`,
+            run: () => onCommand('/usage'),
+          },
+        ]
+  const models = isAgy ? [] : ['opus', 'sonnet', 'haiku', 'default']
   const key =
     'grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40'
   return (
@@ -235,7 +272,9 @@ export function CommandPanel({
         <span className="text-meta text-brand-label">
           {disabled
             ? t`Turn on write access in Settings to send commands`
-            : t`Claude commands, sent into the pane`}
+            : isAgy
+              ? t`Antigravity commands, sent into the pane`
+              : t`Claude commands, sent into the pane`}
         </span>
         <Button
           variant="plain"
@@ -274,24 +313,26 @@ export function CommandPanel({
           </Button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
-        <span className="text-meta text-brand-label">/model</span>
-        {models.map((model) => (
-          <Button
-            variant="key"
-            key={model}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              onCommand(`/model ${model}`)
-              onClose()
-            }}
-            className={cn('h-8 rounded-full px-3 font-mono text-caption')}
-          >
-            {model}
-          </Button>
-        ))}
-      </div>
+      {models.length ? (
+        <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
+          <span className="text-meta text-brand-label">/model</span>
+          {models.map((model) => (
+            <Button
+              variant="key"
+              key={model}
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                onCommand(`/model ${model}`)
+                onClose()
+              }}
+              className={cn('h-8 rounded-full px-3 font-mono text-caption')}
+            >
+              {model}
+            </Button>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
