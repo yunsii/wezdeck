@@ -6,7 +6,15 @@
     "PreInvocation": [
       { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh running" }
     ],
+    "PreToolUse": [
+      { "matcher": "ask_question", "hooks": [
+        { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh ask-waiting" }
+      ] }
+    ],
     "PostToolUse": [
+      { "matcher": "ask_question", "hooks": [
+        { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh ask-resolved" }
+      ] },
       { "matcher": "*", "hooks": [
         { "type": "command", "command": "__WEZDECK_REPO__/scripts/runtime/agent-attention/adapters/agy.sh resolved" }
       ] }

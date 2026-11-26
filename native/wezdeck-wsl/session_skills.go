@@ -27,6 +27,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -312,6 +313,100 @@ func parseGrokInspect(out []byte) ([]skillInfo, error) {
 	return list, nil
 }
 
+// --- Agy --------------------------------------------------------------------
+
+func (agyAdapter) SkillTrigger() string { return "/" }
+
+// Skills scans Agy's documented skill roots in precedence order:
+// project (.agents/skills) > user (~/.agents/skills, ~/.gemini/config/skills)
+// > built-in (~/.gemini/antigravity-cli/builtin/skills).
+func (agyAdapter) Skills(_, cwd string) ([]skillInfo, error) {
+	home, _ := os.UserHomeDir()
+	var roots []string
+	if cwd != "" {
+		roots = append(roots, filepath.Join(cwd, ".agents", "skills"))
+		if _, root, _ := gitRepoMeta(cwd); root != "" && filepath.Clean(root) != filepath.Clean(cwd) {
+			roots = append(roots, filepath.Join(root, ".agents", "skills"))
+		}
+	}
+	if home != "" {
+		roots = append(roots,
+			filepath.Join(home, ".agents", "skills"),
+			filepath.Join(home, ".gemini", "config", "skills"),
+			filepath.Join(home, ".gemini", "antigravity-cli", "builtin", "skills"),
+		)
+	}
+	seen := map[string]bool{}
+	var list []skillInfo
+	for _, root := range roots {
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			skillPath := filepath.Join(root, entry.Name(), "SKILL.md")
+			name, desc, ok := parseSkillFrontmatter(skillPath, entry.Name())
+			if !ok || seen[name] {
+				continue
+			}
+			seen[name] = true
+			list = append(list, skillInfo{Name: name, Description: clip(desc, skillDescMax), Path: skillPath})
+		}
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
+	return list, nil
+}
+
+func parseSkillFrontmatter(path, fallbackName string) (name, desc string, ok bool) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", "", false
+	}
+	text := strings.ReplaceAll(string(data), "\r\n", "\n")
+	if !strings.HasPrefix(text, "---\n") {
+		return fallbackName, "", true
+	}
+	rest := text[4:]
+	end := strings.Index(rest, "\n---")
+	if end < 0 {
+		return fallbackName, "", true
+	}
+	lines := strings.Split(rest[:end], "\n")
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		k, v, has := strings.Cut(line, ":")
+		if !has || strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t") {
+			continue
+		}
+		key := strings.TrimSpace(k)
+		val := strings.TrimSpace(v)
+		if val == ">" || val == ">-" || val == "|" || val == "|-" {
+			var parts []string
+			for i+1 < len(lines) && (strings.HasPrefix(lines[i+1], " ") || strings.HasPrefix(lines[i+1], "\t")) {
+				i++
+				parts = append(parts, strings.TrimSpace(lines[i]))
+			}
+			val = strings.Join(parts, " ")
+		} else {
+			val = strings.Trim(val, `"'`)
+		}
+		switch key {
+		case "name":
+			if val != "" {
+				name = val
+			}
+		case "description":
+			if val != "" {
+				desc = val
+			}
+		}
+	}
+	if name == "" {
+		name = fallbackName
+	}
+	return name, desc, true
+}
+
 // --- origin -------------------------------------------------------------------
 
 // platformSkills: the platform rows of skills/manifest.tsv (the skills this
@@ -353,6 +448,8 @@ func classifySkills(list []skillInfo, cwd string) []skillInfo {
 			s.Origin = "project"
 		case s.Path == "" && cwd != "" && (exists(filepath.Join(cwd, ".claude", "skills", s.Name)) || exists(filepath.Join(cwd, ".agents", "skills", s.Name))):
 			s.Origin = "project"
+		case s.Path != "" && home != "" && strings.HasPrefix(s.Path, filepath.Join(home, ".gemini", "antigravity-cli", "builtin")+string(filepath.Separator)):
+			s.Origin = "builtin"
 		case s.Path != "" && home != "" && strings.HasPrefix(s.Path, home+string(filepath.Separator)) && !strings.Contains(s.Path, string(filepath.Separator)+".system"+string(filepath.Separator)):
 			s.Origin = "user"
 		case s.Path == "" && home != "" && (exists(filepath.Join(home, ".claude", "skills", s.Name)) || exists(filepath.Join(home, ".agents", "skills", s.Name))):

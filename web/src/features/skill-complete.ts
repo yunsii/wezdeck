@@ -46,6 +46,19 @@ export const CLAUDE_COMMANDS = [
   'rename',
 ] as const
 
+/** Antigravity CLI's own slash commands (session-skills.tsx adds descriptions). */
+export const AGY_COMMANDS = [
+  'compact',
+  'new',
+  'clear',
+  'plan',
+  'model',
+  'config',
+  'permissions',
+  'mcp',
+  'help',
+] as const
+
 /** Skill groups in the sheet, in this order */
 export const ORIGIN_ORDER: Array<SkillOrigin> = [
   'wezdeck',

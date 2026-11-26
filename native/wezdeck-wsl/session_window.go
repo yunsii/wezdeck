@@ -26,8 +26,23 @@ type sessionArgs struct {
 
 const sessionPendingLookback = 40
 
-// Bump when a Codex parser change removes, adds or reorders historical rows.
-const codexMessagesRev = 1
+// Bump when an adapter's parser change alters historical messages so browsers
+// replace stale IndexedDB cache pages instead of merging by old indexes.
+const (
+	codexMessagesRev = 1
+	agyMessagesRev   = 1
+)
+
+func messagesRevFor(agent string) int {
+	switch agent {
+	case "codex":
+		return codexMessagesRev
+	case "agy":
+		return agyMessagesRev
+	default:
+		return 0
+	}
+}
 
 func (a sessionArgs) forMessagesRev(rev int) sessionArgs {
 	if a.MessagesRev != nil && *a.MessagesRev != rev {

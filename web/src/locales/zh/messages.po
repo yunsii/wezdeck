@@ -298,6 +298,10 @@ msgstr "Agent 名"
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
+#: src/features/session-skills.tsx:77
+msgid "agent settings and execution mode"
+msgstr "查看设置与执行模式"
+
 #: src/features/console-me.tsx:125
 #: src/features/me-agents.tsx:84
 msgid "Agents"
@@ -357,8 +361,12 @@ msgid "Already the latest"
 msgstr "已是最新版本"
 
 #: src/features/session-elicitation.tsx:210
-msgid "Answer sent; waiting for Grok to continue…"
-msgstr "答案已发送，等待 Grok 继续……"
+#~ msgid "Answer sent; waiting for Grok to continue…"
+#~ msgstr "答案已发送，等待 Grok 继续……"
+
+#: src/features/session-elicitation.tsx:210
+msgid "Answer sent; waiting for the agent to continue…"
+msgstr "答案已发送，等待 Agent 继续……"
 
 #: src/features/ticket-reply.tsx:195
 msgid "Anything to add (optional)"
@@ -526,7 +534,7 @@ msgstr "分组明细"
 msgid "Browsers and scripts that used the local Runtime since it started. They read and write without a device key, so there is nothing to approve here."
 msgstr "本次 Runtime 启动以来访问过它的浏览器和脚本。它们读写都不需要设备密钥，这里没有需要批准的。"
 
-#: src/features/session-skills.tsx:48
+#: src/features/session-skills.tsx:49
 msgid "Built in"
 msgstr "内置"
 
@@ -733,7 +741,7 @@ msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
 #: src/features/console-collab-run.tsx:114
-#: src/features/session-skills.tsx:49
+#: src/features/session-skills.tsx:50
 msgid "Command"
 msgstr "命令"
 
@@ -750,7 +758,7 @@ msgstr "已发送命令 {command}"
 msgid "Commands"
 msgstr "命令"
 
-#: src/features/session-skills.tsx:97
+#: src/features/session-skills.tsx:114
 msgid "Commands and skills"
 msgstr "命令与能力"
 
@@ -865,7 +873,7 @@ msgid "Context compactions"
 msgstr "上下文压缩次数"
 
 #: src/features/session-commands.tsx:220
-#: src/features/session-skills.tsx:62
+#: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "上下文占用"
 
@@ -954,7 +962,7 @@ msgid "Cost"
 msgstr "花费"
 
 #: src/features/session-commands.tsx:225
-#: src/features/session-skills.tsx:63
+#: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "费用与额度"
 
@@ -1642,6 +1650,10 @@ msgstr "浅色"
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
+#: src/features/session-skills.tsx:80
+msgid "list available commands"
+msgstr "查看可用命令"
+
 #: src/features/console-collab-run.tsx:48
 msgid "live"
 msgstr "实时"
@@ -1670,7 +1682,7 @@ msgstr "正在加载原图…"
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
-#: src/features/session-skills.tsx:216
+#: src/features/session-skills.tsx:233
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
@@ -1691,6 +1703,14 @@ msgstr "登录"
 #: src/features/console-activity.tsx:100
 msgid "made progress"
 msgstr "有进展"
+
+#: src/features/session-skills.tsx:79
+msgid "manage MCP servers"
+msgstr "管理 MCP 服务"
+
+#: src/features/session-skills.tsx:78
+msgid "manage tool permission rules"
+msgstr "管理工具权限规则"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -1785,7 +1805,7 @@ msgstr "多选题：点击切换选项，然后按 Enter。"
 msgid "Name"
 msgstr "名称"
 
-#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:66
 msgid "name this session"
 msgstr "给会话命名"
 
@@ -2079,7 +2099,7 @@ msgstr "确认之前不会建任何单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-skills.tsx:219
+#: src/features/session-skills.tsx:236
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2191,6 +2211,10 @@ msgstr "Opus 档"
 msgid "Origin session"
 msgstr "发起会话"
 
+#: src/features/session-skills.tsx:75
+msgid "outline a plan before editing"
+msgstr "修改前先制定计划"
+
 #: src/features/session-header.tsx:123
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
@@ -2265,7 +2289,7 @@ msgstr "选择会话（按仓库分组）"
 #~ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
 #: src/features/session-commands.tsx:217
-#: src/features/session-skills.tsx:61
+#: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
@@ -2285,7 +2309,7 @@ msgstr "计划待你确认"
 msgid "Plan review"
 msgstr "计划确认"
 
-#: src/features/session-skills.tsx:47
+#: src/features/session-skills.tsx:48
 msgid "Plugin"
 msgstr "插件"
 
@@ -2767,7 +2791,7 @@ msgstr "保存中…"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-skills.tsx:209
+#: src/features/session-skills.tsx:226
 msgid "Search name or description"
 msgstr "搜索名称或描述"
 
@@ -2780,7 +2804,7 @@ msgstr "搜索或筛选列表"
 msgid "Search sessions"
 msgstr "搜索会话"
 
-#: src/features/session-skills.tsx:210
+#: src/features/session-skills.tsx:227
 msgid "Search skills"
 msgstr "搜索能力"
 
@@ -2918,15 +2942,15 @@ msgstr "显示的是上次的数据"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/session-skills.tsx:157
+#: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "能力"
 
-#: src/features/session-skills.tsx:196
+#: src/features/session-skills.tsx:213
 msgid "Skills · {count}"
 msgstr "能力 · {count}"
 
-#: src/features/session-skills.tsx:152
+#: src/features/session-skills.tsx:169
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
@@ -2977,8 +3001,10 @@ msgid "Staged"
 msgstr "已暂存"
 
 #: src/features/session-commands.tsx:214
-#: src/features/session-skills.tsx:59
 #: src/features/session-skills.tsx:60
+#: src/features/session-skills.tsx:61
+#: src/features/session-skills.tsx:73
+#: src/features/session-skills.tsx:74
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
@@ -3047,7 +3073,8 @@ msgid "Submitting your answer…"
 msgstr "正在提交答案……"
 
 #: src/features/session-commands.tsx:204
-#: src/features/session-skills.tsx:58
+#: src/features/session-skills.tsx:59
+#: src/features/session-skills.tsx:72
 msgid "summarise the context"
 msgstr "压缩上下文"
 
@@ -3071,7 +3098,8 @@ msgstr "切换模式"
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
-#: src/features/session-skills.tsx:64
+#: src/features/session-skills.tsx:65
+#: src/features/session-skills.tsx:76
 msgid "switch the model"
 msgstr "切换模型"
 
@@ -3204,7 +3232,7 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/session-skills.tsx:219
+#: src/features/session-skills.tsx:236
 msgid "This agent lists no skills yet"
 msgstr "这个 agent 还没有列出能力"
 
@@ -3256,7 +3284,7 @@ msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 msgid "This pane switched sessions"
 msgstr "这个窗格已切换会话，已跟过去"
 
-#: src/features/session-skills.tsx:45
+#: src/features/session-skills.tsx:46
 msgid "This repo"
 msgstr "本仓库"
 
@@ -3492,7 +3520,7 @@ msgstr "使用 CLI 默认模型"
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."
 msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。"
 
-#: src/features/session-skills.tsx:46
+#: src/features/session-skills.tsx:47
 msgid "User"
 msgstr "用户级"
 
@@ -3604,7 +3632,7 @@ msgstr "WebSocket 中转"
 
 #: src/features/console-shell.tsx:226
 #: src/features/console-shell.tsx:315
-#: src/features/session-skills.tsx:44
+#: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
 
@@ -3640,7 +3668,7 @@ msgstr "要对方仓库做什么"
 msgid "What the terminal shows"
 msgstr "终端画面"
 
-#: src/features/session-skills.tsx:203
+#: src/features/session-skills.tsx:220
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 

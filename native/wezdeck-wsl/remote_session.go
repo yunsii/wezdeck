@@ -799,11 +799,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		transcriptsMu.Lock()
 		total := len(t.messages)
 		windowArgs := a
-		if agent == "codex" {
-			windowArgs = a.forMessagesRev(codexMessagesRev)
-			out["messages_rev"] = codexMessagesRev
+		if rev := messagesRevFor(agent); rev > 0 {
+			windowArgs = a.forMessagesRev(rev)
+			out["messages_rev"] = rev
 			if (a.Since != nil || a.Before != nil) && windowArgs.Since == nil && windowArgs.Before == nil {
-				relayLogf("session_cursor", "id=%s agent=codex outcome=revision_reset", a.ID)
+				relayLogf("session_cursor", "id=%s agent=%s outcome=revision_reset", a.ID, agent)
 			}
 		}
 		start, end, span := sessionWindow(t.messages, windowArgs)

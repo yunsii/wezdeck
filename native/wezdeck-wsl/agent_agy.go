@@ -5,11 +5,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -30,6 +32,91 @@ func (agyAdapter) ToolKind(name string, input map[string]any) string {
 }
 func (agyAdapter) Capabilities() agentCaps {
 	return agentCaps{Usage: "transcript", MidTurnInput: "queue", Title: true}
+}
+
+// PendingAsk implements askReader: returns the newest unanswered ask_question
+// tool call in transcript_full.jsonl so the web renders tappable options.
+func (agyAdapter) PendingAsk(path, _ string) *elicitation { return pendingAgyElicitation(path) }
+
+func pendingAgyElicitation(path string) *elicitation {
+	data, err := readTailFile(path, 2<<20)
+	if err != nil {
+		return nil
+	}
+	type pendingCall struct {
+		step int
+		name string
+		args json.RawMessage
+	}
+	var queue []pendingCall
+	for _, line := range bytes.Split(data, []byte("\n")) {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		var row struct {
+			StepIndex int    `json:"step_index"`
+			Type      string `json:"type"`
+			ToolCalls []struct {
+				Name string          `json:"name"`
+				Args json.RawMessage `json:"args"`
+			} `json:"tool_calls"`
+		}
+		if json.Unmarshal(line, &row) != nil {
+			continue
+		}
+		switch row.Type {
+		case "USER_INPUT":
+			queue = nil
+		case "PLANNER_RESPONSE":
+			queue = nil
+			for _, tc := range row.ToolCalls {
+				queue = append(queue, pendingCall{step: row.StepIndex, name: tc.Name, args: tc.Args})
+			}
+		case "GENERIC":
+			if len(queue) > 0 {
+				queue = queue[1:]
+			}
+		}
+	}
+	for i := len(queue) - 1; i >= 0; i-- {
+		if queue[i].name == "ask_question" {
+			return parseAgyAskQuestions("agy-step-"+strconv.Itoa(queue[i].step), queue[i].args)
+		}
+	}
+	return nil
+}
+
+// parseAgyAskQuestions parses Agy's ask_question schema:
+// {questions:[{question, options:["..."], is_multi_select}]}.
+func parseAgyAskQuestions(id string, input json.RawMessage) *elicitation {
+	var raw struct {
+		Questions []struct {
+			Question      string   `json:"question"`
+			Options       []string `json:"options"`
+			IsMultiSelect bool     `json:"is_multi_select"`
+		} `json:"questions"`
+	}
+	if json.Unmarshal(input, &raw) != nil || len(raw.Questions) == 0 {
+		return nil
+	}
+	out := &elicitation{ToolCallID: id}
+	for _, q := range raw.Questions {
+		if strings.TrimSpace(q.Question) == "" {
+			continue
+		}
+		eq := elicitQuestion{Question: q.Question, MultiSelect: q.IsMultiSelect}
+		for _, opt := range q.Options {
+			if opt = strings.TrimSpace(opt); opt != "" {
+				eq.Options = append(eq.Options, elicitOption{Label: opt})
+			}
+		}
+		out.Questions = append(out.Questions, eq)
+	}
+	if len(out.Questions) == 0 {
+		return nil
+	}
+	return out
 }
 
 var agyToolKinds = map[string]string{
