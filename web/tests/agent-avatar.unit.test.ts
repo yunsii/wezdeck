@@ -57,6 +57,10 @@ describe('AgentAvatar', () => {
     expect(html).toContain('-top-0.5 -left-0.5')
     expect(html).toContain('data-testid="agent-avatar-badge"')
     expect(html).toContain('-right-0.5 -bottom-0.5')
+    const done = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'claude', tone: 'done' }),
+    )
+    expect(done).toContain('data-tone="done"')
     const idle = renderToStaticMarkup(
       createElement(AgentAvatar, { profile: 'claude_kimi', tone: 'idle' }),
     )

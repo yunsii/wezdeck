@@ -50,7 +50,7 @@ while its managed pane's bash launcher still has an `agy` child process;
 one row per worktree, with known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
-status LED (waiting / running; idle empty), **bottom-right** = backend /
+status LED (waiting / done / running; idle empty), **bottom-right** = backend /
 profile badge (Kimi, gateway, …). Preview line reads like the last message
 (`Waiting on you · …` / `Replying…` / human prompt); list time is clock-today /
 yesterday / weekday / date; a top search filters by title, purpose, preview,

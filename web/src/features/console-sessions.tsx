@@ -44,6 +44,15 @@ export type { SessionCard }
 export const needsYou = (row: { status: string; waiting_kind?: string }) =>
   Boolean(row.waiting_kind) || row.status === 'waiting'
 
+/** turn finished while you were away — desk ✓ done until focus-ack / clear */
+export const isDoneUnread = (row: { status: string }) => row.status === 'done'
+
+/** list unread / tab badge: waiting on you, or done and not yet seen */
+export const needsAttention = (row: {
+  status: string
+  waiting_kind?: string
+}) => needsYou(row) || isDoneUnread(row)
+
 /** Last prompt the user typed; harness-injected ones (<task-notification>…) are not. */
 export const humanPrompt = (prompt?: string) =>
   prompt && !prompt.trim().startsWith('<') ? prompt : ''

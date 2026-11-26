@@ -37,10 +37,11 @@ const card = (over: Partial<SessionCard>): SessionCard => ({
 })
 
 describe('resolveChatFocus', () => {
-  it('prefers waiting, then running, then newest ts', () => {
+  it('prefers waiting, then done, then running, then newest ts', () => {
     const rows = [
       card({ id: 'old', ts: 10, status: 'idle' }),
       card({ id: 'run', ts: 20, status: 'running' }),
+      card({ id: 'done', ts: 15, status: 'done' }),
       card({
         id: 'wait',
         ts: 5,
@@ -50,8 +51,13 @@ describe('resolveChatFocus', () => {
     ]
     expect(resolveChatFocus(rows)?.id).toBe('wait')
     expect(resolveChatFocus(rows.filter((row) => row.id !== 'wait'))?.id).toBe(
-      'run',
+      'done',
     )
+    expect(
+      resolveChatFocus(
+        rows.filter((row) => row.id !== 'wait' && row.id !== 'done'),
+      )?.id,
+    ).toBe('run')
     expect(
       resolveChatFocus([
         card({ id: 'old', ts: 10, status: 'idle' }),
@@ -115,16 +121,22 @@ describe('buildChatGroups', () => {
 const previewLabels = {
   waiting: 'Waiting on you',
   needsConfirm: 'Needs a decision',
+  done: 'Done',
   working: 'Replying…',
   empty: 'No human message yet',
 }
 
 describe('chatTone / chatPreview', () => {
-  it('marks waiting and running for the IM preview line', () => {
+  it('marks waiting, done, and running for the IM preview line', () => {
     const wait = card({
       status: 'waiting',
       waiting_kind: 'permission',
       last_prompt: 'allow bash?',
+    })
+    const done = card({
+      status: 'done',
+      last_prompt: 'ship it',
+      ts: Date.now(),
     })
     const run = card({
       status: 'running',
@@ -133,22 +145,49 @@ describe('chatTone / chatPreview', () => {
     })
     const idle = card({ status: 'idle', last_prompt: 'done turn' })
     expect(chatTone(wait)).toBe('waiting')
+    expect(chatTone(done)).toBe('done')
     expect(chatTone(run)).toBe('running')
     expect(chatTone(idle)).toBe('idle')
     expect(chatPreview(wait, previewLabels)).toBe(
       'Waiting on you · allow bash?',
     )
+    expect(chatPreview(done, previewLabels)).toBe('Done · ship it')
     expect(chatPreview(run, previewLabels)).toBe('Replying… · hello')
     expect(chatPreview(idle, previewLabels)).toBe('done turn')
     expect(
       chatPreview(card({ status: 'running', last_prompt: '' }), previewLabels),
     ).toBe('Replying…')
     expect(
+      chatPreview(card({ status: 'done', last_prompt: '' }), previewLabels),
+    ).toBe('Done')
+    expect(
       chatPreview(
         card({ status: 'waiting', waiting_kind: 'ask', last_prompt: '' }),
         previewLabels,
       ),
     ).toBe('Waiting on you · Needs a decision')
+  })
+})
+
+describe('unreadChatCount', () => {
+  it('counts worktrees with waiting or done-unseen sessions', () => {
+    expect(
+      unreadChatCount([
+        card({ id: 'a', status: 'done', worktree: '/r/a/.worktrees/ux' }),
+        card({
+          id: 'b',
+          status: 'waiting',
+          waiting_kind: 'ask',
+          worktree: '/r/a/.worktrees/ux-2',
+        }),
+        card({ id: 'c', status: 'idle', worktree: '/r/a/.worktrees/ux-3' }),
+        card({
+          id: 'd',
+          status: 'done',
+          worktree: '/r/a/.worktrees/ux',
+        }),
+      ]),
+    ).toBe(2)
   })
 })
 

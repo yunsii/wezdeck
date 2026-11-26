@@ -1,5 +1,5 @@
 // Chat-list avatar corner slots (fixed convention):
-//   · top-left  — agent turn status (waiting ▲ / running ●); idle = empty
+//   · top-left  — agent turn status (waiting ▲ / done ✓ / running ●); idle = empty
 //   · bottom-right — backend / profile badge (kimi, gateway, …)
 // Brand mark fills the circle; unknown agents and failed images use Bot.
 import { Bot } from 'lucide-react'
@@ -88,7 +88,15 @@ export function AgentAvatar({
   const src = AVATAR_SRC[family]
   const [failedSrc, setFailedSrc] = useState('')
   const statusLabel =
-    tone === 'waiting' ? 'waiting' : tone === 'running' ? 'running' : ''
+    tone === 'waiting'
+      ? 'waiting'
+      : tone === 'done'
+        ? 'done'
+        : tone === 'running'
+          ? 'running'
+          : ''
+  const ledTone =
+    tone === 'waiting' ? 'waiting' : tone === 'done' ? 'done' : 'running'
   const aria = [label, badge || null, statusLabel || null]
     .filter(Boolean)
     .join(' · ')
@@ -134,7 +142,7 @@ export function AgentAvatar({
           className="pointer-events-none absolute -top-0.5 -left-0.5 rounded-full bg-brand-deck p-px"
         >
           <Led
-            tone={tone === 'waiting' ? 'waiting' : 'running'}
+            tone={ledTone}
             size={statusPx}
             label={statusLabel}
             className={cn(
