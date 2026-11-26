@@ -181,6 +181,10 @@ func liveSessions() (map[string]attentionEntry, error) {
 	if err != nil {
 		return nil, err
 	}
+	return liveSessionsFrom(entries, recent), nil
+}
+
+func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) map[string]attentionEntry {
 	out := map[string]attentionEntry{}
 	panes := map[string]bool{}
 	for id, e := range entries {
@@ -196,6 +200,9 @@ func liveSessions() (map[string]attentionEntry, error) {
 		panes[key] = true
 		_, _, cmd, _, alive := paneState(r.attentionEntry)
 		if !alive || !isAgentPane(cmd, r.attentionEntry) {
+			continue
+		}
+		if cmd != "codex" && archivedCodexTranscript(r) != "" {
 			continue
 		}
 		e := r.attentionEntry
@@ -220,7 +227,7 @@ func liveSessions() (map[string]attentionEntry, error) {
 		}
 		out[r.SessionID] = e
 	}
-	return out, nil
+	return out
 }
 
 func tmuxCmd(socket string, args ...string) *exec.Cmd {
@@ -233,6 +240,9 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 
 // paneState: the pane's id, cwd, current command, index, and whether it exists.
 func paneState(e attentionEntry) (id, cwd, cmd string, index int, alive bool) {
+	if e.TmuxPane == "" {
+		return "", "", "", 0, false
+	}
 	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
 		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}").Output()
 	if err != nil {
@@ -373,11 +383,12 @@ type sessionCard struct {
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
 
 func listSessions() (any, error) {
-	entries, err := liveSessions()
+	active, recent, err := readAttentionDoc()
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().Unix()
+	entries := liveSessionsFrom(active, recent)
+	now := time.Now()
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
 	visits := worktreeVisits()
@@ -426,11 +437,25 @@ func listSessions() (any, error) {
 			card.TS = act
 		}
 		if act := deskActivity(e); act > 0 {
-			card.DeskIdleS = now - act
+			card.DeskIdleS = now.Unix() - act
 		} else {
 			card.DeskIdleS = -1
 		}
 		cards = append(cards, card)
+	}
+	listed := make(map[string]bool, len(cards))
+	for _, card := range cards {
+		listed[card.ID] = true
+	}
+	for _, r := range recent {
+		if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
+			now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
+			continue
+		}
+		if path := archivedCodexTranscript(r); path != "" {
+			cards = append(cards, archivedCodexCard(r, path))
+			listed[r.SessionID] = true
+		}
 	}
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
@@ -459,11 +484,14 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	if a.Limit > 5000 {
 		a.Limit = 5000
 	}
-	entries, err := liveSessions()
+	active, recent, err := readAttentionDoc()
 	if err != nil {
 		return nil, err
 	}
+	entries := liveSessionsFrom(active, recent)
 	e, ok := entries[a.ID]
+	path, agent := "", ""
+	readOnly := false
 	if !ok {
 		// cleared in its pane (/new, /clear): point the page at the session
 		// that took its place
@@ -472,7 +500,21 @@ func sessionDetail(args json.RawMessage) (any, error) {
 				return map[string]any{"v": 1, "ok": true, "id": a.ID, "replaced_by": id, "status": "idle"}, nil
 			}
 		}
-		return nil, errors.New("session not found (ended or not tracked)")
+		for _, r := range recent {
+			if r.SessionID == a.ID {
+				if path = archivedCodexTranscript(r); path != "" {
+					e = attentionEntry{SessionID: a.ID, Status: "idle", TS: r.ArchivedTS,
+						AgentName: r.AgentName, WindowName: r.WindowName, GitBranch: r.GitBranch}
+					agent, readOnly = "codex", true
+				}
+				break
+			}
+		}
+		if !readOnly {
+			return nil, errors.New("session not found (ended or not tracked)")
+		}
+	} else {
+		path, agent = findTranscript(e.SessionID)
 	}
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
 	// clears this state only, not a newer one
@@ -489,7 +531,6 @@ func sessionDetail(args json.RawMessage) (any, error) {
 			out["compact_started"] = e.CompactStarted
 		}
 	}
-	path, agent := findTranscript(e.SessionID)
 	if path == "" {
 		// no transcript yet (a fresh session after /new): the pane's command
 		// still says which agent it is, so the page can offer its commands
@@ -517,7 +558,11 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		out["node"] = node
 	}
 	out["reference"] = sessionReference(e, path, agent)
-	out["focus"] = sessionFocus(a.ID, e)
+	if readOnly {
+		out["read_only"] = true
+	} else {
+		out["focus"] = sessionFocus(a.ID, e)
+	}
 	out["meta"] = sessionMeta(e, path, agent, nil)
 	if path != "" {
 		out["agent"] = agent
@@ -610,6 +655,9 @@ func sessionDetail(args json.RawMessage) (any, error) {
 				out["account"] = limits
 			}
 		}
+	}
+	if readOnly {
+		return out, nil
 	}
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {

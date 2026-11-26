@@ -86,6 +86,7 @@ export type AgentCapabilities = {
 
 export type Detail = StatusFields & {
   messages_rev?: number
+  read_only?: boolean
   id: string
   name?: string
   title?: string
@@ -352,6 +353,15 @@ const activityOf = (data?: Detail) => ({
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
 
+function ArchivedSessionNotice() {
+  const { t } = useLingui()
+  return (
+    <p role="status" className="text-meta text-brand-label">
+      {t`Archived session · Read only`}
+    </p>
+  )
+}
+
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -363,6 +373,7 @@ export function SessionDetail({ id }: { id: string }) {
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []
   const busy = Boolean(data && isBusy(data))
+  const readOnly = data?.read_only === true
   const pending = settle(pendingRaw, messages, data?.start ?? 0, busy)
   // +1 once the detail has loaded: a new session with no messages yet shows
   // only the pane's screen, and a count of 0 never landed at the bottom
@@ -385,14 +396,13 @@ export function SessionDetail({ id }: { id: string }) {
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
   const keepPlace = useKeepPlace(end, start)
-  useWhileShown(id, data, device.state === 'approved')
+  useWhileShown(id, data, !readOnly && device.state === 'approved')
   const failed = useFailedPolls(detail.errorUpdateCount, detail.dataUpdatedAt)
   const back = useGoBack({
     to: '/{-$locale}/console/sessions',
     params: { locale: locale === 'en' ? undefined : locale },
   })
-  const elicitation = data?.elicitation
-  const asking = Boolean(elicitation && elicitation.questions.length > 0)
+  const asking = (data?.elicitation?.questions.length ?? 0) > 0
   const planReview = Boolean(data?.plan?.awaiting_approval)
   const blocked =
     device.state !== 'approved'
@@ -415,7 +425,7 @@ export function SessionDetail({ id }: { id: string }) {
         id={id}
         data={data}
         onBack={back}
-        renameDisabled={sending || device.state !== 'approved'}
+        renameDisabled={readOnly || sending || device.state !== 'approved'}
         onRename={(title) =>
           void send({
             text: `/rename ${title}`,
@@ -480,7 +490,9 @@ export function SessionDetail({ id }: { id: string }) {
               start={start}
               busy={busy}
               activity={busy ? activityOf(data) : undefined}
-              {...writes.pendingProps(device.state === 'approved' && !blocked)}
+              {...writes.pendingProps(
+                !readOnly && device.state === 'approved' && !blocked,
+              )}
               status={data?.status}
               statusTs={data?.ts}
               onBackground={toBackground(data, device.state, run)}
@@ -493,7 +505,7 @@ export function SessionDetail({ id }: { id: string }) {
         <PromptPanels
           data={data}
           sending={sending}
-          canWrite={device.state === 'approved'}
+          canWrite={!readOnly && device.state === 'approved'}
           onKey={(key) => run('key', { key })}
         />
         <div ref={end} />
@@ -503,6 +515,7 @@ export function SessionDetail({ id }: { id: string }) {
         className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)]"
         onSubmit={(event) => {
           event.preventDefault()
+          if (readOnly) return
           setError('')
           composer.submit().catch((e: unknown) => {
             setError((e as Error).message)
@@ -525,13 +538,13 @@ export function SessionDetail({ id }: { id: string }) {
           </p>
         ) : null}
         <SessionSubagents agents={data?.subagents} />
-        {retryIn ? (
+        {retryIn && !readOnly ? (
           <p role="status" className="text-meta text-brand-muted">
             {t`Someone just used the desk; sending in ${retryIn}s…`}
           </p>
         ) : error ? (
           <ErrorLine message={error} />
-        ) : blocked ? (
+        ) : blocked && !readOnly ? (
           <p className="text-meta text-brand-muted">
             {blocked}{' '}
             {device.state !== 'approved' ? (
@@ -548,25 +561,29 @@ export function SessionDetail({ id }: { id: string }) {
             ) : null}
           </p>
         ) : null}
-        <ComposerBox
-          composer={composer}
-          blocked={sending || Boolean(blocked)}
-          keysDisabled={sending || device.state !== 'approved'}
-          writable={device.state === 'approved'}
-          onRun={run}
-          commands={
-            data?.agent === 'claude'
-              ? {
-                  send: (text) =>
-                    void send({ text, attachments: [], note: '' }),
-                  resume: resume.open,
-                }
-              : undefined
-          }
-          session={data}
-        />
+        {readOnly ? (
+          <ArchivedSessionNotice />
+        ) : (
+          <ComposerBox
+            composer={composer}
+            blocked={sending || Boolean(blocked)}
+            keysDisabled={sending || device.state !== 'approved'}
+            writable={device.state === 'approved'}
+            onRun={run}
+            commands={
+              data?.agent === 'claude'
+                ? {
+                    send: (text) =>
+                      void send({ text, attachments: [], note: '' }),
+                    resume: resume.open,
+                  }
+                : undefined
+            }
+            session={data}
+          />
+        )}
         <SessionStatusBar data={data} />
-        {resume.element}
+        {!readOnly && resume.element}
       </form>
     </div>
   )
