@@ -172,7 +172,7 @@ A workstation branch that lags mainline is **out of policy**, not an acceptable 
 
 Standing loop after finishing a round on a workstation:
 
-1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). Graph hygiene [vcs-36]–[vcs-37] still applies.
+1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). For Web and relay releases, use `scripts/dev/wezdeck-release.sh --land HEAD` from the committed workstation to integrate and publish under one shared lock. Graph hygiene [vcs-36]–[vcs-37] still applies.
 2. **Recycle the workstation immediately** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so its `dev/<name>` **stays in sync** with mainline (same tip). Do not leave the workstation behind “until next time”.
 3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZDECK_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
 

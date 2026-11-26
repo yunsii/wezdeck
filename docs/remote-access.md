@@ -379,28 +379,33 @@ scripts/dev/install-remote-relay.sh               # tokens (once) + build + user
 scripts/dev/install-remote-relay.sh --push-secrets  # after creating / rotating tokens
 scripts/dev/install-remote-relay.sh --pair        # pairing link + QR for the remote device
 scripts/dev/install-remote-relay.sh --check       # unit state + /relay/health presence
-scripts/dev/wezdeck-release.sh                    # ship a committed round (below)
+scripts/dev/wezdeck-release.sh                    # publish primary master
+scripts/dev/wezdeck-release.sh --land HEAD        # integrate and publish a committed task worktree
 ```
 
-`wezdeck-release.sh` runs push, relay and web **in parallel** (logs under
-`~/.local/state/wezdeck/release/<stamp>/`, one summary row per run in
-`release.log`). A part whose running version already equals its fingerprint
-is skipped — a web-only round does not restart the relay and drop web console
-links; `--only push|relay|web`, `--force`. It refuses uncommitted tracked
-changes. After a web deploy it moves every web console seen in the last 3 min onto
-the new build (`wezdeck-wsl diag --reload`: the page answers, then reloads —
-a draft survives; retried while a relay restarted in the same release has
-not seen the web consoles reconnect yet; `--no-reload` skips), so nobody taps 刷新.
-Before any job it runs the test gate —
-`web-affected-tests.sh --base @{u} --run`, the tests the unpushed commits
-can break — and ships nothing when it fails (`--no-test` skips it, for
-emergencies only). The web job deploys the existing `web/dist` when its
-build id already equals the fingerprint (the gate's stack just built it:
-one `vite build` per release instead of two). `--commit MSGFILE` commits the staged changes first and fixes what
-the pre-commit gate would only report — prettier on the staged web files,
-`lingui extract` for the catalogs — so one command goes from staged to
-live; lint / type errors still stop it before anything ships. A deploy that succeeds is done; the version check belongs before
-the tests, not after the deploy.
+`--land COMMIT` resolves the commit in the task worktree and delegates to
+the primary `master`. The lock in the shared Git directory covers integration,
+push, and deployment for all linked worktrees on this host.
+`WEZDECK_RELEASE_LOCK_WAIT` sets the wait in seconds (300 by default).
+The script fetches `origin/master` before integrating. A merge conflict
+returns to the task worktree for resolution. If the remote advances during
+the build, the script integrates the new tip and retries once with a fresh
+build check.
+
+The script builds once per candidate and verifies that the exact commit is
+on `origin/master` before deploying either Web or relay. The two deploy jobs
+can run together once the push is confirmed. Each skips an already-current
+source fingerprint. Use `--only push|relay|web` to select jobs. Deploy-only
+runs can fast-forward a clean primary checkout and require it to match the
+remote tip. `--force` redeploys current parts. Logs live under
+`~/.local/state/wezdeck/release/`, with a separate directory for the retry.
+
+Affected tests run alongside delivery by default. `--gate` waits for them
+before push and deployment. `--no-test` skips that run. `--commit MSGFILE`
+formats staged Web sources, refreshes the translation catalogs, and commits
+on the primary checkout before starting the release. After a Web deploy,
+the script reloads connected consoles and checks their build.
+`--no-reload` skips the reload.
 The relay job repairs a stale systemd `ExecStart` before restarting, then
 checks the new process's `event=connected` version. A restart with an old
 version is a release failure, even when systemd reports the unit as active.
