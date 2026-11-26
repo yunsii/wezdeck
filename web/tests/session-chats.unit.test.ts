@@ -79,7 +79,7 @@ describe('resolveChatFocus', () => {
       ).toBe('detached')
     }
   })
-  it('follows the active primary terminal over an archived done session', () => {
+  it('follows the primary terminal over an archived done session', () => {
     const archived = card({
       id: 'old-grok',
       agent: 'grok',
@@ -89,7 +89,7 @@ describe('resolveChatFocus', () => {
     const terminal = card({
       id: 'agy-live',
       agent: 'agy',
-      status: 'running',
+      status: 'done',
       pane_role: 'primary',
       ts: 20,
     })
