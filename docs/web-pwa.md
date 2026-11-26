@@ -78,9 +78,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
    session waiting on you / finished / running in the list's order — on the
-   mobile a 「还有 N 个等你 ›」 chip in the header when another one waits;
-   `Alt+g` / `Alt+x` or tapping the title opens a switcher sheet grouped
-   like the list. Switching replaces the history entry, so back returns to
+   phone the title opens the same grouped switcher sheet as `Alt+g` / `Alt+x`.
+   Switching replaces the history entry, so back returns to
    the list. Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
    filter (`c` on a keyboard) is 新会话 — message first; location bar for

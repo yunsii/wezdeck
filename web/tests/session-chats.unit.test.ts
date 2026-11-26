@@ -267,7 +267,7 @@ describe('chatTone / chatPreview', () => {
 })
 
 describe('unreadChatCount', () => {
-  it('counts worktrees with waiting or done-unseen sessions', () => {
+  it('counts only worktrees with sessions waiting on a person', () => {
     expect(
       unreadChatCount([
         card({ id: 'a', status: 'done', worktree: '/r/a/.worktrees/ux' }),
@@ -284,7 +284,7 @@ describe('unreadChatCount', () => {
           worktree: '/r/a/.worktrees/ux',
         }),
       ]),
-    ).toBe(2)
+    ).toBe(1)
   })
 })
 

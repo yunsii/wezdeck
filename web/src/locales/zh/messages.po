@@ -54,8 +54,8 @@ msgid "{count} monitors running"
 msgstr "{count} 个 Monitor 运行中"
 
 #: src/features/session-switcher.tsx:127
-msgid "{count} more need you"
-msgstr "还有 {count} 个等你"
+#~ msgid "{count} more need you"
+#~ msgstr "还有 {count} 个等你"
 
 #: src/features/session-statusbar.tsx:162
 msgid "{count} shells running"
@@ -580,7 +580,7 @@ msgstr "字节"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:123
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -870,7 +870,7 @@ msgstr "控制台导航"
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:121
+#: src/features/session-header.tsx:120
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -1673,7 +1673,7 @@ msgstr "与上游一致。"
 msgid "Light"
 msgstr "浅色"
 
-#: src/features/session-header.tsx:125
+#: src/features/session-header.tsx:124
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -1707,7 +1707,7 @@ msgstr "正在加载原图…"
 #: src/features/me-agents.tsx:83
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:221
+#: src/features/session-header.tsx:220
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/tickets-view.tsx:288
@@ -1850,7 +1850,7 @@ msgstr "需要确认"
 #~ msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 #~ msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
-#: src/features/session-header.tsx:238
+#: src/features/session-header.tsx:237
 msgid "Needs you"
 msgstr "需要你处理"
 
@@ -2008,7 +2008,7 @@ msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
 #: src/features/session-list.tsx:66
-#: src/features/session-switcher.tsx:185
+#: src/features/session-switcher.tsx:157
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -2155,7 +2155,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:271
+#: src/features/session-switcher.tsx:243
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -2244,7 +2244,7 @@ msgstr "发起会话"
 msgid "outline a plan before editing"
 msgstr "修改前先制定计划"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:122
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -2590,7 +2590,7 @@ msgstr "调研失败"
 msgid "Resend"
 msgstr "重发"
 
-#: src/features/session-header.tsx:112
+#: src/features/session-header.tsx:111
 msgid "resets {reset}"
 msgstr "{reset}重置"
 
@@ -2910,7 +2910,7 @@ msgstr "会话已删除，工作树还有本地改动。"
 msgid "Session id"
 msgstr "会话 ID"
 
-#: src/features/session-header.tsx:251
+#: src/features/session-header.tsx:245
 #: src/features/session-info.tsx:245
 msgid "Session info"
 msgstr "会话信息"
@@ -2925,7 +2925,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:200
+#: src/features/session-header.tsx:199
 #: src/features/session-list.tsx:375
 msgctxt "nav"
 msgid "Sessions"
@@ -3114,7 +3114,7 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:255
+#: src/features/session-switcher.tsx:227
 msgid "Switch chat"
 msgstr "切换对话"
 
@@ -3126,7 +3126,7 @@ msgstr "切换模式"
 #~ msgid "Switch session"
 #~ msgstr "切换会话"
 
-#: src/features/session-header.tsx:212
+#: src/features/session-header.tsx:211
 msgid "Switch session (Alt+g)"
 msgstr "切换会话（Alt+g）"
 
@@ -3509,7 +3509,7 @@ msgid "Unknown"
 msgstr "未知"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:176
+#: src/features/session-header.tsx:175
 msgid "Untitled session"
 msgstr "未命名会话"
 
