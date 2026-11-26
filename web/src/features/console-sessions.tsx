@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown } from 'lucide-react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
 import type { GitStatus } from '#/components/deck/session-tags'
@@ -336,6 +336,12 @@ function useComposerBlock(data: Detail | undefined, approved: boolean) {
       : ''
 }
 
+function useLeaveMissingSession(gone: boolean, back: () => void) {
+  useEffect(() => {
+    if (gone) back()
+  }, [back, gone])
+}
+
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -367,7 +373,6 @@ export function SessionDetail({ id }: { id: string }) {
   const shown = messages.length
   const start = data?.start ?? 0
   const compactedAt = data?.compacted_at
-  // reached the latest compaction marker: what is above is the old context
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
   const keepPlace = useKeepPlace(end, start)
@@ -377,6 +382,10 @@ export function SessionDetail({ id }: { id: string }) {
     to: '/{-$locale}/console/sessions',
     params: { locale: locale === 'en' ? undefined : locale },
   })
+  const gone =
+    detail.isError &&
+    /session not found|ended or not tracked/i.test(String(detail.error.message))
+  useLeaveMissingSession(gone, back)
   const blocked = useComposerBlock(data, device.state === 'approved')
   const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({
