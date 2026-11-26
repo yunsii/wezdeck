@@ -422,7 +422,7 @@ export function ComposerBox({
       ) : null}
       <div
         data-text-field
-        className="relative min-h-12 rounded-3xl bg-brand-surface p-1.5"
+        className="relative flex min-h-12 items-center rounded-3xl bg-brand-surface p-1"
       >
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
