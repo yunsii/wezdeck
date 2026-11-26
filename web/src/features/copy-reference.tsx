@@ -1,8 +1,6 @@
-// 复制引用 from a list (工单 / 会话): the list rows carry no reference — it
-// is built per item by the host (`ticket api show`, the relay's `session`
-// reply) and the lists poll — so a copy reads it on demand, straight from the
-// cache when the item was open just now, and writes it inside the click
-// (copyTextLater). One toast says what landed or why not.
+// 复制引用 from lists: 工单 / 会话 load host-built blocks on demand; 智能体 uses
+// its already-loaded profile data. copyTextLater keeps the clipboard write
+// inside the click, with one toast for success or failure.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, Hash } from 'lucide-react'
@@ -14,6 +12,7 @@ import { copyTextLater } from '#/lib/clipboard'
 import { collabKey } from '#/lib/collab-query'
 import { getCollab, hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
+import type { AgentProfile } from './agent-profiles'
 
 type CopyFn = (id: string) => Promise<boolean>
 
@@ -68,6 +67,29 @@ export function useCopySessionReference(): CopyFn {
     }
     if (!reply.reference) throw new Error(reply.error ?? 'no reference')
     return reply.reference
+  })
+}
+
+type AgentReferenceProfile = Pick<
+  AgentProfile,
+  'id' | 'label' | 'model' | 'model_override' | 'default_model'
+>
+
+export function agentReference(profile: AgentReferenceProfile): string {
+  const model =
+    profile.model_override || profile.model || profile.default_model || ''
+  return [
+    `[wezdeck 智能体] ${profile.label}`,
+    `agent_profile: ${profile.id}`,
+    ...(model ? [`model: ${model}`] : []),
+  ].join('\n')
+}
+
+export function useCopyAgentReference(profiles: Array<AgentProfile>): CopyFn {
+  return useCopyReference(async (id) => {
+    const profile = profiles.find((item) => item.id === id)
+    if (!profile) throw new Error('agent profile not found')
+    return agentReference(profile)
   })
 }
 
