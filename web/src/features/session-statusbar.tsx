@@ -308,7 +308,10 @@ function WorktreeManager({
           {(workstations.data?.directions ?? []).map((direction) => (
             <section key={direction.name} className="grid gap-1">
               <h3 className="text-meta font-semibold text-brand-text">
-                {direction.description || t`未命名工作树`}
+                {direction.description &&
+                direction.description !== direction.name
+                  ? direction.description
+                  : t`未命名工作树`}
               </h3>
               {direction.slots.map((slot) => (
                 <div
