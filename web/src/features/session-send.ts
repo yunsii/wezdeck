@@ -7,6 +7,7 @@ import { useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { hostWrite } from '#/lib/runtime-client'
+import { trace } from '#/lib/client-trace'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
@@ -154,12 +155,26 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     args: Record<string, unknown>,
   ) => {
     const target = id
+    const op_id = crypto.randomUUID()
     return write(target, async () => {
-      await hostWrite(action, { id: target, ...args })
+      trace('web-write', { id: target, op_id, action, stage: 'requested' })
+      try {
+        await hostWrite(action, { id: target, ...args, client_op: op_id })
+        trace('web-write', {
+          id: target,
+          op_id,
+          action,
+          stage: 'host-accepted',
+        })
+      } catch (error) {
+        trace('web-write', { id: target, op_id, action, stage: 'failed' })
+        throw error
+      }
     })
   }
   const send = (message: Outgoing) => {
     const target = id
+    const op_id = crypto.randomUUID()
     // a slash command (/new, /clear, /compact…) is run by the TUI, never
     // written to the transcript as a message: queued as one it waited for
     // the agent forever
@@ -188,6 +203,12 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         },
       ])
     return write(target, async () => {
+      trace('web-write', {
+        id: target,
+        op_id,
+        action: 'send',
+        stage: 'requested',
+      })
       try {
         await withDeskRetry(
           () =>
@@ -195,14 +216,27 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
               id: target,
               text: message.text,
               attachments: message.attachments,
+              client_op: op_id,
             }),
           (seconds) => patch(target, { retryIn: seconds }),
         )
       } catch (error) {
         // refused: the text goes back to the composer with the error
         if (!command) mark()
+        trace('web-write', {
+          id: target,
+          op_id,
+          action: 'send',
+          stage: 'failed',
+        })
         throw error
       }
+      trace('web-write', {
+        id: target,
+        op_id,
+        action: 'send',
+        stage: 'host-accepted',
+      })
       if (command) toast(t`Command sent: ${command}`)
       else mark('queued')
     })

@@ -18,6 +18,7 @@ import { PendingBubbles } from './chat-pending'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
+import { trace } from '#/lib/client-trace'
 import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { SmoothGrow } from './chat-grow'
@@ -263,6 +264,10 @@ export function ChatThread({
   const from = cursor === null ? (baseline.current ?? end) : cursor
   const caught = catchUp(items, start, from)
   const effective = settleCursor(items, start, caught)
+  useEffect(() => {
+    if (sessionId)
+      trace('chat-render', { id: sessionId, shown: effective, total: end })
+  }, [sessionId, effective, end])
   const skippedFrom = caught > from ? from : null
   useCatchUpSignal(skippedFrom)
   // shown at once by a catch-up: no entrance, they were not watched arriving

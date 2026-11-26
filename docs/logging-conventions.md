@@ -6,13 +6,14 @@ For the **operator** surface — env knobs, where files live, how to read them, 
 
 ## Where logs go
 
-Four log files, segmented by **which process writes**. The file lives on the writer's native filesystem so the writer never pays the cross-FS penalty; cross-FS readers (rare) absorb the cost in their own paths.
+Five log files, segmented by **which process writes**. The file lives on the writer's native filesystem so the writer never pays the cross-FS penalty; cross-FS readers (rare) absorb the cost in their own paths.
 
 | File | Writer | Why this side |
 |---|---|---|
 | `~/.local/state/wezterm-runtime/logs/runtime.log` (WSL ext4) | every bash script in `scripts/runtime/`, every `picker` invocation, the Claude/Codex agent hooks | WSL-native; ~150× faster than `/mnt/c` per the cross-FS routing rule in [`performance.md`](./performance.md) |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\wezterm.log` (Windows NTFS) | WezTerm Lua via `wezterm.log_*` + `append_file` in `wezterm-x/lua/logger.lua` | wezterm.exe is a Windows process |
 | `%LOCALAPPDATA%\wezterm-runtime\logs\helper.log` (Windows NTFS) | `wezdeck-runtime.exe` (.NET WezDeck Runtime) | helper is a Windows process |
+| `%LOCALAPPDATA%\wezterm-runtime\logs\web-client.log` (Windows NTFS) | local Web console through the loopback Runtime | bounded batches and separate rotation keep page events out of `helper.log` |
 | `/var/log/wezterm-oom-guard.log` (WSL ext4, root-owned) | `scripts/runtime/wsl-oom-guard.sh` under the `wezterm-oom-*` systemd units | root-owned system service, not a user session — see the exception below |
 
 Never hard-code paths. Bash sources `scripts/runtime/wsl-runtime-paths-lib.sh` for `WSL_RUNTIME_LOG_FILE`; Lua reads `diagnostics.wezterm.file` from `wezterm-x/local/constants.lua`; the Go picker honors `WEZTERM_RUNTIME_LOG_FILE` else derives the same XDG default.

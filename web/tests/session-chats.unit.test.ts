@@ -2,9 +2,17 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildChatGroups,
+  chatMatchesQuery,
+  chatPreview,
+  chatTone,
   resolveChatFocus,
   unreadChatCount,
 } from '#/features/session-chats'
+import {
+  chatTimeBucket,
+  formatChatClock,
+  formatChatDate,
+} from '#/features/chat-time'
 import { directionForWorktree } from '#/features/session-new-direction'
 import type { SessionCard } from '#/features/console-sessions'
 import type { Direction } from '#/features/session-new-direction'
@@ -101,6 +109,82 @@ describe('buildChatGroups', () => {
       }),
     ])
     expect(groups[0].chats[0].title).toBe('wezdeck')
+  })
+})
+
+const previewLabels = {
+  waiting: 'Waiting on you',
+  needsConfirm: 'Needs a decision',
+  working: 'Replying…',
+  empty: 'No human message yet',
+}
+
+describe('chatTone / chatPreview', () => {
+  it('marks waiting and running for the IM preview line', () => {
+    const wait = card({
+      status: 'waiting',
+      waiting_kind: 'permission',
+      last_prompt: 'allow bash?',
+    })
+    const run = card({
+      status: 'running',
+      last_prompt: 'hello',
+      ts: Date.now(),
+    })
+    const idle = card({ status: 'idle', last_prompt: 'done turn' })
+    expect(chatTone(wait)).toBe('waiting')
+    expect(chatTone(run)).toBe('running')
+    expect(chatTone(idle)).toBe('idle')
+    expect(chatPreview(wait, previewLabels)).toBe(
+      'Waiting on you · allow bash?',
+    )
+    expect(chatPreview(run, previewLabels)).toBe('Replying… · hello')
+    expect(chatPreview(idle, previewLabels)).toBe('done turn')
+    expect(
+      chatPreview(card({ status: 'running', last_prompt: '' }), previewLabels),
+    ).toBe('Replying…')
+    expect(
+      chatPreview(
+        card({ status: 'waiting', waiting_kind: 'ask', last_prompt: '' }),
+        previewLabels,
+      ),
+    ).toBe('Waiting on you · Needs a decision')
+  })
+})
+
+describe('chatMatchesQuery', () => {
+  it('matches title, purpose, and preview', () => {
+    const groups = buildChatGroups([
+      card({
+        id: 's1',
+        worktree: '/r/a/.worktrees/ux',
+        cwd: '/r/a/.worktrees/ux',
+        last_prompt: 'wire search',
+        worktree_description: 'list polish',
+      }),
+    ])
+    const chat = groups[0].chats[0]
+    expect(chatMatchesQuery(chat, 'ux', 'wire search')).toBe(true)
+    expect(chatMatchesQuery(chat, 'polish', 'wire search')).toBe(true)
+    expect(chatMatchesQuery(chat, 'wire', 'wire search')).toBe(true)
+    expect(chatMatchesQuery(chat, 'zzz', 'wire search')).toBe(false)
+    expect(chatMatchesQuery(chat, '  ', 'wire search')).toBe(true)
+  })
+})
+
+describe('chatTimeBucket', () => {
+  it('buckets today / yesterday / older', () => {
+    const now = new Date('2026-11-26T15:00:00').getTime()
+    const today = new Date('2026-11-26T09:30:00').getTime()
+    const yesterday = new Date('2026-11-25T22:00:00').getTime()
+    const week = new Date('2026-11-23T12:00:00').getTime()
+    const older = new Date('2026-10-01T12:00:00').getTime()
+    expect(chatTimeBucket(today, now)).toBe('today')
+    expect(chatTimeBucket(yesterday, now)).toBe('yesterday')
+    expect(chatTimeBucket(week, now)).toBe('weekday')
+    expect(chatTimeBucket(older, now)).toBe('date')
+    expect(formatChatClock(today, 'en')).toMatch(/\d/)
+    expect(formatChatDate(older, 'en')).toMatch(/\d/)
   })
 })
 

@@ -177,6 +177,11 @@ internal sealed partial class RuntimeWebServer : IDisposable
             return;
         }
 
+        if (HttpMethods.IsPost(context.Request.Method) && await TryHandleWebEventsAsync(context))
+        {
+            return;
+        }
+
         if (HttpMethods.IsPost(context.Request.Method) &&
             context.Request.Path.StartsWithSegments("/api/v1/actions"))
         {
@@ -204,7 +209,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
-                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot", "clients.read",
+                    "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot", "clients.read", "web.events",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },

@@ -5,6 +5,7 @@
 // carry the pairing token, is dropped).
 import { buildId } from '#/lib/pwa'
 import { remoteLink } from '#/lib/remote-link'
+import { installLocalEvents, recordLocalEvent } from '#/lib/local-events'
 
 type TraceEvent = { t: number; kind: string; data?: Record<string, unknown> }
 
@@ -77,6 +78,7 @@ export function trace(kind: string, data?: Record<string, unknown>) {
   if (typeof performance === 'undefined') return
   events.push({ t: Math.round(performance.now()), kind, data })
   if (events.length > MAX_EVENTS) events.shift()
+  recordLocalEvent(kind, data)
 }
 
 function viewport() {
@@ -163,6 +165,7 @@ const routerIndex = () =>
 export function installClientTrace() {
   if (installed || typeof window === 'undefined') return
   installed = true
+  installLocalEvents()
   try {
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries())

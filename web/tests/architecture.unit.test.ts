@@ -50,11 +50,16 @@ describe('architecture page: diagrams', () => {
 })
 
 describe('architecture page: capabilities match the source', () => {
-  it('Runtime GET endpoints', () => {
+  it('Runtime HTTP endpoints', () => {
     const source = repo(`${RUNTIME}/RuntimeWebServer.cs`)
     const routes = new Set(
       [...source.matchAll(/^\s*"(\/api\/v1\/[a-z/]+)" =>/gm)].map((m) => m[1]),
     )
+    const webEvents = repo(`${RUNTIME}/RuntimeWebServer.WebEvents.cs`)
+    for (const match of webEvents.matchAll(
+      /Request\.Path\.Equals\("(\/api\/v1\/[a-z-]+)"/g,
+    ))
+      routes.add(match[1])
     routes.add('/events') // the WebSocket, matched before the switch
     const page = names('runtime-http')
     // prefixes are separate handlers (collab / remote), listed with a placeholder

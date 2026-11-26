@@ -44,9 +44,16 @@ minutes unless a new session has taken over the same pane. In local mode,
 the detail page can read its transcript while the entry is in the attention
 archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
-inherit its original pane environment. The Web session list is an IM chat rail: one row per worktree (known brand
-avatar, including [Antigravity's official icon](https://antigravity.google/press), or generic Bot glyph for unknown agents; profile badge when not the bare family; focus session for
-open/preview); pane index still orders sessions inside a worktree.
+inherit its original pane environment. The Web session list is an IM chat rail:
+one row per worktree, with known brand avatars (including
+[Antigravity's official icon](https://antigravity.google/press)) or a generic
+Bot glyph for unknown agents. Non-default profiles retain their corner badge;
+focusing a session opens its preview. A status LED on the avatar shows waiting
+or running; the preview
+line reads like the last message (`Waiting on you · …` / `Replying…` /
+human prompt); list time is clock-today / yesterday / weekday / date; a
+top search filters by title, purpose, preview, and agent; pane index still
+orders sessions inside a worktree.
 
 ## Session RPCs
 

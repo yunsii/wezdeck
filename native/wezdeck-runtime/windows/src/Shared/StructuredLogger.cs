@@ -12,20 +12,22 @@ internal sealed class StructuredLogger
         this.config = config;
     }
 
-    public void Info(string category, string message, IDictionary<string, string?>? fields = null) => Write("info", category, message, fields);
-    public void Warn(string category, string message, IDictionary<string, string?>? fields = null) => Write("warn", category, message, fields);
-    public void Error(string category, string message, IDictionary<string, string?>? fields = null) => Write("error", category, message, fields);
+    public void Info(string category, string message, IDictionary<string, string?>? fields = null) => _ = Write("info", category, message, fields);
+    public void Warn(string category, string message, IDictionary<string, string?>? fields = null) => _ = Write("warn", category, message, fields);
+    public void Error(string category, string message, IDictionary<string, string?>? fields = null) => _ = Write("error", category, message, fields);
+    public bool TryInfo(string category, string message, IDictionary<string, string?>? fields = null) => Write("info", category, message, fields);
+    public bool TryWarn(string category, string message, IDictionary<string, string?>? fields = null) => Write("warn", category, message, fields);
 
-    private void Write(string level, string category, string message, IDictionary<string, string?>? fields)
+    private bool Write(string level, string category, string message, IDictionary<string, string?>? fields)
     {
         if (!config.Enabled || !config.CategoryEnabled || string.IsNullOrWhiteSpace(config.FilePath))
         {
-            return;
+            return false;
         }
 
         if (LevelRank(level) > LevelRank(config.Level))
         {
-            return;
+            return false;
         }
 
         lock (writeLock)
@@ -51,9 +53,11 @@ internal sealed class StructuredLogger
                 }
 
                 File.AppendAllText(config.FilePath!, line + Environment.NewLine, new UTF8Encoding(false));
+                return true;
             }
             catch
             {
+                return false;
             }
         }
     }

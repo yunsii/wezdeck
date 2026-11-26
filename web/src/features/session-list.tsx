@@ -6,13 +6,16 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { FolderGit2, Plus } from 'lucide-react'
+import { FolderGit2, Plus, Search, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 
+import { Led } from '#/components/deck/led'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
-import { AgentAvatar } from './agent-avatar'
+import { Input } from '#/components/ui/input'
+import { AgentAvatar, agentProfileBadge } from './agent-avatar'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -24,40 +27,102 @@ import { clearable, SwipeToClear } from './session-clear'
 import { NewSessionButton, requestNewSession } from './session-new'
 import { WorktreePurpose } from './session-purpose'
 import { worktreeKey } from './session-order'
-import { buildChatGroups, flattenChats } from './session-chats'
+import {
+  buildChatGroups,
+  chatMatchesQuery,
+  chatPreview,
+  chatTone,
+  flattenChats,
+} from './session-chats'
 import type { SessionChat } from './session-chats'
+import {
+  chatTimeBucket,
+  formatChatClock,
+  formatChatDate,
+  formatChatWeekday,
+} from './chat-time'
 import { directionForWorktree, useDirections } from './session-new-direction'
 import { useFrozenVisits, useStickyMembers } from './session-stable'
-import { useAgo } from './tickets-view'
 import { RowCopyButton, useCopySessionReference } from './copy-reference'
-import {
-  humanPrompt,
-  needsYou,
-  prefetchSession,
-  useSessions,
-} from './console-sessions'
+import { prefetchSession, useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 
-const ts = (iso?: number) => (iso ? new Date(iso).toISOString() : undefined)
+function useChatPreviewLabels() {
+  const { t } = useLingui()
+  return {
+    waiting: t`Waiting on you`,
+    needsConfirm: t`Needs a decision`,
+    working: t`Replying…`,
+    empty: t`No human message yet`,
+  }
+}
+
+function useChatTimeLabel() {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  return (ms?: number) => {
+    if (!ms) return ''
+    const bucket = chatTimeBucket(ms)
+    if (bucket === 'today') return formatChatClock(ms, locale)
+    if (bucket === 'yesterday') return t`Yesterday`
+    if (bucket === 'weekday') return formatChatWeekday(ms, locale)
+    return formatChatDate(ms, locale)
+  }
+}
+
+function ChatStatusDot({
+  tone,
+  hasProfileBadge,
+}: {
+  tone: ReturnType<typeof chatTone>
+  hasProfileBadge: boolean
+}) {
+  if (tone === 'idle') return null
+  return (
+    <span
+      data-testid="chat-status-dot"
+      data-tone={tone}
+      className={cn(
+        'pointer-events-none absolute',
+        hasProfileBadge ? '-bottom-0.5 -left-0.5' : '-right-0.5 -bottom-0.5',
+      )}
+    >
+      <Led
+        tone={tone === 'waiting' ? 'waiting' : 'running'}
+        size={14}
+        label={tone === 'waiting' ? 'waiting' : 'running'}
+        className={cn(
+          'rounded-full bg-brand-deck p-px',
+          tone === 'running' &&
+            'motion-safe:animate-[pulse_1.6s_ease-in-out_infinite]',
+        )}
+      />
+    </span>
+  )
+}
 
 function ChatRow({
   chat,
   selectedWorktree,
+  preview,
+  timeLabel,
 }: {
   chat: SessionChat
   selectedWorktree?: string
+  preview: string
+  timeLabel: string
 }) {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
-  const ago = useAgo()
   const wide = useIsWide()
   const copyReference = useCopySessionReference()
   const client = useQueryClient()
   const directions = useDirections(chat.repoKey)
   const row = chat.focus
+  const tone = chatTone(row)
+  const hasBadge = Boolean(agentProfileBadge(row.agent_profile, undefined))
   const warm = () => prefetchSession(client, row.id)
-  const prompt = humanPrompt(row.last_prompt)
   const selected = Boolean(selectedWorktree && selectedWorktree === chat.key)
   const newRound = (event: SyntheticEvent) => {
     event.preventDefault()
@@ -85,20 +150,27 @@ function ChatRow({
           onPointerDown={warm}
           onFocus={warm}
           className={cn(
-            'list-row flex min-h-14 items-start gap-3 px-4 py-3 pr-14',
+            'list-row flex min-h-14 items-start gap-3 px-4 py-2.5 pr-14',
             selected && 'row-selected',
           )}
         >
-          <AgentAvatar
-            agent={row.agent}
-            profile={row.agent_profile}
-            size={40}
-            className="mt-0.5"
-          />
+          <span className="relative mt-0.5 shrink-0">
+            <AgentAvatar
+              agent={row.agent}
+              profile={row.agent_profile}
+              size={40}
+            />
+            <ChatStatusDot tone={tone} hasProfileBadge={hasBadge} />
+          </span>
           <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
             <span className="flex items-baseline justify-between gap-2">
               <span className="flex min-w-0 items-baseline gap-1.5">
-                <span className="truncate text-title font-medium">
+                <span
+                  className={cn(
+                    'truncate text-title',
+                    chat.unread > 0 ? 'font-semibold' : 'font-medium',
+                  )}
+                >
                   {chat.title}
                 </span>
                 {chat.editable || chat.purpose ? (
@@ -118,13 +190,20 @@ function ChatRow({
                     {chat.unread}
                   </span>
                 ) : null}
-                <span className="text-meta text-brand-label">
-                  {ago(ts(row.ts))}
-                </span>
+                <span className="text-meta text-brand-label">{timeLabel}</span>
               </span>
             </span>
-            <span className="truncate text-caption text-brand-muted">
-              {prompt || t`No human message yet`}
+            <span
+              data-testid="chat-preview"
+              data-tone={tone}
+              className={cn(
+                'truncate text-caption',
+                tone === 'waiting' && 'text-brand-waiting',
+                tone === 'running' && 'text-brand-running',
+                tone === 'idle' && 'text-brand-muted',
+              )}
+            >
+              {preview}
             </span>
           </span>
         </Link>
@@ -159,6 +238,47 @@ export function selectedChatKey(
   return row ? worktreeKey(row) : undefined
 }
 
+function ChatSearch({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (next: string) => void
+}) {
+  const { t } = useLingui()
+  return (
+    <label className="relative min-w-0 flex-1">
+      <Search
+        size={16}
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-brand-label"
+      />
+      <Input
+        variant="field"
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t`Search sessions`}
+        aria-label={t`Search sessions`}
+        data-testid="chat-search"
+        className="h-9 min-h-9 w-full pl-8 pr-8 text-caption"
+      />
+      {value ? (
+        <Button
+          type="button"
+          variant="plain"
+          size="none"
+          aria-label={t`Clear search`}
+          onClick={() => onChange('')}
+          className="absolute top-1/2 right-1 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-brand-muted"
+        >
+          <X size={14} aria-hidden />
+        </Button>
+      ) : null}
+    </label>
+  )
+}
+
 export function SessionList({
   selected,
   split = false,
@@ -168,22 +288,44 @@ export function SessionList({
   const phone = consoleVisits()
   const rows = useFrozenVisits(sessions.data?.sessions ?? [], phone)
   const groups = buildChatGroups(rows, phone)
+  const previewLabels = useChatPreviewLabels()
+  const timeOf = useChatTimeLabel()
+  const [query, setQuery] = useState('')
+
+  const previewOf = (chat: SessionChat) =>
+    chatPreview(chat.focus, previewLabels)
+
   // unread set sticky: clearing one does not reshuffle the rest mid-pass
   const unreadKeys = flattenChats(groups)
     .filter((c) => c.unread > 0)
     .map((c) => c.key)
   const keptUnread = useStickyMembers('chats-unread', unreadKeys)
-  const painted = groups.map((repo) => ({
-    ...repo,
-    chats: [...repo.chats].sort((a, b) => {
-      const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
-      const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
-      if (au !== bu) return bu - au
-      return b.activity - a.activity || b.visit - a.visit
-    }),
-  }))
+
+  const painted = useMemo(() => {
+    return groups
+      .map((repo) => {
+        const chats = repo.chats
+          .filter((chat) =>
+            chatMatchesQuery(
+              chat,
+              query,
+              chatPreview(chat.focus, previewLabels),
+            ),
+          )
+          .sort((a, b) => {
+            const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
+            const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
+            if (au !== bu) return bu - au
+            return b.activity - a.activity || b.visit - a.visit
+          })
+        return { ...repo, chats }
+      })
+      .filter((repo) => repo.chats.length > 0)
+  }, [groups, query, keptUnread, previewLabels])
+
   const selectedWorktree = selectedChatKey(selected, rows)
   const empty = painted.every((repo) => repo.chats.length === 0)
+  const searching = query.trim().length > 0
 
   const title = (
     <h1 className="hidden text-body font-semibold md:block">
@@ -191,9 +333,9 @@ export function SessionList({
     </h1>
   )
   const headActions = (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex min-w-0 items-center gap-2">
       {split ? null : title}
-      <div className="flex-1" />
+      <ChatSearch value={query} onChange={setQuery} />
       <NewSessionButton />
     </div>
   )
@@ -212,6 +354,20 @@ export function SessionList({
       {empty ? (
         sessions.isError ? null : sessions.isPending ? (
           <SessionListSkeleton />
+        ) : searching ? (
+          <div className="rounded-xl bg-brand-surface px-4 py-10 text-center">
+            <p className="text-caption text-brand-muted">
+              {t`No sessions match that search.`}
+            </p>
+            <Button
+              type="button"
+              variant="plain"
+              className="mt-3 min-h-11 px-3 text-caption text-brand-running"
+              onClick={() => setQuery('')}
+            >
+              {t`Clear search`}
+            </Button>
+          </div>
         ) : (
           <p className="rounded-xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
             {t`No agent sessions are running.`}
@@ -240,7 +396,12 @@ export function SessionList({
                     className="border-b border-brand-edge last:border-b-0"
                     data-worktree={chat.title}
                   >
-                    <ChatRow chat={chat} selectedWorktree={selectedWorktree} />
+                    <ChatRow
+                      chat={chat}
+                      selectedWorktree={selectedWorktree}
+                      preview={previewOf(chat)}
+                      timeLabel={timeOf(chat.focus.ts)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -256,8 +417,9 @@ export function SessionList({
       <SplitColumn
         label={t`Agent sessions`}
         head={
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             {title}
+            <ChatSearch value={query} onChange={setQuery} />
             <NewSessionButton />
           </div>
         }
@@ -287,4 +449,4 @@ export const useSessionFilter = (): [
 export const readSessionFilter = (): SessionFilter => 'all'
 
 // re-export for switcher / tests that counted waiting sessions
-export { needsYou }
+export { needsYou } from './console-sessions'

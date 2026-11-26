@@ -433,6 +433,24 @@ export async function hasLocalWrite() {
   return Boolean(local?.health.capabilities.includes('remote.write'))
 }
 
+/** Best-effort, bounded diagnostics from a page using the loopback Runtime. */
+export async function postLocalEvents(events: Array<unknown>, dropped: number) {
+  const local = await probeRuntimeCached()
+  if (!local?.health.capabilities.includes('web.events')) return false
+  await requestJson(
+    local.baseUrl,
+    '/api/v1/web-events',
+    (value) => value,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ events, dropped }),
+    },
+    3_000,
+  )
+  return true
+}
+
 /**
  * Writes into sessions and tickets. On this computer, through the local
  * Runtime (POST /api/v1/remote/<action>): loopback, origin-checked, no device
@@ -445,7 +463,8 @@ export async function hostWrite(
 ): Promise<unknown> {
   const local = await probeRuntimeCached()
   if (!local?.health.capabilities.includes('remote.write')) {
-    return remoteLink.write(action, args)
+    const { client_op: _localOperation, ...remoteArgs } = args
+    return remoteLink.write(action, remoteArgs)
   }
   const result = await requestJson(
     local.baseUrl,
