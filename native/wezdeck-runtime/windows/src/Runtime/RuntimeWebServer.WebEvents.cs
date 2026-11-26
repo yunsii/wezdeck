@@ -25,6 +25,14 @@ internal sealed partial class RuntimeWebServer
     private readonly object webEventsLock = new();
     private StructuredLogger? webEventsLogger;
 
+    private string WebEventsLogPath()
+    {
+        var helperPath = string.IsNullOrWhiteSpace(config.Diagnostics.FilePath)
+            ? Path.Combine(config.RuntimeDir, "logs", "helper.log")
+            : config.Diagnostics.FilePath;
+        return Path.Combine(Path.GetDirectoryName(helperPath) ?? Path.Combine(config.RuntimeDir, "logs"), "web-client.log");
+    }
+
     private async Task<bool> TryHandleWebEventsAsync(HttpContext context)
     {
         if (!context.Request.Path.Equals("/api/v1/web-events", StringComparison.OrdinalIgnoreCase)) return false;
@@ -57,7 +65,7 @@ internal sealed partial class RuntimeWebServer
                 {
                     Enabled = true,
                     CategoryEnabled = true,
-                    FilePath = Path.Combine(config.RuntimeDir, "logs", "web-client.log"),
+                    FilePath = WebEventsLogPath(),
                     MaxBytes = 1 << 20,
                     MaxFiles = 3,
                 });
