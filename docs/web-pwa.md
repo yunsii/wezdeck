@@ -128,9 +128,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    scroll. Wide, both lists are a `SplitColumn`
    (`components/deck/split-column.tsx`): the title, status filter and search
    sit in a fixed head above a divider and only the list below scrolls via
-   OverlayScrollbars (`overlay-scroll.tsx`: hover-show, no layout-width
-   gutter so the column does not jitter); the pane beside is flat with the
-   column divider as its left edge (no card).
+   OverlayScrollbars on fine-pointer desktops (`overlay-scroll.tsx`; touch
+   keeps native overflow); the pane beside is flat with the column divider
+   as its left edge (no card).
    工单's run / cache / cost band opens from the head in a dialog. Session
    groups carry icons: repo `FolderGit2`, worktree `GitFork`.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx). Both
