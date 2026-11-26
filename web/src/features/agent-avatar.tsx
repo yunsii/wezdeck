@@ -1,12 +1,25 @@
-// Chat-list avatar: the agent's brand mark (icons under public/icons/agents/)
+// Chat-list avatar: official brand marks under public/icons/agents/
+// (claude.ai app icon, ChatGPT touch icon, x.ai favicon, kimi.com PWA icon)
 // with an optional corner badge for a non-default managed profile
-// (claude_kimi → Kimi, claude_sub2api → gateway). Unread sits elsewhere on
-// the row; this only identifies who is speaking.
+// (claude_kimi → Kimi, claude_sub2api → gateway).
 import { cn } from '#/lib/utils'
 
 const ICONS = '/icons/agents'
 
 export type AgentFamily = 'claude' | 'codex' | 'grok' | 'agent'
+
+/** official raster marks */
+const AVATAR_SRC: Record<AgentFamily, string> = {
+  claude: `${ICONS}/claude.png`,
+  codex: `${ICONS}/codex.png`,
+  grok: `${ICONS}/grok.png`,
+  agent: `${ICONS}/agent.png`,
+}
+
+const BADGE_SRC: Record<'kimi' | 'gateway', string> = {
+  kimi: `${ICONS}/kimi.png`,
+  gateway: `${ICONS}/gateway.png`,
+}
 
 /** family for the main mark: prefer the live agent, else the profile prefix */
 export function agentFamily(agent?: string, profile?: string): AgentFamily {
@@ -73,22 +86,22 @@ export function AgentAvatar({
       style={{ width: size, height: size }}
     >
       <img
-        src={`${ICONS}/${family}.svg`}
+        src={AVATAR_SRC[family]}
         alt=""
         width={size}
         height={size}
         draggable={false}
-        className="size-full rounded-full"
+        className="size-full rounded-full object-cover"
       />
       {badge ? (
         <img
-          src={`${ICONS}/${badge}.svg`}
+          src={BADGE_SRC[badge]}
           alt=""
           width={badgePx}
           height={badgePx}
           draggable={false}
           data-testid="agent-avatar-badge"
-          className="absolute -right-0.5 -bottom-0.5 rounded-full ring-2 ring-brand-deck"
+          className="absolute -right-0.5 -bottom-0.5 rounded-full object-cover ring-2 ring-brand-deck"
           style={{ width: badgePx, height: badgePx }}
         />
       ) : null}
