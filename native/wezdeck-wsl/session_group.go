@@ -188,14 +188,13 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	}
 	// Check before stopping the last agent so the user can still ask it to
 	// review or preserve local changes. The checkout lock also covers starts.
+	otherPane := false
 	if tree != repo {
-		otherAgent, otherPane, err := checkoutOtherPanes(entry, tree)
+		otherAgent, pane, err := checkoutOtherPanes(entry, tree)
 		if err != nil {
 			return nil, err
 		}
-		if request.Force && otherPane {
-			return nil, errors.New("another pane is using this worktree")
-		}
+		otherPane = pane
 		if !otherAgent {
 			switch state := sessionWorktreeStatus(tree); state {
 			case "dirty":
@@ -231,7 +230,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	if tree != repo {
 		outcome = "in_use"
 		paths, err := tmuxCmd(entry.TmuxSocket, "list-panes", "-a", "-F", "#{pane_start_path}").Output()
-		if err != nil || !strings.Contains("\n"+string(paths), "\n"+tree+"\n") {
+		if !otherPane && (err != nil || !strings.Contains("\n"+string(paths), "\n"+tree+"\n")) {
 			outcome = reclaimSessionWorktree(repo, tree, request.Force)
 		}
 	}
