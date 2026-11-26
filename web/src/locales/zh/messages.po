@@ -360,11 +360,11 @@ msgstr "外观"
 msgid "Approve"
 msgstr "批准"
 
-#: src/features/session-elicitation.tsx:206
+#: src/features/session-elicitation.tsx:195
 msgid "Approve plan"
 msgstr "批准计划"
 
-#: src/features/session-elicitation.tsx:228
+#: src/features/session-elicitation.tsx:217
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
@@ -862,8 +862,8 @@ msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
 #: src/features/session-elicitation.tsx:176
-msgid "Current plan"
-msgstr "当前计划"
+#~ msgid "Current plan"
+#~ msgstr "当前计划"
 
 #: src/features/console-shared.tsx:349
 msgid "Current sample is from the foreground WezTerm window."
@@ -1629,7 +1629,7 @@ msgstr "无 Origin（脚本、curl 或其他程序）"
 msgid "No output yet"
 msgstr "还没有输出"
 
-#: src/features/session-elicitation.tsx:196
+#: src/features/session-elicitation.tsx:185
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
@@ -1861,7 +1861,7 @@ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
-#: src/features/session-elicitation.tsx:190
+#: src/features/session-elicitation.tsx:179
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
@@ -1934,7 +1934,7 @@ msgstr "快捷键"
 msgid "Quiet for over a week ({count})"
 msgstr "一周以上没动静（{count}）"
 
-#: src/features/session-elicitation.tsx:224
+#: src/features/session-elicitation.tsx:213
 msgid "Quit plan"
 msgstr "退出计划"
 
@@ -2066,7 +2066,7 @@ msgstr "仓库根目录"
 msgid "Request access"
 msgstr "申请授权"
 
-#: src/features/session-elicitation.tsx:215
+#: src/features/session-elicitation.tsx:204
 msgid "Request changes"
 msgstr "请修改"
 

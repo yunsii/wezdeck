@@ -4,8 +4,8 @@
 // offered here.
 import { useLingui } from '@lingui/react/macro'
 import { Button } from '#/components/ui/button'
-import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
+import { ChatMarkdown } from './chat-markdown'
 import { AskCard } from './session-ask-claude'
 import type { Detail } from './console-sessions'
 import { PermissionCard } from './session-permission'
@@ -167,20 +167,9 @@ export function SessionPlanReview({
   onKey: (key: string) => void
 }) {
   const { t } = useLingui()
-  if (!excerpt && !awaitingApproval) return null
-  if (!awaitingApproval) {
-    return (
-      <Disclosure
-        className="rounded-2xl bg-brand-surface px-3"
-        triggerClassName="font-medium"
-        title={t`Current plan`}
-      >
-        <pre className="mb-3 max-h-56 overflow-auto font-mono text-meta leading-snug whitespace-pre-wrap text-brand-muted">
-          {excerpt}
-        </pre>
-      </Disclosure>
-    )
-  }
+  // Only while the TUI is on the plan-approval bar — not while plan.md is
+  // still being written under plan mode Active.
+  if (!awaitingApproval) return null
   return (
     <div
       className="grid gap-3 rounded-2xl border border-brand-running/40 bg-brand-running/10 p-3"
@@ -189,9 +178,9 @@ export function SessionPlanReview({
     >
       <p className="text-body font-medium">{t`Plan ready for review`}</p>
       {excerpt ? (
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-xl bg-brand-deck p-3 font-mono text-meta leading-snug text-brand-muted">
-          {excerpt}
-        </pre>
+        <div className="max-h-96 overflow-y-auto rounded-xl bg-brand-deck px-3 py-2">
+          <ChatMarkdown text={excerpt} />
+        </div>
       ) : (
         <p className="text-caption text-brand-muted">{t`No plan written yet`}</p>
       )}
@@ -252,16 +241,10 @@ export function PromptPanels({
   // Host gates elicitation / plan.awaiting_approval on attention waiting;
   // also hide here so a stale poll cache after Ctrl+C cannot keep the card.
   const waiting = data?.status === 'waiting' || Boolean(data?.waiting_kind)
-  const midTurn = waiting || data?.status === 'running'
   const elicitation = waiting ? data?.elicitation : undefined
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
+  // Plan card only when the TUI is on the approval bar (not while writing).
   const planReview = waiting && Boolean(data?.plan?.awaiting_approval)
-  // 「当前计划」 excerpt is for peeking while planning / reviewing — not
-  // under 已完成 with a leftover plan.md after plan mode ends.
-  const planExcerpt =
-    (planReview || midTurn) && data?.plan?.excerpt
-      ? data.plan.excerpt
-      : undefined
   return (
     <div
       aria-busy={sending}
@@ -276,10 +259,10 @@ export function PromptPanels({
           sendKey={onKey}
         />
       ) : null}
-      {!asking && (planExcerpt || planReview) ? (
+      {!asking && planReview ? (
         <SessionPlanReview
-          excerpt={planExcerpt}
-          awaitingApproval={planReview}
+          excerpt={data?.plan?.excerpt}
+          awaitingApproval
           disabled={!canWrite}
           onKey={(key) => void onKey(key)}
         />

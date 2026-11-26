@@ -349,6 +349,23 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	}
 }
 
+func TestReplacementForArchivedUsesPaneWhenClearedToMissing(t *testing.T) {
+	recent := []recentEntry{{attentionEntry: attentionEntry{
+		SessionID:  "old-session",
+		TmuxSocket: "/tmp/wezdeck.sock",
+		TmuxPane:   "%7",
+	}}}
+	entries := map[string]attentionEntry{
+		"new-session": {SessionID: "new-session", TmuxSocket: "/tmp/wezdeck.sock", TmuxPane: "%7"},
+	}
+	if got := replacementForArchived("old-session", recent, entries); got != "new-session" {
+		t.Fatalf("want pane replacement, got %q", got)
+	}
+	if got := replacementForArchived("other-session", recent, entries); got != "" {
+		t.Fatalf("unrelated session must not be replaced, got %q", got)
+	}
+}
+
 func TestSessionFocusLiveEntry(t *testing.T) {
 	if got := sessionFocus("live-1", attentionEntry{SessionID: "live-1", Status: "running"}); !reflect.DeepEqual(got, map[string]any{"session_id": "live-1"}) {
 		t.Fatalf("live focus: %#v", got)
@@ -410,23 +427,27 @@ func TestPendingGrokPlanApprovalRespectsPlanModeFile(t *testing.T) {
 	}
 }
 
-func TestPendingGrokPlanHidesExcerptWhenPlanModeInactive(t *testing.T) {
+func TestPendingGrokPlanOnlyWhileAwaitingApproval(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")
 	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
-	_ = os.WriteFile(filepath.Join(dir, "plan.md"), []byte("# leftover plan\n\nstill on disk\n"), 0o600)
-	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
-		`{"state":"Inactive","awaiting_plan_approval":false}`,
-	), 0o600)
-	if got := (grokAdapter{}).PendingPlan(chat); got != nil {
-		t.Fatalf("Inactive plan mode must not surface leftover plan.md: %#v", got)
-	}
+	_ = os.WriteFile(filepath.Join(dir, "plan.md"), []byte("# draft plan\n\nstill writing\n"), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "updates.jsonl"), []byte("{}\n"), 0o600)
 	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
 		`{"state":"Active","awaiting_plan_approval":false}`,
 	), 0o600)
+	if got := (grokAdapter{}).PendingPlan(chat); got != nil {
+		t.Fatalf("Active but not awaiting must not surface plan.md early: %#v", got)
+	}
+	_ = os.WriteFile(filepath.Join(dir, "updates.jsonl"), []byte(
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"plan-1","title":"exit_plan_mode"}}}`+"\n",
+	), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
+		`{"state":"Active","awaiting_plan_approval":true}`,
+	), 0o600)
 	got := (grokAdapter{}).PendingPlan(chat)
-	if got == nil || got["excerpt"] == nil || got["awaiting_approval"] != nil {
-		t.Fatalf("Active plan mode should show excerpt only: %#v", got)
+	if got == nil || got["awaiting_approval"] != true || got["excerpt"] == nil {
+		t.Fatalf("awaiting approval should surface plan: %#v", got)
 	}
 }
 

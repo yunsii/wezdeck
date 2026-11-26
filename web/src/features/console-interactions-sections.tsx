@@ -212,8 +212,8 @@ function promptSections(
       tags: ['grok'],
       title: { zh: 'Grok 计划审阅', en: 'Grok plan review' },
       source: {
-        zh: '旁边的 plan.md 与未完成的 exit_plan_mode（agent_grok.go）',
-        en: 'Sibling plan.md and an open exit_plan_mode (agent_grok.go)',
+        zh: '仅 exit_plan_mode 审阅中才下发 plan.md（agent_grok.go）；正文用 Markdown 渲染',
+        en: 'plan.md only while exit_plan_mode review is open (agent_grok.go); body rendered as Markdown',
       },
       keys: {
         zh: 'a 批准 · s 要求修改 · q 退出',

@@ -360,11 +360,11 @@ msgstr "Appearance"
 msgid "Approve"
 msgstr "Approve"
 
-#: src/features/session-elicitation.tsx:206
+#: src/features/session-elicitation.tsx:195
 msgid "Approve plan"
 msgstr "Approve plan"
 
-#: src/features/session-elicitation.tsx:228
+#: src/features/session-elicitation.tsx:217
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
@@ -862,8 +862,8 @@ msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
 #: src/features/session-elicitation.tsx:176
-msgid "Current plan"
-msgstr "Current plan"
+#~ msgid "Current plan"
+#~ msgstr "Current plan"
 
 #: src/features/console-shared.tsx:349
 msgid "Current sample is from the foreground WezTerm window."
@@ -1629,7 +1629,7 @@ msgstr "No Origin (script, curl, another app)"
 msgid "No output yet"
 msgstr "No output yet"
 
-#: src/features/session-elicitation.tsx:196
+#: src/features/session-elicitation.tsx:185
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
@@ -1861,7 +1861,7 @@ msgstr "Pick a session on the left. j / k move through the list."
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
-#: src/features/session-elicitation.tsx:190
+#: src/features/session-elicitation.tsx:179
 msgid "Plan ready for review"
 msgstr "Plan ready for review"
 
@@ -1934,7 +1934,7 @@ msgstr "Quick keys"
 msgid "Quiet for over a week ({count})"
 msgstr "Quiet for over a week ({count})"
 
-#: src/features/session-elicitation.tsx:224
+#: src/features/session-elicitation.tsx:213
 msgid "Quit plan"
 msgstr "Quit plan"
 
@@ -2066,7 +2066,7 @@ msgstr "Repository root"
 msgid "Request access"
 msgstr "Request access"
 
-#: src/features/session-elicitation.tsx:215
+#: src/features/session-elicitation.tsx:204
 msgid "Request changes"
 msgstr "Request changes"
 

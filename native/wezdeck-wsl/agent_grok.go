@@ -350,20 +350,15 @@ func (t *transcript) feedGrok(raw []byte) {
 // unanswered Ask may outlive a flaky waiting flag.
 func (grokAdapter) PendingAsk(path, _ string) *elicitation { return pendingGrokElicitation(path) }
 func (grokAdapter) PendingPlan(path string) map[string]any {
-	plan := map[string]any{}
-	awaiting := pendingGrokPlanApproval(path)
-	if awaiting {
-		plan["awaiting_approval"] = true
-	}
-	// plan.md often survives after plan mode ends; only surface the excerpt
-	// while reviewing or while plan mode is still Active — otherwise the web
-	// keeps a 「当前计划」 disclosure under 已完成 with leftover text.
-	mode := grokPlanModeFile(path)
-	if excerpt := grokPlanExcerpt(path, 2500); excerpt != "" && (awaiting || mode.Active) {
-		plan["excerpt"] = excerpt
-	}
-	if len(plan) == 0 {
+	// Match the Grok TUI: only surface plan.md when exit_plan_mode opened
+	// review (awaiting approval). plan mode Active while the agent is still
+	// writing must not flash 「当前计划」 on the web ahead of the terminal.
+	if !pendingGrokPlanApproval(path) {
 		return nil
+	}
+	plan := map[string]any{"awaiting_approval": true}
+	if excerpt := grokPlanExcerpt(path, 8000); excerpt != "" {
+		plan["excerpt"] = excerpt
 	}
 	return plan
 }
