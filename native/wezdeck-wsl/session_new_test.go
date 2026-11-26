@@ -112,6 +112,18 @@ func TestAgyTrustRequiresVisiblePromptAndExplicitConfirmation(t *testing.T) {
 	if !agyTrustPrompt("Do you trust the contents of this project?\n> Yes, I trust this folder\n  No, exit") {
 		t.Fatal("Agy trust screen was not detected")
 	}
+	if kind, keys := detectWorkspaceTrustPrompt("Do you trust the contents of this project?\n> Yes, I trust this folder\n  No, exit"); kind != "agy" || strings.Join(keys, ",") != "Enter" {
+		t.Fatalf("agy selected-yes keys: kind=%q keys=%v", kind, keys)
+	}
+	if kind, keys := detectWorkspaceTrustPrompt("Do you trust the contents of this project?\n  Yes, I trust this folder\n> No, exit"); kind != "agy" || strings.Join(keys, ",") != "Up,Enter" {
+		t.Fatalf("agy selected-no keys: kind=%q keys=%v", kind, keys)
+	}
+	if kind, keys := detectWorkspaceTrustPrompt("Quick safety check: Is this a project you created or one you trust?\n❯ 1. Yes, I trust this folder"); kind != "claude" || strings.Join(keys, ",") != "Enter" {
+		t.Fatalf("claude trust prompt: kind=%q keys=%v", kind, keys)
+	}
+	if kind, keys := detectWorkspaceTrustPrompt("Do you trust the contents of this directory?\n1. Yes, continue"); kind != "codex" || strings.Join(keys, ",") != "Enter" {
+		t.Fatalf("codex trust prompt: kind=%q keys=%v", kind, keys)
+	}
 	if agyTrustPrompt("Welcome to Antigravity CLI") {
 		t.Fatal("ordinary Agy screen was treated as a trust prompt")
 	}
@@ -120,6 +132,68 @@ func TestAgyTrustRequiresVisiblePromptAndExplicitConfirmation(t *testing.T) {
 	}
 	if _, err := approveNewSessionTrust(json.RawMessage(`{"job":"missing","confirm":true}`)); err == nil || !strings.Contains(err.Error(), "no pending") {
 		t.Fatalf("trust without pending job: %v", err)
+	}
+}
+
+func TestNewSessionAutoConfirmsTrustAndCapturesSessionID(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux missing")
+	}
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 missing")
+	}
+	repo, socket := newSessionFixture(t)
+	attPath := os.Getenv("WEZDECK_ATTENTION_FILE")
+	agentPy := filepath.Join(t.TempDir(), "fake_agent.py")
+	pyBody := `import json, os, subprocess, sys
+socket, att = sys.argv[1], sys.argv[2]
+sys.stdout.write("Quick safety check: Is this a project you created or one you trust?\n❯ 1. Yes, I trust this folder\n  2. No, exit\n")
+sys.stdout.flush()
+sys.stdin.readline()
+sys.stdout.write("\033[2J\033[HClaude ready\n")
+sys.stdout.flush()
+msg = sys.stdin.readline().strip()
+sys.stdout.write(f"GOT:{msg}\n")
+sys.stdout.flush()
+pane = subprocess.check_output(["tmux", "-S", socket, "display-message", "-p", "-t", "fake", "#{pane_id}"], text=True).strip()
+with open(att, "w", encoding="utf-8") as f:
+    json.dump({"entries": {"sess-auto-1": {"session_id": "sess-auto-1", "tmux_socket": socket, "tmux_pane": pane, "status": "running"}}}, f)
+for _ in sys.stdin:
+    pass
+`
+	if err := os.WriteFile(agentPy, []byte(pyBody), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	fake := filepath.Join(t.TempDir(), "fake-trust-agent")
+	script := `#!/usr/bin/env bash
+set -e
+tmux -S ` + socket + ` new-session -d -s fake -x 100 -y 20 "python3 ` + agentPy + ` ` + socket + ` ` + attPath + `"
+echo "branch_name=dev/${5}"
+echo "worktree_path=$PWD/.worktrees/$5"
+echo "window_id=$(tmux -S ` + socket + ` display-message -p -t fake '#{window_id}')"
+echo "tmux_socket=` + socket + `"
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_SESSION_NEW_CMD", fake)
+	// Omit agent_profile (repository default) to prove trust handling does not
+	// depend on an explicit agent_profile=="agy".
+	raw, _ := json.Marshal(map[string]string{"repo": repo, "name": "auto", "prompt": "run the check"})
+	res, err := startNewSession(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	j := waitJob(t, res.(map[string]any)["job"].(string))
+	if j.Stage != "done" {
+		t.Fatalf("job failed: %+v", j)
+	}
+	if j.SessionID != "sess-auto-1" {
+		t.Fatalf("expected session_id=sess-auto-1, got %+v", j)
+	}
+	screen, _ := exec.Command("tmux", "-S", socket, "capture-pane", "-p", "-t", "fake").Output()
+	if !strings.Contains(string(screen), "GOT:run the check") {
+		t.Fatalf("first message did not reach agent after trust confirm:\n%s", screen)
 	}
 }
 

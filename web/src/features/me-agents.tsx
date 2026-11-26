@@ -1,5 +1,5 @@
 import { useLingui } from '@lingui/react/macro'
-import { ArrowLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Hash } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -9,6 +9,7 @@ import { cn } from '#/lib/utils'
 import { AgentAvatar } from './agent-avatar'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import { AgentDetail } from './me-agent-detail'
+import { CopyKey, useCopyAgentReference } from './copy-reference'
 
 export function AgentsPage() {
   const { t } = useLingui()
@@ -19,6 +20,7 @@ export function AgentsPage() {
   const desktop = useMediaQuery('(min-width: 1024px)', false)
   const rows = profiles.data?.profiles ?? []
   const selected = rows.find((profile) => profile.id === picked) ?? rows[0]
+  const copyReference = useCopyAgentReference(rows)
 
   if (profiles.isError)
     return (
@@ -30,6 +32,9 @@ export function AgentsPage() {
 
   return (
     <div className="min-w-0" data-testid="agents-page">
+      {rows.length > 0 && (desktop || mobileDetail) ? (
+        <CopyKey id={selected.id} copy={copyReference} />
+      ) : null}
       <div
         className={cn(
           'mb-4 grid gap-1.5',
@@ -53,7 +58,7 @@ export function AgentsPage() {
           ]}
         />
       </div>
-      <div className="grid min-h-[26rem] min-w-0 lg:grid-cols-[minmax(180px,210px)_minmax(0,1fr)] lg:border-t lg:border-brand-edge">
+      <div className="grid min-h-[26rem] min-w-0 lg:grid-cols-[minmax(180px,240px)_minmax(0,1fr)] lg:border-t lg:border-brand-edge">
         <div
           className={cn(
             'min-w-0 lg:border-r lg:border-brand-edge lg:pr-3',
@@ -65,37 +70,58 @@ export function AgentsPage() {
           ) : (
             <div className="grid content-start" aria-label={t`Agents`}>
               {rows.map((profile) => (
-                <Button
+                <div
                   key={profile.id}
-                  variant="plain"
-                  size="none"
-                  type="button"
-                  aria-current={selected.id === profile.id ? 'true' : undefined}
-                  data-agent-profile={profile.id}
-                  onClick={() => {
-                    setPicked(profile.id)
-                    setMobileDetail(true)
-                  }}
                   className={cn(
-                    'flex min-h-14 w-full min-w-0 items-center gap-2.5 border-b border-brand-edge px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-                    selected.id === profile.id
-                      ? 'bg-brand-soft text-brand-text'
-                      : 'text-brand-muted',
+                    'flex min-w-0 items-center border-b border-brand-edge',
+                    selected.id === profile.id && 'bg-brand-soft',
                   )}
                 >
-                  <AgentAvatar profile={profile.id} size={36} />
-                  <span className="min-w-0 flex-1 truncate text-body">
-                    {profile.label}
-                  </span>
-                  {profile.id === 'claude_kimi' && !profile.configured ? (
-                    <span className="shrink-0 text-meta text-brand-label">{t`Not configured`}</span>
-                  ) : null}
-                  <ChevronRight
-                    size={16}
-                    aria-hidden
-                    className="shrink-0 text-brand-label lg:hidden"
-                  />
-                </Button>
+                  <Button
+                    variant="plain"
+                    size="none"
+                    type="button"
+                    aria-current={
+                      selected.id === profile.id ? 'true' : undefined
+                    }
+                    data-agent-profile={profile.id}
+                    onClick={() => {
+                      setPicked(profile.id)
+                      setMobileDetail(true)
+                    }}
+                    className={cn(
+                      'flex min-h-14 min-w-0 flex-1 items-center gap-2.5 px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+                      selected.id === profile.id
+                        ? 'text-brand-text'
+                        : 'text-brand-muted',
+                    )}
+                  >
+                    <AgentAvatar profile={profile.id} size={36} />
+                    <span className="min-w-0 flex-1 truncate text-body">
+                      {profile.label}
+                    </span>
+                    {profile.id === 'claude_kimi' && !profile.configured ? (
+                      <span className="shrink-0 text-meta text-brand-label">{t`Not configured`}</span>
+                    ) : null}
+                    <ChevronRight
+                      size={16}
+                      aria-hidden
+                      className="shrink-0 text-brand-label lg:hidden"
+                    />
+                  </Button>
+                  <Button
+                    variant="plain"
+                    size="none"
+                    type="button"
+                    aria-label={`${t`Copy reference`}: ${profile.label}`}
+                    title={t`Copy reference`}
+                    data-testid="agent-copy-reference"
+                    onClick={() => void copyReference(profile.id)}
+                    className="mr-1 grid size-10 shrink-0 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running lg:size-8"
+                  >
+                    <Hash size={16} aria-hidden />
+                  </Button>
+                </div>
               ))}
             </div>
           )}
@@ -118,7 +144,11 @@ export function AgentsPage() {
             </Button>
           ) : null}
           {rows.length > 0 ? (
-            <AgentDetail key={selected.id} profile={selected} />
+            <AgentDetail
+              key={selected.id}
+              profile={selected}
+              onCopy={() => void copyReference(selected.id)}
+            />
           ) : (
             <div className="min-h-[24rem]" aria-hidden />
           )}

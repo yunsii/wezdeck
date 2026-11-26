@@ -1,9 +1,13 @@
 // IM left rail: one chat row per workstation (worktree path). Sessions stay
 // the detail route; opening a chat resolves which session to show. Pure +
 // unit-tested — session-list.tsx only renders.
-import { humanPrompt, needsYou } from './console-sessions'
 import {
-  inRunning,
+  humanPrompt,
+  isDoneUnread,
+  needsAttention,
+  needsYou,
+} from './console-sessions'
+import {
   isWorkstation,
   repoName,
   visitOf,
@@ -13,23 +17,18 @@ import {
 import type { SessionCard } from './session-card'
 
 /** Row tone for preview colour / status LED. */
-export type ChatTone = 'waiting' | 'running' | 'idle'
+export type ChatTone = 'waiting' | 'done' | 'running' | 'idle'
 
 export function chatTone(
-  focus: Pick<
-    SessionCard,
-    'status' | 'running_kind' | 'waiting_kind' | 'ts' | 'last_prompt'
-  >,
-  now = Date.now(),
+  focus: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
+  _now = Date.now(),
 ): ChatTone {
   if (needsYou(focus)) return 'waiting'
-  // A fresh pane gets a recent ts before its first prompt. That is not a
-  // just-finished turn, so RECENT_MS must not paint it as "Replying…" (or
-  // make it the chat's running focus). A host-reported running state still
-  // wins: the first prompt may be on its way before the transcript shows it.
-  if (focus.status !== 'running' && !humanPrompt(focus.last_prompt))
-    return 'idle'
-  if (inRunning(focus, now)) return 'running'
+  if (isDoneUnread(focus)) return 'done'
+  // Strict host status only. inRunning() also treats idle/recent-ts as
+  // "运行中" for ~3 minutes (legacy filter grace); after a done seen-ack the
+  // row becomes idle with a fresh ts and would falsely stay "运行中".
+  if (focus.status === 'running') return 'running'
   return 'idle'
 }
 
@@ -45,6 +44,7 @@ export function chatPreview(
   labels: {
     waiting: string
     needsConfirm: string
+    done: string
     working: string
     empty: string
   },
@@ -56,6 +56,9 @@ export function chatPreview(
     return prompt
       ? `${labels.waiting} · ${prompt}`
       : `${labels.waiting} · ${labels.needsConfirm}`
+  }
+  if (tone === 'done') {
+    return prompt ? `${labels.done} · ${prompt}` : labels.done
   }
   if (tone === 'running') {
     return prompt ? `${labels.working} · ${prompt}` : labels.working
@@ -120,19 +123,21 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
   return workstationLabel(base) || wtKey
 }
 
-/** which session a chat opens: waiting → running → newest activity */
+/** which session a chat opens: waiting → done → running → newest activity */
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
   phone: Record<string, number> = {},
-  now = Date.now(),
+  _now = Date.now(),
 ): SessionCard | undefined {
   if (!sessions.length) return undefined
   const byVisit = (a: SessionCard, b: SessionCard) =>
     visitOf(b, phone) - visitOf(a, phone) || b.ts - a.ts
   const waiting = sessions.filter(needsYou).sort(byVisit)
   if (waiting[0]) return waiting[0]
+  const done = sessions.filter(isDoneUnread).sort(byVisit)
+  if (done[0]) return done[0]
   const running = sessions
-    .filter((row) => chatTone(row, now) === 'running')
+    .filter((row) => row.status === 'running')
     .sort(byVisit)
   if (running[0]) return running[0]
   return [...sessions].sort((a, b) => b.ts - a.ts || byVisit(a, b))[0]
@@ -190,7 +195,7 @@ export function buildChatGroups(
       )
       const focus = resolveChatFocus(ordered, phone, now)
       if (!focus) continue
-      const unread = ordered.filter(needsYou).length
+      const unread = ordered.filter(needsAttention).length
       // prefer frozen `visited` from useFrozenVisits so a click does not
       // lift the chat (visitOf would max with a fresh phone visit)
       const visit = Math.max(
@@ -240,11 +245,11 @@ export function flattenChats(groups: Array<ChatRepoGroup>): Array<SessionChat> {
   return groups.flatMap((repo) => repo.chats)
 }
 
-/** tab badge: how many chats wait on you */
+/** tab badge: chats waiting on you, or done and not yet seen */
 export function unreadChatCount(rows: Array<SessionCard>): number {
   const keys = new Set<string>()
   for (const row of rows) {
-    if (needsYou(row)) keys.add(worktreeKey(row))
+    if (needsAttention(row)) keys.add(worktreeKey(row))
   }
   return keys.size
 }

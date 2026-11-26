@@ -1,6 +1,7 @@
 // covers: web/src/features/me-agents.tsx
 // covers: web/src/features/me-agent-detail.tsx
 // covers: web/src/features/agent-profiles.ts
+// covers: web/src/features/copy-reference.tsx
 // covers: native/wezdeck-wsl/agent_profiles.go
 import { chromium } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
@@ -16,6 +17,7 @@ async function pageWithProfiles(
   const context: BrowserContext = await browser.newContext({
     viewport: { width, height: 850 },
     locale: 'zh-CN',
+    permissions: ['clipboard-read', 'clipboard-write'],
   })
   const writes: Array<{ profile: string; model: string }> = []
   let codexModel = ''
@@ -112,6 +114,22 @@ describe('Agent settings layout', () => {
     await detail.waitFor()
     expect(
       await page
+        .locator('[data-agent-profile=claude_sub2api] span.truncate')
+        .evaluate((label) => label.scrollWidth <= label.clientWidth),
+    ).toBe(true)
+    await page
+      .locator('[data-agent-profile=claude_kimi]')
+      .locator('..')
+      .getByTestId('agent-copy-reference')
+      .click()
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe(
+        '[wezdeck 智能体] Claude · Kimi\nagent_profile: claude_kimi\nmodel: kimi-k3[1m]',
+      )
+    expect(await detail.locator('h2').textContent()).toBe('Claude')
+    expect(
+      await page
         .locator('[data-agent-profile=agy]')
         .locator('img[src="/icons/agents/agy.png"]')
         .evaluate(
@@ -153,11 +171,28 @@ describe('Agent settings layout', () => {
     await detail.getByRole('button', { name: '保存' }).click()
     await expect.poll(() => writes.length).toBe(1)
     expect(writes[0]).toEqual({ profile: 'codex', model: 'gpt-6.2-astra' })
+    await expect.poll(() => detail.getByText('受管模型覆盖').count()).toBe(1)
+    await page.evaluate(() => navigator.clipboard.writeText(''))
+    await page.evaluate(() =>
+      (document.activeElement as HTMLElement | null)?.blur(),
+    )
+    await page.keyboard.press('y')
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toContain('agent_profile: codex\nmodel: gpt-6.2-astra')
     await context.close()
   })
 
   it('phone opens one profile detail and returns to the list', async () => {
     const { context, page } = await pageWithProfiles(browser, 390)
+    await page
+      .locator('[data-agent-profile=agy]')
+      .locator('..')
+      .getByTestId('agent-copy-reference')
+      .click()
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe('[wezdeck 智能体] Antigravity\nagent_profile: agy')
     if (process.env.WEZDECK_VISUAL_SHOTS)
       await page.screenshot({ path: '/tmp/wezdeck-agents-mobile-list.png' })
     expect(
@@ -171,6 +206,16 @@ describe('Agent settings layout', () => {
     expect(await page.getByTestId('agent-detail').isVisible()).toBe(false)
     await page.locator('[data-agent-profile=claude_kimi]').click()
     await page.getByTestId('agent-detail').waitFor({ state: 'visible' })
+    await page
+      .getByTestId('agent-detail')
+      .getByTestId('agent-detail-copy-reference')
+      .click()
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toContain('agent_profile: claude_kimi')
+    expect(
+      await page.evaluate(() => navigator.clipboard.readText()),
+    ).not.toContain('5678')
     if (process.env.WEZDECK_VISUAL_SHOTS)
       await page.screenshot({ path: '/tmp/wezdeck-agents-mobile.png' })
     expect(

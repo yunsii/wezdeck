@@ -44,11 +44,13 @@ minutes unless a new session has taken over the same pane. In local mode,
 the detail page can read its transcript while the entry is in the attention
 archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
-inherit its original pane environment. The Web session list is an IM chat rail:
+inherit its original pane environment. Agy remains visible after a turn ends
+while its managed pane's bash launcher still has an `agy` child process;
+`pane_current_command` alone reports `bash`. The Web session list is an IM chat rail:
 one row per worktree, with known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
-status LED (waiting / running; idle empty), **bottom-right** = backend /
+status LED (waiting / done / running; idle empty), **bottom-right** = backend /
 profile badge (Kimi, gateway, …). Preview line reads like the last message
 (`Waiting on you · …` / `Replying…` / human prompt). A newly created idle
 session with no human prompt is never called `Replying…` merely because its
@@ -84,15 +86,26 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `agent.profiles` | read | registered profile ids, configured/model state, provider defaults (Claude JSON, Codex/Grok TOML, gateway env) and masked gateway key suffixes; never returns raw credentials or command strings (`agent_profiles.go`). For `claude_kimi`, also returns Claude Code `/status` parity fields from `kimi.env` (`base_url`, `effort_level`, `auto_compact_window`, per-tier / sub-agent model ids). `session.new` accepts an optional `agent_profile`; omission keeps the repository default. |
 | `agent.profile.configure {token, model}` | write | replace the Kimi profile's private `kimi.env` (mode 600, atomic rename) with the Kimi Code defaults (`https://api.kimi.ai/coding/`, `ANTHROPIC_API_KEY`, effort `high`, compact/max-context `262144` or `1048576` when the model id contains `[1m]`); one model across all Claude tiers; response and logs omit the key (`agent_profiles.go`) |
 | `agent.profile.model {profile, model}` | write | set or clear a managed model override for Claude, Claude gateway, Codex, Grok or Agy; each profile has a private scalar file under `~/.config/wezdeck/agent-models/`, read by `agent-launcher.sh` on the next launch (`agent_profiles.go`) |
-| `session.new.trust {job, confirm:true}` | write | after Agy's trust screen is observed in a newly created pane, a separately signed user action confirms only that pane's still-visible prompt; the first message is sent after the screen clears (`session_new.go`) |
-| `session.new {repo, name, description, prompt}` | write | 新会话 by direction (`session_new.go`; web UI is message-first with a place layer for repo/direction and a third layer for a new name + purpose): `name` an existing direction (as `workstations` lists it) with an idle slot → that slot is reused, `reuse-workstation --no-attach <slot>` (job `mode` `reuse`; a slot a running job is reusing is skipped); all its slots busy → one more parallel slot (`parallel`); else a new workstation (`new`) — both through `open-task-window --no-attach --description <description> -- <name>` in `repo` (must be one of `repos`; name one line ≤ 60 with at least one ASCII letter or digit — it becomes the directory and `dev/<name>` branch; description one line ≤ 120, stored as the branch description; message 1–8000), then the message is pasted into the new agent once its pane runs a non-shell and the screen holds still 1.5 s. Answers `{job}` at once — git fetch + agent start outlast an RPC. The message is required: a session is listed only from its first prompt's attention entry. `WEZDECK_SESSION_NEW_CMD` replaces open-task-window (test stack stand-in) |
+| `session.new.trust {job, confirm:true}` | write | fallback confirmation when a newly created pane is still paused at a visible workspace trust prompt after auto-confirm did not clear it (`session_new.go`) |
+| `session.new {repo, name, description, prompt}` | write | 新会话 by direction (`session_new.go`; web UI is message-first with a place layer for repo/direction and a third layer for a new name + purpose): `name` an existing direction (as `workstations` lists it) with an idle slot → that slot is reused, `reuse-workstation --no-attach <slot>` (job `mode` `reuse`; a slot a running job is reusing is skipped); all its slots busy → one more parallel slot (`parallel`); else a new workstation (`new`) — both through `open-task-window --no-attach --description <description> -- <name>` in `repo` (must be one of `repos`; name one line ≤ 60 with at least one ASCII letter or digit — it becomes the directory and `dev/<name>` branch; description one line ≤ 120, stored as the branch description; message 1–8000). `agent-launcher.sh` pre-trusts the launch worktree for Claude / Codex / Agy; once the pane runs an agent (or agent descendant under a launcher shell) and the screen holds still 1.5 s, `session_new.go` also auto-confirms any still-visible Claude / Codex / Agy workspace trust prompt (falling back to `waiting_trust` only if it fails to clear), pastes the first message, and waits briefly for the new pane's `session_id` in `attention.json` so the web console navigates straight into the session. Answers `{job}` at once — git fetch + agent start outlast an RPC. The message is required: a session is listed only from its first prompt's attention entry. `WEZDECK_SESSION_NEW_CMD` replaces open-task-window (test stack stand-in) |
 | `workstations {repo}` | read | the repo's workstations grouped by direction (`workstations.go`): `{name, description, idle, visited, slots: [{path, name, branch, state, reason, visited}]}`, newest visit first; `state` idle / running / waiting (attention) or dirty / undelivered / detached (`worktree-task idle`, no fetch — a just-merged tip may still read undelivered, the safe side; the reuse fetches and checks again) |
-| `session.new.job {job}` | read | that job: `stage` creating → starting → sending → done, or failed with `error`; `worktree`, `branch` (kept an hour) |
+| `session.new.job {job}` | read | that job: `stage` creating → starting → sending → done (or `waiting_trust` fallback / `failed` with `error`), `worktree`, `branch`, optional `session_id` once the agent picks up the first message (kept an hour) |
 | `worktree.describe {worktree, text}` | write | set (empty text: clear) a workstation's one-line purpose — `worktree-task describe --cwd <worktree> --set/--clear`, the same writer as `Ctrl+e` in `Alt+g`; the worktree must be a linked worktree of one of `repos`, not its primary checkout nor `ticket-*` / `claw-*`; text one line ≤ 120. Clears the relay's description cache so the next `sessions` poll carries it (`worktree_description.go`) |
 | `ticket.targets` | read | the ticket config's targets `[{key, path}]` (`$TICKETS_ROOT/config.yml`, the subset the CLI parses) |
 | `ticket.new {from, to, title, observed, assumed, run}` | write | 新工单: `ticket create` between two configured targets (title one line ≤ 120; the assumption gate's observed / assumed 1–8000). `run` starts `ticket run --phase auto` in its own transient unit (`systemd-run --user --unit wezdeck-ticket-<id>`), so a relay restart does not kill it; `WEZDECK_TICKET_RUN_CMD` replaces that launch (`ticket_new.go`) |
 | `clear {id}` | write | mark a session read — Ctrl+X in `Alt+/`: `attention-jump.sh --forget <id> --only-if-ts <ts>` archives the live entry into `recent[]` and nudges the counters; only a listed session, and only while its entry still has the ts just read (a fresh question is never swallowed). A relay with `WEZDECK_ATTENTION_FILE` clears there (`WEZDECK_ATTENTION_STATE_PATH`), never in the live state (`remote_clear.go`). The web console: swipe a running / waiting / done row left → 标为已读, or the button in 会话信息 |
 | `device.register` | read-ish | records a remote web console's public key as pending |
+
+我的 › 智能体 uses the same `复制引用` pattern as sessions and tickets: each
+profile row and its detail header copy a short block with display name,
+`agent_profile` id and effective model (when known). The selected detail
+also supports `y`; credentials and masked key fragments are excluded.
+
+The Web new-session sheet stores a pending job id in the current tab so it
+can resume after closing. A relay restart loses its in-memory jobs: an
+`unknown job` response clears the stale id, re-enables the form and explains
+why another session must be created. Transient read errors keep the id so a
+temporary connection failure cannot trigger a duplicate creation.
 
 Guards on every write (`remote_writes.go`; signatures `remote_device_keys.go`): one writer — a tmux-hosted
 session only ever receives a paste into its own TUI, never a second process

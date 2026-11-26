@@ -83,6 +83,12 @@ importers:
       motion:
         specifier: ^12.35.2
         version: 12.35.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      overlayscrollbars:
+        specifier: ^2.17.1
+        version: 2.17.1
+      overlayscrollbars-react:
+        specifier: ^0.5.8
+        version: 0.5.8(overlayscrollbars@2.17.1)(react@19.3.0)
       react:
         specifier: ^19.2.0
         version: 19.3.0
@@ -3458,6 +3464,15 @@ packages:
   ora@9.4.1:
     resolution: {integrity: sha512-6VlU9MLXbjVQD04AZCMX28hVtA5bUoadvUqO76MUCVA0ilwJbMiHsITRPfyVm6p/BC0Av/BXMujx39WCe1LEqw==}
     engines: {node: '>=20'}
+
+  overlayscrollbars-react@0.5.8:
+    resolution: {integrity: sha512-/O4yRQdLnagaN38klq9bK4QAVMjl9oipDstrSNtxZNU1ce54PO3+LARNYnfqikFJ/IgW5/WoYpSWMVWF13Zecw==}
+    peerDependencies:
+      overlayscrollbars: ^2.0.0
+      react: '>=16.8.0'
+
+  overlayscrollbars@2.17.1:
+    resolution: {integrity: sha512-EVBOsCB/BhvdP4WMLvIej8jHikJtGCxrWRBC8qX8xj3QmvSuY+PJgOr02du9Y2ad9dn9T8c7vp4MiMDQNWT9RQ==}
 
   oxc-parser@0.120.0:
     resolution: {integrity: sha512-WyPWZlcIm+Fkte63FGfgFB8mAAk33aH9h5N9lphXVOHSXEBFFsmYdOBedVKly363aWABjZdaj/m9lBfEY4wt+w==}
@@ -7701,6 +7716,13 @@ snapshots:
       log-symbols: 7.0.1
       stdin-discarder: 0.3.2
       string-width: 8.3.0
+
+  overlayscrollbars-react@0.5.8(overlayscrollbars@2.17.1)(react@19.3.0):
+    dependencies:
+      overlayscrollbars: 2.17.1
+      react: 19.3.0
+
+  overlayscrollbars@2.17.1: {}
 
   oxc-parser@0.120.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3):
     dependencies:

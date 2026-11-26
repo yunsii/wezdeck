@@ -1,5 +1,6 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
+import { Hash } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -251,7 +252,13 @@ function ModelSettings({ profile }: { profile: AgentProfile }) {
   )
 }
 
-export function AgentDetail({ profile }: { profile: AgentProfile }) {
+export function AgentDetail({
+  profile,
+  onCopy,
+}: {
+  profile: AgentProfile
+  onCopy: () => void
+}) {
   const { t } = useLingui()
   return (
     <section className="min-h-[24rem] min-w-0 pb-6" data-testid="agent-detail">
@@ -267,11 +274,25 @@ export function AgentDetail({ profile }: { profile: AgentProfile }) {
             </p>
           </div>
         </div>
-        {profile.id === 'claude_kimi' ? (
-          <span className="shrink-0 text-meta text-brand-muted">
-            {profile.configured ? t`Configured` : t`Not configured`}
-          </span>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {profile.id === 'claude_kimi' ? (
+            <span className="text-meta text-brand-muted">
+              {profile.configured ? t`Configured` : t`Not configured`}
+            </span>
+          ) : null}
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            aria-label={`${t`Copy reference`}: ${profile.label}`}
+            title={t`Copy reference`}
+            data-testid="agent-detail-copy-reference"
+            onClick={onCopy}
+            className="grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
+          >
+            <Hash size={18} aria-hidden />
+          </Button>
+        </div>
       </div>
       {profile.id === 'claude_kimi' ? (
         <KimiSettings profile={profile} />

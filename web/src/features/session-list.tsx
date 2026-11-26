@@ -1,6 +1,6 @@
 // 会话 left rail as an IM chat list (Telegram Web orientation): one row per
-// workstation, repo as a quiet section head, unread = needs-you badge. No
-// status Segmented. Opening a row resolves the focus session (session-chats)
+// workstation, repo as a quiet section head, unread = waiting or done-unseen.
+// No status Segmented. Opening a row resolves the focus session (session-chats)
 // and navigates to /sessions/$id. Order: unread first within a repo, then
 // activity time — frozen while you work (session-stable).
 import { useLingui } from '@lingui/react/macro'
@@ -50,7 +50,8 @@ function useChatPreviewLabels() {
   return {
     waiting: t`Waiting on you`,
     needsConfirm: t`Needs a decision`,
-    working: t`Replying…`,
+    done: t`Done`,
+    working: t`Working`,
     empty: t`No human message yet`,
   }
 }
@@ -152,7 +153,13 @@ function ChatRow({
                 {chat.unread > 0 ? (
                   <span
                     data-testid="chat-unread"
-                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]"
+                    data-tone={tone}
+                    className={cn(
+                      'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-meta font-semibold',
+                      tone === 'done'
+                        ? 'bg-brand-done text-[#0b1a12]'
+                        : 'bg-brand-waiting text-[#1b1406]',
+                    )}
                   >
                     {chat.unread}
                   </span>
@@ -166,6 +173,7 @@ function ChatRow({
               className={cn(
                 'truncate text-caption',
                 tone === 'waiting' && 'text-brand-waiting',
+                tone === 'done' && 'text-brand-done',
                 tone === 'running' && 'text-brand-running',
                 tone === 'idle' && 'text-brand-muted',
               )}
@@ -396,7 +404,10 @@ export function SessionList({
     )
   return (
     <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
-      <StickyBar>{headActions}</StickyBar>
+      {/* No -mx bleed: bled sticky made the search row look inset while the
+          surface cards (skeleton especially) read as full-bleed against a
+          near-white deck. Keep sticky and cards on the same content width. */}
+      <StickyBar className="mx-0 px-0">{headActions}</StickyBar>
       {body}
     </div>
   )
