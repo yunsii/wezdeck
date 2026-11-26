@@ -14,7 +14,9 @@ type sessionCard struct {
 	WaitingKind         string   `json:"waiting_kind,omitempty"`
 	LastPrompt          string   `json:"last_prompt"`
 	TS                  int64    `json:"ts"`
+	TimeSource          string   `json:"time_source"`
 	OrderAt             int64    `json:"order_at"`
+	OrderSource         string   `json:"order_source"`
 	Transcript          bool     `json:"transcript"`
 	DeskIdleS           int64    `json:"desk_idle_s"`
 	RunningKind         string   `json:"running_kind,omitempty"`
@@ -45,4 +47,17 @@ func sessionOrderAt(e attentionEntry, fallback int64) int64 {
 		return e.TS
 	}
 	return fallback
+}
+
+func sessionOrderSource(e attentionEntry, fallbackSource string) string {
+	if e.archivedOrderAt > 0 {
+		return "archived_live"
+	}
+	if (e.Status == "running" || e.Status == "waiting") && e.TurnStarted > 0 {
+		return "turn_started"
+	}
+	if e.Status == "done" && e.TS > 0 {
+		return "completion"
+	}
+	return fallbackSource
 }
