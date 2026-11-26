@@ -30,6 +30,7 @@ import {
   RUNNING_LONG,
   BACKGROUND,
 } from './console-interactions-samples'
+import { agySections } from './console-interactions-agy'
 import { chromeSections } from './console-interactions-chrome'
 
 export type Text = { zh: string; en: string }
@@ -38,6 +39,7 @@ export type Text = { zh: string; en: string }
 export const TAGS = [
   { id: 'claude', label: { zh: 'Claude', en: 'Claude' } },
   { id: 'grok', label: { zh: 'Grok', en: 'Grok' } },
+  { id: 'agy', label: { zh: 'Agy', en: 'Agy' } },
   { id: 'common', label: { zh: '通用', en: 'Any agent' } },
 ] as const
 export type Tag = (typeof TAGS)[number]['id']
@@ -70,6 +72,7 @@ export function buildSections(
       ...s,
       group: 'stream' as const,
     })),
+    ...agySections(keyFor),
     ...chromeSections().map((s) => ({ ...s, group: 'stream' as const })),
   ]
   // stable: within a tag the authored order stays

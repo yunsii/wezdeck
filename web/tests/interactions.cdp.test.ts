@@ -36,6 +36,8 @@ describe('Interaction debugging page', () => {
     'permission-edit',
     'plan-approval',
     'grok-plan',
+    'agy-permission',
+    'agy-ask',
     'generic-keys',
     'progress',
     'stream',
@@ -43,6 +45,8 @@ describe('Interaction debugging page', () => {
     'to-background',
     'compaction',
     'slash',
+    'agy-thought',
+    'agy-mode-bar',
     'diff',
   ]
 
@@ -82,6 +86,19 @@ describe('Interaction debugging page', () => {
       .toContain('permission-bash → 1')
     // the selection is in the hash: a link opens that one
     expect(page.url()).toContain('#permission-bash')
+    await page.goto(`${base}/zh/console/me/interactions#agy-permission`)
+    await expect
+      .poll(() =>
+        page.getByTestId('interaction-detail').getAttribute('data-interaction'),
+      )
+      .toBe('agy-permission')
+    await page
+      .getByTestId('interaction-detail')
+      .getByRole('button', { name: '允许' })
+      .click()
+    await expect
+      .poll(() => page.getByTestId('interaction-log').textContent())
+      .toContain('agy-permission → Enter')
     await page.goto(`${base}/zh/console/me/interactions#plan-approval`)
     await expect
       .poll(() =>
