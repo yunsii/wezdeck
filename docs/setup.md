@@ -133,7 +133,7 @@ bash tests/hook-units/test_tmux_status_node_resolution.sh
 | Genre | Goes in | Notes |
 |---|---|---|
 | User-level secret (CNB, OpenAI, …) | `~/.config/shell-env.d/<name>.env` | Mode 600. One file per service. Files are auto-globbed. |
-| Claude gateway profile (sub2api) | `~/.config/claude-profiles/sub2api.env` | Mode 600. **Not** auto-globbed — only `agent-launcher.sh claude-sub2api` loads it. See [Claude auth profiles](#claude-auth-profiles). |
+| Claude gateway profile (sub2api / Kimi) | `~/.config/claude-profiles/{sub2api,kimi}.env` | Mode 600. **Not** auto-globbed — only the matching launcher profile loads it. See [Claude auth profiles](#claude-auth-profiles). |
 | External capability source (`WEZDECK_REPO`, absolute checkout root) | `~/.config/shell-env.d/wezdeck-env.env` | Single source anchor for platform skills, agent profiles, shell wrappers, and CLI paths. |
 | Repo-anchored shell helpers (aliases, `cd` functions) | `~/.config/shell-env.d/wezdeck-fn.env` | Same template dir. Parent-shell only; runtime-loader treats it as a no-op. |
 | User-facing CLI commands | `scripts/runtime/cli/<name>` | No `.sh` suffix. Auto-PATH'd by `wezdeck-env.env`. |
@@ -158,6 +158,7 @@ Managed Claude has two auth identities that share the same binary and the same `
 |---|---|---|
 | `claude` (default) | Claude.ai OAuth / team subscription | `~/.claude/.credentials.json` (login once). Launcher **clears** `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_BASE_URL` so a leaked parent env cannot override OAuth. |
 | `claude_sub2api` | Anthropic-compatible gateway (sub2api, etc.) | `~/.config/claude-profiles/sub2api.env` (or `$CLAUDE_SUB2API_ENV`). Must set `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` (or `ANTHROPIC_API_KEY`). |
+| `claude_kimi` | Kimi API Platform through its Anthropic-compatible endpoint | `~/.config/claude-profiles/kimi.env` (or `$CLAUDE_KIMI_ENV`). Must set the Kimi endpoint, token, and account-supported model ids. |
 
 **Why not `shell-env.d`?** That directory is sourced for *every* managed agent. Putting gateway keys there would force API auth onto team panes as well. The sub2api file is deliberately outside the auto-glob and is only read by `agent-launcher.sh claude-sub2api`.
 
@@ -188,6 +189,50 @@ claude-sub2api -p 'hi'  # forward args to claude after loading gateway env
 ```
 
 `claude-sub2api` is on PATH via the `wezdeck-env.env` template (`scripts/runtime/cli/`).
+
+### Claude Code on Kimi
+
+`claude_kimi` keeps the Claude Code CLI as the user interface and routes its
+Anthropic Messages API calls to Kimi. Kimi documents this integration at
+<https://platform.kimi.ai/docs/guide/claude-code-kimi>.
+
+Install the profile file once; keep it outside `shell-env.d` so the default
+Claude OAuth profile cannot inherit the Kimi token:
+
+```bash
+mkdir -p ~/.config/claude-profiles
+cp wezterm-x/local.example/claude-profiles/kimi.env \
+  ~/.config/claude-profiles/kimi.env
+chmod 600 ~/.config/claude-profiles/kimi.env
+# edit the token and model ids
+```
+
+Run it directly with `claude-kimi`, or select it for newly managed panes:
+
+```bash
+# wezterm-x/local/shared.env
+MANAGED_AGENT_PROFILE='claude_kimi'
+```
+
+`claude-kimi` uses a separate `CLAUDE_CONFIG_DIR` under
+`~/.config/claude-profiles/kimi-home`; the launcher copies local settings while
+removing endpoint, credential, model, and effort entries that could override
+the profile environment. The Kimi home never reuses the Claude OAuth
+credentials file.
+
+Verify the endpoint before opening the TUI:
+
+```bash
+curl https://api.moonshot.ai/anthropic/v1/messages \
+  -H "Authorization: Bearer $MOONSHOT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"<account-supported-model>","max_tokens":1,"messages":[{"role":"user","content":"hi"}]}'
+claude-kimi
+```
+
+Inside Claude Code, `/status` should show the Kimi base URL and model. Also
+exercise a sub-agent, auto-compact, and a resumed conversation; each tier must
+have a model id accepted by the Kimi account.
 
 **Verify**
 

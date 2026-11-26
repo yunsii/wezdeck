@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# agent-claude-sub2api-lib.sh — gateway auth + CLAUDE_CONFIG_DIR isolation
-# for the claude-sub2api profile. Sourced by agent-launcher.sh and
-# scripts/runtime/cli/claude-sub2api.
+# agent-claude-sub2api-lib.sh — Anthropic-compatible gateway auth and
+# CLAUDE_CONFIG_DIR isolation. Sourced by agent-launcher.sh and the gateway
+# profile wrappers.
 #
 # shellcheck shell=bash
 
@@ -27,9 +27,9 @@ clear_anthropic_gateway_env() {
 # without .credentials.json forces pure gateway auth (AUTH_TOKEN + BASE_URL).
 #
 # Default home: ~/.config/claude-profiles/home
-# Override:     CLAUDE_SUB2API_HOME
+# Override:     CLAUDE_SUB2API_HOME / CLAUDE_KIMI_HOME
 prepare_claude_sub2api_home() {
-  local home_dir="${CLAUDE_SUB2API_HOME:-$HOME/.config/claude-profiles/home}"
+  local home_dir="${CLAUDE_GATEWAY_HOME:-${CLAUDE_SUB2API_HOME:-$HOME/.config/claude-profiles/home}}"
   local main_claude="${HOME}/.claude"
   local name
   local main_json="${HOME}/.claude.json"
@@ -42,10 +42,38 @@ prepare_claude_sub2api_home() {
     rm -f "$home_dir/.credentials.json"
   fi
 
-  # Reuse local settings (hooks / permissions) from the main home when
-  # present. Prefer symlink so hook path edits stay in one place.
+  # Copy local settings (hooks / permissions), but strip endpoint, credential,
+  # model, and effort overrides. Claude Code gives settings.json env entries
+  # precedence over the process environment, which can otherwise silently
+  # defeat this profile.
   if [[ -f "$main_claude/settings.json" && ! -e "$home_dir/settings.json" ]]; then
-    ln -s "$main_claude/settings.json" "$home_dir/settings.json"
+    if command -v python3 >/dev/null 2>&1; then
+      python3 - "$main_claude/settings.json" "$home_dir/settings.json" <<'PY'
+import json, os, sys
+
+source, target = sys.argv[1], sys.argv[2]
+with open(source, encoding="utf-8") as f:
+    data = json.load(f)
+env = data.get("env")
+if isinstance(env, dict):
+    blocked = {
+        "ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
+        "ANTHROPIC_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
+        "CLAUDE_CODE_SUBAGENT_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+        "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME", "ENABLE_TOOL_SEARCH",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "CLAUDE_CODE_EFFORT_LEVEL",
+    }
+    data["env"] = {key: value for key, value in env.items() if key not in blocked}
+with open(target, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+    else
+      cp "$main_claude/settings.json" "$home_dir/settings.json"
+    fi
   fi
 
   # User-level AGENTS / topic docs (same as main ~/.claude).
@@ -112,35 +140,53 @@ PY
   export CLAUDE_CONFIG_DIR="$home_dir"
 }
 
-# Load sub2api (or any Anthropic-compatible gateway) credentials from a
-# dedicated file — never from shell-env.d auto-glob. Override path with
-# CLAUDE_SUB2API_ENV.
-load_claude_sub2api_env() {
-  local env_file="${CLAUDE_SUB2API_ENV:-$HOME/.config/claude-profiles/sub2api.env}"
+# Load an Anthropic-compatible gateway profile from a dedicated file — never
+# from shell-env.d auto-glob. Arguments: profile label, env-file variable,
+# default env file, home variable, default home.
+load_claude_gateway_env() {
+  local profile="$1"
+  local env_var="$2"
+  local default_env="$3"
+  local home_var="$4"
+  local default_home="$5"
+  local env_file="${!env_var:-$default_env}"
   local repo_root
   repo_root="$(runtime_env_repo_root)"
 
   if [[ ! -r "$env_file" ]]; then
-    printf 'agent-launcher: claude-sub2api env file missing or unreadable:\n' >&2
+    printf 'agent-launcher: %s env file missing or unreadable:\n' "$profile" >&2
     printf '  %s\n' "$env_file" >&2
     printf 'Create it (mode 600) from:\n' >&2
-    printf '  %s/wezterm-x/local.example/claude-profiles/sub2api.env\n' "$repo_root" >&2
-    printf 'Or point CLAUDE_SUB2API_ENV at an alternate path.\n' >&2
+    printf '  %s/wezterm-x/local.example/claude-profiles/%s.env\n' "$repo_root" "$profile" >&2
+    printf 'Or point %s at an alternate path.\n' "$env_var" >&2
     exit 1
   fi
 
   clear_anthropic_gateway_env
   runtime_env_load_shell "$env_file"
+  CLAUDE_GATEWAY_HOME="${!home_var:-$default_home}"
+  export CLAUDE_GATEWAY_HOME
   prepare_claude_sub2api_home
 
   if [[ -z "${ANTHROPIC_AUTH_TOKEN:-}" && -z "${ANTHROPIC_API_KEY:-}" ]]; then
-    printf 'agent-launcher: %s must set ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY\n' \
-      "$env_file" >&2
+    printf 'agent-launcher: %s must set ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY\n' "$env_file" >&2
     exit 1
   fi
   if [[ -z "${ANTHROPIC_BASE_URL:-}" ]]; then
     printf 'agent-launcher: %s must set ANTHROPIC_BASE_URL\n' "$env_file" >&2
     exit 1
   fi
+}
+
+load_claude_sub2api_env() {
+  load_claude_gateway_env sub2api CLAUDE_SUB2API_ENV \
+    "$HOME/.config/claude-profiles/sub2api.env" \
+    CLAUDE_SUB2API_HOME "$HOME/.config/claude-profiles/home"
+}
+
+load_claude_kimi_env() {
+  load_claude_gateway_env kimi CLAUDE_KIMI_ENV \
+    "$HOME/.config/claude-profiles/kimi.env" \
+    CLAUDE_KIMI_HOME "$HOME/.config/claude-profiles/kimi-home"
 }
 

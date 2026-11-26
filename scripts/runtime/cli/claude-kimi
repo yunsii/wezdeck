@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# claude-kimi — Claude Code on Kimi's Anthropic-compatible endpoint.
+# Credentials: ~/.config/claude-profiles/kimi.env (or $CLAUDE_KIMI_ENV)
+
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+runtime_dir="$(cd "$script_dir/.." && pwd -P)"
+launcher="$runtime_dir/agent-launcher.sh"
+
+if [[ ! -f "$launcher" ]]; then
+  printf 'claude-kimi: agent-launcher.sh not found at %s\n' "$launcher" >&2
+  exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+  exec bash "$launcher" claude-kimi
+fi
+
+# One-shot invocation with the same gateway environment and isolated config
+# home as managed panes.
+. "$runtime_dir/runtime-env-lib.sh"
+runtime_env_load_managed
+. "$runtime_dir/agent-claude-sub2api-lib.sh"
+load_claude_kimi_env
+exec claude "$@"

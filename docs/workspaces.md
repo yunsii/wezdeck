@@ -100,7 +100,7 @@ config = {
 - **Shell entry points** (`Alt+g`, `Ctrl+k g d`, refresh, tab-overflow cold-spawn) read `wezterm-x/local/workspace-agent-map.tsv` (cwd → base profile), which flattens the same merge (repo override, else workspace default). Sync regenerates it via `scripts/runtime/render-workspace-agent-map.sh`. Edit `launcher` / workspace defaults, then run `wezdeck-runtime-ops` before expecting shell paths to pick up the change.
 - If the map misses the cwd: `MANAGED_AGENT_PROFILE` / `shared.env` → `WT_PROVIDER_AGENT_PROFILE` → `claude`.
 - Within one repo family, a more specific mapped cwd wins over a shorter prefix; when only the family rule applies, the entry whose cwd equals the primary worktree is preferred.
-- Registered profiles today: `claude`, `claude_sub2api`, `codex`, `grok` (each with a `_resume` Lua key / `-resume` shell form). Add new ones in `config/worktree-task.env` + `scripts/runtime/agent-launcher.sh`.
+- Registered profiles today: `claude`, `claude_sub2api`, `claude_kimi`, `codex`, `grok` (each with a `_resume` Lua key / `-resume` shell form). Add new ones in `config/worktree-task.env` + `scripts/runtime/agent-launcher.sh`.
 
 ### Permission Profiles
 
@@ -111,7 +111,7 @@ The current adapters are:
 
 | Agent | `auto` | `full-access` |
 |---|---|---|
-| Claude / `claude_sub2api` | base Claude settings | `--permission-mode bypassPermissions` |
+| Claude / `claude_sub2api` / `claude_kimi` | base Claude settings | `--permission-mode bypassPermissions` |
 | Codex | `~/.codex/auto.config.toml` | `~/.codex/full-access.config.toml` |
 | Grok | base Grok settings | `--always-approve` |
 

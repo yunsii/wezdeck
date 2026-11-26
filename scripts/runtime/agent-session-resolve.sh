@@ -95,7 +95,7 @@ agent_session_forget_typed_id() {
 agent_session_normalize_agent() {
   local raw="${1:-}"
   case "$raw" in
-    claude|claude-sub2api|claude_sub2api) printf 'claude\n' ;;
+    claude|claude-sub2api|claude_sub2api|claude-kimi|claude_kimi) printf 'claude\n' ;;
     codex) printf 'codex\n' ;;
     grok) printf 'grok\n' ;;
     *) return 1 ;;

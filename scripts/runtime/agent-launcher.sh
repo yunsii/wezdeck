@@ -23,7 +23,7 @@
 #   workspace first-open) shares the same env view.
 #
 # Usage:
-#   agent-launcher.sh <claude|claude-sub2api|codex|grok>
+#   agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>
 #
 # Claude auth profiles:
 #   claude            OAuth / subscription (team or individual). Gateway
@@ -34,6 +34,8 @@
 #                     ~/.config/claude-profiles/sub2api.env). Do NOT put
 #                     those keys in shell-env.d — that would override
 #                     every claude pane.
+#   claude-kimi       Kimi API via its Anthropic-compatible endpoint. Credentials
+#                     live in ~/.config/claude-profiles/kimi.env.
 #
 # Phone sync via Happy was removed (2026-07): remote work goes through
 # OpenClaw (Feishu / ACP / temporary tmux control). See
@@ -89,7 +91,7 @@ _launcher_log_error() {
 
 if [[ -n "${2:-}" ]]; then
   printf 'agent-launcher: unexpected argument %s (Happy wrap removed)\n' "$2" >&2
-  printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
+  printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>\n' >&2
   _launcher_log_error "agent launcher failed" \
     "reason=unexpected_argument" "arg=$2" "agent=${agent:-}" "cwd=$PWD"
   exit 1
@@ -280,6 +282,15 @@ case "$agent" in
       "$claude_bin" "${CLAUDE_PERMISSION_PROFILE:-base}" \
       "${CLAUDE_PERMISSION_ARGS[@]}"
     ;;
+  claude-kimi)
+    load_claude_kimi_env
+    resolve_claude_permission
+    log_resume_boot claude-kimi "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
+    claude_bin="$(require_agent_binary claude)"
+    exec bash "$script_dir/agent-resume.sh" claude-kimi "$fallback_log_script" \
+      "$claude_bin" "${CLAUDE_PERMISSION_PROFILE:-base}" \
+      "${CLAUDE_PERMISSION_ARGS[@]}"
+    ;;
   codex)
     codex_bin="$(require_agent_binary codex)"
     codex_profile_args=()
@@ -367,7 +378,7 @@ case "$agent" in
     ;;
   *)
     printf 'agent-launcher: unknown agent %s\n' "$agent" >&2
-    printf 'usage: agent-launcher.sh <claude|claude-sub2api|codex|grok>\n' >&2
+    printf 'usage: agent-launcher.sh <claude|claude-sub2api|claude-kimi|codex|grok>\n' >&2
     _launcher_log_error "agent launcher failed" \
       "reason=unknown_agent" "agent=${agent:-}" "cwd=$PWD"
     exit 1
