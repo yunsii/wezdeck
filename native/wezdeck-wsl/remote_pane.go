@@ -18,28 +18,36 @@ func tmuxCmd(socket string, args ...string) *exec.Cmd {
 }
 
 // paneState: the pane's id, cwd, current command, index, managed profile, and
-// whether it exists. Profile comes from @wezterm_agent_profile (pane), else
-// @wezterm_window_agent_profile (window sticky after handoff).
+// whether it exists. The display profile prefers the most specific of:
+// pane role (agent-cli:claude_kimi), window sticky (@wezterm_window_agent_profile),
+// and pane pin (@wezterm_agent_profile). The pane pin is often the bare family
+// (claude) after agent-session-resolve normalizes; the window/role keep the
+// variant (claude_kimi) the web avatar badge needs.
 func paneState(e attentionEntry) (id, cwd, cmd string, index int, profile string, alive bool) {
 	if e.TmuxPane == "" {
 		return "", "", "", 0, "", false
 	}
 	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
-		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}").Output()
+		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}").Output()
 	if err != nil {
 		return "", "", "", 0, "", false
 	}
-	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 6)
+	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 7)
 	if len(parts) < 4 || parts[0] != e.TmuxPane {
 		return "", "", "", 0, "", false
 	}
 	index, _ = strconv.Atoi(parts[3])
+	paneProfile, windowProfile, paneRole := "", "", ""
 	if len(parts) > 4 {
-		profile = normalizeAgentProfile(parts[4])
+		paneProfile = normalizeAgentProfile(parts[4])
 	}
-	if profile == "" && len(parts) > 5 {
-		profile = normalizeAgentProfile(parts[5])
+	if len(parts) > 5 {
+		windowProfile = normalizeAgentProfile(parts[5])
 	}
+	if len(parts) > 6 {
+		paneRole = parts[6]
+	}
+	profile = pickManagedAgentProfile(paneProfile, windowProfile, paneRole)
 	return parts[0], parts[1], parts[2], index, profile, true
 }
 
@@ -51,6 +59,41 @@ func normalizeAgentProfile(raw string) string {
 		return ""
 	}
 	return raw
+}
+
+func profileFamily(profile string) string {
+	for _, fam := range []string{"claude", "codex", "grok"} {
+		if profile == fam || strings.HasPrefix(profile, fam+"_") {
+			return fam
+		}
+	}
+	return profile
+}
+
+// pickManagedAgentProfile: among pane pin, window sticky, and agent-cli role,
+// keep the most specific id in the same family (claude_kimi over claude).
+func pickManagedAgentProfile(paneProfile, windowProfile, paneRole string) string {
+	roleProfile := ""
+	if strings.HasPrefix(paneRole, "agent-cli:") {
+		roleProfile = normalizeAgentProfile(strings.TrimPrefix(paneRole, "agent-cli:"))
+	}
+	best := ""
+	for _, cand := range []string{roleProfile, windowProfile, paneProfile} {
+		if cand == "" {
+			continue
+		}
+		if best == "" {
+			best = cand
+			continue
+		}
+		if profileFamily(cand) != profileFamily(best) {
+			continue
+		}
+		if len(cand) > len(best) {
+			best = cand
+		}
+	}
+	return best
 }
 
 // windowActivity: last output in the session's tmux window (unix ms), 0 if unknown.
