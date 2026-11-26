@@ -98,7 +98,6 @@ attention_state_path() {
   fi
   printf '%s' "$__ATTENTION_STATE_PATH_CACHED"
 }
-
 attention_state_lock_path() {
   # Keep the flock on WSL ext4 even when attention.json lives on DrvFS
   # (/mnt/c). Writers are all WSL bash; Lua only reads the JSON. A native
@@ -799,6 +798,7 @@ attention_state_upsert() {
                       end)
                  ))
              end
+           | del(.entries[$sid].restart_pending)
            | archive_into_recent($evicted; $ts; $cap; $ttl)
          ' <<<"$current"
     )"
@@ -1074,7 +1074,6 @@ attention_state_transition_to_running() {
   [[ -n "$changed_flag" ]] && rm -f "$changed_flag" 2>/dev/null
   return "$rc"
 }
-
 # Remove every entry on a given (tmux_socket, tmux_session, tmux_pane),
 # optionally preserving one session_id. Used by the SessionStart
 # `source=clear` hook to clean up stale entries when the user runs
@@ -1145,7 +1144,6 @@ attention_state_evict_session() {
     attention_state_write "$next"
   ) 9>"$lock"
 }
-
 # Archive every entry whose tmux_session matches and remove it from
 # .entries. Used by the tmux `session-closed` hook (and the wezterm-side
 # `forget_by_tmux_session` Lua helper, which spawns this via attention-

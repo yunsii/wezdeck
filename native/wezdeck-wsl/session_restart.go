@@ -58,6 +58,7 @@ func restartSession(args json.RawMessage) (any, error) {
 	start := time.Now()
 	cmd := exec.CommandContext(ctx, "bash", argv...)
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "WEZDECK_RESTART_SESSION_ID="+a.ID)
 	if e.TmuxSocket != "" {
 		// tmux without -S follows $TMUX: the session's own server
 		cmd.Env = append(cmd.Env, "TMUX="+e.TmuxSocket+",0,0")
