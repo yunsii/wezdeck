@@ -202,7 +202,7 @@ func TestAgentProfilesReadExistingModelsAndMaskKeys(t *testing.T) {
 		filepath.Join(home, ".codex", "config.toml"):       "model = \"gpt-6.2-sol\"\napi_key = \"codex-secret\"\n",
 		filepath.Join(home, ".grok", "config.toml"):        "[models]\ndefault = \"grok-4.5\"\n[model.secret]\napi_key = \"grok-secret\"\n",
 		sub2api: "ANTHROPIC_BASE_URL='https://gateway.example'\nANTHROPIC_AUTH_TOKEN='sub2api-secret-1234'\nANTHROPIC_MODEL='gateway-model'\n",
-		kimi:    "ANTHROPIC_AUTH_TOKEN='kimi-secret-5678'\nANTHROPIC_MODEL='kimi-k3[1m]'\n",
+		kimi:    "ANTHROPIC_BASE_URL='https://api.moonshot.ai/anthropic'\nANTHROPIC_AUTH_TOKEN='kimi-secret-5678'\nANTHROPIC_MODEL='kimi-k3[1m]'\nANTHROPIC_DEFAULT_OPUS_MODEL='kimi-k3[1m]'\nANTHROPIC_DEFAULT_SONNET_MODEL='kimi-k3[1m]'\nANTHROPIC_DEFAULT_HAIKU_MODEL='kimi-k3[1m]'\nANTHROPIC_DEFAULT_FABLE_MODEL='kimi-k3[1m]'\nCLAUDE_CODE_SUBAGENT_MODEL='kimi-k3[1m]'\nCLAUDE_CODE_AUTO_COMPACT_WINDOW='1000000'\nCLAUDE_CODE_EFFORT_LEVEL='max'\n",
 	}
 	for path, body := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -231,8 +231,15 @@ func TestAgentProfilesReadExistingModelsAndMaskKeys(t *testing.T) {
 	if got["claude_sub2api"].MaskedKey != "••••••••1234" || !got["claude_sub2api"].Configured {
 		t.Fatalf("gateway credential status: %+v", got["claude_sub2api"])
 	}
-	if got["claude_kimi"].MaskedKey != "••••••••5678" || got["claude_kimi"].Model != "kimi-k3[1m]" {
-		t.Fatalf("Kimi credential/model status: %+v", got["claude_kimi"])
+	kimiProfile := got["claude_kimi"]
+	if kimiProfile.MaskedKey != "••••••••5678" || kimiProfile.Model != "kimi-k3[1m]" {
+		t.Fatalf("Kimi credential/model status: %+v", kimiProfile)
+	}
+	if kimiProfile.BaseURL != "https://api.moonshot.ai/anthropic" || kimiProfile.EffortLevel != "max" || kimiProfile.AutoCompactWindow != "1000000" {
+		t.Fatalf("Kimi /status fields: %+v", kimiProfile)
+	}
+	if kimiProfile.OpusModel != "kimi-k3[1m]" || kimiProfile.SubagentModel != "kimi-k3[1m]" {
+		t.Fatalf("Kimi tier models: %+v", kimiProfile)
 	}
 	response, _ := json.Marshal(result)
 	for _, secret := range []string{"sub2api-secret-1234", "kimi-secret-5678", "codex-secret", "grok-secret"} {

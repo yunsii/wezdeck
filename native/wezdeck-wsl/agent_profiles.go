@@ -28,6 +28,15 @@ type agentProfile struct {
 	ModelOverride string `json:"model_override,omitempty"`
 	DefaultModel  string `json:"default_model,omitempty"`
 	MaskedKey     string `json:"masked_key,omitempty"`
+	// Kimi / gateway status (Claude Code /status parity). Never include raw keys.
+	BaseURL           string `json:"base_url,omitempty"`
+	EffortLevel       string `json:"effort_level,omitempty"`
+	AutoCompactWindow string `json:"auto_compact_window,omitempty"`
+	OpusModel         string `json:"opus_model,omitempty"`
+	SonnetModel       string `json:"sonnet_model,omitempty"`
+	HaikuModel        string `json:"haiku_model,omitempty"`
+	FableModel        string `json:"fable_model,omitempty"`
+	SubagentModel     string `json:"subagent_model,omitempty"`
 }
 
 var agentProfileKey = regexp.MustCompile(`^WT_PROVIDER_AGENT_PROFILE_([A-Z0-9_]+)_RESUME_COMMAND=(.+)$`)
@@ -119,8 +128,7 @@ func listAgentProfiles() (any, error) {
 		case "claude_kimi":
 			profile.Configured = kimiConfigured()
 			if profile.Configured {
-				profile.Model = readEnvAssignment(kimiEnvPath(), "ANTHROPIC_MODEL")
-				profile.MaskedKey = maskKey(readEnvAssignment(kimiEnvPath(), "ANTHROPIC_AUTH_TOKEN"))
+				fillKimiProfileStatus(&profile)
 			}
 		}
 		profiles = append(profiles, profile)
@@ -313,6 +321,22 @@ func kimiConfigured() bool {
 	path := kimiEnvPath()
 	token := readEnvAssignment(path, "ANTHROPIC_AUTH_TOKEN")
 	return token != "" && token != "sk-your-moonshot-api-key"
+}
+
+// fillKimiProfileStatus copies the Claude Code /status fields from kimi.env
+// (official platform.kimi.ai Claude Code guide) into the web read model.
+func fillKimiProfileStatus(profile *agentProfile) {
+	path := kimiEnvPath()
+	profile.BaseURL = readEnvAssignment(path, "ANTHROPIC_BASE_URL")
+	profile.Model = readEnvAssignment(path, "ANTHROPIC_MODEL")
+	profile.MaskedKey = maskKey(readEnvAssignment(path, "ANTHROPIC_AUTH_TOKEN"))
+	profile.EffortLevel = readEnvAssignment(path, "CLAUDE_CODE_EFFORT_LEVEL")
+	profile.AutoCompactWindow = readEnvAssignment(path, "CLAUDE_CODE_AUTO_COMPACT_WINDOW")
+	profile.OpusModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_OPUS_MODEL")
+	profile.SonnetModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_SONNET_MODEL")
+	profile.HaikuModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_HAIKU_MODEL")
+	profile.FableModel = readEnvAssignment(path, "ANTHROPIC_DEFAULT_FABLE_MODEL")
+	profile.SubagentModel = readEnvAssignment(path, "CLAUDE_CODE_SUBAGENT_MODEL")
 }
 
 var kimiModelPattern = regexp.MustCompile(`^[a-zA-Z0-9._-]+(?:\[[a-zA-Z0-9]+\])?$`)

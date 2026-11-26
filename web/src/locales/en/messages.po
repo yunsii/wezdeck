@@ -324,6 +324,10 @@ msgstr "All repos"
 msgid "All tags"
 msgstr "All tags"
 
+#: src/features/me-agent-detail.tsx:75
+msgid "All tiers"
+msgstr "All tiers"
+
 #: src/features/me-host.tsx:117
 msgid "All time"
 msgstr "All time"
@@ -356,6 +360,11 @@ msgstr "Anywhere"
 #: src/features/chat-command.tsx:86
 msgid "API error"
 msgstr "API error"
+
+#. placeholder {0}: profile.masked_key
+#: src/features/me-agent-detail.tsx:64
+msgid "API Key · {0}"
+msgstr "API Key · {0}"
 
 #: src/features/console-me.tsx:122
 #: src/features/me-app.tsx:36
@@ -406,6 +415,10 @@ msgstr "assumptions challenged"
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
+#: src/features/me-agent-detail.tsx:71
+msgid "Auto compact"
+msgstr "Auto compact"
+
 #: src/features/console-me.tsx:450
 #: src/features/tickets-view.tsx:413
 msgid "Back"
@@ -443,6 +456,10 @@ msgstr "Bar"
 #: src/features/console-collab-run.tsx:128
 msgid "Base commit"
 msgstr "Base commit"
+
+#: src/features/me-agent-detail.tsx:59
+msgid "Base URL"
+msgstr "Base URL"
 
 #: src/features/console-me.tsx:232
 msgid "Block"
@@ -591,11 +608,11 @@ msgstr "Clear input (Esc Esc)"
 msgid "Clearing…"
 msgstr "Clearing…"
 
-#: src/features/me-agent-detail.tsx:130
+#: src/features/me-agent-detail.tsx:195
 msgid "CLI default"
 msgstr "CLI default"
 
-#: src/features/me-agent-detail.tsx:131
+#: src/features/me-agent-detail.tsx:196
 msgid "CLI selects automatically"
 msgstr "CLI selects automatically"
 
@@ -694,7 +711,7 @@ msgstr "Composer"
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/me-agent-detail.tsx:195
+#: src/features/me-agent-detail.tsx:260
 msgid "Configured"
 msgstr "Configured"
 
@@ -904,8 +921,7 @@ msgstr "Cross-repo collab"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/me-agent-detail.tsx:50
-#: src/features/me-agent-detail.tsx:135
+#: src/features/me-agent-detail.tsx:200
 msgid "Current API key"
 msgstr "Current API key"
 
@@ -1009,6 +1025,10 @@ msgstr "Earlier messages are left out here; the ticket file has them all."
 msgid "Edit the description"
 msgstr "Edit the description"
 
+#: src/features/me-agent-detail.tsx:69
+msgid "Effort"
+msgstr "Effort"
+
 #: src/features/console-me.tsx:301
 msgid "Enabled"
 msgstr "Enabled"
@@ -1075,6 +1095,10 @@ msgstr "Exit"
 #: src/features/chat-images.tsx:58
 msgid "Expired"
 msgstr "Expired"
+
+#: src/features/me-agent-detail.tsx:88
+msgid "Fable tier"
+msgstr "Fable tier"
 
 #: src/features/tickets-view.tsx:138
 msgid "failed"
@@ -1146,6 +1170,10 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 #: src/features/remote-badge.tsx:134
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
+
+#: src/features/me-agent-detail.tsx:85
+msgid "Haiku tier"
+msgstr "Haiku tier"
 
 #: src/features/session-handoff.tsx:176
 #: src/features/session-handoff.tsx:235
@@ -1366,7 +1394,7 @@ msgstr "Keyboard shortcuts"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/me-agent-detail.tsx:56
+#: src/features/me-agent-detail.tsx:117
 msgid "Kimi API key"
 msgstr "Kimi API key"
 
@@ -1416,7 +1444,7 @@ msgstr "Latest output"
 msgid "Launch details"
 msgstr "Launch details"
 
-#: src/features/me-agent-detail.tsx:66
+#: src/features/me-agent-detail.tsx:127
 msgid "Leave blank to keep current key"
 msgstr "Leave blank to keep current key"
 
@@ -1489,15 +1517,19 @@ msgstr "Log entry"
 msgid "Log stream"
 msgstr "Log stream"
 
+#: src/features/me-agent-detail.tsx:61
+msgid "Login"
+msgstr "Login"
+
 #: src/features/console-activity.tsx:100
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/me-agent-detail.tsx:204
+#: src/features/me-agent-detail.tsx:269
 msgid "Managed in host configuration"
 msgstr "Managed in host configuration"
 
-#: src/features/me-agent-detail.tsx:128
+#: src/features/me-agent-detail.tsx:193
 msgid "Managed override"
 msgstr "Managed override"
 
@@ -1542,13 +1574,14 @@ msgstr "Metrics window"
 msgid "Mode"
 msgstr "Mode"
 
+#: src/features/me-agent-detail.tsx:68
 #: src/features/session-empty.tsx:42
 #: src/features/session-info.tsx:51
 msgid "Model"
 msgstr "Model"
 
-#: src/features/me-agent-detail.tsx:71
-#: src/features/me-agent-detail.tsx:118
+#: src/features/me-agent-detail.tsx:132
+#: src/features/me-agent-detail.tsx:183
 msgid "Model ID"
 msgstr "Model ID"
 
@@ -1770,9 +1803,9 @@ msgstr "no upstream"
 msgid "No upstream branch: nothing to compare with."
 msgstr "No upstream branch: nothing to compare with."
 
-#: src/features/me-agent-detail.tsx:52
-#: src/features/me-agent-detail.tsx:137
-#: src/features/me-agent-detail.tsx:195
+#: src/features/me-agent-detail.tsx:65
+#: src/features/me-agent-detail.tsx:202
+#: src/features/me-agent-detail.tsx:260
 #: src/features/me-agents.tsx:91
 #: src/features/session-new-panels.tsx:122
 msgid "Not configured"
@@ -1809,6 +1842,13 @@ msgstr "Not pushed"
 #: src/features/console-shell.tsx:420
 msgid "Not running"
 msgstr "Not running"
+
+#: src/features/me-agent-detail.tsx:59
+#: src/features/me-agent-detail.tsx:68
+#: src/features/me-agent-detail.tsx:69
+#: src/features/me-agent-detail.tsx:72
+msgid "Not set"
+msgstr "Not set"
 
 #: src/features/ticket-proposals.tsx:113
 msgid "Nothing is created until you confirm."
@@ -1917,6 +1957,10 @@ msgstr "opens one more"
 #: src/features/session-handoff.tsx:190
 msgid "Optional note"
 msgstr "Optional note"
+
+#: src/features/me-agent-detail.tsx:79
+msgid "Opus tier"
+msgstr "Opus tier"
 
 #: src/features/console-collab-run.tsx:111
 msgid "Origin session"
@@ -2156,7 +2200,7 @@ msgstr "Rename via /rename in the agent pane"
 msgid "Reopen"
 msgstr "Reopen"
 
-#: src/features/me-agent-detail.tsx:56
+#: src/features/me-agent-detail.tsx:117
 msgid "Replace API key"
 msgstr "Replace API key"
 
@@ -2431,8 +2475,8 @@ msgstr "Same as Enter in the Alt+/ picker (key: o)"
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
-#: src/features/me-agent-detail.tsx:94
-#: src/features/me-agent-detail.tsx:152
+#: src/features/me-agent-detail.tsx:158
+#: src/features/me-agent-detail.tsx:217
 msgid "Save"
 msgstr "Save"
 
@@ -2440,8 +2484,12 @@ msgstr "Save"
 msgid "Saved"
 msgstr "Saved"
 
-#: src/features/me-agent-detail.tsx:94
-#: src/features/me-agent-detail.tsx:152
+#: src/features/me-agent-detail.tsx:142
+msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
+msgstr "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
+
+#: src/features/me-agent-detail.tsx:158
+#: src/features/me-agent-detail.tsx:217
 msgid "Saving…"
 msgstr "Saving…"
 
@@ -2607,6 +2655,10 @@ msgstr "Some numbers are missing: {missing}"
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
+#: src/features/me-agent-detail.tsx:82
+msgid "Sonnet tier"
+msgstr "Sonnet tier"
+
 #: src/features/console-collab-run.tsx:160
 #: src/features/console-diagnostics.tsx:318
 msgid "Source"
@@ -2673,6 +2725,10 @@ msgstr "Status"
 #: src/features/session-info.tsx:75
 msgid "Status updated"
 msgstr "Status updated"
+
+#: src/features/me-agent-detail.tsx:91
+msgid "Sub-agent"
+msgstr "Sub-agent"
 
 #: src/features/session-ask-claude.tsx:93
 msgid "Submit answers"
@@ -3086,8 +3142,8 @@ msgstr "Usage"
 msgid "Usage from"
 msgstr "Usage from"
 
-#: src/features/me-agent-detail.tsx:122
-#: src/features/me-agent-detail.tsx:169
+#: src/features/me-agent-detail.tsx:187
+#: src/features/me-agent-detail.tsx:234
 msgid "Use CLI default"
 msgstr "Use CLI default"
 
