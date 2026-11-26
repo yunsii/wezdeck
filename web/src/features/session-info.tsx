@@ -262,7 +262,7 @@ export function SessionInfo({
             className="rounded-xl border border-brand-edge px-3 py-2"
             data-testid="session-info-purpose"
           >
-            <p className="mb-1 text-meta text-brand-label">{t`Workstation purpose`}</p>
+            <p className="mb-1 text-meta text-brand-label">{t`Group name`}</p>
             <div className="text-body text-brand-text">
               <WorktreePurpose
                 worktree={worktreeKey(card)}
@@ -324,7 +324,10 @@ export function SessionInfo({
                 requestNewSession({
                   repo: card.repo_root || card.cwd,
                   anchor: card.id,
-                  group: worktreeKey(card).split('/').at(-1) || card.cwd,
+                  group:
+                    card.worktree_description ||
+                    worktreeKey(card).split('/').at(-1) ||
+                    card.cwd,
                 })
               }}
             >

@@ -159,12 +159,13 @@ func validSubject(s string) bool {
 
 func startNewSession(args json.RawMessage) (any, error) {
 	var a struct {
-		Repo        string `json:"repo"`
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		Prompt      string `json:"prompt"`
-		Agent       string `json:"agent_profile"`
-		Anchor      string `json:"anchor_session_id"`
+		Repo        string  `json:"repo"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		Prompt      string  `json:"prompt"`
+		Agent       string  `json:"agent_profile"`
+		Anchor      string  `json:"anchor_session_id"`
+		GroupName   *string `json:"group_name"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.new: bad arguments")
@@ -205,6 +206,16 @@ func startNewSession(args json.RawMessage) (any, error) {
 			return nil, errors.New("session.new: default agent is disabled; select another agent")
 		}
 	}
+	if a.GroupName != nil {
+		if a.Name != "" || a.Description != "" || a.Anchor != "" {
+			return nil, errors.New("session.new: group name is for a new group")
+		}
+		a.Description = strings.TrimSpace(*a.GroupName)
+		if !validSubject(a.Description) {
+			return nil, fmt.Errorf("session.new: the group name needs 1–%d characters, one line", subjectMax)
+		}
+		a.Name = "session-" + newDiagID()
+	}
 	if a.Anchor == "" && !validSubject(a.Name) {
 		return nil, fmt.Errorf("session.new: the name needs 1–%d characters, one line", subjectMax)
 	}
@@ -235,7 +246,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	// a new direction
 	mode, reuse := "new", ""
 	direction := directionSlug(a.Name)
-	if dirs, err := repoWorkstations(a.Repo); err == nil {
+	if dirs, err := repoWorkstations(a.Repo); a.GroupName == nil && err == nil {
 		newJobsMu.Lock()
 		for _, d := range dirs {
 			if d.Name != direction {

@@ -211,12 +211,7 @@ export function SessionSwitcher({
       return (
         <li key={chat.key}>
           <div className="flex items-baseline gap-1.5 px-4 pt-2 text-caption font-medium text-brand-muted">
-            <span className="truncate">{chat.title}</span>
-            {chat.purpose ? (
-              <span className="min-w-0 truncate text-meta">
-                · {chat.purpose}
-              </span>
-            ) : null}
+            <span className="truncate">{chat.purpose || chat.title}</span>
             {chat.unread > 0 ? (
               <span className="ml-auto shrink-0 rounded-full bg-brand-waiting px-1.5 text-meta font-semibold text-[#1b1406]">
                 {chat.unread}

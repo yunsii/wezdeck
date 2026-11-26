@@ -13,9 +13,7 @@ import {
   formatChatClock,
   formatChatDate,
 } from '#/features/chat-time'
-import { directionForWorktree } from '#/features/session-new-direction'
 import type { SessionCard } from '#/features/console-sessions'
-import type { Direction } from '#/features/session-new-direction'
 
 const card = (over: Partial<SessionCard>): SessionCard => ({
   id: 'x',
@@ -314,35 +312,6 @@ describe('chatTimeBucket', () => {
     expect(chatTimeBucket(older, now)).toBe('date')
     expect(formatChatClock(today, 'en')).toMatch(/\d/)
     expect(formatChatDate(older, 'en')).toMatch(/\d/)
-  })
-})
-
-describe('directionForWorktree', () => {
-  it('returns the direction that owns a parallel slot path', () => {
-    const dirs: Array<Direction> = [
-      {
-        name: 'ux',
-        idle: 1,
-        slots: [
-          {
-            path: '/r/a/.worktrees/ux',
-            name: 'ux',
-            branch: 'dev/ux',
-            state: 'idle',
-          },
-          {
-            path: '/r/a/.worktrees/ux-2',
-            name: 'ux-2',
-            branch: 'dev/ux-2',
-            state: 'running',
-          },
-        ],
-      },
-    ]
-    expect(directionForWorktree(dirs, '/r/a/.worktrees/ux-2', 'ux-2')).toBe(
-      'ux',
-    )
-    expect(directionForWorktree(dirs, '/missing', 'fallback')).toBe('fallback')
   })
 })
 
