@@ -161,3 +161,72 @@ func TestAgyWorkspaceTrustIsExact(t *testing.T) {
 		t.Fatal("Agy trust must be confirmed for each worktree")
 	}
 }
+
+func TestAgyPendingAskAndSettlement(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "transcript_full.jsonl")
+	openAsk := strings.Join([]string{
+		`{"step_index":0,"type":"USER_INPUT","content":"<USER_REQUEST>\nHelp\n</USER_REQUEST>"}`,
+		`{"step_index":1,"type":"PLANNER_RESPONSE","tool_calls":[{"name":"ask_question","args":{"questions":[{"question":"Which mode?","options":["(Recommended) Auto","Manual"],"is_multi_select":false},{"question":"Extras?","options":["Logs","Metrics"],"is_multi_select":true}]}}]}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(path, []byte(openAsk), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	el := (agyAdapter{}).PendingAsk(path, "")
+	if el == nil || el.ToolCallID != "agy-step-1" || len(el.Questions) != 2 {
+		t.Fatalf("pending ask: %+v", el)
+	}
+	if el.Questions[0].Question != "Which mode?" || len(el.Questions[0].Options) != 2 || el.Questions[0].Options[0].Label != "(Recommended) Auto" || el.Questions[0].MultiSelect {
+		t.Fatalf("q0: %+v", el.Questions[0])
+	}
+	if !el.Questions[1].MultiSelect || len(el.Questions[1].Options) != 2 {
+		t.Fatalf("q1: %+v", el.Questions[1])
+	}
+	// Once GENERIC arrives for that ask_question, PendingAsk clears.
+	answered := openAsk + `{"step_index":2,"type":"GENERIC","content":"User selected: Auto"}` + "\n"
+	if err := os.WriteFile(path, []byte(answered), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := (agyAdapter{}).PendingAsk(path, ""); got != nil {
+		t.Fatalf("answered ask must clear: %+v", got)
+	}
+	if messagesRevFor("agy") != agyMessagesRev || agyMessagesRev < 1 {
+		t.Fatalf("agy messages_rev: %d", messagesRevFor("agy"))
+	}
+}
+
+func TestAgySkillsDiscoveryAndPrecedence(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	cwd := filepath.Join(t.TempDir(), "proj")
+	mkSkill := func(dir, content string) {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mkSkill(filepath.Join(cwd, ".agents", "skills", "shared"), "---\nname: shared\ndescription: project override\n---\n")
+	mkSkill(filepath.Join(home, ".agents", "skills", "shared"), "---\nname: shared\ndescription: user copy\n---\n")
+	mkSkill(filepath.Join(home, ".gemini", "config", "skills", "custom"), "---\nname: custom\ndescription: >-\n  multi-line\n  description\n---\n")
+	mkSkill(filepath.Join(home, ".gemini", "antigravity-cli", "builtin", "skills", "guide"), "---\nname: guide\ndescription: built in\n---\n")
+
+	raw, err := (agyAdapter{}).Skills("", cwd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	list := classifySkills(raw, cwd)
+	byName := map[string]skillInfo{}
+	for _, s := range list {
+		byName[s.Name] = s
+	}
+	if byName["shared"].Origin != "project" || byName["shared"].Description != "project override" {
+		t.Fatalf("project precedence failed: %+v", byName["shared"])
+	}
+	if byName["custom"].Origin != "user" || byName["custom"].Description != "multi-line description" {
+		t.Fatalf("user skill failed: %+v", byName["custom"])
+	}
+	if byName["guide"].Origin != "builtin" || byName["guide"].Description != "built in" {
+		t.Fatalf("builtin skill failed: %+v", byName["guide"])
+	}
+}

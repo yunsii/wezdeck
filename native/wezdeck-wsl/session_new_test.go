@@ -259,3 +259,25 @@ func TestNewSessionFailureIsReported(t *testing.T) {
 		t.Fatalf("job: %+v", j)
 	}
 }
+
+func TestNewSessionWithGroupNameAllocatesWorktree(t *testing.T) {
+	repo, _ := newSessionFixture(t)
+	raw, err := json.Marshal(map[string]string{
+		"repo": repo, "group_name": "手机端体验", "prompt": "修复列表布局",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := startNewSession(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	job := waitJob(t, res.(map[string]any)["job"].(string))
+	if job.Stage != "done" || job.Mode != "new" || !strings.HasPrefix(job.Branch, "dev/session-") {
+		t.Fatalf("unexpected job: %+v", job)
+	}
+	got, err := os.ReadFile(filepath.Join(repo, ".fake-description"))
+	if err != nil || strings.TrimSpace(string(got)) != "手机端体验" {
+		t.Fatalf("group name was not saved: %q, %v", got, err)
+	}
+}

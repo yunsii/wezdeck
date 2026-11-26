@@ -15,6 +15,7 @@ import { Button } from '#/components/ui/button'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
 import {
+  AGY_COMMANDS,
   CLAUDE_COMMANDS,
   ORIGIN_ORDER,
   completionEntries,
@@ -50,21 +51,37 @@ export function useOriginLabels(): Record<SkillOrigin | 'command', string> {
   }
 }
 
-/** Claude's own commands, described in the page language */
+/** Built-in CLI commands for agents whose slash commands aren't listed as skills */
 export function useAgentCommands(agent: string | undefined) {
   const { t } = useLingui()
-  if (agent !== 'claude') return []
-  const hints: Record<(typeof CLAUDE_COMMANDS)[number], string> = {
-    compact: t`summarise the context`,
-    new: t`start a fresh conversation`,
-    clear: t`start a fresh conversation`,
-    resume: t`pick an earlier one`,
-    context: t`context usage`,
-    usage: t`cost and limits`,
-    model: t`switch the model`,
-    rename: t`name this session`,
+  if (agent === 'claude') {
+    const hints: Record<(typeof CLAUDE_COMMANDS)[number], string> = {
+      compact: t`summarise the context`,
+      new: t`start a fresh conversation`,
+      clear: t`start a fresh conversation`,
+      resume: t`pick an earlier one`,
+      context: t`context usage`,
+      usage: t`cost and limits`,
+      model: t`switch the model`,
+      rename: t`name this session`,
+    }
+    return CLAUDE_COMMANDS.map((name) => ({ name, description: hints[name] }))
   }
-  return CLAUDE_COMMANDS.map((name) => ({ name, description: hints[name] }))
+  if (agent === 'agy') {
+    const hints: Record<(typeof AGY_COMMANDS)[number], string> = {
+      compact: t`summarise the context`,
+      new: t`start a fresh conversation`,
+      clear: t`start a fresh conversation`,
+      plan: t`outline a plan before editing`,
+      model: t`switch the model`,
+      config: t`agent settings and execution mode`,
+      permissions: t`manage tool permission rules`,
+      mcp: t`manage MCP servers`,
+      help: t`list available commands`,
+    }
+    return AGY_COMMANDS.map((name) => ({ name, description: hints[name] }))
+  }
+  return []
 }
 
 /** every entry the composer completes: commands, then skills */

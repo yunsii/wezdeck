@@ -11,6 +11,9 @@ import { useState } from 'react'
 import { useSessions } from './console-sessions'
 import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
+import { useDeleteSession } from './session-delete'
+import { requestNewSession } from './session-new'
+import { useDeviceState } from './device-state'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
 import { isWorkstation, worktreeKey } from './session-order'
@@ -208,6 +211,8 @@ export function SessionInfo({
   const statusText = useStatusText()
   const sessions = useSessions()
   const card = sessions.data?.sessions.find((row) => row.id === data.id)
+  const deleteSession = useDeleteSession()
+  const device = useDeviceState()
   const [copiedRef, setCopiedRef] = useState(false)
   useFocusKey(data.focus)
   // stays mounted while closed: the sheet plays its exit before it unmounts
@@ -257,7 +262,7 @@ export function SessionInfo({
             className="rounded-xl border border-brand-edge px-3 py-2"
             data-testid="session-info-purpose"
           >
-            <p className="mb-1 text-meta text-brand-label">{t`Workstation purpose`}</p>
+            <p className="mb-1 text-meta text-brand-label">{t`Group name`}</p>
             <div className="text-body text-brand-text">
               <WorktreePurpose
                 worktree={worktreeKey(card)}
@@ -308,6 +313,34 @@ export function SessionInfo({
             <Pencil size={15} aria-hidden />
             {t`Rename via /rename in the agent pane`}
           </Button>
+        ) : null}
+        {card?.tmux_pane && device.state === 'approved' ? (
+          <>
+            <Button
+              type="button"
+              variant="key"
+              onClick={() => {
+                onClose()
+                requestNewSession({
+                  repo: card.repo_root || card.cwd,
+                  anchor: card.id,
+                  group:
+                    card.worktree_description ||
+                    worktreeKey(card).split('/').at(-1) ||
+                    card.cwd,
+                })
+              }}
+            >
+              {t`New session in this group`}
+            </Button>
+            <Button
+              type="button"
+              variant="key"
+              onClick={() => void deleteSession(card, true)}
+            >
+              {t`Delete session`}
+            </Button>
+          </>
         ) : null}
         <FocusInTerminal focus={data.focus} />
         <OpenInVsCode cwd={metaValue(data, 'cwd')} />

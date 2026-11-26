@@ -23,12 +23,12 @@ import {
 } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { useCopySessionReference } from './copy-reference'
+import { useDeleteSession } from './session-delete'
 import { useDeviceState } from './device-state'
 import { clearable, useClearSession } from './session-clear'
 import type { ChatTone, SessionChat } from './session-chats'
 import { chatTone } from './session-chats'
 import { useChatCollapsed } from './session-collapse'
-import { directionForWorktree, useDirections } from './session-new-direction'
 import { requestNewSession } from './session-new'
 import { SwipeActions } from './session-row-swipe'
 
@@ -78,7 +78,6 @@ function SessionSubRow({
   const device = useDeviceState()
   const copyReference = useCopySessionReference()
   const { clear } = useClearSession()
-  const directions = useDirections(chat.repoKey)
   const client = useQueryClient()
   const tone = chatTone(session)
   const title = session.title?.trim()
@@ -97,35 +96,18 @@ function SessionSubRow({
   const canClear =
     device.state === 'approved' &&
     clearable(session.status, session.waiting_kind)
-  const startNewRound = () => {
-    const direction = directionForWorktree(
-      directions.data?.directions ?? [],
-      chat.key,
-      chat.title,
-    )
-    if (!direction) return false
-    requestNewSession({ repo: chat.repoKey, direction })
-    return true
-  }
+  const deleteSession = useDeleteSession()
+  const canManage = device.state === 'approved' && Boolean(session.tmux_pane)
   const copy = () => copyReference(session.id)
   return (
     <SwipeActions
       id={session.id}
-      left={
-        chat.editable
-          ? {
-              label: t`New round`,
-              className: 'bg-brand-running text-white',
-              testId: 'chat-swipe-new-round',
-              onAction: startNewRound,
-            }
-          : {
-              label: t`Copy reference`,
-              className: 'bg-brand-soft text-brand-text',
-              testId: 'chat-swipe-copy',
-              onAction: copy,
-            }
-      }
+      left={{
+        label: t`Copy reference`,
+        className: 'bg-brand-soft text-brand-text',
+        testId: 'chat-swipe-copy',
+        onAction: copy,
+      }}
       right={
         canClear
           ? {
@@ -227,15 +209,28 @@ function SessionSubRow({
                 <Hash size={14} aria-hidden />
                 {t`Copy reference`}
               </ContextMenu.Item>
-              {chat.editable ? (
-                <ContextMenu.Item
-                  data-testid="chat-new-round"
-                  onClick={() => void startNewRound()}
-                  className={menuItemClass}
-                >
-                  <Plus size={14} aria-hidden />
-                  {t`New round`}
-                </ContextMenu.Item>
+              {canManage ? (
+                <>
+                  <ContextMenu.Item
+                    className={menuItemClass}
+                    onClick={() =>
+                      requestNewSession({
+                        repo: chat.repoKey,
+                        anchor: session.id,
+                        group: chat.purpose || chat.title,
+                      })
+                    }
+                  >
+                    <Plus size={14} aria-hidden />
+                    {t`New session in this group`}
+                  </ContextMenu.Item>
+                  <ContextMenu.Item
+                    className={menuItemClass}
+                    onClick={() => void deleteSession(session, selected)}
+                  >
+                    {t`Delete session`}
+                  </ContextMenu.Item>
+                </>
               ) : null}
               {canClear ? (
                 <ContextMenu.Item
@@ -267,44 +262,66 @@ export function ChatGroupRow({
   timeOf: (ms?: number) => string
 }) {
   const { t } = useLingui()
+  const device = useDeviceState()
+  const anchor = chat.sessions.find((session) => session.tmux_pane)
   const [collapsed, toggle] = useChatCollapsed(chat.key)
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
     ? 'waiting'
     : 'done'
   return (
     <div>
-      <Button
-        variant="plain"
-        size="none"
-        type="button"
-        data-testid="chat-group-toggle"
-        data-chat={chat.key}
-        aria-expanded={!collapsed}
-        title={collapsed ? t`Expand sessions` : t`Collapse sessions`}
-        aria-label={chat.title}
-        onClick={toggle}
-        className="flex min-h-10 w-full items-center gap-1.5 px-4 py-1 text-left text-caption text-brand-label md:px-[var(--split-pad)]"
-      >
-        {collapsed ? (
-          <ChevronRight
-            size={16}
-            className="shrink-0 text-brand-label"
-            aria-hidden
-          />
-        ) : (
-          <ChevronDown
-            size={16}
-            className="shrink-0 text-brand-label"
-            aria-hidden
-          />
-        )}
-        <span className="min-w-0 flex-1 truncate font-medium">
-          {chat.title}
-        </span>
-        {collapsed && chat.unread > 0 ? (
-          <UnreadBadge tone={tone} n={chat.unread} />
+      <div className="flex items-center">
+        <Button
+          variant="plain"
+          size="none"
+          type="button"
+          data-testid="chat-group-toggle"
+          data-chat={chat.key}
+          aria-expanded={!collapsed}
+          title={collapsed ? t`Expand sessions` : t`Collapse sessions`}
+          aria-label={chat.purpose || chat.title}
+          onClick={toggle}
+          className="flex min-h-10 min-w-0 flex-1 items-center gap-1.5 px-4 py-1 text-left text-caption text-brand-label md:px-[var(--split-pad)]"
+        >
+          {collapsed ? (
+            <ChevronRight
+              size={16}
+              className="shrink-0 text-brand-label"
+              aria-hidden
+            />
+          ) : (
+            <ChevronDown
+              size={16}
+              className="shrink-0 text-brand-label"
+              aria-hidden
+            />
+          )}
+          <span className="min-w-0 flex-1 truncate font-medium">
+            {chat.purpose || chat.title}
+          </span>
+          {collapsed && chat.unread > 0 ? (
+            <UnreadBadge tone={tone} n={chat.unread} />
+          ) : null}
+        </Button>
+        {anchor && device.state === 'approved' ? (
+          <Button
+            variant="plain"
+            type="button"
+            aria-label={t`New session in this group`}
+            title={t`New session in this group`}
+            onClick={() =>
+              requestNewSession({
+                repo: chat.repoKey,
+                anchor: anchor.id,
+                group: chat.purpose || chat.title,
+              })
+            }
+            className="mr-2 size-10 shrink-0 text-brand-muted"
+          >
+            <Plus size={16} aria-hidden />
+          </Button>
         ) : null}
-      </Button>
+      </div>
       {collapsed ? null : (
         <ul>
           {chat.sessions.map((session) => (

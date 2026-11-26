@@ -20,6 +20,7 @@ export const OPEN_ACTIONS = new Set([
   'agent.profile.model',
   'agent.profile.settings',
   'session.restart',
+  'session.delete',
   'session.handoff',
   'ticket.new',
   'worktree.describe',

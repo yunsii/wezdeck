@@ -305,6 +305,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',
       ),
       c(
+        'session.delete',
+        '停止并删除一条会话，检查是否可回收空工作树',
+        'Stop and delete one session and check whether its empty worktree can be reclaimed',
+      ),
+      c(
         'session.restart',
         '重启会话所在窗格（等同终端 F5，agent 恢复原会话）或新开全新进程（等同 Ctrl+Shift+n）',
         'Respawn the session pane (the desk F5: the agent resumes) or start a blank agent process (Ctrl+Shift+n)',

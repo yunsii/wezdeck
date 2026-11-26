@@ -27,9 +27,9 @@ import { NOT_PAIRED } from '#/lib/remote-link'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, useClearSession } from './session-clear'
+import { useDeleteSession } from './session-delete'
 import { useDeviceState } from './device-state'
 import { NewSessionButton, requestNewSession } from './session-new'
-import { worktreeKey } from './session-order'
 import {
   buildChatGroups,
   chatMatchesQuery,
@@ -44,7 +44,6 @@ import {
   formatChatDate,
   formatChatWeekday,
 } from './chat-time'
-import { directionForWorktree, useDirections } from './session-new-direction'
 import { useFrozenVisits, useStickyMembers } from './session-stable'
 import { useCopySessionReference } from './copy-reference'
 import { SwipeActions } from './session-row-swipe'
@@ -98,42 +97,24 @@ function ChatRow({
   const copyReference = useCopySessionReference()
   const { clear } = useClearSession()
   const client = useQueryClient()
-  const directions = useDirections(chat.repoKey)
   const row = chat.focus
   const tone = chatTone(row)
   const warm = () => prefetchSession(client, row.id)
   const selected = row.id === selectedId
   const canClear =
     device.state === 'approved' && clearable(row.status, row.waiting_kind)
-  const startNewRound = () => {
-    const direction = directionForWorktree(
-      directions.data?.directions ?? [],
-      chat.key,
-      chat.title,
-    )
-    if (!direction) return false
-    requestNewSession({ repo: chat.repoKey, direction })
-    return true
-  }
+  const deleteSession = useDeleteSession()
+  const canManage = device.state === 'approved' && Boolean(row.tmux_pane)
   const copy = () => copyReference(row.id)
   return (
     <SwipeActions
       id={row.id}
-      left={
-        chat.editable
-          ? {
-              label: t`New round`,
-              className: 'bg-brand-running text-white',
-              testId: 'chat-swipe-new-round',
-              onAction: startNewRound,
-            }
-          : {
-              label: t`Copy reference`,
-              className: 'bg-brand-soft text-brand-text',
-              testId: 'chat-swipe-copy',
-              onAction: copy,
-            }
-      }
+      left={{
+        label: t`Copy reference`,
+        className: 'bg-brand-soft text-brand-text',
+        testId: 'chat-swipe-copy',
+        onAction: copy,
+      }}
       right={
         canClear
           ? {
@@ -239,15 +220,28 @@ function ChatRow({
                 <Hash size={14} aria-hidden />
                 {t`Copy reference`}
               </ContextMenu.Item>
-              {chat.editable ? (
-                <ContextMenu.Item
-                  data-testid="chat-new-round"
-                  onClick={() => void startNewRound()}
-                  className={menuItemClass}
-                >
-                  <Plus size={14} aria-hidden />
-                  {t`New round`}
-                </ContextMenu.Item>
+              {canManage ? (
+                <>
+                  <ContextMenu.Item
+                    className={menuItemClass}
+                    onClick={() =>
+                      requestNewSession({
+                        repo: chat.repoKey,
+                        anchor: row.id,
+                        group: chat.purpose || chat.title,
+                      })
+                    }
+                  >
+                    <Plus size={14} aria-hidden />
+                    {t`New session in this group`}
+                  </ContextMenu.Item>
+                  <ContextMenu.Item
+                    className={menuItemClass}
+                    onClick={() => void deleteSession(row, selected)}
+                  >
+                    {t`Delete session`}
+                  </ContextMenu.Item>
+                </>
               ) : null}
               {canClear ? (
                 <ContextMenu.Item
@@ -265,16 +259,6 @@ function ChatRow({
       </ContextMenu.Root>
     </SwipeActions>
   )
-}
-
-/** worktree of the open session — left-rail selection follows the chat */
-export function selectedChatKey(
-  selected: string | undefined,
-  rows: Array<SessionCard>,
-) {
-  if (!selected) return undefined
-  const row = rows.find((r) => r.id === selected)
-  return row ? worktreeKey(row) : undefined
 }
 
 function ChatSearch({
@@ -363,7 +347,7 @@ export function SessionList({
       .filter((repo) => repo.chats.length > 0)
   }, [groups, query, keptUnread, previewLabels])
 
-  const selectedWorktree = selectedChatKey(selected, rows)
+  const replaceSession = wide && rows.some((row) => row.id === selected)
   const empty = painted.every((repo) => repo.chats.length === 0)
   const searching = query.trim().length > 0
 
@@ -440,14 +424,14 @@ export function SessionList({
                       <ChatGroupRow
                         chat={chat}
                         selectedId={selected}
-                        replace={wide && Boolean(selectedWorktree)}
+                        replace={replaceSession}
                         timeOf={timeOf}
                       />
                     ) : (
                       <ChatRow
                         chat={chat}
                         selectedId={selected}
-                        replace={wide && Boolean(selectedWorktree)}
+                        replace={replaceSession}
                         preview={previewOf(chat)}
                         timeLabel={timeOf(chat.focus.ts)}
                       />
