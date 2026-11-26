@@ -1,12 +1,18 @@
-// Overlay scrollbar host for list columns: native scroll feel, custom track
-// that does not take layout width (no classic-scrollbar width jitter), hidden
-// until hover / focus-within / scroll. Wraps OverlayScrollbars.
-import 'overlayscrollbars/styles/overlayscrollbars.css'
+// Desktop list-column scroller: OverlayScrollbars (hover-show, no layout-width
+// jitter). Touch / coarse pointers keep a plain overflow div — phones already
+// use OS overlay bars, and SplitColumn is wide-only anyway; this guard also
+// keeps the library off the mobile render path when reused elsewhere.
+import { lazy, Suspense } from 'react'
+import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react'
-import type { OverlayScrollbarsComponentProps } from 'overlayscrollbars-react'
-
+import { useMediaQuery } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
+
+const OverlayScrollbarsLazy = lazy(async () => {
+  await import('overlayscrollbars/styles/overlayscrollbars.css')
+  const { OverlayScrollbarsComponent } = await import('overlayscrollbars-react')
+  return { default: OverlayScrollbarsComponent }
+})
 
 const defaults = {
   overflow: { x: 'hidden' as const, y: 'scroll' as const },
@@ -18,32 +24,57 @@ const defaults = {
   },
 }
 
-/**
- * Flex-friendly overlay scroller. Parent must give it a bounded height
- * (`min-h-0 flex-1` / `h-full`). Children scroll inside; the bar paints over
- * the content edge instead of stealing columns.
- */
-export function OverlayScroll({
-  className,
-  options,
-  children,
-  ...rest
-}: OverlayScrollbarsComponentProps) {
-  const extra = options && typeof options === 'object' ? options : {}
+type NativeProps = ComponentPropsWithoutRef<'div'> & { children?: ReactNode }
+
+function NativeScroll({ className, children, ...rest }: NativeProps) {
   return (
-    <OverlayScrollbarsComponent
-      defer
-      data-overlayscrollbars-initialize=""
-      options={{
-        ...defaults,
-        ...extra,
-        overflow: { ...defaults.overflow, ...extra.overflow },
-        scrollbars: { ...defaults.scrollbars, ...extra.scrollbars },
-      }}
-      className={cn('h-full min-h-0', className)}
+    <div
+      className={cn(
+        'h-full min-h-0 overflow-y-auto overscroll-contain',
+        className,
+      )}
       {...rest}
     >
       {children}
-    </OverlayScrollbarsComponent>
+    </div>
+  )
+}
+
+/**
+ * Flex-friendly scroller. Parent must give a bounded height (`min-h-0 flex-1`
+ * / `h-full`). On fine-pointer desktops: OverlayScrollbars. On touch / coarse
+ * pointers: native overflow (no library init).
+ */
+export function OverlayScroll({ className, children, ...rest }: NativeProps) {
+  // Phone-first: assume touch until matchMedia says otherwise, so SSR / first
+  // paint never mounts OverlayScrollbars on a phone.
+  const desktopPointer = useMediaQuery(
+    '(hover: hover) and (pointer: fine)',
+    false,
+  )
+  if (!desktopPointer) {
+    return (
+      <NativeScroll className={className} {...rest}>
+        {children}
+      </NativeScroll>
+    )
+  }
+  return (
+    <Suspense
+      fallback={
+        <NativeScroll className={className} {...rest}>
+          {children}
+        </NativeScroll>
+      }
+    >
+      <OverlayScrollbarsLazy
+        defer
+        data-overlayscrollbars-initialize=""
+        options={defaults}
+        className={cn('h-full min-h-0', className)}
+      >
+        {children}
+      </OverlayScrollbarsLazy>
+    </Suspense>
   )
 }
