@@ -2,7 +2,6 @@ import { useLingui } from '@lingui/react/macro'
 import { ShieldCheck } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
 import type { AgentProfile } from './agent-profiles'
@@ -46,9 +45,6 @@ export function ComposeLayer({
   repo,
   onRepo,
   group,
-  suggestedName,
-  customName,
-  onName,
   prompt,
   setPrompt,
   current,
@@ -69,9 +65,6 @@ export function ComposeLayer({
   repo: string
   onRepo: (repo: string) => void
   group?: string
-  suggestedName: string
-  customName: string
-  onName: (name: string) => void
   prompt: string
   setPrompt: (next: string) => void
   current?: StageJob
@@ -102,40 +95,22 @@ export function ComposeLayer({
       </label>
       {group ? (
         <p className="truncate text-caption text-brand-muted">{group}</p>
-      ) : (
-        <>
-          <label className="grid gap-1 text-caption text-brand-muted">
-            {t`Group name`}
-            <Input
-              value={customName}
-              placeholder={suggestedName}
-              onChange={(event) => onName(event.target.value)}
-              disabled={busy}
-              maxLength={60}
-              data-testid="new-session-group-name"
-            />
-          </label>
-          {repositories.length > 1 ? (
-            <label className="grid gap-1 text-caption text-brand-muted">
-              {t`Repository`}
-              <Select
-                value={repo}
-                disabled={busy}
-                onValueChange={onRepo}
-                aria-label={t`Repository`}
-                options={repositories.map(({ root, label }) => ({
-                  value: root,
-                  label,
-                }))}
-              />
-            </label>
-          ) : repoLabel ? (
-            <p className="truncate text-caption text-brand-muted">
-              {repoLabel}
-            </p>
-          ) : null}
-        </>
-      )}
+      ) : null}
+      <label className="grid gap-1 text-caption text-brand-muted">
+        {t`Repository`}
+        <Select
+          value={repo}
+          disabled={busy || Boolean(group) || repositories.length < 2}
+          onValueChange={onRepo}
+          size="lg"
+          aria-label={t`Repository`}
+          options={
+            group
+              ? [{ value: repo, label: repoLabel }]
+              : repositories.map(({ root, label }) => ({ value: root, label }))
+          }
+        />
+      </label>
       {agentProfiles.length > 0 ? (
         <label className="grid gap-1 text-caption text-brand-muted">
           {t`Agent`}

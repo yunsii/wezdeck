@@ -878,6 +878,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
 	if err == nil {
 		out["screen"] = strings.TrimRight(string(screen), "\n ")
+		if agent == "agy" {
+			if msgs, ok := out["messages"].([]chatMessage); ok {
+				applyAgyScreenPermission(out, msgs, string(screen))
+			}
+		}
 	}
 	if r, ok := adapterFor(agent).(askReader); ok && path != "" {
 		if el := r.PendingAsk(path, string(screen)); el != nil {

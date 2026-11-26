@@ -5,13 +5,11 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -32,91 +30,6 @@ func (agyAdapter) ToolKind(name string, input map[string]any) string {
 }
 func (agyAdapter) Capabilities() agentCaps {
 	return agentCaps{Usage: "transcript", MidTurnInput: "queue", Title: true}
-}
-
-// PendingAsk implements askReader: returns the newest unanswered ask_question
-// tool call in transcript_full.jsonl so the web renders tappable options.
-func (agyAdapter) PendingAsk(path, _ string) *elicitation { return pendingAgyElicitation(path) }
-
-func pendingAgyElicitation(path string) *elicitation {
-	data, err := readTailFile(path, 2<<20)
-	if err != nil {
-		return nil
-	}
-	type pendingCall struct {
-		step int
-		name string
-		args json.RawMessage
-	}
-	var queue []pendingCall
-	for _, line := range bytes.Split(data, []byte("\n")) {
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		var row struct {
-			StepIndex int    `json:"step_index"`
-			Type      string `json:"type"`
-			ToolCalls []struct {
-				Name string          `json:"name"`
-				Args json.RawMessage `json:"args"`
-			} `json:"tool_calls"`
-		}
-		if json.Unmarshal(line, &row) != nil {
-			continue
-		}
-		switch row.Type {
-		case "USER_INPUT":
-			queue = nil
-		case "PLANNER_RESPONSE":
-			queue = nil
-			for _, tc := range row.ToolCalls {
-				queue = append(queue, pendingCall{step: row.StepIndex, name: tc.Name, args: tc.Args})
-			}
-		case "GENERIC":
-			if len(queue) > 0 {
-				queue = queue[1:]
-			}
-		}
-	}
-	for i := len(queue) - 1; i >= 0; i-- {
-		if queue[i].name == "ask_question" {
-			return parseAgyAskQuestions("agy-step-"+strconv.Itoa(queue[i].step), queue[i].args)
-		}
-	}
-	return nil
-}
-
-// parseAgyAskQuestions parses Agy's ask_question schema:
-// {questions:[{question, options:["..."], is_multi_select}]}.
-func parseAgyAskQuestions(id string, input json.RawMessage) *elicitation {
-	var raw struct {
-		Questions []struct {
-			Question      string   `json:"question"`
-			Options       []string `json:"options"`
-			IsMultiSelect bool     `json:"is_multi_select"`
-		} `json:"questions"`
-	}
-	if json.Unmarshal(input, &raw) != nil || len(raw.Questions) == 0 {
-		return nil
-	}
-	out := &elicitation{ToolCallID: id}
-	for _, q := range raw.Questions {
-		if strings.TrimSpace(q.Question) == "" {
-			continue
-		}
-		eq := elicitQuestion{Question: q.Question, MultiSelect: q.IsMultiSelect}
-		for _, opt := range q.Options {
-			if opt = strings.TrimSpace(opt); opt != "" {
-				eq.Options = append(eq.Options, elicitOption{Label: opt})
-			}
-		}
-		out.Questions = append(out.Questions, eq)
-	}
-	if len(out.Questions) == 0 {
-		return nil
-	}
-	return out
 }
 
 var agyToolKinds = map[string]string{
@@ -218,6 +131,7 @@ func (t *transcript) feedAgy(raw []byte) {
 	var row struct {
 		Type            string `json:"type"`
 		Content         string `json:"content"`
+		Thinking        string `json:"thinking"`
 		CreatedAt       string `json:"created_at"`
 		Model           string `json:"model"`
 		InputTokens     int    `json:"input_tokens"`
@@ -243,6 +157,12 @@ func (t *transcript) feedAgy(raw []byte) {
 		}
 	case "PLANNER_RESPONSE":
 		t.settleAgyPending()
+		if thought := strings.TrimSpace(row.Thinking); thought != "" {
+			t.messages = append(t.messages, chatMessage{
+				Role: "system", Kind: "thought",
+				Text: clip(firstLine(thought), 160), Body: clip(thought, 4000), TS: row.CreatedAt,
+			})
+		}
 		if text := strings.TrimSpace(row.Content); text != "" {
 			t.messages = append(t.messages, chatMessage{Role: "assistant", Text: clip(text, 8000), TS: row.CreatedAt})
 		}
@@ -473,85 +393,6 @@ func agyToolBody(name string, input map[string]any) string {
 		return clipLines(strings.Join(lines, "\n"), 40)
 	}
 	return ""
-}
-
-func normalizeAgyMode(raw string) string {
-	s := strings.ToLower(strings.TrimSpace(strings.Trim(raw, "`'\"")))
-	switch s {
-	case "":
-		return ""
-	case "auto", "auto mode":
-		return "auto"
-	case "accept-edits", "accept edits", "acceptedits":
-		return "accept-edits"
-	case "plan", "plan mode":
-		return "plan"
-	case "full-access", "full access", "yolo", "bypasspermissions", "dangerously-skip-permissions":
-		return "full-access"
-	case "default", "default mode", "manual", "none":
-		return "default"
-	default:
-		return s
-	}
-}
-
-func agySettingsPath() string {
-	if dir := strings.TrimSpace(os.Getenv("AGY_CONFIG_DIR")); dir != "" {
-		return filepath.Join(dir, "settings.json")
-	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".gemini", "antigravity-cli", "settings.json")
-}
-
-func agyModeFromSettings() string {
-	body, err := os.ReadFile(agySettingsPath())
-	if err != nil {
-		return ""
-	}
-	var settings struct {
-		AgentMode string `json:"agentMode"`
-	}
-	if json.Unmarshal(body, &settings) != nil {
-		return ""
-	}
-	return normalizeAgyMode(settings.AgentMode)
-}
-
-func agyModeFromArgs(argv []string) string {
-	mode := ""
-	for i := 0; i < len(argv); i++ {
-		arg := argv[i]
-		if arg == "--dangerously-skip-permissions" {
-			return "full-access"
-		}
-		if arg == "--mode" && i+1 < len(argv) {
-			mode = normalizeAgyMode(argv[i+1])
-			i++
-			continue
-		}
-		if strings.HasPrefix(arg, "--mode=") {
-			mode = normalizeAgyMode(strings.TrimPrefix(arg, "--mode="))
-		}
-	}
-	return mode
-}
-
-// resolveAgyMode returns Agy's effective execution mode so the web console can
-// always tell whether auto mode is on: in-session toggle > CLI flag > settings.json > default.
-func resolveAgyMode(e attentionEntry, t *transcript) string {
-	if t != nil && t.mode != "" {
-		return t.mode
-	}
-	if e.TmuxPane != "" {
-		argv := paneDescendantArgs(e.TmuxSocket, e.TmuxPane, func(comm string) bool { return comm == "agy" })
-		if mode := agyModeFromArgs(argv); mode != "" {
-			return mode
-		}
-	}
-	if mode := agyModeFromSettings(); mode != "" {
-		return mode
-	}
-	return "default"
 }
 
 func handoffDigestAgy(raw []byte, users *[]string, files map[string]struct{}, lastAssist *string) {

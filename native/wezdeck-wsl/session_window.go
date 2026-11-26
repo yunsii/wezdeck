@@ -30,7 +30,7 @@ const sessionPendingLookback = 40
 // replace stale IndexedDB cache pages instead of merging by old indexes.
 const (
 	codexMessagesRev = 1
-	agyMessagesRev   = 1
+	agyMessagesRev   = 2
 )
 
 func messagesRevFor(agent string) int {

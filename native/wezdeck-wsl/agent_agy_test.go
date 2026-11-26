@@ -230,3 +230,40 @@ func TestAgySkillsDiscoveryAndPrecedence(t *testing.T) {
 		t.Fatalf("builtin skill failed: %+v", byName["guide"])
 	}
 }
+
+func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "transcript_full.jsonl")
+	lines := []string{
+		`{"step_index":0,"type":"USER_INPUT","content":"<USER_REQUEST>\nPush branch\n</USER_REQUEST>"}`,
+		`{"step_index":1,"type":"PLANNER_RESPONSE","thinking":"Checking git push.\nNeeds bypass sandbox.","tool_calls":[{"name":"run_command","args":{"CommandLine":"git push origin master","toolSummary":"Push branch","BypassSandbox":true}}]}`,
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	tr, err := loadTranscript(path, "agy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tr.messages) != 3 || tr.messages[1].Role != "system" || tr.messages[1].Kind != "thought" ||
+		tr.messages[1].Text != "Checking git push." || !strings.Contains(tr.messages[1].Body, "Needs bypass sandbox.") {
+		t.Fatalf("thought message: %+v", tr.messages)
+	}
+	if !agyPermissionPromptVisible("Run this command?\n> 1. Yes\n  2. No") {
+		t.Fatal("Run this command? should be detected")
+	}
+	if !agyPermissionPromptVisible("Do you want to proceed?\n> 1. Yes\n  2. Yes, and always allow 'git push'") {
+		t.Fatal("Do you want to proceed? + always allow should be detected")
+	}
+	if agyPermissionPromptVisible("Do you trust the contents of this project?\n> Yes, I trust this folder") {
+		t.Fatal("workspace trust prompt must not be treated as permission prompt")
+	}
+	out := map[string]any{"status": "running", "waiting_kind": ""}
+	applyAgyScreenPermission(out, tr.messages, "Run this command?\n> 1. Yes\n  2. No")
+	if out["status"] != "waiting" || out["waiting_kind"] != "permission_prompt" {
+		t.Fatalf("status not escalated to waiting: %+v", out)
+	}
+	perm, ok := out["permission"].(*pendingCall)
+	if !ok || perm == nil || perm.Tool != "run_command" || !strings.Contains(perm.Body, "git push origin master") {
+		t.Fatalf("permission card: %+v", out["permission"])
+	}
+}
