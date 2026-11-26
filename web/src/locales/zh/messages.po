@@ -180,7 +180,7 @@ msgid "+ Description"
 msgstr "+ 描述"
 
 #: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:415
+#: src/features/session-new.tsx:432
 msgid "+ New direction"
 msgstr "+ 新方向"
 
@@ -232,7 +232,7 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/session-new-panels.tsx:294
+#: src/features/session-new-panels.tsx:302
 msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
 
@@ -280,8 +280,8 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:114
-#: src/features/session-new-panels.tsx:120
+#: src/features/session-new-panels.tsx:116
+#: src/features/session-new-panels.tsx:122
 msgid "Agent"
 msgstr "智能体"
 
@@ -295,11 +295,11 @@ msgid "Agent sessions"
 msgstr "Agent 会话"
 
 #: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:71
+#: src/features/me-agents.tsx:84
 msgid "Agents"
 msgstr "智能体"
 
-#: src/features/session-new.tsx:204
+#: src/features/session-new.tsx:205
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
@@ -328,7 +328,7 @@ msgstr "全部仓库"
 msgid "All tags"
 msgstr "全部标签"
 
-#: src/features/me-agent-detail.tsx:88
+#: src/features/me-agent-detail.tsx:89
 msgid "All tiers"
 msgstr "全部档位"
 
@@ -370,7 +370,7 @@ msgid "API error"
 msgstr "API 错误"
 
 #. placeholder {0}: profile.masked_key
-#: src/features/me-agent-detail.tsx:65
+#: src/features/me-agent-detail.tsx:66
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
@@ -423,28 +423,32 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/me-agent-detail.tsx:72
+#: src/features/me-agent-detail.tsx:73
 msgid "Auto compact"
 msgstr "自动压缩窗口"
 
-#: src/features/me-agent-detail.tsx:80
+#: src/features/me-agent-detail.tsx:81
 msgid "Auto mode server"
 msgstr "Auto mode 服务端"
+
+#: src/features/me-agent-detail.tsx:276
+msgid "Availability and note"
+msgstr "可用状态与备注"
 
 #: src/features/console-me.tsx:450
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:143
+#: src/features/me-agents.tsx:165
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
-#: src/features/session-new.tsx:235
+#: src/features/session-new.tsx:236
 msgid "Back to message"
 msgstr "返回写消息"
 
-#: src/features/session-new.tsx:235
+#: src/features/session-new.tsx:236
 msgid "Back to place"
 msgstr "返回选位置"
 
@@ -469,11 +473,11 @@ msgstr "细线"
 msgid "Base commit"
 msgstr "基线提交"
 
-#: src/features/me-agent-detail.tsx:60
+#: src/features/me-agent-detail.tsx:61
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:60
 msgid "Blank switch"
 msgstr "空白切换"
 
@@ -543,7 +547,7 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/session-handoff.tsx:266
+#: src/features/session-handoff.tsx:274
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
@@ -561,7 +565,7 @@ msgstr "能力"
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
-#: src/features/session-handoff.tsx:58
+#: src/features/session-handoff.tsx:59
 msgid "Carry a brief"
 msgstr "携带简报"
 
@@ -638,11 +642,11 @@ msgstr "清除搜索"
 msgid "Clearing…"
 msgstr "处理中…"
 
-#: src/features/me-agent-detail.tsx:208
+#: src/features/me-agent-detail.tsx:209
 msgid "CLI default"
 msgstr "CLI 默认模型"
 
-#: src/features/me-agent-detail.tsx:209
+#: src/features/me-agent-detail.tsx:210
 msgid "CLI selects automatically"
 msgstr "由 CLI 自动选择"
 
@@ -703,7 +707,7 @@ msgstr "命令"
 msgid "Command output"
 msgstr "命令输出"
 
-#: src/features/session-send.ts:240
+#: src/features/session-send.ts:242
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
@@ -741,7 +745,7 @@ msgstr "输入框"
 msgid "Composer tools"
 msgstr "输入工具"
 
-#: src/features/me-agent-detail.tsx:280
+#: src/features/me-agent-detail.tsx:339
 msgid "Configured"
 msgstr "已配置"
 
@@ -817,7 +821,7 @@ msgstr "上下文压缩次数"
 msgid "context usage"
 msgstr "上下文占用"
 
-#: src/features/session-new-panels.tsx:319
+#: src/features/session-new-panels.tsx:327
 msgid "Continue"
 msgstr "继续"
 
@@ -864,12 +868,12 @@ msgstr "复制错误信息"
 msgid "Copy raw line"
 msgstr "复制原始日志"
 
-#: src/features/copy-reference.tsx:110
-#: src/features/copy-reference.tsx:111
-#: src/features/me-agent-detail.tsx:287
-#: src/features/me-agent-detail.tsx:288
-#: src/features/me-agents.tsx:116
-#: src/features/me-agents.tsx:117
+#: src/features/copy-reference.tsx:118
+#: src/features/copy-reference.tsx:119
+#: src/features/me-agent-detail.tsx:346
+#: src/features/me-agent-detail.tsx:347
+#: src/features/me-agents.tsx:138
+#: src/features/me-agents.tsx:139
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "复制引用"
@@ -910,7 +914,7 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:209
+#: src/features/session-new.tsx:210
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -930,7 +934,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new-panels.tsx:189
+#: src/features/session-new-panels.tsx:197
 msgid "Create session"
 msgstr "创建会话"
 
@@ -938,7 +942,7 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:200
+#: src/features/session-new.tsx:201
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
@@ -955,7 +959,7 @@ msgstr "跨仓协作"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/me-agent-detail.tsx:213
+#: src/features/me-agent-detail.tsx:214
 msgid "Current API key"
 msgstr "当前 API 密钥"
 
@@ -997,7 +1001,7 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-new-panels.tsx:301
+#: src/features/session-new-panels.tsx:309
 msgid "Description"
 msgstr "描述"
 
@@ -1020,8 +1024,8 @@ msgid "Direct"
 msgstr "直连"
 
 #: src/features/session-new-direction.tsx:121
-#: src/features/session-new-panels.tsx:234
-#: src/features/session-new.tsx:416
+#: src/features/session-new-panels.tsx:242
+#: src/features/session-new.tsx:433
 msgid "Direction"
 msgstr "方向"
 
@@ -1029,6 +1033,17 @@ msgstr "方向"
 #: src/features/session-info.tsx:55
 msgid "Directory"
 msgstr "目录"
+
+#: src/features/me-agent-detail.tsx:293
+msgid "Disable this agent"
+msgstr "停用此 Agent"
+
+#: src/features/me-agent-detail.tsx:336
+#: src/features/me-agents.tsx:67
+#: src/features/me-agents.tsx:119
+#: src/features/session-new-panels.tsx:133
+msgid "Disabled"
+msgstr "已停用"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:150
@@ -1044,7 +1059,7 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-new-panels.tsx:283
+#: src/features/session-new-panels.tsx:291
 msgid "e.g. ux, ci, i18n"
 msgstr "例如 ux、ci、i18n"
 
@@ -1060,7 +1075,7 @@ msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 msgid "Edit the description"
 msgstr "修改描述"
 
-#: src/features/me-agent-detail.tsx:70
+#: src/features/me-agent-detail.tsx:71
 msgid "Effort"
 msgstr "推理力度"
 
@@ -1132,7 +1147,7 @@ msgstr "退出码"
 msgid "Expired"
 msgstr "已过期"
 
-#: src/features/me-agent-detail.tsx:101
+#: src/features/me-agent-detail.tsx:102
 msgid "Fable tier"
 msgstr "Fable 档"
 
@@ -1174,7 +1189,7 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new-panels.tsx:102
+#: src/features/session-new-panels.tsx:104
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -1207,24 +1222,24 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/me-agent-detail.tsx:98
+#: src/features/me-agent-detail.tsx:99
 msgid "Haiku tier"
 msgstr "Haiku 档"
 
-#: src/features/session-handoff.tsx:58
-#: src/features/session-handoff.tsx:227
+#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:235
 msgid "Hand off"
 msgstr "接力"
 
-#: src/features/session-handoff.tsx:292
+#: src/features/session-handoff.tsx:300
 msgid "Hand off / switch"
 msgstr "交接 / 切换"
 
-#: src/features/session-handoff.tsx:277
+#: src/features/session-handoff.tsx:285
 msgid "Hand off to {to}"
 msgstr "接力给 {to}"
 
-#: src/features/session-handoff.tsx:287
+#: src/features/session-handoff.tsx:295
 msgid "Hand off to another agent"
 msgstr "接力给另一个 agent"
 
@@ -1232,15 +1247,15 @@ msgstr "接力给另一个 agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/session-handoff.tsx:168
+#: src/features/session-handoff.tsx:176
 msgid "Handed off to {toAgent}"
 msgstr "已接力给 {toAgent}"
 
-#: src/features/session-handoff.tsx:159
+#: src/features/session-handoff.tsx:167
 msgid "Handoff brief"
 msgstr "接力 brief"
 
-#: src/features/session-handoff.tsx:178
+#: src/features/session-handoff.tsx:186
 msgid "Handoff failed"
 msgstr "接力失败"
 
@@ -1260,7 +1275,7 @@ msgstr "收起初始消息"
 msgid "hit {hit}%"
 msgstr "命中 {hit}%"
 
-#: src/features/session-new-panels.tsx:129
+#: src/features/session-new-panels.tsx:137
 msgid "host default"
 msgstr "主机默认"
 
@@ -1434,7 +1449,7 @@ msgstr "键盘快捷键"
 msgid "Keys"
 msgstr "快捷"
 
-#: src/features/me-agent-detail.tsx:130
+#: src/features/me-agent-detail.tsx:131
 msgid "Kimi API key"
 msgstr "Kimi API 密钥"
 
@@ -1484,7 +1499,7 @@ msgstr "最新输出"
 msgid "Launch details"
 msgstr "启动详情"
 
-#: src/features/me-agent-detail.tsx:140
+#: src/features/me-agent-detail.tsx:141
 msgid "Leave blank to keep current key"
 msgstr "留空以保留当前密钥"
 
@@ -1538,7 +1553,7 @@ msgstr "正在加载原图…"
 #: src/features/console-sessions.tsx:443
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:69
+#: src/features/me-agents.tsx:82
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:221
@@ -1557,7 +1572,7 @@ msgstr "日志详情"
 msgid "Log stream"
 msgstr "日志流"
 
-#: src/features/me-agent-detail.tsx:62
+#: src/features/me-agent-detail.tsx:63
 msgid "Login"
 msgstr "登录"
 
@@ -1565,11 +1580,11 @@ msgstr "登录"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/me-agent-detail.tsx:304
+#: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
 msgstr "由主机配置管理"
 
-#: src/features/me-agent-detail.tsx:206
+#: src/features/me-agent-detail.tsx:207
 msgid "Managed override"
 msgstr "受管模型覆盖"
 
@@ -1586,7 +1601,7 @@ msgstr "标为已读"
 msgid "Marked read"
 msgstr "已标为已读"
 
-#: src/features/me-agent-detail.tsx:76
+#: src/features/me-agent-detail.tsx:77
 msgid "Max context"
 msgstr "最大上下文"
 
@@ -1618,14 +1633,14 @@ msgstr "统计窗口"
 msgid "Mode"
 msgstr "模式"
 
-#: src/features/me-agent-detail.tsx:69
+#: src/features/me-agent-detail.tsx:70
 #: src/features/session-empty.tsx:42
 #: src/features/session-info.tsx:54
 msgid "Model"
 msgstr "模型"
 
-#: src/features/me-agent-detail.tsx:145
-#: src/features/me-agent-detail.tsx:196
+#: src/features/me-agent-detail.tsx:146
+#: src/features/me-agent-detail.tsx:197
 msgid "Model ID"
 msgstr "模型 ID"
 
@@ -1666,8 +1681,8 @@ msgstr "自动命名会话"
 msgid "Needs a decision"
 msgstr "需要确认"
 
-#: src/features/session-new-panels.tsx:142
-#: src/features/session-new-panels.tsx:297
+#: src/features/session-new-panels.tsx:150
+#: src/features/session-new-panels.tsx:305
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
@@ -1689,8 +1704,8 @@ msgstr "新开会话"
 msgid "new direction"
 msgstr "新方向"
 
-#: src/features/session-new-panels.tsx:275
-#: src/features/session-new.tsx:240
+#: src/features/session-new-panels.tsx:283
+#: src/features/session-new.tsx:241
 msgid "New direction"
 msgstr "新方向"
 
@@ -1700,12 +1715,12 @@ msgstr "换行"
 
 #: src/features/session-list.tsx:191
 #: src/features/session-list.tsx:192
-#: src/features/session-new.tsx:231
+#: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "新一轮"
 
-#: src/features/session-new.tsx:231
-#: src/features/session-new.tsx:310
+#: src/features/session-new.tsx:232
+#: src/features/session-new.tsx:311
 msgid "New session"
 msgstr "新会话"
 
@@ -1713,7 +1728,7 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:306
+#: src/features/session-new.tsx:307
 msgid "New session (c)"
 msgstr "新会话（c）"
 
@@ -1859,11 +1874,11 @@ msgstr "无上游"
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
-#: src/features/me-agent-detail.tsx:66
-#: src/features/me-agent-detail.tsx:215
-#: src/features/me-agent-detail.tsx:280
-#: src/features/me-agents.tsx:104
-#: src/features/session-new-panels.tsx:127
+#: src/features/me-agent-detail.tsx:67
+#: src/features/me-agent-detail.tsx:216
+#: src/features/me-agent-detail.tsx:339
+#: src/features/me-agents.tsx:126
+#: src/features/session-new-panels.tsx:135
 msgid "Not configured"
 msgstr "未配置"
 
@@ -1899,14 +1914,18 @@ msgstr "未推送"
 msgid "Not running"
 msgstr "未运行"
 
-#: src/features/me-agent-detail.tsx:60
-#: src/features/me-agent-detail.tsx:69
+#: src/features/me-agent-detail.tsx:61
 #: src/features/me-agent-detail.tsx:70
-#: src/features/me-agent-detail.tsx:73
-#: src/features/me-agent-detail.tsx:77
-#: src/features/me-agent-detail.tsx:84
+#: src/features/me-agent-detail.tsx:71
+#: src/features/me-agent-detail.tsx:74
+#: src/features/me-agent-detail.tsx:78
+#: src/features/me-agent-detail.tsx:85
 msgid "Not set"
 msgstr "未设置"
+
+#: src/features/me-agent-detail.tsx:278
+msgid "Note"
+msgstr "备注"
 
 #: src/features/ticket-proposals.tsx:113
 msgid "Nothing is created until you confirm."
@@ -1936,7 +1955,7 @@ msgstr "状态：{label}"
 msgid "Off"
 msgstr "未启用"
 
-#: src/features/me-agent-detail.tsx:83
+#: src/features/me-agent-detail.tsx:84
 msgid "Off (client classifier)"
 msgstr "关闭（客户端分类器）"
 
@@ -2016,11 +2035,11 @@ msgstr "正在打开…"
 msgid "opens one more"
 msgstr "将新开"
 
-#: src/features/session-handoff.tsx:245
+#: src/features/session-handoff.tsx:253
 msgid "Optional note"
 msgstr "补充说明"
 
-#: src/features/me-agent-detail.tsx:92
+#: src/features/me-agent-detail.tsx:93
 msgid "Opus tier"
 msgstr "Opus 档"
 
@@ -2262,7 +2281,7 @@ msgstr "通过 Agent 窗格的 /rename 改标题"
 msgid "Reopen"
 msgstr "重新打开"
 
-#: src/features/me-agent-detail.tsx:130
+#: src/features/me-agent-detail.tsx:131
 msgid "Replace API key"
 msgstr "更换 API 密钥"
 
@@ -2270,15 +2289,15 @@ msgstr "更换 API 密钥"
 #~ msgid "Replace this pane with {target} and paste a continuation brief"
 #~ msgstr "用 {target} 替换本格，并粘贴接续 brief"
 
-#: src/features/session-handoff.tsx:305
+#: src/features/session-handoff.tsx:313
 msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
 msgstr "将此窗格替换为 {target}；选择交接简报或空白切换"
 
-#: src/features/session-handoff.tsx:240
+#: src/features/session-handoff.tsx:248
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "用 {to} 替换本格。源会话 transcript 仍在磁盘上；首条消息会粘贴一段接续 brief。之后 F5 仍起 {to}。不会 recycle worktree。"
 
-#: src/features/session-handoff.tsx:241
+#: src/features/session-handoff.tsx:249
 msgid "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
 msgstr "将此窗格替换为没有上下文的 {to}。不会发送续接简报或首条消息，也不会读取旧记录。工作树保持不变；之后按 F5 仍会使用 {to}。"
 
@@ -2319,13 +2338,13 @@ msgid "Repo filter"
 msgstr "仓库筛选"
 
 #: src/features/session-info.tsx:56
-#: src/features/session-new-panels.tsx:221
+#: src/features/session-new-panels.tsx:229
 msgid "Repository"
 msgstr "仓库"
 
 #: src/features/console-me.tsx:319
-#: src/features/me-agents.tsx:53
-#: src/features/session-new-panels.tsx:122
+#: src/features/me-agents.tsx:59
+#: src/features/session-new-panels.tsx:126
 msgid "Repository default"
 msgstr "按仓库设置"
 
@@ -2365,7 +2384,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new.tsx:199
+#: src/features/session-new.tsx:200
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -2553,16 +2572,20 @@ msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 msgid "Same at the desk"
 msgstr "终端同键"
 
-#: src/features/me-agent-detail.tsx:171
-#: src/features/me-agent-detail.tsx:230
+#: src/features/me-agent-detail.tsx:172
+#: src/features/me-agent-detail.tsx:231
 msgid "Save"
 msgstr "保存"
 
-#: src/features/me-agent-detail.tsx:22
+#: src/features/me-agent-detail.tsx:306
+msgid "Save availability and note"
+msgstr "保存可用状态与备注"
+
+#: src/features/me-agent-detail.tsx:23
 msgid "Saved"
 msgstr "已保存"
 
-#: src/features/me-agent-detail.tsx:155
+#: src/features/me-agent-detail.tsx:156
 msgid "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 档位、effort=high，以及 compact/max-context（262144；模型含 [1m] 时为 1048576）。重启 Kimi 窗后 /status 才会刷新。"
 
@@ -2570,8 +2593,9 @@ msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 
 #~ msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
 #~ msgstr "保存时会按 Kimi Claude Code 指南写入 Base URL、全部 Claude 档位、自动压缩窗口与推理力度。重启 Kimi 窗后 /status 才会刷新。"
 
-#: src/features/me-agent-detail.tsx:171
-#: src/features/me-agent-detail.tsx:230
+#: src/features/me-agent-detail.tsx:172
+#: src/features/me-agent-detail.tsx:231
+#: src/features/me-agent-detail.tsx:306
 msgid "Saving…"
 msgstr "保存中…"
 
@@ -2625,11 +2649,11 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:206
+#: src/features/session-new.tsx:207
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
-#: src/features/session-handoff.tsx:192
+#: src/features/session-handoff.tsx:200
 msgid "Sending the handoff brief…"
 msgstr "正在发送接续 brief…"
 
@@ -2742,7 +2766,7 @@ msgstr "部分数据没拿到：{missing}"
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
-#: src/features/me-agent-detail.tsx:95
+#: src/features/me-agent-detail.tsx:96
 msgid "Sonnet tier"
 msgstr "Sonnet 档"
 
@@ -2774,7 +2798,7 @@ msgstr "开一个新会话"
 msgid "Start fresh"
 msgstr "新开"
 
-#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:60
 msgid "Start without context"
 msgstr "不带上下文启动"
 
@@ -2790,11 +2814,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:208
+#: src/features/session-new.tsx:209
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:202
+#: src/features/session-new.tsx:203
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -2817,7 +2841,7 @@ msgstr "状态"
 msgid "Status updated"
 msgstr "状态更新于"
 
-#: src/features/me-agent-detail.tsx:104
+#: src/features/me-agent-detail.tsx:105
 msgid "Sub-agent"
 msgstr "子智能体"
 
@@ -2846,7 +2870,7 @@ msgstr "摘要"
 msgid "Switch chat"
 msgstr "切换对话"
 
-#: src/features/session-handoff.tsx:54
+#: src/features/session-handoff.tsx:55
 msgid "Switch mode"
 msgstr "切换模式"
 
@@ -2862,11 +2886,11 @@ msgstr "切换会话（Alt+g）"
 msgid "switch the model"
 msgstr "切换模型"
 
-#: src/features/session-handoff.tsx:277
+#: src/features/session-handoff.tsx:285
 msgid "Switch to {to}"
 msgstr "切换到 {to}"
 
-#: src/features/session-handoff.tsx:167
+#: src/features/session-handoff.tsx:175
 msgid "Switched to {toAgent}"
 msgstr "已切换到 {toAgent}"
 
@@ -2874,7 +2898,7 @@ msgstr "已切换到 {toAgent}"
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
-#: src/features/session-handoff.tsx:193
+#: src/features/session-handoff.tsx:201
 msgid "Switching agent…"
 msgstr "正在切换 agent…"
 
@@ -2976,7 +3000,7 @@ msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
-#: src/features/session-new.tsx:167
+#: src/features/session-new.tsx:168
 msgid "The previous session request expired. Start a new one."
 msgstr "上一个会话请求已过期，请重新开始。"
 
@@ -3039,7 +3063,7 @@ msgstr "打开这份快捷键说明"
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
-#: src/features/session-follow.ts:34
+#: src/features/session-follow.ts:71
 msgid "This pane switched sessions"
 msgstr "这个窗格已切换会话，已跟过去"
 
@@ -3187,7 +3211,7 @@ msgstr "过程记录"
 msgid "Trigger"
 msgstr "触发来源"
 
-#: src/features/session-new-panels.tsx:173
+#: src/features/session-new-panels.tsx:181
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
@@ -3266,8 +3290,8 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-agent-detail.tsx:200
-#: src/features/me-agent-detail.tsx:247
+#: src/features/me-agent-detail.tsx:201
+#: src/features/me-agent-detail.tsx:248
 msgid "Use CLI default"
 msgstr "使用 CLI 默认模型"
 
@@ -3403,11 +3427,11 @@ msgstr "确认后会发生什么"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new-panels.tsx:109
+#: src/features/session-new-panels.tsx:111
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
-#: src/features/session-handoff.tsx:251
+#: src/features/session-handoff.tsx:259
 msgid "What should the next agent do first?"
 msgstr "希望下一个 agent 先做什么？"
 
@@ -3423,7 +3447,7 @@ msgstr "终端画面"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
-#: src/features/session-new-panels.tsx:308
+#: src/features/session-new-panels.tsx:316
 #: src/features/session-purpose.tsx:73
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
@@ -3436,7 +3460,7 @@ msgstr "你的假设"
 msgid "What you saw"
 msgstr "你看到的现象"
 
-#: src/features/session-new.tsx:240
+#: src/features/session-new.tsx:241
 msgid "Where"
 msgstr "选择位置"
 
@@ -3504,7 +3528,7 @@ msgstr "工作站用途"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new-panels.tsx:296
+#: src/features/session-new-panels.tsx:304
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
