@@ -64,6 +64,10 @@ const LABEL: Record<AgentFamily, string> = {
   agent: 'Agent',
 }
 
+export function agentLabel(agent?: string, profile?: string): string {
+  return LABEL[agentFamily(agent, profile)]
+}
+
 export function AgentAvatar({
   agent,
   profile,

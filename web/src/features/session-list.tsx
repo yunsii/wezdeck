@@ -332,7 +332,6 @@ export function SessionList({
 
   const previewOf = (chat: SessionChat) =>
     chatPreview(chat.focus, previewLabels)
-  const sessionPreview = (row: SessionCard) => chatPreview(row, previewLabels)
 
   // unread set sticky: clearing one does not reshuffle the rest mid-pass
   const unreadKeys = flattenChats(groups)
@@ -440,7 +439,6 @@ export function SessionList({
                         chat={chat}
                         selectedId={selected}
                         replace={wide && Boolean(selectedWorktree)}
-                        previewOf={sessionPreview}
                         timeOf={timeOf}
                       />
                     ) : (
