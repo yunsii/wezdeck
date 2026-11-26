@@ -144,7 +144,7 @@ attention_mark_cleared() {
             ) | .cleared_to)
           | unique) as $phantoms
       | ($recent | map(.session_id // "") | unique) as $known
-      | .entries[$sid] |= del(.restart_pending)
+      | if (.entries[$sid] | type) == "object" then .entries[$sid] |= del(.restart_pending) else . end
       | .recent = (
           ($recent | map(
             if (.tmux_pane // "") != $tp or (.tmux_socket // "") != $tsk then .

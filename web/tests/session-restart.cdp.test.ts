@@ -168,11 +168,10 @@ describe.runIf(attention && devicesFile && stack)(
       // 空白切换: same target-agent confirmation, no note or brief. The
       // relay returns its pending id and the page opens the blank session.
       await openKeys()
-      await expect(
-        page.getByTestId('session-handoff-mode').getByRole('radio', {
-          name: /空白切换/,
-        }),
-      ).toBeVisible()
+      await page
+        .getByTestId('session-handoff-mode')
+        .getByRole('radio', { name: /空白切换/ })
+        .waitFor()
       await page.locator('[data-handoff=grok]').click()
       const handoff = page.getByTestId('session-handoff-confirm')
       const blank = handoff.getByRole('radio', { name: /空白切换/ })
