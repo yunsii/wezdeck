@@ -249,9 +249,13 @@ export function PromptPanels({
   canWrite: boolean
   onKey: (key: string) => Promise<unknown>
 }) {
-  const elicitation = data?.elicitation
+  // Host gates elicitation / plan.awaiting_approval on attention waiting;
+  // also hide here so a stale poll cache after Ctrl+C cannot keep the card.
+  const waiting = data?.status === 'waiting' || Boolean(data?.waiting_kind)
+  const elicitation = waiting ? data?.elicitation : undefined
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
-  const planReview = Boolean(data?.plan?.awaiting_approval)
+  const planReview = waiting && Boolean(data?.plan?.awaiting_approval)
+  const planExcerpt = data?.plan?.excerpt
   return (
     <div
       aria-busy={sending}
@@ -266,9 +270,9 @@ export function PromptPanels({
           sendKey={onKey}
         />
       ) : null}
-      {!asking && (data?.plan?.excerpt || planReview) ? (
+      {!asking && (planExcerpt || planReview) ? (
         <SessionPlanReview
-          excerpt={data?.plan?.excerpt}
+          excerpt={planExcerpt}
           awaitingApproval={planReview}
           disabled={!canWrite}
           onKey={(key) => void onKey(key)}

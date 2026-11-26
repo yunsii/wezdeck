@@ -39,10 +39,13 @@
 #     waiting, flips waiting → running via
 #     attention_state_transition_to_running … force=1 and exits. force=1
 #     is required so elicitation_dialog waiting (sticky against ordinary
-#     PostToolUse) can clear. We do NOT try to distinguish
-#     approve-vs-cancel — either way the agent is no longer blocked on
-#     user input; a cancel will be followed shortly by `Stop` which
-#     transitions running → done.
+#     PostToolUse) can clear. Approve vs answer: running is correct (Stop
+#     or the next tool follows). Grok Ctrl+C / mid-turn abort is different:
+#     updates.jsonl gets turn_completed stop_reason=cancelled and the TUI
+#     returns to Ready, but Stop often never fires — flipping only to
+#     running left the web console on Working… until the next prompt. When
+#     the newest Grok updates signal is that cancelled turn_completed, the
+#     watcher upserts done instead.
 #
 # Opt-out:
 #   Set WEZTERM_ATTENTION_WATCHER_DISABLED=1 in the env that hooks read
@@ -54,9 +57,10 @@
 #     matching → watcher flips to running on the very next poll. Slightly
 #     premature but not catastrophic — Stop will overwrite to done if no
 #     tool actually ran.
-#   - User picks "No" / Esc-cancels → prompt vanishes, watcher flips to
-#     running, Stop fires moments later with done. One transient running
-#     blip.
+#   - User picks "No" / Esc-cancels (Claude) → prompt vanishes, watcher
+#     flips to running, Stop fires moments later with done. One transient
+#     running blip. Grok Ctrl+C → turn_completed cancelled; watcher flips
+#     to done directly when that is the newest updates signal.
 #   - Tool runs synchronously and PostToolUse beats the watcher to the
 #     state file → attention_state_transition_to_running sees `running`
 #     under the lock and short-circuits. No-op.
@@ -124,7 +128,71 @@ CONSECUTIVE_MISS_THRESHOLD="${WEZTERM_ATTENTION_WATCHER_MISS_THRESHOLD:-2}"
 #   `Enter:submit`               — Ask footer submit affordance.
 #   `Tab:next answer`            — Ask footer (multi-question).
 #   `Shift\+x:dismiss`           — Ask dismiss chrome.
-PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again|Waiting on answers for|Enter:submit|Tab:next answer|Shift\+x:dismiss)'
+#
+# Grok plan review / approval_required (exit_plan_mode):
+#   `Waiting for approval`       — status while plan review is open.
+#   Keep this alongside Ask anchors so Ctrl+C / quit clears waiting after
+#   the dialog leaves (without it, approval_required stuck until Stop/TTL).
+PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again|Waiting on answers for|Enter:submit|Tab:next answer|Shift\+x:dismiss|Waiting for approval)'
+
+# True when Grok's updates.jsonl newest turn/ask signal is a cancelled
+# turn_completed (Ctrl+C mid-turn abort). A later Ask / tool_call / user
+# chunk after that cancel means a new turn started — not cancelled-idle.
+grok_mid_turn_cancelled() {
+  local sid="$1"
+  local root="${HOME}/.grok/sessions"
+  [[ -n "$sid" && -d "$root" ]] || return 1
+  local dir updates
+  dir="$(find "$root" -mindepth 2 -maxdepth 2 -type d -name "$sid" 2>/dev/null | head -n 1)"
+  updates="${dir:+$dir/updates.jsonl}"
+  [[ -n "$updates" && -f "$updates" ]] || return 1
+  # Tail only: updates.jsonl can be multi-MB.
+  python3 - "$updates" <<'PY'
+import json, os, sys
+path = sys.argv[1]
+try:
+    size = os.path.getsize(path)
+    with open(path, "rb") as f:
+        if size > 524288:
+            f.seek(size - 524288)
+            f.readline()  # drop partial first line
+        data = f.read()
+except OSError:
+    sys.exit(1)
+last = None  # "cancel" | "open" | "activity"
+for line in data.splitlines():
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        row = json.loads(line)
+    except Exception:
+        continue
+    u = (row.get("params") or {}).get("update") or {}
+    su = u.get("sessionUpdate") or ""
+    title = u.get("title") or ""
+    status = (u.get("status") or "").lower()
+    meta = (row.get("params") or {}).get("_meta") or {}
+    if su == "turn_completed":
+        reason = (u.get("stop_reason") or "").lower()
+        cat = str(meta.get("cancellationCategory") or "").lower().replace("_", "")
+        if reason in ("cancelled", "canceled") or meta.get("cancelTrigger") or cat == "midturnabort":
+            last = "cancel"
+        else:
+            last = "activity"
+    elif su == "tool_call" and title in ("ask_user_question", "exit_plan_mode"):
+        last = "open"
+    elif su in ("user_message_chunk", "tool_call"):
+        last = "activity"
+    elif su == "tool_call_update" and status in (
+        "completed", "failed", "cancelled", "canceled", "error", "rejected",
+    ):
+        # Settled call after an open Ask = answered path, not cancel-idle.
+        if last == "open":
+            last = "activity"
+sys.exit(0 if last == "cancel" else 1)
+PY
+}
 
 state_path="$(attention_state_path)"
 start_ts="$(date +%s 2>/dev/null || printf '0')"
@@ -225,9 +293,37 @@ while :; do
     continue
   fi
 
-  # Prompt anchor stably gone. Flip waiting → running with force=1 so
-  # elicitation_dialog waiting (sticky against ordinary PostToolUse) can
-  # clear. The helper re-checks under flock.
+  # Prompt anchor stably gone.
+  # Grok Ctrl+C: dialog left + turn_completed cancelled, but Stop may never
+  # fire — prefer done so the web console drops Working… immediately.
+  if grok_mid_turn_cancelled "$session_id"; then
+    if attention_state_upsert \
+         "$session_id" \
+         "$wezterm_pane" \
+         "$tmux_socket" \
+         "$tmux_session" \
+         "$tmux_window" \
+         "$tmux_pane" \
+         "done" \
+         "turn cancelled (ctrl_c)" \
+         "$git_branch" \
+         2>/dev/null; then
+      runtime_log_info attention "watcher flipped waiting to done" \
+        "session_id=$session_id" "tmux_pane=$tmux_pane" \
+        "reason=grok_turn_cancelled" \
+        "elapsed_s=$((now_ts - start_ts))" \
+        "consecutive_misses=$consecutive_misses" 2>/dev/null || true
+    else
+      runtime_log_info attention "watcher done upsert noop" \
+        "session_id=$session_id" "tmux_pane=$tmux_pane" \
+        "elapsed_s=$((now_ts - start_ts))" 2>/dev/null || true
+    fi
+    exit 0
+  fi
+
+  # Flip waiting → running with force=1 so elicitation_dialog waiting
+  # (sticky against ordinary PostToolUse) can clear. The helper re-checks
+  # under flock.
   if attention_state_transition_to_running \
        "$session_id" \
        "$wezterm_pane" \

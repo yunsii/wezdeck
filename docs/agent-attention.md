@@ -288,9 +288,9 @@ Mitigation (no Grok config change):
 | `attention.json` entry | Waiting upserts store `waiting_kind` (`permission_prompt` / `elicitation_dialog` / `approval_required`). |
 | `attention_state_transition_to_running` | Refuses to flip `waiting_kind=elicitation_dialog` unless `force=1`. Permission / legacy (no kind) still clear via PostToolUse. |
 | `emit.sh` resolved | Logs `resolved skipped elicitation waiting` and exits without OSC when that kind is live. |
-| `attention-prompt-watcher.sh` | Also spawned for `elicitation_dialog` / `approval_required` (not only Claude `permission_prompt`); Grok Ask anchors (`Waiting on answers for`, `Enter:submit`, `Tab:next answer`, `Shift+x:dismiss`) join the Claude footers; flips with `force=1` once the dialog leaves the pane. |
+| `attention-prompt-watcher.sh` | Also spawned for `elicitation_dialog` / `approval_required` (not only Claude `permission_prompt`); Grok Ask anchors (`Waiting on answers for`, `Enter:submit`, `Tab:next answer`, `Shift+x:dismiss`) and plan-review chrome (`Waiting for approval`) join the Claude footers; flips with `force=1` once the dialog leaves the pane. Grok Ctrl+C writes `turn_completed` / `stop_reason=cancelled` but often skips `Stop` — when that is the newest updates signal, the watcher upserts `done` instead of `running` so the web console does not stick on Working… |
 
-Clearance paths for elicitation waiting: watcher (dialog gone), `Stop → done`, next `UserPromptSubmit → running`, `Alt+/` Ctrl+X clear (or clear-all), TTL. Not PostToolUse.
+Clearance paths for elicitation waiting: watcher (dialog gone → running, or Grok mid-turn cancel → done), `Stop → done`, next `UserPromptSubmit → running`, `Alt+/` Ctrl+X clear (or clear-all), TTL. Not PostToolUse.
 
 Regression coverage: `tests/hook-units/test_agent_attention_adapters.sh` (Grok camelCase session id, turn_complete must not overwrite `done`, `approval_required` still waits, elicitation sticky against resolved, always-approve ignores `permission_prompt` while keeping elicitation, env override) and `tests/hook-units/test_lifecycle.sh` case 6c.
 

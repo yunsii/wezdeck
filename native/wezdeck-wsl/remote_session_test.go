@@ -371,6 +371,41 @@ func TestPendingGrokPlanApproval(t *testing.T) {
 	}
 }
 
+func TestPendingGrokPlanApprovalClearsOnTurnCompleted(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	updates := filepath.Join(dir, "updates.jsonl")
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"plan-1","title":"exit_plan_mode"}}}`,
+		`{"params":{"update":{"sessionUpdate":"turn_completed","stop_reason":"cancelled"}}}`,
+	}, "\n")), 0o600)
+	if pendingGrokPlanApproval(chat) {
+		t.Fatal("turn_completed (Ctrl+C) must clear awaiting plan")
+	}
+}
+
+func TestPendingGrokPlanApprovalRespectsPlanModeFile(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "updates.jsonl"), []byte(
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"plan-1","title":"exit_plan_mode"}}}`+"\n",
+	), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
+		`{"state":"Active","awaiting_plan_approval":false}`,
+	), 0o600)
+	if pendingGrokPlanApproval(chat) {
+		t.Fatal("plan_mode.json awaiting_plan_approval=false must win over open exit_plan_mode")
+	}
+	_ = os.WriteFile(filepath.Join(dir, "plan_mode.json"), []byte(
+		`{"state":"Active","awaiting_plan_approval":true}`,
+	), 0o600)
+	if !pendingGrokPlanApproval(chat) {
+		t.Fatal("plan_mode.json awaiting_plan_approval=true keeps updates pending")
+	}
+}
+
 func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")
@@ -394,6 +429,34 @@ func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
 	}, "\n")), 0o600)
 	if pendingGrokElicitation(chat) != nil {
 		t.Fatal("completed ask must not stay pending")
+	}
+}
+
+func TestPendingGrokElicitationClearsOnTurnCompleted(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	updates := filepath.Join(dir, "updates.jsonl")
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"ask-1","title":"ask_user_question","rawInput":{"questions":[{"question":"Pick?","options":[{"label":"A"},{"label":"B"}]}]}}}}`,
+		`{"params":{"update":{"sessionUpdate":"turn_completed","stop_reason":"cancelled"}}}`,
+	}, "\n")), 0o600)
+	if pendingGrokElicitation(chat) != nil {
+		t.Fatal("turn_completed (Ctrl+C) must clear unanswered Ask")
+	}
+}
+
+func TestPendingGrokElicitationClearsOnCancelledStatus(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	_ = os.WriteFile(chat, []byte("{}\n"), 0o600)
+	updates := filepath.Join(dir, "updates.jsonl")
+	_ = os.WriteFile(updates, []byte(strings.Join([]string{
+		`{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"ask-1","title":"ask_user_question","rawInput":{"questions":[{"question":"Pick?","options":[{"label":"A"}]}]}}}}`,
+		`{"params":{"update":{"sessionUpdate":"tool_call_update","toolCallId":"ask-1","status":"cancelled"}}}`,
+	}, "\n")), 0o600)
+	if pendingGrokElicitation(chat) != nil {
+		t.Fatal("status=cancelled must clear Ask")
 	}
 }
 

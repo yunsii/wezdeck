@@ -81,6 +81,18 @@ func readTailFile(path string, window int64) ([]byte, error) {
 	return data, nil
 }
 
+// toolCallSettled: the call finished or was aborted — web must not keep the
+// Ask / plan-review card. Ctrl+C mid-turn often never writes "completed"
+// (see turn_completed stop_reason=cancelled); failed / rejected land here too.
+func toolCallSettled(status string) bool {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "completed", "failed", "cancelled", "canceled", "error", "rejected":
+		return true
+	default:
+		return false
+	}
+}
+
 // pendingGrokElicitation finds the newest unanswered ask_user_question in updates.jsonl.
 func pendingGrokElicitation(chatHistoryPath string) *elicitation {
 	updatesPath := filepath.Join(filepath.Dir(chatHistoryPath), "updates.jsonl")
@@ -88,7 +100,7 @@ func pendingGrokElicitation(chatHistoryPath string) *elicitation {
 	if err != nil {
 		return nil
 	}
-	completed := map[string]bool{}
+	settled := map[string]bool{}
 	var pendingID string
 	var pendingRaw json.RawMessage
 	for _, line := range bytes.Split(data, []byte("\n")) {
@@ -118,17 +130,22 @@ func pendingGrokElicitation(chatHistoryPath string) *elicitation {
 				pendingRaw = u.RawInput
 			}
 		case "tool_call_update":
-			if u.Status == "completed" && u.ToolCallID != "" {
-				completed[u.ToolCallID] = true
+			if toolCallSettled(u.Status) && u.ToolCallID != "" {
+				settled[u.ToolCallID] = true
 			}
 			// Some builds only put AskUserQuestion on the update row.
 			if len(u.RawInput) > 0 && bytes.Contains(u.RawInput, []byte(`"AskUserQuestion"`)) {
 				pendingID = u.ToolCallID
 				pendingRaw = u.RawInput
 			}
+		case "turn_completed":
+			// Ctrl+C / Esc abort: Ask stays without status=completed. The turn
+			// ended, so drop any open Ask from this turn; a later Ask reopens.
+			pendingID = ""
+			pendingRaw = nil
 		}
 	}
-	if pendingID == "" || completed[pendingID] || len(pendingRaw) == 0 {
+	if pendingID == "" || settled[pendingID] || len(pendingRaw) == 0 {
 		return nil
 	}
 	return parseAskQuestions(pendingID, pendingRaw)
@@ -184,14 +201,35 @@ func grokPlanExcerpt(chatHistoryPath string, limit int) string {
 	return text
 }
 
+// grokAwaitingPlanApprovalFile reads sibling plan_mode.json. When the file
+// says awaiting_plan_approval=false, updates.jsonl alone must not keep the
+// web on the plan-review card after Ctrl+C / quit (exit_plan_mode often has
+// no status=completed).
+func grokAwaitingPlanApprovalFile(chatHistoryPath string) (awaiting bool, known bool) {
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(chatHistoryPath), "plan_mode.json"))
+	if err != nil {
+		return false, false
+	}
+	var doc struct {
+		Awaiting *bool `json:"awaiting_plan_approval"`
+	}
+	if json.Unmarshal(raw, &doc) != nil || doc.Awaiting == nil {
+		return false, false
+	}
+	return *doc.Awaiting, true
+}
+
 // pendingGrokPlanApproval: exit_plan_mode opened the TUI review and has not completed.
 func pendingGrokPlanApproval(chatHistoryPath string) bool {
+	if awaiting, known := grokAwaitingPlanApprovalFile(chatHistoryPath); known && !awaiting {
+		return false
+	}
 	updatesPath := filepath.Join(filepath.Dir(chatHistoryPath), "updates.jsonl")
 	data, err := readTailFile(updatesPath, 2<<20)
 	if err != nil {
 		return false
 	}
-	completed := map[string]bool{}
+	settled := map[string]bool{}
 	var pendingID string
 	for _, line := range bytes.Split(data, []byte("\n")) {
 		line = bytes.TrimSpace(line)
@@ -218,16 +256,18 @@ func pendingGrokPlanApproval(chatHistoryPath string) bool {
 				pendingID = u.ToolCallID
 			}
 		case "tool_call_update":
-			if u.Status == "completed" && u.ToolCallID != "" {
-				completed[u.ToolCallID] = true
+			if toolCallSettled(u.Status) && u.ToolCallID != "" {
+				settled[u.ToolCallID] = true
 			}
 			// Some builds title the update "Plan mode exited" / similar after approve.
 			if u.Title == "exit_plan_mode" && u.ToolCallID != "" && u.Status == "" {
 				pendingID = u.ToolCallID
 			}
+		case "turn_completed":
+			pendingID = ""
 		}
 	}
-	return pendingID != "" && !completed[pendingID]
+	return pendingID != "" && !settled[pendingID]
 }
 
 // feedGrok: ~/.grok/sessions/…/chat_history.jsonl lines

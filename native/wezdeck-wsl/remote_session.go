@@ -526,7 +526,18 @@ func sessionDetail(args json.RawMessage) (any, error) {
 		}
 		if p, ok := adapterFor(agent).(planReader); ok {
 			if plan := p.PendingPlan(path); plan != nil {
-				out["plan"] = plan
+				// awaiting_approval only while attention is waiting — after
+				// Ctrl+C the TUI is Ready but updates.jsonl may still lack
+				// status=completed; keep excerpt, drop the sticky review card.
+				if e.Status != "waiting" {
+					if _, ok := plan["awaiting_approval"]; ok {
+						delete(plan, "awaiting_approval")
+						relayLogf("session_prompt", "suppressed=plan_approval id=%s status=%s", a.ID, e.Status)
+					}
+				}
+				if len(plan) > 0 {
+					out["plan"] = plan
+				}
 			}
 		}
 		t, err := loadTranscript(path, agent)
@@ -598,7 +609,13 @@ func sessionDetail(args json.RawMessage) (any, error) {
 	}
 	if r, ok := adapterFor(agent).(askReader); ok && path != "" {
 		if el := r.PendingAsk(path, string(screen)); el != nil {
-			out["elicitation"] = el
+			// Same gate as Claude permission: disk may still show an Ask after
+			// mid-turn abort; only surface it while attention is waiting.
+			if e.Status == "waiting" {
+				out["elicitation"] = el
+			} else {
+				relayLogf("session_prompt", "suppressed=elicitation id=%s status=%s", a.ID, e.Status)
+			}
 		}
 	}
 	return out, nil
