@@ -30,8 +30,13 @@ func guardSession(id string) (attentionEntry, error) {
 	if !ok {
 		return attentionEntry{}, errors.New("session not found (ended or not tracked)")
 	}
-	if _, alive := paneInfo(e); !alive {
+	_, _, cmd, _, alive := paneState(e)
+	if !alive {
 		return attentionEntry{}, errors.New("the session's tmux pane is gone")
+	}
+	if strings.EqualFold(e.AgentName, "codex") && cmd != "codex" {
+		relayLogf("codex_pane", "outcome=unavailable id=%s pane=%s", id, e.TmuxPane)
+		return attentionEntry{}, errors.New("the session's Codex pane is unavailable")
 	}
 	if act := deskActivity(e); act > 0 && time.Since(time.Unix(act, 0)) < deskIdle {
 		ago := time.Since(time.Unix(act, 0))

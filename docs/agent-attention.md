@@ -172,7 +172,7 @@ Decision tree:
 
 ### Codex install / update
 
-Codex now exposes lifecycle hooks in `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` / project `.codex/config.toml`. The relevant events map cleanly onto the existing attention state machine: `UserPromptSubmit → running`, `PermissionRequest → waiting`, `Stop → done`, `PreToolUse` / `PostToolUse → resolved`, and `SessionStart` with matcher `clear → pane-evict`.
+Codex now exposes lifecycle hooks in `~/.codex/hooks.json` or inline `[hooks]` tables in `~/.codex/config.toml` / project `.codex/config.toml`. WezDeck launches Codex with `--no-daemon` so lifecycle hooks inherit the terminal client's tmux pane instead of the first client that started the shared server. When starting Codex manually, pass `--no-daemon` to make the conversation writable from Web. The relevant events map cleanly onto the existing attention state machine: `UserPromptSubmit → running`, `PermissionRequest → waiting`, `Stop → done`, `PreToolUse` / `PostToolUse → resolved`, and `SessionStart` with matcher `clear → pane-evict`.
 
 Use `scripts/dev/agent-hooks.sh install --provider codex` to merge the template into user-level `~/.codex/hooks.json`. The checked-in template uses a repo placeholder that the installer resolves to the current checkout. Prefer the user-level file for this machine: project-local `.codex/hooks.json` only applies after that project layer is trusted, while the attention counter is a terminal-wide operator surface.
 

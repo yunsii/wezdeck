@@ -158,6 +158,10 @@ func TestSendPastesIntoTheSessionPaneUnderGuards(t *testing.T) {
 	}
 	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
 
+	write("running", "", map[string]any{"agent_name": "codex"})
+	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"wrong pane"}`)); err == nil || !strings.Contains(err.Error(), "Codex pane is unavailable") {
+		t.Fatalf("stale Codex entry must not paste into another program: %v", err)
+	}
 	write("running", "") // any agent takes input mid-turn (queued / steered by its TUI)
 	if _, err := sendToSession(json.RawMessage(`{"id":"sess-1","text":"mid-turn"}`)); err != nil {
 		t.Fatalf("running agent must take input, got %v", err)

@@ -294,6 +294,9 @@ case "$agent" in
         codex_profile=''
         ;;
     esac
+    # A shared app-server keeps its original TMUX_PANE across clients.
+    # Attention hooks must use this TUI's own environment.
+    codex_profile_args=(--no-daemon "${codex_profile_args[@]}")
     log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
     # Recycle --fresh-agent / forced F5: skip typed id and resume --last.
     if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
