@@ -103,7 +103,11 @@ func dispatch(req request) response {
 	case "collab.health", "collab.list", "collab.show", "collab.events",
 		"collab.run", "collab.prompt", "collab.transcript", "collab.metrics":
 		res.Result, err = runCollab(req.Action, req.Payload)
-	case "remote.sessions", "remote.session", "remote.upload.get", "remote.todos",
+	case "remote.sessions":
+		res.Result, err = listSessionsFor(true)
+	case "remote.session":
+		res.Result, err = sessionDetailFor(req.Payload, true)
+	case "remote.upload.get", "remote.todos",
 		"remote.repos", "remote.workstations", "remote.ticket.targets", "remote.session.new.job", "remote.session.image",
 		"remote.session.history", "remote.session.git", "remote.session.skills":
 		// the relay's read-only actions for a browser on the host (readRPC)

@@ -383,6 +383,10 @@ type sessionCard struct {
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
 
 func listSessions() (any, error) {
+	return listSessionsFor(false)
+}
+
+func listSessionsFor(includeArchived bool) (any, error) {
 	active, recent, err := readAttentionDoc()
 	if err != nil {
 		return nil, err
@@ -443,18 +447,20 @@ func listSessions() (any, error) {
 		}
 		cards = append(cards, card)
 	}
-	listed := make(map[string]bool, len(cards))
-	for _, card := range cards {
-		listed[card.ID] = true
-	}
-	for _, r := range recent {
-		if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
-			now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
-			continue
+	if includeArchived {
+		listed := make(map[string]bool, len(cards))
+		for _, card := range cards {
+			listed[card.ID] = true
 		}
-		if path := archivedCodexTranscript(r); path != "" {
-			cards = append(cards, archivedCodexCard(r, path))
-			listed[r.SessionID] = true
+		for _, r := range recent {
+			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" ||
+				now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
+				continue
+			}
+			if path := archivedCodexTranscript(r); path != "" {
+				cards = append(cards, archivedCodexCard(r, path))
+				listed[r.SessionID] = true
+			}
 		}
 	}
 	// newest conversation activity first
@@ -474,6 +480,10 @@ func backgroundOf(e attentionEntry) []bgTask {
 }
 
 func sessionDetail(args json.RawMessage) (any, error) {
+	return sessionDetailFor(args, false)
+}
+
+func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	var a sessionArgs
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
@@ -500,14 +510,16 @@ func sessionDetail(args json.RawMessage) (any, error) {
 				return map[string]any{"v": 1, "ok": true, "id": a.ID, "replaced_by": id, "status": "idle"}, nil
 			}
 		}
-		for _, r := range recent {
-			if r.SessionID == a.ID {
-				if path = archivedCodexTranscript(r); path != "" {
-					e = attentionEntry{SessionID: a.ID, Status: "idle", TS: r.ArchivedTS,
-						AgentName: r.AgentName, WindowName: r.WindowName, GitBranch: r.GitBranch}
-					agent, readOnly = "codex", true
+		if includeArchived {
+			for _, r := range recent {
+				if r.SessionID == a.ID {
+					if path = archivedCodexTranscript(r); path != "" {
+						e = attentionEntry{SessionID: a.ID, Status: "idle", TS: r.ArchivedTS,
+							AgentName: r.AgentName, WindowName: r.WindowName, GitBranch: r.GitBranch}
+						agent, readOnly = "codex", true
+					}
+					break
 				}
-				break
 			}
 		}
 		if !readOnly {

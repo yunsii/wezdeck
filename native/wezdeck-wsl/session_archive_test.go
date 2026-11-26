@@ -50,7 +50,7 @@ func TestArchivedCodexSessionWithNoAgentPane(t *testing.T) {
 	if len(messages) != 1 || messages[0].Text != "done" {
 		t.Fatalf("unexpected chat: %#v", messages)
 	}
-	list, err := listSessions()
+	list, err := listSessionsFor(true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,15 +61,22 @@ func TestArchivedCodexSessionWithNoAgentPane(t *testing.T) {
 	if _, err := guardSession("tracked"); err == nil {
 		t.Fatal("archive must not accept writes")
 	}
-	if _, err := sessionDetail(json.RawMessage(`{"id":"untracked"}`)); err == nil {
+	if _, err := sessionDetail(args); err == nil {
+		t.Fatal("remote reads must not open the local archive")
+	}
+	if remoteList, err := listSessions(); err != nil || len(remoteList.(map[string]any)["sessions"].([]sessionCard)) != 0 {
+		t.Fatalf("remote list must exclude the local archive: %#v %v", remoteList, err)
+	}
+	untracked := dispatch(request{Version: 2, Domain: "remote", Action: "session", Payload: json.RawMessage(`{"id":"untracked"}`)})
+	if untracked.OK {
 		t.Fatal("a transcript alone must not grant access")
 	}
 	setArchiveTime(time.Now().Add(-4 * time.Minute))
-	list, err = listSessions()
+	list, err = listSessionsFor(true)
 	if err != nil || len(list.(map[string]any)["sessions"].([]sessionCard)) != 0 {
 		t.Fatalf("old archive must leave the list: %#v %v", list, err)
 	}
-	if _, err := sessionDetail(args); err != nil {
-		t.Fatalf("direct read of old archive: %v", err)
+	if reply := dispatch(request{Version: 2, Domain: "remote", Action: "session", Payload: args}); !reply.OK {
+		t.Fatalf("direct read of old archive: %s", reply.Error)
 	}
 }

@@ -21,9 +21,9 @@ and manual renames. The relay caches the index until its file changes and
 logs refreshes without recording the titles.
 
 When a completed Codex turn is acknowledged and its pane no longer runs
-Codex, its archived entry remains in the session list for three minutes.
-The detail page can read its transcript while the entry is in the attention
-archive. The detail is read-only and does not use the archived pane.
+Codex, its archived entry remains in the local-mode session list for three
+minutes. In local mode, the detail page can read its transcript while the
+entry is in the attention archive. The detail is read-only.
 
 ## Session RPCs
 
