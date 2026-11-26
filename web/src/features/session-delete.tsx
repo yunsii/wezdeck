@@ -126,10 +126,12 @@ export function useDeleteSession() {
               ? t`Force delete “${title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept.`
               : t`Delete “${title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept.`}
           </p>
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-col-reverse gap-2.5 md:flex-row md:justify-end">
             <Button
               type="button"
-              variant="plain"
+              variant="key"
+              size="md"
+              className="inline-flex w-full items-center justify-center px-4 font-medium md:w-auto"
               onClick={() => setOpen(false)}
             >
               {t`Cancel`}
@@ -137,7 +139,8 @@ export function useDeleteSession() {
             <Button
               type="button"
               variant="solid"
-              className="bg-brand-error text-white"
+              size="md"
+              className="inline-flex w-full items-center justify-center bg-brand-error px-4 text-white md:w-auto"
               onClick={confirm}
             >
               {action}
