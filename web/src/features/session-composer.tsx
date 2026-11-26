@@ -13,7 +13,7 @@ import {
   ListTodo,
   SendHorizontal,
   SquareSlash,
-  X,
+  Trash2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -300,6 +300,20 @@ function Toolbar({
           />
         </label>
       ) : null}
+      {composer.text || composer.images.length ? (
+        <Button
+          variant="plain"
+          type="button"
+          data-testid="composer-clear"
+          aria-label={t`Clear input`}
+          title={t`Clear input`}
+          onClick={() => composer.clear('toolbar')}
+          className={chip(false)}
+        >
+          <Trash2 size={14} aria-hidden />
+          {t`Clear input`}
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -465,21 +479,8 @@ export function ComposerBox({
           enterKeyHint={touch ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-20 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
-        {composer.text || composer.images.length ? (
-          <Button
-            variant="plain"
-            type="button"
-            data-testid="composer-clear"
-            aria-label={t`Clear input`}
-            title={t`Clear input`}
-            onClick={() => composer.clear('button')}
-            className="absolute bottom-2 right-12 inline-flex size-8 items-center justify-center rounded-full text-brand-label"
-          >
-            <X size={16} aria-hidden />
-          </Button>
-        ) : null}
         <Button
           variant="solid"
           // round: no side padding — the default size's px-4 left 8 px of a
