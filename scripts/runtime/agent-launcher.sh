@@ -97,9 +97,11 @@ if [[ -n "${2:-}" ]]; then
   exit 1
 fi
 
-# Normalize underscore form from managed_cli profile names.
+# Normalize underscore form from managed_cli / web profile ids
+# (claude_kimi, claude_sub2api) to the launcher's hyphenated names.
 case "$agent" in
   claude_sub2api) agent='claude-sub2api' ;;
+  claude_kimi) agent='claude-kimi' ;;
 esac
 
 # Visible boot cue. Until the agent CLI paints its first frame, the pane

@@ -374,6 +374,18 @@ wt_config_resolve_agent_profile() {
 
   [[ -n "$resolved_command" || -n "$resolved_command_light" || -n "$resolved_command_dark" ]] || return 0
 
+  # Expand ${WEZDECK_REPO} here. tmux-agent's run-pane-command printf-%q's the
+  # argv into `zsh -ilc`, which would otherwise leave a literal
+  # `${WEZDECK_REPO}/…` path (or worse, `\$\{WEZDECK_REPO\}/…`) — the agent
+  # exits immediately and pane-exit-keep respawns a bare login shell. Keep
+  # in lockstep with resume_command_expand_placeholders.
+  local repo_root="${WEZDECK_REPO_ROOT:-${WEZDECK_REPO:-}}"
+  if [[ -n "$repo_root" ]]; then
+    resolved_command="${resolved_command//\$\{WEZDECK_REPO\}/$repo_root}"
+    resolved_command_light="${resolved_command_light//\$\{WEZDECK_REPO\}/$repo_root}"
+    resolved_command_dark="${resolved_command_dark//\$\{WEZDECK_REPO\}/$repo_root}"
+  fi
+
   WT_PROVIDER_AGENT_COMMAND="$resolved_command"
   WT_PROVIDER_AGENT_COMMAND_LIGHT="$resolved_command_light"
   WT_PROVIDER_AGENT_COMMAND_DARK="$resolved_command_dark"
