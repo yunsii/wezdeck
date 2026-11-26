@@ -1347,7 +1347,7 @@ msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
 #: src/features/session-info.tsx:265
-#: src/features/session-new-panels.tsx:103
+#: src/features/session-new-panels.tsx:118
 msgid "Group name"
 msgstr "组名"
 
@@ -2537,8 +2537,8 @@ msgid "Repo filter"
 msgstr "仓库筛选"
 
 #: src/features/session-info.tsx:60
-#: src/features/session-new-panels.tsx:116
-#: src/features/session-new-panels.tsx:122
+#: src/features/session-new-panels.tsx:91
+#: src/features/session-new-panels.tsx:97
 msgid "Repository"
 msgstr "仓库"
 
@@ -3667,7 +3667,7 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
-#: src/features/session-new-panels.tsx:91
+#: src/features/session-new-panels.tsx:106
 msgid "What do you want to solve?"
 msgstr "你想解决什么问题？"
 
@@ -3675,7 +3675,7 @@ msgstr "你想解决什么问题？"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new-panels.tsx:98
+#: src/features/session-new-panels.tsx:113
 msgid "What should it work on?"
 msgstr "要它做什么？"
 

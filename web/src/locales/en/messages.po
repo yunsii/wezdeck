@@ -1347,7 +1347,7 @@ msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
 #: src/features/session-info.tsx:265
-#: src/features/session-new-panels.tsx:103
+#: src/features/session-new-panels.tsx:118
 msgid "Group name"
 msgstr "Group name"
 
@@ -2537,8 +2537,8 @@ msgid "Repo filter"
 msgstr "Repo filter"
 
 #: src/features/session-info.tsx:60
-#: src/features/session-new-panels.tsx:116
-#: src/features/session-new-panels.tsx:122
+#: src/features/session-new-panels.tsx:91
+#: src/features/session-new-panels.tsx:97
 msgid "Repository"
 msgstr "Repository"
 
@@ -3667,7 +3667,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new-panels.tsx:91
+#: src/features/session-new-panels.tsx:106
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -3675,7 +3675,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new-panels.tsx:98
+#: src/features/session-new-panels.tsx:113
 msgid "What should it work on?"
 msgstr "What should it work on?"
 

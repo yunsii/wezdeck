@@ -135,9 +135,21 @@ describe.runIf(attention && devicesFile && stack)(
       } catch {
         // The first creation starts the private tmux server.
       }
-      await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
       const repository = sheet.getByRole('combobox', { name: '仓库' })
       await expect.poll(() => repository.textContent()).toContain('phone-repo')
+      const prompt = sheet.getByPlaceholder('要它做什么？')
+      const promptElement = await prompt.elementHandle()
+      expect(
+        await repository.evaluate(
+          (element, next) =>
+            Boolean(
+              element.compareDocumentPosition(next) &
+              Node.DOCUMENT_POSITION_FOLLOWING,
+            ),
+          promptElement,
+        ),
+      ).toBe(true)
+      await prompt.fill('从手机开的新会话')
       expect(await sheet.getByTestId('new-session-group-name').count()).toBe(0)
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')

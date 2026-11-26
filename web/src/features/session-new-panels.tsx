@@ -88,6 +88,21 @@ export function ComposeLayer({
   return (
     <>
       <label className="grid gap-1 text-caption text-brand-muted">
+        {t`Repository`}
+        <Select
+          value={repo}
+          disabled={busy || Boolean(group) || repositories.length < 2}
+          onValueChange={onRepo}
+          size="lg"
+          aria-label={t`Repository`}
+          options={
+            group
+              ? [{ value: repo, label: repoLabel }]
+              : repositories.map(({ root, label }) => ({ value: root, label }))
+          }
+        />
+      </label>
+      <label className="grid gap-1 text-caption text-brand-muted">
         {t`What do you want to solve?`}
         <Textarea
           value={prompt}
@@ -112,21 +127,6 @@ export function ComposeLayer({
       ) : group ? (
         <p className="truncate text-caption text-brand-muted">{group}</p>
       ) : null}
-      <label className="grid gap-1 text-caption text-brand-muted">
-        {t`Repository`}
-        <Select
-          value={repo}
-          disabled={busy || Boolean(group) || repositories.length < 2}
-          onValueChange={onRepo}
-          size="lg"
-          aria-label={t`Repository`}
-          options={
-            group
-              ? [{ value: repo, label: repoLabel }]
-              : repositories.map(({ root, label }) => ({ value: root, label }))
-          }
-        />
-      </label>
       {agentProfiles.length > 0 ? (
         <label className="grid gap-1 text-caption text-brand-muted">
           {t`Agent`}
