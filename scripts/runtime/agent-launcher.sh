@@ -184,6 +184,23 @@ require_agent_binary() {
 # Called from inside `sh -c` fallback — keep argv tiny and best-effort.
 fallback_log_script="$script_dir/agent-resume-fallback-log.sh"
 
+# Web-managed model choice is scoped to this managed profile. The file is a
+# single validated scalar written by agent_profiles.go; read it as data, never
+# source it into the shell.
+managed_model_args=()
+load_managed_model_override() {
+  local profile="${1//-/_}"
+  local path="${HOME}/.config/wezdeck/agent-models/${profile}.env"
+  local line="" model=""
+  [[ -r "$path" ]] || return 0
+  IFS= read -r line < "$path" || true
+  [[ "$line" == MODEL="'"*"'" ]] || return 0
+  model="${line#MODEL=\'}"
+  model="${model%\'}"
+  [[ "$model" =~ ^[[:graph:]]+$ && ${#model} -le 100 ]] || return 0
+  managed_model_args=(--model "$model")
+}
+
 ensure_codex_permission_overlay() {
   local profile="$1"
   local profile_file="${CODEX_HOME:-$HOME/.codex}/${profile}.config.toml"
@@ -265,6 +282,8 @@ case "$agent" in
   claude)
     clear_anthropic_gateway_env
     resolve_claude_permission
+    load_managed_model_override claude
+    CLAUDE_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot claude "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
     exec bash "$script_dir/agent-resume.sh" claude "$fallback_log_script" \
@@ -276,6 +295,8 @@ case "$agent" in
     # Env is inherited by the inner sh -c / claude process. Banner label
     # keeps the identity visible during the multi-second resume window.
     resolve_claude_permission
+    load_managed_model_override claude-sub2api
+    CLAUDE_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot claude-sub2api "${CLAUDE_PERMISSION_PROFILE:-base}" "$CLAUDE_PERMISSION_RESOLUTION"
     claude_bin="$(require_agent_binary claude)"
     exec bash "$script_dir/agent-resume.sh" claude-sub2api "$fallback_log_script" \
@@ -320,7 +341,8 @@ case "$agent" in
     esac
     # A shared app-server keeps its original TMUX_PANE across clients.
     # Attention hooks must use this TUI's own environment.
-    codex_profile_args=(--no-daemon "${codex_profile_args[@]}")
+    load_managed_model_override codex
+    codex_profile_args=(--no-daemon "${codex_profile_args[@]}" "${managed_model_args[@]}")
     log_resume_boot codex "${codex_profile:-base}" "$codex_permission_resolution"
     # Recycle --fresh-agent / forced F5: skip typed id and resume --last.
     if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
@@ -371,6 +393,8 @@ case "$agent" in
       exit 127
     fi
     resolve_grok_permission
+    load_managed_model_override grok
+    GROK_PERMISSION_ARGS+=("${managed_model_args[@]}")
     log_resume_boot grok "${GROK_PERMISSION_PROFILE:-base}" "$GROK_PERMISSION_RESOLUTION"
     exec bash "$script_dir/agent-resume.sh" grok "$fallback_log_script" \
       "$grok_bin" "${GROK_PERMISSION_PROFILE:-base}" \

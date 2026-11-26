@@ -295,6 +295,7 @@ msgid "Agent sessions"
 msgstr "Agent sessions"
 
 #: src/features/console-me.tsx:125
+#: src/features/me-agents.tsx:65
 msgid "Agents"
 msgstr "Agents"
 
@@ -405,10 +406,14 @@ msgstr "assumptions challenged"
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
-#: src/features/console-me.tsx:448
+#: src/features/console-me.tsx:450
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "Back"
+
+#: src/features/me-agents.tsx:115
+msgid "Back to agents"
+msgstr "Back to agents"
 
 #: src/features/session-new.tsx:286
 msgid "Back to message"
@@ -681,7 +686,7 @@ msgstr "Composer"
 msgid "Composer tools"
 msgstr "Composer tools"
 
-#: src/features/me-agents.tsx:102
+#: src/features/me-agent-detail.tsx:165
 msgid "Configured"
 msgstr "Configured"
 
@@ -850,7 +855,7 @@ msgstr "Could not copy the reference: {reason}"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-agents.tsx:48
+#: src/features/me-agents.tsx:27
 msgid "Could not read agent profiles."
 msgstr "Could not read agent profiles."
 
@@ -909,11 +914,11 @@ msgstr "data as of {time}"
 msgid "Decision"
 msgstr "Decision"
 
-#: src/features/me-agents.tsx:57
+#: src/features/me-agents.tsx:40
 msgid "Default agent"
 msgstr "Default agent"
 
-#: src/features/me-agents.tsx:54
+#: src/features/me-agents.tsx:38
 msgid "Default agent for new sessions in this browser"
 msgstr "Default agent for new sessions in this browser"
 
@@ -1174,7 +1179,6 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/me-agents.tsx:85
 #: src/features/session-new-panels.tsx:118
 msgid "host default"
 msgstr "host default"
@@ -1349,7 +1353,7 @@ msgstr "Keyboard shortcuts"
 msgid "Keys"
 msgstr "Keys"
 
-#: src/features/me-agents.tsx:106
+#: src/features/me-agent-detail.tsx:49
 msgid "Kimi API key"
 msgstr "Kimi API key"
 
@@ -1399,7 +1403,7 @@ msgstr "Latest output"
 msgid "Launch details"
 msgstr "Launch details"
 
-#: src/features/me-agents.tsx:116
+#: src/features/me-agent-detail.tsx:59
 msgid "Leave blank to keep current key"
 msgstr "Leave blank to keep current key"
 
@@ -1453,7 +1457,7 @@ msgstr "Loading original…"
 #: src/features/console-sessions.tsx:487
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:42
+#: src/features/me-agents.tsx:63
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:371
 #: src/features/session-header.tsx:220
@@ -1475,6 +1479,10 @@ msgstr "Log stream"
 #: src/features/console-activity.tsx:100
 msgid "made progress"
 msgstr "made progress"
+
+#: src/features/me-agent-detail.tsx:174
+msgid "Managed in host configuration"
+msgstr "Managed in host configuration"
 
 #: src/features/session-todos.tsx:186
 msgid "Mark done"
@@ -1522,7 +1530,8 @@ msgstr "Mode"
 msgid "Model"
 msgstr "Model"
 
-#: src/features/me-agents.tsx:121
+#: src/features/me-agent-detail.tsx:64
+#: src/features/me-agent-detail.tsx:106
 msgid "Model ID"
 msgstr "Model ID"
 
@@ -1738,7 +1747,8 @@ msgstr "no upstream"
 msgid "No upstream branch: nothing to compare with."
 msgstr "No upstream branch: nothing to compare with."
 
-#: src/features/me-agents.tsx:102
+#: src/features/me-agent-detail.tsx:165
+#: src/features/me-agents.tsx:89
 #: src/features/session-new-panels.tsx:116
 msgid "Not configured"
 msgstr "Not configured"
@@ -2167,7 +2177,7 @@ msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:319
-#: src/features/me-agents.tsx:69
+#: src/features/me-agents.tsx:47
 #: src/features/session-new-panels.tsx:111
 msgid "Repository default"
 msgstr "Repository default"
@@ -2392,15 +2402,17 @@ msgstr "Same as Enter in the Alt+/ picker (key: o)"
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
-#: src/features/me-agents.tsx:144
+#: src/features/me-agent-detail.tsx:87
+#: src/features/me-agent-detail.tsx:125
 msgid "Save"
 msgstr "Save"
 
-#: src/features/me-agents.tsx:32
+#: src/features/me-agent-detail.tsx:20
 msgid "Saved"
 msgstr "Saved"
 
-#: src/features/me-agents.tsx:144
+#: src/features/me-agent-detail.tsx:87
+#: src/features/me-agent-detail.tsx:125
 msgid "Saving…"
 msgstr "Saving…"
 
@@ -3041,6 +3053,11 @@ msgstr "Usage"
 #: src/features/session-info.tsx:85
 msgid "Usage from"
 msgstr "Usage from"
+
+#: src/features/me-agent-detail.tsx:110
+#: src/features/me-agent-detail.tsx:142
+msgid "Use CLI default"
+msgstr "Use CLI default"
 
 #: src/features/me-app.tsx:46
 msgid "Use the browser menu: “Install app” / “Add to Home screen”."

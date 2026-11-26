@@ -439,7 +439,9 @@ function MeSubPage({ page }: { page: MePage }) {
       // 交互调试 lays out a list beside its detail: give it the room
       className={cn(
         'grid content-start gap-3',
-        page === 'interactions' ? 'max-w-4xl' : 'max-w-2xl',
+        page === 'interactions' || page === 'agents'
+          ? 'max-w-none'
+          : 'max-w-2xl',
       )}
       data-me-page={page}
     >
@@ -455,7 +457,7 @@ function MeSubPage({ page }: { page: MePage }) {
         </span>
       </div>
       {/* 交互调试 brings its own cards (the real components): no card around them */}
-      {page === 'interactions' ? (
+      {page === 'interactions' || page === 'agents' ? (
         body
       ) : (
         <section className="key grid gap-3 rounded-2xl p-4">{body}</section>
@@ -472,7 +474,12 @@ export function ConsoleMePage() {
   if (wide)
     return (
       // the divider runs the window's height, as beside 会话 and 工单
-      <div className="grid max-w-5xl grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+      <div
+        className={cn(
+          'grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)]',
+          known === 'agents' ? 'max-w-none' : 'max-w-5xl',
+        )}
+      >
         <div className="vt-split-list self-start pr-[var(--page-x)]">
           <MeIndex active={known ?? 'connection'} />
         </div>

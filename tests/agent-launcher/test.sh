@@ -178,6 +178,19 @@ grep -Fxq -- '--permission-mode bypassPermissions' "$CLAUDE_LOG"
 ! grep -Eq -- '--continue|--resume' "$CLAUDE_LOG"
 printf 'PASS agent-launcher FORCE_FRESH skips Claude continue/resume\n'
 
+mkdir -p "$TEST_ROOT/home/.config/wezdeck/agent-models"
+printf "MODEL='gpt-6.2-sol'\n" > "$TEST_ROOT/home/.config/wezdeck/agent-models/codex.env"
+printf "MODEL='sonnet'\n" > "$TEST_ROOT/home/.config/wezdeck/agent-models/claude.env"
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" CODEX_HOME="$TEST_ROOT/codex-home" \
+  CODEX_TEST_LOG="$LOG" PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex
+grep -Fxq -- '--no-daemon --profile auto --model gpt-6.2-sol resume --last' "$LOG"
+env -i HOME="$TEST_ROOT/home" NVM_DIR="$NVM_DIR" CLAUDE_TEST_LOG="$CLAUDE_LOG" \
+  PATH=/usr/bin:/bin WEZTERM_NO_LOADING_BANNER=1 \
+  bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" claude
+grep -Fxq -- '--model sonnet --continue' "$CLAUDE_LOG"
+printf 'PASS managed model overrides reach Codex and Claude resume commands\n'
+
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'
 

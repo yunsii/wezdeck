@@ -136,3 +136,52 @@ func TestNewSessionPassesSelectedProfileToBothWorkstationPaths(t *testing.T) {
 		t.Fatalf("reuse args: %q", reuse)
 	}
 }
+
+func TestAgentModelOverrideIsPrivateAndPerProfile(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("WEZDECK_REPO", root)
+	if err := os.MkdirAll(filepath.Join(root, "config"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	config := "WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=claude\n" +
+		"WT_PROVIDER_AGENT_PROFILE_CODEX_RESUME_COMMAND=codex\n"
+	if err := os.WriteFile(filepath.Join(root, "config", "worktree-task.env"), []byte(config), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := configureAgentModel(json.RawMessage(`{"profile":"codex","model":"gpt-6.2-sol"}`)); err != nil {
+		t.Fatal(err)
+	}
+	path := agentModelPath("codex")
+	info, err := os.Stat(path)
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("private model file: %v, %v", info, err)
+	}
+	if got := readEnvAssignment(path, "MODEL"); got != "gpt-6.2-sol" {
+		t.Fatalf("model override: %q", got)
+	}
+	listed, err := listAgentProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, profile := range listed.(map[string]any)["profiles"].([]agentProfile) {
+		if profile.ID == "codex" && profile.ModelOverride != "gpt-6.2-sol" {
+			t.Fatalf("Codex panel model: %q", profile.ModelOverride)
+		}
+	}
+	if _, err := configureAgentModel(json.RawMessage(`{"profile":"claude","model":"sonnet"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if got := readEnvAssignment(agentModelPath("claude"), "MODEL"); got != "sonnet" {
+		t.Fatalf("Claude model override: %q", got)
+	}
+	if _, err := configureAgentModel(json.RawMessage(`{"profile":"codex","model":""}`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("cleared override remains: %v", err)
+	}
+	if _, err := configureAgentModel(json.RawMessage(`{"profile":"codex","model":"bad key"}`)); err == nil {
+		t.Fatal("invalid model accepted")
+	}
+}

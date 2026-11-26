@@ -274,6 +274,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Write the Kimi API key and model to the host credential file without returning the key',
       ),
       c(
+        'agent.profile.model',
+        '为单个受管 Agent profile 保存或清除模型覆盖',
+        'Save or clear the model override for one managed agent profile',
+      ),
+      c(
         'worktree.describe',
         '改工作站的一行描述（git 分支描述，等同终端 Alt+g 里的 Ctrl+e）',
         'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',

@@ -17,11 +17,12 @@ import (
 )
 
 type agentProfile struct {
-	ID         string `json:"id"`
-	Label      string `json:"label"`
-	Default    bool   `json:"default,omitempty"`
-	Configured bool   `json:"configured,omitempty"`
-	Model      string `json:"model,omitempty"`
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Default       bool   `json:"default,omitempty"`
+	Configured    bool   `json:"configured,omitempty"`
+	Model         string `json:"model,omitempty"`
+	ModelOverride string `json:"model_override,omitempty"`
 }
 
 var agentProfileKey = regexp.MustCompile(`^WT_PROVIDER_AGENT_PROFILE_([A-Z0-9_]+)_RESUME_COMMAND=(.+)$`)
@@ -96,6 +97,9 @@ func listAgentProfiles() (any, error) {
 	profiles := make([]agentProfile, 0, len(ids))
 	for id := range ids {
 		profile := agentProfile{ID: id, Label: agentProfileLabel(id), Default: id == active}
+		if id != "claude_kimi" {
+			profile.ModelOverride = readEnvAssignment(agentModelPath(id), "MODEL")
+		}
 		if id == "claude_kimi" {
 			profile.Configured = kimiConfigured()
 			if profile.Configured {
@@ -106,6 +110,87 @@ func listAgentProfiles() (any, error) {
 	}
 	sort.Slice(profiles, func(i, j int) bool { return profiles[i].ID < profiles[j].ID })
 	return map[string]any{"v": 1, "ok": true, "profiles": profiles, "default": active}, nil
+}
+
+func agentModelPath(id string) string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "wezdeck", "agent-models", id+".env")
+}
+
+var managedModelPattern = regexp.MustCompile(`^[a-zA-Z0-9._:/\[\]-]+$`)
+var agentProfileIDPattern = regexp.MustCompile(`^[a-z0-9_]+$`)
+
+func editableModelProfile(id string) bool {
+	switch id {
+	case "claude", "claude_sub2api", "codex", "grok":
+		return true
+	}
+	return false
+}
+
+func configureAgentModel(args json.RawMessage) (any, error) {
+	var input struct {
+		Profile string `json:"profile"`
+		Model   string `json:"model"`
+	}
+	if err := json.Unmarshal(args, &input); err != nil {
+		return nil, errors.New("agent.profile.model: bad arguments")
+	}
+	input.Model = strings.TrimSpace(input.Model)
+	if input.Profile == "claude_kimi" {
+		return nil, errors.New("agent.profile.model: configure Kimi in its own panel")
+	}
+	if !editableModelProfile(input.Profile) || !registeredAgentProfile(input.Profile) {
+		return nil, errors.New("agent.profile.model: unknown profile")
+	}
+	if input.Model != "" && (len(input.Model) > 100 || !managedModelPattern.MatchString(input.Model)) {
+		return nil, errors.New("agent.profile.model: invalid model id")
+	}
+	path := agentModelPath(input.Profile)
+	if input.Model == "" {
+		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return nil, errors.New("agent.profile.model: cannot clear model override")
+		}
+	} else {
+		if err := writePrivateFile(path, []byte("MODEL='"+input.Model+"'\n")); err != nil {
+			return nil, errors.New("agent.profile.model: cannot save model override")
+		}
+	}
+	relayLogf("agent_profile", "profile=%s model_override=%q", input.Profile, input.Model)
+	return map[string]any{"v": 1, "ok": true}, nil
+}
+
+func registeredAgentProfile(id string) bool {
+	if !agentProfileIDPattern.MatchString(id) {
+		return false
+	}
+	path := filepath.Join(repoRoot(), "config", "worktree-task.env")
+	return readEnvAssignment(path, "WT_PROVIDER_AGENT_PROFILE_"+strings.ToUpper(id)+"_RESUME_COMMAND") != ""
+}
+
+func writePrivateFile(path string, body []byte) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".agent-profile-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	defer tmp.Close()
+	if err := tmp.Chmod(0o600); err != nil {
+		return err
+	}
+	if _, err := tmp.Write(body); err != nil {
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 func kimiEnvPath() string {

@@ -9,6 +9,7 @@ export type AgentProfile = {
   default?: boolean
   configured?: boolean
   model?: string
+  model_override?: string
 }
 
 export function useAgentProfiles() {

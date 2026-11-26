@@ -84,7 +84,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    (`Ctrl+X` in `Alt+/`, host `clear`; also a button in 会话信息). The + beside
    the filter (`c` on a keyboard) is 新会话 — message first; location bar for
    repo/direction (idle reuses; "+ New direction" deeper); the sheet
-   follows the job and opens the session once the agent has the message. 我的 › Agents sets this browser's new-session default and writes Kimi's key/model to a private host file; the host validates profile choices and never returns credentials. 工单 has the
+   follows the job and opens the session once the agent has the message. 我的 › Agents has a persistent desktop detail column per profile, sets this browser's new-session default, saves per-profile managed models and Kimi's key/model, and never returns credentials. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The
    agent's own name (`agent_name`, usually Claude's derived peer address

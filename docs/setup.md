@@ -213,6 +213,10 @@ The web console's 我的 › Agents can also write the Kimi API key and model to
 the same private file. Its read view reports only whether Kimi is configured;
 the key is never returned. The browser's default agent applies to new web
 sessions only, while `MANAGED_AGENT_PROFILE` below controls terminal launches.
+The other profile panels save a model override under
+`~/.config/wezdeck/agent-models/<profile>.env`; managed launches pass it as
+`--model`, and clearing it restores each CLI's own default. Running sessions
+keep the model they started with until restarted.
 
 ```bash
 # wezterm-x/local/shared.env
