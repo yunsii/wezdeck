@@ -35,7 +35,7 @@ const card = (over: Partial<SessionCard>): SessionCard => ({
 })
 
 describe('resolveChatFocus', () => {
-  it('prefers waiting, then done, then running, then stable pane order', () => {
+  it('prefers waiting, then done, then running, then latest stable activity', () => {
     const rows = [
       card({ id: 'old', ts: 10, status: 'idle' }),
       card({ id: 'run', ts: 20, status: 'running' }),
@@ -61,7 +61,7 @@ describe('resolveChatFocus', () => {
         card({ id: 'old', ts: 10, status: 'idle', pane_index: 0 }),
         card({ id: 'newer', ts: 30, status: 'idle', pane_index: 1 }),
       ])?.id,
-    ).toBe('old')
+    ).toBe('newer')
   })
   it('prefers attached idle sessions without hiding detached work', () => {
     const attached = card({ id: 'attached', ts: 10 })
@@ -152,27 +152,57 @@ describe('buildChatGroups', () => {
         worktree: '/r/a/.worktrees/a',
         cwd: '/r/a/.worktrees/a',
         ts: 100,
+        order_at: 100,
+        visited: 900,
       }),
       card({
         id: 'b',
         worktree: '/r/a/.worktrees/b',
         cwd: '/r/a/.worktrees/b',
         ts: 200,
+        order_at: 200,
+        visited: 0,
       }),
     ]
     const refreshed = rows.map((row, index) => ({
       ...row,
       ts: 1_000_000 + index,
+      visited: index === 0 ? 2_000_000 : 0,
     }))
-    expect(
-      buildChatGroups(rows).flatMap((repo) =>
+    const order = (items: Array<SessionCard>) =>
+      buildChatGroups(items).flatMap((repo) =>
         repo.chats.map((chat) => chat.key),
-      ),
-    ).toEqual(
-      buildChatGroups(refreshed).flatMap((repo) =>
-        repo.chats.map((chat) => chat.key),
-      ),
-    )
+      )
+    expect(order(rows)).toEqual(['/r/a/.worktrees/b', '/r/a/.worktrees/a'])
+    expect(order(refreshed)).toEqual(order(rows))
+  })
+
+  it('orders repo groups by turn events instead of opening them', () => {
+    const alpha = card({
+      id: 'a',
+      repo_root: '/alpha',
+      repo: 'alpha',
+      repo_label: 'alpha',
+      order_at: 100,
+    })
+    const beta = card({
+      id: 'b',
+      repo_root: '/beta',
+      repo: 'beta',
+      repo_label: 'beta',
+      order_at: 200,
+    })
+    const order = (rows: Array<SessionCard>) =>
+      buildChatGroups(rows).map((repo) => repo.label)
+    expect(order([alpha, beta])).toEqual(['beta', 'alpha'])
+    expect(order([{ ...alpha, visited: 10_000 }, beta])).toEqual([
+      'beta',
+      'alpha',
+    ])
+    expect(order([{ ...alpha, order_at: 300 }, beta])).toEqual([
+      'alpha',
+      'beta',
+    ])
   })
 })
 
@@ -240,19 +270,15 @@ describe('chatTone / chatPreview', () => {
     expect(chatTone(fresh, now)).toBe('idle')
     expect(chatPreview(fresh, previewLabels, now)).toBe('No human message yet')
     expect(
-      resolveChatFocus(
-        [
-          fresh,
-          card({
-            id: 'recent-turn',
-            status: 'idle',
-            last_prompt: 'finished work',
-            ts: now - 1_000,
-          }),
-        ],
-        {},
-        now,
-      )?.id,
+      resolveChatFocus([
+        fresh,
+        card({
+          id: 'recent-turn',
+          status: 'idle',
+          last_prompt: 'finished work',
+          ts: now - 1_000,
+        }),
+      ])?.id,
     ).toBe('fresh-empty')
   })
 

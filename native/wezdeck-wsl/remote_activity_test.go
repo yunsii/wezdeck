@@ -51,3 +51,21 @@ func TestLastTurnAtFindsStampBehindGiantLines(t *testing.T) {
 		t.Fatalf("stamp behind a 3 MB line: %d", got)
 	}
 }
+
+func TestSessionOrderAtUsesTurnBoundaries(t *testing.T) {
+	if got := sessionOrderAt(attentionEntry{Status: "running", TS: 900, TurnStarted: 100}, 950); got != 100 {
+		t.Fatalf("running output changed order time: %d", got)
+	}
+	if got := sessionOrderAt(attentionEntry{Status: "waiting", TS: 900, TurnStarted: 100}, 950); got != 100 {
+		t.Fatalf("waiting changed order time: %d", got)
+	}
+	if got := sessionOrderAt(attentionEntry{Status: "done", TS: 200, TurnStarted: 100}, 950); got != 200 {
+		t.Fatalf("completion should set order time: %d", got)
+	}
+	if got := sessionOrderAt(attentionEntry{Status: "idle"}, 150); got != 150 {
+		t.Fatalf("idle fallback: %d", got)
+	}
+	if got := sessionOrderAt(attentionEntry{Status: "idle", TS: 900, archivedOrderAt: 200}, 950); got != 200 {
+		t.Fatalf("opening a completed session changed order time: %d", got)
+	}
+}

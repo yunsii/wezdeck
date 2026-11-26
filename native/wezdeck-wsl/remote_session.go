@@ -60,11 +60,12 @@ type attentionEntry struct {
 	// set on a session listed from recent[]: the archived row it came from
 	// (session id + archived_ts), which is how the desk's sessions/focus
 	// finds it (sessionFocus)
-	archivedID     string
-	archivedTS     int64
-	TurnStarted    int64 `json:"turn_started"`
-	CompactStarted int64 `json:"compact_started"`
-	Bg             struct {
+	archivedID      string
+	archivedTS      int64
+	archivedOrderAt int64
+	TurnStarted     int64 `json:"turn_started"`
+	CompactStarted  int64 `json:"compact_started"`
+	Bg              struct {
 		Tasks []bgTask `json:"tasks"`
 	} `json:"bg"`
 }
@@ -95,6 +96,7 @@ func attentionFile() string {
 type recentEntry struct {
 	attentionEntry
 	LastStatus string `json:"last_status"`
+	LiveTS     int64  `json:"live_ts"`
 	ArchivedTS int64  `json:"archived_ts"`
 	// set by the SessionStart clear hook (/new, /clear): the session that
 	// took this pane over (agent-attention/turn-lib.sh attention_mark_cleared)
@@ -232,6 +234,9 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 		e.RunningKind = ""
 		e.TS = r.ArchivedTS
 		e.archivedID, e.archivedTS = r.SessionID, r.ArchivedTS
+		if r.LastStatus == "done" {
+			e.archivedOrderAt = r.LiveTS
+		}
 		// /new or /clear in this pane: the hook archived the old session and
 		// marked it cleared_to the new one, which has no entry until its
 		// first prompt. List the new session in its place (idle, empty,
@@ -239,6 +244,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 		if next := r.ClearedTo; sessionIDPattern.MatchString(next) && next != r.SessionID {
 			if current, taken := out[next]; !taken || current.TmuxPane == "" {
 				e.ReplacedFrom = r.SessionID
+				e.archivedOrderAt = 0
 				e.SessionID = next
 				e.LastUserPrompt = ""
 				e.AgentName = ""
@@ -384,45 +390,6 @@ func deskActivity(e attentionEntry) int64 {
 	return newest
 }
 
-type sessionCard struct {
-	ID             string   `json:"id"`
-	Agent          string   `json:"agent"`
-	Name           string   `json:"name"`
-	Title          string   `json:"title,omitempty"` // auto /rename title when known
-	Window         string   `json:"window"`
-	Cwd            string   `json:"cwd"`
-	Branch         string   `json:"branch"`
-	Status         string   `json:"status"`
-	WaitingKind    string   `json:"waiting_kind,omitempty"`
-	LastPrompt     string   `json:"last_prompt"`
-	TS             int64    `json:"ts"`
-	Transcript     bool     `json:"transcript"`
-	DeskIdleS      int64    `json:"desk_idle_s"`
-	RunningKind    string   `json:"running_kind,omitempty"`
-	RestartPending bool     `json:"restart_pending,omitempty"`
-	Background     []bgTask `json:"background"`
-	// Tree grouping (repo family → worktree → pane). tmux fields are optional
-	// mount info so ticket agents on the same worktree can join later.
-	Repo      string `json:"repo,omitempty"`
-	RepoLabel string `json:"repo_label,omitempty"` // Repo through WEZDECK_REPO_ALIASES (repo_alias.go)
-	RepoRoot  string `json:"repo_root,omitempty"`
-	Worktree  string `json:"worktree,omitempty"`
-	// WorktreeDescription: the workstation's one-line purpose (git branch
-	// description, worktree_description.go)
-	WorktreeDescription string `json:"worktree_description,omitempty"`
-	TmuxSession         string `json:"tmux_session,omitempty"`
-	TmuxPane            string `json:"tmux_pane,omitempty"`
-	PaneIndex           int    `json:"pane_index,omitempty"`
-	PaneRole            string `json:"pane_role,omitempty"` // primary | secondary
-	// Visited: when you last visited this worktree at the desk (ms, access
-	// ledger, session_visits.go); the phone sorts by it, not by output
-	Visited int64 `json:"visited,omitempty"`
-	// AgentProfile: managed profile on the pane (@wezterm_agent_profile),
-	// e.g. claude_kimi — web chat avatars use it for the corner badge
-	AgentProfile string `json:"agent_profile,omitempty"`
-	Detached     bool   `json:"detached,omitempty"`
-}
-
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
 
 func listSessions() (any, error) {
@@ -503,6 +470,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		} else if act := windowActivity(e); act > card.TS {
 			card.TS = act
 		}
+		card.OrderAt = sessionOrderAt(e, card.TS)
 		if act := deskActivity(e); act > 0 {
 			card.DeskIdleS = now.Unix() - act
 		} else {

@@ -10,7 +10,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
 
 import { useLocale } from '#/lib/locale-context'
-import { consoleVisits, recordVisit } from '#/lib/session-visits'
+import { recordVisit } from '#/lib/session-visits'
 import { cn } from '#/lib/utils'
 import {
   isBusy,
@@ -39,8 +39,7 @@ export function useSessionNav(current: string) {
   const navigate = useNavigate()
   const { locale } = useLocale()
   const rows = sessions.data?.sessions ?? []
-  const phone = consoleVisits()
-  const groups = buildChatGroups(rows, phone)
+  const groups = buildChatGroups(rows)
   const chats = flattenChats(groups)
   // jump targets: every session, not just each worktree's focus — two agents
   // in one worktree each get their own stop (Alt+l cycles both). `ordered`

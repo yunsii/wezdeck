@@ -2,8 +2,7 @@ package main
 
 // When you last visited a worktree, from the access ledger that Alt+g / Alt+x
 // sort by (scripts/runtime/access-ledger-lib.sh): "user visited / selected",
-// never pane output. The phone orders sessions by it so a list of running
-// agents stays put instead of reshuffling on every turn.
+// never pane output. The phone's chat list no longer sorts by visits.
 
 import (
 	"encoding/json"

@@ -20,7 +20,7 @@ import { Input } from '#/components/ui/input'
 import { AgentAvatar, agentLabel } from './agent-avatar'
 import { ChatGroupRow } from './session-chat-group'
 import { useLocale } from '#/lib/locale-context'
-import { consoleVisits, recordVisit } from '#/lib/session-visits'
+import { recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { NOT_PAIRED } from '#/lib/remote-link'
@@ -44,7 +44,7 @@ import {
   formatChatDate,
   formatChatWeekday,
 } from './chat-time'
-import { useFrozenVisits, useStickyMembers } from './session-stable'
+import { useStickyMembers } from './session-stable'
 import { useCopySessionReference } from './copy-reference'
 import { SwipeActions } from './session-row-swipe'
 import { prefetchSession, useSessions } from './console-sessions'
@@ -321,14 +321,13 @@ export function SessionList({
 }: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
   const sessions = useSessions()
-  const phone = consoleVisits()
-  const rows = useFrozenVisits(sessions.data?.sessions ?? [], phone)
+  const rows = sessions.data?.sessions ?? []
   useDraftRevision()
   const rowsWithDrafts = rows.map((row) => ({
     ...row,
     draft: readDraft(sessionDraftKey(row.id)),
   }))
-  const groups = buildChatGroups(rowsWithDrafts, phone)
+  const groups = buildChatGroups(rowsWithDrafts)
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')
@@ -358,7 +357,7 @@ export function SessionList({
             const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
             const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
             if (au !== bu) return bu - au
-            return b.visit - a.visit || a.title.localeCompare(b.title)
+            return b.activity - a.activity || a.title.localeCompare(b.title)
           })
         return { ...repo, chats }
       })

@@ -1,7 +1,6 @@
 // When a worktree was last visited from this phone. The host sends the desk
 // side (`visited`, the access ledger behind Alt+g / Alt+x); opening a session
-// here counts as a visit too. The session list sorts by the later of the two
-// so it only reorders when you go somewhere, never because an agent printed.
+// here counts as a visit too. Visits are navigation history, not chat order.
 const KEY = 'wezdeck-session-visits'
 const CAP = 200
 
@@ -31,6 +30,6 @@ export function recordVisit(worktree: string, at = Date.now()) {
       .slice(0, CAP)
     localStorage.setItem(KEY, JSON.stringify(Object.fromEntries(kept)))
   } catch {
-    // private window / blocked storage: desk visits still order the list
+    // private window / blocked storage: navigation still works
   }
 }

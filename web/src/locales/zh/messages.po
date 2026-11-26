@@ -293,8 +293,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:424
-#: src/features/session-list.tsx:474
+#: src/features/session-list.tsx:423
+#: src/features/session-list.tsx:473
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -685,7 +685,7 @@ msgstr "清空输入"
 #~ msgstr "清空输入（Esc Esc）"
 
 #: src/features/session-list.tsx:307
-#: src/features/session-list.tsx:414
+#: src/features/session-list.tsx:413
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -1991,7 +1991,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:419
+#: src/features/session-list.tsx:418
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -2017,7 +2017,7 @@ msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
 #: src/features/session-list.tsx:64
-#: src/features/session-switcher.tsx:157
+#: src/features/session-switcher.tsx:156
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -2045,7 +2045,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/session-list.tsx:406
+#: src/features/session-list.tsx:405
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2164,7 +2164,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/session-switcher.tsx:243
+#: src/features/session-switcher.tsx:242
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
 
@@ -2943,12 +2943,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:374
+#: src/features/session-list.tsx:373
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:396
+#: src/features/session-list.tsx:395
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -3131,7 +3131,7 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/session-switcher.tsx:227
+#: src/features/session-switcher.tsx:226
 msgid "Switch chat"
 msgstr "切换对话"
 

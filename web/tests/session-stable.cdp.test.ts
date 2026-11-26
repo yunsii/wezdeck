@@ -8,8 +8,8 @@ import { chromium, devices } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-// IM chat list holds still (session-stable): opening a chat (a visit) does
-// not lift its row; j / k walk every chat; an answered unread chat stays
+// IM chat list holds still: opening a chat does not lift its row; j / k walk
+// every chat; an answered unread chat stays
 // in the unread sticky set until 会话 is re-tapped. Wide split,
 // remote-test-stack.sh only.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
@@ -91,7 +91,7 @@ describe.runIf(attention)('A session list that holds still', () => {
         els.map((el) => (el as HTMLElement).dataset.session),
       )
 
-  it('order holds on a visit; j / k walk chats; unread sticky keeps answered', async () => {
+  it('opening a chat keeps order; j / k walk chats; unread sticky keeps answered', async () => {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       locale: 'zh-CN',
@@ -162,7 +162,7 @@ describe.runIf(attention)('A session list that holds still', () => {
     await context.close()
   }, 60_000)
 
-  it('phone: back from a session keeps the order; re-tapping 会话 re-reads it', async () => {
+  it('phone: back from a session keeps the order; re-tapping 会话 keeps the list', async () => {
     const context = await browser.newContext({
       ...devices['Pixel 7'],
       locale: 'zh-CN',

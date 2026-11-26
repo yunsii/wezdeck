@@ -5,7 +5,6 @@ import { humanPrompt, needsYou } from './console-sessions'
 import {
   isWorkstation,
   repoName,
-  visitOf,
   workstationLabel,
   worktreeKey,
 } from './session-order'
@@ -113,15 +112,14 @@ export type SessionChat = {
   /** the session the row preview / open target uses */
   focus: SessionCard
   unread: number
-  visit: number
-  /** retained for callers that render activity metadata; never used for order */
+  /** latest stable turn event among sessions in this worktree */
   activity: number
 }
 
 export type ChatRepoGroup = {
   key: string
   label: string
-  visit: number
+  activity: number
   chats: Array<SessionChat>
 }
 
@@ -133,17 +131,17 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
   return workstationLabel(base) || wtKey
 }
 
-/** which session a chat opens: terminal's primary pane → waiting → done → running → stable pane order */
+/** which session a chat opens: terminal's primary pane → waiting → done → running → latest turn */
+const orderAt = (row: SessionCard) => row.order_at ?? row.ts
+
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
-  phone: Record<string, number> = {},
-  _now = Date.now(),
 ): SessionCard | undefined {
   if (!sessions.length) return undefined
   const paneIndex = (row: SessionCard) =>
     row.pane_index ?? (row.tmux_pane ? 0 : Infinity)
-  const byVisit = (a: SessionCard, b: SessionCard) =>
-    visitOf(b, phone) - visitOf(a, phone) ||
+  const byActivity = (a: SessionCard, b: SessionCard) =>
+    orderAt(b) - orderAt(a) ||
     paneIndex(a) - paneIndex(b) ||
     a.id.localeCompare(b.id)
   const terminal = sessions
@@ -151,38 +149,35 @@ export function resolveChatFocus(
       (row) =>
         row.pane_role === 'primary' && !row.restart_pending && !row.detached,
     )
-    .sort(byVisit)
+    .sort(byActivity)
   if (terminal[0]) return terminal[0]
-  const waiting = sessions.filter(needsYou).sort(byVisit)
+  const waiting = sessions.filter(needsYou).sort(byActivity)
   if (waiting[0]) return waiting[0]
-  const done = sessions.filter((row) => row.status === 'done').sort(byVisit)
+  const done = sessions.filter((row) => row.status === 'done').sort(byActivity)
   if (done[0]) return done[0]
   const running = sessions
     .filter((row) => row.status === 'running' && !row.restart_pending)
-    .sort(byVisit)
+    .sort(byActivity)
   if (running[0]) return running[0]
   return [...sessions].sort(
     (a, b) =>
       Number(a.detached === true) - Number(b.detached === true) ||
-      byVisit(a, b),
+      byActivity(a, b),
   )[0]
 }
 
 /**
  * Aggregate flat sessions into repo → chat rows. Unread chats float to the
- * top of each repo; the rest follow the frozen visit order. Agent attention
- * timestamps are state refreshes and must not reorder this navigation list.
+ * top of each repo; the rest follow stable turn events. Opening a chat does
+ * not change order, and transcript output does not move an active turn.
  */
 export function buildChatGroups(
   rows: Array<SessionCard>,
-  phone: Record<string, number> = {},
-  now = Date.now(),
 ): Array<ChatRepoGroup> {
   const repos = new Map<
     string,
     {
       label: string
-      visit: number
       trees: Map<string, Array<SessionCard>>
     }
   >()
@@ -196,7 +191,7 @@ export function buildChatGroups(
     const wtKey = worktreeKey(row)
     let repo = repos.get(repoKey)
     if (!repo) {
-      repo = { label: repoLabel, visit: 0, trees: new Map() }
+      repo = { label: repoLabel, trees: new Map() }
       repos.set(repoKey, repo)
     }
     let list = repo.trees.get(wtKey)
@@ -205,7 +200,6 @@ export function buildChatGroups(
       repo.trees.set(wtKey, list)
     }
     list.push(row)
-    repo.visit = Math.max(repo.visit, visitOf(row, phone))
   }
 
   const paneIndex = (row: SessionCard) =>
@@ -218,14 +212,10 @@ export function buildChatGroups(
       const ordered = [...sessions].sort(
         (a, b) => paneIndex(a) - paneIndex(b) || a.id.localeCompare(b.id),
       )
-      const focus = resolveChatFocus(ordered, phone, now)
+      const focus = resolveChatFocus(ordered)
       if (!focus) continue
       const unread = ordered.filter(needsYou).length
-      // prefer frozen `visited` from useFrozenVisits so a click does not
-      // lift the chat (visitOf would max with a fresh phone visit)
-      const visit = Math.max(
-        ...ordered.map((row) => row.visited ?? visitOf(row, phone)),
-      )
+      const activity = Math.max(...ordered.map(orderAt))
       chats.push({
         key: wtKey,
         title: chatTitle(focus, wtKey),
@@ -238,26 +228,24 @@ export function buildChatGroups(
         sessions: ordered,
         focus,
         unread,
-        visit,
-        activity: focus.ts,
+        activity,
       })
     }
     chats.sort((a, b) => {
       const au = a.unread > 0 ? 1 : 0
       const bu = b.unread > 0 ? 1 : 0
       if (au !== bu) return bu - au
-      return b.visit - a.visit || a.title.localeCompare(b.title)
+      return b.activity - a.activity || a.title.localeCompare(b.title)
     })
     groups.push({
       key: repoKey,
       label: repo.label,
-      // repo section order: frozen visits only
-      visit: Math.max(0, ...chats.map((c) => c.visit)),
+      activity: Math.max(0, ...chats.map((c) => c.activity)),
       chats,
     })
   }
   return groups.sort(
-    (a, b) => b.visit - a.visit || a.label.localeCompare(b.label),
+    (a, b) => b.activity - a.activity || a.label.localeCompare(b.label),
   )
 }
 

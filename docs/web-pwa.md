@@ -50,19 +50,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    会话 is the home: an IM chat list (single-session groups show the session title; multi-session
    groups: compact foldable header with the group name, one line for empty idle sessions, preview rows for active conversations;
    agent brand avatar, Kimi/gateway as a corner badge; unread badge; row + for a new round; no status Segmented), then the
-   repo → worktree → pane tree ordered by **visits**, never output — the
-   later of the terminal visit (`visited`, the access ledger behind `Alt+g` /
-   `Alt+x`, `session_visits.go`) and a visit from this web console
-   (`lib/session-visits.ts`); never-visited groups (ticket agents) sink by
-   name (`features/session-order.ts`); 待跟进 to-dos at the bottom. The
-   list holds still while you use it (`session-stable.ts`, 2026-11-24), the
-   same on a phone and a wide screen — both records live for the page, not
-   the list component (a phone remounts the list on every way back from a
-   session, which re-read the visits and lifted the session just opened):
-   a worktree's visit is read once, when the list first sees it, so
-   opening a session no longer moves its group; a row shown under the
-   current filter stays until the filter changes; re-tapping 会话 (tab, or
-   the sidebar entry while on it) or reloading re-reads both; 运行中 holds every session the host calls
+   repo → worktree → pane tree ordered by the group's latest stable turn
+   start or completion (`order_at`), never by visits or streaming output;
+   待跟进 to-dos at the bottom. Opening a session does not move its group.
+   `session-stable.ts` keeps a row shown under the current filter until the
+   filter changes; re-tapping 会话 re-reads membership. 运行中 holds every session the host calls
    running — background tasks included (a dev server is not finished) — and
    keeps one 3 min after its turn ends (`inRunning`, the card's newest-turn
    `ts`), so a finished one no

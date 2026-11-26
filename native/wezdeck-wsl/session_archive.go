@@ -23,6 +23,6 @@ func archivedCodexCard(r recentEntry, path string) sessionCard {
 	return sessionCard{
 		ID: r.SessionID, Name: r.AgentName, Title: readSessionTitle(path, "codex"),
 		Window: r.WindowName, Branch: r.GitBranch, Status: "idle", Agent: "codex",
-		Transcript: true, LastPrompt: r.LastUserPrompt, TS: r.ArchivedTS, DeskIdleS: -1,
+		Transcript: true, LastPrompt: r.LastUserPrompt, TS: r.ArchivedTS, OrderAt: r.LiveTS, DeskIdleS: -1,
 	}
 }
