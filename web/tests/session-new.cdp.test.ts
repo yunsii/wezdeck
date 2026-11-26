@@ -8,12 +8,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
-import type {
-  Browser,
-  BrowserContextOptions,
-  Locator,
-  Page,
-} from '@playwright/test'
+import type { Browser, BrowserContextOptions, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 新会话 accepts a question and a group name. The host allocates the checkout
@@ -190,7 +185,7 @@ describe.runIf(attention && devicesFile && stack)(
 
     it('creates the workstation, hands the agent the message, opens the session', async () => {
       const { context, page } = await approvedPage(devices['iPhone 13'])
-      const { worktree, session } = await createSession(page, 'new-1')
+      const { worktree, session, pane } = await createSession(page, 'new-1')
       const git = (...args: Array<string>) =>
         execFileSync('git', ['-C', worktree, ...args])
           .toString()
@@ -203,18 +198,22 @@ describe.runIf(attention && devicesFile && stack)(
       await page.goto(`${base}/zh/console/sessions`)
       const group = page.locator(`[data-worktree=${session}]`)
       await group.waitFor({ timeout: 15_000 })
-      expect(await group.getByTestId('worktree-description').count()).toBe(0)
-
-      await group.getByTestId('chat-edit-group-name').tap()
-      const editor = page.getByRole('dialog', { name: '修改组名' })
-      await editor.getByRole('textbox', { name: '组名' }).fill('从列表改名')
-      await editor.getByRole('button', { name: '保存' }).tap()
-      await editor.waitFor({ state: 'hidden' })
+      expect(await group.getByTestId('chat-edit-group-name').count()).toBe(0)
+      await addSibling(
+        page,
+        socket,
+        worktree,
+        session,
+        {
+          'new-1': listEntry('new-1', pane, session),
+        },
+        listEntry,
+      )
       await expect
-        .poll(() => git('config', `branch.dev/${session}.description`))
+        .poll(() =>
+          git('config', '--default', '', `branch.dev/${session}.description`),
+        )
         .toBe('从列表改名')
-
-      await editPurposeInSessionInfo(page, group, worktree, session)
       await context.close()
     }, 90_000)
 
@@ -267,63 +266,46 @@ describe.runIf(attention && devicesFile && stack)(
   },
 )
 
-/**
- * Purpose edited from 会话信息 (list stays read-only).
- * session-purpose.tsx → relay worktree.describe → worktree-task describe.
- */
-async function editPurposeInSessionInfo(
+async function addSibling(
   page: Page,
-  group: Locator,
+  socket: string,
   worktree: string,
   session: string,
+  entries: Record<string, object>,
+  listEntry: (id: string, pane: string, session: string) => object,
 ) {
-  const purpose = () =>
-    execFileSync('git', [
-      '-C',
-      worktree,
-      'config',
-      '--default',
-      '',
-      `branch.dev/${session}.description`,
-    ])
-      .toString()
-      .trim()
-  await group.click()
-  await page.getByTestId('session-info-button').click()
-  const info = page.getByTestId('session-info')
-  await info.waitFor({ timeout: 5_000 })
-  const block = info.getByTestId('session-info-purpose')
-  const input = block.getByTestId('worktree-purpose-input')
-  await block.getByTestId('worktree-description').click()
-  await input.fill('手机端新建与收尾')
-  await input.press('Enter')
-  await expect.poll(purpose, { timeout: 15_000 }).toBe('手机端新建与收尾')
+  const siblingPane = execFileSync('tmux', [
+    '-S',
+    socket,
+    'new-window',
+    '-d',
+    '-P',
+    '-F',
+    '#{pane_id}',
+    '-t',
+    session,
+    '-c',
+    worktree,
+    'cat',
+  ])
+    .toString()
+    .trim()
+  writeFileSync(
+    attention,
+    JSON.stringify({
+      entries: {
+        ...entries,
+        sibling: listEntry('sibling', siblingPane, session),
+      },
+    }),
+  )
+  const group = page.locator(`[data-worktree=${session}]`)
+  await group.getByTestId('chat-edit-group-name').tap()
+  const editor = page.getByRole('dialog', { name: '修改组名' })
+  await editor.getByRole('textbox', { name: '组名' }).fill('从列表改名')
+  await editor.getByRole('button', { name: '保存' }).tap()
+  await editor.waitFor({ state: 'hidden' })
   await expect
-    .poll(() => block.getByTestId('worktree-description').textContent())
-    .toContain('手机端新建与收尾')
-
-  await block.getByTestId('worktree-description').click()
-  await input.fill('')
-  await input.press('Enter')
-  await expect.poll(purpose, { timeout: 15_000 }).toBe('')
-  const add = block.getByTestId('worktree-purpose-add')
-  await expect.poll(() => add.textContent()).toContain('+ 描述')
-  await add.focus()
-  await page.keyboard.press('Enter')
-  await input.fill('再补一句')
-  await input.press('Enter')
-  await expect.poll(purpose, { timeout: 15_000 }).toBe('再补一句')
-
-  await block.getByTestId('worktree-description').click()
-  await input.fill('不保存')
-  await input.press('Escape')
-  expect(await input.count()).toBe(0)
-  expect(purpose()).toBe('再补一句')
-
-  // list no longer shows the purpose; it stays on the branch + 会话信息
-  await page.keyboard.press('Escape')
-  await page.goto(`${base}/zh/console/sessions`)
-  await group.waitFor({ timeout: 15_000 })
-  expect(await group.getByTestId('worktree-description').count()).toBe(0)
-  expect(purpose()).toBe('再补一句')
+    .poll(() => group.getByTestId('chat-group-toggle').textContent())
+    .toContain('从列表改名')
 }

@@ -17,8 +17,7 @@ import { requestNewSession } from './session-new'
 import { useDeviceState } from './device-state'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
-import { hasEditableGroupName, worktreeKey } from './session-order'
-import { WorktreePurpose } from './session-purpose'
+import { worktreeKey } from './session-order'
 import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
@@ -253,21 +252,6 @@ export function SessionInfo({
             {data.branch ? <BranchTag branch={data.branch} /> : null}
             {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
           </TagLine>
-        ) : null}
-        {card && hasEditableGroupName(card) ? (
-          <div
-            className="rounded-xl border border-brand-edge px-3 py-2"
-            data-testid="session-info-purpose"
-          >
-            <p className="mb-1 text-meta text-brand-label">{t`Group name`}</p>
-            <div className="text-body text-brand-text">
-              <WorktreePurpose
-                worktree={worktreeKey(card)}
-                description={card.worktree_description ?? ''}
-                editable
-              />
-            </div>
-          </div>
         ) : null}
         {data.reference ? (
           <Button
