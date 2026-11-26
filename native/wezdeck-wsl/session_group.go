@@ -303,7 +303,7 @@ func sessionWorktreeStatus(tree string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	status, err := exec.CommandContext(ctx, "git", "-C", tree, "status",
-		"--porcelain", "--untracked-files=all", "--ignored=matching").Output()
+		"--porcelain", "--untracked-files=all").Output()
 	if err != nil {
 		return "unavailable"
 	}

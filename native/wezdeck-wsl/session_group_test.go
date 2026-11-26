@@ -121,7 +121,55 @@ func TestGroupReclaimPreservesLocalFilesAndKeepsBranch(t *testing.T) {
 	if repos := knownRepos(); len(repos) != 1 || repos[0].Root != repo {
 		t.Fatalf("repository missing after deleting its last session: %+v", repos)
 	}
+}
 
+func TestGroupReclaimIgnoresGitignoredArtifacts(t *testing.T) {
+	dir, socket, pane, _ := restartFixture(t)
+	t.Setenv("WEZDECK_ACCESS_LEDGER", filepath.Join(dir, "ledger.json"))
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "config"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(dir, "state"))
+	platform, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", platform)
+	repo := filepath.Join(dir, "repo")
+	tree := filepath.Join(dir, ".worktrees", "repo", "group")
+	git := func(args ...string) {
+		t.Helper()
+		if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v: %s", args, err, out)
+		}
+	}
+	git("init", "-qb", "main", repo)
+	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("node_modules/\ndist/\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	git("-C", repo, "add", ".gitignore")
+	git("-C", repo, "-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-qm", "initial")
+	git("-C", repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+	git("-C", repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main")
+	git("-C", repo, "worktree", "add", "-qb", "dev/group", tree)
+	if err := os.MkdirAll(filepath.Join(tree, "node_modules", "pkg"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tree, "node_modules", "pkg", "index.js"), []byte("module.exports = 1\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if got := sessionWorktreeStatus(tree); got != "clean" {
+		t.Fatalf("gitignored files marked worktree %q", got)
+	}
+	if out, err := tmuxCmd(socket, "respawn-pane", "-k", "-t", pane, "-c", tree,
+		filepath.Join(dir, "pane-bin", "claude"), "600").CombinedOutput(); err != nil {
+		t.Fatalf("tmux respawn: %v: %s", err, out)
+	}
+	result, err := deleteGroupedSession([]byte(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "removed" {
+		t.Fatalf("delete with gitignored files: %v, %v", result, err)
+	}
+	if _, err := os.Stat(tree); !os.IsNotExist(err) {
+		t.Fatalf("worktree still exists: %v", err)
+	}
 }
 
 func TestDeleteArchivedSessionPreservesReusedPane(t *testing.T) {
