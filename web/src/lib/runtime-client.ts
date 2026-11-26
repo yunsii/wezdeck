@@ -375,6 +375,8 @@ export async function getCollab<TCommand extends CollabCommand>(
 
 /** The relay's read-only session actions (wezdeck-wsl readRPC). */
 export type HostReadAction =
+  | 'host.warp.status'
+  | 'host.oppo.status'
   | 'sessions'
   | 'session'
   | 'upload.get'

@@ -219,9 +219,7 @@ func grokConfigPath() string {
 }
 
 func agyDefaultModel() string {
-	home, _ := os.UserHomeDir()
-	path := filepath.Join(home, ".gemini", "antigravity-cli", "settings.json")
-	body, err := os.ReadFile(path)
+	body, err := os.ReadFile(agySettingsPath())
 	if err != nil {
 		return ""
 	}
@@ -235,8 +233,7 @@ func agyDefaultModel() string {
 }
 
 func agyWorkspaceTrusted(cwd string) bool {
-	home, _ := os.UserHomeDir()
-	body, err := os.ReadFile(filepath.Join(home, ".gemini", "antigravity-cli", "settings.json"))
+	body, err := os.ReadFile(agySettingsPath())
 	if err != nil {
 		return false
 	}

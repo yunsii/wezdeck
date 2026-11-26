@@ -230,6 +230,12 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '会话 agent 实际加载的 skill（Claude 读会话记录、Codex 读 rollout、Grok 跑 inspect），供「能力」与输入框 / 补全',
         'Skills the session agent was actually given (Claude transcript, Codex rollout, Grok inspect), for 能力 and the composer / completion',
       ),
+      c('host.warp.status', '读取 One Client 状态', 'Read One Client status'),
+      c(
+        'host.oppo.status',
+        '查看 OPPO 远控状态',
+        'Read OPPO remote-control status',
+      ),
     ],
   },
   {
@@ -309,6 +315,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Cross-agent handoff: replace this pane with the target agent and paste a continuation brief (no recycle, no transcript migrate; later F5 keeps the target)',
       ),
       c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
+      c(
+        'host.warp.set',
+        '切换 One Client 并回读状态',
+        'Set and verify One Client status',
+      ),
     ],
   },
   {

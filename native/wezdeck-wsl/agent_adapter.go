@@ -115,7 +115,7 @@ func toolKindByName(table map[string]string, name string, input map[string]any) 
 		return toolKindEdit
 	case func() bool { _, ok := writeContent(name, input); return ok }():
 		return toolKindWrite
-	case inputString(input, "command", "cmd") != "":
+	case inputString(input, "command", "cmd", "CommandLine") != "":
 		return toolKindCommand
 	case toolFile(input) != "":
 		return toolKindRead

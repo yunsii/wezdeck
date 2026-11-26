@@ -269,6 +269,36 @@ describe('chatMatchesQuery', () => {
     expect(chatMatchesQuery(chat, 'zzz', 'wire search')).toBe(false)
     expect(chatMatchesQuery(chat, '  ', 'wire search')).toBe(true)
   })
+
+  it('matches a non-focus session of a multi-session worktree', () => {
+    const groups = buildChatGroups([
+      card({
+        id: 'g1',
+        agent: 'grok',
+        name: 'grok',
+        title: 'sync fix',
+        last_prompt: 'grok prompt',
+        status: 'running',
+        ts: 100,
+      }),
+      card({
+        id: 'c1',
+        agent: 'codex',
+        name: 'codex',
+        title: 'relay review',
+        last_prompt: 'codex prompt',
+        status: 'idle',
+        ts: 200,
+      }),
+    ])
+    const chat = groups[0].chats[0]
+    expect(chat.sessions).toHaveLength(2)
+    expect(chat.focus.id).toBe('g1')
+    expect(chatMatchesQuery(chat, 'codex', '')).toBe(true)
+    expect(chatMatchesQuery(chat, 'relay review', '')).toBe(true)
+    expect(chatMatchesQuery(chat, 'codex prompt', '')).toBe(true)
+    expect(chatMatchesQuery(chat, 'nomatch', '')).toBe(false)
+  })
 })
 
 describe('chatTimeBucket', () => {

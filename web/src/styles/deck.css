@@ -28,6 +28,7 @@
   --agent-claude: #d97757;
   --agent-codex: #10a37f;
   --agent-grok: #0f1419;
+  --agent-agy: #4285f4;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -51,6 +52,7 @@ html[data-theme='dark'] [data-deck] {
   --agent-claude: #e08a6c;
   --agent-codex: #2fbf95;
   --agent-grok: #e7e9ea;
+  --agent-agy: #6aa3ff;
 }
 
 /* Streamdown (chat Markdown) reads shadcn-style tokens: map them onto ink. */
@@ -216,6 +218,9 @@ html[data-theme='dark'] .list-row.row-selected::after {
 }
 .session-tag[data-tone='grok'] {
   --tone: var(--agent-grok);
+}
+.session-tag[data-tone='agy'] {
+  --tone: var(--agent-agy);
 }
 
 /* SectionHeading (components/ui/section-heading.tsx): the heading's fill,

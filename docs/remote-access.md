@@ -421,3 +421,18 @@ production: the deployed site, test relay in `room=test`):
 WEZDECK_REMOTE_URL=https://wezdeck.yuns.love WEZDECK_REMOTE_TOKEN=<client token> \
   corepack pnpm exec vitest run --config vitest.cdp.config.ts tests/remote.cdp.test.ts
 ```
+
+### Host quick controls
+
+In **Settings → This computer**, approved remote devices can connect or
+disconnect One Client (WARP) and see OPPO remote-control status. The local
+Windows Runtime exposes the same controls to its allowed loopback origins.
+The WARP write takes an explicit target state, serializes changes, and
+reads back the client state before reporting success. Check the current state
+on the page if changing network routes interrupts the connection.
+
+The OPPO row uses the optional sampler's heartbeat for the active session
+and O+ Connect's main log for the latest completed connection attempt.
+A missing or stale sampler shows an unknown session state. RPC outcomes and
+durations are in the relay log under `host.warp.status`, `host.warp.set`,
+and `host.oppo.status`. Writes also log the approving device or local origin.

@@ -1,8 +1,11 @@
 // 会话 left rail as an IM chat list (Telegram Web orientation): one row per
 // workstation, repo as a quiet section head, unread = waiting or done-unseen.
-// No status Segmented. Opening a row resolves the focus session (session-chats)
-// and navigates to /sessions/$id. Order: unread first within a repo, then
-// activity time — frozen while you work (session-stable).
+// A workstation with several sessions becomes a foldable header plus one
+// stable sub-row per session (session-chat-group) — no focus repaint, every
+// session directly reachable. No status Segmented. Opening a single-session
+// row resolves the focus session (session-chats) and navigates to
+// /sessions/$id. Order: unread first within a repo, then activity time —
+// frozen while you work (session-stable).
 import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
@@ -15,6 +18,7 @@ import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { AgentAvatar } from './agent-avatar'
+import { ChatGroupRow } from './session-chat-group'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -324,6 +328,7 @@ export function SessionList({
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')
+  const wide = useIsWide()
 
   const previewOf = (chat: SessionChat) =>
     chatPreview(chat.focus, previewLabels)
@@ -429,12 +434,21 @@ export function SessionList({
                     className="border-b border-brand-edge last:border-b-0"
                     data-worktree={chat.title}
                   >
-                    <ChatRow
-                      chat={chat}
-                      selectedWorktree={selectedWorktree}
-                      preview={previewOf(chat)}
-                      timeLabel={timeOf(chat.focus.ts)}
-                    />
+                    {chat.sessions.length > 1 ? (
+                      <ChatGroupRow
+                        chat={chat}
+                        selectedId={selected}
+                        replace={wide && Boolean(selectedWorktree)}
+                        timeOf={timeOf}
+                      />
+                    ) : (
+                      <ChatRow
+                        chat={chat}
+                        selectedWorktree={selectedWorktree}
+                        preview={previewOf(chat)}
+                        timeLabel={timeOf(chat.focus.ts)}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

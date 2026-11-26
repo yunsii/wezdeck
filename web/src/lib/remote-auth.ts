@@ -23,6 +23,7 @@ export const OPEN_ACTIONS = new Set([
   'session.handoff',
   'ticket.new',
   'worktree.describe',
+  'host.warp.set',
 ])
 
 /**
