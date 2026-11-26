@@ -1,11 +1,13 @@
-// Chat-list avatar: known brand marks under public/icons/agents/;
-// unknown agents and failed images use a neutral Bot glyph.
-// with an optional corner badge for a non-default managed profile
-// (claude_kimi → Kimi, claude_sub2api → gateway).
+// Chat-list avatar corner slots (fixed convention):
+//   · top-left  — agent turn status (waiting ▲ / running ●); idle = empty
+//   · bottom-right — backend / profile badge (kimi, gateway, …)
+// Brand mark fills the circle; unknown agents and failed images use Bot.
 import { Bot } from 'lucide-react'
 import { useState } from 'react'
 
+import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
+import type { ChatTone } from './session-chats'
 
 const ICONS = '/icons/agents'
 
@@ -68,27 +70,37 @@ export function AgentAvatar({
   size = 40,
   className,
   title,
+  tone = 'idle',
 }: {
   agent?: string
   profile?: string
   size?: number
   className?: string
   title?: string
+  /** turn status for the top-left LED; idle hides it */
+  tone?: ChatTone
 }) {
   const family = agentFamily(agent, profile)
   const badge = agentProfileBadge(profile, family)
   const label = title || LABEL[family]
   const badgePx = Math.max(14, Math.round(size * 0.4))
+  const statusPx = Math.max(12, Math.round(size * 0.35))
   const src = AVATAR_SRC[family]
   const [failedSrc, setFailedSrc] = useState('')
+  const statusLabel =
+    tone === 'waiting' ? 'waiting' : tone === 'running' ? 'running' : ''
+  const aria = [label, badge || null, statusLabel || null]
+    .filter(Boolean)
+    .join(' · ')
   return (
     <span
       role="img"
-      aria-label={badge ? `${label} · ${badge}` : label}
-      title={badge ? `${label} · ${badge}` : label}
+      aria-label={aria}
+      title={aria}
       data-testid="agent-avatar"
       data-agent={family}
       data-badge={badge || undefined}
+      data-tone={tone === 'idle' ? undefined : tone}
       className={cn('relative inline-flex shrink-0', className)}
       style={{ width: size, height: size }}
     >
@@ -113,6 +125,23 @@ export function AgentAvatar({
           <Bot size={Math.round(size * 0.55)} aria-hidden />
         </span>
       )}
+      {tone !== 'idle' ? (
+        <span
+          data-testid="chat-status-dot"
+          data-tone={tone}
+          className="pointer-events-none absolute -top-0.5 -left-0.5 rounded-full bg-brand-deck p-px"
+        >
+          <Led
+            tone={tone === 'waiting' ? 'waiting' : 'running'}
+            size={statusPx}
+            label={statusLabel}
+            className={cn(
+              tone === 'running' &&
+                'motion-safe:animate-[pulse_1.6s_ease-in-out_infinite]',
+            )}
+          />
+        </span>
+      ) : null}
       {badge ? (
         <img
           src={BADGE_SRC[badge]}

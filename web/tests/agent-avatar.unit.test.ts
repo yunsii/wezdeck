@@ -44,4 +44,23 @@ describe('AgentAvatar', () => {
     expect(unknown).toContain('data-testid="agent-avatar-fallback"')
     expect(unknown).not.toContain('/icons/agents/agent.png')
   })
+
+  it('puts status top-left and backend badge bottom-right', () => {
+    const html = renderToStaticMarkup(
+      createElement(AgentAvatar, {
+        profile: 'claude_kimi',
+        tone: 'running',
+      }),
+    )
+    expect(html).toContain('data-testid="chat-status-dot"')
+    expect(html).toContain('data-tone="running"')
+    expect(html).toContain('-top-0.5 -left-0.5')
+    expect(html).toContain('data-testid="agent-avatar-badge"')
+    expect(html).toContain('-right-0.5 -bottom-0.5')
+    const idle = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'claude_kimi', tone: 'idle' }),
+    )
+    expect(idle).not.toContain('chat-status-dot')
+    expect(idle).toContain('agent-avatar-badge')
+  })
 })

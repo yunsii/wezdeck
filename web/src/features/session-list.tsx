@@ -10,12 +10,11 @@ import { FolderGit2, Plus, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 
-import { Led } from '#/components/deck/led'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { AgentAvatar, agentProfileBadge } from './agent-avatar'
+import { AgentAvatar } from './agent-avatar'
 import { useLocale } from '#/lib/locale-context'
 import { consoleVisits, recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
@@ -69,37 +68,6 @@ function useChatTimeLabel() {
   }
 }
 
-function ChatStatusDot({
-  tone,
-  hasProfileBadge,
-}: {
-  tone: ReturnType<typeof chatTone>
-  hasProfileBadge: boolean
-}) {
-  if (tone === 'idle') return null
-  return (
-    <span
-      data-testid="chat-status-dot"
-      data-tone={tone}
-      className={cn(
-        'pointer-events-none absolute',
-        hasProfileBadge ? '-bottom-0.5 -left-0.5' : '-right-0.5 -bottom-0.5',
-      )}
-    >
-      <Led
-        tone={tone === 'waiting' ? 'waiting' : 'running'}
-        size={14}
-        label={tone === 'waiting' ? 'waiting' : 'running'}
-        className={cn(
-          'rounded-full bg-brand-deck p-px',
-          tone === 'running' &&
-            'motion-safe:animate-[pulse_1.6s_ease-in-out_infinite]',
-        )}
-      />
-    </span>
-  )
-}
-
 function ChatRow({
   chat,
   selectedWorktree,
@@ -120,7 +88,6 @@ function ChatRow({
   const directions = useDirections(chat.repoKey)
   const row = chat.focus
   const tone = chatTone(row)
-  const hasBadge = Boolean(agentProfileBadge(row.agent_profile, undefined))
   const warm = () => prefetchSession(client, row.id)
   const selected = Boolean(selectedWorktree && selectedWorktree === chat.key)
   const newRound = (event: SyntheticEvent) => {
@@ -153,14 +120,13 @@ function ChatRow({
             selected && 'row-selected',
           )}
         >
-          <span className="relative mt-0.5 shrink-0">
-            <AgentAvatar
-              agent={row.agent}
-              profile={row.agent_profile}
-              size={40}
-            />
-            <ChatStatusDot tone={tone} hasProfileBadge={hasBadge} />
-          </span>
+          <AgentAvatar
+            agent={row.agent}
+            profile={row.agent_profile}
+            size={40}
+            tone={tone}
+            className="mt-0.5"
+          />
           <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
             <span className="flex items-baseline justify-between gap-2">
               <span className="flex min-w-0 items-baseline gap-1.5">
