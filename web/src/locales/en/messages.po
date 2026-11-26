@@ -289,8 +289,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:422
-#: src/features/session-list.tsx:462
+#: src/features/session-list.tsx:411
+#: src/features/session-list.tsx:451
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -633,8 +633,8 @@ msgstr "Clear input"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "Clear input (Esc Esc)"
 
-#: src/features/session-list.tsx:315
-#: src/features/session-list.tsx:412
+#: src/features/session-list.tsx:304
+#: src/features/session-list.tsx:401
 msgid "Clear search"
 msgstr "Clear search"
 
@@ -876,7 +876,7 @@ msgstr "Copy raw line"
 #: src/features/me-agents.tsx:138
 #: src/features/me-agents.tsx:139
 #: src/features/session-list.tsx:126
-#: src/features/session-list.tsx:245
+#: src/features/session-list.tsx:234
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"
@@ -1598,7 +1598,7 @@ msgstr "Mark done"
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 #: src/features/session-list.tsx:135
-#: src/features/session-list.tsx:264
+#: src/features/session-list.tsx:253
 msgid "Mark read"
 msgstr "Mark read"
 
@@ -1719,7 +1719,7 @@ msgid "New line"
 msgstr "New line"
 
 #: src/features/session-list.tsx:120
-#: src/features/session-list.tsx:254
+#: src/features/session-list.tsx:243
 #: src/features/session-new.tsx:232
 msgid "New round"
 msgstr "New round"
@@ -1803,7 +1803,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:417
+#: src/features/session-list.tsx:406
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -1853,7 +1853,7 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/session-list.tsx:404
+#: src/features/session-list.tsx:393
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2620,8 +2620,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:305
-#: src/features/session-list.tsx:306
+#: src/features/session-list.tsx:294
+#: src/features/session-list.tsx:295
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -2693,12 +2693,12 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:376
+#: src/features/session-list.tsx:365
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:394
+#: src/features/session-list.tsx:383
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
