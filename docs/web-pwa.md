@@ -75,7 +75,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    the list. Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
    filter (`c` on a keyboard) is 新会话 — message first; location bar for
-   repo/direction (idle reuses; "+ New direction" deeper); the sheet
+   repo/direction (idle reuses; "+ New direction" deeper); on phones, repository
+   and agent fields open searchable lists within the same sheet, with a back
+   button and preserved form draft; wide screens keep anchored selects. Open,
+   back and pick emit `session-new-picker` events without search text or paths. The sheet
    follows the job and opens the session once the agent has the message; managed worktrees are pre-trusted (with `session.new.trust` only as fallback), and 我的 › Agents shows every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The

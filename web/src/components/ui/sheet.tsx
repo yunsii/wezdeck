@@ -1,7 +1,8 @@
 import { Drawer } from '@base-ui/react/drawer'
 import { useLingui } from '@lingui/react/macro'
-import { X } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 
+import { Button } from './button'
 import { cn } from '#/lib/utils'
 
 /**
@@ -18,6 +19,7 @@ export function Sheet({
   open,
   onOpenChange,
   title,
+  onBack,
   testId,
   write = false,
   className,
@@ -26,6 +28,8 @@ export function Sheet({
   open: boolean
   onOpenChange: (open: boolean) => void
   title: React.ReactNode
+  /** return from a nested view without dismissing the sheet */
+  onBack?: () => void
   testId?: string
   /** a form that writes: the host diagnostics never click inside it */
   write?: boolean
@@ -68,16 +72,34 @@ export function Sheet({
                 aria-hidden
                 className="mx-auto mb-2 h-1 w-10 rounded-full bg-brand-label/40 md:hidden"
               />
-              <div className="flex items-center justify-between gap-2">
+              <div
+                className={cn(
+                  'flex items-center gap-2',
+                  onBack ? 'justify-start' : 'justify-between',
+                )}
+              >
+                {onBack ? (
+                  <Button
+                    variant="plain"
+                    type="button"
+                    aria-label={t`Back`}
+                    onClick={onBack}
+                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+                  >
+                    <ArrowLeft size={19} aria-hidden />
+                  </Button>
+                ) : null}
                 <Drawer.Title className="text-title font-semibold">
                   {title}
                 </Drawer.Title>
-                <Drawer.Close
-                  aria-label={t`Close`}
-                  className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
-                >
-                  <X size={18} aria-hidden />
-                </Drawer.Close>
+                {!onBack ? (
+                  <Drawer.Close
+                    aria-label={t`Close`}
+                    className="inline-flex size-9 items-center justify-center rounded-full text-brand-muted outline-none focus-visible:ring-2 focus-visible:ring-brand-running"
+                  >
+                    <X size={18} aria-hidden />
+                  </Drawer.Close>
+                ) : null}
               </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1rem)] md:mb-3">

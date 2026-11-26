@@ -1,6 +1,7 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
 // covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
 // covers: web/src/features/session-info.tsx
+// covers: web/src/features/session-new-panels.tsx
 // covers: native/wezdeck-wsl/session_new.go native/wezdeck-wsl/worktree_description.go
 // covers: scripts/runtime/worktree/lib/core-describe.sh
 import { execFileSync } from 'node:child_process'
@@ -28,28 +29,23 @@ describe.runIf(attention && devicesFile && stack)(
   () => {
     let browser: Browser
     const repo = join(mkdtempSync(join(tmpdir(), 'wd-newrepo-')), 'phone-repo')
+    const otherRepo = join(
+      mkdtempSync(join(tmpdir(), 'wd-newrepo-')),
+      'other-repo',
+    )
     const socket = join(stack, 'new.sock')
 
     beforeAll(async () => {
-      execFileSync('git', ['init', '-q', repo])
-      execFileSync(
-        'git',
-        ['-C', repo, 'commit', '-q', '--allow-empty', '-m', 'init'],
-        {
-          env: {
-            ...process.env,
-            GIT_AUTHOR_NAME: 't',
-            GIT_AUTHOR_EMAIL: 't@t',
-            GIT_COMMITTER_NAME: 't',
-            GIT_COMMITTER_EMAIL: 't@t',
-          },
-        },
-      )
+      initTestRepo(repo)
+      initTestRepo(otherRepo)
       // the repository list comes from the access ledger (visited worktrees)
       writeFileSync(
         join(stack, 'access-ledger.json'),
         JSON.stringify({
-          worktrees: { [repo]: { last_access_ms: Date.now() } },
+          worktrees: {
+            [repo]: { last_access_ms: Date.now() },
+            [otherRepo]: { last_access_ms: Date.now() - 60_000 },
+          },
         }),
       )
       writeFileSync(attention, JSON.stringify({ entries: {} }))
@@ -145,6 +141,7 @@ describe.runIf(attention && devicesFile && stack)(
         ),
       ).toBe(true)
       await prompt.fill('从手机开的新会话')
+      if ((page.viewportSize()?.width ?? 0) < 768) await checkMobilePicker(page)
       expect(await sheet.getByTestId('new-session-group-name').count()).toBe(0)
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
@@ -265,6 +262,60 @@ describe.runIf(attention && devicesFile && stack)(
     }, 90_000)
   },
 )
+
+function initTestRepo(repo: string) {
+  execFileSync('git', ['init', '-q', repo])
+  execFileSync(
+    'git',
+    ['-C', repo, 'commit', '-q', '--allow-empty', '-m', 'init'],
+    {
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: 't',
+        GIT_AUTHOR_EMAIL: 't@t',
+        GIT_COMMITTER_NAME: 't',
+        GIT_COMMITTER_EMAIL: 't@t',
+      },
+    },
+  )
+}
+
+async function checkMobilePicker(page: Page) {
+  const sheet = page.getByTestId('new-session-sheet')
+  const repository = sheet.getByRole('combobox', { name: '仓库' })
+  const prompt = sheet.getByPlaceholder('要它做什么？')
+  await repository.click()
+  const picker = sheet.getByTestId('new-session-picker')
+  await picker.waitFor()
+  await picker.getByRole('searchbox').fill('phone-repo')
+  await expect.poll(() => picker.getByRole('option').count()).toBe(1)
+  await sheet.getByRole('button', { name: '返回' }).click()
+  expect(await prompt.inputValue()).toBe('从手机开的新会话')
+  await repository.click()
+  await page.keyboard.press('Escape')
+  await picker.waitFor({ state: 'hidden' })
+  expect(await prompt.inputValue()).toBe('从手机开的新会话')
+  await repository.click()
+  await sheet
+    .getByTestId('new-session-picker')
+    .getByRole('option', { name: 'phone-repo' })
+    .click()
+  expect(await prompt.inputValue()).toBe('从手机开的新会话')
+  const agent = sheet.getByRole('combobox', { name: '智能体' })
+  if (await agent.count()) {
+    await agent.click()
+    const choices = sheet.getByTestId('new-session-picker').getByRole('option')
+    let picked = false
+    for (const choice of await choices.all()) {
+      if (!(await choice.isEnabled())) continue
+      await choice.click()
+      picked = true
+      break
+    }
+    expect(picked).toBe(true)
+    expect(await prompt.inputValue()).toBe('从手机开的新会话')
+  }
+}
 
 async function addSibling(
   page: Page,

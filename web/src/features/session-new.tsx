@@ -1,4 +1,3 @@
-// 新会话 collects the first question, repository and agent.
 // The host allocates the checkout and starts the agent as an observable job.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,10 +14,17 @@ import { worktreeKey } from './session-order'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
-import type { AgentProfile } from './agent-profiles'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
-import { ComposeLayer, useStageText } from './session-new-panels'
+import {
+  ComposeLayer,
+  NewSessionPicker,
+  useAgentSelection,
+  useNewSessionAgentOptions,
+  useNewSessionPicker,
+  useStageText,
+} from './session-new-panels'
 
 type Repo = { root: string; label: string; visited?: number }
 
@@ -293,21 +299,6 @@ export function NewSessionButton() {
   )
 }
 
-function useAgentSelection(profiles: Array<AgentProfile>, preferred: string) {
-  const [picked, setPicked] = useState<string | null>(null)
-  const available = profiles.filter((profile) => !profile.disabled)
-  const defaultDisabled = profiles.some(
-    (profile) => profile.default && profile.disabled,
-  )
-  const requested = picked ?? preferred
-  const selected = available.some((profile) => profile.id === requested)
-    ? requested
-    : defaultDisabled
-      ? available[0]?.id || ''
-      : ''
-  return { available, defaultDisabled, selected, setPicked }
-}
-
 function NewSessionSheet({
   open,
   onClose,
@@ -318,7 +309,9 @@ function NewSessionSheet({
   preset?: NewSessionPreset
 }) {
   const { t } = useLingui()
+  const mobile = !useIsWidePhoneFirst()
   const stageText = useStageText()
+  const { picker, openPicker, backToForm } = useNewSessionPicker()
   const anchor = preset?.anchor
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
@@ -365,6 +358,10 @@ function NewSessionSheet({
       },
   })
   const repositories = repos.data?.repos ?? []
+  const agentOptions = useNewSessionAgentOptions(
+    agentProfiles.data?.profiles ?? [],
+    defaultDisabled,
+  )
   const chosen =
     preset?.repo ??
     (repositories.some(({ root }) => root === repo)
@@ -448,13 +445,30 @@ function NewSessionSheet({
     <Sheet
       open={open}
       onOpenChange={(next) => {
-        if (!next) onClose()
+        if (!next) {
+          if (picker) backToForm()
+          else onClose()
+        }
       }}
-      title={anchor ? t`New session in this group` : t`New session`}
+      title={
+        picker === 'repo'
+          ? t`Repository`
+          : picker === 'agent'
+            ? t`Agent`
+            : anchor
+              ? t`New session in this group`
+              : t`New session`
+      }
+      onBack={picker ? () => backToForm() : undefined}
       testId="new-session-sheet"
       write
     >
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
+      <div
+        hidden={Boolean(picker)}
+        className={
+          picker ? 'hidden' : 'grid grid-cols-[minmax(0,1fr)] gap-3 px-4'
+        }
+      >
         <ComposeLayer
           busy={busy}
           repoLabel={repoLabel}
@@ -474,11 +488,30 @@ function NewSessionSheet({
           onTrust={() => void trust()}
           trusting={trusting}
           agentProfiles={agentProfiles.data?.profiles ?? []}
+          agentOptions={agentOptions}
           agentProfile={selectedAgent}
-          defaultAgentDisabled={defaultDisabled}
           onAgentProfile={setAgentProfile}
+          mobile={mobile}
+          onOpenPicker={openPicker}
         />
       </div>
+      {picker ? (
+        <NewSessionPicker
+          key={picker}
+          title={picker === 'repo' ? t`Repository` : t`Agent`}
+          options={
+            picker === 'repo'
+              ? repositories.map(({ root, label }) => ({ value: root, label }))
+              : agentOptions
+          }
+          value={picker === 'repo' ? chosen : selectedAgent}
+          onPick={(value) => {
+            if (picker === 'repo') setRepo(value)
+            else setAgentProfile(value)
+            backToForm('pick')
+          }}
+        />
+      ) : null}
     </Sheet>
   )
 }
