@@ -180,3 +180,22 @@ printf 'PASS agent-launcher FORCE_FRESH skips Claude continue/resume\n'
 
 grep -q -- '--always-approve' "$REPO_ROOT/scripts/runtime/agent-launcher.sh"
 printf 'PASS agent-launcher contains Grok full-access adapter\n'
+
+if command -v zsh >/dev/null; then
+  for tmux_context in '/tmp/test-tmux,1,0' ''; do
+    env -i PATH="$FAKE_BIN:/usr/bin:/bin" WEZDECK_REPO="$REPO_ROOT" \
+      CODEX_TEST_LOG="$LOG" TMUX="$tmux_context" zsh -fic '
+        source "$WEZDECK_REPO/wezterm-x/local.example/shell-env.d/wezdeck-codex.env"
+        codex resume session-id'
+    if [[ -n "$tmux_context" ]]; then
+      grep -Fxq -- '--no-daemon resume session-id' "$LOG"
+    else
+      grep -Fxq -- 'resume session-id' "$LOG"
+    fi
+  done
+  env PATH="$FAKE_BIN:/usr/bin:/bin" CODEX_TEST_LOG="$LOG" \
+    bash "$REPO_ROOT/scripts/runtime/agent-launcher.sh" codex --interactive \
+      --remote ws://localhost:1234
+  grep -Fxq -- '--remote ws://localhost:1234' "$LOG"
+  printf 'PASS interactive Codex uses --no-daemon in tmux and preserves explicit remote\n'
+fi

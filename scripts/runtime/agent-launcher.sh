@@ -43,6 +43,19 @@
 set -eu
 
 script_dir="$(cd "$(dirname "$0")" && pwd -P)"
+
+# Manual TUI invocations keep the caller's CLI arguments and configuration.
+if [[ "${1:-}" == codex && "${2:-}" == --interactive ]]; then
+  shift 2
+  for arg in "$@"; do
+    case "$arg" in
+      --) break ;;
+      --remote|--remote=*|--no-daemon) exec codex "$@" ;;
+    esac
+  done
+  exec codex --no-daemon "$@"
+fi
+
 # An item/workspace override is injected as an inline environment assignment
 # by Lua or resume-command.sh. Preserve it across the shared env load so the
 # more specific launch context wins over the machine default.

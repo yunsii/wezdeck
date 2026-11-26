@@ -98,6 +98,11 @@ zsh -ilc 'whence -w grok; [[ -n ${WEZDECK_REPO:-} ]] && echo "WEZDECK_REPO=$WEZD
 # expect: grok: function
 ```
 
+Install [`wezdeck-codex.env`](../wezterm-x/local.example/shell-env.d/wezdeck-codex.env)
+in the same directory to route interactive `codex` in tmux through the
+WezDeck launcher. It passes through CLI arguments such as `resume <id>` and
+uses a per-client app-server so Web input reaches the correct pane.
+
 Without the snippet, copying `*.env` into `~/.config/shell-env.d/` only affects managed agents. A direct `grok` then follows PATH and, after `grok update`, can be the bare ELF again.
 
 Managed agent launchers also add stable user CLI directories without starting an interactive shell: the nvm default Node `bin`, fnm's `aliases/default/bin`, Volta, Bun, and `~/.local/bin` when present. This keeps tools such as `codex` reachable from tmux F5/respawn paths even when the tmux server was started with a minimal PATH.
