@@ -8,7 +8,8 @@ import { useLingui } from '@lingui/react/macro'
 import { Check, Code2, Copy, Pencil } from 'lucide-react'
 import { useState } from 'react'
 
-import { useSessions, useStatusText } from './console-sessions'
+import { useSessions } from './console-sessions'
+import { useStatusText } from './session-status-text'
 import type { Detail } from './console-sessions'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
@@ -317,6 +318,7 @@ export function SessionInfo({
                           data.waiting_kind,
                           data.running_kind,
                           data.background?.length ?? 0,
+                          data.restart_pending,
                         )
                       : format(row.key, row.value)
                   }

@@ -144,6 +144,7 @@ attention_mark_cleared() {
             ) | .cleared_to)
           | unique) as $phantoms
       | ($recent | map(.session_id // "") | unique) as $known
+      | .entries[$sid] |= del(.restart_pending)
       | .recent = (
           ($recent | map(
             if (.tmux_pane // "") != $tp or (.tmux_socket // "") != $tsk then .
@@ -166,3 +167,7 @@ attention_mark_cleared() {
     attention_state_write "$next"
   ) 9>"$(attention_state_lock_path)"
 }
+
+# Restart markers live outside the large attention state library.
+# shellcheck disable=SC1091
+. "$__ATTENTION_STATE_LIB_DIR/attention-restart-lib.sh"

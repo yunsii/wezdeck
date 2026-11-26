@@ -20,6 +20,7 @@ export type SessionCard = {
   transcript: boolean
   desk_idle_s: number
   running_kind?: string
+  restart_pending?: boolean
   background?: Array<BgTask>
   /** Repo family label (git main checkout basename). */
   repo?: string

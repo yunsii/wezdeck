@@ -27,6 +27,7 @@ import { UsageTag, usageMetrics } from './session-usage'
 /** what the status bar adds to the session reply (session_env.go) */
 export type StatusFields = {
   worktrees?: Array<{ path: string; branch?: string; current?: boolean }>
+  restart_pending?: boolean
 }
 
 const trigger =

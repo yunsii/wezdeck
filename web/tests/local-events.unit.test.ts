@@ -28,6 +28,23 @@ describe('local Web events', () => {
     ])
   })
 
+  it('keeps a Chinese host --reason on host-diag', async () => {
+    const { recordLocalEvent, flushLocalEvents } =
+      await import('../src/lib/local-events')
+    recordLocalEvent('host-diag', {
+      action: 'reload',
+      reason: '发布网页 e009ca40',
+      steps: 1,
+    })
+    await flushLocalEvents()
+    expect(postLocalEvents.mock.calls[0]?.[0]).toMatchObject([
+      {
+        kind: 'host-diag',
+        data: { action: 'reload', reason: '发布网页 e009ca40' },
+      },
+    ])
+  })
+
   it('keeps only the route path, never its query or fragment', async () => {
     const { recordLocalEvent, flushLocalEvents } =
       await import('../src/lib/local-events')

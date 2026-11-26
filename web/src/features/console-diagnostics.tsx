@@ -169,7 +169,7 @@ export function ConsoleDiagnosticsPage() {
         <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-start">
           <aside
             aria-label={t`Log stream`}
-            className="sticky top-4 grid h-[calc(100cqh-2rem)] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pb-0 [scrollbar-gutter:stable_both-edges]"
+            className="sticky top-0 grid h-[100cqh] content-start gap-3 overflow-y-auto overscroll-contain border-r border-brand-edge pb-0 [scrollbar-gutter:stable_both-edges]"
           >
             <div className="md:px-[var(--page-x)]">{filters}</div>
             {list}

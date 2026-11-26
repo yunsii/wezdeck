@@ -50,7 +50,8 @@ type attentionEntry struct {
 	// running_kind=background: the turn ended but harness background tasks
 	// (bg.tasks) are still alive — the TUI takes input (agent-attention.md
 	// "Background running substate").
-	RunningKind string `json:"running_kind"`
+	RunningKind    string `json:"running_kind"`
+	RestartPending bool   `json:"restart_pending"`
 	// when this turn began / the compaction started (ms; emit.sh +
 	// attention-state-lib.sh): the phone counts elapsed time from them
 	// set on a session listed in place of an archived one whose pane was
@@ -381,21 +382,22 @@ func deskActivity(e attentionEntry) int64 {
 }
 
 type sessionCard struct {
-	ID          string   `json:"id"`
-	Agent       string   `json:"agent"`
-	Name        string   `json:"name"`
-	Title       string   `json:"title,omitempty"` // auto /rename title when known
-	Window      string   `json:"window"`
-	Cwd         string   `json:"cwd"`
-	Branch      string   `json:"branch"`
-	Status      string   `json:"status"`
-	WaitingKind string   `json:"waiting_kind,omitempty"`
-	LastPrompt  string   `json:"last_prompt"`
-	TS          int64    `json:"ts"`
-	Transcript  bool     `json:"transcript"`
-	DeskIdleS   int64    `json:"desk_idle_s"`
-	RunningKind string   `json:"running_kind,omitempty"`
-	Background  []bgTask `json:"background"`
+	ID             string   `json:"id"`
+	Agent          string   `json:"agent"`
+	Name           string   `json:"name"`
+	Title          string   `json:"title,omitempty"` // auto /rename title when known
+	Window         string   `json:"window"`
+	Cwd            string   `json:"cwd"`
+	Branch         string   `json:"branch"`
+	Status         string   `json:"status"`
+	WaitingKind    string   `json:"waiting_kind,omitempty"`
+	LastPrompt     string   `json:"last_prompt"`
+	TS             int64    `json:"ts"`
+	Transcript     bool     `json:"transcript"`
+	DeskIdleS      int64    `json:"desk_idle_s"`
+	RunningKind    string   `json:"running_kind,omitempty"`
+	RestartPending bool     `json:"restart_pending,omitempty"`
+	Background     []bgTask `json:"background"`
 	// Tree grouping (repo family → worktree → pane). tmux fields are optional
 	// mount info so ticket agents on the same worktree can join later.
 	Repo      string `json:"repo,omitempty"`
@@ -444,7 +446,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
-			RunningKind: e.RunningKind, Background: backgroundOf(e),
+			RunningKind: e.RunningKind, RestartPending: e.RestartPending, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
 			AgentProfile: profile}
 		if meta, ok := gitCache[cwd]; ok {
@@ -695,7 +697,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	}
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
 	// clears this state only, not a newer one
-	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "ts": e.TS, "waiting_kind": e.WaitingKind,
+	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "ts": e.TS, "waiting_kind": e.WaitingKind, "restart_pending": e.RestartPending,
 		"running_kind": e.RunningKind, "background": enrichBackground(backgroundOf(e), nil, e.SessionID), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
 	// mid-turn progress from hooks, not the screen: when the turn / the

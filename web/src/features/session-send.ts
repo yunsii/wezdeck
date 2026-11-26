@@ -160,6 +160,8 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       trace('web-write', { id: target, op_id, action, stage: 'requested' })
       try {
         await hostWrite(action, { id: target, ...args, client_op: op_id })
+        if (action === 'session.restart')
+          void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
         trace('web-write', {
           id: target,
           op_id,

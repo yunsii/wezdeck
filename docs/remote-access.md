@@ -401,6 +401,9 @@ the pre-commit gate would only report — prettier on the staged web files,
 `lingui extract` for the catalogs — so one command goes from staged to
 live; lint / type errors still stop it before anything ships. A deploy that succeeds is done; the version check belongs before
 the tests, not after the deploy.
+The relay job repairs a stale systemd `ExecStart` before restarting, then
+checks the new process's `event=connected` version. A restart with an old
+version is a release failure, even when systemd reports the unit as active.
 
 Logs: `category=relay` rows (`connected` / `disconnected` / `rtc_state` /
 `rtc_answer` / `rpc via=webrtc|websocket ms err`) in

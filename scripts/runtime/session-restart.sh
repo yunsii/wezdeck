@@ -28,6 +28,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/runtime-log-lib.sh"
+source "$SCRIPT_DIR/attention-state-lib.sh"
 export WEZTERM_RUNTIME_LOG_SOURCE="session-restart.sh"
 
 fresh=0
@@ -55,6 +56,7 @@ start_ms="$(runtime_log_now_ms)"
 mode=resume
 ((fresh)) && mode=fresh
 fields=("pane=$pane" "session_name=$session_name" "window_id=$window_id" "mode=$mode" "agent=${agent:-}")
+attention_state_mark_restart_pending "${WEZDECK_RESTART_SESSION_ID:-}" 2>/dev/null || true
 runtime_log_info workspace "web session restart invoked" "${fields[@]}"
 
 finish() {
@@ -75,6 +77,7 @@ if ((!fresh)); then
     exit 0
   fi
   finish "failed:${out##*$'\n'}" warn
+  attention_state_clear_restart_pending "${WEZDECK_RESTART_SESSION_ID:-}" 2>/dev/null || true
   exit 1
 fi
 
