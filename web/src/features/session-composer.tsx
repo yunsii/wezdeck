@@ -408,7 +408,10 @@ export function ComposerBox({
       ) : null}
       <div
         data-text-field
-        className="flex items-end gap-2 rounded-3xl bg-brand-surface p-1.5"
+        className={cn(
+          'relative rounded-3xl bg-brand-surface p-1.5',
+          composer.text || composer.images.length ? 'min-h-16' : 'min-h-12',
+        )}
       >
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
@@ -465,7 +468,10 @@ export function ComposerBox({
           enterKeyHint={touch ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className="max-h-40 min-h-10 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
+          className={cn(
+            'w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label',
+            composer.text || composer.images.length ? 'pb-12' : null,
+          )}
         />
         {composer.text || composer.images.length ? (
           <Button
@@ -475,7 +481,7 @@ export function ComposerBox({
             aria-label={t`Clear input`}
             title={t`Clear input`}
             onClick={() => composer.clear('button')}
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-label"
+            className="absolute right-1.5 top-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-label"
           >
             <X size={18} aria-hidden />
           </Button>
@@ -488,7 +494,7 @@ export function ComposerBox({
           type="submit"
           aria-label={t`Send`}
           disabled={!canSend}
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full disabled:opacity-30"
+          className="absolute bottom-1.5 right-1.5 inline-flex size-10 items-center justify-center rounded-full disabled:opacity-30"
         >
           <SendHorizontal
             size={20}
