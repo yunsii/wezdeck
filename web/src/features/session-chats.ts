@@ -1,7 +1,7 @@
 // IM left rail: one chat row per workstation (worktree path). Sessions stay
 // the detail route; opening a chat resolves which session to show. Pure +
 // unit-tested — session-list.tsx only renders.
-import { needsYou } from './console-sessions'
+import { humanPrompt, needsYou } from './console-sessions'
 import {
   inRunning,
   isWorkstation,
@@ -11,6 +11,71 @@ import {
   worktreeKey,
 } from './session-order'
 import type { SessionCard } from './session-card'
+
+/** Row tone for preview colour / status LED. */
+export type ChatTone = 'waiting' | 'running' | 'idle'
+
+export function chatTone(
+  focus: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
+  now = Date.now(),
+): ChatTone {
+  if (needsYou(focus)) return 'waiting'
+  if (inRunning(focus, now)) return 'running'
+  return 'idle'
+}
+
+/**
+ * Last-line preview for the IM list. Labels are caller-supplied so this
+ * stays free of React / lingui (unit-tested).
+ */
+export function chatPreview(
+  focus: Pick<
+    SessionCard,
+    'status' | 'running_kind' | 'waiting_kind' | 'ts' | 'last_prompt'
+  >,
+  labels: {
+    waiting: string
+    needsConfirm: string
+    working: string
+    empty: string
+  },
+  now = Date.now(),
+): string {
+  const prompt = humanPrompt(focus.last_prompt)
+  const tone = chatTone(focus, now)
+  if (tone === 'waiting') {
+    return prompt
+      ? `${labels.waiting} · ${prompt}`
+      : `${labels.waiting} · ${labels.needsConfirm}`
+  }
+  if (tone === 'running') {
+    return prompt ? `${labels.working} · ${prompt}` : labels.working
+  }
+  return prompt || labels.empty
+}
+
+/** Local filter for the list search box. */
+export function chatMatchesQuery(
+  chat: SessionChat,
+  query: string,
+  preview: string,
+): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  const hay = [
+    chat.title,
+    chat.purpose,
+    chat.repoLabel,
+    preview,
+    chat.focus.agent,
+    chat.focus.agent_profile,
+    chat.focus.name,
+  ]
+    .filter(Boolean)
+    .join('\n')
+    .toLowerCase()
+  return hay.includes(q)
+}
 
 export type SessionChat = {
   /** worktree path (primary checkout: repo_root / cwd) */

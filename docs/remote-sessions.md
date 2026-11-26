@@ -46,7 +46,11 @@ archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
 inherit its original pane environment. The Web session list is an IM chat rail: one row per worktree (agent brand
 avatar, profile badge when not the bare family; focus session for
-open/preview); pane index still orders sessions inside a worktree.
+open/preview); a status LED on the avatar for waiting / running; preview
+line reads like the last message (`Waiting on you · …` / `Replying…` /
+human prompt); list time is clock-today / yesterday / weekday / date; a
+top search filters by title, purpose, preview, and agent; pane index still
+orders sessions inside a worktree.
 
 ## Session RPCs
 
