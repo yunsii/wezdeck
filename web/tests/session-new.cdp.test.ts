@@ -300,7 +300,9 @@ async function addSibling(
     }),
   )
   const group = page.locator(`[data-worktree=${session}]`)
-  await group.getByTestId('chat-edit-group-name').tap()
+  const header = group.getByTestId('chat-group-toggle')
+  await header.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: '修改组名' }).click()
   const editor = page.getByRole('dialog', { name: '修改组名' })
   await editor.getByRole('textbox', { name: '组名' }).fill('从列表改名')
   await editor.getByRole('button', { name: '保存' }).tap()

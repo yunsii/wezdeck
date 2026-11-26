@@ -1,6 +1,5 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
 import { useState } from 'react'
 
 import { trace } from '#/lib/client-trace'
@@ -10,30 +9,22 @@ import { Sheet } from '#/components/ui/sheet'
 import { Input } from '#/components/ui/input'
 import type { SessionCard } from './session-card'
 import { worktreeKey } from './session-order'
-import { useDeviceState } from './device-state'
 
 const MAX = 120
 
-export function WorktreePurpose({
+export function useGroupNameEditor({
   worktree,
   description,
-  editable,
 }: {
   worktree: string
   description: string
-  editable: boolean
 }) {
   const { t } = useLingui()
   const client = useQueryClient()
-  const device = useDeviceState()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const canEdit = editable && device.state === 'approved'
-
-  if (!canEdit) return null
-
   const save = async () => {
     const text = draft.trim()
     if (text === description) {
@@ -66,24 +57,13 @@ export function WorktreePurpose({
     }
   }
   const label = t`Edit group name`
-  return (
-    <>
-      <Button
-        type="button"
-        variant="plain"
-        size="none"
-        aria-label={label}
-        title={label}
-        data-testid="chat-edit-group-name"
-        onClick={() => {
-          setDraft(description)
-          setError('')
-          setEditing(true)
-        }}
-        className="size-11 shrink-0 text-brand-muted"
-      >
-        <Pencil size={15} aria-hidden />
-      </Button>
+  return {
+    edit: () => {
+      setDraft(description)
+      setError('')
+      setEditing(true)
+    },
+    sheet: (
       <Sheet
         open={editing}
         write
@@ -141,6 +121,6 @@ export function WorktreePurpose({
           </form>
         </div>
       </Sheet>
-    </>
-  )
+    ),
+  }
 }
