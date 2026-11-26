@@ -1,17 +1,19 @@
-// 新会话 — wezdeck's Ctrl+k g d from the phone: pick a repository, name a
-// new workstation (one direction: ux, ci, i18n …) with a one-line purpose,
-// and write the first message; the host creates the worktree (directory
-// <name>, branch dev/<name>, the purpose as its git branch description) and
-// its agent in tmux and hands the agent the message (native
-// session_new.go). Creation outlasts an RPC, so the host answers a
-// job id and the sheet follows its stages, then opens the session once it
-// is listed. `c` on the session list opens it with a keyboard.
+// 新会话 — wezdeck's Ctrl+k g d from the phone, layered so the common path
+// stays one screen: a location summary bar + the first message. Tap the bar
+// for the place layer (repository + directions with idle/busy); "+ New
+// direction" opens a third layer for the name and purpose. The host creates
+// or reuses the worktree (native session_new.go / workstations.go), starts
+// its agent in tmux and hands it the message. Creation outlasts an RPC, so
+// the host answers a job id and the sheet follows its stages, then opens
+// the session once it is listed. `c` on the session list opens it with a
+// keyboard.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import { BackButton } from '#/components/deck/back-button'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { recordVisit } from '#/lib/session-visits'
@@ -19,19 +21,24 @@ import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
-import { Textarea } from '#/components/ui/textarea'
-import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
 import {
-  DirectionPicker,
   defaultDirection,
   useDirectionPlan,
+  useDirectionPlanShort,
   useDirections,
 } from './session-new-direction'
 import type { DirectionPick } from './session-new-direction'
+import {
+  ComposeLayer,
+  NewDirectionLayer,
+  PlaceLayer,
+} from './session-new-panels'
 
 type Repo = { root: string; label: string; visited?: number }
+
+/** compose = message; place = repo + directions; new = name a new direction */
+type Layer = 'compose' | 'place' | 'new'
 
 /**
  * The directory / branch name the host makes of a typed name
@@ -59,7 +66,7 @@ type Job = {
 
 function useStageText() {
   const { t } = useLingui()
-  return (job: Job) => {
+  return (job: Pick<Job, 'stage' | 'mode' | 'error'>) => {
     const reason = job.error ?? ''
     return job.stage === 'creating'
       ? job.mode === 'reuse'
@@ -153,12 +160,15 @@ function NewSessionSheet({
   const { locale } = useLocale()
   const navigate = useNavigate()
   const stageText = useStageText()
+  const plan = useDirectionPlan()
+  const planShort = useDirectionPlanShort()
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
     queryFn: async () =>
       (await hostRead('repos', {})) as { repos: Array<Repo> },
   })
   const sessions = useSessions()
+  const [layer, setLayer] = useState<Layer>('compose')
   const [repo, setRepo] = useState('')
   const [name, setName] = useState('')
   // the chosen direction: null until picked (then the default applies),
@@ -185,13 +195,16 @@ function NewSessionSheet({
       },
   })
   const chosen = repo || repos.data?.repos[0]?.root || ''
+  const repoLabel =
+    (repos.data?.repos ?? []).find((r) => r.root === chosen)?.label ||
+    chosen.split('/').pop() ||
+    ''
   const directions = useDirections(chosen)
   const dirs = directions.data?.directions ?? []
   const pick = picked ?? defaultDirection(dirs)
   const pickedDir = dirs.find((d) => d.name === pick)
-  const plan = useDirectionPlan()
+  const isNew = pick === ''
   const current = job.data?.job
-  // once listed (the agent answered its first prompt), open the session
   const listed =
     current?.stage === 'done' && current.worktree
       ? sessions.data?.sessions.find(
@@ -214,15 +227,29 @@ function NewSessionSheet({
       params: { locale: locale === 'en' ? undefined : locale, id: listed.id },
     })
   }, [listed, jobId, navigate, locale, onClose])
+  // Esc backs a layer before the drawer closes the sheet
+  useEffect(() => {
+    if (!open || layer === 'compose') return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopPropagation()
+      setLayer(layer === 'new' ? 'place' : 'compose')
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [open, layer])
   const busy = Boolean(jobId) && current?.stage !== 'failed'
   const slug = workstationSlug(name)
   const ready =
     Boolean(chosen) && Boolean(pick || slug) && Boolean(prompt.trim())
+  const locationClause = isNew
+    ? slug || t`+ New direction`
+    : pick || t`Direction`
+  const locationHint = planShort(pickedDir, isNew)
   const submit = async () => {
     setError('')
     try {
-      // the workstation a reuse will pick: the most recent idle one (host
-      // workstations.go idleSlot); its listed sessions are not the new one
       const reused = pickedDir?.slots.find((s) => s.state === 'idle')?.path
       before.current = new Set(
         (sessions.data?.sessions ?? [])
@@ -240,130 +267,89 @@ function NewSessionSheet({
       setError((e as Error).message)
     }
   }
+  const title =
+    layer === 'compose' ? (
+      t`New session`
+    ) : (
+      <span className="flex min-w-0 items-center gap-0.5">
+        <BackButton
+          label={layer === 'new' ? t`Back to place` : t`Back to message`}
+          onClick={() => setLayer(layer === 'new' ? 'place' : 'compose')}
+          className="-ml-2"
+        />
+        <span className="truncate">
+          {layer === 'place' ? t`Where` : t`New direction`}
+        </span>
+      </span>
+    )
   return (
     <Sheet
       open={open}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}
-      title={t`New session`}
+      title={title}
       testId="new-session-sheet"
       write
     >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-4">
-        <label className="grid gap-1 text-caption text-brand-muted">
-          {t`Repository`}
-          <Select
-            size="lg"
-            value={chosen}
-            disabled={busy}
-            onValueChange={setRepo}
-            options={(repos.data?.repos ?? []).map((r) => ({
-              value: r.root,
-              label: r.label,
-            }))}
+        {layer === 'compose' ? (
+          <ComposeLayer
+            busy={busy}
+            repoLabel={repoLabel}
+            locationClause={locationClause}
+            locationHint={locationHint}
+            prompt={prompt}
+            setPrompt={setPrompt}
+            isNew={isNew}
+            name={name}
+            slug={slug}
+            current={current}
+            stageText={stageText}
+            error={error}
+            ready={ready}
+            onPlace={() => setLayer('place')}
+            onSubmit={() => void submit()}
           />
-        </label>
-        <div className="grid gap-1 text-caption text-brand-muted">
-          {t`Direction`}
-          <DirectionPicker
-            directions={dirs}
-            value={pick}
-            onChange={setPicked}
-            disabled={busy}
+        ) : null}
+        {layer === 'place' ? (
+          <PlaceLayer
+            busy={busy}
+            chosen={chosen}
+            repos={repos.data?.repos ?? []}
+            dirs={dirs}
+            pick={pick}
+            pickedDir={pickedDir}
+            plan={plan}
+            onRepo={(next) => {
+              setRepo(next)
+              setPicked(null)
+              setName('')
+              setDescription('')
+            }}
+            onPick={(next) => {
+              setPicked(next)
+              if (next === '') {
+                setLayer('new')
+                return
+              }
+              setName('')
+              setDescription('')
+              setLayer('compose')
+            }}
           />
-          {pickedDir ? (
-            <span
-              className="px-1 text-meta text-brand-label"
-              data-testid="new-session-plan"
-            >
-              {plan(pickedDir)}
-            </span>
-          ) : null}
-        </div>
-        {pick === '' ? (
-          <>
-            <label className="grid gap-1 text-caption text-brand-muted">
-              {t`New direction`}
-              <Input
-                variant="field"
-                value={name}
-                disabled={busy}
-                maxLength={60}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t`e.g. ux, ci, i18n`}
-              />
-              <span
-                className={
-                  name.trim() && !slug
-                    ? 'px-1 text-meta text-brand-error'
-                    : 'px-1 text-meta text-brand-label'
-                }
-                data-testid="new-session-slug"
-              >
-                {!name.trim()
-                  ? t`A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk.`
-                  : slug
-                    ? t`Worktree ${slug}, branch dev/${slug} (a taken name gets -2)`
-                    : t`Needs letters or digits: it becomes the directory and branch. Put the rest in the description.`}
-              </span>
-            </label>
-            <label className="grid gap-1 text-caption text-brand-muted">
-              {t`Description`}
-              <Input
-                variant="field"
-                value={description}
-                disabled={busy}
-                maxLength={120}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder={t`What this workstation is for, one line`}
-              />
-            </label>
-          </>
         ) : null}
-        <label className="grid gap-1 text-caption text-brand-muted">
-          {t`First message to the agent`}
-          <Textarea
-            value={prompt}
-            disabled={busy}
-            rows={4}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder={t`What should it work on?`}
+        {layer === 'new' ? (
+          <NewDirectionLayer
+            busy={busy}
+            name={name}
+            slug={slug}
+            setName={setName}
+            description={description}
+            setDescription={setDescription}
+            onDone={() => setLayer('compose')}
           />
-        </label>
-        {current ? (
-          <p
-            role="status"
-            data-testid="new-session-stage"
-            data-stage={current.stage}
-            className={
-              current.stage === 'failed'
-                ? 'rounded-xl bg-brand-error/10 px-3 py-2 text-caption text-brand-error'
-                : 'rounded-xl bg-brand-surface px-3 py-2 text-caption'
-            }
-          >
-            {stageText(current)}
-            {current.branch ? (
-              <span className="block text-meta text-brand-label">
-                {current.branch}
-              </span>
-            ) : null}
-          </p>
         ) : null}
-        {error ? (
-          <p role="alert" className="text-caption text-brand-error">
-            {error}
-          </p>
-        ) : null}
-        <Button
-          variant="solid"
-          type="button"
-          disabled={!ready || busy}
-          onClick={() => void submit()}
-          className="min-h-12 px-3 text-body disabled:opacity-40"
-        >
-          {t`Create session`}
-        </Button>
       </div>
     </Sheet>
   )

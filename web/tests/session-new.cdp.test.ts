@@ -125,6 +125,8 @@ describe.runIf(attention && devicesFile && stack)(
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
+      // compose first: tap the place bar → directions → + new direction
+      await sheet.getByTestId('new-session-place').click()
       // the repository picker (Base UI Select) preselects the visited repo
       await expect
         .poll(() => sheet.getByRole('combobox').textContent())
@@ -135,6 +137,7 @@ describe.runIf(attention && devicesFile && stack)(
         .poll(() => sheet.getByTestId('new-session-slug').textContent())
         .toContain(`工作站 ${name}，分支 dev/${name}`)
       await sheet.getByPlaceholder('这个工作站做什么，一行').fill(description)
+      await sheet.getByTestId('new-session-direction-done').click()
       await sheet.getByPlaceholder('要它做什么？').fill('从手机开的新会话')
       await sheet.getByRole('button', { name: '创建会话' }).click()
       const stage = page.getByTestId('new-session-stage')
@@ -211,14 +214,14 @@ describe.runIf(attention && devicesFile && stack)(
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
       const sheet = page.getByTestId('new-session-sheet')
+      await sheet.getByTestId('new-session-place').click()
       await sheet.locator('[data-direction="+new"]').click()
       await sheet.getByPlaceholder('例如 ux、ci、i18n').fill('网页体验')
-      await sheet.getByPlaceholder('要它做什么？').fill('不会创建')
       await expect
         .poll(() => sheet.getByTestId('new-session-slug').textContent())
         .toContain('需要包含字母或数字')
       expect(
-        await sheet.getByRole('button', { name: '创建会话' }).isDisabled(),
+        await sheet.getByTestId('new-session-direction-done').isDisabled(),
       ).toBe(true)
       await context.close()
     }, 60_000)
@@ -366,18 +369,26 @@ async function reuseIdleDirection({
   await page.goto(`${base}/zh/console/sessions`)
   await page.getByTestId('new-session').click()
   const sheet = page.getByTestId('new-session-sheet')
+  // compose defaults to the idle direction; open place to confirm
+  const place = sheet.getByTestId('new-session-place')
+  await expect
+    .poll(() => place.textContent(), { timeout: 15_000 })
+    .toMatch(/phone/)
+  await expect.poll(() => place.textContent()).toMatch(/复用空闲|reuse idle/)
+  await place.click()
   const row = sheet.locator('[data-direction="phone"]')
   await expect
     .poll(() => row.getByTestId('direction-state').textContent(), {
       timeout: 15_000,
     })
     .toBe('空闲')
-  // the idle direction is the default; the new-direction fields stay hidden
   expect(await row.getAttribute('aria-checked')).toBe('true')
-  expect(await sheet.getByPlaceholder('例如 ux、ci、i18n').count()).toBe(0)
   expect(await sheet.getByTestId('new-session-plan').textContent()).toContain(
     '复用 phone',
   )
+  // pick confirms and returns to compose (message only)
+  await row.click()
+  expect(await sheet.getByPlaceholder('例如 ux、ci、i18n').count()).toBe(0)
   await sheet.getByPlaceholder('要它做什么？').fill('下一轮')
   await sheet.getByRole('button', { name: '创建会话' }).click()
   const stage = page.getByTestId('new-session-stage')

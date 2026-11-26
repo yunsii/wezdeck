@@ -110,7 +110,7 @@ msgstr "{name} 已就绪，还没有对话。"
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
-#: src/features/session-new-direction.tsx:61
+#: src/features/session-new-direction.tsx:63
 msgid "{reason} · opens one more"
 msgstr "{reason} · 将新开一个"
 
@@ -179,7 +179,8 @@ msgstr "↓ {tokens} tokens"
 msgid "+ Description"
 msgstr "+ 描述"
 
-#: src/features/session-new-direction.tsx:139
+#: src/features/session-new-direction.tsx:142
+#: src/features/session-new.tsx:247
 msgid "+ New direction"
 msgstr "+ 新方向"
 
@@ -231,7 +232,7 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/session-new.tsx:305
+#: src/features/session-new-panels.tsx:238
 msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
 
@@ -400,6 +401,14 @@ msgstr "终端：{host}"
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "返回"
+
+#: src/features/session-new.tsx:276
+msgid "Back to message"
+msgstr "返回写消息"
+
+#: src/features/session-new.tsx:276
+msgid "Back to place"
+msgstr "返回选位置"
 
 #: src/features/console-collab-run.tsx:124
 msgid "Backend"
@@ -644,7 +653,7 @@ msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
-#: src/features/session-new-direction.tsx:57
+#: src/features/session-new-direction.tsx:59
 msgid "commits not in main yet"
 msgstr "有未合入主分支的提交"
 
@@ -736,6 +745,10 @@ msgstr "上下文压缩次数"
 msgid "context usage"
 msgstr "上下文占用"
 
+#: src/features/session-new-panels.tsx:263
+msgid "Continue"
+msgstr "继续"
+
 #: src/features/session-composer.tsx:90
 #: src/features/session-info.tsx:252
 #: src/features/ticket-copy-reference.tsx:31
@@ -821,7 +834,7 @@ msgstr "操作失败：{changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-new.tsx:74
+#: src/features/session-new.tsx:81
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -837,7 +850,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:365
+#: src/features/session-new-panels.tsx:134
 msgid "Create session"
 msgstr "创建会话"
 
@@ -845,7 +858,7 @@ msgstr "创建会话"
 msgid "Create ticket"
 msgstr "创建工单"
 
-#: src/features/session-new.tsx:67
+#: src/features/session-new.tsx:74
 msgid "Creating the worktree…"
 msgstr "正在创建工作树…"
 
@@ -896,7 +909,7 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-new.tsx:312
+#: src/features/session-new-panels.tsx:245
 msgid "Description"
 msgstr "描述"
 
@@ -918,8 +931,9 @@ msgstr "诊断"
 msgid "Direct"
 msgstr "直连"
 
-#: src/features/session-new-direction.tsx:108
-#: src/features/session-new.tsx:268
+#: src/features/session-new-direction.tsx:110
+#: src/features/session-new-panels.tsx:178
+#: src/features/session-new.tsx:248
 msgid "Direction"
 msgstr "方向"
 
@@ -941,7 +955,7 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-new.tsx:294
+#: src/features/session-new-panels.tsx:227
 msgid "e.g. ux, ci, i18n"
 msgstr "例如 ux、ci、i18n"
 
@@ -1004,7 +1018,7 @@ msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
 msgid "Event stream"
 msgstr "事件流"
 
-#: src/features/session-new-direction.tsx:155
+#: src/features/session-new-direction.tsx:164
 msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
 msgstr "{direction} 的工作站都在忙：新开一个并行的，描述沿用。"
 
@@ -1062,7 +1076,7 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new.tsx:325
+#: src/features/session-new-panels.tsx:84
 msgid "First message to the agent"
 msgstr "给 agent 的第一条消息"
 
@@ -1173,7 +1187,7 @@ msgstr "打算怎么做"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-new-direction.tsx:52
+#: src/features/session-new-direction.tsx:54
 msgid "idle"
 msgstr "空闲"
 
@@ -1187,7 +1201,7 @@ msgctxt "session status"
 msgid "Idle"
 msgstr "空闲"
 
-#: src/features/session-new-direction.tsx:52
+#: src/features/session-new-direction.tsx:54
 msgid "idle · {count} workstations"
 msgstr "空闲 · 共 {count} 个工作站"
 
@@ -1503,7 +1517,8 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-new.tsx:308
+#: src/features/session-new-panels.tsx:100
+#: src/features/session-new-panels.tsx:241
 msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
 msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
 
@@ -1523,7 +1538,12 @@ msgstr "等你"
 msgid "New conversation"
 msgstr "新开会话"
 
-#: src/features/session-new.tsx:287
+#: src/features/session-new-direction.tsx:172
+msgid "new direction"
+msgstr "新方向"
+
+#: src/features/session-new-panels.tsx:219
+#: src/features/session-new.tsx:281
 msgid "New direction"
 msgstr "新方向"
 
@@ -1531,8 +1551,8 @@ msgstr "新方向"
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-new.tsx:132
-#: src/features/session-new.tsx:249
+#: src/features/session-new.tsx:139
+#: src/features/session-new.tsx:272
 msgid "New session"
 msgstr "新会话"
 
@@ -1540,7 +1560,7 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:128
+#: src/features/session-new.tsx:135
 msgid "New session (c)"
 msgstr "新会话（c）"
 
@@ -1812,6 +1832,10 @@ msgstr "建立连接算 1 次请求。"
 #: src/features/ticket-reply.tsx:296
 msgid "Opening…"
 msgstr "正在打开…"
+
+#: src/features/session-new-direction.tsx:174
+msgid "opens one more"
+msgstr "将新开"
 
 #: src/features/session-handoff.tsx:190
 msgid "Optional note"
@@ -2092,7 +2116,7 @@ msgid "Repo filter"
 msgstr "仓库筛选"
 
 #: src/features/session-info.tsx:53
-#: src/features/session-new.tsx:255
+#: src/features/session-new-panels.tsx:165
 msgid "Repository"
 msgstr "仓库"
 
@@ -2132,7 +2156,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new.tsx:66
+#: src/features/session-new.tsx:73
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -2176,6 +2200,10 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 msgid "Retry"
 msgstr "重试"
 
+#: src/features/session-new-direction.tsx:174
+msgid "reuse idle"
+msgstr "复用空闲"
+
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "复用理由"
@@ -2184,7 +2212,7 @@ msgstr "复用理由"
 msgid "Reuses"
 msgstr "复用"
 
-#: src/features/session-new-direction.tsx:154
+#: src/features/session-new-direction.tsx:163
 msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
 msgstr "复用 {slot}：重置到最新主分支，起一个全新的 agent（上一轮对话仍可恢复）。"
 
@@ -2238,7 +2266,7 @@ msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
 #: src/features/console-collab.tsx:396
-#: src/features/session-new-direction.tsx:54
+#: src/features/session-new-direction.tsx:56
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "运行中"
@@ -2357,7 +2385,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-new.tsx:71
+#: src/features/session-new.tsx:78
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -2514,11 +2542,11 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new.tsx:73
+#: src/features/session-new.tsx:80
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new.tsx:69
+#: src/features/session-new.tsx:76
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -2901,7 +2929,7 @@ msgstr "轮数"
 msgid "Unavailable"
 msgstr "不可用"
 
-#: src/features/session-new-direction.tsx:56
+#: src/features/session-new-direction.tsx:58
 msgid "uncommitted changes"
 msgstr "有未提交的改动"
 
@@ -2990,7 +3018,7 @@ msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
 #: src/features/console-sessions.tsx:158
-#: src/features/session-new-direction.tsx:55
+#: src/features/session-new-direction.tsx:57
 msgid "waiting for you"
 msgstr "在等你"
 
@@ -3083,7 +3111,7 @@ msgstr "确认后会发生什么"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new.tsx:331
+#: src/features/session-new-panels.tsx:91
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -3103,7 +3131,7 @@ msgstr "终端画面"
 msgid "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
-#: src/features/session-new.tsx:319
+#: src/features/session-new-panels.tsx:252
 #: src/features/session-purpose.tsx:73
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
@@ -3115,6 +3143,10 @@ msgstr "你的假设"
 #: src/features/ticket-new.tsx:187
 msgid "What you saw"
 msgstr "你看到的现象"
+
+#: src/features/session-new.tsx:281
+msgid "Where"
+msgstr "选择位置"
 
 #: src/features/session-info.tsx:39
 msgid "Where it runs"
@@ -3175,7 +3207,7 @@ msgstr "工作站描述"
 msgid "Worktree"
 msgstr "工作树"
 
-#: src/features/session-new.tsx:307
+#: src/features/session-new-panels.tsx:240
 msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 

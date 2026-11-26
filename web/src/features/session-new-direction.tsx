@@ -1,11 +1,13 @@
-// 新会话's first choice: the direction (native workstations.go). Each
+// 新会话's place layer: the direction (native workstations.go). Each
 // direction says whether one of its workstations is idle — then the new
 // session reuses it: same directory, branch and purpose, reset onto the
 // latest main branch with a blank agent — or, when all are busy, that one
-// more parallel workstation will be opened. The last row starts a new
-// direction (name + purpose).
+// more parallel workstation will be opened. The last row opens the new-
+// direction layer (name + purpose). The compose layer only shows a one-
+// line summary of the pick; this list lives one tap behind that bar.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
+import { ChevronRight } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { hostRead } from '#/lib/runtime-client'
@@ -136,7 +138,14 @@ export function DirectionPicker({
       {row(
         '+new',
         value === '',
-        <span className="font-medium">{t`+ New direction`}</span>,
+        <>
+          <span className="font-medium">{t`+ New direction`}</span>
+          <ChevronRight
+            size={16}
+            aria-hidden
+            className="ml-auto shrink-0 text-brand-label"
+          />
+        </>,
         '',
       )}
     </div>
@@ -153,5 +162,15 @@ export function useDirectionPlan() {
     return slot
       ? t`Reuses ${slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable).`
       : t`Every ${direction} workstation is busy: opens one more in parallel, with the same purpose.`
+  }
+}
+
+/** short clause on the compose layer's location bar */
+export function useDirectionPlanShort() {
+  const { t } = useLingui()
+  return (d: Direction | undefined, isNew: boolean) => {
+    if (isNew) return t`new direction`
+    if (!d) return ''
+    return d.idle > 0 ? t`reuse idle` : t`opens one more`
   }
 }
