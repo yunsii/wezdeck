@@ -44,9 +44,12 @@ type handoffJob struct {
 	ToAgent   string `json:"to_agent"`
 	Worktree  string `json:"worktree,omitempty"`
 	Pane      string `json:"pane,omitempty"`
-	SessionID string `json:"session_id,omitempty"` // known up front for Claude targets
-	Error     string `json:"error,omitempty"`
-	at        time.Time
+	SessionID string `json:"session_id,omitempty"` // Claude up front; others after paste
+	// Brief is the pasted continuation text so the web console can seed a
+	// queued bubble before the transcript poll catches up.
+	Brief string `json:"brief,omitempty"`
+	Error string `json:"error,omitempty"`
+	at    time.Time
 }
 
 var (
@@ -135,6 +138,7 @@ func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAge
 		relayLogf("session_handoff", "job=%s ok=false err=%q", id, err)
 	}
 	brief := buildHandoffBrief(e, transcript, fromAgent, toAgent, note)
+	setHandoffJob(id, func(j *handoffJob) { j.Brief = brief })
 	cmdPath := os.Getenv("WEZDECK_SESSION_HANDOFF_CMD")
 	if cmdPath == "" {
 		cmdPath = filepath.Join(repoRoot(), "scripts", "runtime", "session-handoff.sh")
@@ -168,8 +172,9 @@ func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAge
 		fail(fmt.Errorf("handoff respawn failed: %s", clip(msg, 200)))
 		return
 	}
-	if sid := result["session_id"]; sid != "" {
-		setHandoffJob(id, func(j *handoffJob) { j.SessionID = sid })
+	newID := result["session_id"]
+	if newID != "" {
+		setHandoffJob(id, func(j *handoffJob) { j.SessionID = newID })
 	}
 	if err := waitAgentReady(e.TmuxSocket, e.TmuxPane, 90*time.Second); err != nil {
 		fail(err)
@@ -180,9 +185,76 @@ func runSessionHandoff(id string, e attentionEntry, transcript, fromAgent, toAge
 		fail(err)
 		return
 	}
+	// After paste, wait for the target session to appear so the web page can
+	// open it and seed a queued bubble keyed by the real id (Grok/Codex mint
+	// the id on the first prompt; Claude already returned one above).
+	if newID == "" {
+		waitFor := 45 * time.Second
+		// test stubs set WEZDECK_SESSION_HANDOFF_CMD; don't hang the job
+		if os.Getenv("WEZDECK_SESSION_HANDOFF_CMD") != "" {
+			waitFor = 800 * time.Millisecond
+		}
+		newID = waitHandoffSessionID(e, e.SessionID, toAgent, waitFor)
+		if newID != "" {
+			setHandoffJob(id, func(j *handoffJob) { j.SessionID = newID })
+			markHandoffCleared(e, newID)
+		}
+	}
 	setHandoffJob(id, func(j *handoffJob) { j.Stage = "done" })
 	relayLogf("session_handoff", "job=%s ok=true from=%s to=%s pane=%s new=%s",
-		id, fromAgent, toAgent, e.TmuxPane, result["session_id"])
+		id, fromAgent, toAgent, e.TmuxPane, newID)
+}
+
+// waitHandoffSessionID waits until attention lists a new session on this
+// pane (session detail needs that entry — a bare transcript path is not
+// enough for the web console to open).
+func waitHandoffSessionID(e attentionEntry, fromID, _ string, limit time.Duration) string {
+	deadline := time.Now().Add(limit)
+	for time.Now().Before(deadline) {
+		if sid := handoffSessionFromAttention(e, fromID); sid != "" {
+			return sid
+		}
+		time.Sleep(400 * time.Millisecond)
+	}
+	return ""
+}
+
+func handoffSessionFromAttention(e attentionEntry, fromID string) string {
+	raw, err := os.ReadFile(attentionFile())
+	if err != nil {
+		return ""
+	}
+	var doc struct {
+		Entries map[string]attentionEntry `json:"entries"`
+	}
+	if json.Unmarshal(raw, &doc) != nil {
+		return ""
+	}
+	for id, ent := range doc.Entries {
+		if id == fromID || id == "" {
+			continue
+		}
+		if e.TmuxPane != "" && ent.TmuxPane == e.TmuxPane &&
+			(e.TmuxSocket == "" || ent.TmuxSocket == e.TmuxSocket) {
+			return id
+		}
+	}
+	return ""
+}
+
+func markHandoffCleared(e attentionEntry, newID string) {
+	script := filepath.Join(repoRoot(), "scripts", "runtime", "attention-state-lib.sh")
+	if _, err := os.Stat(script); err != nil {
+		return
+	}
+	cmd := exec.Command("bash", "-c",
+		`source "$1" && attention_mark_cleared "$2" "$3" "$4"`,
+		"handoff-cleared", script, e.TmuxSocket, e.TmuxPane, newID)
+	cmd.Env = os.Environ()
+	if p := os.Getenv("WEZDECK_ATTENTION_FILE"); p != "" {
+		cmd.Env = append(cmd.Env, "WEZDECK_ATTENTION_STATE_PATH="+p, "WEZTERM_ATTENTION_LOCK_FILE="+p+".lock")
+	}
+	_ = cmd.Run()
 }
 
 // buildHandoffBrief: deterministic continuation prompt — reference header +

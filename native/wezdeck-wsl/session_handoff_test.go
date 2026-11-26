@@ -149,15 +149,61 @@ func TestStartSessionHandoffBadTo(t *testing.T) {
 
 func TestHandoffBriefJSONRoundTripShape(t *testing.T) {
 	// ensure handoffJob marshals the exported fields the web polls
-	j := handoffJob{ID: "j1", Stage: "done", FromID: "s1", FromAgent: "claude", ToAgent: "grok", Worktree: "/x", Pane: "%1"}
+	j := handoffJob{ID: "j1", Stage: "done", FromID: "s1", FromAgent: "claude", ToAgent: "grok",
+		Worktree: "/x", Pane: "%1", Brief: "[wezdeck 接力] x"}
 	b, err := json.Marshal(j)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(b)
-	for _, want := range []string{`"job":"j1"`, `"stage":"done"`, `"from_id":"s1"`, `"to_agent":"grok"`} {
+	for _, want := range []string{`"job":"j1"`, `"stage":"done"`, `"from_id":"s1"`, `"to_agent":"grok"`, `"brief":`} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("missing %s in %s", want, s)
 		}
+	}
+}
+
+func TestStartSessionHandoffJobCarriesBrief(t *testing.T) {
+	dir, _, _, _ := restartFixture(t)
+	stub := filepath.Join(dir, "handoff-stub")
+	_ = os.WriteFile(stub, []byte(`#!/usr/bin/env bash
+tmux respawn-pane -k -t "$2" "sh" "-c" "echo ready; exec cat"
+echo outcome=respawned
+echo agent=grok
+`), 0o755)
+	t.Setenv("WEZDECK_SESSION_HANDOFF_CMD", stub)
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	proj := filepath.Join(home, ".claude", "projects", "-x")
+	_ = os.MkdirAll(proj, 0o755)
+	_ = os.WriteFile(filepath.Join(proj, "s1.jsonl"), []byte(
+		`{"type":"user","message":{"role":"user","content":"hello handoff"}}`+"\n"), 0o600)
+
+	res, err := startSessionHandoff([]byte(`{"id":"s1","to":"grok"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobID := res.(map[string]any)["job"].(string)
+	deadline := time.Now().Add(15 * time.Second)
+	var brief string
+	for time.Now().Before(deadline) {
+		st, err := handoffJobStatus([]byte(`{"job":"` + jobID + `"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		j := st.(map[string]any)["job"].(handoffJob)
+		if j.Brief != "" {
+			brief = j.Brief
+		}
+		if j.Stage == "done" || j.Stage == "failed" {
+			if j.Stage == "failed" {
+				t.Fatalf("failed: %s", j.Error)
+			}
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if !strings.Contains(brief, "wezdeck 接力") || !strings.Contains(brief, "hello handoff") {
+		t.Fatalf("brief missing content: %q", brief)
 	}
 }

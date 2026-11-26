@@ -488,7 +488,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
-#: src/features/session-handoff.tsx:195
+#: src/features/session-handoff.tsx:210
 #: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
@@ -626,7 +626,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:200
+#: src/features/session-send.ts:226
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1095,16 +1095,16 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-handoff.tsx:161
-#: src/features/session-handoff.tsx:220
+#: src/features/session-handoff.tsx:176
+#: src/features/session-handoff.tsx:235
 msgid "Hand off"
 msgstr "Hand off"
 
-#: src/features/session-handoff.tsx:206
+#: src/features/session-handoff.tsx:221
 msgid "Hand off to {to}"
 msgstr "Hand off to {to}"
 
-#: src/features/session-handoff.tsx:216
+#: src/features/session-handoff.tsx:231
 msgid "Hand off to another agent"
 msgstr "Hand off to another agent"
 
@@ -1112,11 +1112,15 @@ msgstr "Hand off to another agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/session-handoff.tsx:102
+#: src/features/session-handoff.tsx:119
 msgid "Handed off to {toAgent}"
 msgstr "Handed off to {toAgent}"
 
-#: src/features/session-handoff.tsx:111
+#: src/features/session-handoff.tsx:113
+msgid "Handoff brief"
+msgstr "Handoff brief"
+
+#: src/features/session-handoff.tsx:128
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
@@ -1809,7 +1813,7 @@ msgstr "Opening the connection is one request."
 msgid "Opening…"
 msgstr "Opening…"
 
-#: src/features/session-handoff.tsx:175
+#: src/features/session-handoff.tsx:190
 msgid "Optional note"
 msgstr "Optional note"
 
@@ -2047,11 +2051,11 @@ msgstr "Rename via /rename in the agent pane"
 msgid "Reopen"
 msgstr "Reopen"
 
-#: src/features/session-handoff.tsx:229
+#: src/features/session-handoff.tsx:244
 msgid "Replace this pane with {target} and paste a continuation brief"
 msgstr "Replace this pane with {target} and paste a continuation brief"
 
-#: src/features/session-handoff.tsx:172
+#: src/features/session-handoff.tsx:187
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 
@@ -2357,7 +2361,7 @@ msgstr "Send the first message below."
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
-#: src/features/session-handoff.tsx:127
+#: src/features/session-handoff.tsx:142
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
@@ -2571,7 +2575,7 @@ msgstr "switch the model"
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
-#: src/features/session-handoff.tsx:128
+#: src/features/session-handoff.tsx:143
 msgid "Switching agent…"
 msgstr "Switching agent…"
 
@@ -3083,7 +3087,7 @@ msgstr "What it solves"
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
-#: src/features/session-handoff.tsx:181
+#: src/features/session-handoff.tsx:196
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 

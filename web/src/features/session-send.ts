@@ -94,6 +94,32 @@ function updatePending(
   for (const listener of pendingListeners) listener()
 }
 
+/**
+ * Seed a queued bubble for a host-side paste the page did not send itself
+ * (session handoff's continuation brief). settle() drops it once the
+ * transcript shows the same text.
+ */
+export function seedQueuedPending(
+  id: string,
+  text: string,
+  opts?: { note?: string },
+) {
+  const trimmed = text.trim()
+  if (!id || !trimmed) return
+  const at = Date.now()
+  updatePending(id, (list) => [
+    ...list,
+    {
+      text: trimmed,
+      note: opts?.note,
+      attachments: [],
+      at,
+      after: 0,
+      state: 'queued',
+    },
+  ])
+}
+
 function usePending(id: string) {
   return useSyncExternalStore(
     (listener) => {

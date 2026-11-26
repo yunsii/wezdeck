@@ -3,7 +3,7 @@
 // `session.handoff` → scripts/runtime/session-handoff.sh (sticks the target
 // agent on the window for later F5). Same agent → use 新开会话 instead.
 import { useLingui } from '@lingui/react/macro'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRightLeft } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -15,6 +15,7 @@ import { trace } from '#/lib/client-trace'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useSessions } from './console-sessions'
+import { seedQueuedPending } from './session-send'
 
 const AGENTS = ['claude', 'codex', 'grok'] as const
 type Agent = (typeof AGENTS)[number]
@@ -27,7 +28,34 @@ type Job = {
   worktree?: string
   pane?: string
   session_id?: string
+  /** pasted brief — seed a queued bubble before the transcript poll */
+  brief?: string
   error?: string
+}
+
+type SessionRow = { id: string; tmux_pane?: string; worktree?: string }
+
+function followHandoffId(
+  job: Job | undefined,
+  id: string,
+  before: Set<string>,
+  rows: Array<SessionRow> | undefined,
+) {
+  if (job?.stage !== 'done') return undefined
+  if (job.session_id) return job.session_id
+  return (
+    rows?.find(
+      (row) =>
+        row.tmux_pane === job.pane && !before.has(row.id) && row.id !== id,
+    )?.id ||
+    rows?.find(
+      (row) =>
+        row.worktree &&
+        row.worktree === job.worktree &&
+        !before.has(row.id) &&
+        row.id !== id,
+    )?.id
+  )
 }
 
 export function HandoffActions({
@@ -44,6 +72,7 @@ export function HandoffActions({
   const { t } = useLingui()
   const { locale } = useLocale()
   const navigate = useNavigate()
+  const client = useQueryClient()
   const sessions = useSessions()
   const normalized = (agent || '').replace(/\.real$/, '')
   const current: Agent | '' = AGENTS.includes(normalized as Agent)
@@ -65,54 +94,40 @@ export function HandoffActions({
       query.state.data &&
       ['done', 'failed'].includes(query.state.data.job.stage)
         ? false
-        : 1_000,
+        : 800,
     queryFn: async () =>
       (await hostRead('session.handoff.job', { job: jobId })) as { job: Job },
   })
   const currentJob = job.data?.job
-
-  // Prefer an explicit new session id (Claude target); else the newest
-  // session on the same pane that was not listed when we submitted.
-  const listed =
-    currentJob?.stage === 'done'
-      ? currentJob.session_id
-        ? sessions.data?.sessions.find(
-            (row) => row.id === currentJob.session_id,
-          )
-        : sessions.data?.sessions.find(
-            (row) =>
-              row.tmux_pane === currentJob.pane &&
-              !before.current.has(row.id) &&
-              row.id !== id,
-          ) ||
-          sessions.data?.sessions.find(
-            (row) =>
-              row.worktree &&
-              row.worktree === currentJob.worktree &&
-              !before.current.has(row.id) &&
-              row.id !== id,
-          )
-      : undefined
+  const followId = followHandoffId(
+    currentJob,
+    id,
+    before.current,
+    sessions.data?.sessions,
+  )
 
   useEffect(() => {
-    if (!listed || opened.current === jobId) return
+    if (!followId || !jobId || opened.current === jobId) return
     opened.current = jobId
+    if (currentJob?.brief) {
+      seedQueuedPending(followId, currentJob.brief, { note: t`Handoff brief` })
+    }
+    void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+    void client.invalidateQueries({ queryKey: ['remote', 'session', followId] })
     onDone()
     const toAgent = currentJob?.to_agent ?? 'agent'
     toast(t`Handed off to ${toAgent}`)
     void navigate({
       to: '/{-$locale}/console/sessions/$id',
-      params: { locale: locale === 'en' ? undefined : locale, id: listed.id },
+      params: { locale: locale === 'en' ? undefined : locale, id: followId },
     })
-  }, [listed, jobId, navigate, locale, onDone, currentJob?.to_agent, t])
+  }, [followId, jobId, navigate, locale, onDone, currentJob, client, t])
 
   useEffect(() => {
-    if (currentJob?.stage === 'failed') {
-      setError(currentJob.error || t`Handoff failed`)
-      setJobId('')
-    }
+    if (currentJob?.stage !== 'failed') return
+    setError(currentJob.error || t`Handoff failed`)
+    setJobId('')
   }, [currentJob?.stage, currentJob?.error, t])
-
   if (!current || targets.length === 0) {
     return null
   }
