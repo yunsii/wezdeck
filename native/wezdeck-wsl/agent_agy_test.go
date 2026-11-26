@@ -257,8 +257,8 @@ func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
 	if !agyPermissionPromptVisible("Do you want to proceed?\n> 1. Yes\n  2. Yes, and always allow 'git push'") {
 		t.Fatal("Do you want to proceed? + always allow should be detected")
 	}
-	if agyPermissionPromptVisible("We saw Run this command? in the logs earlier.") {
-		t.Fatal("plain prose mentioning prompt title must not trigger permission card")
+	if agyPermissionPromptVisible("确认项（Yes, run command / Yes, allow access）+ 拒绝项（No, deny / Run this command?）\n>\n? for shortcuts") {
+		t.Fatal("assistant prose quoting option strings must not trigger permission card")
 	}
 	if agyPermissionPromptVisible("Do you trust the contents of this project?\n> Yes, I trust this folder") {
 		t.Fatal("workspace trust prompt must not be treated as permission prompt")
@@ -273,11 +273,15 @@ func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
 	if !ok || perm == nil || perm.Tool != "run_command" || !strings.Contains(perm.Body, "git push origin master") {
 		t.Fatalf("permission card: %+v", out["permission"])
 	}
-	// Screen-only fallback when transcript hasn't flushed the pending call yet.
-	outFallback := map[string]any{"status": "running", "waiting_kind": ""}
-	applyAgyScreenPermission(outFallback, nil, "Run this command?\n  git push origin master\n> Yes, run command\n  No, deny")
-	permFB, ok := outFallback["permission"].(*pendingCall)
-	if !ok || permFB == nil || permFB.Text != "Run this command?" {
-		t.Fatalf("screen fallback permission card: %+v", outFallback["permission"])
+	// Idle/completed turns or turns without an unanswered tool call must NEVER lock the composer.
+	outIdle := map[string]any{"status": "done", "waiting_kind": ""}
+	applyAgyScreenPermission(outIdle, pendingPermission(tr.messages, ""), "Run this command?\n> Yes, run command\n  No, deny")
+	if _, locked := outIdle["permission"]; locked {
+		t.Fatalf("completed turn must not surface permission card: %+v", outIdle)
+	}
+	outNoPending := map[string]any{"status": "running", "waiting_kind": ""}
+	applyAgyScreenPermission(outNoPending, nil, "Run this command?\n> Yes, run command\n  No, deny")
+	if _, locked := outNoPending["permission"]; locked {
+		t.Fatalf("turn without unanswered tool call must not surface permission card: %+v", outNoPending)
 	}
 }
