@@ -175,10 +175,13 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 		_ = os.Remove(marker)
 		return nil, fmt.Errorf("close session pane: %w", err)
 	}
-	outcome := "in_use"
-	paths, err := tmuxCmd(entry.TmuxSocket, "list-panes", "-a", "-F", "#{pane_start_path}").Output()
-	if err != nil || !strings.Contains("\n"+string(paths), "\n"+tree+"\n") {
-		outcome = reclaimEmptySessionWorktree(repo, tree)
+	outcome := "primary"
+	if tree != repo {
+		outcome = "in_use"
+		paths, err := tmuxCmd(entry.TmuxSocket, "list-panes", "-a", "-F", "#{pane_start_path}").Output()
+		if err != nil || !strings.Contains("\n"+string(paths), "\n"+tree+"\n") {
+			outcome = reclaimEmptySessionWorktree(repo, tree)
+		}
 	}
 	relayLogf("session_delete", "id=%s worktree=%q outcome=%s", request.ID, tree, outcome)
 	return map[string]any{"v": 1, "ok": true, "worktree_outcome": outcome}, nil
