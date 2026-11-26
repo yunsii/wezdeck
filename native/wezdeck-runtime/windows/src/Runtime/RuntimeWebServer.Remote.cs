@@ -19,7 +19,7 @@ internal sealed partial class RuntimeWebServer
 
     private static readonly HashSet<string> RemoteReadActions = new(StringComparer.Ordinal)
     {
-        "sessions", "session", "upload.get", "todos", "repos", "workstations", "ticket.targets",
+        "sessions", "session", "upload.get", "todos", "repos", "agent.profiles", "workstations", "ticket.targets",
         "session.new.job", "session.handoff.job", "session.image", "session.history", "session.git",
         "session.skills", "devices",
         // local only: this browser polling for the host's diagnostics requests
@@ -30,7 +30,7 @@ internal sealed partial class RuntimeWebServer
 
     private static readonly HashSet<string> RemoteWriteActions = new(StringComparer.Ordinal)
     {
-        "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.restart",
+        "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "agent.profile.configure", "session.restart",
         "session.handoff", "ticket.new", "worktree.describe",
         // local only (serve.go): 批准 / 撤销 from the console on the host
         "device.approve", "device.revoke",

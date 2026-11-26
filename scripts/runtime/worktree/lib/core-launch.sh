@@ -112,6 +112,14 @@ wt_core_launch() {
 
   wt_core_resolve_repo_context "$cwd"
   wt_config_load
+  if [[ -n "${WEZDECK_AGENT_PROFILE_OVERRIDE:-}" ]]; then
+    MANAGED_AGENT_PROFILE="${WEZDECK_AGENT_PROFILE_OVERRIDE}-resume"
+    WT_PROVIDER_AGENT_PROFILE="$MANAGED_AGENT_PROFILE"
+    WT_PROVIDER_AGENT_COMMAND=""
+    WT_PROVIDER_AGENT_COMMAND_LIGHT=""
+    WT_PROVIDER_AGENT_COMMAND_DARK=""
+    wt_config_resolve_agent_profile
+  fi
   wt_core_apply_launch_overrides "$provider_override" "$provider_mode_override" "$workspace_override" "$session_name_override" "$variant_override" "$attach_override"
   wt_core_resolve_policy_paths
   runtime_log_info task "launch requested" \

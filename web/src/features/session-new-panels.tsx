@@ -11,6 +11,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
 import { DirectionPicker } from './session-new-direction'
 import type { Direction, DirectionPick } from './session-new-direction'
+import type { AgentProfile } from './agent-profiles'
 
 type Repo = { root: string; label: string; visited?: number }
 
@@ -37,6 +38,9 @@ export function ComposeLayer({
   ready,
   onPlace,
   onSubmit,
+  agentProfiles,
+  agentProfile,
+  onAgentProfile,
 }: {
   busy: boolean
   repoLabel: string
@@ -53,6 +57,9 @@ export function ComposeLayer({
   ready: boolean
   onPlace: () => void
   onSubmit: () => void
+  agentProfiles: Array<AgentProfile>
+  agentProfile: string
+  onAgentProfile: (next: string) => void
 }) {
   const { t } = useLingui()
   return (
@@ -91,6 +98,30 @@ export function ComposeLayer({
           placeholder={t`What should it work on?`}
         />
       </label>
+      {agentProfiles.length > 0 ? (
+        <label className="grid gap-1 text-caption text-brand-muted">
+          {t`Agent`}
+          <Select
+            value={agentProfile}
+            disabled={busy}
+            onValueChange={onAgentProfile}
+            size="lg"
+            aria-label={t`Agent`}
+            options={[
+              { value: '', label: t`Repository default` },
+              ...agentProfiles.map((profile) => ({
+                value: profile.id,
+                label:
+                  profile.id === 'claude_kimi' && !profile.configured
+                    ? `${profile.label} (${t`Not configured`})`
+                    : profile.default
+                      ? `${profile.label} (${t`host default`})`
+                      : profile.label,
+              })),
+            ]}
+          />
+        </label>
+      ) : null}
       {isNew && name.trim() && !slug ? (
         <p
           role="status"

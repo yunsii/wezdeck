@@ -158,6 +158,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 		Prompt      string `json:"prompt"`
+		Agent       string `json:"agent_profile"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.new: bad arguments")
@@ -165,6 +166,28 @@ func startNewSession(args json.RawMessage) (any, error) {
 	a.Name = strings.TrimSpace(a.Name)
 	a.Description = strings.TrimSpace(a.Description)
 	a.Prompt = strings.TrimSpace(a.Prompt)
+	a.Agent = strings.ToLower(strings.TrimSpace(a.Agent))
+	if a.Agent != "" {
+		profiles, err := listAgentProfiles()
+		if err != nil {
+			return nil, errors.New("session.new: agent profiles unavailable")
+		}
+		valid := false
+		if rows, ok := profiles.(map[string]any)["profiles"].([]agentProfile); ok {
+			for _, profile := range rows {
+				if profile.ID == a.Agent {
+					valid = true
+					break
+				}
+			}
+		}
+		if !valid {
+			return nil, errors.New("session.new: unknown agent profile")
+		}
+		if a.Agent == "claude_kimi" && !kimiConfigured() {
+			return nil, errors.New("session.new: configure the Kimi API key in Agents first")
+		}
+	}
 	if !validSubject(a.Name) {
 		return nil, fmt.Errorf("session.new: the name needs 1–%d characters, one line", subjectMax)
 	}
@@ -222,7 +245,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	newJobs[job.ID] = job
 	newJobsMu.Unlock()
 	go func() {
-		runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt, reuse)
+		runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt, a.Agent, reuse)
 		if reuse != "" {
 			newJobsMu.Lock()
 			delete(reusing, reuse)
@@ -267,7 +290,7 @@ func directionSlug(name string) string {
 	return strings.TrimSuffix(b.String(), "-")
 }
 
-func runNewSession(id, repo, name, description, prompt, reuse string) {
+func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 	fail := func(err error) {
 		setJob(id, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
 		relayLogf("session_new", "job=%s ok=false err=%q", id, err)
@@ -278,13 +301,13 @@ func runNewSession(id, repo, name, description, prompt, reuse string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, cmdPath, "--no-attach", "--description", description, "--", name)
+	cmd := exec.CommandContext(ctx, cmdPath, newSessionCreateArgs(name, description, agent)...)
 	if reuse != "" {
 		reusePath := os.Getenv("WEZDECK_SESSION_REUSE_CMD") // the test stack's stand-in
 		if reusePath == "" {
 			reusePath = filepath.Join(repoRoot(), "scripts", "runtime", "worktree", "reuse-workstation")
 		}
-		cmd = exec.CommandContext(ctx, reusePath, "--no-attach", reuse)
+		cmd = exec.CommandContext(ctx, reusePath, newSessionReuseArgs(reuse, agent)...)
 	}
 	cmd.Dir = repo
 	out, err := cmd.Output()
@@ -326,6 +349,22 @@ func runNewSession(id, repo, name, description, prompt, reuse string) {
 	}
 	setJob(id, func(j *newSessionJob) { j.Stage = "done" })
 	relayLogf("session_new", "job=%s ok=true reuse=%t worktree=%q branch=%q", id, reuse != "", result["worktree_path"], result["branch_name"])
+}
+
+func newSessionCreateArgs(name, description, agent string) []string {
+	args := []string{"--no-attach", "--description", description}
+	if agent != "" {
+		args = append(args, "--agent-profile", agent)
+	}
+	return append(args, "--", name)
+}
+
+func newSessionReuseArgs(path, agent string) []string {
+	args := []string{"--no-attach"}
+	if agent != "" {
+		args = append(args, "--agent-profile", agent)
+	}
+	return append(args, path)
 }
 
 var shells = map[string]bool{"bash": true, "zsh": true, "sh": true, "fish": true, "dash": true}

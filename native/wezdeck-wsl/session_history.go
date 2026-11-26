@@ -56,7 +56,17 @@ func sessionHistory(args json.RawMessage) (any, error) {
 		dir = filepath.Dir(path)
 	} else if _, cwd, _, _, alive := paneState(e); alive && cwd != "" {
 		home, _ := os.UserHomeDir()
-		dir = filepath.Join(home, ".claude", "projects", nonAlnum.ReplaceAllString(cwd, "-"))
+		root := filepath.Join(home, ".claude")
+		for _, candidate := range []string{
+			filepath.Join(home, ".config", "claude-profiles", "kimi-home"),
+			filepath.Join(home, ".config", "claude-profiles", "home"),
+		} {
+			if matches, _ := filepath.Glob(filepath.Join(candidate, "projects", nonAlnum.ReplaceAllString(cwd, "-"), "*.jsonl")); len(matches) > 0 {
+				root = candidate
+				break
+			}
+		}
+		dir = filepath.Join(root, "projects", nonAlnum.ReplaceAllString(cwd, "-"))
 	}
 	if dir == "" {
 		return map[string]any{"v": 1, "ok": true, "sessions": []historyItem{}}, nil

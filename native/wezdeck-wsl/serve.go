@@ -108,7 +108,7 @@ func dispatch(req request) response {
 	case "remote.session":
 		res.Result, err = sessionDetailFor(req.Payload, true)
 	case "remote.upload.get", "remote.todos",
-		"remote.repos", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
+		"remote.repos", "remote.agent.profiles", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
 		"remote.session.handoff.job", "remote.session.image",
 		"remote.session.history", "remote.session.git", "remote.session.skills":
 		// the relay's read-only actions for a browser on the host (readRPC)
@@ -139,7 +139,7 @@ func dispatch(req request) response {
 		// …and handing its snapshot back, chunk by chunk
 		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
-		"remote.todo", "remote.clear", "remote.session.new", "remote.session.restart",
+		"remote.todo", "remote.clear", "remote.session.new", "remote.agent.profile.configure", "remote.session.restart",
 		"remote.session.handoff", "remote.ticket.new", "remote.worktree.describe":
 		// a browser on this computer through the local Runtime (remote_write.go)
 		payload := req.Payload

@@ -380,6 +380,7 @@ export type HostReadAction =
   | 'upload.get'
   | 'todos'
   | 'repos'
+  | 'agent.profiles'
   | 'workstations'
   | 'ticket.targets'
   | 'session.new.job'

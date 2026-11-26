@@ -603,6 +603,10 @@ provider_launch() {
   fi
 
   tmux rename-window -t "$window_id" "$worktree_label"
+  if [[ -n "${WEZDECK_AGENT_PROFILE_OVERRIDE:-}" ]]; then
+    tmux set-window-option -t "$window_id" -q @wezterm_window_agent_profile \
+      "$WEZDECK_AGENT_PROFILE_OVERRIDE"
+  fi
   provider_ensure_window_panes "$window_id"
   provider_apply_tmux_config
 

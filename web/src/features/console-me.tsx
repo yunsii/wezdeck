@@ -25,6 +25,8 @@ import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
 import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
+import { usePreferredAgentProfile } from './agent-profiles'
+import { AgentsPage } from './me-agents'
 
 function DeviceAccess() {
   const { t } = useLingui()
@@ -106,6 +108,7 @@ export const ME_PAGES = [
   'app',
   'host',
   'interactions',
+  'agents',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
 
@@ -119,6 +122,7 @@ function useMeTitles(): Record<MePage, string> {
     app: t`App`,
     host: t`This computer`,
     interactions: t`Interaction debugging`,
+    agents: t`Agents`,
   }
 }
 
@@ -288,6 +292,7 @@ function MeIndex({ active }: { active?: MePage }) {
   const remote = useRemoteState()
   const device = useDeviceState()
   const titles = useMeTitles()
+  const [preferredAgent] = usePreferredAgentProfile()
   const localeParam = locale === 'en' ? undefined : locale
   const writing =
     device.state === 'approved'
@@ -307,6 +312,12 @@ function MeIndex({ active }: { active?: MePage }) {
     <div className="grid max-w-2xl content-start gap-4">
       <h1 className="hidden text-body font-semibold md:block">{t`Settings`}</h1>
       <ul className={group}>
+        <EntryRow
+          page="agents"
+          active={active === 'agents'}
+          title={titles.agents}
+          value={preferredAgent || t`Repository default`}
+        />
         <EntryRow
           page="connection"
           active={active === 'connection'}
@@ -421,6 +432,7 @@ function MeSubPage({ page }: { page: MePage }) {
     ),
     host: <HostPage />,
     interactions: <InteractionsPage />,
+    agents: <AgentsPage />,
   }[page]
   return (
     <div

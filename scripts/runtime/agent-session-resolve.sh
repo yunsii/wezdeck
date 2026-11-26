@@ -63,7 +63,7 @@ agent_session_claude_transcript_exists() {
   agent_session_id_usable "$sid" || return 1
   encoded="$(agent_session_claude_project_dir_name "$cwd" 2>/dev/null || true)"
   [[ -n "$encoded" ]] || return 1
-  path="${HOME:-}/.claude/projects/${encoded}/${sid}.jsonl"
+  path="${CLAUDE_CONFIG_DIR:-${HOME:-}/.claude}/projects/${encoded}/${sid}.jsonl"
   [[ -f "$path" && -s "$path" ]]
 }
 

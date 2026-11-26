@@ -42,7 +42,7 @@ export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.reuse"
 
 usage() {
   cat <<'USAGE'
-usage: reuse-workstation [--no-attach] <workstation-path>
+usage: reuse-workstation [--agent-profile PROFILE] [--no-attach] <workstation-path>
 
 Start a new round on an idle workstation: reset onto the latest origin/HEAD
 and start a blank agent in its window. Refuses (exit 3) when it is not idle.
@@ -55,10 +55,20 @@ die() {
 }
 
 path=""
+agent_profile_override=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help) usage; exit 0 ;;
     --no-attach) shift ;; # the only mode: it never switches the desk
+    --agent-profile)
+      [[ $# -ge 2 ]] || die "--agent-profile requires a value"
+      agent_profile_override="$2"
+      shift 2
+      ;;
+    --agent-profile=*)
+      agent_profile_override="${1#--agent-profile=}"
+      shift
+      ;;
     -*) die "unknown flag: $1" ;;
     *)
       [[ -z "$path" ]] || die "expected one workstation path"
@@ -88,10 +98,16 @@ name="$(sed -n 's/^name=//p' <<<"$idle_out")"
 
 # shellcheck disable=SC1091
 source "$RUNTIME_LIB_DIR/worktree/lib/resume-command.sh"
-base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$path")"
+if [[ -n "$agent_profile_override" ]]; then
+  [[ "$agent_profile_override" =~ ^[a-z0-9_]+$ ]] || die "invalid --agent-profile"
+  base_profile="$agent_profile_override"
+else
+  base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$path")"
+fi
 base_profile="${base_profile:-claude}"
 
 launch_out="$(env MANAGED_AGENT_PROFILE="${base_profile}-resume" \
+  WEZDECK_AGENT_PROFILE_OVERRIDE="$agent_profile_override" \
   "$WORKTREE_TASK_CLI" launch \
   --cwd "$WT_MAIN_WORKTREE_ROOT" \
   --title "$name" \
@@ -101,6 +117,13 @@ launch_out="$(env MANAGED_AGENT_PROFILE="${base_profile}-resume" \
   --provider "${WT_QUICK_CREATE_PROVIDER:-tmux-agent}" \
   --provider-mode "${WT_QUICK_CREATE_PROVIDER_MODE:-auto}" \
   --no-attach)" || die "opening the workstation's window failed"
+
+if [[ -n "$agent_profile_override" ]]; then
+  window_id="$(sed -n 's/^window_id=//p' <<<"$launch_out" | head -n 1)"
+  [[ -n "$window_id" ]] || die "opening the workstation returned no window id"
+  tmux set-window-option -t "$window_id" -q @wezterm_window_agent_profile \
+    "$agent_profile_override" || die "setting the workstation agent failed"
+fi
 
 recycle_out="$("$WORKTREE_TASK_CLI" recycle --worktree-root "$path" -y --fresh-agent 2>&1)" \
   || die "recycle failed: $(tail -n 3 <<<"$recycle_out" | tr '\n' ' ')"

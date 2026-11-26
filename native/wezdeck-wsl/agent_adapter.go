@@ -202,7 +202,16 @@ type claudeAdapter struct{}
 
 func (claudeAdapter) Name() string { return "claude" }
 func (claudeAdapter) Locate(home, id string) string {
-	return globFirst(filepath.Join(home, ".claude", "projects", "*", id+".jsonl"))
+	for _, root := range []string{
+		filepath.Join(home, ".claude"),
+		filepath.Join(home, ".config", "claude-profiles", "home"),
+		filepath.Join(home, ".config", "claude-profiles", "kimi-home"),
+	} {
+		if path := globFirst(filepath.Join(root, "projects", "*", id+".jsonl")); path != "" {
+			return path
+		}
+	}
+	return ""
 }
 func (claudeAdapter) Feed(t *transcript, line []byte) { t.feedLine(line) }
 func (claudeAdapter) Title(path string) string        { return lastClaudeAITitle(path) }

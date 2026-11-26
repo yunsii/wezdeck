@@ -12,7 +12,7 @@
 claude_transcript_path() {
   local sid="$1"
   [[ -n "$sid" ]] || return 1
-  local root="${HOME}/.claude/projects"
+  local root="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}/projects"
   [[ -d "$root" ]] || return 1
   # Session files are ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
   local path=""

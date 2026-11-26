@@ -209,6 +209,11 @@ chmod 600 ~/.config/claude-profiles/kimi.env
 
 Run it directly with `claude-kimi`, or select it for newly managed panes:
 
+The web console's 我的 › Agents can also write the Kimi API key and model to
+the same private file. Its read view reports only whether Kimi is configured;
+the key is never returned. The browser's default agent applies to new web
+sessions only, while `MANAGED_AGENT_PROFILE` below controls terminal launches.
+
 ```bash
 # wezterm-x/local/shared.env
 MANAGED_AGENT_PROFILE='claude_kimi'

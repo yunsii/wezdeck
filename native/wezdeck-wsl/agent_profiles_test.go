@@ -1,0 +1,138 @@
+package main
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestAgentProfilesExposeRegisteredIDsWithoutCommands(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "config"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "wezterm-x", "local"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	config := "WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=claude\n" +
+		"WT_PROVIDER_AGENT_PROFILE_CLAUDE_KIMI_RESUME_COMMAND=/secret/command\n" +
+		"WT_PROVIDER_AGENT_PROFILE_EMPTY_RESUME_COMMAND=\n"
+	if err := os.WriteFile(filepath.Join(root, "config", "worktree-task.env"), []byte(config), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "wezterm-x", "local", "shared.env"), []byte("MANAGED_AGENT_PROFILE='claude_kimi'\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", root)
+	t.Setenv("MANAGED_AGENT_PROFILE", "")
+	result, err := listAgentProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := result.(map[string]any)
+	profiles := data["profiles"].([]agentProfile)
+	if data["default"] != "claude_kimi" || len(profiles) != 2 {
+		t.Fatalf("profiles: %+v", data)
+	}
+	body, _ := json.Marshal(result)
+	if strings.Contains(string(body), "/secret/command") {
+		t.Fatal("profile command leaked")
+	}
+	for _, profile := range profiles {
+		if profile.ID == "claude_kimi" && !profile.Default {
+			t.Fatal("Kimi should be the default")
+		}
+	}
+}
+
+func TestNewSessionRejectsUnknownAgentProfile(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "config"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "config", "worktree-task.env"), []byte("WT_PROVIDER_AGENT_PROFILE_CLAUDE_RESUME_COMMAND=claude\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", root)
+	_, err := startNewSession(json.RawMessage(`{"repo":"/tmp","name":"test","prompt":"hi","agent_profile":"shell;rm"}`))
+	if err == nil || err.Error() != "session.new: unknown agent profile" {
+		t.Fatalf("want profile refusal, got %v", err)
+	}
+}
+
+func TestNewSessionRejectsUnconfiguredKimiBeforeCreatingWorktree(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "config"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "config", "worktree-task.env"), []byte("WT_PROVIDER_AGENT_PROFILE_CLAUDE_KIMI_RESUME_COMMAND=claude-kimi\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", root)
+	t.Setenv("CLAUDE_KIMI_ENV", filepath.Join(root, "missing.env"))
+	_, err := startNewSession(json.RawMessage(`{"repo":"/tmp","name":"test","prompt":"hi","agent_profile":"claude_kimi"}`))
+	if err == nil || err.Error() != "session.new: configure the Kimi API key in Agents first" {
+		t.Fatalf("want Kimi preflight refusal, got %v", err)
+	}
+}
+
+func TestClaudeAdapterFindsKimiTranscript(t *testing.T) {
+	home := t.TempDir()
+	path := filepath.Join(home, ".config", "claude-profiles", "kimi-home", "projects", "-repo", "session-1.jsonl")
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := (claudeAdapter{}).Locate(home, "session-1"); got != path {
+		t.Fatalf("Kimi transcript: got %q, want %q", got, path)
+	}
+}
+
+func TestConfigureKimiProfileWritesPrivateFileWithoutReturningKey(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "claude-profiles", "kimi.env")
+	t.Setenv("CLAUDE_KIMI_ENV", path)
+	result, err := configureKimiProfile(json.RawMessage(`{"token":"sk-test-secret","model":"kimi-k3[1m]"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("credential file mode: %v", info.Mode().Perm())
+	}
+	content, _ := os.ReadFile(path)
+	if !strings.Contains(string(content), "ANTHROPIC_AUTH_TOKEN='sk-test-secret'") || !kimiConfigured() {
+		t.Fatal("credential file was not configured")
+	}
+	body, _ := json.Marshal(result)
+	if strings.Contains(string(body), "sk-test-secret") {
+		t.Fatal("API key leaked in response")
+	}
+	if _, err := configureKimiProfile(json.RawMessage(`{"model":"kimi-k3.1-pro"}`)); err != nil {
+		t.Fatalf("model-only update: %v", err)
+	}
+	content, _ = os.ReadFile(path)
+	if !strings.Contains(string(content), "ANTHROPIC_AUTH_TOKEN='sk-test-secret'") || !strings.Contains(string(content), "ANTHROPIC_MODEL='kimi-k3.1-pro'") {
+		t.Fatal("model-only update lost the key or model")
+	}
+	if _, err := configureKimiProfile(json.RawMessage(`{"token":"bad'key","model":"kimi-k3[1m]"}`)); err == nil {
+		t.Fatal("unsafe API key accepted")
+	}
+}
+
+func TestNewSessionPassesSelectedProfileToBothWorkstationPaths(t *testing.T) {
+	create := newSessionCreateArgs("direction", "purpose", "claude_kimi")
+	reuse := newSessionReuseArgs("/repo/worktree", "claude_kimi")
+	if strings.Join(create, "|") != "--no-attach|--description|purpose|--agent-profile|claude_kimi|--|direction" {
+		t.Fatalf("create args: %q", create)
+	}
+	if strings.Join(reuse, "|") != "--no-attach|--agent-profile|claude_kimi|/repo/worktree" {
+		t.Fatalf("reuse args: %q", reuse)
+	}
+}

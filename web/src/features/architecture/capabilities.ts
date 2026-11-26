@@ -186,6 +186,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('todos', '仓库待办', 'Repository to-dos'),
       c('repos', '可以新开会话的仓库', 'Repositories a session can start in'),
       c(
+        'agent.profiles',
+        '主机注册的 agent profile 与默认项（不含凭据）',
+        'Host agent profiles and default (without credentials)',
+      ),
+      c(
         'workstations',
         '某仓库按方向分组的工作站与是否空闲，供新会话选方向复用',
         'A repository’s workstations by direction and whether each is idle, for 新会话 to reuse one',
@@ -262,6 +267,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'session.new',
         '在某仓库新开一个会话：新建一个方向的工作站（方向名 + 一行描述）',
         'Start a session in a repository: a new workstation for one direction (name + one-line purpose)',
+      ),
+      c(
+        'agent.profile.configure',
+        '写入 Kimi API key 与模型到主机独立凭据文件，不回传密钥',
+        'Write the Kimi API key and model to the host credential file without returning the key',
       ),
       c(
         'worktree.describe',

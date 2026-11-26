@@ -32,13 +32,14 @@ export WEZTERM_RUNTIME_LOG_SOURCE="worktree-task.open-window"
 
 usage() {
   cat <<'USAGE'
-usage: open-task-window [--description TEXT] [--no-attach] [--] <name>
+usage: open-task-window [--description TEXT] [--agent-profile PROFILE] [--no-attach] [--] <name>
 
 Create a workstation for the direction <name> (letters or digits; a dev- or
 dev/ prefix typed out of habit is dropped): directory <name>, branch
 dev/<name>, from the latest origin/HEAD.
 
   --description TEXT  one-line purpose (git branch description, ≤ 120 chars)
+  --agent-profile PROFILE  managed agent profile for this workstation
   --no-attach         open the window without switching / attaching to it
 USAGE
 }
@@ -49,6 +50,7 @@ die() {
 }
 
 description=""
+agent_profile_override=""
 raw=""
 no_attach=0
 
@@ -65,6 +67,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     --description=*)
       description="${1#--description=}"
+      shift
+      ;;
+    --agent-profile)
+      [[ $# -ge 2 ]] || die "--agent-profile requires a value"
+      agent_profile_override="$2"
+      shift 2
+      ;;
+    --agent-profile=*)
+      agent_profile_override="${1#--agent-profile=}"
       shift
       ;;
     --type|--type=*)
@@ -117,7 +128,12 @@ fi
 # conversation for the cwd, the resume command falls back to a fresh agent.
 # shellcheck disable=SC1091
 source "$RUNTIME_LIB_DIR/worktree/lib/resume-command.sh"
-base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$PWD")"
+if [[ -n "$agent_profile_override" ]]; then
+  [[ "$agent_profile_override" =~ ^[a-z0-9_]+$ ]] || die "invalid --agent-profile"
+  base_profile="$agent_profile_override"
+else
+  base_profile="$(resume_command_active_profile "${WEZTERM_CONFIG_REPO:-$WEZTERM_CONFIG_REPO_DEFAULT}" "$PWD")"
+fi
 base_profile="${base_profile:-claude}"
 selected_profile="${base_profile}-resume"
 quick_create_provider="${WT_QUICK_CREATE_PROVIDER:-tmux-agent}"
@@ -131,6 +147,9 @@ if [[ -z "${WEZTERM_CONFIG_REPO:-}" ]]; then
 fi
 if [[ -n "$selected_profile" ]]; then
   launch_env+=("MANAGED_AGENT_PROFILE=$selected_profile")
+fi
+if [[ -n "$agent_profile_override" ]]; then
+  launch_env+=("WEZDECK_AGENT_PROFILE_OVERRIDE=$base_profile")
 fi
 # `env` with no extra args is a noop wrapper; the shape stays consistent
 # whether we set anything or not.

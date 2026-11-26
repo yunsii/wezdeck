@@ -15,6 +15,7 @@ export const OPEN_ACTIONS = new Set([
   'todo',
   'clear',
   'session.new',
+  'agent.profile.configure',
   'session.restart',
   'session.handoff',
   'ticket.new',

@@ -20,6 +20,7 @@ import { recordVisit } from '#/lib/session-visits'
 import { useSessions } from './console-sessions'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
+import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import {
@@ -168,6 +169,14 @@ function NewSessionSheet({
       (await hostRead('repos', {})) as { repos: Array<Repo> },
   })
   const sessions = useSessions()
+  const agentProfiles = useAgentProfiles()
+  const [preferredAgent] = usePreferredAgentProfile()
+  const [agentProfile, setAgentProfile] = useState('')
+  const selectedAgent = agentProfiles.data?.profiles.some(
+    (profile) => profile.id === (agentProfile || preferredAgent),
+  )
+    ? agentProfile || preferredAgent
+    : ''
   const [layer, setLayer] = useState<Layer>('compose')
   const [repo, setRepo] = useState('')
   const [name, setName] = useState('')
@@ -261,6 +270,7 @@ function NewSessionSheet({
         name: pick || name.trim(),
         description: pick ? '' : description.trim(),
         prompt: prompt.trim(),
+        agent_profile: selectedAgent || undefined,
       })) as { job: string }
       setJobId(res.job)
     } catch (e) {
@@ -310,6 +320,9 @@ function NewSessionSheet({
             ready={ready}
             onPlace={() => setLayer('place')}
             onSubmit={() => void submit()}
+            agentProfiles={agentProfiles.data?.profiles ?? []}
+            agentProfile={selectedAgent}
+            onAgentProfile={setAgentProfile}
           />
         ) : null}
         {layer === 'place' ? (
