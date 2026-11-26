@@ -382,6 +382,7 @@ export type HostReadAction =
   | 'upload.get'
   | 'todos'
   | 'repos'
+  | 'repo.links'
   | 'agent.profiles'
   | 'workstations'
   | 'ticket.targets'

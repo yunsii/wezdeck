@@ -5,7 +5,7 @@
 // backdrop or × closes it. Portalled to <body>: the header's backdrop blur
 // would otherwise become the containing block of a fixed sheet.
 import { useLingui } from '@lingui/react/macro'
-import { Check, Code2, Copy, Pencil } from 'lucide-react'
+import { Check, Code2, Copy, ExternalLink, Pencil } from 'lucide-react'
 import { useState } from 'react'
 
 import { useSessions } from './console-sessions'
@@ -18,6 +18,9 @@ import { requestNewSession } from './session-new'
 import { useDeviceState } from './device-state'
 import { ClearButton } from './session-clear'
 import { FocusInTerminal, useFocusKey } from './session-focus'
+import { RepoLinksSheet, useRepoLinksKey } from './repo-links'
+import type { RepoLinksTarget } from './repo-links'
+import { trace } from '#/lib/client-trace'
 import { worktreeKey } from './session-order'
 import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
@@ -211,7 +214,10 @@ export function SessionInfo({
   const device = useDeviceState()
   const reviewRequired = useSessionDeleteReview(data.id)
   const [copiedRef, setCopiedRef] = useState(false)
+  const [linksOpen, setLinksOpen] = useState(false)
+  const linksTarget = sessionLinksTarget(data, card)
   useFocusKey(data.focus)
+  useRepoLinksKey(Boolean(linksTarget), () => setLinksOpen(true))
   // stays mounted while closed: the sheet plays its exit before it unmounts
   if (typeof document === 'undefined') return null
   const loaded = {
@@ -234,148 +240,164 @@ export function SessionInfo({
     ),
   ]
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) onClose()
-      }}
-      title={t`Session info`}
-      testId="session-info"
-    >
-      <div className="grid gap-3 px-3">
-        {/* the header's tags, whole: no line limit here, a truncated one
+    <>
+      <Sheet
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) onClose()
+        }}
+        title={t`Session info`}
+        testId="session-info"
+      >
+        <div className="grid gap-3 px-3">
+          {/* the header's tags, whole: no line limit here, a truncated one
             opens in place */}
-        {data.agent || data.branch || data.git ? (
-          <TagLine testId="info-tags" className="px-1">
-            {data.agent && data.agent !== 'agent' ? (
-              <AgentTag agent={data.agent} />
-            ) : null}
-            {data.branch ? <BranchTag branch={data.branch} /> : null}
-            {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
-          </TagLine>
-        ) : null}
-        {data.reference ? (
-          <Button
-            variant="solid"
-            type="button"
-            onClick={() => {
-              void copyText(data.reference ?? '').then(() => {
-                setCopiedRef(true)
-                setTimeout(() => setCopiedRef(false), 1_500)
-              })
-            }}
-            className="flex min-h-11 items-center justify-center gap-2 px-3 text-body font-medium"
-          >
-            {copiedRef ? (
-              <Check size={16} aria-hidden />
-            ) : (
-              <Copy size={16} aria-hidden />
-            )}
-            {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
-          </Button>
-        ) : null}
-        <ClearButton
-          id={data.id}
-          status={data.status}
-          waitingKind={data.waiting_kind}
-        />
-        {onRename ? (
-          <Button
-            variant="plain"
-            type="button"
-            data-write
-            disabled={renameDisabled}
-            onClick={() => {
-              const title = data.title || ''
-              const next = window.prompt(t`New session title`, title)?.trim()
-              if (next && next !== title) onRename(next)
-            }}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
-          >
-            <Pencil size={15} aria-hidden />
-            {t`Rename via /rename in the agent pane`}
-          </Button>
-        ) : null}
-        {card?.tmux_pane && device.state === 'approved' ? (
-          <>
+          {data.agent || data.branch || data.git ? (
+            <TagLine testId="info-tags" className="px-1">
+              {data.agent && data.agent !== 'agent' ? (
+                <AgentTag agent={data.agent} />
+              ) : null}
+              {data.branch ? <BranchTag branch={data.branch} /> : null}
+              {data.git ? (
+                <GitStatusButton id={data.id} git={data.git} />
+              ) : null}
+            </TagLine>
+          ) : null}
+          {data.reference ? (
             <Button
+              variant="solid"
               type="button"
-              variant="key"
               onClick={() => {
-                onClose()
-                requestNewSession({
-                  repo: card.repo_root || card.cwd,
-                  anchor: card.id,
-                  group:
-                    card.worktree_description ||
-                    worktreeKey(card).split('/').at(-1) ||
-                    card.cwd,
+                void copyText(data.reference ?? '').then(() => {
+                  setCopiedRef(true)
+                  setTimeout(() => setCopiedRef(false), 1_500)
                 })
               }}
+              className="flex min-h-11 items-center justify-center gap-2 px-3 text-body font-medium"
             >
-              {t`New session in this group`}
+              {copiedRef ? (
+                <Check size={16} aria-hidden />
+              ) : (
+                <Copy size={16} aria-hidden />
+              )}
+              {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
             </Button>
+          ) : null}
+          <ClearButton
+            id={data.id}
+            status={data.status}
+            waitingKind={data.waiting_kind}
+          />
+          {onRename ? (
             <Button
+              variant="plain"
               type="button"
-              variant="key"
-              onClick={() => deleteSession(card, true)}
+              data-write
+              disabled={renameDisabled}
+              onClick={() => {
+                const title = data.title || ''
+                const next = window.prompt(t`New session title`, title)?.trim()
+                if (next && next !== title) onRename(next)
+              }}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
             >
-              {t`Delete session`}
+              <Pencil size={15} aria-hidden />
+              {t`Rename via /rename in the agent pane`}
             </Button>
-            {reviewRequired ? (
-              <div className="grid gap-2 rounded-xl bg-brand-deck p-3">
-                <p role="status" className="text-caption text-brand-muted">
-                  {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}
-                </p>
-                <Button
-                  type="button"
-                  variant="plain"
-                  className="min-h-11 text-brand-error"
-                  onClick={() => deleteSession(card, true, { force: true })}
-                >
-                  {t`Force delete session and worktree`}
-                </Button>
-              </div>
-            ) : null}
-          </>
-        ) : null}
-        {confirmation}
-        <FocusInTerminal focus={data.focus} />
-        <OpenInVsCode cwd={metaValue(data, 'cwd')} />
-        <p className="px-1 text-meta text-brand-label">
-          {t`Tap a row to copy its value; long-press or right-click for more.`}
-        </p>
-        {groups.map((group) => (
-          <section key={group.name} className="grid gap-1">
-            <SectionHeading className="bg-brand-deck">
-              {groupLabels[group.name] ?? group.name}
-            </SectionHeading>
-            <FieldList>
-              {group.rows.map((row) => (
-                <Field
-                  key={row.key}
-                  label={keys[row.key] ?? row.key}
-                  // the state in words, as on the list (it showed the raw
-                  // `done`); the kinds below stay raw for debugging
-                  value={
-                    row.key === 'status'
-                      ? statusText(
-                          row.value,
-                          data.waiting_kind,
-                          data.running_kind,
-                          data.background?.length ?? 0,
-                          data.restart_pending,
-                        )
-                      : format(row.key, row.value)
-                  }
-                  mono
-                />
-              ))}
-            </FieldList>
-          </section>
-        ))}
-      </div>
-    </Sheet>
+          ) : null}
+          {card?.tmux_pane && device.state === 'approved' ? (
+            <>
+              <Button
+                type="button"
+                variant="key"
+                onClick={() => {
+                  onClose()
+                  requestNewSession({
+                    repo: card.repo_root || card.cwd,
+                    anchor: card.id,
+                    group:
+                      card.worktree_description ||
+                      worktreeKey(card).split('/').at(-1) ||
+                      card.cwd,
+                  })
+                }}
+              >
+                {t`New session in this group`}
+              </Button>
+              <Button
+                type="button"
+                variant="key"
+                onClick={() => deleteSession(card, true)}
+              >
+                {t`Delete session`}
+              </Button>
+              {reviewRequired ? (
+                <div className="grid gap-2 rounded-xl bg-brand-deck p-3">
+                  <p role="status" className="text-caption text-brand-muted">
+                    {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="plain"
+                    className="min-h-11 text-brand-error"
+                    onClick={() => deleteSession(card, true, { force: true })}
+                  >
+                    {t`Force delete session and worktree`}
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {confirmation}
+          <FocusInTerminal focus={data.focus} />
+          <OpenInVsCode cwd={metaValue(data, 'cwd')} />
+          <SessionRepoLinksAction
+            target={linksTarget}
+            onOpen={() => {
+              onClose()
+              setLinksOpen(true)
+            }}
+          />
+          <p className="px-1 text-meta text-brand-label">
+            {t`Tap a row to copy its value; long-press or right-click for more.`}
+          </p>
+          {groups.map((group) => (
+            <section key={group.name} className="grid gap-1">
+              <SectionHeading className="bg-brand-deck">
+                {groupLabels[group.name] ?? group.name}
+              </SectionHeading>
+              <FieldList>
+                {group.rows.map((row) => (
+                  <Field
+                    key={row.key}
+                    label={keys[row.key] ?? row.key}
+                    // the state in words, as on the list (it showed the raw
+                    // `done`); the kinds below stay raw for debugging
+                    value={
+                      row.key === 'status'
+                        ? statusText(
+                            row.value,
+                            data.waiting_kind,
+                            data.running_kind,
+                            data.background?.length ?? 0,
+                            data.restart_pending,
+                          )
+                        : format(row.key, row.value)
+                    }
+                    mono
+                  />
+                ))}
+              </FieldList>
+            </section>
+          ))}
+        </div>
+      </Sheet>
+      <RepoLinksSheet
+        open={linksOpen}
+        onOpenChange={setLinksOpen}
+        target={linksTarget}
+      />
+    </>
   )
 }
 
@@ -383,6 +405,50 @@ export function metaValue(data: Detail, key: string) {
   for (const group of data.meta ?? [])
     for (const row of group.rows) if (row.key === key) return row.value
   return ''
+}
+
+function sessionLinksTarget(
+  data: Detail,
+  card:
+    | { repo_root?: string; cwd?: string; repo_label?: string; repo?: string }
+    | undefined,
+): RepoLinksTarget | null {
+  const repoRoot = card?.repo_root || metaValue(data, 'repo_root')
+  const cwd = metaValue(data, 'cwd') || card?.cwd || ''
+  if (!repoRoot && !cwd) return null
+  return {
+    label: card?.repo_label || card?.repo || metaValue(data, 'repo') || '',
+    repo: repoRoot || undefined,
+    cwd: cwd || undefined,
+  }
+}
+
+function SessionRepoLinksAction({
+  target,
+  onOpen,
+}: {
+  target: RepoLinksTarget | null
+  onOpen: () => void
+}) {
+  const { t } = useLingui()
+  if (!target) return null
+  return (
+    <Button
+      variant="plain"
+      type="button"
+      data-testid="session-repo-links-button"
+      aria-haspopup="dialog"
+      title={t`Open repository links (key: l)`}
+      onClick={() => {
+        trace('repo-links', { open: true, via: 'info', repo: target.label })
+        onOpen()
+      }}
+      className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium"
+    >
+      <ExternalLink size={15} aria-hidden />
+      {t`Repository links`}
+    </Button>
+  )
 }
 
 /**

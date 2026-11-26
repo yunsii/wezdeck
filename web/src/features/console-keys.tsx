@@ -41,6 +41,11 @@ function useKeyGroups(): Array<Group> {
       items: [
         { keys: ['j', 'k'], what: t`Next / previous session in the list` },
         { keys: ['y'], what: t`Copy the open session's reference` },
+        {
+          keys: ['l'],
+          what: t`Repository links (GitHub / CNB and project links)`,
+          host: 'Ctrl+K l',
+        },
         ...(local
           ? [
               {

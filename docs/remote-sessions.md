@@ -117,6 +117,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `todos {session? \| all}` | read | the repo to-dos of the session's repo, or every open one (`scripts/runtime/todo.py list --json`) |
 | `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `web`; rows from before 2026-11-24 were migrated from `phone` by `todo.py`) / `done` / `reopen` / `delete` a repo to-do |
 | `repos` | read | repositories a remote web console may create a session in: main checkouts of visited worktrees (access ledger) and of running sessions, newest visit first (`session_new.go`) |
+| `repo.links {repo?, cwd?, refresh?}` | read | external links of a known repository / live checkout resolved by the host's `vscode-links` CLI (`repo_links.go`, same `VSCODE_LINKS_BIN` → `native/vscode-links/bin/vscode-links` → `PATH` order as `Ctrl+k l`, cached 60 s per checkout unless `refresh:true`, 4 s cap, http(s) URLs only, `repo_links` log row per read); opened from the session list's repo header, 会话信息 or key `l` (`repo-links.tsx`; 交互调试 › 仓库外链) |
 | `agent.profiles` | read | registered profile ids, configured/model state, provider defaults (Claude JSON, Codex/Grok TOML, gateway env) and masked gateway key suffixes; never returns raw credentials or command strings (`agent_profiles.go`). For `claude_kimi`, also returns Claude Code `/status` parity fields from `kimi.env` (`base_url`, `effort_level`, `auto_compact_window`, per-tier / sub-agent model ids). `session.new` accepts an optional `agent_profile`; omission keeps the repository default. |
 | `agent.profile.configure {token, model}` | write | replace the Kimi profile's private `kimi.env` (mode 600, atomic rename) with the Kimi Code defaults (`https://api.kimi.ai/coding/`, `ANTHROPIC_API_KEY`, effort `high`, compact/max-context `262144` or `1048576` when the model id contains `[1m]`); one model across all Claude tiers; response and logs omit the key (`agent_profiles.go`) |
 | `agent.profile.model {profile, model}` | write | set or clear a managed model override for Claude, Claude gateway, Codex, Grok or Agy; each profile has a private scalar file under `~/.config/wezdeck/agent-models/`, read by `agent-launcher.sh` on the next launch (`agent_profiles.go`) |
@@ -167,7 +168,7 @@ way it already reads tickets: the loopback Runtime answers
 `remote.read`; `RuntimeWebServer.Remote.cs`, fixed allowlist, args ≤ 4 KB)
 through the WSL bridge `remote.<action>`, which runs the relay's own read set
 (`readRPC` in `relay.go`): `sessions`, `session`, `upload.get`, `todos`,
-`repos`, `ticket.targets`, `session.new.job`, `session.image`. Writes go the
+`repos`, `repo.links`, `ticket.targets`, `session.new.job`, `session.image`. Writes go the
 same way as `POST /api/v1/remote/<action>` with a JSON object body
 (capability `remote.write`; `send`, `key`, `reply`, `attach`, `upload`,
 `todo`, `clear`, `session.new`, `ticket.new`) into `runWrite`

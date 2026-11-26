@@ -191,6 +191,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('todos', '仓库待办', 'Repository to-dos'),
       c('repos', '可以新开会话的仓库', 'Repositories a session can start in'),
       c(
+        'repo.links',
+        '仓库外链列表（复用 vscode-links，含仓库主页与项目自定义外链）',
+        'Repository external links (via vscode-links: repo homepage and project-configured links)',
+      ),
+      c(
         'agent.profiles',
         '主机注册的 agent profile 与默认项（不含凭据）',
         'Host agent profiles and default (without credentials)',

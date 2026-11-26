@@ -123,7 +123,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    keeps native overflow); the pane beside is flat with the column divider
    as its left edge (no card).
    工单's run / cache / cost band opens from the head in a dialog. Session
-   groups carry icons: repo `FolderGit2`, worktree `GitFork`.
+   groups carry icons: repo `FolderGit2` (tap or Enter opens its `vscode-links` external links sheet via `repo.links`; same links as `Ctrl+k l` at the desk, also reachable from 会话信息 and key `l` on a session page), worktree `GitFork`.
    On a wide screen 工单 is the same split as 会话 (tickets-view.tsx): zero outer padding, equal head padding, flat status notices, and session bars within pane edges. 工单
    remembers its status filter; 会话 has none (IM list). With no item in
    the URL, reopen the last opened item if it still exists, else the top

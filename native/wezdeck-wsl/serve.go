@@ -108,7 +108,7 @@ func dispatch(req request) response {
 	case "remote.session":
 		res.Result, err = sessionDetailFor(req.Payload, true)
 	case "remote.upload.get", "remote.todos",
-		"remote.repos", "remote.agent.profiles", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
+		"remote.repos", "remote.repo.links", "remote.agent.profiles", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
 		"remote.session.handoff.job", "remote.session.image",
 		"remote.session.history", "remote.session.git", "remote.session.skills", "remote.host.warp.status", "remote.host.oppo.status":
 		// the relay's read-only actions for a browser on the host (readRPC)

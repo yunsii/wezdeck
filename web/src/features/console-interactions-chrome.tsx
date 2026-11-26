@@ -15,6 +15,40 @@ import {
 } from './console-interactions-demos'
 import { GIT, TASK_NOTES } from './console-interactions-samples'
 import { SkillsDemo } from './console-interactions-skills'
+import { RepoLinksButton } from './repo-links'
+import type { RepoLinksReply } from './repo-links-model'
+
+const SAMPLE_REPO_LINKS: RepoLinksReply = {
+  cli_available: true,
+  cwd: '/home/yuns/github/wezterm-config',
+  links: [
+    {
+      type: 'detected',
+      source: 'detected:github',
+      url: 'https://github.com/yunsii/wezterm-config',
+      title: 'GitHub Repository',
+    },
+    {
+      type: 'detected',
+      source: 'detected:github',
+      url: 'https://github.com/yunsii/wezterm-config/pulls',
+      title: 'Pull Requests',
+    },
+    {
+      type: 'local',
+      source: 'settings:links.resources',
+      url: 'https://wezdeck.yuns.love/console/sessions',
+      title: 'WezDeck Web Console',
+      description: 'Remote session & ticket deck',
+    },
+    {
+      type: 'remote-shared',
+      source: 'csv:#shared-links',
+      url: 'https://docs.example.com/runbook',
+      title: 'Team Runbook',
+    },
+  ],
+}
 
 /** a clean checkout, no upstream (the synced one adds upstream) */
 const CLEAN = {
@@ -106,6 +140,30 @@ export function chromeSections(): Array<Omit<Section, 'group'>> {
       },
       keys: { zh: '无', en: 'None' },
       demo: <TagsDemo />,
+    },
+    {
+      id: 'repo-links',
+      tags: ['common'],
+      title: { zh: '仓库外链', en: 'Repository links' },
+      source: {
+        zh: '会话列表仓库分组标题栏 / 会话信息 / 快捷键 l：调用 repo.links 复用主机 vscode-links（同终端 Ctrl+k l，含仓库主页及 .vscode/settings.json 自定义外链），支持搜索、方向键选择与复制链接',
+        en: 'session list repo headers / Session info / key l: reads repo.links via the host vscode-links CLI (same as terminal Ctrl+k l: repo homepage plus .vscode/settings.json links), with search, arrow-key navigation and copy URL',
+      },
+      keys: {
+        zh: 'l 打开，↑ ↓ 选择，Enter 新标签打开，Esc 清空搜索 / 关闭',
+        en: 'l opens, ↑ ↓ move, Enter opens in a new tab, Esc clears search / closes',
+      },
+      demo: (
+        <div data-testid="repo-links-demo" className="flex flex-wrap gap-2">
+          <RepoLinksButton
+            target={{
+              label: 'wezdeck',
+              repo: '/home/yuns/github/wezterm-config',
+            }}
+            sample={SAMPLE_REPO_LINKS}
+          />
+        </div>
+      ),
     },
     {
       id: 'git-status',

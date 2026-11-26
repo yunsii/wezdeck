@@ -10,7 +10,7 @@ import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, FolderGit2, Hash, Plus, Search, X } from 'lucide-react'
+import { CheckCheck, Hash, Plus, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { StickyBar } from '#/components/deck/sticky-bar'
@@ -24,6 +24,8 @@ import { recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { NOT_PAIRED } from '#/lib/remote-link'
+import { RepoLinksSheet, RepoSectionHeader } from './repo-links'
+import type { RepoLinksTarget } from './repo-links'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { clearable, useClearSession } from './session-clear'
@@ -331,6 +333,8 @@ export function SessionList({
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')
+  const [linksTarget, setLinksTarget] = useState<RepoLinksTarget | null>(null)
+  const [linksOpen, setLinksOpen] = useState(false)
   const wide = useIsWide()
 
   const previewOf = (chat: SessionChat) =>
@@ -430,10 +434,15 @@ export function SessionList({
               className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
               data-repo={repo.label}
             >
-              <h2 className="flex items-center gap-1.5 border-b border-brand-edge px-4 py-2 text-caption font-medium text-brand-label md:px-[var(--split-pad)]">
-                <FolderGit2 size={14} aria-hidden className="shrink-0" />
-                {repo.label}
-              </h2>
+              <RepoSectionHeader
+                label={repo.label}
+                repoRoot={repo.repoRoot}
+                fallbackCwd={repo.chats[0]?.focus.cwd}
+                onOpen={(target) => {
+                  setLinksTarget(target)
+                  setLinksOpen(true)
+                }}
+              />
               <ul>
                 {repo.chats.map((chat) => (
                   <li
@@ -465,6 +474,11 @@ export function SessionList({
         </div>
       )}
       <OpenTodos />
+      <RepoLinksSheet
+        open={linksOpen}
+        onOpenChange={setLinksOpen}
+        target={linksTarget}
+      />
     </>
   )
   if (split)

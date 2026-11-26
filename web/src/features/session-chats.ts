@@ -119,6 +119,8 @@ export type SessionChat = {
 export type ChatRepoGroup = {
   key: string
   label: string
+  /** Absolute path of the git main checkout when known (for `repo.links`). */
+  repoRoot?: string
   activity: number
   chats: Array<SessionChat>
 }
@@ -178,6 +180,7 @@ export function buildChatGroups(
     string,
     {
       label: string
+      repoRoot?: string
       trees: Map<string, Array<SessionCard>>
     }
   >()
@@ -191,8 +194,10 @@ export function buildChatGroups(
     const wtKey = worktreeKey(row)
     let repo = repos.get(repoKey)
     if (!repo) {
-      repo = { label: repoLabel, trees: new Map() }
+      repo = { label: repoLabel, repoRoot: row.repo_root, trees: new Map() }
       repos.set(repoKey, repo)
+    } else if (!repo.repoRoot && row.repo_root) {
+      repo.repoRoot = row.repo_root
     }
     let list = repo.trees.get(wtKey)
     if (!list) {
@@ -240,6 +245,7 @@ export function buildChatGroups(
     groups.push({
       key: repoKey,
       label: repo.label,
+      repoRoot: repo.repoRoot,
       activity: Math.max(0, ...chats.map((c) => c.activity)),
       chats,
     })
