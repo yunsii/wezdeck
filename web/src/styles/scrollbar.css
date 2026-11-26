@@ -23,3 +23,34 @@
     )
     transparent;
 }
+
+/*
+ * OverlayScrollbars theme for list columns (SplitColumn, …). Overlay bars do
+ * not reserve layout width — hover-show without the classic gutter jitter.
+ * See components/deck/overlay-scroll.tsx.
+ */
+.os-theme-wezdeck {
+  --os-size: 8px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 2px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-handle-bg: color-mix(
+    in oklab,
+    var(--brand-label, #6f7887) 40%,
+    transparent
+  );
+  --os-handle-bg-hover: color-mix(
+    in oklab,
+    var(--brand-label, #6f7887) 65%,
+    transparent
+  );
+  --os-handle-bg-active: color-mix(
+    in oklab,
+    var(--brand-label, #6f7887) 80%,
+    transparent
+  );
+  --os-handle-border-radius: 999px;
+  --os-handle-min-size: 32px;
+}

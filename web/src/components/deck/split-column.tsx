@@ -1,10 +1,9 @@
 // The list column of a wide split (会话 / 工单): its head — the page title,
 // the status filter, search — holds still above a divider, and only the list
-// under it scrolls. The column is sticky beside the pane, which keeps the
-// page scroll (the chat's pin-to-bottom depends on that). Head and body use
-// the same horizontal pad on both sides (scrollbar-gutter:stable already
-// reserves the classic scrollbar), so skeleton and loaded cards share one
-// inset and do not sit flush on the divider.
+// under it scrolls. OverlayScrollbars paint over the content edge (no classic
+// gutter), so hover-show never shifts card width; left/right use the same
+// --split-pad.
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import { cn } from '#/lib/utils'
 
 export function SplitColumn({
@@ -28,14 +27,21 @@ export function SplitColumn({
     >
       <div
         data-testid="split-head"
-        className="grid shrink-0 gap-3 overflow-hidden border-b border-brand-edge px-[var(--split-pad)] pt-0.5 pb-3 [scrollbar-gutter:stable]"
+        className="grid shrink-0 gap-3 overflow-hidden border-b border-brand-edge px-[var(--split-pad)] pt-0.5 pb-3"
       >
         {head}
       </div>
       {/* overscroll contained: past its top or end the list used to chain
           the wheel into the page, scrolling the pane beside it */}
-      <div className="grid min-h-0 flex-1 content-start gap-3 overflow-y-auto overscroll-contain px-[var(--split-pad)] pt-3 pb-1 [scrollbar-gutter:stable]">
-        {children}
+      <div className="min-h-0 flex-1">
+        <OverlayScroll className="overscroll-contain">
+          <div
+            data-testid="split-body"
+            className="grid content-start gap-3 px-[var(--split-pad)] pt-3 pb-1"
+          >
+            {children}
+          </div>
+        </OverlayScroll>
       </div>
     </aside>
   )
