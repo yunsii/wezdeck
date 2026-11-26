@@ -30,12 +30,13 @@ import (
 )
 
 type workstationSlot struct {
-	Path    string `json:"path"`
-	Name    string `json:"name"` // the directory without an old dev- prefix
-	Branch  string `json:"branch"`
-	State   string `json:"state"` // idle | running | waiting | dirty | undelivered | detached
-	Reason  string `json:"reason,omitempty"`
-	Visited int64  `json:"visited,omitempty"`
+	Path     string   `json:"path"`
+	Name     string   `json:"name"` // the directory without an old dev- prefix
+	Branch   string   `json:"branch"`
+	State    string   `json:"state"` // idle | running | waiting | dirty | undelivered | detached
+	Reason   string   `json:"reason,omitempty"`
+	Visited  int64    `json:"visited,omitempty"`
+	Sessions []string `json:"sessions,omitempty"`
 }
 
 type workstationDirection struct {
@@ -51,6 +52,9 @@ func listWorkstations(args json.RawMessage) (any, error) {
 		Repo string `json:"repo"`
 	}
 	_ = json.Unmarshal(args, &a)
+	if root := repoRootForPath(a.Repo); root != "" {
+		a.Repo = root
+	}
 	if !isKnownRepo(a.Repo) {
 		return nil, errors.New("workstations: not a repository you work in")
 	}
@@ -59,6 +63,14 @@ func listWorkstations(args json.RawMessage) (any, error) {
 		return nil, err
 	}
 	return map[string]any{"v": 1, "ok": true, "directions": dirs}, nil
+}
+
+func repoRootForPath(path string) string {
+	if path == "" {
+		return ""
+	}
+	_, root, _ := gitRepoMeta(path)
+	return root
 }
 
 func isKnownRepo(root string) bool {
@@ -104,6 +116,20 @@ func repoWorkstations(repo string) ([]workstationDirection, error) {
 		}
 	}
 
+	if entries, err := liveSessions(); err == nil {
+		for id, entry := range entries {
+			_, cwd, _, _, _, alive := paneState(entry)
+			if !alive || cwd == "" {
+				continue
+			}
+			_, _, tree := gitRepoMeta(cwd)
+			for i := range slots {
+				if slots[i].Path == tree {
+					slots[i].Sessions = append(slots[i].Sessions, id)
+				}
+			}
+		}
+	}
 	busy := busyWorktrees()
 	visits := worktreeVisits()
 	var wg sync.WaitGroup

@@ -9,6 +9,8 @@
 // the thread, so nothing in it moves. The git tag keeps its width.
 import { useLingui } from '@lingui/react/macro'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import {
   Bot,
   Layers,
@@ -29,6 +31,10 @@ import {
 import type { Tone } from '#/components/deck/session-tags'
 import { Led } from '#/components/deck/led'
 import { PopoverContent } from '#/components/ui/popover'
+import { Sheet } from '#/components/ui/sheet'
+import { Button } from '#/components/ui/button'
+import { hostRead } from '#/lib/runtime-client'
+import { cn } from '#/lib/utils'
 import type { Detail } from './console-sessions'
 import { BackgroundTasks } from './session-background'
 import { GitStatusButton } from './session-git'
@@ -188,46 +194,155 @@ function Background({
   )
 }
 
-function Linked({ list }: { list: NonNullable<Detail['worktrees']> }) {
+type WorkstationSlot = {
+  path: string
+  name: string
+  branch: string
+  state: string
+  reason?: string
+  visited?: number
+  sessions?: string[]
+}
+
+type WorkstationDirection = {
+  name: string
+  description?: string
+  slots: WorkstationSlot[]
+}
+
+function WorktreeManager({
+  list,
+  repoPath,
+}: {
+  list: NonNullable<Detail['worktrees']>
+  repoPath: string
+}) {
   const { t } = useLingui()
+  const [open, setOpen] = useState(false)
+  const workstations = useQuery({
+    queryKey: ['remote', 'workstations', repoPath],
+    enabled: open && Boolean(repoPath),
+    queryFn: async () =>
+      (await hostRead('workstations', { repo: repoPath })) as {
+        directions: WorkstationDirection[]
+      },
+  })
   // the terminal's linked:N — every worktree but the main checkout (first)
   const linked = list.length - 1
+  const tone = (state: string) =>
+    state === 'idle'
+      ? 'text-brand-done'
+      : state === 'running' || state === 'waiting'
+        ? 'text-brand-waiting'
+        : 'text-brand-muted'
   return (
-    <PopoverPrimitive.Root>
-      <PopoverPrimitive.Trigger
-        data-tone="neutral"
-        data-testid="status-worktrees"
-        title={t`${linked} linked worktrees`}
-        className={trigger}
+    <>
+      <PopoverPrimitive.Root>
+        <PopoverPrimitive.Trigger
+          data-tone="neutral"
+          data-testid="status-worktrees"
+          title={t`${linked} linked worktrees`}
+          className={trigger}
+        >
+          <Layers size={11} aria-hidden className="shrink-0" />
+          {`linked ${linked}`}
+        </PopoverPrimitive.Trigger>
+        <PopoverContent
+          side="top"
+          sideOffset={6}
+          className="w-[min(22rem,calc(100vw-2rem))] p-2"
+        >
+          <ul className="grid gap-0.5" data-testid="status-worktree-list">
+            {list.map((wt) => (
+              <li
+                key={wt.path}
+                className="grid min-w-0 gap-0.5 rounded-lg px-1.5 py-1"
+                data-current={wt.current ? '' : undefined}
+              >
+                <span className="flex min-w-0 items-center gap-1.5 font-mono text-meta text-brand-text">
+                  {wt.current ? <Led tone="running" size={7} /> : null}
+                  <span className="truncate">{wt.branch ?? '—'}</span>
+                </span>
+                <span className="truncate font-mono text-meta text-brand-label">
+                  {wt.path}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Button
+            variant="plain"
+            size="sm"
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mt-1 w-full justify-center text-brand-running"
+          >
+            {t`Manage worktrees`}
+          </Button>
+        </PopoverContent>
+      </PopoverPrimitive.Root>
+      <Sheet
+        open={open}
+        onOpenChange={setOpen}
+        title={t`Worktrees`}
+        testId="worktree-manager"
       >
-        <Layers size={11} aria-hidden className="shrink-0" />
-        {`linked ${linked}`}
-      </PopoverPrimitive.Trigger>
-      <PopoverContent
-        side="top"
-        sideOffset={6}
-        className="w-[min(22rem,calc(100vw-2rem))] p-2"
-      >
-        <ul className="grid gap-0.5" data-testid="status-worktree-list">
-          {list.map((wt) => (
-            <li
-              key={wt.path}
-              className="grid min-w-0 gap-0.5 rounded-lg px-1.5 py-1"
-              data-current={wt.current ? '' : undefined}
-            >
-              <span className="flex min-w-0 items-center gap-1.5 font-mono text-meta text-brand-text">
-                {wt.current ? <Led tone="running" size={7} /> : null}
-                <span className="truncate">{wt.branch ?? '—'}</span>
-              </span>
-              <span className="truncate font-mono text-meta text-brand-label">
-                {wt.path}
-              </span>
-            </li>
+        <div className="grid gap-3 px-4">
+          {workstations.isPending ? (
+            <p className="text-meta text-brand-muted">{t`Loading…`}</p>
+          ) : null}
+          {workstations.error ? (
+            <p role="alert" className="text-meta text-brand-error">
+              {String(workstations.error)}
+            </p>
+          ) : null}
+          {(workstations.data?.directions ?? []).map((direction) => (
+            <section key={direction.name} className="grid gap-1">
+              <h3 className="text-meta font-semibold text-brand-text">
+                {direction.name}
+              </h3>
+              {direction.slots.map((slot) => (
+                <div
+                  key={slot.path}
+                  className="grid min-w-0 gap-1 rounded-lg border border-brand-edge px-3 py-2"
+                >
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="truncate font-mono text-meta text-brand-text">
+                      {slot.branch || t`detached`}
+                    </span>
+                    <span
+                      className={cn('shrink-0 text-meta', tone(slot.state))}
+                    >
+                      {slot.state}
+                    </span>
+                  </div>
+                  <span className="truncate font-mono text-caption text-brand-label">
+                    {slot.path}
+                  </span>
+                  <span className="text-caption text-brand-muted">
+                    {slot.sessions?.length ? (
+                      <SessionCount count={slot.sessions.length} />
+                    ) : (
+                      t`No session`
+                    )}
+                    {slot.reason ? ` · ${slot.reason}` : ''}
+                  </span>
+                </div>
+              ))}
+            </section>
           ))}
-        </ul>
-      </PopoverContent>
-    </PopoverPrimitive.Root>
+          {!workstations.isPending &&
+          !(workstations.data?.directions ?? []).length ? (
+            <p className="text-meta text-brand-muted">{t`No linked worktrees`}</p>
+          ) : null}
+        </div>
+      </Sheet>
+    </>
   )
+}
+
+function SessionCount({ count }: { count: number }) {
+  const { t } = useLingui()
+  return t`${count} sessions`
 }
 
 export function SessionStatusBar({
@@ -296,7 +411,14 @@ export function SessionStatusBar({
           {data.git ? (
             <GitStatusButton id={data.id} git={data.git} fixed />
           ) : null}
-          {worktrees.length > 1 ? <Linked list={worktrees} /> : null}
+          {worktrees.length > 1 ? (
+            <WorktreeManager
+              list={worktrees}
+              repoPath={
+                worktrees.find((wt) => wt.current)?.path ?? worktrees[0].path
+              }
+            />
+          ) : null}
         </TagLine>
       ) : null}
     </div>
