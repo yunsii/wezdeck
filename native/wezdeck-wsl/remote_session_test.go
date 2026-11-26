@@ -332,6 +332,10 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	if len(cards) != 1 || cards[0].ID != "new-after-clear" || cards[0].LastPrompt != "" || cards[0].Name != "" {
 		t.Fatalf("want the new session in place of the cleared one, got %+v", cards)
 	}
+	redirects, _ := list.(map[string]any)["redirects"].([]sessionRedirect)
+	if len(redirects) != 1 || redirects[0].From != "before-clear" || redirects[0].To != "new-after-clear" {
+		t.Fatalf("want redirect before-clear→new-after-clear, got %+v", redirects)
+	}
 	old, err := sessionDetail(json.RawMessage(`{"id":"before-clear"}`))
 	if err != nil || old.(map[string]any)["replaced_by"] != "new-after-clear" {
 		t.Fatalf("old id should point at the new one: %v %v", old, err)
@@ -346,6 +350,29 @@ func TestClearedPaneListsTheNewSession(t *testing.T) {
 	}
 	if got := detail.(map[string]any)["focus"]; !reflect.DeepEqual(got, map[string]any{"session_id": "before-clear", "recent": true, "archived_ts": int64(100), "detached": true, "tmux_session": "agent"}) {
 		t.Fatalf("cleared-pane focus: %#v", got)
+	}
+}
+
+func TestSessionRedirectsFromClearedToAndReplacedFrom(t *testing.T) {
+	recent := []recentEntry{
+		{attentionEntry: attentionEntry{SessionID: "old-a"}, ClearedTo: "new-a"},
+		{attentionEntry: attentionEntry{SessionID: "stale"}, ClearedTo: "gone"},
+		{attentionEntry: attentionEntry{SessionID: "same"}, ClearedTo: "same"},
+	}
+	entries := map[string]attentionEntry{
+		"new-a": {SessionID: "new-a", ReplacedFrom: "old-a"},
+		"new-b": {SessionID: "new-b", ReplacedFrom: "ghost-b"},
+	}
+	got := sessionRedirects(recent, entries)
+	want := map[string]string{"old-a": "new-a", "ghost-b": "new-b"}
+	if len(got) != len(want) {
+		t.Fatalf("redirects %+v", got)
+	}
+	for _, r := range got {
+		if want[r.From] != r.To {
+			t.Fatalf("redirect %+v, want map %v", r, want)
+		}
+		delete(want, r.From)
 	}
 }
 

@@ -483,7 +483,46 @@ func listSessionsFor(includeArchived bool) (any, error) {
 	}
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
-	return map[string]any{"v": 1, "ok": true, "sessions": cards}, nil
+	return map[string]any{
+		"v": 1, "ok": true, "sessions": cards,
+		"redirects": sessionRedirects(recent, entries),
+	}, nil
+}
+
+// sessionRedirect: an old / phantom session id that a pane left behind, and
+// the id that owns the pane now — the web console's sessions poll follows
+// these so a detail URL that missed replaced_by still lands on the current
+// conversation (docs/remote-sessions.md).
+type sessionRedirect struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func sessionRedirects(recent []recentEntry, entries map[string]attentionEntry) []sessionRedirect {
+	seen := map[string]bool{}
+	var out []sessionRedirect
+	add := func(from, to string) {
+		if from == "" || to == "" || from == to || !sessionIDPattern.MatchString(from) ||
+			!sessionIDPattern.MatchString(to) || seen[from] {
+			return
+		}
+		if _, ok := entries[to]; !ok {
+			return
+		}
+		seen[from] = true
+		out = append(out, sessionRedirect{From: from, To: to})
+	}
+	for _, r := range recent {
+		if next := r.ClearedTo; sessionIDPattern.MatchString(next) {
+			add(r.SessionID, next)
+		}
+	}
+	for id, e := range entries {
+		if e.ReplacedFrom != "" {
+			add(e.ReplacedFrom, id)
+		}
+	}
+	return out
 }
 
 func backgroundOf(e attentionEntry) []bgTask {

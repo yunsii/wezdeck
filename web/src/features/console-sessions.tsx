@@ -169,6 +169,7 @@ export function useSessions() {
     queryFn: async () =>
       (await hostRead('sessions', {})) as {
         sessions: Array<SessionCard>
+        redirects?: Array<{ from: string; to: string }>
       },
   })
 }

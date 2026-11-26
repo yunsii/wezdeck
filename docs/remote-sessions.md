@@ -29,6 +29,9 @@ show its persisted transcript. The reverse also follows: Grok `/resume`
 same `pane-evict` path, overwrite an earlier `cleared_to` on that pane, and
 leave a stub for any phantom id that only existed as someone's `cleared_to`,
 so a web page still on the fresh session switches back to the resumed one.
+The `sessions` poll also carries `redirects: [{from,to}]` (cleared_to and
+`ReplacedFrom` edges whose `to` is still listed) so a detail URL that missed
+`replaced_by` still follows on the next list tick (`useFollowSessionRedirect`).
 
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived entry remains in the local-mode session list for three

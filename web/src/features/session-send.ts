@@ -3,15 +3,15 @@
 // countdown when the host asks to wait for the desk to go quiet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
-import { useLocale } from '#/lib/locale-context'
 import { hostWrite } from '#/lib/runtime-client'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
+
+export { useFollowReplacement } from './session-follow'
 
 /**
  * The host refuses a write right after input at the desk and says when to
@@ -44,26 +44,6 @@ export async function withDeskRetry<T>(
  */
 export const commandOf = (text: string) =>
   /^\/[a-z][\w:-]*(?=\s|$)/i.exec(text.trim())?.[0] ?? ''
-
-/**
- * /new, /clear or /resume in the pane switches the conversation there; the
- * host then answers the previous id with replaced_by (relay liveSessions).
- * Follow it, in place of this page in history, and say so.
- */
-export function useFollowReplacement(replacedBy?: string) {
-  const { t } = useLingui()
-  const navigate = useNavigate()
-  const { locale } = useLocale()
-  useEffect(() => {
-    if (!replacedBy) return
-    toast(t`This pane switched sessions`)
-    void navigate({
-      to: '/{-$locale}/console/sessions/$id',
-      params: { locale: locale === 'en' ? undefined : locale, id: replacedBy },
-      replace: true,
-    })
-  }, [replacedBy, navigate, locale, t])
-}
 
 type WriteState = { sending: boolean; error: string; retryIn: number }
 const IDLE: WriteState = { sending: false, error: '', retryIn: 0 }

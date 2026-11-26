@@ -28,6 +28,7 @@ import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { KeysEntry } from './console-keys'
 import { RemoteBadge } from './remote-badge'
 import { needsYou, useSessions } from './console-sessions'
+import { useFollowSessionRedirect } from './session-follow'
 import { installClientTrace } from '#/lib/client-trace'
 import { RECENT_START_MS } from './runtime-restart'
 import { remoteLink } from '#/lib/remote-link'
@@ -150,6 +151,9 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const health = useTicketSync()
   // what waits on you, on the tab that holds it
   const sessions = useSessions()
+  // pane switched (/new, /resume…): follow from the sessions poll even when
+  // the detail never mounted — only while the URL is a session detail
+  useFollowSessionRedirect()
   const badges: Partial<Record<Section, number>> = {
     collab: health.data?.waiting_human ?? 0,
     sessions: (sessions.data?.sessions ?? []).filter(needsYou).length,
