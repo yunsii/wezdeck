@@ -194,7 +194,7 @@ export type Composer = ReturnType<typeof useComposer>
 type Panel = 'keys' | 'todos' | 'commands' | null
 
 const tool =
-  'inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-caption'
+  'composer-tool inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-caption'
 
 /**
  * One row above the input: 快捷 (always), then 图片 and 诊断 once this phone
@@ -225,18 +225,13 @@ function Toolbar({
   ).length
   const full = composer.images.length >= MAX_IMAGES
   const chip = (on: boolean) =>
-    cn(
-      tool,
-      on
-        ? 'bg-brand-text text-brand-deck'
-        : 'bg-brand-surface text-brand-muted',
-    )
+    cn(tool, on ? 'composer-tool-active text-brand-text' : 'text-brand-muted')
   return (
     <div
       role="toolbar"
       aria-label={t`Composer tools`}
       data-testid="composer-tools"
-      className="flex items-center gap-1.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+      className="composer-toolbar flex items-center gap-1 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
     >
       <Button
         variant="plain"
@@ -255,6 +250,7 @@ function Toolbar({
           variant="plain"
           type="button"
           aria-pressed={panel === 'commands'}
+          aria-label={t`Commands`}
           title={t`Slash commands for Claude`}
           onClick={() => onPanel(panel === 'commands' ? null : 'commands')}
           className={chip(panel === 'commands')}
@@ -267,6 +263,7 @@ function Toolbar({
         variant="plain"
         type="button"
         aria-pressed={panel === 'todos'}
+        aria-label={t`To-dos`}
         title={t`Follow-ups of this repo`}
         onClick={() => onPanel(panel === 'todos' ? null : 'todos')}
         className={chip(panel === 'todos')}

@@ -8,7 +8,6 @@
 // read off the screen.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
-import { X } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -16,6 +15,7 @@ import { Sheet } from '#/components/ui/sheet'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
 import type { Outgoing } from './session-composer'
+import { ComposerPanel } from './composer-panel'
 
 type HistoryItem = {
   id: string
@@ -267,25 +267,18 @@ export function CommandPanel({
   const key =
     'grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40'
   return (
-    <div data-write className="grid gap-1.5 rounded-2xl bg-brand-surface p-2">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-meta text-brand-label">
-          {disabled
-            ? t`Turn on write access in Settings to send commands`
-            : isAgy
-              ? t`Antigravity commands, sent into the pane`
-              : t`Claude commands, sent into the pane`}
-        </span>
-        <Button
-          variant="plain"
-          type="button"
-          onClick={onClose}
-          aria-label={t`Close commands`}
-          className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted"
-        >
-          <X size={14} aria-hidden />
-        </Button>
-      </div>
+    <ComposerPanel
+      title={isAgy ? t`Antigravity commands` : t`Claude commands`}
+      onClose={onClose}
+      closeLabel={t`Close commands`}
+    >
+      <p className="text-meta text-brand-label">
+        {disabled
+          ? t`Turn on write access in Settings to send commands`
+          : isAgy
+            ? t`Antigravity commands, sent into the pane`
+            : t`Claude commands, sent into the pane`}
+      </p>
       <div
         role="group"
         aria-label={t`Commands`}
@@ -333,6 +326,6 @@ export function CommandPanel({
           ))}
         </div>
       ) : null}
-    </div>
+    </ComposerPanel>
   )
 }

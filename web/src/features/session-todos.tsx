@@ -6,12 +6,13 @@
 // are not (`todos`).
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, CornerDownLeft, RotateCcw, X } from 'lucide-react'
+import { Check, CornerDownLeft, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
+import { ComposerPanel } from './composer-panel'
 
 export type Todo = {
   id: number
@@ -90,27 +91,15 @@ export function TodoPanel({
     if (await write.run({ op: 'add', session, text })) setText('')
   }
   return (
-    <div
-      data-write
-      data-testid="todo-panel"
-      className="grid grid-cols-[minmax(0,1fr)] gap-2 rounded-2xl bg-brand-surface p-2"
+    <ComposerPanel
+      testId="todo-panel"
+      title={repo ? t`To-dos of ${repo}` : t`To-dos of this repo`}
+      onClose={onClose}
+      closeLabel={t`Close to-dos`}
     >
-      <div className="flex items-center justify-between gap-2 px-1">
-        <span className="min-w-0 truncate text-meta text-brand-label">
-          {repo
-            ? t`To-dos of ${repo}: they stay with the repo, any session can pick them up`
-            : t`To-dos of this repo`}
-        </span>
-        <Button
-          variant="plain"
-          type="button"
-          onClick={onClose}
-          aria-label={t`Close to-dos`}
-          className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-brand-muted"
-        >
-          <X size={14} aria-hidden />
-        </Button>
-      </div>
+      <p className="text-meta text-brand-label">
+        {t`They stay with the repo, so any session can pick them up.`}
+      </p>
       {writable ? (
         // not a <form>: this panel renders inside the composer's form, and a
         // nested form's submit would send the message instead
@@ -229,7 +218,7 @@ export function TodoPanel({
             : null}
         </div>
       ) : null}
-    </div>
+    </ComposerPanel>
   )
 }
 

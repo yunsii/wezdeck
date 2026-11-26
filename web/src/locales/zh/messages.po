@@ -204,7 +204,7 @@ msgstr "7 天"
 msgid "7-day limit"
 msgstr "7 天额度"
 
-#: src/features/session-todos.tsx:131
+#: src/features/session-todos.tsx:120
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
@@ -264,7 +264,7 @@ msgstr "自动编辑"
 msgid "Account limits"
 msgstr "账号额度"
 
-#: src/features/session-todos.tsx:141
+#: src/features/session-todos.tsx:130
 msgid "Add"
 msgstr "添加"
 
@@ -377,7 +377,11 @@ msgstr "答案已发送，等待 Agent 继续……"
 msgid "Antigravity asks to run this"
 msgstr "Antigravity 请求执行此操作"
 
-#: src/features/session-commands.tsx:276
+#: src/features/session-commands.tsx:271
+msgid "Antigravity commands"
+msgstr "Antigravity 命令"
+
+#: src/features/session-commands.tsx:279
 msgid "Antigravity commands, sent into the pane"
 msgstr "Antigravity 命令，直接发到终端窗格"
 
@@ -588,7 +592,7 @@ msgstr "缓存命中 {hit}%"
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
-#: src/features/session-key-panel.tsx:20
+#: src/features/session-key-panel.tsx:19
 msgid "cancel"
 msgstr "取消"
 
@@ -666,7 +670,11 @@ msgstr "认领"
 msgid "Claude asks to run this"
 msgstr "Claude 请求执行"
 
-#: src/features/session-commands.tsx:277
+#: src/features/session-commands.tsx:271
+msgid "Claude commands"
+msgstr "Claude 命令"
+
+#: src/features/session-commands.tsx:280
 msgid "Claude commands, sent into the pane"
 msgstr "Claude 命令，发进窗格执行"
 
@@ -678,9 +686,9 @@ msgstr "Claude 想退出计划模式，按这个计划开始执行"
 #~ msgid "Clear"
 #~ msgstr ""
 
-#: src/features/session-composer.tsx:308
-#: src/features/session-composer.tsx:309
-#: src/features/session-composer.tsx:314
+#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:306
+#: src/features/session-composer.tsx:311
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -717,11 +725,11 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/session-commands.tsx:283
+#: src/features/session-commands.tsx:273
 msgid "Close commands"
 msgstr "关闭命令"
 
-#: src/features/session-key-panel.tsx:56
+#: src/features/session-key-panel.tsx:47
 msgid "Close keys"
 msgstr "收起按键"
 
@@ -729,7 +737,7 @@ msgstr "收起按键"
 msgid "Close the viewer"
 msgstr "关闭图片查看"
 
-#: src/features/session-todos.tsx:108
+#: src/features/session-todos.tsx:98
 msgid "Close to-dos"
 msgstr "关闭待办"
 
@@ -773,8 +781,9 @@ msgstr "命令输出"
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
-#: src/features/session-commands.tsx:291
-#: src/features/session-composer.tsx:263
+#: src/features/session-commands.tsx:284
+#: src/features/session-composer.tsx:253
+#: src/features/session-composer.tsx:259
 msgid "Commands"
 msgstr "命令"
 
@@ -803,7 +812,7 @@ msgstr "正在压缩上下文"
 msgid "Composer"
 msgstr "输入框"
 
-#: src/features/session-composer.tsx:237
+#: src/features/session-composer.tsx:232
 msgid "Composer tools"
 msgstr "输入工具"
 
@@ -811,7 +820,7 @@ msgstr "输入工具"
 msgid "Configured"
 msgstr "已配置"
 
-#: src/features/session-key-panel.tsx:19
+#: src/features/session-key-panel.tsx:18
 msgid "confirm"
 msgstr "确认"
 
@@ -1163,7 +1172,7 @@ msgstr "正在断开…"
 msgid "Done"
 msgstr "已完成"
 
-#: src/features/session-todos.tsx:204
+#: src/features/session-todos.tsx:193
 msgid "Done ({doneCount})"
 msgstr "已完成（{doneCount}）"
 
@@ -1333,7 +1342,7 @@ msgstr "这一轮已结束"
 msgid "First turn"
 msgstr "第一轮"
 
-#: src/features/session-composer.tsx:270
+#: src/features/session-composer.tsx:267
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
@@ -1421,7 +1430,7 @@ msgstr "接力失败"
 msgid "Headless worker"
 msgstr "后台执行"
 
-#: src/features/session-todos.tsx:204
+#: src/features/session-todos.tsx:193
 msgid "Hide done"
 msgstr "收起已完成"
 
@@ -1500,7 +1509,7 @@ msgstr "图片预览"
 msgid "Image viewer"
 msgstr "图片查看"
 
-#: src/features/session-composer.tsx:289
+#: src/features/session-composer.tsx:286
 msgid "Images"
 msgstr "图片"
 
@@ -1567,7 +1576,7 @@ msgstr "交互调试"
 msgid "internet"
 msgstr "公网"
 
-#: src/features/session-key-panel.tsx:21
+#: src/features/session-key-panel.tsx:20
 msgid "interrupt"
 msgstr "打断"
 
@@ -1603,7 +1612,7 @@ msgstr "继续规划"
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-#: src/features/session-composer.tsx:251
+#: src/features/session-composer.tsx:246
 msgid "Keys"
 msgstr "快捷"
 
@@ -1763,7 +1772,7 @@ msgstr "由主机配置管理"
 msgid "Managed override"
 msgstr "受管模型覆盖"
 
-#: src/features/session-todos.tsx:186
+#: src/features/session-todos.tsx:175
 msgid "Mark done"
 msgstr "标为完成"
 
@@ -1792,11 +1801,11 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:481
+#: src/features/session-composer.tsx:478
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:428
+#: src/features/session-composer.tsx:425
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -1940,7 +1949,7 @@ msgstr "新工单"
 msgid "New ticket (n)"
 msgstr "新工单（n）"
 
-#: src/features/session-todos.tsx:119
+#: src/features/session-todos.tsx:108
 msgid "New to-do"
 msgstr "新待办"
 
@@ -2145,7 +2154,7 @@ msgstr "现在没有等你处理的工单。需要你回复或运行失败的会
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
-#: src/features/session-todos.tsx:158
+#: src/features/session-todos.tsx:147
 msgid "Nothing to follow up in this repo."
 msgstr "这个仓库暂时没有要跟进的事。"
 
@@ -2397,11 +2406,11 @@ msgstr "拆分方案：{n} 张子单"
 msgid "Put [{label}] at the caret"
 msgstr "把 [{label}] 插到光标处"
 
-#: src/features/session-todos.tsx:174
+#: src/features/session-todos.tsx:163
 msgid "Put into the message"
 msgstr "填进消息"
 
-#: src/features/session-todos.tsx:175
+#: src/features/session-todos.tsx:164
 msgid "Put into the message for this agent"
 msgstr "填进消息，交给这个 agent"
 
@@ -2417,10 +2426,15 @@ msgstr "排队中的消息"
 msgid "Quick controls"
 msgstr "快捷控制"
 
-#: src/features/session-composer.tsx:245
-#: src/features/session-key-panel.tsx:64
+#: src/features/session-composer.tsx:240
+#: src/features/session-key-panel.tsx:45
+#: src/features/session-key-panel.tsx:56
 msgid "Quick keys"
 msgstr "快捷键"
+
+#: src/features/session-key-panel.tsx:45
+msgid "Quick keys unavailable"
+msgstr "快捷键不可用"
 
 #: src/features/ticket-keys.tsx:83
 msgid "Quiet for over a week ({count})"
@@ -2509,7 +2523,7 @@ msgstr "移除图片"
 msgid "Rename via /rename in the agent pane"
 msgstr "通过 Agent 窗格的 /rename 改标题"
 
-#: src/features/session-todos.tsx:221
+#: src/features/session-todos.tsx:210
 msgid "Reopen"
 msgstr "重新打开"
 
@@ -2866,7 +2880,7 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:80
-#: src/features/session-composer.tsx:490
+#: src/features/session-composer.tsx:487
 msgid "Send"
 msgstr "发送"
 
@@ -2878,7 +2892,7 @@ msgstr "发送（触屏上回车是换行，这个键也能发送）"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接着往下做"
 
-#: src/features/session-composer.tsx:246
+#: src/features/session-composer.tsx:241
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -3011,7 +3025,7 @@ msgstr "这个 agent 加载的能力"
 msgid "Skip to content"
 msgstr "跳到内容"
 
-#: src/features/session-composer.tsx:258
+#: src/features/session-composer.tsx:254
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
@@ -3198,7 +3212,7 @@ msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-key-panel.tsx:50
+#: src/features/session-key-panel.tsx:52
 msgid "Tap to send into the agent pane"
 msgstr "点一下就会发到 Agent 窗格"
 
@@ -3287,6 +3301,10 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 #: src/features/console-shared.tsx:379
 msgid "Theme"
 msgstr "主题"
+
+#: src/features/session-todos.tsx:101
+msgid "They stay with the repo, so any session can pick them up."
+msgstr "待办事项会保留在仓库中，任何会话都可以继续处理。"
 
 #: src/features/chat-command.tsx:181
 #: src/features/chat-command.tsx:187
@@ -3431,19 +3449,24 @@ msgstr "tmux 窗口"
 msgid "To"
 msgstr "目标仓库"
 
-#: src/features/session-todos.tsx:253
+#: src/features/session-todos.tsx:242
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-composer.tsx:275
+#: src/features/session-composer.tsx:266
+#: src/features/session-composer.tsx:272
 msgid "To-dos"
 msgstr "待办"
 
-#: src/features/session-todos.tsx:101
-msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
-msgstr "{repo} 的待办：跟着仓库走，任何会话都能接着做"
+#: src/features/session-todos.tsx:96
+msgid "To-dos of {repo}"
+msgstr "{repo} 的待办"
 
-#: src/features/session-todos.tsx:102
+#: src/features/session-todos.tsx:101
+#~ msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
+#~ msgstr "{repo} 的待办：跟着仓库走，任何会话都能接着做"
+
+#: src/features/session-todos.tsx:96
 msgid "To-dos of this repo"
 msgstr "这个仓库的待办"
 
@@ -3501,11 +3524,11 @@ msgstr "触发来源"
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
-#: src/features/session-commands.tsx:274
+#: src/features/session-commands.tsx:277
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
 
-#: src/features/session-key-panel.tsx:49
+#: src/features/session-key-panel.tsx:51
 msgid "Turn on write access in Settings to send these keys"
 msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 

@@ -452,9 +452,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. One toolbar row above the composer holds every tool:
   快捷 (always shown; disabled with a hint until write access is enabled on this device),
-  then 图片 once this device may write, then the picked thumbnails.
-  What a tool opens renders above the row in one card style, never as a
-  popover: 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
+  命令 / 待办 / 能力 when the session offers them, then 图片 once this device
+  may write. Picked thumbnails stay in their own row. Tool panels attach to
+  the input surface with one shared header and close affordance; the `/`
+  completion list uses the same surface treatment. 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
   `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
   closes once a key is sent (diagnostics are pulled by the host, see
   remote-sessions.md "Diagnostics on demand"). Choices (digits,

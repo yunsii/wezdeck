@@ -113,7 +113,7 @@ export function CompletionList({
       id="composer-completions"
       aria-label={t`Commands and skills`}
       data-testid="composer-completions"
-      className="grid max-h-72 gap-0.5 overflow-y-auto rounded-2xl bg-brand-surface p-1.5"
+      className="composer-picker grid max-h-72 gap-0.5 overflow-y-auto bg-brand-surface p-1.5"
     >
       {items.map((item, index) => (
         <Button
@@ -168,7 +168,7 @@ export function SkillsChip({
       aria-haspopup="dialog"
       title={t`Skills this agent was given`}
       onClick={onOpen}
-      className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2.5 text-caption text-brand-muted"
+      className="composer-tool inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-caption text-brand-muted"
     >
       <Sparkles size={14} aria-hidden />
       {t`Skills`}

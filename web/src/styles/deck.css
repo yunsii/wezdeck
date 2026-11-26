@@ -85,6 +85,45 @@ html[data-theme='dark'] [data-deck] {
   box-shadow: inset 0 0 0 999px rgb(0 0 0 / 0.08);
 }
 
+/* Composer tools share one quiet rail and one attached panel. The panel is a
+   continuation of the input surface, rather than a stack of floating cards. */
+.composer-toolbar {
+  border-top: 1px solid var(--brand-edge);
+}
+.composer-tool {
+  background: transparent;
+  transition:
+    background-color var(--motion-short) var(--ease-standard),
+    color var(--motion-short) var(--ease-standard);
+}
+.composer-tool:hover,
+.composer-tool:focus-visible {
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+.composer-tool-active {
+  background: var(--brand-soft);
+  box-shadow: inset 0 -2px 0 var(--brand-running);
+}
+.composer-panel {
+  border-block: 1px solid var(--brand-edge);
+  padding: 0.625rem 0.25rem 0.5rem;
+  background: var(--brand-deck);
+}
+.composer-panel-header {
+  padding-inline: 0.5rem;
+}
+.composer-panel [data-testid='session-quick-keys'],
+.composer-panel [data-testid='session-commands'] {
+  gap: 0.375rem;
+}
+.composer-picker {
+  border-block: 1px solid var(--brand-edge);
+}
+.composer-picker [role='option'] {
+  transition: background-color var(--motion-short) var(--ease-standard);
+}
+
 html[data-theme='dark'] .key-press:active {
   box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.1);
 }

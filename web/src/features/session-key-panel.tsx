@@ -2,9 +2,8 @@
 // below them whatever the composer adds (重启会话 / 新开会话 / 接力,
 // session-restart.tsx · session-handoff.tsx). Split from session-composer.tsx.
 import { useLingui } from '@lingui/react/macro'
-import { X } from 'lucide-react'
-
 import { Button } from '#/components/ui/button'
+import { ComposerPanel } from './composer-panel'
 
 /**
  * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
@@ -42,23 +41,16 @@ export function KeyPanel({
   const { t } = useLingui()
   const keys = useQuickKeys()
   return (
-    <div data-write className="grid gap-1.5 rounded-2xl bg-brand-surface p-2">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-meta text-brand-label">
-          {disabled
-            ? t`Turn on write access in Settings to send these keys`
-            : t`Tap to send into the agent pane`}
-        </span>
-        <Button
-          variant="plain"
-          type="button"
-          onClick={onClose}
-          aria-label={t`Close keys`}
-          className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted"
-        >
-          <X size={14} aria-hidden />
-        </Button>
-      </div>
+    <ComposerPanel
+      title={disabled ? t`Quick keys unavailable` : t`Quick keys`}
+      onClose={onClose}
+      closeLabel={t`Close keys`}
+    >
+      <p className="text-meta text-brand-label">
+        {disabled
+          ? t`Turn on write access in Settings to send these keys`
+          : t`Tap to send into the agent pane`}
+      </p>
       <div
         role="group"
         aria-label={t`Quick keys`}
@@ -85,6 +77,6 @@ export function KeyPanel({
         ))}
       </div>
       {children}
-    </div>
+    </ComposerPanel>
   )
 }
