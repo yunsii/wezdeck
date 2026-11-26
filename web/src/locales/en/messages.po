@@ -2274,8 +2274,8 @@ msgid "Reply and continue"
 msgstr "Reply and continue"
 
 #: src/features/session-list.tsx:54
-msgid "Replying…"
-msgstr "Replying…"
+#~ msgid "Replying…"
+#~ msgstr "Replying…"
 
 #: src/features/console-collab.tsx:360
 msgid "Repo"
@@ -3416,6 +3416,7 @@ msgid "working"
 msgstr "working"
 
 #: src/features/chat-turn.tsx:136
+#: src/features/session-list.tsx:54
 msgid "Working"
 msgstr "Working"
 

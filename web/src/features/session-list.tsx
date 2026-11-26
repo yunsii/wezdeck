@@ -51,7 +51,7 @@ function useChatPreviewLabels() {
     waiting: t`Waiting on you`,
     needsConfirm: t`Needs a decision`,
     done: t`Done`,
-    working: t`Replying…`,
+    working: t`Working`,
     empty: t`No human message yet`,
   }
 }

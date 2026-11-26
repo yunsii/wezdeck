@@ -2274,8 +2274,8 @@ msgid "Reply and continue"
 msgstr "回复并继续"
 
 #: src/features/session-list.tsx:54
-msgid "Replying…"
-msgstr "正在回复…"
+#~ msgid "Replying…"
+#~ msgstr "正在回复…"
 
 #: src/features/console-collab.tsx:360
 msgid "Repo"
@@ -3416,6 +3416,7 @@ msgid "working"
 msgstr "运行中"
 
 #: src/features/chat-turn.tsx:136
+#: src/features/session-list.tsx:54
 msgid "Working"
 msgstr "运行中"
 

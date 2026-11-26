@@ -8,7 +8,6 @@ import {
   needsYou,
 } from './console-sessions'
 import {
-  inRunning,
   isWorkstation,
   repoName,
   visitOf,
@@ -22,11 +21,14 @@ export type ChatTone = 'waiting' | 'done' | 'running' | 'idle'
 
 export function chatTone(
   focus: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
-  now = Date.now(),
+  _now = Date.now(),
 ): ChatTone {
   if (needsYou(focus)) return 'waiting'
   if (isDoneUnread(focus)) return 'done'
-  if (inRunning(focus, now)) return 'running'
+  // Strict host status only. inRunning() also treats idle/recent-ts as
+  // "运行中" for ~3 minutes (legacy filter grace); after a done seen-ack the
+  // row becomes idle with a fresh ts and would falsely stay "运行中".
+  if (focus.status === 'running') return 'running'
   return 'idle'
 }
 
@@ -125,7 +127,7 @@ const chatTitle = (row: SessionCard, wtKey: string) => {
 export function resolveChatFocus(
   sessions: Array<SessionCard>,
   phone: Record<string, number> = {},
-  now = Date.now(),
+  _now = Date.now(),
 ): SessionCard | undefined {
   if (!sessions.length) return undefined
   const byVisit = (a: SessionCard, b: SessionCard) =>
@@ -134,7 +136,9 @@ export function resolveChatFocus(
   if (waiting[0]) return waiting[0]
   const done = sessions.filter(isDoneUnread).sort(byVisit)
   if (done[0]) return done[0]
-  const running = sessions.filter((row) => inRunning(row, now)).sort(byVisit)
+  const running = sessions
+    .filter((row) => row.status === 'running')
+    .sort(byVisit)
   if (running[0]) return running[0]
   return [...sessions].sort((a, b) => b.ts - a.ts || byVisit(a, b))[0]
 }

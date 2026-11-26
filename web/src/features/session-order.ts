@@ -140,21 +140,21 @@ export function nextInCycle(
   return ids[(at + step + ids.length) % ids.length]
 }
 
-/** how long 运行中 keeps a session after its turn ends */
+/** how long a just-ended turn may still count as 运行中 for legacy filters */
 export const RECENT_MS = 3 * 60_000
 
 /**
- * 运行中: the host says running — mid-turn or with background tasks still
- * going (a dev server, a background build: not finished, though it takes
- * input; it used to count as 空闲 and leave 运行中 after RECENT_MS) — or a
- * turn that ended under RECENT_MS ago (`ts` is the newest turn), so a session
- * that just finished does not drop out the moment it stops. Waiting on you
- * is 等你, never this.
+ * 运行中 for filters that want a short grace after the turn ends: host
+ * `status=running`, or idle/empty with `ts` under RECENT_MS. Waiting is
+ * never this. The IM list tone does **not** use this — it keys off host
+ * status only (`session-chats` chatTone), otherwise a done seen-ack → idle
+ * with a fresh ts looks "运行中" again.
  */
 export function inRunning(
   row: Pick<SessionCard, 'status' | 'running_kind' | 'waiting_kind' | 'ts'>,
   now: number,
 ) {
   if (row.waiting_kind || row.status === 'waiting') return false
+  if (row.status === 'done') return false
   return row.status === 'running' || now - row.ts < RECENT_MS
 }

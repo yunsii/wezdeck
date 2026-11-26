@@ -122,7 +122,7 @@ const previewLabels = {
   waiting: 'Waiting on you',
   needsConfirm: 'Needs a decision',
   done: 'Done',
-  working: 'Replying…',
+  working: 'Working',
   empty: 'No human message yet',
 }
 
@@ -144,19 +144,27 @@ describe('chatTone / chatPreview', () => {
       ts: Date.now(),
     })
     const idle = card({ status: 'idle', last_prompt: 'done turn' })
+    // idle with a fresh ts must NOT look running (seen-ack → idle)
+    const justAcked = card({
+      status: 'idle',
+      last_prompt: 'ship it',
+      ts: Date.now(),
+    })
     expect(chatTone(wait)).toBe('waiting')
     expect(chatTone(done)).toBe('done')
     expect(chatTone(run)).toBe('running')
     expect(chatTone(idle)).toBe('idle')
+    expect(chatTone(justAcked)).toBe('idle')
     expect(chatPreview(wait, previewLabels)).toBe(
       'Waiting on you · allow bash?',
     )
     expect(chatPreview(done, previewLabels)).toBe('Done · ship it')
-    expect(chatPreview(run, previewLabels)).toBe('Replying… · hello')
+    expect(chatPreview(run, previewLabels)).toBe('Working · hello')
     expect(chatPreview(idle, previewLabels)).toBe('done turn')
+    expect(chatPreview(justAcked, previewLabels)).toBe('ship it')
     expect(
       chatPreview(card({ status: 'running', last_prompt: '' }), previewLabels),
-    ).toBe('Replying…')
+    ).toBe('Working')
     expect(
       chatPreview(card({ status: 'done', last_prompt: '' }), previewLabels),
     ).toBe('Done')
