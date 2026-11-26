@@ -160,6 +160,7 @@ function SessionSubRow({
             <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
               <span className="flex items-baseline justify-between gap-2">
                 <span
+                  data-testid="chat-title"
                   className={cn(
                     'min-w-0 truncate text-body',
                     compact ? 'text-brand-muted' : 'font-medium',
@@ -192,12 +193,14 @@ function SessionSubRow({
                     </span>
                   ) : null}
                   {draft ? (
-                    <span className="truncate text-brand-label">
-                      {t`Draft`} · {draft}
+                    <span
+                      data-testid="chat-draft"
+                      className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+                    >
+                      {t`Draft`}
                     </span>
-                  ) : prompt ? (
-                    <span className="truncate">{prompt}</span>
                   ) : null}
+                  {prompt ? <span className="truncate">{prompt}</span> : null}
                 </span>
               ) : null}
             </span>
@@ -308,12 +311,19 @@ export function ChatGroupRow({
               aria-hidden
             />
           )}
-          <span className="min-w-0 flex-1 truncate font-medium">
-            {chat.purpose || chat.title}
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="truncate font-medium">
+              {chat.purpose || chat.title}
+            </span>
+            {collapsed && hasDraft ? (
+              <span
+                data-testid="chat-draft"
+                className="w-fit rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+              >
+                {t`Draft`}
+              </span>
+            ) : null}
           </span>
-          {collapsed && hasDraft ? (
-            <span className="shrink-0 text-meta text-brand-label">{t`Draft`}</span>
-          ) : null}
           {collapsed && chat.unread > 0 ? (
             <UnreadBadge tone={tone} n={chat.unread} />
           ) : null}

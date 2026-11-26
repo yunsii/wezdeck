@@ -256,13 +256,13 @@ describe('chatTone / chatPreview', () => {
     ).toBe('fresh-empty')
   })
 
-  it('shows unsent text as the chat preview', () => {
+  it('keeps the running preview when the composer has an unsent draft', () => {
     expect(
       chatPreview(
-        card({ status: 'done', last_prompt: 'sent', draft: 'unsent reply' }),
-        { ...previewLabels, draft: '草稿' },
+        card({ status: 'running', last_prompt: 'sent', draft: 'unsent reply' }),
+        previewLabels,
       ),
-    ).toBe('草稿 · unsent reply')
+    ).toBe('Working · sent')
   })
 })
 

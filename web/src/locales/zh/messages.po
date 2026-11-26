@@ -293,8 +293,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:415
-#: src/features/session-list.tsx:473
+#: src/features/session-list.tsx:425
+#: src/features/session-list.tsx:483
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -683,14 +683,14 @@ msgstr "清空输入"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "清空输入（Esc Esc）"
 
-#: src/features/session-list.tsx:298
-#: src/features/session-list.tsx:405
+#: src/features/session-list.tsx:308
+#: src/features/session-list.tsx:415
 msgid "Clear search"
 msgstr "清除搜索"
 
 #: src/features/session-chat-group.tsx:118
 #: src/features/session-clear.tsx:114
-#: src/features/session-list.tsx:126
+#: src/features/session-list.tsx:125
 msgid "Clearing…"
 msgstr "处理中…"
 
@@ -750,7 +750,7 @@ msgstr "协作指标"
 msgid "Collab tickets"
 msgstr "协作工单"
 
-#: src/features/session-chat-group.tsx:293
+#: src/features/session-chat-group.tsx:296
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
@@ -945,9 +945,9 @@ msgstr "复制原始日志"
 #: src/features/me-agents.tsx:139
 #: src/features/me-agents.tsx:140
 #: src/features/session-chat-group.tsx:109
-#: src/features/session-chat-group.tsx:219
-#: src/features/session-list.tsx:117
-#: src/features/session-list.tsx:225
+#: src/features/session-chat-group.tsx:222
+#: src/features/session-list.tsx:116
+#: src/features/session-list.tsx:235
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "复制引用"
@@ -1079,9 +1079,9 @@ msgstr "受限"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
-#: src/features/session-chat-group.tsx:240
+#: src/features/session-chat-group.tsx:243
 #: src/features/session-info.tsx:341
-#: src/features/session-list.tsx:246
+#: src/features/session-list.tsx:256
 msgid "Delete session"
 msgstr "删除会话"
 
@@ -1164,9 +1164,9 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:196
-#: src/features/session-chat-group.tsx:315
-#: src/features/session-list.tsx:67
+#: src/features/session-chat-group.tsx:200
+#: src/features/session-chat-group.tsx:323
+#: src/features/session-list.tsx:202
 msgid "Draft"
 msgstr "草稿"
 
@@ -1268,7 +1268,7 @@ msgstr "执行模式：{mode}"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/session-chat-group.tsx:293
+#: src/features/session-chat-group.tsx:296
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -1753,11 +1753,11 @@ msgid "Mark done"
 msgstr "标为完成"
 
 #: src/features/session-chat-group.tsx:117
-#: src/features/session-chat-group.tsx:251
+#: src/features/session-chat-group.tsx:254
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
-#: src/features/session-list.tsx:125
-#: src/features/session-list.tsx:257
+#: src/features/session-list.tsx:124
+#: src/features/session-list.tsx:267
 msgid "Mark read"
 msgstr "标为已读"
 
@@ -1885,7 +1885,7 @@ msgstr "换行"
 #~ msgid "New round"
 #~ msgstr "新一轮"
 
-#: src/features/session-chat-group.tsx:169
+#: src/features/session-chat-group.tsx:170
 #: src/features/session-new.tsx:282
 #: src/features/session-new.tsx:453
 msgid "New session"
@@ -1903,11 +1903,11 @@ msgstr "新会话（c）"
 msgid "New session group"
 msgstr "新会话组"
 
-#: src/features/session-chat-group.tsx:234
-#: src/features/session-chat-group.tsx:331
-#: src/features/session-chat-group.tsx:332
+#: src/features/session-chat-group.tsx:237
+#: src/features/session-chat-group.tsx:341
+#: src/features/session-chat-group.tsx:342
 #: src/features/session-info.tsx:334
-#: src/features/session-list.tsx:240
+#: src/features/session-list.tsx:250
 #: src/features/session-new.tsx:453
 msgid "New session in this group"
 msgstr "在此组新建会话"
@@ -1982,7 +1982,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:410
+#: src/features/session-list.tsx:420
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -2036,7 +2036,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/session-list.tsx:397
+#: src/features/session-list.tsx:407
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2829,8 +2829,8 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:288
-#: src/features/session-list.tsx:289
+#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:299
 msgid "Search sessions"
 msgstr "搜索会话"
 
@@ -2926,12 +2926,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:82
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:200
-#: src/features/session-list.tsx:365
+#: src/features/session-list.tsx:375
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:387
+#: src/features/session-list.tsx:397
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -3805,7 +3805,7 @@ msgid "yes"
 msgstr "是"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:78
+#: src/features/session-list.tsx:77
 msgid "Yesterday"
 msgstr "昨天"
 
