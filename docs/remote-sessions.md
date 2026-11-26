@@ -47,14 +47,13 @@ still be open in another pane because hooks from a shared app-server can
 inherit its original pane environment. The Web session list is an IM chat rail:
 one row per worktree, with known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
-Bot glyph for unknown agents. Non-default profiles retain their corner badge;
-focusing a session opens its preview. A status LED on the avatar shows waiting
-or running; the preview
-line reads like the last message (`Waiting on you · …` / `Replying…` /
-human prompt); list time is clock-today / yesterday / weekday / date; a
-top search filters by title, purpose, preview, and agent; purpose on the
-row is read-only (edit in 会话信息 via `worktree.describe`); pane index still
-orders sessions inside a worktree.
+Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
+status LED (waiting / running; idle empty), **bottom-right** = backend /
+profile badge (Kimi, gateway, …). Preview line reads like the last message
+(`Waiting on you · …` / `Replying…` / human prompt); list time is clock-today /
+yesterday / weekday / date; a top search filters by title, purpose, preview,
+and agent; purpose on the row is read-only (edit in 会话信息 via
+`worktree.describe`); pane index still orders sessions inside a worktree.
 
 ## Session RPCs
 

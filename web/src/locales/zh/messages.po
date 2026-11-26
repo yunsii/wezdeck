@@ -289,8 +289,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:379
-#: src/features/session-list.tsx:419
+#: src/features/session-list.tsx:345
+#: src/features/session-list.tsx:385
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -617,8 +617,8 @@ msgstr "清空输入"
 #~ msgid "Clear input (Esc Esc)"
 #~ msgstr "清空输入（Esc Esc）"
 
-#: src/features/session-list.tsx:272
-#: src/features/session-list.tsx:369
+#: src/features/session-list.tsx:238
+#: src/features/session-list.tsx:335
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -1636,7 +1636,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-list.tsx:53
+#: src/features/session-list.tsx:52
 msgid "Needs a decision"
 msgstr "需要确认"
 
@@ -1672,8 +1672,8 @@ msgstr "新方向"
 msgid "New line"
 msgstr "换行"
 
-#: src/features/session-list.tsx:217
-#: src/features/session-list.tsx:218
+#: src/features/session-list.tsx:183
+#: src/features/session-list.tsx:184
 #: src/features/session-new.tsx:155
 msgid "New round"
 msgstr "新一轮"
@@ -1757,7 +1757,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:374
+#: src/features/session-list.tsx:340
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -1782,7 +1782,7 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:55
+#: src/features/session-list.tsx:54
 #: src/features/session-switcher.tsx:178
 msgid "No human message yet"
 msgstr "还没有人工消息"
@@ -1807,7 +1807,7 @@ msgstr "还没有输出"
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
-#: src/features/session-list.tsx:361
+#: src/features/session-list.tsx:327
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2272,7 +2272,7 @@ msgstr "回复"
 msgid "Reply and continue"
 msgstr "回复并继续"
 
-#: src/features/session-list.tsx:54
+#: src/features/session-list.tsx:53
 msgid "Replying…"
 msgstr "正在回复…"
 
@@ -2549,8 +2549,8 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:262
-#: src/features/session-list.tsx:263
+#: src/features/session-list.tsx:228
+#: src/features/session-list.tsx:229
 msgid "Search sessions"
 msgstr "搜索会话"
 
@@ -2622,12 +2622,12 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:81
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:199
-#: src/features/session-list.tsx:333
+#: src/features/session-list.tsx:299
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:351
+#: src/features/session-list.tsx:317
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -3263,7 +3263,7 @@ msgstr "等对方"
 msgid "waiting on you"
 msgstr "等你回复"
 
-#: src/features/session-list.tsx:52
+#: src/features/session-list.tsx:51
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "等你处理"
@@ -3446,7 +3446,7 @@ msgid "yes"
 msgstr "是"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:66
+#: src/features/session-list.tsx:65
 msgid "Yesterday"
 msgstr "昨天"
 
