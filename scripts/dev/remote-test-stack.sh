@@ -163,7 +163,7 @@ start() {
   fi
   # someone else's stack on this port would get our relay as its host
   # (each replaces the other): refuse instead of sharing it
-  if curl -sf -m 2 "http://127.0.0.1:$PORT/relay/health" >/dev/null 2>&1; then
+  if curl -sf -m 2 "http://127.0.0.1:$PORT/build.json" >/dev/null 2>&1; then
     echo "port $PORT already serves another test stack: set WEZDECK_TEST_STACK_PORT (and a separate WEZDECK_TEST_STACK_DIR)" >&2
     exit 1
   fi
@@ -255,7 +255,7 @@ FAKE
     >"$STATE/vite.log" 2>&1 </dev/null &
   echo $! >"$STATE/vite.pid"
   for _ in $(seq 1 40); do
-    curl -sf -m 2 "http://127.0.0.1:$PORT/relay/health" >/dev/null && break
+    curl -sf -m 2 -H "authorization: Bearer dev-host-token" "http://127.0.0.1:$PORT/relay/health" >/dev/null && break
     sleep 1
   done
   start_relay "$home"

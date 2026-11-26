@@ -8,6 +8,13 @@ export function safeEqual(a: string, b: string) {
   return diff === 0
 }
 
+/** Extract `<token>` from `Authorization: Bearer <token>`, else empty string. */
+export function bearerToken(header: string | null | undefined) {
+  if (!header) return ''
+  const prefix = 'Bearer '
+  return header.startsWith(prefix) ? header.slice(prefix.length) : ''
+}
+
 /**
  * The host's `Authorization: Bearer <token>`. An unset secret refuses
  * everyone: comparing with `Bearer ${token}` let "Bearer undefined" in as
@@ -15,8 +22,28 @@ export function safeEqual(a: string, b: string) {
  */
 export function hostAuthorized(header: string, token: string | undefined) {
   if (!token) return false
-  const prefix = 'Bearer '
-  return (
-    header.startsWith(prefix) && safeEqual(header.slice(prefix.length), token)
+  return safeEqual(bearerToken(header), token)
+}
+
+/** Short digest of a token, kept on each client socket so a rotated secret can evict it. */
+export async function tokenTag(token: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(token),
   )
+  return [...new Uint8Array(digest).slice(0, 8)]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/** What a refused token was, without logging it: digest + length (stale vs truncated). */
+export async function tokenFacts(token: string) {
+  return { tag: token ? await tokenTag(token) : '', len: token.length }
+}
+
+export function logRelayEvent(
+  event: string,
+  fields: Record<string, unknown> = {},
+) {
+  console.log(JSON.stringify({ category: 'relay', event, ...fields }))
 }

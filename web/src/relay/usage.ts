@@ -40,7 +40,7 @@ async function graph(env: UsageEnv, query: string, vars: object) {
     },
     body: JSON.stringify({ query, variables: vars }),
   })
-  const body = await res.json<GraphResult>()
+  const body: GraphResult = await res.json()
   if (!res.ok || body.errors?.length)
     throw new Error(body.errors?.[0]?.message ?? `HTTP ${res.status}`)
   const accounts = (body.data as { viewer?: { accounts?: Array<unknown> } })
@@ -175,10 +175,9 @@ export async function usageFetch(
   env: UsageEnv,
   safeEqual: (a: string, b: string) => boolean,
 ) {
-  const presented = (request.headers.get('authorization') ?? '').replace(
-    /^Bearer /,
-    '',
-  )
+  const header = request.headers.get('authorization') ?? ''
+  const prefix = 'Bearer '
+  const presented = header.startsWith(prefix) ? header.slice(prefix.length) : ''
   // the host token only: the page asks the host (`usage` over the relay,
   // where only an approved device gets an answer — relay_usage.go), and the
   // host asks here. The shared client token used to be enough, so a revoked

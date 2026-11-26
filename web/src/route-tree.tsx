@@ -16,7 +16,7 @@ export type AppLocale = (typeof locales)[number]
 
 const siteUrl = (
   import.meta.env.VITE_SITE_URL ??
-  (import.meta.env.DEV ? 'http://localhost:3000' : 'https://wezdeck.yuns.love')
+  (import.meta.env.DEV ? 'http://localhost:35790' : 'https://wezdeck.yuns.love')
 ).replace(/\/$/, '')
 
 function marketingHead({

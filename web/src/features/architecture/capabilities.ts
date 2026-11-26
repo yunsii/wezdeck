@@ -115,8 +115,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
     id: 'runtime-actions',
     title: { zh: 'Runtime：主机操作', en: 'Runtime: host actions' },
     summary: {
-      zh: 'WezTerm 经命名管道、控制台经 POST /api/v1/actions/<域>/<动作> 调用，替终端做它在 WSL 里做不到的 Windows 操作。另有 POST /api/v1/remote/<写入> 给本机浏览器写会话。',
-      en: 'Called by WezTerm over the named pipe and by the console at POST /api/v1/actions/<domain>/<action>: the Windows work a terminal in WSL cannot do. POST /api/v1/remote/<write> also lets the host browser write to sessions.',
+      zh: 'WezTerm 经命名管道调用全部主机动作；控制台经 POST /api/v1/actions/<域>/<动作> 只开放白名单动作（sessions/focus、vscode/focus_or_open，且禁用 code_command），并执行与本机写入相同的正式站点来源、JSON 与体积校验。另有 POST /api/v1/remote/<写入> 给本机浏览器写会话。',
+      en: 'WezTerm calls every host action over the named pipe; the console at POST /api/v1/actions/<domain>/<action> only allows sessions/focus and vscode/focus_or_open (rejecting code_command) under the same production-origin, JSON and size guards as local writes. POST /api/v1/remote/<write> also lets the host browser write to sessions.',
     },
     source: 'native/wezdeck-runtime/windows/src/Runtime/RequestRouter.cs',
     items: [

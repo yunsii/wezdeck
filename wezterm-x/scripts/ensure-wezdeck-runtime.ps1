@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$StatePath = "$env:LOCALAPPDATA\wezterm-runtime\state\helper\state.env",
 
   [string]$ClipboardOutputDir = '',
@@ -19,7 +19,7 @@ param(
 
   [int]$HttpPort = 35791,
 
-  [string]$HttpAllowedOrigins = 'https://wezdeck.yuns.love,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001',
+  [string]$HttpAllowedOrigins = 'https://wezdeck.yuns.love,http://localhost:35790,http://127.0.0.1:35790',
 
   [string]$DiagnosticsEnabled = '0',
 

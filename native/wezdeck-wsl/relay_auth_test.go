@@ -10,8 +10,11 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/pion/webrtc/v4"
 )
 
 // a device key as the page makes it (P-256), its id, and a signed hello
@@ -134,5 +137,57 @@ func TestUsageURL(t *testing.T) {
 	t.Setenv("WEZDECK_REMOTE_DEVICES", filepath.Join(t.TempDir(), "d.json"))
 	if _, err := dispatchRPC(relayFrame{Action: "usage", Cid: "x"}, "test", &relay{}); !errors.Is(err, errNotApproved) {
 		t.Fatalf("usage without hello: %v", err)
+	}
+}
+
+func TestWebRTCSignalingRequiresApprovedDeviceAndCapsPeers(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "remote-devices.json")
+	t.Setenv("WEZDECK_REMOTE_DEVICES", path)
+	t.Setenv("WEZDECK_RELAY_OPEN_READS", "")
+	t.Setenv("WEZDECK_RELAY_STUN", "0")
+	phone := newTestDevice(t)
+	writeDevices(t, path, phone)
+
+	logFile, err := os.CreateTemp(t.TempDir(), "relay.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := &relay{peers: map[string]*webrtc.PeerConnection{}, log: logFile}
+	offer, _ := json.Marshal(relaySignal{Type: "offer", SDP: "v=0\r\n"})
+
+	// Unapproved cid must be rejected before allocating any PeerConnection.
+	r.answer("cid-unapproved", offer)
+	if len(r.peers) != 0 {
+		t.Fatalf("unapproved cid allocated peer: %d", len(r.peers))
+	}
+	logged, _ := os.ReadFile(logFile.Name())
+	if !strings.Contains(string(logged), "event=rtc_denied cid=cid-unapproved") {
+		t.Fatalf("expected rtc_denied log, got %q", logged)
+	}
+
+	// Peer cap prevents an approved device from exhausting peers.
+	if _, err := r.deviceHello(phone.hello(t, "n-rtc-cap"), "cid-cap", "test"); err != nil {
+		t.Fatalf("hello: %v", err)
+	}
+	for i := 0; i < maxRelayPeers; i++ {
+		r.peers[strings.Repeat("p", i+1)] = nil
+	}
+	r.answer("cid-cap", offer)
+	if _, exists := r.peers["cid-cap"]; exists {
+		t.Fatal("peer allocated past maxRelayPeers cap")
+	}
+	logged, _ = os.ReadFile(logFile.Name())
+	if !strings.Contains(string(logged), "too many peers") {
+		t.Fatalf("expected too many peers log, got %q", logged)
+	}
+
+	// Revoking an approved device drops its existing peer on the next readAllowed check.
+	r.peers = map[string]*webrtc.PeerConnection{"cid-cap": nil}
+	writeDevices(t, path)
+	if !errors.Is(r.readAllowed("cid-cap"), errNotApproved) {
+		t.Fatal("revoked cid still allowed")
+	}
+	if _, exists := r.peers["cid-cap"]; exists {
+		t.Fatal("revoked cid's peer was not dropped")
 	}
 }

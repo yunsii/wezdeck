@@ -136,10 +136,8 @@ function relayRoom() {
   }
 }
 
-const roomQuery = () => {
-  const room = relayRoom()
-  return room ? `?room=${encodeURIComponent(room)}` : ''
-}
+const roomQuery = () =>
+  relayRoom() ? `?room=${encodeURIComponent(relayRoom())}` : ''
 
 function relayBase() {
   const configured = import.meta.env.VITE_WEZDECK_RELAY_URL?.trim()
@@ -384,15 +382,14 @@ class RemoteLink {
       this.state.mode === 'websocket' || this.state.mode === 'webrtc'
     if (up()) return Promise.resolve(true)
     return new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => {
-        off()
-        resolve(false)
-      }, timeoutMs)
-      const off = this.subscribe(() => {
-        if (!up()) return
+      const done = (ok: boolean) => {
         clearTimeout(timer)
         off()
-        resolve(true)
+        resolve(ok)
+      }
+      const timer = setTimeout(() => done(false), timeoutMs)
+      const off = this.subscribe(() => {
+        if (up()) done(true)
       })
     })
   }
@@ -468,6 +465,8 @@ class RemoteLink {
         if (!(await loadDeviceKey())) return
         await this.write('device.hello', {})
         this.helloWs = ws
+        if (this.ws === ws && this.state.mode === 'websocket' && !this.pc)
+          this.scheduleRtc(0)
       } catch {
         // not approved (yet): the reads themselves report it
       } finally {
@@ -513,17 +512,23 @@ class RemoteLink {
     this.rtcTimer = setTimeout(() => void this.startRtc(), delay)
   }
 
+  private canStartRtc(ws: WebSocket | undefined): ws is WebSocket {
+    return Boolean(
+      ws && !this.pc && this.ws === ws && ws.readyState === WebSocket.OPEN,
+    )
+  }
+
   private async startRtc() {
-    if (typeof RTCPeerConnection === 'undefined') {
-      this.set({ rtcNote: 'WebRTC not supported by this browser' })
-      return
-    }
+    if (typeof RTCPeerConnection === 'undefined')
+      return this.set({ rtcNote: 'WebRTC not supported by this browser' })
     const ws = this.ws
-    if (this.pc || ws?.readyState !== WebSocket.OPEN) return
-    if (new URLSearchParams(location.search).get('transport') === 'websocket') {
-      this.set({ rtcNote: 'WebRTC disabled by ?transport=websocket' })
-      return
-    }
+    if (!this.canStartRtc(ws)) return
+    if (new URLSearchParams(location.search).get('transport') === 'websocket')
+      return this.set({ rtcNote: 'WebRTC disabled by ?transport=websocket' })
+    // Bind this socket to the approved device key before offering WebRTC so
+    // unauthenticated connections cannot probe host ICE candidates.
+    await this.sayHello()
+    if (!this.canStartRtc(ws)) return
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
     })

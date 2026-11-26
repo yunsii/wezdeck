@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -208,7 +209,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                 ["capabilities"] = new[]
                 {
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
-                    "vscode.windows", "vscode.focus", "vscode.focus_or_open", "vscode.close",
+                    "vscode.windows", "vscode.focus_or_open",
                     "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot", "clients.read", "web.events",
                 },
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
@@ -243,6 +244,16 @@ internal sealed partial class RuntimeWebServer : IDisposable
         await WriteJsonAsync(context, body);
     }
 
+    private const int ActionMaxBytes = 64 * 1024;
+
+    // Only actions the web console actually calls may cross HTTP; clipboard,
+    // Chrome process control, and window close stay named-pipe-only for WezTerm.
+    private static readonly HashSet<string> HttpAllowedActions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "sessions/focus",
+        "vscode/focus_or_open",
+    };
+
     private async Task HandleActionAsync(HttpContext context)
     {
         var segments = context.Request.Path.Value?
@@ -257,14 +268,98 @@ internal sealed partial class RuntimeWebServer : IDisposable
             return;
         }
 
+        var domain = segments[3].ToLowerInvariant();
+        var action = segments[4].ToLowerInvariant();
+        var route = $"{domain}/{action}";
+        if (!HttpAllowedActions.Contains(route))
+        {
+            logger.Warn("wezdeck_runtime", "http action denied", new Dictionary<string, string?>
+            {
+                ["route"] = route,
+                ["reason"] = "not_allowed_over_http",
+            });
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "not_found" });
+            return;
+        }
+
+        var origin = context.Request.Headers.Origin.ToString();
+        if (!IsWriteOriginAllowed(origin))
+        {
+            logger.Warn("wezdeck_runtime", "http action denied", new Dictionary<string, string?>
+            {
+                ["route"] = route,
+                ["origin"] = origin,
+                ["reason"] = "origin_not_allowed",
+            });
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "actions are not allowed from this origin" });
+            return;
+        }
+
+        if (!(context.Request.ContentType ?? string.Empty).StartsWith("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "json body required" });
+            return;
+        }
+
+        if (context.Request.ContentLength > ActionMaxBytes)
+        {
+            context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "body too large" });
+            return;
+        }
+
+        JsonElement payloadRoot;
+        try
+        {
+            var limit = context.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (limit is { IsReadOnly: false }) limit.MaxRequestBodySize = ActionMaxBytes;
+            using var document = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("body must be an object");
+            payloadRoot = document.RootElement.Clone();
+        }
+        catch (BadHttpRequestException)
+        {
+            context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "body too large" });
+            return;
+        }
+        catch (JsonException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = exception.Message });
+            return;
+        }
+
+        // Never let an HTTP caller override the executable launched by vscode/focus_or_open.
+        if (string.Equals(route, "vscode/focus_or_open", StringComparison.Ordinal))
+        {
+            foreach (var property in payloadRoot.EnumerateObject())
+            {
+                if (string.Equals(property.Name, "code_command", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.Warn("wezdeck_runtime", "http action denied", new Dictionary<string, string?>
+                    {
+                        ["route"] = route,
+                        ["origin"] = origin,
+                        ["reason"] = "code_command_forbidden",
+                    });
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await WriteJsonAsync(context, new Dictionary<string, object?> { ["error"] = "code_command is not allowed over http" });
+                    return;
+                }
+            }
+        }
+
         CountWrite(context);
-        var payload = await JsonDocument.ParseAsync(context.Request.Body, cancellationToken: context.RequestAborted);
         var requestJson = JsonSerializer.Serialize(new RuntimeRequest
         {
             TraceId = $"http-{Guid.NewGuid():N}",
-            Domain = segments[3],
-            Action = segments[4],
-            Payload = payload.RootElement.Clone(),
+            Domain = domain,
+            Action = action,
+            Payload = payloadRoot,
         });
         var responseJson = actionDispatcher(requestJson);
         await WriteRawJsonAsync(context, responseJson);

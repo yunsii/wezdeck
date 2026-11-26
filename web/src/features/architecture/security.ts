@@ -119,12 +119,12 @@ export const securityDiagram: Diagram = {
         en: 'Production only; dev servers read',
       },
       body: {
-        zh: '写入必须带来源，且是白名单里的非回环地址：localhost 上任何项目的开发服务器都只能读。只收 JSON（表单提交写不进来），请求体上限 256 KB。',
-        en: 'A write needs an origin that is allowlisted and not loopback: any project’s dev server on localhost reads only. JSON only (a form post cannot write), at most 256 KB.',
+        zh: '写入与 HTTP 主机动作（只开放 sessions/focus 和 vscode/focus_or_open，且禁用 code_command；剪贴板与 Chrome 仅走命名管道）必须带白名单里的非回环来源：本地开发端口（默认 35790）只能读。只收 JSON，请求体限额防大包。',
+        en: 'Writes and HTTP host actions (only sessions/focus and vscode/focus_or_open, rejecting code_command; clipboard and Chrome stay named-pipe-only) require an allowlisted non-loopback origin: local dev servers (default port 35790) read only. JSON only, with bounded request bodies.',
       },
       impl: {
-        zh: 'RuntimeWebServer.Remote.cs IsWriteOriginAllowed。',
-        en: 'RuntimeWebServer.Remote.cs IsWriteOriginAllowed.',
+        zh: 'RuntimeWebServer.Remote.cs IsWriteOriginAllowed；RuntimeWebServer.cs HandleActionAsync。',
+        en: 'RuntimeWebServer.Remote.cs IsWriteOriginAllowed; RuntimeWebServer.cs HandleActionAsync.',
       },
     },
     {

@@ -27,6 +27,7 @@ export function HostQuickControls() {
   const remote = useRemoteState()
   const device = useDeviceState()
   const queryClient = useQueryClient()
+  const authorized = mode === 'local' || device.state === 'approved'
   const reachable =
     mode === 'local' ||
     (mode === 'remote' &&
@@ -74,6 +75,7 @@ export function HostQuickControls() {
         ? t`Connection failed`
         : t`No recent result`
   const warpError = change.error ?? warp.error
+  if (!authorized) return null
   return (
     <section className="grid gap-1">
       <SectionHeading as="h2" className="bg-brand-key">

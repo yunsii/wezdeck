@@ -305,6 +305,7 @@ function MeIndex({ active }: { active?: MePage }) {
         : device.state === 'none'
           ? t`Off`
           : ''
+  const authorized = consoleMode === 'local' || device.state === 'approved'
   const hostSummary = useHostSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
@@ -342,7 +343,7 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.writing}
           value={writing}
         />
-        {remote.mode === 'unpaired' ? null : (
+        {remote.mode === 'unpaired' || device.state !== 'approved' ? null : (
           <EntryRow
             page="usage"
             active={active === 'usage'}
@@ -384,30 +385,32 @@ function MeIndex({ active }: { active?: MePage }) {
           </Link>
         </li>
       </ul>
-      <ul className={cn(group, 'md:mt-3')}>
-        <EntryRow
-          page="host"
-          active={active === 'host'}
-          title={titles.host}
-          value={consoleMode === 'local' ? hostSummary : undefined}
-        />
-        {consoleMode === 'local' ? (
-          <li className="border-b border-brand-edge last:border-b-0">
-            <Link
-              to="/{-$locale}/console/diagnostics"
-              params={{ locale: localeParam }}
-              className="key-press flex min-h-13 items-center justify-between px-4 text-body"
-            >
-              {t`Diagnostics`}
-              <ChevronRight
-                size={18}
-                aria-hidden
-                className="text-brand-label"
-              />
-            </Link>
-          </li>
-        ) : null}
-      </ul>
+      {authorized ? (
+        <ul className={cn(group, 'md:mt-3')}>
+          <EntryRow
+            page="host"
+            active={active === 'host'}
+            title={titles.host}
+            value={consoleMode === 'local' ? hostSummary : undefined}
+          />
+          {consoleMode === 'local' ? (
+            <li className="border-b border-brand-edge last:border-b-0">
+              <Link
+                to="/{-$locale}/console/diagnostics"
+                params={{ locale: localeParam }}
+                className="key-press flex min-h-13 items-center justify-between px-4 text-body"
+              >
+                {t`Diagnostics`}
+                <ChevronRight
+                  size={18}
+                  aria-hidden
+                  className="text-brand-label"
+                />
+              </Link>
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
     </div>
   )
 }

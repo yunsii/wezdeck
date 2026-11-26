@@ -68,6 +68,7 @@ func (r *relay) readAllowed(cid string) error {
 		}
 	}
 	r.forgetAuth(cid)
+	r.dropPeer(cid)
 	return errNotApproved
 }
 

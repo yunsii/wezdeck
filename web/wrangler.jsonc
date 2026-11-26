@@ -6,9 +6,9 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   // yuns.love DNS lives in the same Cloudflare account (same as forge);
-  // workers.dev stays as a fallback entry.
+  // keep workers.dev disabled so the custom domain is the single public entry.
   "routes": [{ "pattern": "wezdeck.yuns.love", "custom_domain": true }],
-  "workers_dev": true,
+  "workers_dev": false,
   // One HostRelay instance (idFromName("default")) bridges the home host and
   // remote browsers. Secrets: RELAY_HOST_TOKEN, RELAY_CLIENT_TOKEN
   // (wrangler secret put; local dev reads .dev.vars). docs/remote-access.md

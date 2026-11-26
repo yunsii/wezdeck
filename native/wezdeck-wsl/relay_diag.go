@@ -94,20 +94,26 @@ func (r *relay) forgetClient(cid string) {
 	r.mu.Unlock()
 }
 
-// recentClients: cids seen within clientSeenWindow.
+// recentClients: approved cids seen within clientSeenWindow.
 func (r *relay) recentClients() []string {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-	var out []string
+	var candidates []string
 	for cid, p := range r.clients {
 		if time.Since(p.seen) <= clientSeenWindow {
+			candidates = append(candidates, cid)
+		}
+	}
+	r.mu.Unlock()
+	var out []string
+	for _, cid := range candidates {
+		if r.readAllowed(cid) == nil {
 			out = append(out, cid)
 		}
 	}
 	return out
 }
 
-// pushToClients sends f to every web console page seen recently; returns their cids.
+// pushToClients sends f to every approved web console page seen recently; returns their cids.
 func (r *relay) pushToClients(f relayFrame) []string {
 	r.mu.Lock()
 	type target struct {
@@ -125,6 +131,9 @@ func (r *relay) pushToClients(f relayFrame) []string {
 	r.mu.Unlock()
 	var sent []string
 	for _, t := range targets {
+		if r.readAllowed(t.cid) != nil {
+			continue
+		}
 		if t.dc != nil && t.dc.ReadyState() == webrtc.DataChannelStateOpen {
 			body, _ := json.Marshal(f)
 			if t.dc.SendText(string(body)) == nil {
@@ -254,6 +263,13 @@ func newDiagID() string {
 // pairing token can neither inject a snapshot (an agent reads it) nor fill
 // memory or the uploads dir under made-up page ids.
 func diagSubmit(args json.RawMessage, cid string, r *relay) (any, error) {
+	// Remote clients must still be approved when submitting chunks (a device
+	// revoked mid-request cannot write diagnostics files onto the host).
+	if !strings.HasPrefix(cid, "local-") {
+		if err := r.readAllowed(cid); err != nil {
+			return nil, err
+		}
+	}
 	var a struct {
 		ID     string `json:"id"`
 		Client string `json:"client"`

@@ -197,9 +197,13 @@ reading everything (a revoked Firefox did, re-registering right after). Now
 each relay connection (cid — its DataChannel is the same cid) first sends
 `device.hello`, signed like a write (device key, ts, nonce); the host binds
 that cid to the device and checks, on every read, that the device is still
-approved — a revoke refuses the next read, no reconnect needed. Open without
-it: `device.register`, `device.hello`, `diag.submit`; writes carry their own
-signature. The host keeps the cid → device binding in memory, so a relay
+approved — a revoke refuses the next read and drops its WebRTC peer, no
+reconnect needed. WebRTC signaling (`sig`, capped at 16 peers) and host
+diagnostics pushes / `diag.submit` also require an approved `device.hello`
+connection, so an unapproved or revoked browser cannot probe host ICE
+candidates or inject diagnostics. Open without `device.hello`:
+`device.register`, `device.hello`; writes carry their own signature. The host
+keeps the cid → device binding in memory, so a relay
 restart (crash, reboot, a release) forgets it while the page's socket to
 the Worker stays up: a read refused as not approved on a socket that already
 said hello says hello again and retries once (`retriable` in
@@ -211,9 +215,9 @@ device requests access there (the button was 启用写入). Logs:
 `read_denied` (cid, action). The test stack runs `WEZDECK_RELAY_OPEN_READS=1`
 (honoured only with a private `WEZDECK_ATTENTION_FILE`: its browsers' keys
 cannot be pre-approved); `WEZDECK_TEST_GATED_READS=1` starts it gated to
-walk approve → read → revoke by hand. `/relay/health` answers only
-`{online}` without the client token — `since` and `clients` (when you are
-using it) need `Authorization: Bearer <client token>` (`--check` sends it).
+walk approve → read → revoke by hand. `/relay/health` requires
+`Authorization: Bearer <client or host token>` (`--check` loads and sends the
+client token) and returns `401` without touching the Durable Object otherwise.
 
 Writes add device signatures (above). Cloudflare Access in front of
 `/console` + `/relay/client` and pinned DTLS fingerprints remain follow-ups

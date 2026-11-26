@@ -57,7 +57,7 @@ msgstr "{count} monitors running"
 #~ msgid "{count} more need you"
 #~ msgstr "{count} more need you"
 
-#: src/features/session-statusbar.tsx:355
+#: src/features/session-statusbar.tsx:358
 msgid "{count} sessions"
 msgstr "{count} sessions"
 
@@ -110,7 +110,7 @@ msgstr "{n} s"
 msgid "{name} is ready, no conversation yet."
 msgstr "{name} is ready, no conversation yet."
 
-#: src/features/me-host.tsx:59
+#: src/features/me-host.tsx:60
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
@@ -353,7 +353,7 @@ msgstr "All tags"
 msgid "All tiers"
 msgstr "All tiers"
 
-#: src/features/me-host.tsx:129
+#: src/features/me-host.tsx:138
 msgid "All time"
 msgstr "All time"
 
@@ -445,7 +445,8 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/host-quick-controls.tsx:122
+#: src/features/host-quick-controls.tsx:124
+#: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "Approve this device in Device access to use host controls."
 
@@ -497,7 +498,7 @@ msgstr "Auto-approves edits; auto mode off"
 msgid "Availability and note"
 msgstr "Availability and note"
 
-#: src/features/console-me.tsx:461
+#: src/features/console-me.tsx:464
 #: src/features/tickets-view.tsx:413
 msgid "Back"
 msgstr "Back"
@@ -629,7 +630,7 @@ msgstr "Cancelling…"
 msgid "Capabilities"
 msgstr "Capabilities"
 
-#: src/features/me-host.tsx:151
+#: src/features/me-host.tsx:160
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
@@ -651,7 +652,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "Changes"
 
-#: src/features/host-quick-controls.tsx:109
+#: src/features/host-quick-controls.tsx:111
 msgid "Changing One Client…"
 msgstr "Changing One Client…"
 
@@ -667,7 +668,7 @@ msgstr "Check for updates"
 #: src/features/me-app.tsx:87
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
-#: src/features/me-host.tsx:58
+#: src/features/me-host.tsx:59
 msgid "Checking…"
 msgstr "Checking…"
 
@@ -863,16 +864,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
 
-#: src/features/host-quick-controls.tsx:112
+#: src/features/host-quick-controls.tsx:114
 msgid "Connect One Client"
 msgstr "Connect One Client"
 
-#: src/features/host-quick-controls.tsx:63
-#: src/features/host-quick-controls.tsx:72
+#: src/features/host-quick-controls.tsx:64
+#: src/features/host-quick-controls.tsx:73
 msgid "Connected"
 msgstr "Connected"
 
-#: src/features/host-quick-controls.tsx:65
+#: src/features/host-quick-controls.tsx:66
 #: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
 msgid "Connecting…"
@@ -886,7 +887,7 @@ msgstr "Connection"
 msgid "Connection details"
 msgstr "Connection details"
 
-#: src/features/host-quick-controls.tsx:74
+#: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "Connection failed"
 
@@ -1085,7 +1086,7 @@ msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
 #: src/features/console-me.tsx:220
-#: src/features/console-me.tsx:310
+#: src/features/console-me.tsx:311
 #: src/features/console-shared.tsx:386
 msgid "Dark"
 msgstr "Dark"
@@ -1146,7 +1147,7 @@ msgid "Device access"
 msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:173
-#: src/features/console-me.tsx:401
+#: src/features/console-me.tsx:403
 #: src/features/console-shell.tsx:97
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -1177,15 +1178,15 @@ msgstr "Disable this agent"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/features/host-quick-controls.tsx:111
+#: src/features/host-quick-controls.tsx:113
 msgid "Disconnect One Client"
 msgstr "Disconnect One Client"
 
-#: src/features/host-quick-controls.tsx:64
+#: src/features/host-quick-controls.tsx:65
 msgid "Disconnected"
 msgstr "Disconnected"
 
-#: src/features/host-quick-controls.tsx:66
+#: src/features/host-quick-controls.tsx:67
 msgid "Disconnecting…"
 msgstr "Disconnecting…"
 
@@ -1257,7 +1258,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
 
-#: src/features/me-host.tsx:114
+#: src/features/me-host.tsx:123
 msgid "Endpoint"
 msgstr "Endpoint"
 
@@ -1280,7 +1281,7 @@ msgstr "Esc"
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "Estimated from this machine's past runs, not by the planner."
 
-#: src/features/me-host.tsx:36
+#: src/features/me-host.tsx:37
 msgid "Event stream"
 msgstr "Event stream"
 
@@ -1480,7 +1481,7 @@ msgstr "host default"
 msgid "Host offline"
 msgstr "Host offline"
 
-#: src/features/me-host.tsx:38
+#: src/features/me-host.tsx:39
 msgid "Host signals"
 msgstr "Host signals"
 
@@ -1493,7 +1494,7 @@ msgstr "Host unreachable right now"
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/console-me.tsx:382
+#: src/features/console-me.tsx:383
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"
@@ -1574,8 +1575,8 @@ msgstr "Initiator"
 msgid "Input cleared"
 msgstr "Input cleared"
 
-#: src/features/me-host.tsx:119
-#: src/features/me-host.tsx:120
+#: src/features/me-host.tsx:128
+#: src/features/me-host.tsx:129
 msgid "Input method"
 msgstr "Input method"
 
@@ -1587,7 +1588,7 @@ msgstr "Install WezDeck"
 msgid "Installed"
 msgstr "Installed"
 
-#: src/features/me-host.tsx:113
+#: src/features/me-host.tsx:122
 msgid "Instance"
 msgstr "Instance"
 
@@ -1673,7 +1674,7 @@ msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-shell.tsx:475
-#: src/features/me-host.tsx:116
+#: src/features/me-host.tsx:125
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -1682,11 +1683,11 @@ msgid "Last turn"
 msgstr "Last turn"
 
 #: src/features/chat-controls.tsx:31
-#: src/features/me-host.tsx:130
+#: src/features/me-host.tsx:139
 msgid "Latest"
 msgstr "Latest"
 
-#: src/features/host-quick-controls.tsx:95
+#: src/features/host-quick-controls.tsx:97
 msgid "Latest OPPO connection"
 msgstr "Latest OPPO connection"
 
@@ -1720,7 +1721,7 @@ msgid "Level with upstream."
 msgstr "Level with upstream."
 
 #: src/features/console-me.tsx:219
-#: src/features/console-me.tsx:310
+#: src/features/console-me.tsx:311
 #: src/features/console-shared.tsx:385
 msgid "Light"
 msgstr "Light"
@@ -2023,7 +2024,7 @@ msgstr "Next session waiting on you"
 msgid "no"
 msgstr "no"
 
-#: src/features/host-quick-controls.tsx:90
+#: src/features/host-quick-controls.tsx:92
 msgid "No active session"
 msgstr "No active session"
 
@@ -2073,7 +2074,7 @@ msgstr "No human message yet"
 #~ msgid "No idle sessions."
 #~ msgstr "No idle sessions."
 
-#: src/features/session-statusbar.tsx:345
+#: src/features/session-statusbar.tsx:348
 msgid "No linked worktrees"
 msgstr "No linked worktrees"
 
@@ -2101,11 +2102,11 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/host-quick-controls.tsx:75
+#: src/features/host-quick-controls.tsx:76
 msgid "No recent result"
 msgstr "No recent result"
 
-#: src/features/session-statusbar.tsx:335
+#: src/features/session-statusbar.tsx:338
 msgid "No session"
 msgstr "No session"
 
@@ -2155,11 +2156,11 @@ msgstr "Not delivered: the agent went idle without it"
 msgid "not done"
 msgstr "not done"
 
-#: src/features/me-host.tsx:140
+#: src/features/me-host.tsx:149
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
-#: src/features/console-me.tsx:333
+#: src/features/console-me.tsx:334
 msgid "Not paired"
 msgstr "Not paired"
 
@@ -2311,7 +2312,7 @@ msgstr "Opening…"
 #~ msgid "opens one more"
 #~ msgstr "opens one more"
 
-#: src/features/host-quick-controls.tsx:85
+#: src/features/host-quick-controls.tsx:87
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
 
@@ -2446,7 +2447,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/me-host.tsx:146
+#: src/features/me-host.tsx:155
 msgid "Process"
 msgstr "Process"
 
@@ -2490,7 +2491,7 @@ msgstr "Put the caret in the composer"
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/host-quick-controls.tsx:80
+#: src/features/host-quick-controls.tsx:82
 msgid "Quick controls"
 msgstr "Quick controls"
 
@@ -2522,8 +2523,8 @@ msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:211
 #: src/features/console-shell.tsx:439
-#: src/features/me-host.tsx:59
-#: src/features/me-host.tsx:142
+#: src/features/me-host.tsx:60
+#: src/features/me-host.tsx:151
 msgid "Ready"
 msgstr "Ready"
 
@@ -2667,7 +2668,7 @@ msgstr "Repo filter"
 msgid "Repository"
 msgstr "Repository"
 
-#: src/features/console-me.tsx:322
+#: src/features/console-me.tsx:323
 #: src/features/me-agents.tsx:60
 #: src/features/session-new-panels.tsx:142
 msgid "Repository default"
@@ -2767,7 +2768,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:544
-#: src/features/me-host.tsx:100
+#: src/features/me-host.tsx:109
 msgid "Retry"
 msgstr "Retry"
 
@@ -2795,7 +2796,7 @@ msgstr "Revoke"
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
-#: src/features/me-host.tsx:37
+#: src/features/me-host.tsx:38
 msgid "Rime collector"
 msgstr "Rime collector"
 
@@ -2875,7 +2876,7 @@ msgstr "Runs and cost"
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
-#: src/features/me-host.tsx:112
+#: src/features/me-host.tsx:121
 msgid "Runtime"
 msgstr "Runtime"
 
@@ -2886,7 +2887,7 @@ msgstr "Runtime"
 msgid "Runtime action failed"
 msgstr "Runtime action failed"
 
-#: src/features/me-host.tsx:35
+#: src/features/me-host.tsx:36
 msgid "Runtime API"
 msgstr "Runtime API"
 
@@ -3015,7 +3016,7 @@ msgstr "Sending the handoff brief…"
 msgid "Session"
 msgstr "Session"
 
-#: src/features/host-quick-controls.tsx:88
+#: src/features/host-quick-controls.tsx:90
 msgid "Session active"
 msgstr "Session active"
 
@@ -3072,7 +3073,7 @@ msgstr "Sessions"
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/console-me.tsx:315
+#: src/features/console-me.tsx:316
 #: src/features/console-shell.tsx:101
 msgid "Settings"
 msgstr "Settings"
@@ -3133,7 +3134,7 @@ msgstr "Skip to content"
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
-#: src/features/me-host.tsx:145
+#: src/features/me-host.tsx:154
 msgid "Socket"
 msgstr "Socket"
 
@@ -3218,7 +3219,7 @@ msgid "State"
 msgstr "State"
 
 #: src/features/console-collab.tsx:361
-#: src/features/me-host.tsx:138
+#: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:77
 #: src/features/tickets-view.tsx:197
 msgid "Status"
@@ -3300,7 +3301,7 @@ msgid "Synced"
 msgstr "Synced"
 
 #: src/features/console-me.tsx:218
-#: src/features/console-me.tsx:310
+#: src/features/console-me.tsx:311
 #: src/features/console-shared.tsx:384
 msgid "System"
 msgstr "System"
@@ -3425,7 +3426,7 @@ msgid "This browser"
 msgstr "This browser"
 
 #: src/features/console-me.tsx:123
-#: src/features/console-me.tsx:331
+#: src/features/console-me.tsx:332
 #: src/features/console-shell.tsx:230
 msgid "This computer"
 msgstr "This computer"
@@ -3576,7 +3577,7 @@ msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
 
 #: src/features/console-activity.tsx:165
-#: src/features/me-host.tsx:122
+#: src/features/me-host.tsx:131
 msgid "Today"
 msgstr "Today"
 
@@ -3584,7 +3585,7 @@ msgstr "Today"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 
-#: src/features/me-host.tsx:126
+#: src/features/me-host.tsx:135
 msgid "Today events"
 msgstr "Today events"
 
@@ -3647,7 +3648,7 @@ msgstr "TURN relay"
 msgid "Turns"
 msgstr "Turns"
 
-#: src/features/me-host.tsx:81
+#: src/features/me-host.tsx:90
 msgid "Unavailable"
 msgstr "Unavailable"
 
@@ -3663,7 +3664,7 @@ msgstr "Underscore"
 msgid "Undo"
 msgstr "Undo"
 
-#: src/features/host-quick-controls.tsx:61
+#: src/features/host-quick-controls.tsx:62
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -3695,7 +3696,7 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-shell.tsx:481
-#: src/features/me-host.tsx:115
+#: src/features/me-host.tsx:124
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -3962,8 +3963,8 @@ msgstr "Worktree"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/me-host.tsx:40
-#: src/features/me-host.tsx:136
+#: src/features/me-host.tsx:41
+#: src/features/me-host.tsx:145
 msgid "WSL bridge"
 msgstr "WSL bridge"
 
@@ -4004,12 +4005,12 @@ msgstr "有本地改动"
 msgid "未交付"
 msgstr "未交付"
 
-#: src/features/session-statusbar.tsx:311
+#: src/features/session-statusbar.tsx:314
 msgid "未命名工作树"
 msgstr "未命名工作树"
 
 #: src/features/session-statusbar.tsx:245
-#: src/features/session-statusbar.tsx:320
+#: src/features/session-statusbar.tsx:323
 msgid "游离分支"
 msgstr "游离分支"
 

@@ -386,20 +386,42 @@ func relayICEServers() []webrtc.ICEServer {
 	return []webrtc.ICEServer{{URLs: []string{"stun:stun.cloudflare.com:3478"}}}
 }
 
+const maxRelayPeers = 16
+
 // answer accepts one phone offer (non-trickle: the SDP already carries every
 // candidate) and replies with a fully gathered answer over the relay socket.
 func (r *relay) answer(cid string, data json.RawMessage) {
+	if err := r.readAllowed(cid); err != nil {
+		r.logf("rtc_denied", "cid=%s err=%q", cid, err)
+		return
+	}
 	var sig relaySignal
 	if json.Unmarshal(data, &sig) != nil || sig.Type != "offer" {
 		return
 	}
 	r.dropPeer(cid)
+	r.mu.Lock()
+	peerCount := len(r.peers)
+	r.mu.Unlock()
+	if peerCount >= maxRelayPeers {
+		r.logf("rtc_denied", "cid=%s err=%q peers=%d", cid, "too many peers", peerCount)
+		return
+	}
 	pc, err := webrtc.NewPeerConnection(webrtc.Configuration{ICEServers: relayICEServers()})
 	if err != nil {
 		r.logf("rtc_error", "cid=%s err=%q", cid, err)
 		return
 	}
 	r.mu.Lock()
+	if r.peers == nil {
+		r.peers = map[string]*webrtc.PeerConnection{}
+	}
+	if len(r.peers) >= maxRelayPeers {
+		r.mu.Unlock()
+		_ = pc.Close()
+		r.logf("rtc_denied", "cid=%s err=%q", cid, "too many peers")
+		return
+	}
 	r.peers[cid] = pc
 	r.mu.Unlock()
 	started := time.Now()

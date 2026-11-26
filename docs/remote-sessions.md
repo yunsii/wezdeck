@@ -193,9 +193,14 @@ key: the Runtime listens on loopback and answers only a loopback `Host`
 rebinding page sends no Origin on its same-origin GETs), 403 to an origin
 outside its allowlist, and takes writes only with an `Origin` that is
 allowlisted **and not loopback**: the production console writes, a local dev
-server (`localhost:3000`, any project's) only reads (`IsWriteOriginAllowed`).
-415 to a non-JSON body (a form post cannot write), 400 past 256 KB before
-the body is read. Writes use their own bridge connection with a 75 s timeout
+server (`localhost:35790`, dedicated port away from common `3000`/`3001`) only
+reads (`IsWriteOriginAllowed`).
+415 to a non-JSON body (a form post cannot write), 413/400 past the size cap
+before the body is read (`256 KB` for `/api/v1/remote/*`, `64 KB` for
+`/api/v1/actions/*`). HTTP `/api/v1/actions/*` enforces the same
+`IsWriteOriginAllowed` + JSON guards, exposes only `sessions/focus` and
+`vscode/focus_or_open`, and rejects `code_command` over HTTP (clipboard, Chrome
+control, and window close remain named-pipe-only for WezTerm). Writes use their own bridge connection with a 75 s timeout
 (the page waits 80 s), so a slow `ticket.new` neither blocks reads nor is
 reported failed and retried into a duplicate.
 On the host, 会话信息 also offers 在终端中打开 (key `o` on the session

@@ -8,9 +8,10 @@
 //   client → DO   {t:"rpc"|"sig"|"ping", …}      DO adds cid → host
 //   host   → DO   {t:"res"|"sig"|"pong", cid, …} DO strips cid → that client
 //   DO     → client {t:"host", online, since}    presence on connect/change
-import { usageFetch } from './usage'
 import { DurableObject } from 'cloudflare:workers'
-import { hostAuthorized, safeEqual } from './auth'
+import { logRelayEvent, tokenTag } from './auth'
+
+export { relayFetch } from './relay-fetch'
 
 export interface RelayEnv {
   HOST_RELAY: DurableObjectNamespace<HostRelay>
@@ -23,26 +24,6 @@ export interface RelayEnv {
 
 type Attachment =
   { role: 'host' } | { role: 'client'; cid: string; tag: string }
-
-/** Short digest of a token, kept on each client socket so a rotated secret can evict it. */
-async function tokenTag(token: string) {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(token),
-  )
-  return [...new Uint8Array(digest).slice(0, 8)]
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-/** What a refused token was, without logging it: digest + length (stale vs truncated). */
-async function tokenFacts(token: string) {
-  return { tag: token ? await tokenTag(token) : '', len: token.length }
-}
-
-function logEvent(event: string, fields: Record<string, unknown> = {}) {
-  console.log(JSON.stringify({ category: 'relay', event, ...fields }))
-}
 
 const PRESENCE_KEY = 'host_presence'
 
@@ -170,7 +151,7 @@ export class HostRelay extends DurableObject<RelayEnv> {
           .getWebSockets('host')
           .at(0)
           ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
-        logEvent('client_evicted', { cid: meta.cid })
+        logRelayEvent('client_evicted', { cid: meta.cid })
       }
     }
   }
@@ -190,94 +171,4 @@ export class HostRelay extends DurableObject<RelayEnv> {
     const frame = JSON.stringify({ t: 'host', online, since })
     for (const ws of this.ctx.getWebSockets('client')) ws.send(frame)
   }
-}
-
-/** /relay/host (Bearer host token) · /relay/client (token in Sec-WebSocket-Protocol) · /relay/auth · /relay/health · /relay/usage */
-export async function relayFetch(request: Request, env: RelayEnv) {
-  const url = new URL(request.url)
-  // ?room= picks a separate relay (one DO per room): tests run a throwaway
-  // host + browser in their own room and never touch the real one.
-  const room = url.searchParams.get('room') ?? 'default'
-  if (!/^[a-z0-9-]{1,32}$/.test(room))
-    return new Response('bad room', { status: 400 })
-  // today's Cloudflare usage (Worker-side; never wakes the relay object)
-  if (url.pathname === '/relay/usage')
-    return usageFetch(request, env, safeEqual)
-  const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
-  if (url.pathname === '/relay/health') {
-    const presence = await stub.fetch('https://relay/presence')
-    // anyone may ask whether the host is up; when it came up and how many
-    // browsers are connected (when you are using it) need the client token
-    const presented = (request.headers.get('authorization') ?? '').replace(
-      /^Bearer /,
-      '',
-    )
-    const full = safeEqual(presented, env.RELAY_CLIENT_TOKEN)
-    const body = full
-      ? presence.body
-      : JSON.stringify({
-          online: Boolean((await presence.json<{ online?: boolean }>()).online),
-        })
-    return new Response(body, {
-      headers: {
-        'content-type': 'application/json',
-        'cache-control': 'no-store',
-      },
-    })
-  }
-  if (url.pathname === '/relay/auth') {
-    // Browsers cannot read a refused WebSocket handshake's status; the page
-    // asks here to tell "token rejected" from "network down".
-    const presented = (request.headers.get('authorization') ?? '').replace(
-      /^Bearer /,
-      '',
-    )
-    const ok = safeEqual(presented, env.RELAY_CLIENT_TOKEN)
-    if (!ok)
-      logEvent('auth_failed', {
-        role: 'client',
-        via: 'probe',
-        ...(await tokenFacts(presented)),
-      })
-    return new Response(null, {
-      status: ok ? 204 : 401,
-      headers: { 'cache-control': 'no-store' },
-    })
-  }
-  if (request.headers.get('upgrade') !== 'websocket') {
-    return new Response('expected websocket', { status: 426 })
-  }
-  const headers = new Headers(request.headers)
-  if (url.pathname === '/relay/host') {
-    const auth = request.headers.get('authorization') ?? ''
-    if (!hostAuthorized(auth, env.RELAY_HOST_TOKEN)) {
-      logEvent('auth_failed', { role: 'host' })
-      return new Response('unauthorized', { status: 401 })
-    }
-    headers.set('x-relay-role', 'host')
-  } else if (url.pathname === '/relay/client') {
-    // Browsers cannot set headers on WebSocket: the token rides as a
-    // subprotocol ("wezdeck.v1", "token.<secret>"); only "wezdeck.v1" is echoed.
-    const protocols = (request.headers.get('sec-websocket-protocol') ?? '')
-      .split(',')
-      .map((p) => p.trim())
-    const token = protocols.find((p) => p.startsWith('token.'))?.slice(6) ?? ''
-    if (
-      !protocols.includes('wezdeck.v1') ||
-      !safeEqual(token, env.RELAY_CLIENT_TOKEN)
-    ) {
-      logEvent('auth_failed', {
-        role: 'client',
-        via: 'websocket',
-        ...(await tokenFacts(token)),
-      })
-      return new Response('unauthorized', { status: 401 })
-    }
-    headers.set('x-relay-role', 'client')
-    headers.set('x-relay-token-tag', await tokenTag(token))
-    headers.set('x-relay-protocol', 'wezdeck.v1')
-  } else {
-    return new Response('not found', { status: 404 })
-  }
-  return stub.fetch(new Request(request, { headers }))
 }

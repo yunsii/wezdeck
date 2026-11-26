@@ -2,8 +2,20 @@
 // react-markdown replacement that renders half-written Markdown (an open
 // code fence or table mid-stream) correctly, so a reply can stream in. Tables and code scroll sideways inside their own box so a
 // wide block never widens the page; links open outside the app.
-import { Streamdown } from 'streamdown'
-import type { Components } from 'streamdown'
+import { Streamdown, defaultRehypePlugins } from 'streamdown'
+import type { Components, StreamdownProps } from 'streamdown'
+
+const hardenEntry = defaultRehypePlugins.harden as [
+  unknown,
+  Record<string, unknown>,
+]
+// Keep dangerous protocols (file:, javascript:, data:) strictly non-clickable,
+// but render file:// code references cleanly as text instead of "[blocked]".
+const rehypePlugins = [
+  defaultRehypePlugins.raw,
+  defaultRehypePlugins.sanitize,
+  [hardenEntry[0], { ...hardenEntry[1], linkBlockPolicy: 'text-only' }],
+] as StreamdownProps['rehypePlugins']
 
 const components: Components = {
   p: ({ children }) => (
@@ -118,6 +130,7 @@ export function ChatMarkdown({
     <div className="text-body leading-relaxed break-words">
       <Streamdown
         components={components}
+        rehypePlugins={rehypePlugins}
         animated={reveal}
         isAnimating={streaming}
       >

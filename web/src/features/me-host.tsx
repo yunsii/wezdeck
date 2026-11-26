@@ -10,6 +10,7 @@ import { Disclosure } from '#/components/ui/disclosure'
 import { SectionHeading } from '#/components/ui/section-heading'
 import { Field, FieldList } from '#/components/ui/field'
 import { useConsoleMode } from './console-mode'
+import { useDeviceState } from './device-state'
 import { HostQuickControls } from './host-quick-controls'
 import { runtimeQuery, useRuntimeData } from './console-data'
 import {
@@ -60,7 +61,15 @@ export function useHostSummary() {
 }
 
 export function HostPage() {
+  const { t } = useLingui()
   const mode = useConsoleMode()
+  const device = useDeviceState()
+  if (mode !== 'local' && device.state !== 'approved')
+    return (
+      <p className="text-caption text-brand-muted">
+        {t`Approve this device in Device access to use host controls.`}
+      </p>
+    )
   return (
     <div className="grid gap-4">
       <HostQuickControls />

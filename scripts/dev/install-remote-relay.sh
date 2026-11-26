@@ -165,7 +165,7 @@ PY
     ;;
   check)
     systemctl --user is-active "$UNIT" || true
-    # with the client token: since + clients too (without it only "online")
+    [[ -f "$ENV_FILE" ]] && load_tokens
     curl -fsS -m 5 -H "authorization: Bearer ${WEZDECK_RELAY_CLIENT_TOKEN:-}" "$ORIGIN/relay/health" && printf '\n'
     ;;
   uninstall)
