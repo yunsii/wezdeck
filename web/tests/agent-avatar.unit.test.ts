@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 
-import { agentFamily, agentProfileBadge } from '#/features/agent-avatar'
+import {
+  AgentAvatar,
+  agentFamily,
+  agentProfileBadge,
+} from '#/features/agent-avatar'
 
 describe('agentFamily', () => {
   it('uses the live agent when known', () => {
@@ -22,5 +28,20 @@ describe('agentProfileBadge', () => {
     expect(agentProfileBadge('claude_kimi', 'claude')).toBe('kimi')
     expect(agentProfileBadge('claude_sub2api', 'claude')).toBe('gateway')
     expect(agentProfileBadge('', 'claude')).toBe('')
+  })
+})
+
+describe('AgentAvatar', () => {
+  it('uses the official Agy mark and a generic icon for unknown agents', () => {
+    const agy = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'agy' }),
+    )
+    const unknown = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'unknown' }),
+    )
+    expect(agy).toContain('/icons/agents/agy.png')
+    expect(agy).not.toContain('agent-avatar-fallback')
+    expect(unknown).toContain('data-testid="agent-avatar-fallback"')
+    expect(unknown).not.toContain('/icons/agents/agent.png')
   })
 })

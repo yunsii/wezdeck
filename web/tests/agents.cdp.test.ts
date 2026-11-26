@@ -110,6 +110,14 @@ describe('Agent settings layout', () => {
     )
     const detail = page.getByTestId('agent-detail')
     await detail.waitFor()
+    expect(
+      await page
+        .locator('[data-agent-profile=agy]')
+        .locator('img[src="/icons/agents/agy.png"]')
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true)
     const before = await detail.boundingBox()
     expect(before?.width).toBeGreaterThan(300)
     if (process.env.WEZDECK_VISUAL_SHOTS)
@@ -150,6 +158,16 @@ describe('Agent settings layout', () => {
 
   it('phone opens one profile detail and returns to the list', async () => {
     const { context, page } = await pageWithProfiles(browser, 390)
+    if (process.env.WEZDECK_VISUAL_SHOTS)
+      await page.screenshot({ path: '/tmp/wezdeck-agents-mobile-list.png' })
+    expect(
+      await page
+        .locator('[data-agent-profile=agy]')
+        .locator('img[src="/icons/agents/agy.png"]')
+        .evaluate(
+          (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
+        ),
+    ).toBe(true)
     expect(await page.getByTestId('agent-detail').isVisible()).toBe(false)
     await page.locator('[data-agent-profile=claude_kimi]').click()
     await page.getByTestId('agent-detail').waitFor({ state: 'visible' })

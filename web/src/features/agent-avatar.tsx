@@ -1,20 +1,22 @@
-// Chat-list avatar: official brand marks under public/icons/agents/
-// (claude.ai app icon, ChatGPT touch icon, x.ai favicon, kimi.com PWA icon)
+// Chat-list avatar: known brand marks under public/icons/agents/;
+// unknown agents and failed images use a neutral Bot glyph.
 // with an optional corner badge for a non-default managed profile
 // (claude_kimi → Kimi, claude_sub2api → gateway).
+import { Bot } from 'lucide-react'
+import { useState } from 'react'
+
 import { cn } from '#/lib/utils'
 
 const ICONS = '/icons/agents'
 
 export type AgentFamily = 'claude' | 'codex' | 'grok' | 'agy' | 'agent'
 
-/** official raster marks */
-const AVATAR_SRC: Record<AgentFamily, string> = {
+/** raster marks only for verified brands; Agy is from antigravity.google/press */
+const AVATAR_SRC: Partial<Record<AgentFamily, string>> = {
   claude: `${ICONS}/claude.png`,
   codex: `${ICONS}/codex.png`,
   grok: `${ICONS}/grok.png`,
-  agy: `${ICONS}/agent.png`,
-  agent: `${ICONS}/agent.png`,
+  agy: `${ICONS}/agy.png`,
 }
 
 const BADGE_SRC: Record<'kimi' | 'gateway', string> = {
@@ -77,6 +79,8 @@ export function AgentAvatar({
   const badge = agentProfileBadge(profile, family)
   const label = title || LABEL[family]
   const badgePx = Math.max(14, Math.round(size * 0.4))
+  const src = AVATAR_SRC[family]
+  const [failedSrc, setFailedSrc] = useState('')
   return (
     <span
       role="img"
@@ -88,14 +92,27 @@ export function AgentAvatar({
       className={cn('relative inline-flex shrink-0', className)}
       style={{ width: size, height: size }}
     >
-      <img
-        src={AVATAR_SRC[family]}
-        alt=""
-        width={size}
-        height={size}
-        draggable={false}
-        className="size-full rounded-full object-cover"
-      />
+      {src && failedSrc !== src ? (
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          draggable={false}
+          onError={() => setFailedSrc(src)}
+          className={cn(
+            'size-full rounded-full object-cover',
+            family === 'agy' && 'bg-brand-soft',
+          )}
+        />
+      ) : (
+        <span
+          data-testid="agent-avatar-fallback"
+          className="flex size-full items-center justify-center rounded-full border border-brand-edge bg-brand-soft text-brand-muted"
+        >
+          <Bot size={Math.round(size * 0.55)} aria-hidden />
+        </span>
+      )}
       {badge ? (
         <img
           src={BADGE_SRC[badge]}

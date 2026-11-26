@@ -54,6 +54,7 @@ export default [
       'eslint.config.js',
       'prettier.config.js',
       '.output/**',
+      '.wrangler/**',
       'node_modules/**',
       // plain service-worker script, not part of the TS project
       'public/sw.js',
