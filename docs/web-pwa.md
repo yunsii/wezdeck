@@ -143,10 +143,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
 5. **Wide screens (≥ 768 px, 2026-11-23; Telegram rail 2026-11-27)**: no mobile layout blown up.
-   Left nav is a 68 px Telegram Desktop icon rail (WezDeck mark top, 会话 / 工单
+   Left nav is a 72 px Telegram Desktop icon rail (multiple of 8 so 2.625×
+   HiDPI lands on integer device pixels; WezDeck mark top, 会话 / 工单
    primary, 诊断(local) / 我的 / `?` Shortcuts bottom; 工单动态 lives in `CollabTopBar`
    on both phone and desktop, keeping `g a`), while `StatusBand` / `RemoteBand`
-   sits in a slim 28 px bottom strip so splits start flush at the top edge.
+   sits in a slim 32 px bottom strip so splits start flush at the top edge.
    会话 and 工单 share the sticky split (`session-split.tsx`, full remaining width,
    no 900 px cap, j / k + y, replace history, no back button). 我的 uses
    `SplitColumn` with flat `.me-list` inset-hairline groups (phone: compact
@@ -166,7 +167,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    screens: 新对话 (`/new`, current agent process) and 新进程 (fresh process).
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
-   `?` or the sidebar's 键盘快捷键 entry with the terminal's key for the same
+   `?` or the sidebar's 快捷键 entry with the terminal's key for the same
    action (from `wezterm-x/commands/manifest.json`); a key added to a page
    is added there too. Chrome may keep `Ctrl+N` for a new window in a plain
    tab (an installed app window can hand it to the page), hence `c`. The
@@ -576,6 +577,11 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
 - Client trace (pulled with `wezdeck-wsl diag`) keeps a `nav` row per navigation (`path`, history
   `index`, `length`) and `nav-collapse` when a first-level page is folded
   back to the first entry.
+- List-flicker signals (`client-trace.ts`, `split-column.tsx`, `session-list-trace.ts`):
+  `layout-shift` (PerformanceObserver CLS ≥ 0.001), `split-list-scroll` (unprompted
+  scrollTop jumps ≥ 4 px), `session-list-diff` (order/membership/status churn or ≥ 6
+  renders/s bursts), `listScroller` rect in snapshots, and read-only diag step
+  `sample-list` (per-rAF row geometry & scroll jitter probe; see [`web-motion.md`](web-motion.md#split-switches)).
 
 ## Phases and verification
 

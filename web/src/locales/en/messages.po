@@ -366,8 +366,8 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:315
-#: src/features/session-list.tsx:382
+#: src/features/session-list.tsx:318
+#: src/features/session-list.tsx:385
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -877,8 +877,8 @@ msgstr "Clear input"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:106
-#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:107
+#: src/features/session-list.tsx:308
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "Clear search"
@@ -1266,7 +1266,7 @@ msgstr "Create ticket"
 msgid "Create workspace"
 msgstr "Create workspace"
 
-#: src/features/session-list.tsx:136
+#: src/features/session-list.tsx:137
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
@@ -1440,7 +1440,7 @@ msgstr "Dispatched"
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:127
-#: src/features/session-list.tsx:56
+#: src/features/session-list.tsx:57
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "Done"
@@ -2242,7 +2242,7 @@ msgstr "Names sessions"
 msgid "Native"
 msgstr "Native"
 
-#: src/features/session-list.tsx:55
+#: src/features/session-list.tsx:56
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -2302,7 +2302,7 @@ msgstr "New line"
 #~ msgstr "New round"
 
 #: src/features/session-chat-group.tsx:211
-#: src/features/session-list.tsx:153
+#: src/features/session-list.tsx:154
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new.tsx:193
@@ -2401,7 +2401,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:310
+#: src/features/session-list.tsx:313
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2426,7 +2426,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:58
+#: src/features/session-list.tsx:59
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2478,7 +2478,7 @@ msgstr "No recent result"
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
-#: src/features/session-list.tsx:297
+#: src/features/session-list.tsx:300
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -3500,8 +3500,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:96
 #: src/features/session-list.tsx:97
+#: src/features/session-list.tsx:98
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3628,15 +3628,15 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:216
-#: src/features/session-list.tsx:276
-#: src/features/session-list.tsx:397
+#: src/features/session-list.tsx:279
+#: src/features/session-list.tsx:400
 #: src/features/session-new-job.tsx:399
 #: src/features/session-new.tsx:433
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:287
+#: src/features/session-list.tsx:290
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -4554,7 +4554,7 @@ msgstr "waiting on you"
 
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:126
-#: src/features/session-list.tsx:54
+#: src/features/session-list.tsx:55
 #: src/features/tickets-view.tsx:404
 #: src/features/tickets-view.tsx:549
 msgid "Waiting on you"
@@ -4728,7 +4728,7 @@ msgstr "working"
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:125
-#: src/features/session-list.tsx:57
+#: src/features/session-list.tsx:58
 msgid "Working"
 msgstr "Working"
 
@@ -4781,7 +4781,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:170
-#: src/features/session-list.tsx:69
+#: src/features/session-list.tsx:70
 msgid "Yesterday"
 msgstr "Yesterday"
 

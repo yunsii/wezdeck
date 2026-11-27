@@ -228,7 +228,7 @@ function RailLink({
         onSelect(item, active)
       }}
       className={cn(
-        'relative flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+        'relative flex min-h-13 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
         active
           ? 'bg-brand-running/12 font-semibold text-brand-running'
           : 'text-brand-muted hover:bg-brand-soft hover:text-brand-text',
@@ -331,8 +331,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       // viewport, keyboard included (interactive-widget=resizes-content).
       className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text"
     >
-      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*17)_minmax(0,1fr)] md:items-stretch">
-        <aside className="vt-sidebar hidden min-h-0 flex-col items-stretch overflow-hidden border-r border-brand-edge bg-brand-deck px-1.5 py-2 md:flex">
+      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*18)_minmax(0,1fr)] md:items-stretch">
+        <aside className="vt-sidebar hidden min-h-0 flex-col items-stretch overflow-hidden border-r border-brand-edge bg-brand-deck px-1 py-2 md:flex">
           {/* the brand is the way home (the landing page); language and
               theme live in 我的 › 外观, not in a second set of buttons here */}
           <Link
@@ -355,7 +355,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             aria-label={t`Console navigation`}
           >
             <OverlayScroll>
-              <div className="grid content-start gap-1">
+              <div className="grid grid-cols-1 content-start gap-1">
                 {railPrimary.map((item) => (
                   <RailLink
                     key={item.id}
@@ -368,7 +368,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 ))}
               </div>
             </OverlayScroll>
-            <div className="mt-auto grid gap-1 border-t border-brand-edge pt-2">
+            <div className="mt-auto grid shrink-0 grid-cols-1 gap-1 border-t border-brand-edge pt-2">
               {railFooter.map((item) => (
                 <RailLink
                   key={item.id}
@@ -421,8 +421,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-      {/* bottom: mobile tab bar (<768px) or slim desktop terminal status bar (≥768px) */}
-      <div className="vt-band hidden h-7 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
+      {/* bottom: mobile tab bar (<768px) or slim 32px (multiple of 8 for HiDPI) desktop status bar (≥768px) */}
+      <div className="vt-band hidden h-8 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
         {mode === 'local' ? (
           <StatusBand />
         ) : mode === 'remote' ? (

@@ -1,5 +1,5 @@
 // covers: web/src/features/session-chat-row.tsx web/src/features/session-chat-group.tsx
-// covers: web/src/features/session-list.tsx web/src/components/deck/split-column.tsx
+// covers: web/src/features/session-list.tsx web/src/features/session-list-trace.ts web/src/components/deck/split-column.tsx
 // covers: web/src/features/repo-links.tsx
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
