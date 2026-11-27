@@ -13,6 +13,11 @@ import (
 )
 
 func sessionReference(e attentionEntry, transcript, agent string) string {
+	_, cwd, _, _, _, _ := paneState(e)
+	return sessionReferenceWithCwd(e, transcript, agent, cwd)
+}
+
+func sessionReferenceWithCwd(e attentionEntry, transcript, agent, cwd string) string {
 	home, _ := os.UserHomeDir()
 	short := func(p string) string {
 		if home != "" && strings.HasPrefix(p, home+"/") {
@@ -20,7 +25,6 @@ func sessionReference(e attentionEntry, transcript, agent string) string {
 		}
 		return p
 	}
-	_, cwd, _, _, _, _ := paneState(e)
 	name := e.AgentName
 	if title := resolveSessionTitle(e.SessionID, transcript, agent); title != "" {
 		name = title

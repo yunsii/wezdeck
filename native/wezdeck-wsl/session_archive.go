@@ -1,7 +1,7 @@
 package main
 
 import (
-	"os"
+	"strings"
 	"time"
 )
 
@@ -17,14 +17,16 @@ func (e attentionEntry) asReadOnly() attentionEntry {
 }
 
 func archivedCodexTranscript(r recentEntry) string {
-	if r.LastStatus != "done" || r.ArchivedTS <= 0 || !sessionIDPattern.MatchString(r.SessionID) {
+	if r.LastStatus != "done" || r.ArchivedTS <= 0 || !sessionIDPattern.MatchString(r.SessionID) || isPendingSessionID(r.SessionID) {
 		return ""
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
+	if fam := profileFamily(strings.ToLower(strings.TrimSpace(r.AgentName))); fam != "" && fam != "codex" {
 		return ""
 	}
-	return (codexAdapter{}).Locate(home, r.SessionID)
+	if path, agent := findTranscript(r.SessionID); agent == "codex" {
+		return path
+	}
+	return ""
 }
 
 func archivedCodexCard(r recentEntry, path string) sessionCard {

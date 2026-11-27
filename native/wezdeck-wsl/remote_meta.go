@@ -37,6 +37,11 @@ func msTime(ms int64) string {
 }
 
 func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGroup {
+	_, cwd, cmd, index, _, alive := paneState(e)
+	return sessionMetaWithPane(e, path, agent, t, cwd, cmd, index, alive)
+}
+
+func sessionMetaWithPane(e attentionEntry, path, agent string, t *transcript, cwd, cmd string, index int, alive bool) []metaGroup {
 	session := metaGroup{Name: "session"}
 	session.add("id", e.SessionID)
 	session.add("agent", agent)
@@ -63,7 +68,6 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 	session.add("effort", effort)
 
 	location := metaGroup{Name: "location"}
-	_, cwd, cmd, index, _, alive := paneState(e)
 	location.add("cwd", cwd)
 	if cwd != "" {
 		repo, root, worktree := gitRepoMeta(cwd)

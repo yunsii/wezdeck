@@ -32,7 +32,7 @@ import (
 )
 
 const relayDrainTimeout = 5 * time.Second
-const relaySlowRPCDefaultMS int64 = 500
+const relaySlowRPCDefaultMS int64 = 300
 const bridgeSlowRPCDefaultMS int64 = 300
 
 const relayDefaultURL = "wss://wezdeck.yuns.love/relay/host"

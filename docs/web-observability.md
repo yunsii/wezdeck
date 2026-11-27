@@ -33,6 +33,10 @@ alongside the Windows and WSL logs.
 
 ## Local bridge & HTTP slow-request timing
 
+- `wezdeck-wsl relay` logs `event=rpc_slow` (`>= 300 ms`, override
+  `WEZDECK_RELAY_SLOW_RPC_MS`) with `read_ms` / `live_ms` / `cards_ms` /
+  `post_ms` / `meta_ms` / `transcript_ms` / `screen_ms` phase breakdowns on
+  `sessions` / `session` into `relay.log`.
 - `wezdeck-wsl serve` logs `event=bridge_rpc` (`via=local`, excluding fast
   `bridge.status` / `remote.diag.pending` heartbeats) and threshold-gated
   `event=bridge_rpc_slow` (`>= 300 ms`, override `WEZDECK_BRIDGE_SLOW_RPC_MS`,
