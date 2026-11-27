@@ -45,6 +45,15 @@ func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 		return nil, err
 	}
 	now := time.Now()
+	outboxRec, _ := outboxRecordStart(sentRecord{
+		Kind:      "session_new",
+		RepoKey:   repo,
+		RepoLabel: repoLabelFor(repo),
+		Worktree:  tree,
+		Agent:     profileFamily(agent),
+		Text:      prompt,
+		Status:    "pasting",
+	})
 	job := &newSessionJob{
 		ID:           newDiagID(),
 		Stage:        "creating",
@@ -58,6 +67,7 @@ func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 		Worktree:     tree,
 		Mode:         "group",
 		at:           now,
+		outboxID:     outboxRec.ID,
 	}
 	unlock, err := lockSessionWorktree(tree)
 	if err != nil {
@@ -83,6 +93,12 @@ func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 		err := runGroupedSession(job.ID, id, entry, repo, tree, agent, prompt, groupName)
 		if err != nil {
 			setJob(job.ID, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
+			if oid := jobOutboxID(job.ID); oid != "" {
+				_, _ = outboxUpdate(oid, func(r *sentRecord) {
+					r.Status = "failed"
+					r.Error = clip(err.Error(), 300)
+				})
+			}
 		}
 		relayLogf("session_group_new", "job=%s ok=%t worktree=%q", job.ID, err == nil, tree)
 	}()

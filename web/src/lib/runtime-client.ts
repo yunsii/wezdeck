@@ -381,6 +381,7 @@ export type HostReadAction =
   | 'session'
   | 'upload.get'
   | 'todos'
+  | 'sent.list'
   | 'repos'
   | 'repo.links'
   | 'agent.profiles'
@@ -467,8 +468,7 @@ export async function hostWrite(
 ): Promise<unknown> {
   const local = await probeRuntimeCached()
   if (!local?.health.capabilities.includes('remote.write')) {
-    const { client_op: _localOperation, ...remoteArgs } = args
-    return remoteLink.write(action, remoteArgs)
+    return remoteLink.write(action, args)
   }
   const result = await requestJson(
     local.baseUrl,

@@ -84,12 +84,17 @@ function useKeyGroups(): Array<Group> {
           what: t`New session (a worktree and an agent)`,
           host: 'Ctrl+K g d / t',
         },
+        {
+          keys: ['h'],
+          what: t`Sent messages history`,
+        },
       ],
     },
     {
       title: t`Composer`,
       items: [
         { keys: ['Space'], what: t`Put the caret in the composer` },
+        { keys: ['↑'], what: t`Recall the last sent message (when empty)` },
         { keys: ['Enter'], what: t`Send` },
         { keys: ['Shift+Enter'], what: t`New line` },
         {

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { LOST_AFTER_MS, settle, settleMatches } from '#/features/chat-thread'
 import type { Message, Pending } from '#/features/chat-thread'
+import { mergeOutboxPending } from '#/features/session-send'
+import type { SentRecord } from '#/features/sent-history'
 
 const ask = (text: string): Message => ({ role: 'user', text })
 const say = (text: string): Message => ({ role: 'assistant', text })
@@ -107,5 +109,49 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
     const { left, took } = settleMatches(pending, shown, 10, true, NOW)
     expect(left.map((p) => p.text)).toEqual(['first'])
     expect([...took]).toEqual([11])
+  })
+
+  it('matches terminal-merged drafts and never settles failed records', () => {
+    const merged = [sent('fix the scroll jump', 0)]
+    expect(
+      settle(merged, [ask('顺便 fix the scroll jump 谢谢')], 0, false, NOW),
+    ).toEqual([])
+
+    const failed = [sent('never pasted', 0, { state: 'failed', error: 'gone' })]
+    expect(settle(failed, [ask('never pasted')], 0, false, NOW)).toHaveLength(1)
+  })
+
+  it('merges host outbox with local optimistic bubbles and deduplicates client_op', () => {
+    const host: Array<SentRecord> = [
+      {
+        id: 'sent-1',
+        client_op: 'op-1',
+        kind: 'message',
+        text: 'hello',
+        attachments: ['img-a.jpg'],
+        created_at: NOW - 2_000,
+        status: 'unconfirmed',
+        transcript_end_at_send: 3,
+      },
+    ]
+    const local: Array<Pending> = [
+      sent('hello', 3, { clientOp: 'op-1', state: 'queued', at: NOW - 2_100 }),
+      sent('still sending', 3, {
+        clientOp: 'op-2',
+        state: 'sending',
+        at: NOW - 500,
+      }),
+    ]
+    const merged = mergeOutboxPending(local, host)
+    expect(merged).toHaveLength(2)
+    expect(merged[0]).toMatchObject({
+      sentId: 'sent-1',
+      state: 'lost',
+      attachments: ['img-a.jpg'],
+    })
+    expect(merged[1]).toMatchObject({
+      clientOp: 'op-2',
+      state: 'sending',
+    })
   })
 })

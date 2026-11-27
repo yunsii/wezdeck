@@ -1,26 +1,52 @@
-// Picked images, a row of their own above the composer toolbar (in the
-// toolbar they crowded the tools, and its horizontal scroll clipped the
-// remove buttons). Each one is 图片N, as its [图片N] in the text: a tap on
-// the picture previews it, on its number puts [图片N] at the caret again,
-// the × removes it (and its token).
+// Picked images, a row of their own above the composer toolbar. Supports both
+// local File picks (object URL) and reused host-uploaded attachments (fetched
+// through useImageThumb / loadImageOriginal with zero re-upload).
 import { useLingui } from '@lingui/react/macro'
+import { useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
-import type { Picked } from './composer-images'
+import {
+  isGone,
+  loadImageOriginal,
+  thumbQueryKey,
+  useImageThumb,
+} from '#/lib/upload-image'
+import type { ComposerImage } from './composer-images'
 import { ImageViewer } from './image-viewer'
+
+function UploadedPreview({ name }: { name: string }) {
+  const { t } = useLingui()
+  const thumb = useImageThumb({ kind: 'upload', name })
+  const gone = thumb.isError && isGone(thumb.error)
+  if (thumb.data) {
+    return (
+      <img
+        src={thumb.data.url}
+        alt=""
+        className="size-16 rounded-xl object-cover"
+      />
+    )
+  }
+  return (
+    <span className="flex size-16 items-center justify-center rounded-xl bg-brand-soft text-meta text-brand-muted">
+      {gone ? t`Expired` : thumb.isError ? t`Retry` : t`Image`}
+    </span>
+  )
+}
 
 export function PickedImages({
   composer,
 }: {
   composer: {
-    images: Array<Picked>
+    images: Array<ComposerImage>
     remove: (key: string) => void
     insertToken: (n: number) => void
   }
 }) {
   const { t } = useLingui()
+  const client = useQueryClient()
   const [preview, setPreview] = useState<number | null>(null)
   if (composer.images.length === 0) return null
   return (
@@ -39,11 +65,15 @@ export function PickedImages({
               onClick={() => setPreview(i)}
               className="block size-16"
             >
-              <img
-                src={image.url}
-                alt=""
-                className="size-16 rounded-xl object-cover"
-              />
+              {image.kind === 'local' ? (
+                <img
+                  src={image.url}
+                  alt=""
+                  className="size-16 rounded-xl object-cover"
+                />
+              ) : (
+                <UploadedPreview name={image.name} />
+              )}
             </Button>
             <Button
               variant="plain"
@@ -70,10 +100,18 @@ export function PickedImages({
       })}
       {preview !== null ? (
         <ImageViewer
-          images={composer.images.map((image) => ({
-            key: image.key,
-            src: image.url,
-          }))}
+          images={composer.images.map((image) =>
+            image.kind === 'local'
+              ? { key: image.key, src: image.url }
+              : {
+                  key: image.key,
+                  load: () =>
+                    loadImageOriginal({ kind: 'upload', name: image.name }),
+                  placeholder: client.getQueryData<{ url: string }>(
+                    thumbQueryKey({ kind: 'upload', name: image.name }),
+                  )?.url,
+                },
+          )}
           index={Math.min(preview, composer.images.length - 1)}
           onIndex={setPreview}
           onClose={() => setPreview(null)}

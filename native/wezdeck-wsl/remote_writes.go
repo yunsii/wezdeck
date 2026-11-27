@@ -49,21 +49,31 @@ func guardSession(id string) (attentionEntry, error) {
 }
 
 func sendToSession(args json.RawMessage) (any, error) {
+	return sendToSessionWithMeta(args, "", "", "")
+}
+
+func sendToSessionWithMeta(args json.RawMessage, via, device, clientOp string) (any, error) {
 	var a struct {
 		ID          string   `json:"id"`
 		Text        string   `json:"text"`
 		Attachments []string `json:"attachments"`
+		ClientOp    string   `json:"client_op"`
 	}
 	if json.Unmarshal(args, &a) != nil || len(a.Text) > 20000 ||
 		(strings.TrimSpace(a.Text) == "" && len(a.Attachments) == 0) {
 		return nil, errors.New("message must be 1–20000 characters")
 	}
+	if clientOp == "" && clientOpPattern.MatchString(a.ClientOp) {
+		clientOp = a.ClientOp
+	}
+	rawText := strings.TrimSpace(a.Text)
+	rawAttachments := append([]string(nil), a.Attachments...)
 	note, err := attachmentNote(a.Attachments)
 	if err != nil {
 		return nil, err
 	}
 	if note != "" {
-		a.Text = strings.TrimSpace(strings.TrimSpace(a.Text) + "\n\n" + note)
+		a.Text = strings.TrimSpace(rawText + "\n\n" + note)
 	}
 	e, err := guardSession(a.ID)
 	if err != nil {
@@ -76,16 +86,60 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if e.WaitingKind != "" {
 		return nil, errors.New("the agent is asking for a confirmation; answer it with the keys first")
 	}
+	trimmed := strings.TrimSpace(a.Text)
+	var sentID string
+	if !isSlashCommand(rawText) {
+		repoKey, repoLabel, worktree := sessionRepoMeta(e)
+		rec, deduped := outboxRecordStart(sentRecord{
+			ClientOp:            clientOp,
+			Kind:                "message",
+			SessionID:           a.ID,
+			RepoKey:             repoKey,
+			RepoLabel:           repoLabel,
+			Worktree:            worktree,
+			Agent:               sessionAgentFamily(e),
+			Pane:                e.TmuxPane,
+			Text:                rawText,
+			Attachments:         rawAttachments,
+			Via:                 via,
+			Device:              device,
+			Status:              "pasting",
+			TranscriptEndAtSend: sessionTranscriptLen(e),
+		})
+		if deduped {
+			relayLogf("outbox_record", "id=%s op_id=%s session=%s kind=message chars=%d attachments=%d status=%s deduped=true",
+				rec.ID, clientOp, a.ID, len([]rune(rawText)), len(rawAttachments), rec.Status)
+			return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text)), "deduped": true, "sent_id": rec.ID}, nil
+		}
+		sentID = rec.ID
+	}
 	if err := pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text); err != nil {
+		if sentID != "" {
+			_, _ = outboxUpdate(sentID, func(r *sentRecord) {
+				r.Status = "failed"
+				r.Error = clip(err.Error(), 300)
+			})
+			relayLogf("outbox_record", "id=%s op_id=%s session=%s kind=message chars=%d attachments=%d status=failed deduped=false",
+				sentID, clientOp, a.ID, len([]rune(rawText)), len(rawAttachments))
+		}
 		return nil, err
 	}
-	trimmed := strings.TrimSpace(a.Text)
+	if sentID != "" {
+		_, _ = outboxUpdate(sentID, func(r *sentRecord) {
+			r.Status = "pending"
+		})
+		relayLogf("outbox_record", "id=%s op_id=%s session=%s kind=message chars=%d attachments=%d status=pending deduped=false",
+			sentID, clientOp, a.ID, len([]rune(rawText)), len(rawAttachments))
+	}
 	if renamed, ok := strings.CutPrefix(trimmed, "/rename "); ok {
 		if renamed = strings.TrimSpace(renamed); renamed != "" {
 			lockSessionTitle(a.ID, e.AgentName, renamed)
 		}
 	}
 	reply := map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}
+	if sentID != "" {
+		reply["sent_id"] = sentID
+	}
 	if strings.EqualFold(trimmed, "/new") && sessionAgentFamily(e) == "agy" {
 		if pendingID := markAgyNewConversation(e); pendingID != "" {
 			reply["session_id"] = pendingID

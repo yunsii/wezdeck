@@ -1,5 +1,12 @@
 import { useLingui } from '@lingui/react/macro'
-import { ImagePlus, Plus, Sparkles, SquareSlash, Trash2 } from 'lucide-react'
+import {
+  History,
+  ImagePlus,
+  Plus,
+  Sparkles,
+  SquareSlash,
+  Trash2,
+} from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -16,9 +23,11 @@ export function ComposerTools({
   hasCommands,
   hasSkills,
   hasDraft,
+  unsettledCount = 0,
   onPickImage,
   onCommands,
   onSkills,
+  onSentHistory,
   onClear,
 }: {
   writable: boolean
@@ -26,9 +35,11 @@ export function ComposerTools({
   hasCommands: boolean
   hasSkills: boolean
   hasDraft: boolean
+  unsettledCount?: number
   onPickImage: (files: FileList | null) => void
   onCommands: () => void
   onSkills: () => void
+  onSentHistory?: () => void
   onClear: () => void
 }) {
   const { t } = useLingui()
@@ -47,9 +58,15 @@ export function ComposerTools({
           trace('session-controls', { action: 'open', type: 'composer' })
           setOpen(true)
         }}
-        className="absolute bottom-1.5 left-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-muted"
+        className="relative absolute bottom-1.5 left-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-muted"
       >
         <Plus size={19} aria-hidden />
+        {unsettledCount > 0 ? (
+          <span
+            aria-hidden
+            className="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-waiting"
+          />
+        ) : null}
       </Button>
       <Sheet
         open={open}
@@ -104,6 +121,29 @@ export function ComposerTools({
             >
               <Sparkles size={19} aria-hidden className="text-brand-muted" />
               {t`Skills`}
+            </Button>
+          ) : null}
+          {onSentHistory ? (
+            <Button
+              variant="plain"
+              type="button"
+              data-testid="sent-history-button"
+              onClick={() => {
+                close()
+                onSentHistory()
+              }}
+              className={row}
+            >
+              <History size={19} aria-hidden className="text-brand-muted" />
+              <span className="flex-1">{t`Sent messages`}</span>
+              {unsettledCount > 0 ? (
+                <span className="rounded-full bg-brand-waiting/15 px-2 py-0.5 text-meta font-medium text-brand-waiting tabular-nums">
+                  {unsettledCount}
+                </span>
+              ) : null}
+              <kbd className="hidden rounded border border-brand-border bg-brand-deck px-1.5 py-0.5 font-mono text-meta text-brand-label md:inline">
+                h
+              </kbd>
             </Button>
           ) : null}
           {hasDraft ? (

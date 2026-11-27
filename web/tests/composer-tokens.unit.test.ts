@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { dropToken, insertTokens, tokenAt } from '#/features/composer-tokens'
+import {
+  dropToken,
+  insertTokens,
+  mergePayloads,
+  offsetTokens,
+  tokenAt,
+} from '#/features/composer-tokens'
 
 describe('composer image tokens', () => {
   it('inserts at the caret with spaces only where needed', () => {
@@ -38,5 +44,38 @@ describe('composer image tokens', () => {
     expect(tokenAt(text, 17, 'before')).toEqual([11, 17])
     expect(tokenAt(text, 8, 'before')).toBeNull() // after the space
     expect(tokenAt(text, 1, 'after')).toBeNull()
+  })
+
+  it('offsets tokens and merges payloads with automatic renumbering', () => {
+    expect(offsetTokens('把 [图片1] 改成 [图片2]', 2)).toBe(
+      '把 [图片3] 改成 [图片4]',
+    )
+    expect(offsetTokens('no tokens', 3)).toBe('no tokens')
+    expect(
+      mergePayloads('先看 [图片1]', 1, '再改 [图片1] 和 [图片2]', [
+        'img-b.jpg',
+        'img-c.jpg',
+      ]),
+    ).toEqual({
+      text: '先看 [图片1]\n再改 [图片2] 和 [图片3]',
+      addedAttachments: ['img-b.jpg', 'img-c.jpg'],
+      droppedCount: 0,
+      renumbered: true,
+    })
+    // caps at maxImages (5) and reports droppedCount
+    expect(
+      mergePayloads(
+        '已有四张',
+        4,
+        '加两张 [图片1] [图片2]',
+        ['img-5.jpg', 'img-6.jpg'],
+        5,
+      ),
+    ).toEqual({
+      text: '已有四张\n加两张 [图片5] [图片6]',
+      addedAttachments: ['img-5.jpg'],
+      droppedCount: 1,
+      renumbered: true,
+    })
   })
 })

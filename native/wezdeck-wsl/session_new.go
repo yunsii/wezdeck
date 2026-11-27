@@ -117,6 +117,7 @@ type newSessionJob struct {
 	socket   string
 	pane     string
 	trusting bool
+	outboxID string
 }
 
 func repoLabelFor(repo string) string {
@@ -349,6 +350,15 @@ func startNewSession(args json.RawMessage) (any, error) {
 		}
 	}
 	now := time.Now()
+	outboxRec, _ := outboxRecordStart(sentRecord{
+		Kind:      "session_new",
+		RepoKey:   a.Repo,
+		RepoLabel: repoLabelFor(a.Repo),
+		Worktree:  reuse,
+		Agent:     profileFamily(a.Agent),
+		Text:      a.Prompt,
+		Status:    "pasting",
+	})
 	job := &newSessionJob{
 		ID:           newDiagID(),
 		Stage:        "creating",
@@ -361,6 +371,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 		Mode:         mode,
 		Worktree:     reuse,
 		at:           now,
+		outboxID:     outboxRec.ID,
 	}
 	newJobsMu.Lock()
 	if reuse != "" {
@@ -593,9 +604,24 @@ func directionSlug(name string) string {
 	return strings.TrimSuffix(b.String(), "-")
 }
 
+func jobOutboxID(id string) string {
+	newJobsMu.Lock()
+	defer newJobsMu.Unlock()
+	if j := newJobs[id]; j != nil {
+		return j.outboxID
+	}
+	return ""
+}
+
 func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 	fail := func(err error) {
 		setJob(id, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
+		if oid := jobOutboxID(id); oid != "" {
+			_, _ = outboxUpdate(oid, func(r *sentRecord) {
+				r.Status = "failed"
+				r.Error = clip(err.Error(), 300)
+			})
+		}
 		relayLogf("session_new", "job=%s ok=false err=%q", id, err)
 	}
 	cmdPath := os.Getenv("WEZDECK_SESSION_NEW_CMD")
@@ -672,11 +698,25 @@ func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string
 		warning = afterSend()
 	}
 	newID := waitNewSessionID(socket, target, beforeIDs, waitFor)
+	var wt string
 	setJob(id, func(j *newSessionJob) {
 		j.SessionID = newID
 		j.Warning = warning
 		j.Stage = "done"
+		wt = j.Worktree
 	})
+	if oid := jobOutboxID(id); oid != "" {
+		_, _ = outboxUpdate(oid, func(r *sentRecord) {
+			r.Status = "pending"
+			r.Pane = target
+			if newID != "" {
+				r.SessionID = newID
+			}
+			if wt != "" {
+				r.Worktree = wt
+			}
+		})
+	}
 	return nil
 }
 

@@ -445,12 +445,12 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   draft) keeps a pinned thread at the bottom too. The reveal cursor never
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
-  the page reopened. The composer keeps a single input row: `＋` opens a
-  portalled Sheet for images, commands, skills and clearing the draft;
+  the page reopened. The composer keeps a single input row (`message-composer.tsx` + `session-composer.tsx`): `＋` opens a
+  portalled Sheet for images, commands, skills, sent messages (`sent-history.tsx`, `h` on desktop; `↑` in an empty composer recalls the latest sent message) and clearing the draft;
   its 40 px touch target stays put while the text starts after 44 px of
   left inset. On desktop, supported actions show their actual shortcut
-  in a hover hint or a trailing key label (send, `/new`, fresh process);
-  picked thumbnails remain above the input. The header's 待办 counter opens
+  in a hover hint or a trailing key label (send, `/new`, fresh process, `h`);
+  picked thumbnails remain above the input and support both local picks and reused host-uploaded images (`ComposerImage`, zero re-upload). The header's 待办 counter opens
   a repository-scoped Sheet with a flat list and a sticky add field. The
   header's `⋯` opens session actions, with the running interrupt visible
   and terminal keys / agent switching under expandable rows. These Sheets
