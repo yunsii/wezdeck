@@ -122,8 +122,12 @@ html[data-theme='dark'] .key-press:active {
    while the main thread renders the conversation just opened (~140 ms,
    measured by web-frame-probe) — a background-color transition froze there
    and jumped. Never a box-shadow: easing from a 999 px veil into an accent
-   shadow filled the row solid blue for ~70 ms. The tint sits under the
-   content (isolation + z-index -1), over the card's own surface. */
+   shadow filled the row solid blue for ~70 ms. Paint the translucent tint
+   above the row content (z-index 1, pointer-events none) rather than at
+   z-index -1: in Chromium, an opacity transition at z-index -1 inside a
+   scroller overlap-promotes sibling rows below it into a non-LCD layer for
+   150 ms, flashing every uninvolved row's text twice per switch (~1,133 px
+   per row). */
 .list-row {
   position: relative;
   isolation: isolate;
@@ -140,12 +144,12 @@ html[data-theme='dark'] .key-press:active {
   inset-block: 0;
   inset-inline-start: 0;
   width: 3px;
-  z-index: 1;
+  z-index: 2;
   background: var(--brand-running);
 }
 .list-row::after {
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   background: var(--brand-running);
 }
 @media (hover: hover) {

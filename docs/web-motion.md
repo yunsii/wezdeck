@@ -69,10 +69,15 @@ Chrome 152 HiDPI tablets, jumping `.vt-page.scrollTop` from 0 to 958 while
 switching from `我的` to `会话` caused GPU sticky-layer flicker with zero DOM
 shifts until composer focus forced a main-thread commit). In the same pass,
 `SwipeActions` omits idle `translateX(0px)` layers and hidden underlay buttons
-until a horizontal drag starts, and `motion.css` scopes `view-transition-name`
+until a horizontal drag starts, `motion.css` scopes `view-transition-name`
 to `html:active-view-transition` so idle wide screens carry no permanent
-view-transition compositor layers. Covered by `split-list-stability.cdp.test.ts`
-and `split-switch.cdp.test.ts`.
+view-transition compositor layers, and `.list-row::after` paints its translucent
+accent tint at `z-index: 1` (`::before` at `z-index: 2`) instead of `z-index: -1`
+— an opacity transition at `z-index: -1` inside a scroller overlap-promoted
+sibling rows below it in Chromium, flipping every uninvolved row's text between
+LCD subpixel and grayscale antialiasing at `t = 0` and `+150 ms` on every switch
+(~1,133 px per row). Covered by `split-list-stability.cdp.test.ts` (including
+per-frame CDP screencast) and `split-switch.cdp.test.ts`.
 
 Live-device list-flicker observability (2026-11-27): `client-trace.ts` records
 `layout-shift` (`PerformanceObserver` CLS ≥ 0.001, ignoring recent input, noting
