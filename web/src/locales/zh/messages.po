@@ -216,7 +216,7 @@ msgstr "7 天额度"
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
-#: src/features/session-restart.tsx:179
+#: src/features/session-restart.tsx:182
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 
@@ -224,7 +224,7 @@ msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
-#: src/features/session-restart.tsx:107
+#: src/features/session-restart.tsx:110
 msgid "A fresh conversation is starting"
 msgstr "正在新开会话"
 
@@ -626,7 +626,7 @@ msgstr "取消"
 #: src/features/session-handoff.tsx:274
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:59
-#: src/features/session-restart.tsx:138
+#: src/features/session-restart.tsx:141
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "取消"
@@ -1275,7 +1275,7 @@ msgstr "本机，已启用"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备密钥，也不需要批准。手机、平板和其他电脑需要各自单独启用。"
 
-#: src/features/session-restart.tsx:127
+#: src/features/session-restart.tsx:130
 msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 msgstr "结束当前 agent 进程，在同一窗格新开一个全新会话（等同终端 Ctrl+Shift+n）。当前对话不会删除，可在「恢复会话」里找回。"
 
@@ -1949,12 +1949,16 @@ msgstr "需要确认"
 #~ msgid "Needs you"
 #~ msgstr "等你"
 
-#: src/features/session-restart.tsx:68
-#: src/features/session-restart.tsx:74
-#: src/features/session-restart.tsx:114
-#: src/features/session-restart.tsx:184
+#: src/features/session-restart.tsx:117
+#: src/features/session-restart.tsx:187
 msgid "New conversation"
 msgstr "新开会话"
+
+#: src/features/session-restart.tsx:68
+#: src/features/session-restart.tsx:77
+msgctxt "quick same-pane"
+msgid "New conversation"
+msgstr "新对话"
 
 #: src/features/session-new-direction.tsx:183
 #~ msgid "new direction"
@@ -2761,21 +2765,21 @@ msgstr "重置时间 {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
-#: src/features/session-restart.tsx:167
+#: src/features/session-restart.tsx:170
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "原地重启窗格，agent 恢复当前对话（F5）"
 
-#: src/features/session-restart.tsx:149
-#: src/features/session-restart.tsx:158
+#: src/features/session-restart.tsx:152
+#: src/features/session-restart.tsx:161
 msgid "Restart"
 msgstr "重启"
 
-#: src/features/session-restart.tsx:114
-#: src/features/session-restart.tsx:172
+#: src/features/session-restart.tsx:117
+#: src/features/session-restart.tsx:175
 msgid "Restart session"
 msgstr "重启会话"
 
-#: src/features/session-restart.tsx:128
+#: src/features/session-restart.tsx:131
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对话（等同终端 F5）。"
 
@@ -3236,7 +3240,7 @@ msgstr "开始空白对话？"
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
-#: src/features/session-restart.tsx:149
+#: src/features/session-restart.tsx:152
 msgid "Start fresh"
 msgstr "新开"
 
@@ -3449,7 +3453,7 @@ msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
-#: src/features/session-restart.tsx:108
+#: src/features/session-restart.tsx:111
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 

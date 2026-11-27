@@ -65,13 +65,16 @@ export function QuickNewConversation({
       variant="plain"
       type="button"
       title={t`Start a blank conversation in this pane`}
-      aria-label={t`New conversation`}
+      aria-label={t({
+        message: 'New conversation',
+        context: 'quick same-pane',
+      })}
       onClick={() => setAsking(true)}
-      className={chip}
+      className={`${chip} text-brand-running`}
       data-testid="quick-new-conversation"
     >
       <SquarePlus size={14} aria-hidden />
-      {t`New conversation`}
+      {t({ message: 'New conversation', context: 'quick same-pane' })}
     </Button>
   )
 }
