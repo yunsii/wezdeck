@@ -248,7 +248,12 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     (`status_check`: missing / partial / done + evidence; done → no child,
     partial → the child names what it reuses) and write `summary.problem` /
     `summary.approach` and a plain `effect` per child — a draft missing any of
-    them is refused before review. `outcome` is computed by `split.py`, not
+    them is refused before review. When the goal touches DB schema or data
+    migrations, `prompts/plan.md` also requires reading the target repo's
+    release and migration docs first so multi-release rules (e.g. add-column
+    migration in Release N, ORM schema/code in Release N+1) and manual prod
+    apply gates appear in `summary.approach`, child boundaries, `contract`, and
+    `risks`. `outcome` is computed by `split.py`, not
     the model: workers, max parallel (dependency width ∩ ceilings ∩ memory),
     stages, memory peak, minutes from this machine's run records (no money:
     the user does not want quota estimates on tasks),
