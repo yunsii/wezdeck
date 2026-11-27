@@ -73,6 +73,10 @@
 | Review-headless | `read` | `providers/*.sh` `__invoke` → `host_agent_invoke_run --capture` |
 | agent-fanout | `read`（经 provider） | 同上 |
 
+Review provider 的探针和结果解析在 `adversarial-review/lib/`；委托与审查复用
+`host-agent-invoke` 的 CLI、环境与权限档，分别使用 `write` / `read`。
+探针失败应报告具体后端状态，不能把 API 拒绝或沙箱网络限制概括成“没有 CLI”。
+
 对外 `run_agent` / `fanout_*` API 不变；CLI flags / attention / CODEX_HOME 单源在 `host-agent-invoke`。
 
 ---

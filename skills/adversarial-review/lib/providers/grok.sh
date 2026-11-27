@@ -13,7 +13,7 @@ grok__model()    { printf '%s' "${ADV_MODEL_GROK:-grok-4.5}"; }
 
 # stdin = full prompt; $1 = effort.
 grok__invoke() {
-  local effort="${1:-}" model gtmp raw
+  local effort="${1:-}" model gtmp raw rc=0
   model="$(grok__model)"
   gtmp="$(mktemp "${TMPDIR:-/tmp}/grok-prompt.XXXXXX")"
   cat >"$gtmp"
@@ -23,7 +23,11 @@ grok__invoke() {
       --cwd "${PWD:-.}" --prompt-file "$gtmp" \
       --model "$model" ${effort:+--effort "$effort"} \
       --capture
-  )" || true
+  )" || rc=$?
   rm -f "$gtmp"
-  printf '%s' "$raw" | jq -r '.text // empty'
+  if [ "$rc" -ne 0 ] || printf '%s' "$raw" | jq -e '.is_error == true or .error != null' >/dev/null 2>&1; then
+    printf 'grok invoke failed (exit %s)\n' "$rc" >&2
+    return 1
+  fi
+  printf '%s' "$raw" | jq -er '.text | select(type == "string" and length > 0)'
 }

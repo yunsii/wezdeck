@@ -22,6 +22,7 @@ _sel_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ADV_REVIEW_PROBE="${ADV_REVIEW_PROBE:-1}"
 ADV_REVIEW_PROBE_TIMEOUT="${ADV_REVIEW_PROBE_TIMEOUT:-45}"
+declare -A _PROBE_RESULT=() _PROBE_REASON=()
 
 # Writer identity (various aliases) → family, matching backend families.
 _writer_family() {
@@ -40,12 +41,42 @@ _backend_family() { _provider_family "$1"; }
 
 # Live ping (0 = usable headless). PATH-only when ADV_REVIEW_PROBE=0.
 _probe_backend() {
-  local p; p="$(_provider_canonical "$1")"
-  provider_available "$p" || return 1
-  [ "$ADV_REVIEW_PROBE" = "0" ] && return 0
-  timeout "$ADV_REVIEW_PROBE_TIMEOUT" "$_sel_dir/provider.sh" probe "$p" >/dev/null 2>&1
+  local p rc=0 output reason
+  p="$(_provider_canonical "$1")"
+  if [ -n "${_PROBE_RESULT[$p]+set}" ]; then
+    [ "${_PROBE_RESULT[$p]}" = 0 ]
+    return
+  fi
+  if ! provider_available "$p"; then
+    rc=1; reason=not_on_path
+  elif [ "$ADV_REVIEW_PROBE" = "0" ]; then
+    reason=path_only
+  else
+    output="$(timeout "$ADV_REVIEW_PROBE_TIMEOUT" "$_sel_dir/provider.sh" probe "$p" 2>&1)" || rc=$?
+    if [ "$rc" -eq 124 ]; then reason=timeout
+    elif [[ "$output" == *verification_required* ]]; then reason=verification_required
+    elif [[ "$output" == *'operation not permitted'* ]]; then reason=sandbox_restricted
+    elif [ "$rc" -ne 0 ]; then reason=invoke_failed
+    else reason=ready
+    fi
+  fi
+  _PROBE_RESULT["$p"]="$rc"
+  _PROBE_REASON["$p"]="$reason"
+  [ "$rc" -eq 0 ]
 }
 _avail() { _probe_backend "$1"; }
+
+_probe_failures() {
+  local candidates="$1" seen=' ' p out=''
+  for p in $candidates; do
+    p="$(_provider_canonical "$p")"
+    [[ "$seen" == *" $p "* ]] && continue
+    seen+="$p "
+    [ "${_PROBE_RESULT[$p]:-1}" = 0 ] && continue
+    out+="${out:+, }$p=${_PROBE_REASON[$p]:-unknown}"
+  done
+  printf '%s' "$out"
+}
 
 _emit_pair() {
   SEL_REVIEWER="$1"; SEL_REFUTER="$2"; SEL_FORM="$3"; SEL_DEGRADED="$4"; SEL_REASON="$5"
@@ -73,7 +104,7 @@ select_review_backends() {
     for c in $rev_cands; do _avail "$c" && { reviewer="$c"; break; }; done
   fi
   if [ -z "$reviewer" ]; then
-    _emit_pair "" "" "unavailable" "true" "no review backends available"; return 1
+    _emit_pair "" "" "unavailable" "true" "no review backends available ($(_probe_failures "$rev_cands $ref_cands")); run with host/network access or inspect provider errors"; return 1
   fi
   local rev_fam; rev_fam="$(_backend_family "$reviewer")"
 

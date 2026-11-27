@@ -271,6 +271,14 @@ run.sh <BASE> --reviewer claude --refuter codex
 lib/select-backends.sh --writer codex --json --no-probe
 ```
 
+Live selection probes the same `host-agent-invoke` read profile used by the
+review gates. A CLI found on PATH is not necessarily usable: auth/API errors
+and restricted network access make its probe fail. Failure output names the
+backend and category; `--no-probe` checks PATH only and does not establish a
+working reviewer. If the calling agent is sandboxed, run the review through
+the host-authorized execution path. The ticket worker uses this same invoke
+core in `write` mode; review-specific parsing and provider selection live here.
+
 ## Usage
 
 ```bash
