@@ -80,6 +80,9 @@ importers:
       lucide-react:
         specifier: ^1.48.0
         version: 1.48.0(react@19.3.0)
+      marked:
+        specifier: 18.2.1
+        version: 18.2.1
       mermaid:
         specifier: ^12.3.0
         version: 12.3.0

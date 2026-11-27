@@ -112,7 +112,9 @@ Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /
 profile badge (Kimi, gateway, …). Completed and idle sessions preview the
 latest agent reply from the current detail cache; until it is available they
-show the human prompt. Running and waiting sessions retain the request and
+show the human prompt. Markdown replies become single-line plain text (format
+markers and link URLs are omitted) for both chat rows and sub-rows. Running
+and waiting sessions retain the request and
 status prefix. The cache is already warmed on completion and list previews
 subscribe to its updates without fetching transcripts on every list poll;
 focusing a session opens its preview. A newly created idle
