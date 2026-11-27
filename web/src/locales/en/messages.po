@@ -57,7 +57,7 @@ msgstr "{count} monitors running"
 #~ msgid "{count} more need you"
 #~ msgstr "{count} more need you"
 
-#: src/features/session-worktree-manager.tsx:126
+#: src/features/session-worktree-manager.tsx:129
 msgid "{count} sessions"
 msgstr "{count} sessions"
 
@@ -86,7 +86,7 @@ msgstr "{hours} h ago"
 msgid "{label} {percent}% used"
 msgstr "{label} {percent}% used"
 
-#: src/features/session-worktree-manager.tsx:336
+#: src/features/session-worktree-manager.tsx:389
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
@@ -502,6 +502,7 @@ msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:85
 #: src/features/console-me.tsx:464
+#: src/features/session-worktree-manager.tsx:443
 #: src/features/tickets-view.tsx:412
 msgid "Back"
 msgstr "Back"
@@ -561,6 +562,7 @@ msgstr "Block and underscore need Chrome 144 or later; other browsers keep the b
 
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:67
+#: src/features/session-worktree-detail.tsx:65
 msgid "Branch"
 msgstr "Branch"
 
@@ -995,8 +997,10 @@ msgstr "Copy error"
 msgid "Copy link"
 msgstr "Copy link"
 
-#: src/features/session-worktree-manager.tsx:206
-#: src/features/session-worktree-manager.tsx:207
+#: src/features/session-worktree-detail.tsx:76
+#: src/features/session-worktree-detail.tsx:77
+#: src/features/session-worktree-manager.tsx:223
+#: src/features/session-worktree-manager.tsx:224
 msgid "Copy path"
 msgstr "Copy path"
 
@@ -1052,7 +1056,7 @@ msgstr "cost and limits"
 msgid "Could not change the device: {changeError}"
 msgstr "Could not change the device: {changeError}"
 
-#: src/features/session-worktree-manager.tsx:292
+#: src/features/session-worktree-manager.tsx:317
 msgid "Could not copy path"
 msgstr "Could not copy path"
 
@@ -1125,7 +1129,7 @@ msgstr "Cross-repo collab"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-worktree-manager.tsx:172
+#: src/features/session-worktree-manager.tsx:184
 msgid "Current"
 msgstr "Current"
 
@@ -1202,8 +1206,9 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/session-worktree-manager.tsx:119
-#: src/features/session-worktree-manager.tsx:188
+#: src/features/session-worktree-detail.tsx:67
+#: src/features/session-worktree-manager.tsx:122
+#: src/features/session-worktree-manager.tsx:200
 msgid "Detached"
 msgstr "Detached"
 
@@ -1637,7 +1642,7 @@ msgstr "In progress"
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "In Safari tap Share, then “Add to Home Screen”."
 
-#: src/features/session-worktree-manager.tsx:120
+#: src/features/session-worktree-manager.tsx:123
 msgid "In use"
 msgstr "In use"
 
@@ -1854,12 +1859,12 @@ msgstr "Loading original…"
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
-#: src/features/session-worktree-manager.tsx:316
+#: src/features/session-worktree-manager.tsx:365
 #: src/features/tickets-view.tsx:287
 msgid "Loading…"
 msgstr "Loading…"
 
-#: src/features/session-worktree-manager.tsx:117
+#: src/features/session-worktree-manager.tsx:120
 msgid "Local changes"
 msgstr "Local changes"
 
@@ -1880,7 +1885,7 @@ msgstr "Login"
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/session-worktree-manager.tsx:175
+#: src/features/session-worktree-manager.tsx:187
 msgid "Main checkout"
 msgstr "Main checkout"
 
@@ -1892,6 +1897,10 @@ msgstr "manage MCP servers"
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "manage tool permission rules"
+
+#: src/features/session-worktree-manager.tsx:171
+msgid "Manage worktree"
+msgstr "Manage worktree"
 
 #: src/features/session-statusbar.tsx:289
 #~ msgid "Manage worktrees"
@@ -2075,6 +2084,7 @@ msgstr "New session group"
 #: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:372
 #: src/features/session-new.tsx:437
+#: src/features/session-worktree-detail.tsx:167
 msgid "New session in this group"
 msgstr "New session in this group"
 
@@ -2181,7 +2191,7 @@ msgstr "No human message yet"
 #~ msgid "No idle sessions."
 #~ msgstr "No idle sessions."
 
-#: src/features/session-worktree-manager.tsx:331
+#: src/features/session-worktree-manager.tsx:384
 msgid "No linked worktrees"
 msgstr "No linked worktrees"
 
@@ -2255,7 +2265,7 @@ msgstr "Not configured"
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 
-#: src/features/session-worktree-manager.tsx:118
+#: src/features/session-worktree-manager.tsx:121
 msgid "Not delivered"
 msgstr "Not delivered"
 
@@ -2314,7 +2324,7 @@ msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
 #: src/features/session-new-panels.tsx:127
 #: src/features/session-skills.tsx:236
-#: src/features/session-worktree-manager.tsx:331
+#: src/features/session-worktree-manager.tsx:384
 msgid "Nothing matches"
 msgstr "Nothing matches"
 
@@ -2390,6 +2400,7 @@ msgstr "Open repository links (key: l)"
 
 #: src/features/session-delete.tsx:49
 #: src/features/session-delete.tsx:71
+#: src/features/session-worktree-detail.tsx:152
 msgid "Open session"
 msgstr "Open session"
 
@@ -2449,7 +2460,7 @@ msgstr "Origin session"
 msgid "Other"
 msgstr "Other"
 
-#: src/features/session-worktree-manager.tsx:256
+#: src/features/session-worktree-manager.tsx:275
 msgid "Other worktrees"
 msgstr "Other worktrees"
 
@@ -2513,6 +2524,10 @@ msgstr "Part"
 #: src/features/ticket-proposals.tsx:329
 msgid "partly done"
 msgstr "partly done"
+
+#: src/features/session-worktree-detail.tsx:71
+msgid "Path"
+msgstr "Path"
 
 #: src/features/me-devices.tsx:273
 msgid "Pending"
@@ -2603,6 +2618,10 @@ msgstr "Proposal rejected"
 #: src/features/ticket-proposals.tsx:109
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "Proposed plan: {n} child ticket(s)"
+
+#: src/features/session-worktree-detail.tsx:106
+msgid "Purpose"
+msgstr "Purpose"
 
 #: src/features/composer-picked.tsx:52
 msgid "Put [{label}] at the caret"
@@ -2911,7 +2930,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/session-worktree-manager.tsx:114
+#: src/features/session-worktree-manager.tsx:117
 msgid "Reusable"
 msgstr "Reusable"
 
@@ -2988,7 +3007,7 @@ msgstr "running"
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-status-band.tsx:38
-#: src/features/session-worktree-manager.tsx:115
+#: src/features/session-worktree-manager.tsx:118
 msgid "Running"
 msgstr "Running"
 
@@ -3059,6 +3078,7 @@ msgstr "Same at the desk"
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/session-purpose.tsx:118
+#: src/features/session-worktree-detail.tsx:131
 msgid "Save"
 msgstr "Save"
 
@@ -3067,6 +3087,7 @@ msgid "Save availability and note"
 msgstr "Save availability and note"
 
 #: src/features/me-agent-detail.tsx:23
+#: src/features/session-worktree-detail.tsx:45
 msgid "Saved"
 msgstr "Saved"
 
@@ -3118,8 +3139,8 @@ msgstr "Search sessions"
 msgid "Search skills"
 msgstr "Search skills"
 
-#: src/features/session-worktree-manager.tsx:307
-#: src/features/session-worktree-manager.tsx:308
+#: src/features/session-worktree-manager.tsx:356
+#: src/features/session-worktree-manager.tsx:357
 msgid "Search worktrees"
 msgstr "Search worktrees"
 
@@ -3416,6 +3437,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:82
+#: src/features/session-worktree-detail.tsx:60
 #: src/features/tickets-view.tsx:196
 msgid "Status"
 msgstr "Status"
@@ -3840,6 +3862,10 @@ msgstr "Truncated at 64 KB — check the terminal for the full payload."
 msgid "Trust this worktree and continue"
 msgstr "Trust this worktree and continue"
 
+#: src/features/session-worktree-detail.tsx:134
+msgid "Turn on write access in Settings to edit"
+msgstr "Turn on write access in Settings to edit"
+
 #: src/features/session-commands.tsx:277
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
@@ -3970,7 +3996,7 @@ msgstr "Waiting for the host to approve this device. On the host run:"
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/session-worktree-manager.tsx:116
+#: src/features/session-worktree-manager.tsx:119
 msgid "Waiting for you"
 msgstr "Waiting for you"
 
@@ -4090,6 +4116,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
 #: src/features/session-purpose.tsx:90
+#: src/features/session-worktree-detail.tsx:116
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
@@ -4174,10 +4201,10 @@ msgstr "Worktree"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 
-#: src/features/session-worktree-manager.tsx:351
-#: src/features/session-worktree-manager.tsx:356
-#: src/features/session-worktree-manager.tsx:373
-#: src/features/session-worktree-manager.tsx:381
+#: src/features/session-worktree-manager.tsx:404
+#: src/features/session-worktree-manager.tsx:412
+#: src/features/session-worktree-manager.tsx:430
+#: src/features/session-worktree-manager.tsx:451
 msgid "Worktrees"
 msgstr "Worktrees"
 

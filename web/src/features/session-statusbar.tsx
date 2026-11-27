@@ -260,9 +260,7 @@ export function SessionStatusBar({
             <WorktreeManager
               list={worktrees}
               sample={workstationsSample}
-              repoPath={
-                worktrees.find((wt) => wt.current)?.path ?? worktrees[0].path
-              }
+              repoPath={worktrees[0].path}
             />
           ) : null}
         </TagLine>

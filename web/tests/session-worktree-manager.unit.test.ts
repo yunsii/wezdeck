@@ -17,7 +17,13 @@ describe('worktree overview', () => {
       name: 'ux',
       description: 'Web console',
       slots: [
-        { path: '/trees/ux', name: 'ux', branch: 'dev/ux', state: 'idle' },
+        {
+          path: '/trees/ux',
+          name: 'ux',
+          branch: 'dev/ux',
+          description: 'Web console',
+          state: 'idle',
+        },
         {
           path: '/trees/ux-2',
           name: 'ux-2',
@@ -33,6 +39,7 @@ describe('worktree overview', () => {
     expect(groups.map((group) => group.name)).toEqual(['ux', 'Other'])
     expect(groups[0].description).toBe('Web console')
     expect(groups[0].rows[0]).toMatchObject({ name: 'ux', current: true })
+    expect(groups[0].rows[0].description).toBe('Web console')
     expect(groups[1].rows.map((row) => [row.path, row.primary])).toEqual([
       ['/repo', true],
       ['/trees/ticket-1', false],

@@ -1,6 +1,8 @@
 // covers: web/src/features/session-statusbar.tsx web/src/features/session-usage.tsx
 // covers: web/src/features/session-header.tsx web/src/features/console-sessions.tsx
 // covers: web/src/features/session-worktree-manager.tsx
+// covers: web/src/features/session-worktree-actions.ts web/src/features/session-worktree-detail.tsx
+// covers: native/wezdeck-wsl/workstations.go
 // covers: web/src/features/console-interactions-demos.tsx
 import { chromium } from '@playwright/test'
 import type { Browser, Locator, Page } from '@playwright/test'
@@ -72,7 +74,7 @@ describe('Status bar', () => {
     )
     await checkCopyPath(page, sheet)
     if (process.env.WEZDECK_VISUAL_SHOTS) await captureThemePair(page, 'phone')
-    await page.keyboard.press('Escape')
+    await exerciseMobileWorktreeActions(page, sheet)
     await sheet.waitFor({ state: 'hidden' })
     await page.keyboard.press('Escape')
     const opensUp = async (testId: string, list: string) => {
@@ -128,7 +130,7 @@ describe('Status bar', () => {
       ).toBe(3)
       if (process.env.WEZDECK_VISUAL_SHOTS)
         await captureThemePair(page, 'desktop')
-      await page.keyboard.press('Escape')
+      await exerciseDesktopWorktreeActions(page, panel)
       await panel.waitFor({ state: 'hidden' })
     } finally {
       await page.close()
@@ -247,7 +249,56 @@ async function checkCopyPath(page: Page, sheet: Locator) {
     .toBe(path)
 }
 
-async function captureThemePair(page: Page, viewport: 'phone' | 'desktop') {
+async function exerciseMobileWorktreeActions(page: Page, sheet: Locator) {
+  await sheet.getByRole('button', { name: '管理工作树: dev-agent' }).click()
+  const detail = sheet.getByTestId('worktree-detail')
+  await detail.waitFor()
+  await expectDetailFits(detail)
+  if (process.env.WEZDECK_VISUAL_SHOTS)
+    await captureThemePair(page, 'phone-detail')
+  const purpose = detail.getByRole('textbox', { name: '用途' })
+  expect(await purpose.inputValue()).toBe('Agent 工具与注意力')
+  await purpose.fill('新的用途')
+  await detail.getByRole('button', { name: '保存' }).click()
+  await expect
+    .poll(() => detail.getByRole('button', { name: '保存' }).isDisabled())
+    .toBe(true)
+  await sheet.getByRole('button', { name: '返回' }).click()
+  await sheet.getByText('新的用途').waitFor()
+  await sheet
+    .getByRole('button', { name: '管理工作树: wezterm-config' })
+    .click()
+  expect(
+    await sheet
+      .getByTestId('worktree-detail')
+      .getByRole('textbox', { name: '用途' })
+      .count(),
+  ).toBe(0)
+  await sheet.getByRole('button', { name: '返回' }).click()
+  await sheet.getByRole('button', { name: '管理工作树: dev-agent' }).click()
+  await detail.getByRole('button', { name: '在此组新建会话' }).click()
+  await sheet.waitFor({ state: 'hidden' })
+  expect(page.url()).toContain('/me/interactions')
+}
+
+async function exerciseDesktopWorktreeActions(page: Page, panel: Locator) {
+  await panel.getByRole('button', { name: '管理工作树: dev-agent' }).click()
+  const detail = panel.getByTestId('worktree-detail')
+  await detail.waitFor()
+  await expectDetailFits(detail)
+  if (process.env.WEZDECK_VISUAL_SHOTS)
+    await captureThemePair(page, 'desktop-detail')
+  await detail.getByRole('button', { name: '打开会话' }).waitFor()
+  await detail.getByRole('button', { name: '在此组新建会话' }).waitFor()
+  await panel.getByRole('button', { name: '返回' }).click()
+  await panel.getByRole('button', { name: '管理工作树: dev-agent' }).click()
+  await detail.getByRole('button', { name: '打开会话' }).click()
+}
+
+async function captureThemePair(
+  page: Page,
+  viewport: 'phone' | 'desktop' | 'phone-detail' | 'desktop-detail',
+) {
   const original = await page.evaluate(() =>
     document.documentElement.getAttribute('data-theme'),
   )
@@ -255,9 +306,21 @@ async function captureThemePair(page: Page, viewport: 'phone' | 'desktop') {
   await page.evaluate(() =>
     document.documentElement.setAttribute('data-theme', 'dark'),
   )
+  await page.waitForTimeout(200)
   await page.screenshot({ path: `/tmp/wezdeck-worktrees-${viewport}-dark.png` })
   await page.evaluate((theme) => {
     if (theme === null) document.documentElement.removeAttribute('data-theme')
     else document.documentElement.setAttribute('data-theme', theme)
   }, original)
+}
+
+async function expectDetailFits(detail: Locator) {
+  const geometry = await detail.evaluate((element) => ({
+    content: element.scrollWidth,
+    available: element.clientWidth,
+    right: element.getBoundingClientRect().right,
+    viewport: window.innerWidth,
+  }))
+  expect(geometry.content).toBeLessThanOrEqual(geometry.available + 1)
+  expect(geometry.right).toBeLessThanOrEqual(geometry.viewport + 1)
 }

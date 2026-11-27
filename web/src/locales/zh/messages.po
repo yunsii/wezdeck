@@ -57,7 +57,7 @@ msgstr "{count} 个 Monitor 运行中"
 #~ msgid "{count} more need you"
 #~ msgstr "还有 {count} 个等你"
 
-#: src/features/session-worktree-manager.tsx:126
+#: src/features/session-worktree-manager.tsx:129
 msgid "{count} sessions"
 msgstr "{count} 个会话"
 
@@ -86,7 +86,7 @@ msgstr "{hours} 小时前"
 msgid "{label} {percent}% used"
 msgstr "{label}已用 {percent}%"
 
-#: src/features/session-worktree-manager.tsx:336
+#: src/features/session-worktree-manager.tsx:389
 msgid "{linked} linked worktrees"
 msgstr "{linked} 个关联 worktree"
 
@@ -502,6 +502,7 @@ msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:85
 #: src/features/console-me.tsx:464
+#: src/features/session-worktree-manager.tsx:443
 #: src/features/tickets-view.tsx:412
 msgid "Back"
 msgstr "返回"
@@ -561,6 +562,7 @@ msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示
 
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:67
+#: src/features/session-worktree-detail.tsx:65
 msgid "Branch"
 msgstr "分支"
 
@@ -995,8 +997,10 @@ msgstr "复制错误信息"
 msgid "Copy link"
 msgstr "复制链接"
 
-#: src/features/session-worktree-manager.tsx:206
-#: src/features/session-worktree-manager.tsx:207
+#: src/features/session-worktree-detail.tsx:76
+#: src/features/session-worktree-detail.tsx:77
+#: src/features/session-worktree-manager.tsx:223
+#: src/features/session-worktree-manager.tsx:224
 msgid "Copy path"
 msgstr "复制路径"
 
@@ -1052,7 +1056,7 @@ msgstr "费用与额度"
 msgid "Could not change the device: {changeError}"
 msgstr "操作失败：{changeError}"
 
-#: src/features/session-worktree-manager.tsx:292
+#: src/features/session-worktree-manager.tsx:317
 msgid "Could not copy path"
 msgstr "无法复制路径"
 
@@ -1125,7 +1129,7 @@ msgstr "跨仓协作"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
-#: src/features/session-worktree-manager.tsx:172
+#: src/features/session-worktree-manager.tsx:184
 msgid "Current"
 msgstr "当前"
 
@@ -1202,8 +1206,9 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "终端空闲"
 
-#: src/features/session-worktree-manager.tsx:119
-#: src/features/session-worktree-manager.tsx:188
+#: src/features/session-worktree-detail.tsx:67
+#: src/features/session-worktree-manager.tsx:122
+#: src/features/session-worktree-manager.tsx:200
 msgid "Detached"
 msgstr "游离分支"
 
@@ -1637,7 +1642,7 @@ msgstr "进行中"
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 
-#: src/features/session-worktree-manager.tsx:120
+#: src/features/session-worktree-manager.tsx:123
 msgid "In use"
 msgstr "仍在使用"
 
@@ -1854,12 +1859,12 @@ msgstr "正在加载原图…"
 #: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
-#: src/features/session-worktree-manager.tsx:316
+#: src/features/session-worktree-manager.tsx:365
 #: src/features/tickets-view.tsx:287
 msgid "Loading…"
 msgstr "加载中…"
 
-#: src/features/session-worktree-manager.tsx:117
+#: src/features/session-worktree-manager.tsx:120
 msgid "Local changes"
 msgstr "有本地改动"
 
@@ -1880,7 +1885,7 @@ msgstr "登录"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/session-worktree-manager.tsx:175
+#: src/features/session-worktree-manager.tsx:187
 msgid "Main checkout"
 msgstr "主工作树"
 
@@ -1892,6 +1897,10 @@ msgstr "管理 MCP 服务"
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "管理工具权限规则"
+
+#: src/features/session-worktree-manager.tsx:171
+msgid "Manage worktree"
+msgstr "管理工作树"
 
 #: src/features/session-statusbar.tsx:289
 #~ msgid "Manage worktrees"
@@ -2075,6 +2084,7 @@ msgstr "新会话组"
 #: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:372
 #: src/features/session-new.tsx:437
+#: src/features/session-worktree-detail.tsx:167
 msgid "New session in this group"
 msgstr "在此组新建会话"
 
@@ -2181,7 +2191,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/session-worktree-manager.tsx:331
+#: src/features/session-worktree-manager.tsx:384
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
 
@@ -2255,7 +2265,7 @@ msgstr "未配置"
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
-#: src/features/session-worktree-manager.tsx:118
+#: src/features/session-worktree-manager.tsx:121
 msgid "Not delivered"
 msgstr "未交付"
 
@@ -2314,7 +2324,7 @@ msgstr "现在没有等你处理的工单。需要你回复或运行失败的会
 
 #: src/features/session-new-panels.tsx:127
 #: src/features/session-skills.tsx:236
-#: src/features/session-worktree-manager.tsx:331
+#: src/features/session-worktree-manager.tsx:384
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2390,6 +2400,7 @@ msgstr "打开仓库外链（快捷键：l）"
 
 #: src/features/session-delete.tsx:49
 #: src/features/session-delete.tsx:71
+#: src/features/session-worktree-detail.tsx:152
 msgid "Open session"
 msgstr "打开会话"
 
@@ -2449,7 +2460,7 @@ msgstr "发起会话"
 msgid "Other"
 msgstr "其他"
 
-#: src/features/session-worktree-manager.tsx:256
+#: src/features/session-worktree-manager.tsx:275
 msgid "Other worktrees"
 msgstr "其他工作树"
 
@@ -2513,6 +2524,10 @@ msgstr "组成"
 #: src/features/ticket-proposals.tsx:329
 msgid "partly done"
 msgstr "部分实现"
+
+#: src/features/session-worktree-detail.tsx:71
+msgid "Path"
+msgstr "路径"
 
 #: src/features/me-devices.tsx:273
 msgid "Pending"
@@ -2603,6 +2618,10 @@ msgstr "已驳回提案"
 #: src/features/ticket-proposals.tsx:109
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "拆分方案：{n} 张子单"
+
+#: src/features/session-worktree-detail.tsx:106
+msgid "Purpose"
+msgstr "用途"
 
 #: src/features/composer-picked.tsx:52
 msgid "Put [{label}] at the caret"
@@ -2911,7 +2930,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/session-worktree-manager.tsx:114
+#: src/features/session-worktree-manager.tsx:117
 msgid "Reusable"
 msgstr "可复用"
 
@@ -2988,7 +3007,7 @@ msgstr "运行中"
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-status-band.tsx:38
-#: src/features/session-worktree-manager.tsx:115
+#: src/features/session-worktree-manager.tsx:118
 msgid "Running"
 msgstr "运行中"
 
@@ -3059,6 +3078,7 @@ msgstr "终端同键"
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/session-purpose.tsx:118
+#: src/features/session-worktree-detail.tsx:131
 msgid "Save"
 msgstr "保存"
 
@@ -3067,6 +3087,7 @@ msgid "Save availability and note"
 msgstr "保存可用状态与备注"
 
 #: src/features/me-agent-detail.tsx:23
+#: src/features/session-worktree-detail.tsx:45
 msgid "Saved"
 msgstr "已保存"
 
@@ -3118,8 +3139,8 @@ msgstr "搜索会话"
 msgid "Search skills"
 msgstr "搜索能力"
 
-#: src/features/session-worktree-manager.tsx:307
-#: src/features/session-worktree-manager.tsx:308
+#: src/features/session-worktree-manager.tsx:356
+#: src/features/session-worktree-manager.tsx:357
 msgid "Search worktrees"
 msgstr "搜索工作树"
 
@@ -3416,6 +3437,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:361
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:82
+#: src/features/session-worktree-detail.tsx:60
 #: src/features/tickets-view.tsx:196
 msgid "Status"
 msgstr "状态"
@@ -3840,6 +3862,10 @@ msgstr "内容超过 64 KB 已截断，完整内容请在终端查看。"
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
+#: src/features/session-worktree-detail.tsx:134
+msgid "Turn on write access in Settings to edit"
+msgstr "在设置中启用写入后可编辑"
+
 #: src/features/session-commands.tsx:277
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
@@ -3970,7 +3996,7 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/session-worktree-manager.tsx:116
+#: src/features/session-worktree-manager.tsx:119
 msgid "Waiting for you"
 msgstr "等待处理"
 
@@ -4090,6 +4116,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
 #: src/features/session-purpose.tsx:90
+#: src/features/session-worktree-detail.tsx:116
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
 
@@ -4174,10 +4201,10 @@ msgstr "工作树"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
-#: src/features/session-worktree-manager.tsx:351
-#: src/features/session-worktree-manager.tsx:356
-#: src/features/session-worktree-manager.tsx:373
-#: src/features/session-worktree-manager.tsx:381
+#: src/features/session-worktree-manager.tsx:404
+#: src/features/session-worktree-manager.tsx:412
+#: src/features/session-worktree-manager.tsx:430
+#: src/features/session-worktree-manager.tsx:451
 msgid "Worktrees"
 msgstr "工作树"
 

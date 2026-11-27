@@ -62,6 +62,9 @@ func TestListWorkstationsGroupsByDirection(t *testing.T) {
 	if ux.Slots[0].Name != "ux-2" || ux.Slots[0].State != "dirty" || ux.Slots[1].State != "idle" {
 		t.Fatalf("ux slots (newest visit first): %+v", ux.Slots)
 	}
+	if ux.Slots[0].Description != "" || ux.Slots[1].Description != "网页控制台" {
+		t.Fatalf("slot descriptions: %+v", ux.Slots)
+	}
 	if dirs[1].Name != "ci-2" || dirs[1].Idle != 1 {
 		t.Fatalf("ci-2 is its own direction: %+v", dirs[1])
 	}

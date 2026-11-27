@@ -145,8 +145,11 @@ The web conversation's `工作树 N` status entry opens its worktree overview in
 one step: a bottom sheet on phones, an anchored upward list on wide screens.
 Directions show their name, purpose and slots; the main checkout and ticket /
 OpenClaw trees remain visible under 其他. Each row shows state, branch and path
-with a copy action. This is a read view; recycle and reclaim still use their
-guarded workstation workflows. Open, result, close and copy leave
+with a copy action. Opening a workstation shows its details: an approved
+device can edit that slot's purpose, open an existing session or start another
+session in its group. Primary, ticket and OpenClaw trees stay read-only here;
+recycle and reclaim still use their guarded workstation workflows. Open,
+result, select, describe, navigate and copy leave
 `worktree-view` diagnostic trace events without recording paths.
 
 ```mermaid

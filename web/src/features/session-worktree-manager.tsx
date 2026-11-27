@@ -1,7 +1,7 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
-import { Check, Copy, Layers } from 'lucide-react'
+import { ArrowLeft, Check, ChevronRight, Copy, Layers } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -15,6 +15,8 @@ import { trace } from '#/lib/client-trace'
 import { hostRead } from '#/lib/runtime-client'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import type { Detail } from './console-sessions'
+import { useWorktreeActions } from './session-worktree-actions'
+import { WorktreeDetail } from './session-worktree-detail'
 
 type Worktree = NonNullable<Detail['worktrees']>[number]
 
@@ -22,6 +24,7 @@ export type WorkstationSlot = {
   path: string
   name: string
   branch: string
+  description?: string
   state: string
   reason?: string
   sessions?: string[]
@@ -129,10 +132,12 @@ function SessionCount({ count }: { count: number }) {
 function WorktreeRows({
   groups,
   onCopy,
+  onSelect,
   copied,
 }: {
   groups: WorktreeGroup[]
   onCopy: (path: string) => void
+  onSelect: (row: WorktreeRow) => void
   copied: string
 }) {
   const { t } = useLingui()
@@ -158,9 +163,16 @@ function WorktreeRows({
             {group.rows.map((row) => (
               <li
                 key={row.path}
-                className="flex min-w-0 items-center gap-2 border-b border-brand-edge/70 pl-3 pr-1 last:border-b-0 md:pl-2"
+                className="relative flex min-w-0 items-center gap-2 border-b border-brand-edge/70 pl-3 pr-1 last:border-b-0 hover:bg-brand-soft md:pl-2"
               >
-                <div className="min-w-0 flex-1 py-2.5">
+                <Button
+                  variant="plain"
+                  type="button"
+                  aria-label={`${t`Manage worktree`}: ${row.name}`}
+                  onClick={() => onSelect(row)}
+                  className="absolute inset-y-0 left-0 right-12 rounded-lg focus-visible:ring-2 focus-visible:ring-brand-running md:right-9"
+                />
+                <div className="pointer-events-none min-w-0 flex-1 py-2.5">
                   <div className="flex min-w-0 items-center gap-1.5">
                     <span
                       className="min-w-0 truncate text-body font-medium text-brand-text md:text-caption"
@@ -200,13 +212,18 @@ function WorktreeRows({
                     {row.path}
                   </p>
                 </div>
+                <ChevronRight
+                  size={15}
+                  aria-hidden
+                  className="pointer-events-none shrink-0 text-brand-label"
+                />
                 <Button
                   variant="plain"
                   type="button"
                   aria-label={t`Copy path`}
                   title={`${t`Copy path`}: ${row.path}`}
                   onClick={() => onCopy(row.path)}
-                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-brand-muted hover:bg-brand-soft md:size-8"
+                  className="relative z-10 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-brand-muted hover:bg-brand-soft md:size-8"
                 >
                   {copied === row.path ? (
                     <Check size={16} aria-hidden />
@@ -236,6 +253,8 @@ export function WorktreeManager({
   const { t } = useLingui()
   const wide = useIsWidePhoneFirst()
   const [open, setOpen] = useState(false)
+  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [sampleDirections, setSampleDirections] = useState(sample)
   const [query, setQuery] = useState('')
   const [copied, setCopied] = useState('')
   const openedAt = useRef(0)
@@ -250,13 +269,19 @@ export function WorktreeManager({
         directions: WorkstationDirection[]
       },
   })
-  const directions = sample ?? workstations.data?.directions
+  const directions = sample ? sampleDirections : workstations.data?.directions
   const pending = !sample && workstations.isPending
   const error = !sample && workstations.isError ? workstations.error : null
   const groups = worktreeGroups(list, directions, t`Other worktrees`)
   const shown = filterWorktreeGroups(groups, query)
+  const selectedGroup = groups.find((group) =>
+    group.rows.some((row) => row.path === selectedPath),
+  )
+  const selected = selectedGroup?.rows.find((row) => row.path === selectedPath)
+  const stateLabel = useStateLabel()
   const changeOpen = (next: boolean) => {
     setOpen(next)
+    setSelectedPath(null)
     if (next) {
       setQuery('')
       openedAt.current = performance.now()
@@ -296,7 +321,31 @@ export function WorktreeManager({
       })
     }
   }
-  const content = (
+  const { writable, saveDescription, openSession, newSession } =
+    useWorktreeActions({
+      repoPath,
+      selected,
+      selectedGroup,
+      sample,
+      setSampleDirections,
+      close: () => changeOpen(false),
+    })
+  const content = selected ? (
+    <WorktreeDetail
+      key={selected.path}
+      row={selected}
+      status={stateLabel(selected.state)}
+      writable={writable}
+      wide={wide}
+      copied={copied === selected.path}
+      onCopy={() => void copy(selected.path)}
+      onSave={saveDescription}
+      onOpenSession={selected.sessions?.length ? openSession : undefined}
+      onNewSession={
+        selected.sessions?.length && writable ? newSession : undefined
+      }
+    />
+  ) : (
     <div className="min-w-0 px-4 md:px-2">
       {groups.reduce((count, group) => count + group.rows.length, 0) > 5 ? (
         <Input
@@ -324,6 +373,10 @@ export function WorktreeManager({
         <WorktreeRows
           groups={shown}
           onCopy={(path) => void copy(path)}
+          onSelect={(row) => {
+            setSelectedPath(row.path)
+            trace('worktree-view', { action: 'select' })
+          }}
           copied={copied}
         />
       ) : (
@@ -352,8 +405,12 @@ export function WorktreeManager({
         </Button>
         <Sheet
           open={open}
-          onOpenChange={changeOpen}
-          title={t`Worktrees`}
+          onOpenChange={(next) => {
+            if (!next && selected) setSelectedPath(null)
+            else changeOpen(next)
+          }}
+          title={selected?.name || t`Worktrees`}
+          onBack={selected ? () => setSelectedPath(null) : undefined}
           testId="worktree-manager"
         >
           {content}
@@ -378,7 +435,22 @@ export function WorktreeManager({
         data-testid="worktree-manager"
         className="max-h-[min(28rem,70dvh)] w-[min(27rem,calc(100vw-2rem))] overflow-y-auto p-2"
       >
-        <div className="sticky top-0 z-10 bg-brand-surface px-3 py-2 text-caption font-semibold">{t`Worktrees`}</div>
+        <div className="sticky top-0 z-10 flex items-center gap-2 bg-brand-surface px-3 py-2 text-caption font-semibold">
+          {selected ? (
+            <Button
+              variant="plain"
+              type="button"
+              aria-label={t`Back`}
+              onClick={() => setSelectedPath(null)}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-brand-muted"
+            >
+              <ArrowLeft size={17} aria-hidden />
+            </Button>
+          ) : null}
+          <span className="min-w-0 truncate">
+            {selected?.name || t`Worktrees`}
+          </span>
+        </div>
         {content}
       </PopoverContent>
     </PopoverPrimitive.Root>

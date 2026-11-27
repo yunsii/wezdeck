@@ -30,13 +30,14 @@ import (
 )
 
 type workstationSlot struct {
-	Path     string   `json:"path"`
-	Name     string   `json:"name"` // the directory without an old dev- prefix
-	Branch   string   `json:"branch"`
-	State    string   `json:"state"` // idle | running | waiting | dirty | undelivered | detached
-	Reason   string   `json:"reason,omitempty"`
-	Visited  int64    `json:"visited,omitempty"`
-	Sessions []string `json:"sessions,omitempty"`
+	Path        string   `json:"path"`
+	Name        string   `json:"name"` // the directory without an old dev- prefix
+	Branch      string   `json:"branch"`
+	Description string   `json:"description,omitempty"`
+	State       string   `json:"state"` // idle | running | waiting | dirty | undelivered | detached
+	Reason      string   `json:"reason,omitempty"`
+	Visited     int64    `json:"visited,omitempty"`
+	Sessions    []string `json:"sessions,omitempty"`
 }
 
 type workstationDirection struct {
@@ -151,6 +152,11 @@ func repoWorkstations(repo string) ([]workstationDirection, error) {
 		}()
 	}
 	wg.Wait()
+	for i := range slots {
+		if slots[i].Branch != "" {
+			slots[i].Description = worktreeDescription(repo, slots[i].Branch)
+		}
+	}
 
 	byName := map[string]*workstationDirection{}
 	var order []string
@@ -174,8 +180,8 @@ func repoWorkstations(repo string) ([]workstationDirection, error) {
 		if s.Visited > d.Visited {
 			d.Visited = s.Visited
 		}
-		if d.Description == "" && s.Branch != "" {
-			d.Description = worktreeDescription(repo, s.Branch)
+		if d.Description == "" {
+			d.Description = s.Description
 		}
 	}
 	dirs := make([]workstationDirection, 0, len(order))
