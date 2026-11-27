@@ -31,6 +31,8 @@ func (agyAdapter) ToolKind(name string, input map[string]any) string {
 func (agyAdapter) Capabilities() agentCaps {
 	return agentCaps{Usage: "transcript", MidTurnInput: "queue", Title: true}
 }
+func (agyAdapter) AccountLimits(model string) *accountLimits { return agyAccountLimits(model) }
+func (agyAdapter) ContextSize(sessionID string) int          { return agyContextSize(sessionID) }
 
 var agyToolKinds = map[string]string{
 	"run_command": toolKindCommand, "manage_task": toolKindCommand,

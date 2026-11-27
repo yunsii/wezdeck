@@ -454,27 +454,33 @@ tokens, no message text.
 
 ## Account limits
 
-The composer status bar shows the Claude account's 5-hour and 7-day limits the
-way Claude Code's own status line does — from the same source, no
-credentials or API calls: Claude Code pipes a JSON snapshot (with
-`rate_limits.five_hour` / `seven_day`: `used_percentage`, `resets_at`, and
-`context_window`) to its statusLine command on every refresh. The statusLine
-script hands it on, in the background:
+The composer status bar shows 5-hour and 7-day account limits from the CLI's
+own statusLine snapshot — no credentials or extra API calls:
 
-```bash
-printf '%s' "$input" | bash "${WEZDECK_REPO:-$HOME/github/wezterm-config}/scripts/runtime/claude-statusline-tap.sh" >/dev/null 2>&1 &
-```
+- **Claude Code**: pipes `rate_limits.five_hour` / `seven_day` (`used_percentage`,
+  `resets_at`) and `context_window` to its statusLine command on every refresh,
+  which hands it in the background to `scripts/runtime/claude-statusline-tap.sh`:
 
-`claude-statusline-tap.sh` writes `{session_id, ts, model, context_window,
-rate_limits}` to `~/.local/state/wezdeck/claude-status/<session_id>.json`
-(atomic, ids validated, 30-day prune; `WEZDECK_CLAUDE_STATUS_DIR`
-overrides). `remote_limits.go`: limits are account-wide, so the newest
-snapshot from any session answers (`account` in the `session` reply, Claude
-sessions only, hidden when older than 7 days); a session's own
-`context_window_size` replaces the model-catalog context limit (it knows
-the 1M variants). Codex reports `rate_limits` in its `token_count` events
-too, but through the gateway used here they are all null, so Codex shows
-context only; Grok's transcript has no token counts.
+  ```bash
+  printf '%s' "$input" | bash "${WEZDECK_REPO:-$HOME/github/wezterm-config}/scripts/runtime/claude-statusline-tap.sh" >/dev/null 2>&1 &
+  ```
+
+  Snapshots land atomically at `~/.local/state/wezdeck/claude-status/<session_id>.json`
+  (30-day prune; `WEZDECK_CLAUDE_STATUS_DIR` overrides).
+- **Antigravity CLI (`agy`)**: `~/.gemini/antigravity-cli/settings.json` points
+  `statusLine.command` at `bash /home/yuns/github/wezterm-config/scripts/runtime/agy-statusline.sh`,
+  which renders model, mode, context %, and active quota group (`gemini-*` or
+  `3p-*`) while tapping `scripts/runtime/agy-statusline-tap.sh` to
+  `~/.local/state/wezdeck/agy-status/` (`<session_id>.json` plus `_account.json`
+  so quotas arrive even before the first turn assigns a `conversation_id`;
+  `WEZDECK_AGY_STATUS_DIR` overrides). `remote_limits.go` maps `remaining_fraction`
+  → `used_percentage` and ignores epoch-0 `reset_in_seconds <= 0` windows.
+
+Both adapters implement `limitsReader` (`remote_limits.go`): limits are
+account-wide, so the newest snapshot (< 7 days) answers `account`, and a
+session's own `context_window_size` overrides the model catalog (1M variants).
+Codex reports `rate_limits` in `token_count` events too, but through the gateway
+used here they are null, so Codex shows context only; Grok has no token counts.
 
 ## Agent adapters and the session contract
 
@@ -495,11 +501,13 @@ and the web page only see the shared contract. Each agent is one file —
 Agy uses `~/.gemini/antigravity-cli/brain/<conversationId>/.system_generated/logs/transcript_full.jsonl` for user/assistant text, tool-call summaries and token usage. Its JSONL has no tool-result IDs, so the web console does not invent paired results; the Agy TUI remains the source for detailed tool output and permission prompts.
 
 Optional parts, called through their interface (never `if agent == …`):
-`askReader.PendingAsk(path, screen)` (the unanswered Ask) and
+`askReader.PendingAsk(path, screen)` (the unanswered Ask),
 `planReader` (`PendingPlan(path)`: plan state beside the thread;
 `PlanTool()`: the tool whose permission prompt approves a plan, Claude's
-`ExitPlanMode`). `ask_options` / `plan_review` are derived from them
-(`capabilitiesOf`), so 会话信息 cannot say 否 for a feature that works.
+`ExitPlanMode`), and `limitsReader` (`AccountLimits(model)` /
+`ContextSize(sessionID)`). `ask_options` / `plan_review` / `account_limits`
+are derived from them (`capabilitiesOf`), so 会话信息 cannot say 否 for a
+feature that works.
 
 A new agent is one more file plus an entry in `agentAdapters`.
 
@@ -514,14 +522,14 @@ knows, grouped `session` / `location` / `transcript` / `state` as
 `{name, rows: [{key, value}]}`, empty values left out — the web console's
 会话信息 sheet):
 
-| Field | Meaning | claude / grok / codex |
+| Field | Meaning | claude / grok / codex / agy |
 |---|---|---|
-| `ask_options` | structured questions with tappable options (derived: `askReader`) | ✓ / ✓ / – |
-| `plan_review` | a plan waiting for approve / revise / exit (derived: `planReader`) | ✓ / ✓ / – |
-| `usage` | where context / spend comes from | `transcript` / `none` / `token_count` |
-| `account_limits` | 5 h / 7 d limits from the status line | ✓ / – / – |
-| `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` |
-| `title` | the agent names sessions, honours `/rename` | ✓ / ✓ / – |
+| `ask_options` | structured questions with tappable options (derived: `askReader`) | ✓ / ✓ / – / ✓ |
+| `plan_review` | a plan waiting for approve / revise / exit (derived: `planReader`) | ✓ / ✓ / – / – |
+| `usage` | where context / spend comes from | `transcript` / `none` / `token_count` / `transcript` |
+| `account_limits` | 5 h / 7 d limits from the status line (derived: `limitsReader`) | ✓ / – / – / ✓ |
+| `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` / `queue` |
+| `title` | the agent names sessions, honours `/rename` | ✓ / ✓ / ✓ / ✓ |
 
 For a Grok prompt with multiple questions, a single-choice digit confirms the
 current question. For multiple choice, digits toggle options and Enter confirms
