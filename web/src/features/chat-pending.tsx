@@ -40,6 +40,15 @@ export type Pending = {
   state?: 'sending' | 'queued' | 'lost' | 'failed'
 }
 
+export function pendingKey(
+  item: Pick<Pending, 'clientOp' | 'sentId' | 'at'>,
+): string | number {
+  // Prefer clientOp over sentId so a locally-sent optimistic bubble keeps the
+  // exact same React key once the host outbox assigns a sentId (~500 ms later),
+  // avoiding a remount that replays `chat-in` from opacity 0.
+  return item.clientOp ?? item.sentId ?? item.at
+}
+
 export function PendingBubbles({
   pending,
   onResend,
@@ -55,7 +64,7 @@ export function PendingBubbles({
 }) {
   const { t } = useLingui()
   // queued before the conversation opened: shown still, like its messages
-  const atMount = useRef(new Set(pending.map((item) => item.sentId ?? item.at)))
+  const atMount = useRef(new Set(pending.map(pendingKey)))
   useLostTrace(pending)
   if (pending.length === 0) return null
   return (
@@ -64,7 +73,7 @@ export function PendingBubbles({
         const lost = item.state === 'lost'
         const failed = item.state === 'failed'
         const errorText = item.error
-        const key = item.sentId ?? item.clientOp ?? item.at
+        const key = pendingKey(item)
         return (
           <div key={key} className="grid min-w-0 gap-1">
             {/* the user bubble itself — same box, same text and image strip
@@ -75,7 +84,7 @@ export function PendingBubbles({
               className={cn(
                 'min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck',
                 lost || failed ? 'opacity-80' : 'opacity-55',
-                !atMount.current.has(item.sentId ?? item.at) && 'chat-in',
+                !atMount.current.has(key) && 'chat-in',
               )}
             >
               <SentAttachments
@@ -173,10 +182,10 @@ export function PendingBubbles({
 function useLostTrace(pending: Array<Pending>) {
   const seen = useRef(new Set<string | number>())
   const lost = pending.filter((item) => item.state === 'lost')
-  const key = lost.map((item) => item.sentId ?? item.at).join(',')
+  const key = lost.map(pendingKey).join(',')
   useEffect(() => {
     for (const item of lost) {
-      const k = item.sentId ?? item.at
+      const k = pendingKey(item)
       if (seen.current.has(k)) continue
       seen.current.add(k)
       trace('send-lost', {

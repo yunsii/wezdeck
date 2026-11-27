@@ -16,9 +16,15 @@ import {
   useState,
 } from 'react'
 
-import { SentAttachments, endsWithNote } from './chat-attachments'
+import { SentAttachments } from './chat-attachments'
 import { PendingBubbles } from './chat-pending'
 import type { Pending } from './chat-pending'
+import {
+  LOST_AFTER_MS,
+  collectSettledIndices,
+  settle,
+  settleMatches,
+} from './chat-settle'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -297,13 +303,27 @@ export function ChatThread({
     baseline.current !== null && start + index >= baseline.current
   // settle against the revealed messages only: the faded bubble stays
   // until its normal bubble is on screen, not while an earlier reply is
-  // still unfolding — and that bubble then solidifies in its place
-  const queue = settleMatches(
+  // still unfolding — and that bubble then solidifies in its place.
+  // Also match against the previous frame's visible pending bubbles so when
+  // the host reconciles/drops `data.outbox` in the exact same poll that adds
+  // the user message to `messages`, the new Bubble still plays `chat-settle`
+  // (0.55 → 1) instead of flashing from opacity 0 with `chat-in`.
+  const revealedMessages = messages.slice(0, Math.max(0, effective - start + 1))
+  const queue = settleMatches(pending, revealedMessages, start, busy)
+  const prevShownPending = useRef<Array<Pending>>([])
+  const settledAt = collectSettledIndices(
+    queue.took,
+    prevShownPending.current,
     pending,
-    messages.slice(0, Math.max(0, effective - start + 1)),
+    revealedMessages,
     start,
     busy,
   )
+  useLayoutEffect(() => {
+    prevShownPending.current = queue.left.filter(
+      (item) => item.state !== 'failed',
+    )
+  }, [queue.left])
   // items waiting behind the one streaming now: two or more → catch up
   const queued = items.filter((item) => start + item.index > effective).length
   const floor = useProgressiveFloor(items, start)
@@ -382,7 +402,7 @@ export function ChatThread({
         fresh={isFresh(item.index) && !skipped(at)}
         stream={stream}
         rush={queued >= 2}
-        settles={queue.took.has(at)}
+        settles={settledAt.has(at)}
         onShown={stream ? () => advance(at + 1) : undefined}
       />
     )
@@ -511,91 +531,4 @@ function CompactDivider({
   )
 }
 
-/**
- * Drop optimistic bubbles the transcript now shows: each user line after
- * the point a message was sent settles at most one bubble, so two identical
- * messages need two lines and an earlier identical one never counts. A
- * bubble the transcript never shows turns lost a minute after it was sent
- * once the agent is idle (never while it works: a long turn keeps the
- * queue). It used to vanish silently then, so a paste the TUI swallowed
- * (a half-typed draft at the desk, an open completion menu) looked
- * delivered; now it stays as 未送达 until resent or removed, and a later
- * transcript line still settles it.
- */
-export const LOST_AFTER_MS = 60_000
-
-export function settle(
-  pending: Array<Pending>,
-  messages: Array<Message>,
-  start = 0,
-  busy = false,
-  now = Date.now(),
-) {
-  return settleMatches(pending, messages, start, busy, now).left
-}
-
-/** settle(), plus the transcript index of each line that settled a bubble */
-export function settleMatches(
-  pending: Array<Pending>,
-  messages: Array<Message>,
-  start = 0,
-  busy = false,
-  now = Date.now(),
-) {
-  const users = messages
-    .map((message, index) => ({ message, at: start + index }))
-    .filter(({ message }) => message.role === 'user')
-    .map(({ message, at }) => ({ text: message.text.trim(), at }))
-  const used = new Set<number>()
-  // the host appends an attachment note after a blank line; also tolerate a
-  // terminal draft prefix merged with the pasted web message (mirrors host
-  // remote_outbox.go outboxMatchesUserLine).
-  const matches = (
-    typed: string,
-    attachments: Array<string> | undefined,
-    text: string,
-  ) => {
-    if (
-      typed
-        ? text === typed || endsWithNote(text, typed)
-        : endsWithNote(text, '')
-    )
-      return true
-    return attachments?.length
-      ? attachments.every((name) => text.includes(name)) &&
-          (!typed || text.includes(typed))
-      : typed.length >= 4 && text.includes(typed)
-  }
-  const left: Array<Pending> = []
-  for (const item of pending) {
-    if (item.state === 'failed') {
-      left.push(item)
-      continue
-    }
-    const typed = item.text.trim()
-    const line = users.find(
-      (user) =>
-        !used.has(user.at) &&
-        user.at >= (item.after ?? 0) &&
-        matches(typed, item.attachments, user.text),
-    )
-    if (line) {
-      used.add(line.at)
-      continue
-    }
-    if (item.state === 'lost') {
-      left.push(item)
-      continue
-    }
-    const browserSentAt = item.sentId ? item.browserSentAt : item.at
-    const waiting = item.state === 'sending' || busy
-    left.push(
-      waiting ||
-        browserSentAt === undefined ||
-        now - browserSentAt < LOST_AFTER_MS
-        ? item
-        : { ...item, state: 'lost' },
-    )
-  }
-  return { left, took: used }
-}
+export { LOST_AFTER_MS, collectSettledIndices, settle, settleMatches }

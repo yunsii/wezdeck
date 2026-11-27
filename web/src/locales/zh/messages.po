@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:497
+#: src/features/chat-thread.tsx:517
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -1143,11 +1143,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:481
+#: src/features/chat-thread.tsx:501
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:482
+#: src/features/chat-thread.tsx:502
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 
@@ -1597,7 +1597,7 @@ msgstr "这个项目里更早的会话。选中后窗格会切换过去，本页
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 
-#: src/features/chat-pending.tsx:135
+#: src/features/chat-pending.tsx:144
 msgid "Edit"
 msgstr "回填编辑"
 
@@ -2710,7 +2710,7 @@ msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（�
 msgid "Not delivered"
 msgstr "未交付"
 
-#: src/features/chat-pending.tsx:117
+#: src/features/chat-pending.tsx:126
 msgid "Not delivered: the agent went idle without it"
 msgstr "未送达：agent 已空闲，没收到这条"
 
@@ -3167,7 +3167,7 @@ msgctxt "ticket bucket"
 msgid "Queued"
 msgstr "待接手"
 
-#: src/features/chat-pending.tsx:62
+#: src/features/chat-pending.tsx:71
 msgid "Queued messages"
 msgstr "排队中的消息"
 
@@ -3325,7 +3325,7 @@ msgstr "远程设备"
 msgid "Remote project"
 msgstr "远程项目"
 
-#: src/features/chat-pending.tsx:155
+#: src/features/chat-pending.tsx:164
 msgid "Remove"
 msgstr "移除"
 
@@ -3471,7 +3471,7 @@ msgstr "调研完成"
 msgid "research failed"
 msgstr "调研失败"
 
-#: src/features/chat-pending.tsx:125
+#: src/features/chat-pending.tsx:134
 #: src/features/sent-history-row.tsx:161
 msgid "Resend"
 msgstr "重发"
@@ -3846,11 +3846,11 @@ msgstr "发送（触屏上回车是换行，这个键也能发送）"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接着往下做"
 
-#: src/features/chat-pending.tsx:116
+#: src/features/chat-pending.tsx:125
 msgid "Send failed"
 msgstr "发送失败"
 
-#: src/features/chat-pending.tsx:115
+#: src/features/chat-pending.tsx:124
 msgid "Send failed: {errorText}"
 msgstr "发送失败：{errorText}"
 
@@ -4657,7 +4657,7 @@ msgstr "tmux 窗口"
 msgid "To"
 msgstr "目标仓库"
 
-#: src/features/chat-pending.tsx:145
+#: src/features/chat-pending.tsx:154
 #: src/features/sent-history-row.tsx:174
 msgid "To ticket"
 msgstr "转工单"

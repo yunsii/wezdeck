@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:497
+#: src/features/chat-thread.tsx:517
 msgid "· summary"
 msgstr "· summary"
 
@@ -1143,11 +1143,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:481
+#: src/features/chat-thread.tsx:501
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:482
+#: src/features/chat-thread.tsx:502
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1597,7 +1597,7 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/chat-pending.tsx:135
+#: src/features/chat-pending.tsx:144
 msgid "Edit"
 msgstr "Edit"
 
@@ -2710,7 +2710,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered"
 msgstr "Not delivered"
 
-#: src/features/chat-pending.tsx:117
+#: src/features/chat-pending.tsx:126
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
@@ -3167,7 +3167,7 @@ msgctxt "ticket bucket"
 msgid "Queued"
 msgstr "Queued"
 
-#: src/features/chat-pending.tsx:62
+#: src/features/chat-pending.tsx:71
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -3325,7 +3325,7 @@ msgstr "Remote devices"
 msgid "Remote project"
 msgstr "Remote project"
 
-#: src/features/chat-pending.tsx:155
+#: src/features/chat-pending.tsx:164
 msgid "Remove"
 msgstr "Remove"
 
@@ -3471,7 +3471,7 @@ msgstr "Research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/chat-pending.tsx:125
+#: src/features/chat-pending.tsx:134
 #: src/features/sent-history-row.tsx:161
 msgid "Resend"
 msgstr "Resend"
@@ -3846,11 +3846,11 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/chat-pending.tsx:116
+#: src/features/chat-pending.tsx:125
 msgid "Send failed"
 msgstr "Send failed"
 
-#: src/features/chat-pending.tsx:115
+#: src/features/chat-pending.tsx:124
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
@@ -4657,7 +4657,7 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/chat-pending.tsx:145
+#: src/features/chat-pending.tsx:154
 #: src/features/sent-history-row.tsx:174
 msgid "To ticket"
 msgstr "To ticket"
