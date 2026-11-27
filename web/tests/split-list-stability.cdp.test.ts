@@ -369,6 +369,18 @@ describe.runIf(attention)('Wide split: list stability', () => {
     const state = await page.evaluate(() => {
       const vtPage = document.querySelector<HTMLElement>('.vt-page')!
       const pane = document.querySelector<HTMLElement>('.vt-split-pane')!
+      const threadScroll = document.querySelector<HTMLElement>(
+        '[data-testid=session-thread-scroll]',
+      )!
+      const detail = document.querySelector<HTMLElement>(
+        '[data-testid=session-detail]',
+      )!
+      const header = document.querySelector<HTMLElement>(
+        '[data-testid=session-header]',
+      )!
+      const form = document
+        .querySelector('#session-composer')
+        ?.closest<HTMLElement>('form')
       const list = document.querySelector<HTMLElement>('.vt-split-list')!
       const swipeRow = document.querySelector<HTMLElement>(
         '.vt-split-list [data-swipe] > div',
@@ -377,10 +389,15 @@ describe.runIf(attention)('Wide split: list stability', () => {
         pageScrollTop: vtPage.scrollTop,
         pageRoom: vtPage.scrollHeight - vtPage.clientHeight,
         pageVtName: getComputedStyle(vtPage).viewTransitionName,
-        paneScrollTop: pane.scrollTop,
-        paneRoom: pane.scrollHeight - pane.clientHeight,
+        paneScrollTop: threadScroll.scrollTop,
+        paneRoom: threadScroll.scrollHeight - threadScroll.clientHeight,
+        detailHeight: Math.round(detail.getBoundingClientRect().height),
+        headerPosition: getComputedStyle(header).position,
+        formPosition: form ? getComputedStyle(form).position : 'none',
         listPosition: getComputedStyle(list).position,
         listWillChange: getComputedStyle(list).willChange,
+        listContain: getComputedStyle(list).contain,
+        paneContain: getComputedStyle(pane).contain,
         idleSwipeTransform: swipeRow
           ? getComputedStyle(swipeRow).transform
           : 'none',
@@ -394,8 +411,13 @@ describe.runIf(attention)('Wide split: list stability', () => {
     expect(state.pageVtName).toBe('none')
     expect(state.paneRoom).toBeGreaterThan(200)
     expect(state.paneScrollTop).toBeGreaterThan(200)
+    expect(state.detailHeight).toBeLessThanOrEqual(866)
+    expect(state.headerPosition).not.toBe('sticky')
+    expect(state.formPosition).not.toBe('sticky')
     expect(state.listPosition).not.toBe('sticky')
     expect(state.listWillChange).toBe('auto')
+    expect(state.listContain).toBe('strict')
+    expect(state.paneContain).toBe('strict')
     expect(state.idleSwipeTransform).toBe('none')
     expect(state.idleSwipeButtons).toBe(0)
 

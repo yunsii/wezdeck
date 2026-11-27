@@ -48,6 +48,9 @@ async function frames(page: Page, title: string, act: () => Promise<void>) {
     const t0 = performance.now()
     const tick = () => {
       const el =
+        document.querySelector<HTMLElement>(
+          '[data-testid=session-thread-scroll].overflow-y-auto',
+        ) ??
         document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
         document.querySelector<HTMLElement>('.vt-page')
       w.f.push({
@@ -151,9 +154,13 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       })
     expect(await inView()).toBe(true)
     await page.evaluate(() => {
-      const scroller = document
-        .querySelector('[data-testid=session-pane]')
-        ?.closest('.overflow-y-auto')
+      const scroller =
+        document.querySelector<HTMLElement>(
+          '[data-testid=session-thread-scroll].overflow-y-auto',
+        ) ??
+        document
+          .querySelector('[data-testid=session-pane]')
+          ?.closest('.overflow-y-auto')
       if (scroller) scroller.scrollTop = 0
     })
     await page.waitForTimeout(300)
@@ -352,21 +359,39 @@ describe.runIf(attention)('Wide split: layout', () => {
     expect(got.bottom).toBeLessThanOrEqual(1)
   }, 30_000)
 
-  it('a switched-to conversation fades in as a whole, the first one does not', async () => {
+  it('a switched-to conversation swaps directly without opacity dip or entrance animation', async () => {
     const page = await (
       await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
     ).newPage()
     await page.goto(`${base}/console/sessions/sw-short?remote=1#pair=${token}`)
     await page.locator('[data-session=sw-tall]').waitFor({ timeout: 20_000 })
     await page.waitForTimeout(800)
-    const anim = () =>
-      page.evaluate(
-        () =>
-          getComputedStyle(
-            document.querySelector('[data-testid=session-detail]')!,
-          ).animationName,
-      )
-    expect(await anim()).toBe('none')
+    await page.evaluate(() => {
+      const w = window as unknown as {
+        __switchFrames?: Array<{ anim: string; opacity: number; id: string }>
+        __switchStop?: boolean
+      }
+      w.__switchFrames = []
+      w.__switchStop = false
+      const tick = () => {
+        const detail = document.querySelector<HTMLElement>(
+          '[data-testid=session-detail]',
+        )
+        const title = document.querySelector<HTMLElement>(
+          '[data-testid=session-title]',
+        )
+        if (detail) {
+          const cs = getComputedStyle(detail)
+          w.__switchFrames?.push({
+            anim: cs.animationName,
+            opacity: Number(cs.opacity),
+            id: title?.getAttribute('data-session-id') ?? '',
+          })
+        }
+        if (!w.__switchStop) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    })
     await page.locator('[data-session=sw-tall]').click()
     await expect
       .poll(() =>
@@ -377,8 +402,19 @@ describe.runIf(attention)('Wide split: layout', () => {
         ),
       )
       .toBe('sw-tall')
-    // opacity only: whole detail, nothing slides on its own
-    expect(await anim()).toBe('pane-enter')
+    await page.waitForTimeout(250)
+    const sampled = await page.evaluate(() => {
+      const w = window as unknown as {
+        __switchFrames?: Array<{ anim: string; opacity: number; id: string }>
+        __switchStop?: boolean
+      }
+      w.__switchStop = true
+      return w.__switchFrames ?? []
+    })
+    expect(sampled.length).toBeGreaterThan(2)
+    expect(sampled.some((frame) => frame.id === 'sw-tall')).toBe(true)
+    expect(sampled.every((frame) => frame.anim === 'none')).toBe(true)
+    expect(sampled.every((frame) => frame.opacity === 1)).toBe(true)
     expect(
       await page.evaluate(
         () =>

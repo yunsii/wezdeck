@@ -19,7 +19,7 @@ and `MotionConfig reducedMotion="user"` (opacity only under reduced motion).
 | --- | --- | --- |
 | state: hover, press, open, a colour | CSS transition, preferably of `opacity` on a pseudo-element layer (compositor: smooth while the main thread renders) | short, standard |
 | an element arrives / leaves (sticky prompt, a chip, a hint) | `AnimatePresence` + `m.div` with a preset; the leaving element keeps its last content | enter medium + enter curve; leave exit + exit curve |
-| a page / pane | View Transitions (`lib/view-transition.ts`); within a wide split a switched-to conversation fades in whole (`.pane-enter`, opacity 0.4 → 1, CSS) | 120 ms, enter curve |
+| a page / pane | View Transitions (`lib/view-transition.ts`) for top-level / mobile route changes; within a wide split, switching conversations swaps directly at `opacity: 1` (no `.pane-enter` dip) | 0 ms inside split; 120–240 ms on pushed pages |
 
 Rules: states move one way (a list row is hover 9 % → pressed 12 % → open
 15 % of the accent, `.list-row`, never white → grey → blue); never ease
@@ -60,24 +60,32 @@ left rail, `32 px` bottom status bar, `min-h-16` 64 px / `min-h-14` 56 px rows,
 `h-8` 32 px repo headings, `56 px` inset-shadow split head) so neither `.vt-split-list`
 nor `.list-row` transitions land on half-pixel boundaries at 1.25x or 2.625x DPR
 (e.g. a `68 px` rail sits at `178.5` physical px on a 2.625x tablet and caused
-5,752 changed pixels across switches). Wide splits (`session-split.tsx`,
-`tickets-view.tsx`, `console-me.tsx`, `console-diagnostics.tsx`) lock the split
-grid to `h-[100cqh] overflow-hidden` and give `.vt-split-pane` its own
-`overflow-y-auto` scroller instead of pinning `.vt-split-list` via
-`position: sticky; will-change: transform` inside a scrolling `.vt-page` (on
-Chrome 152 HiDPI tablets, jumping `.vt-page.scrollTop` from 0 to 958 while
-switching from `我的` to `会话` caused GPU sticky-layer flicker with zero DOM
-shifts until composer focus forced a main-thread commit). In the same pass,
-`SwipeActions` omits idle `translateX(0px)` layers and hidden underlay buttons
-until a horizontal drag starts, `motion.css` scopes `view-transition-name`
-to `html:active-view-transition` so idle wide screens carry no permanent
-view-transition compositor layers, and `.list-row::after` paints its translucent
-accent tint at `z-index: 1` (`::before` at `z-index: 2`) instead of `z-index: -1`
-— an opacity transition at `z-index: -1` inside a scroller overlap-promoted
-sibling rows below it in Chromium, flipping every uninvolved row's text between
-LCD subpixel and grayscale antialiasing at `t = 0` and `+150 ms` on every switch
-(~1,133 px per row). Covered by `split-list-stability.cdp.test.ts` (including
-per-frame CDP screencast) and `split-switch.cdp.test.ts`.
+5,752 changed pixels across switches). Wide splits (`session-split.tsx`, `tickets-view.tsx`, `console-me.tsx`,
+`console-diagnostics.tsx`) lock the split grid to `h-[100cqh] overflow-hidden`,
+isolate `.vt-split-list` and `.vt-split-pane` with `contain: strict`, and on
+real conversations give `SessionDetail` a fixed 3-row shell (static
+`SessionHeader`, dedicated `session-thread-scroll` `.overflow-y-auto` middle
+row, and non-sticky bottom `<form>` with `ComposerBox` + `SessionStatusBar`)
+so `session-detail` stays bounded to viewport height and scrolling messages
+never tear behind the bottom status bar. Wide-split conversation switches also
+omit `.pane-enter` (`opacity: 0.4 → 1` over 120 ms) and swap directly at
+`opacity: 1` like tickets (2026-11-27): fading the whole detail pane dipped the
+static header/composer chrome on every click and promoted/demoted a full-pane
+GPU layer on HiDPI screens, reading as a blink; `SessionHeader` also seeds its
+avatar and title from the already-loaded session list row so cold switches
+never flash `Loading…`. In the same pass, `SwipeActions` omits idle
+`translateX(0px)` layers and hidden underlay buttons until a horizontal drag
+starts, `motion.css` scopes `view-transition-name` to
+`html:active-view-transition`, `TagLine` keeps its observers stable and caps
+single-line height to prevent statusbar height bounces (paired with stale-on-timeout
+git/worktree caching in `git_status.go` / `session_env.go`), and
+`.list-row::after` paints its translucent accent tint at `z-index: 1`
+(`::before` at `z-index: 2`) instead of `z-index: -1` — an opacity transition
+at `z-index: -1` inside a scroller overlap-promoted sibling rows below it in
+Chromium, flipping every uninvolved row's text between LCD subpixel and
+grayscale antialiasing at `t = 0` and `+150 ms` on every switch (~1,133 px per
+row). Covered by `split-list-stability.cdp.test.ts` (including per-frame CDP
+screencast) and `split-switch.cdp.test.ts`.
 
 Live-device list-flicker observability (2026-11-27): `client-trace.ts` records
 `layout-shift` (`PerformanceObserver` CLS ≥ 0.001, ignoring recent input, noting

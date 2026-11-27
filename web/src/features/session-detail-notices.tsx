@@ -1,6 +1,26 @@
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 
+export function SessionStaleNotice({
+  staleAt,
+  message,
+}: {
+  staleAt: string
+  message?: string
+}) {
+  const { t } = useLingui()
+  return (
+    <p
+      role="status"
+      data-testid="session-stale"
+      className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
+    >
+      {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+      {message ?? t`this device is offline`}
+    </p>
+  )
+}
+
 export function SessionInputUnavailable() {
   const { t } = useLingui()
   return (

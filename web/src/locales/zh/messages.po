@@ -25,8 +25,8 @@ msgstr "（可多选）"
 #~ msgid "{0} tasks"
 #~ msgstr "{0} 项任务"
 
-#: src/components/deck/session-tags.tsx:282
-#: src/components/deck/session-tags.tsx:521
+#: src/components/deck/session-tags.tsx:289
+#: src/components/deck/session-tags.tsx:540
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
@@ -151,8 +151,8 @@ msgstr "{runs} 次"
 msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
-#: src/components/deck/session-tags.tsx:280
-#: src/components/deck/session-tags.tsx:519
+#: src/components/deck/session-tags.tsx:287
+#: src/components/deck/session-tags.tsx:538
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 
@@ -414,7 +414,7 @@ msgstr "都答完了，提交后 agent 才会继续。"
 msgid "All repos"
 msgstr "全部仓库"
 
-#: src/components/deck/session-tags.tsx:476
+#: src/components/deck/session-tags.tsx:495
 msgid "All tags"
 msgstr "全部标签"
 
@@ -751,7 +751,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:487
+#: src/features/session-detail-notices.tsx:18
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -2102,7 +2102,7 @@ msgstr "正在加载原图…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:241
+#: src/features/session-header.tsx:245
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
@@ -2440,7 +2440,7 @@ msgstr "还没有动态"
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
-#: src/components/deck/session-tags.tsx:302
+#: src/components/deck/session-tags.tsx:309
 msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
@@ -2530,8 +2530,8 @@ msgstr "没有符合这个筛选的工单。"
 msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
-#: src/components/deck/session-tags.tsx:283
-#: src/components/deck/session-tags.tsx:522
+#: src/components/deck/session-tags.tsx:290
+#: src/components/deck/session-tags.tsx:541
 msgid "no upstream"
 msgstr "无上游"
 
@@ -2702,7 +2702,7 @@ msgstr "打开仓库外链（快捷键：l）"
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/session-detail-notices.tsx:35
+#: src/features/session-detail-notices.tsx:55
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2846,7 +2846,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:199
+#: src/features/session-split.tsx:203
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -3631,7 +3631,7 @@ msgid "Session"
 msgstr "会话"
 
 #: src/features/session-actions.tsx:40
-#: src/features/session-header.tsx:280
+#: src/features/session-header.tsx:284
 msgid "Session actions"
 msgstr "会话操作"
 
@@ -3671,8 +3671,8 @@ msgstr "会话 ID"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "会话 ID、tmux、记录文件与能力"
 
-#: src/features/session-header.tsx:229
-#: src/features/session-header.tsx:293
+#: src/features/session-header.tsx:233
+#: src/features/session-header.tsx:297
 #: src/features/session-info.tsx:290
 msgid "Session info"
 msgstr "会话信息"
@@ -3691,7 +3691,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
-#: src/features/session-header.tsx:216
+#: src/features/session-header.tsx:220
 #: src/features/session-list.tsx:279
 #: src/features/session-list.tsx:400
 #: src/features/session-new-job.tsx:399
@@ -3733,7 +3733,7 @@ msgstr "快捷键"
 msgid "Show all {total} tasks"
 msgstr "展开全部 {total} 项任务"
 
-#: src/components/deck/session-tags.tsx:464
+#: src/components/deck/session-tags.tsx:483
 msgid "Show all tags"
 msgstr "显示全部标签"
 
@@ -3810,7 +3810,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:494
+#: src/features/console-sessions.tsx:502
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -4011,7 +4011,7 @@ msgstr "已把 WezTerm 切到这个会话"
 msgid "Switching agent…"
 msgstr "正在切换 agent…"
 
-#: src/components/deck/session-tags.tsx:301
+#: src/components/deck/session-tags.tsx:308
 msgctxt "git"
 msgid "Synced"
 msgstr "已同步"
@@ -4085,7 +4085,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:260
+#: src/features/console-sessions.tsx:263
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -4179,7 +4179,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/console-sessions.tsx:256
+#: src/features/console-sessions.tsx:259
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4189,7 +4189,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:488
+#: src/features/session-detail-notices.tsx:19
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -4323,7 +4323,7 @@ msgstr "目标仓库"
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-header.tsx:259
+#: src/features/session-header.tsx:263
 msgid "To-dos"
 msgstr "待办"
 
@@ -4466,7 +4466,8 @@ msgid "Unlock to resume auto-titling"
 msgstr "解除锁定并恢复自动更新"
 
 #: src/features/session-commands.tsx:160
-#: src/features/session-header.tsx:203
+#: src/features/session-header.tsx:204
+#: src/features/session-header.tsx:206
 #: src/features/session-info.tsx:218
 msgid "Untitled session"
 msgstr "未命名会话"
@@ -4656,7 +4657,7 @@ msgstr "警告"
 msgid "Warnings"
 msgstr "警告"
 
-#: src/features/session-detail-notices.tsx:8
+#: src/features/session-detail-notices.tsx:28
 msgid "Web sending is unavailable for this session."
 msgstr "此会话暂时无法从网页发送消息。"
 
