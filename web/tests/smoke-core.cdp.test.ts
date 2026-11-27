@@ -150,7 +150,9 @@ describe.runIf(attention && devicesFile)(
 
       // 4. Verify interactive prompt key write path works when waiting
       writeSession('waiting', 'permission_prompt')
-      const allowBtn = page.getByRole('button', { name: /允许|1/ }).first()
+      const allowBtn = page
+        .getByTestId('session-permission-keys')
+        .getByRole('button', { name: '1', exact: true })
       await allowBtn.waitFor({ timeout: 10_000 })
       await allowBtn.click()
       await expect
