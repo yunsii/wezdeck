@@ -78,7 +78,7 @@ function DiffLoadingSkeleton() {
       role="status"
       aria-live="polite"
       aria-label={t`Loading diff…`}
-      className="skeleton-enter mx-auto w-full max-w-5xl px-3 py-5 sm:px-6"
+      className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-6"
     >
       <div className="rounded-2xl border border-brand-edge bg-brand-surface p-5">
         <SkeletonGroup className="flex flex-col gap-4">

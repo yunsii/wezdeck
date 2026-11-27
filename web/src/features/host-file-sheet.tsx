@@ -86,56 +86,60 @@ function FileViewerActions({
             flicker when the layer mounts and tears down on fetch completion. */}
         <RefreshCw size={14} aria-hidden />
       </Button>
-      {data ? (
-        <>
-          <Button
-            variant="ghost"
-            size="none"
-            type="button"
-            aria-label={t`Copy path`}
-            title={t`Copy path`}
-            onClick={() => onCopy('path', data.path)}
-            className="hidden min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted sm:inline-flex"
-          >
-            {copied === 'path' ? (
-              <Check size={13} className="text-brand-done" aria-hidden />
-            ) : (
-              <Copy size={13} aria-hidden />
-            )}
-            <span>{t`Path`}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="none"
-            type="button"
-            aria-label={t`Copy document`}
-            title={t`Copy document`}
-            onClick={() => onCopy('content', data.content)}
-            className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted"
-          >
-            {copied === 'content' ? (
-              <Check size={13} className="text-brand-done" aria-hidden />
-            ) : (
-              <Copy size={13} aria-hidden />
-            )}
-            <span className="hidden sm:inline">{t`Copy`}</span>
-          </Button>
-        </>
-      ) : null}
-      {data && onQuote ? (
+      <Button
+        variant="ghost"
+        size="none"
+        type="button"
+        aria-label={t`Copy path`}
+        title={t`Copy path`}
+        disabled={!data}
+        onClick={() => {
+          if (data) onCopy('path', data.path)
+        }}
+        className="hidden min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted disabled:opacity-40 sm:inline-flex"
+      >
+        {copied === 'path' ? (
+          <Check size={13} className="text-brand-done" aria-hidden />
+        ) : (
+          <Copy size={13} aria-hidden />
+        )}
+        <span>{t`Path`}</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="none"
+        type="button"
+        aria-label={t`Copy document`}
+        title={t`Copy document`}
+        disabled={!data}
+        onClick={() => {
+          if (data) onCopy('content', data.content)
+        }}
+        className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted disabled:opacity-40"
+      >
+        {copied === 'content' ? (
+          <Check size={13} className="text-brand-done" aria-hidden />
+        ) : (
+          <Copy size={13} aria-hidden />
+        )}
+        <span className="hidden sm:inline">{t`Copy`}</span>
+      </Button>
+      {onQuote ? (
         <Button
           variant="solid"
           size="none"
           type="button"
           data-testid="host-file-quote"
+          disabled={!data}
           onClick={() => {
+            if (!data) return
             const ref = range
               ? `${data.rel_path || data.name} (${range})`
               : data.rel_path || data.name
             onQuote(t`Regarding ${ref}: `)
             onClose()
           }}
-          className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
+          className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta disabled:opacity-40"
         >
           <MessageSquarePlus size={13} aria-hidden />
           <span>{t`Reply`}</span>
