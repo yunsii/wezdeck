@@ -13,6 +13,8 @@ scripts/dev/install-headless-runtime-startup.sh
 
 It starts the installed Runtime and keeps the current WSL distribution
 running at user login. The existing `WezDeck WSL Keepalive` task is reused.
+With the minimal terminal client enabled, WSL recovery does not relaunch the
+full WezTerm GUI.
 Check both tasks with `Get-ScheduledTask -TaskName 'WezDeck*'` and the
 local Runtime at `http://127.0.0.1:35791/api/v1/health`.
 
