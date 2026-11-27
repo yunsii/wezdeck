@@ -3,7 +3,7 @@
 // per-event toggles, desk-active quiet mode, and end-to-end test delivery.
 import { useLingui } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, BellOff, Radio, Send } from 'lucide-react'
+import { Bell, BellOff, Send } from 'lucide-react'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
@@ -19,7 +19,6 @@ import {
   isPushServiceError,
   sendTestPush,
   subscribeDevicePush,
-  subscribeWsFallbackPush,
   unsubscribeDevicePush,
   updatePushPrefs,
 } from '#/lib/push-client'
@@ -186,15 +185,7 @@ function NotificationPrefsSections({
   )
 }
 
-function PushErrorCallout({
-  errorText,
-  wsPending,
-  onEnableWs,
-}: {
-  errorText: string
-  wsPending: boolean
-  onEnableWs: () => void
-}) {
+function PushErrorCallout({ errorText }: { errorText: string }) {
   const { t } = useLingui()
   if (!errorText) return null
   if (!isPushServiceError(errorText)) {
@@ -208,32 +199,14 @@ function PushErrorCallout({
     <div
       role="alert"
       data-testid="push-service-error-guide"
-      className="grid gap-2.5 rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 p-3 text-caption text-brand-text"
+      className="grid gap-1.5 rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 p-3 text-caption text-brand-text"
     >
       <p className="font-medium">
         {t`Browser push service (FCM/GMS) is unreachable on this device.`}
       </p>
       <p className="text-meta text-brand-muted">
-        {t`Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM through your proxy, switch to Firefox/Edge, or use background WebSocket notifications below without FCM.`}
+        {t`Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge.`}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="solid"
-          size="sm"
-          type="button"
-          data-testid="push-fallback-ws-button"
-          disabled={wsPending}
-          onClick={onEnableWs}
-          className="inline-flex items-center gap-1.5"
-        >
-          <Radio size={14} aria-hidden />
-          <span>
-            {wsPending
-              ? t`Enabling…`
-              : t`Use background keepalive notifications (no FCM)`}
-          </span>
-        </Button>
-      </div>
     </div>
   )
 }
@@ -293,7 +266,6 @@ export function NotificationsPage() {
   })
 
   const subscribed = Boolean(statusQuery.data?.subscribed)
-  const mode = statusQuery.data?.mode ?? (subscribed ? 'webpush' : null)
   const relayEnabled = statusQuery.data?.enabled ?? true
   const prefs: PushPrefs = statusQuery.data?.prefs ?? DEFAULT_PUSH_PREFS
 
@@ -301,21 +273,8 @@ export function NotificationsPage() {
     mutationFn: () => subscribeDevicePush(prefs),
     onSuccess: () => {
       setErrorText('')
-      trace('push-perm', { action: 'subscribed', mode: 'webpush' })
+      trace('push-perm', { action: 'subscribed' })
       toast(t`Notifications enabled on this device`)
-      void client.invalidateQueries({ queryKey: QUERY_KEY })
-    },
-    onError: (err) => {
-      setErrorText(err instanceof Error ? err.message : String(err))
-    },
-  })
-
-  const enableWsMutation = useMutation({
-    mutationFn: () => subscribeWsFallbackPush(prefs),
-    onSuccess: () => {
-      setErrorText('')
-      trace('push-perm', { action: 'subscribed', mode: 'ws' })
-      toast(t`Background keepalive notifications enabled`)
       void client.invalidateQueries({ queryKey: QUERY_KEY })
     },
     onError: (err) => {
@@ -395,98 +354,63 @@ export function NotificationsPage() {
           )}
         </div>
 
-        {support !== 'ready' && support !== 'ws-only' ? (
+        {support !== 'ready' ? (
           <PushSupportBanner support={support} />
+        ) : !relayEnabled ? (
+          <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
+            {t`VAPID push keys are not configured on the relay Worker yet.`}
+          </p>
         ) : (
-          <div className="grid gap-2.5">
-            {subscribed && mode === 'ws' ? (
-              <p
-                data-testid="push-ws-mode-hint"
-                className="rounded-xl bg-brand-deck px-3 py-2 text-meta text-brand-muted"
+          <div className="flex flex-wrap items-center gap-2">
+            {subscribed ? (
+              <>
+                <Button
+                  variant="solid"
+                  type="button"
+                  data-testid="push-test-button"
+                  disabled={testMutation.isPending}
+                  onClick={() => testMutation.mutate()}
+                  className="inline-flex min-h-10 items-center gap-1.5"
+                >
+                  <Send size={14} aria-hidden />
+                  <span>
+                    {testMutation.isPending
+                      ? t`Sending…`
+                      : t`Send test notification`}
+                  </span>
+                </Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  data-testid="push-disable-button"
+                  disabled={disableMutation.isPending}
+                  onClick={() => disableMutation.mutate()}
+                  className="min-h-10"
+                >
+                  {t`Disable on this device`}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="solid"
+                type="button"
+                data-testid="push-enable-button"
+                disabled={enableMutation.isPending || statusQuery.isPending}
+                onClick={() => enableMutation.mutate()}
+                className="inline-flex min-h-10 items-center gap-1.5"
               >
-                {t`Active channel: Background keepalive (WebSocket, no FCM). Alerts only pop while WezDeck stays alive in the background and stay silent in the foreground.`}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-2">
-              {subscribed ? (
-                <>
-                  <Button
-                    variant="solid"
-                    type="button"
-                    data-testid="push-test-button"
-                    disabled={testMutation.isPending}
-                    onClick={() => testMutation.mutate()}
-                    className="inline-flex min-h-10 items-center gap-1.5"
-                  >
-                    <Send size={14} aria-hidden />
-                    <span>
-                      {testMutation.isPending
-                        ? t`Sending…`
-                        : t`Send test notification`}
-                    </span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    data-testid="push-disable-button"
-                    disabled={disableMutation.isPending}
-                    onClick={() => disableMutation.mutate()}
-                    className="min-h-10"
-                  >
-                    {t`Disable on this device`}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {support === 'ready' && relayEnabled ? (
-                    <Button
-                      variant="solid"
-                      type="button"
-                      data-testid="push-enable-button"
-                      disabled={
-                        enableMutation.isPending || statusQuery.isPending
-                      }
-                      onClick={() => enableMutation.mutate()}
-                      className="inline-flex min-h-10 items-center gap-1.5"
-                    >
-                      <Bell size={15} aria-hidden />
-                      <span>
-                        {enableMutation.isPending
-                          ? t`Enabling…`
-                          : t`Enable notifications`}
-                      </span>
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant={
-                      support === 'ready' && relayEnabled ? 'outline' : 'solid'
-                    }
-                    type="button"
-                    data-testid="push-ws-enable-button"
-                    disabled={
-                      enableWsMutation.isPending || statusQuery.isPending
-                    }
-                    onClick={() => enableWsMutation.mutate()}
-                    className="inline-flex min-h-10 items-center gap-1.5"
-                  >
-                    <Radio size={15} aria-hidden />
-                    <span>
-                      {enableWsMutation.isPending
-                        ? t`Enabling…`
-                        : t`Background keepalive (no FCM)`}
-                    </span>
-                  </Button>
-                </>
-              )}
-            </div>
+                <Bell size={15} aria-hidden />
+                <span>
+                  {enableMutation.isPending
+                    ? t`Enabling…`
+                    : t`Enable notifications`}
+                </span>
+              </Button>
+            )}
           </div>
         )}
 
-        <PushErrorCallout
-          errorText={errorText}
-          wsPending={enableWsMutation.isPending}
-          onEnableWs={() => enableWsMutation.mutate()}
-        />
+        <PushErrorCallout errorText={errorText} />
       </section>
 
       <NotificationPrefsSections

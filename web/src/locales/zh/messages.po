@@ -20,26 +20,6 @@ msgstr "· 摘要"
 msgid "(pick any)"
 msgstr "（可多选）"
 
-#. placeholder {0}: data.total_files
-#: src/features/ticket-diff.tsx:205
-#~ msgid "{0} files"
-#~ msgstr ""
-
-#. placeholder {0}: group.summary.running
-#: src/features/ticket-keys.tsx:203
-#~ msgid "{0} running"
-#~ msgstr ""
-
-#. placeholder {0}: history.length
-#: src/features/me-autotitle.tsx:199
-#~ msgid "{0} tasks"
-#~ msgstr "{0} 项任务"
-
-#. placeholder {0}: group.summary.waiting
-#: src/features/ticket-keys.tsx:198
-#~ msgid "{0} waiting"
-#~ msgstr ""
-
 #: src/components/deck/session-tags.tsx:289
 #: src/components/deck/session-tags.tsx:540
 msgid "{ahead} ahead, {behind} behind upstream"
@@ -73,10 +53,6 @@ msgstr "{count} 张图片"
 #: src/features/session-statusbar.tsx:161
 msgid "{count} monitors running"
 msgstr "{count} 个 Monitor 运行中"
-
-#: src/features/session-switcher.tsx:127
-#~ msgid "{count} more need you"
-#~ msgstr "还有 {count} 个等你"
 
 #: src/features/session-worktree-manager.tsx:130
 msgid "{count} sessions"
@@ -146,10 +122,6 @@ msgstr "{off} 项需要留意"
 #: src/features/console-collab.tsx:236
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} 排队中"
-
-#: src/features/session-new-direction.tsx:74
-#~ msgid "{reason} · opens one more"
-#~ msgstr "{reason} · 将新开一个"
 
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
@@ -243,15 +215,6 @@ msgstr "起 {workers} 个后台工人，最多同时 {parallel} 个，分 {stage
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
-#: src/features/session-purpose.tsx:197
-#~ msgid "+ Description"
-#~ msgstr "+ 描述"
-
-#: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:424
-#~ msgid "+ New direction"
-#~ msgstr "+ 新方向"
-
 #: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 项任务"
@@ -308,17 +271,13 @@ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 
 msgid "A message sent mid-turn"
 msgstr "运行中发来的消息"
 
-#: src/features/me-notifications.tsx:143
+#: src/features/me-notifications.tsx:142
 msgid "A multi-repo fanout proposal is waiting for your approval."
 msgstr "跨仓拆单提案已生成，等待你的审批。"
 
 #: src/features/session-restart.tsx:49
 msgid "A new conversation is starting in this agent"
 msgstr "正在当前 agent 中开始新对话"
-
-#: src/features/session-new-panels.tsx:324
-#~ msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
-#~ msgstr "为这个方向新建一个工作站，基于最新主分支，和桌面上的 Ctrl+k g d 一样。"
 
 #: src/features/landing-page.tsx:128
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
@@ -336,7 +295,7 @@ msgstr "已由人接管"
 msgid "A ticket goes to another repository."
 msgstr "工单要发给另一个仓库。"
 
-#: src/features/me-notifications.tsx:150
+#: src/features/me-notifications.tsx:149
 msgid "A worker raised a question or challenge needing your decision."
 msgstr "子工单或工人提出问询/质疑，等待你的决定。"
 
@@ -359,10 +318,6 @@ msgstr "操作已发送，等待 Agent 继续……"
 #: src/features/me-autotitle.tsx:169
 msgid "Active"
 msgstr "活跃"
-
-#: src/features/me-notifications.tsx:407
-msgid "Active channel: Background keepalive (WebSocket, no FCM). Alerts only pop while WezDeck stays alive in the background and stay silent in the foreground."
-msgstr "当前通道：后台保活通知（WebSocket，免 FCM）。仅在 WezDeck 切到后台保活时弹窗，前台查看时自动静默。"
 
 #: src/features/me-autotitle.tsx:427
 msgid "Active CLI"
@@ -505,10 +460,6 @@ msgstr "已是最新版本"
 msgid "Always allow"
 msgstr "始终允许"
 
-#: src/features/session-elicitation.tsx:210
-#~ msgid "Answer sent; waiting for Grok to continue…"
-#~ msgstr "答案已发送，等待 Grok 继续……"
-
 #: src/features/session-ask-claude.tsx:207
 #: src/features/session-elicitation.tsx:209
 msgid "Answer sent; waiting for the agent to continue…"
@@ -632,10 +583,6 @@ msgstr "自动 · {provider}"
 msgid "Auto ({autoChain})"
 msgstr "自动（{autoChain}）"
 
-#: src/features/me-autotitle.tsx:380
-#~ msgid "Auto (Grok → Claude → Codex)"
-#~ msgstr "自动（Grok → Claude → Codex）"
-
 #: src/features/me-agent-detail.tsx:73
 msgid "Auto compact"
 msgstr "自动压缩窗口"
@@ -685,17 +632,9 @@ msgstr "返回"
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
-#: src/features/session-new.tsx:227
-#~ msgid "Back to message"
-#~ msgstr "返回写消息"
-
 #: src/features/console-collab.tsx:153
 msgid "Back to parent ticket"
 msgstr "返回父工单"
-
-#: src/features/session-new.tsx:227
-#~ msgid "Back to place"
-#~ msgstr "返回选位置"
 
 #: src/features/console-collab-run.tsx:137
 msgid "Backend"
@@ -713,14 +652,6 @@ msgstr "后台运行"
 #: src/features/me-autotitle.tsx:363
 msgid "Background auto-titling"
 msgstr "后台自动更新标题"
-
-#: src/features/me-notifications.tsx:476
-msgid "Background keepalive (no FCM)"
-msgstr "后台保活通知（免 FCM）"
-
-#: src/features/me-notifications.tsx:318
-msgid "Background keepalive notifications enabled"
-msgstr "已开启后台保活通知（仅后台触发）"
 
 #: src/features/session-background.tsx:133
 #: src/features/session-info.tsx:92
@@ -769,7 +700,7 @@ msgstr "分支"
 msgid "Breakdowns"
 msgstr "分组明细"
 
-#: src/features/me-notifications.tsx:214
+#: src/features/me-notifications.tsx:205
 msgid "Browser push service (FCM/GMS) is unreachable on this device."
 msgstr "当前设备无法连接浏览器推送服务（FCM/GMS）。"
 
@@ -919,9 +850,9 @@ msgstr "子工单"
 msgid "Children"
 msgstr "子单"
 
-#: src/features/me-notifications.tsx:217
-msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM through your proxy, switch to Firefox/Edge, or use background WebSocket notifications below without FCM."
-msgstr "Chrome Web Push 依赖 mtalk.google.com:5228（Android 还需 Google Play 服务）。可在 chrome://gcm-internals 检查连通性、在代理中放行 FCM、换用 Firefox/Edge，或直接点击下方改用免 FCM 的后台保活通知。"
+#: src/features/me-notifications.tsx:208
+msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge."
+msgstr "Chrome Web Push 依赖 mtalk.google.com:5228（Android 还需 Google Play 服务）。可在 chrome://gcm-internals 检查连通性、在代理中放行 FCM/GMS，或尝试 Firefox/Edge。"
 
 #: src/features/console-activity.tsx:110
 msgid "claimed"
@@ -943,18 +874,9 @@ msgstr "Claude 命令，发进窗格执行"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-composer.tsx:314
-#~ msgid "Clear"
-#~ msgstr ""
-
 #: src/features/session-composer-tools.tsx:161
 msgid "Clear input"
 msgstr "清空输入"
-
-#: src/features/session-composer.tsx:478
-#: src/features/session-composer.tsx:479
-#~ msgid "Clear input (Esc Esc)"
-#~ msgstr "清空输入（Esc Esc）"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:274
@@ -987,21 +909,9 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/session-commands.tsx:273
-#~ msgid "Close commands"
-#~ msgstr "关闭命令"
-
-#: src/features/session-key-panel.tsx:47
-#~ msgid "Close keys"
-#~ msgstr "收起按键"
-
 #: src/features/console-keys.tsx:123
 msgid "Close the viewer"
 msgstr "关闭图片查看"
-
-#: src/features/session-todos.tsx:98
-#~ msgid "Close to-dos"
-#~ msgstr "关闭待办"
 
 #: src/features/console-activity.tsx:114
 #: src/features/tickets-view.tsx:128
@@ -1021,7 +931,7 @@ msgstr "协作数据不可用：{unavailable}"
 msgid "Collab metrics"
 msgstr "协作指标"
 
-#: src/features/me-notifications.tsx:138
+#: src/features/me-notifications.tsx:137
 #: src/features/ticket-keys.tsx:91
 #: src/features/tickets-view.tsx:347
 msgid "Collab tickets"
@@ -1066,10 +976,6 @@ msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
-#: src/features/session-new-direction.tsx:70
-#~ msgid "commits not in main yet"
-#~ msgstr "有未合入主分支的提交"
-
 #: src/features/chat-turn.tsx:143
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
@@ -1081,10 +987,6 @@ msgstr "正在压缩上下文"
 #: src/features/console-keys.tsx:99
 msgid "Composer"
 msgstr "输入框"
-
-#: src/features/session-composer.tsx:237
-#~ msgid "Composer tools"
-#~ msgstr "输入工具"
 
 #: src/features/me-agent-detail.tsx:339
 msgid "Configured"
@@ -1142,11 +1044,6 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/console-shell.tsx:403
-#: src/features/session-list.tsx:293
-#~ msgid "Connection details"
-#~ msgstr "连接详情"
-
 #: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "连接失败"
@@ -1193,10 +1090,6 @@ msgstr "上下文压缩次数"
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "上下文占用"
-
-#: src/features/session-new-panels.tsx:349
-#~ msgid "Continue"
-#~ msgstr "继续"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history.tsx:228
@@ -1393,10 +1286,6 @@ msgstr "创建中的会话"
 msgid "Creating the session group…"
 msgstr "正在创建会话组…"
 
-#: src/features/session-new-panels.tsx:35
-#~ msgid "Creating the worktree…"
-#~ msgstr "正在创建工作树…"
-
 #: src/features/ticket-new.tsx:242
 msgid "Creating…"
 msgstr "创建中…"
@@ -1489,10 +1378,6 @@ msgstr "拒绝"
 msgid "Depends on"
 msgstr "依赖"
 
-#: src/features/session-new-panels.tsx:331
-#~ msgid "Description"
-#~ msgstr "描述"
-
 #: src/features/session-info.tsx:91
 msgid "Desk idle for"
 msgstr "终端空闲"
@@ -1534,18 +1419,12 @@ msgstr "变更审阅修改意见："
 msgid "Direct"
 msgstr "直连"
 
-#: src/features/session-new-direction.tsx:121
-#: src/features/session-new-panels.tsx:264
-#: src/features/session-new.tsx:424
-#~ msgid "Direction"
-#~ msgstr "方向"
-
 #: src/features/session-empty.tsx:48
 #: src/features/session-info.tsx:66
 msgid "Directory"
 msgstr "目录"
 
-#: src/features/me-notifications.tsx:436
+#: src/features/me-notifications.tsx:390
 msgid "Disable on this device"
 msgstr "在此设备上关闭"
 
@@ -1612,10 +1491,6 @@ msgstr "{when} 完成"
 msgid "Draft"
 msgstr "草稿"
 
-#: src/features/session-new-panels.tsx:313
-#~ msgid "e.g. ux, ci, i18n"
-#~ msgstr "例如 ux、ci、i18n"
-
 #: src/features/session-commands.tsx:129
 msgid "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 msgstr "这个项目里更早的会话。选中后窗格会切换过去，本页也会跟着切换。"
@@ -1638,15 +1513,11 @@ msgstr "修改重发"
 msgid "Edit group name"
 msgstr "修改组名"
 
-#: src/features/session-purpose.tsx:169
-#~ msgid "Edit the description"
-#~ msgstr "修改描述"
-
 #: src/features/me-agent-detail.tsx:71
 msgid "Effort"
 msgstr "推理力度"
 
-#: src/features/me-notifications.tsx:456
+#: src/features/me-notifications.tsx:406
 msgid "Enable notifications"
 msgstr "开启推送通知"
 
@@ -1662,9 +1533,7 @@ msgstr "本机，已启用"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备密钥，也不需要批准。手机、平板和其他电脑需要各自单独启用。"
 
-#: src/features/me-notifications.tsx:232
-#: src/features/me-notifications.tsx:455
-#: src/features/me-notifications.tsx:475
+#: src/features/me-notifications.tsx:405
 msgid "Enabling…"
 msgstr "开启中…"
 
@@ -1711,10 +1580,6 @@ msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
 #: src/features/me-host.tsx:37
 msgid "Event stream"
 msgstr "事件流"
-
-#: src/features/session-new-direction.tsx:175
-#~ msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
-#~ msgstr "{direction} 的工作站都在忙：新开一个并行的，描述沿用。"
 
 #: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
@@ -1769,7 +1634,7 @@ msgstr "失败次数"
 msgid "Failed to refresh links"
 msgstr "刷新外链失败"
 
-#: src/features/me-notifications.tsx:156
+#: src/features/me-notifications.tsx:155
 msgid "Failure or merge conflict"
 msgstr "异常或合并冲突"
 
@@ -1801,10 +1666,6 @@ msgstr "已结束"
 msgid "finished its turn"
 msgstr "这一轮已结束"
 
-#: src/features/session-new-panels.tsx:126
-#~ msgid "First message to the agent"
-#~ msgstr "给 agent 的第一条消息"
-
 #: src/features/session-info.tsx:83
 msgid "First turn"
 msgstr "第一轮"
@@ -1816,10 +1677,6 @@ msgstr "适应宽度"
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
 msgstr "聚焦会话搜索或返回列表"
-
-#: src/features/session-composer.tsx:272
-#~ msgid "Follow-ups of this repo"
-#~ msgstr "这个仓库的待跟进事项"
 
 #: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
@@ -1976,23 +1833,10 @@ msgstr "打算怎么做"
 msgid "How the WebSocket is billed"
 msgstr "WebSocket 怎么计费"
 
-#: src/features/session-new-direction.tsx:65
-#~ msgid "idle"
-#~ msgstr "空闲"
-
-#: src/features/session-list.tsx:247
-#~ msgctxt "filter"
-#~ msgid "Idle"
-#~ msgstr "空闲"
-
 #: src/features/session-status-text.ts:21
 msgctxt "session status"
 msgid "Idle"
 msgstr "空闲"
-
-#: src/features/session-new-direction.tsx:65
-#~ msgid "idle · {count} workstations"
-#~ msgstr "空闲 · 共 {count} 个工作站"
 
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
@@ -2079,11 +1923,11 @@ msgstr "实例"
 msgid "Integration"
 msgstr "集成"
 
-#: src/features/me-notifications.tsx:157
+#: src/features/me-notifications.tsx:156
 msgid "Integration conflict, verification failure, or run error."
 msgstr "集成合并冲突、验收未通过或运行失败。"
 
-#: src/features/me-notifications.tsx:164
+#: src/features/me-notifications.tsx:163
 msgid "Integration verification passed and awaits delivery confirmation."
 msgstr "集成验证已通过，等待确认交付。"
 
@@ -2136,10 +1980,6 @@ msgstr "继续规划"
 #: src/features/console-keys.tsx:277
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
-
-#: src/features/session-composer.tsx:251
-#~ msgid "Keys"
-#~ msgstr "快捷"
 
 #: src/features/me-agent-detail.tsx:131
 msgid "Kimi API key"
@@ -2310,7 +2150,7 @@ msgstr "日志流"
 msgid "Login"
 msgstr "登录"
 
-#: src/features/me-notifications.tsx:108
+#: src/features/me-notifications.tsx:107
 msgid "Long turn completed"
 msgstr "长任务完成"
 
@@ -2334,10 +2174,6 @@ msgstr "管理工具权限规则"
 #: src/features/session-worktree-manager.tsx:172
 msgid "Manage worktree"
 msgstr "管理工作树"
-
-#: src/features/session-statusbar.tsx:289
-#~ msgid "Manage worktrees"
-#~ msgstr "管理工作树"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -2436,8 +2272,8 @@ msgstr "消息数"
 msgid "Metrics window"
 msgstr "统计窗口"
 
-#: src/features/me-notifications.tsx:117
-#: src/features/me-notifications.tsx:120
+#: src/features/me-notifications.tsx:116
+#: src/features/me-notifications.tsx:119
 msgid "Minimum duration"
 msgstr "最小时长阈值"
 
@@ -2498,20 +2334,6 @@ msgstr "原生"
 msgid "Needs a decision"
 msgstr "需要确认"
 
-#: src/features/session-new-panels.tsx:172
-#: src/features/session-new-panels.tsx:327
-#~ msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
-#~ msgstr "需要包含字母或数字：它会成为目录名和分支名。其余内容写进描述。"
-
-#: src/features/session-header.tsx:237
-#~ msgid "Needs you"
-#~ msgstr "需要你处理"
-
-#: src/features/session-list.tsx:237
-#~ msgctxt "filter"
-#~ msgid "Needs you"
-#~ msgstr "等你"
-
 #: src/features/ticket-diff.tsx:311
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
@@ -2530,37 +2352,13 @@ msgstr "新进程"
 msgid "New conversation"
 msgstr "新开会话"
 
-#: src/features/session-restart.tsx:37
-#: src/features/session-restart.tsx:46
-#: src/features/session-restart.tsx:53
-#~ msgctxt "quick same-pane"
-#~ msgid "New conversation"
-#~ msgstr "新对话"
-
 #: src/features/session-restart.tsx:125
 msgid "New conversation (/new)"
 msgstr "新对话 /new"
 
-#: src/features/session-new-direction.tsx:183
-#~ msgid "new direction"
-#~ msgstr "新方向"
-
-#: src/features/session-new-panels.tsx:305
-#: src/features/session-new.tsx:232
-#~ msgid "New direction"
-#~ msgstr "新方向"
-
 #: src/features/console-keys.tsx:104
 msgid "New line"
 msgstr "换行"
-
-#: src/features/session-chat-group.tsx:120
-#: src/features/session-chat-group.tsx:240
-#: src/features/session-list.tsx:127
-#: src/features/session-list.tsx:251
-#: src/features/session-new.tsx:222
-#~ msgid "New round"
-#~ msgstr "新一轮"
 
 #: src/features/sent-history.tsx:167
 #: src/features/session-chat-group.tsx:213
@@ -2663,10 +2461,6 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:211
-#~ msgid "No agent is working right now."
-#~ msgstr "没有正在干活的 agent。"
-
 #: src/features/session-list.tsx:315
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
@@ -2699,10 +2493,6 @@ msgstr "这张工单还没有后台运行记录。"
 #: src/features/session-list.tsx:60
 msgid "No human message yet"
 msgstr "还没有人工消息"
-
-#: src/features/session-list.tsx:213
-#~ msgid "No idle sessions."
-#~ msgstr "没有空闲的会话。"
 
 #: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
@@ -2744,10 +2534,6 @@ msgstr "暂无最近的连接结果"
 msgid "No sent messages recorded yet."
 msgstr "暂无已发送消息记录。"
 
-#: src/features/session-statusbar.tsx:338
-#~ msgid "No session"
-#~ msgstr "无会话"
-
 #: src/features/me-autotitle.tsx:147
 msgid "No session titles recorded yet."
 msgstr "暂无已记录的会话标题。"
@@ -2782,7 +2568,7 @@ msgstr "无上游"
 msgid "No upstream branch: nothing to compare with."
 msgstr "没有上游分支，无法比较。"
 
-#: src/features/me-notifications.tsx:174
+#: src/features/me-notifications.tsx:173
 msgid "Noise control"
 msgstr "降噪策略"
 
@@ -2848,10 +2634,6 @@ msgstr "备注"
 msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
-#: src/features/session-list.tsx:209
-#~ msgid "Nothing is waiting on you."
-#~ msgstr "没有等你处理的工单。"
-
 #: src/features/tickets-view.tsx:528
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
@@ -2866,7 +2648,7 @@ msgstr "没有匹配项"
 msgid "Nothing to follow up in this repo."
 msgstr "这个仓库暂时没有要跟进的事。"
 
-#: src/features/me-notifications.tsx:266
+#: src/features/me-notifications.tsx:239
 msgid "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 msgstr "浏览器已拦截此站点的通知权限，请在浏览器设置中重新允许。"
 
@@ -2874,15 +2656,15 @@ msgstr "浏览器已拦截此站点的通知权限，请在浏览器设置中重
 msgid "Notifications"
 msgstr "通知"
 
-#: src/features/me-notifications.tsx:331
+#: src/features/me-notifications.tsx:290
 msgid "Notifications disabled on this device"
 msgstr "已在此设备上关闭通知"
 
-#: src/features/me-notifications.tsx:305
+#: src/features/me-notifications.tsx:277
 msgid "Notifications enabled on this device"
 msgstr "已在此设备上开启通知"
 
-#: src/features/me-notifications.tsx:109
+#: src/features/me-notifications.tsx:108
 msgid "Notify when a long agent turn finishes (off by default)."
 msgstr "单轮长耗时任务完成时推送（默认关闭，减少打扰）。"
 
@@ -2893,7 +2675,7 @@ msgstr "状态：{label}"
 #: src/features/console-me.tsx:199
 #: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
-#: src/features/me-notifications.tsx:46
+#: src/features/me-notifications.tsx:45
 msgid "Off"
 msgstr "未启用"
 
@@ -2911,15 +2693,11 @@ msgstr "离线中，稍后再试"
 
 #: src/features/me-autotitle.tsx:117
 #: src/features/me-autotitle.tsx:369
-#: src/features/me-notifications.tsx:45
+#: src/features/me-notifications.tsx:44
 msgid "On"
 msgstr "开启"
 
-#: src/features/session-switcher.tsx:242
-#~ msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
-#~ msgstr "键盘：Alt+j 下一个等你，Alt+k 下一个已完成，Alt+l 下一个运行中，Alt+g 打开这个列表。"
-
-#: src/features/me-notifications.tsx:253
+#: src/features/me-notifications.tsx:226
 msgid "On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications."
 msgstr "iOS 16.4+ 请先点 Safari 分享 →「添加到主屏幕」，再从主屏幕图标打开 WezDeck 开启推送。"
 
@@ -3020,10 +2798,6 @@ msgstr "建立连接算 1 次请求。"
 msgid "Opening…"
 msgstr "正在打开…"
 
-#: src/features/session-new-direction.tsx:185
-#~ msgid "opens one more"
-#~ msgstr "将新开"
-
 #: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO 远控"
@@ -3065,10 +2839,6 @@ msgstr "输出 {outputTokens}"
 msgid "Output rate"
 msgstr "输出速率"
 
-#: src/features/session-info.tsx:86
-#~ msgid "Output tokens"
-#~ msgstr "输出 token"
-
 #: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:317
 #: src/features/ticket-info.tsx:227
@@ -3087,11 +2857,11 @@ msgstr "页面、中转握手和用量查询；静态文件免费。"
 msgid "Pair again"
 msgstr "需重新配对"
 
-#: src/features/me-notifications.tsx:44
+#: src/features/me-notifications.tsx:43
 msgid "Pair first"
 msgstr "需先配对"
 
-#: src/features/me-notifications.tsx:246
+#: src/features/me-notifications.tsx:219
 msgid "Pair this device with your host first to enable remote push notifications."
 msgstr "请先与宿主机完成配对，再开启远程推送通知。"
 
@@ -3136,7 +2906,7 @@ msgstr "路径"
 msgid "Pending"
 msgstr "待批准"
 
-#: src/features/me-notifications.tsx:101
+#: src/features/me-notifications.tsx:100
 msgid "Permission prompts, Ask questions, and plan approvals."
 msgstr "权限审批、提问等你回复与计划待确认。"
 
@@ -3153,14 +2923,6 @@ msgstr "手机或平板"
 #: src/features/session-split.tsx:198
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
-
-#: src/features/console-keys.tsx:71
-#~ msgid "Pick a session (grouped by repository)"
-#~ msgstr "选择会话（按仓库分组）"
-
-#: src/features/session-split.tsx:185
-#~ msgid "Pick a session on the left. j / k move through the list."
-#~ msgstr "从左边选一个会话。j / k 在列表里上下切换。"
 
 #: src/features/session-commands.tsx:255
 #: src/features/session-skills.tsx:62
@@ -3245,7 +3007,7 @@ msgstr "把上周的数据拉进周报里。"
 msgid "Purpose"
 msgstr "用途"
 
-#: src/features/me-notifications.tsx:380
+#: src/features/me-notifications.tsx:339
 msgid "Push alerts only carry clipped titles and status labels — never prompts, source code, or diffs."
 msgstr "推送仅包含截断标题与状态短语，绝不携带提示词、源码或 Diff。"
 
@@ -3286,19 +3048,11 @@ msgstr "快捷控制"
 msgid "Quick keys"
 msgstr "快捷键"
 
-#: src/features/session-key-panel.tsx:45
-#~ msgid "Quick keys unavailable"
-#~ msgstr "快捷键不可用"
-
 #: src/features/ticket-keys.tsx:113
 msgid "Quiet for over a week ({count})"
 msgstr "一周以上没动静（{count}）"
 
-#: src/features/me-notifications.tsx:173
-#~ msgid "Quiet while active at desk"
-#~ msgstr "电脑前活跃时静默弹窗"
-
-#: src/features/me-notifications.tsx:178
+#: src/features/me-notifications.tsx:177
 msgid "Quiet while active on another device"
 msgstr "任意端活跃时静默弹窗"
 
@@ -3325,7 +3079,7 @@ msgstr "阅读文档"
 msgid "Ready"
 msgstr "就绪"
 
-#: src/features/me-notifications.tsx:163
+#: src/features/me-notifications.tsx:162
 msgid "Ready to deliver"
 msgstr "验收通过待交付"
 
@@ -3419,10 +3173,6 @@ msgstr "刷新"
 msgid "Remote"
 msgstr "远程"
 
-#: src/features/console-status-band.tsx:14
-#~ msgid "Remote access"
-#~ msgstr "远程访问"
-
 #: src/features/me-devices.tsx:246
 msgid "Remote devices"
 msgstr "远程设备"
@@ -3464,10 +3214,6 @@ msgstr "重新打开"
 msgid "Replace API key"
 msgstr "更换 API 密钥"
 
-#: src/features/session-handoff.tsx:244
-#~ msgid "Replace this pane with {target} and paste a continuation brief"
-#~ msgstr "用 {target} 替换本格，并粘贴接续 brief"
-
 #: src/features/session-handoff.tsx:317
 msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
 msgstr "将此窗格替换为 {target}；选择交接简报或空白切换"
@@ -3505,10 +3251,6 @@ msgstr "回复"
 #: src/features/ticket-reply.tsx:231
 msgid "Reply and continue"
 msgstr "回复并继续"
-
-#: src/features/session-list.tsx:54
-#~ msgid "Replying…"
-#~ msgstr "正在回复…"
 
 #: src/features/console-collab.tsx:252
 msgid "Repo"
@@ -3600,10 +3342,6 @@ msgstr "重置时间 {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
-#: src/features/session-restart.tsx:157
-#~ msgid "Respawn the pane; the agent resumes this conversation (F5)"
-#~ msgstr "原地重启窗格，agent 恢复当前对话（F5）"
-
 #: src/features/session-restart.tsx:101
 #: src/features/session-restart.tsx:110
 msgid "Restart"
@@ -3617,10 +3355,6 @@ msgstr "重启会话"
 #: src/features/console-keys.tsx:84
 msgid "Restart the agent and resume this conversation"
 msgstr "重启 agent 并恢复当前对话"
-
-#: src/features/session-restart.tsx:158
-#~ msgid "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
-#~ msgstr "重启当前窗格中的 agent 并恢复对话（网页 Alt+F5，终端 F5）"
 
 #: src/features/session-restart.tsx:158
 msgid "Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)"
@@ -3650,10 +3384,6 @@ msgstr "续接 / 新开命中"
 msgid "Resume a conversation"
 msgstr "恢复会话"
 
-#: src/features/ticket-reply.tsx:301
-#~ msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
-#~ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的 agent 对话聊；之后后台不会再往这个对话里写。"
-
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
@@ -3672,10 +3402,6 @@ msgstr "重试加载更早"
 msgid "Reusable"
 msgstr "可复用"
 
-#: src/features/session-new-direction.tsx:185
-#~ msgid "reuse idle"
-#~ msgstr "复用空闲"
-
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "复用理由"
@@ -3684,18 +3410,9 @@ msgstr "复用理由"
 msgid "Reuses"
 msgstr "复用"
 
-#: src/features/session-new-direction.tsx:174
-#~ msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
-#~ msgstr "复用 {slot}：重置到最新主分支，起一个全新的 agent（上一轮对话仍可恢复）。"
-
 #: src/features/sent-history.tsx:111
 msgid "Review"
 msgstr "查看"
-
-#. placeholder {0}: file.path
-#: src/features/ticket-diff.tsx:185
-#~ msgid "Review note for {repoName}/{0}…"
-#~ msgstr ""
 
 #: src/features/ticket-diff.tsx:188
 msgid "Review note for {repoName}/{filePath}…"
@@ -3716,10 +3433,6 @@ msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝
 #: src/features/me-host.tsx:38
 msgid "Rime collector"
 msgstr "Rime 采集器"
-
-#: src/features/console-collab.tsx:122
-#~ msgid "Route"
-#~ msgstr "流向"
 
 #: src/features/ticket-runs.tsx:138
 msgid "RSS"
@@ -3880,10 +3593,6 @@ msgstr "已保存"
 msgid "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 档位、effort=high，以及 compact/max-context（262144；模型含 [1m] 时为 1048576）。重启 Kimi 窗后 /status 才会刷新。"
 
-#: src/features/me-agent-detail.tsx:142
-#~ msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
-#~ msgstr "保存时会按 Kimi Claude Code 指南写入 Base URL、全部 Claude 档位、自动压缩窗口与推理力度。重启 Kimi 窗后 /status 才会刷新。"
-
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/me-agent-detail.tsx:306
@@ -3970,10 +3679,6 @@ msgstr "发送（触屏上回车是换行，这个键也能发送）"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接着往下做"
 
-#: src/features/session-composer.tsx:246
-#~ msgid "Send Enter, Esc or Ctrl+C into the agent pane"
-#~ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
-
 #: src/features/chat-pending.tsx:73
 msgid "Send failed"
 msgstr "发送失败"
@@ -3986,13 +3691,9 @@ msgstr "发送失败：{errorText}"
 msgid "Send review ({noteCount})"
 msgstr "打包发送修改 ({noteCount})"
 
-#: src/features/me-notifications.tsx:425
+#: src/features/me-notifications.tsx:379
 msgid "Send test notification"
 msgstr "发送测试通知"
-
-#: src/features/session-new.tsx:467
-#~ msgid "Send the first message below to create the workspace and start the agent."
-#~ msgstr "在下方发送第一条消息即可创建工作区并启动 Agent。"
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -4010,7 +3711,7 @@ msgstr "正在发送第一条消息…"
 msgid "Sending the handoff brief…"
 msgstr "正在发送接续 brief…"
 
-#: src/features/me-notifications.tsx:424
+#: src/features/me-notifications.tsx:378
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Sending…"
 msgstr "发送中…"
@@ -4091,7 +3792,7 @@ msgid "Session titles"
 msgstr "会话标题列表"
 
 #: src/features/collab-metrics.tsx:154
-#: src/features/me-notifications.tsx:96
+#: src/features/me-notifications.tsx:95
 msgid "Sessions"
 msgstr "会话数"
 
@@ -4130,11 +3831,6 @@ msgstr "已交付"
 msgid "Shortcuts"
 msgstr "快捷键"
 
-#. placeholder {0}: ordered.length
-#: src/features/session-title-history.tsx:152
-#~ msgid "Show all {0} tasks"
-#~ msgstr "展开全部 {0} 项任务"
-
 #: src/features/session-title-history.tsx:154
 msgid "Show all {total} tasks"
 msgstr "展开全部 {total} 项任务"
@@ -4158,11 +3854,6 @@ msgstr "查看初始消息"
 #: src/features/session-background.tsx:118
 msgid "Show the call"
 msgstr "跳到发起的调用"
-
-#. placeholder {0}: messages.length
-#: src/features/ticket-run-chat.tsx:230
-#~ msgid "Showing {0} of {total} items"
-#~ msgstr ""
 
 #: src/features/ticket-run-chat.tsx:233
 msgid "Showing {shownCount} of {total} items"
@@ -4200,10 +3891,6 @@ msgstr "这个 agent 加载的能力"
 #: src/features/console-shell.tsx:401
 msgid "Skip to content"
 msgstr "跳到内容"
-
-#: src/features/session-composer.tsx:259
-#~ msgid "Slash commands for Claude"
-#~ msgstr "Claude 斜杠命令"
 
 #: src/features/ticket-timeline.tsx:115
 msgid "slot {slot}"
@@ -4253,7 +3940,7 @@ msgstr "本机来源"
 msgid "Split proposal {pid}"
 msgstr "拆分提案 {pid}"
 
-#: src/features/me-notifications.tsx:142
+#: src/features/me-notifications.tsx:141
 msgid "Split proposal ready"
 msgstr "拆单提案待批"
 
@@ -4277,18 +3964,6 @@ msgstr "当前 agent 执行 /new（Ctrl+N）"
 #: src/features/console-keys.tsx:80
 msgid "Start a blank agent process in this pane"
 msgstr "在当前窗格启动空白 agent 进程"
-
-#: src/features/session-restart.tsx:36
-#~ msgid "Start a blank conversation in this pane"
-#~ msgstr "在当前窗格开始空白对话"
-
-#: src/features/session-restart.tsx:59
-#~ msgid "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
-#~ msgstr "在当前窗格开始空白对话，并保留当前工作树。当前对话仍可在恢复会话中找回。"
-
-#: src/features/session-restart.tsx:33
-#~ msgid "Start a blank conversation?"
-#~ msgstr "开始空白对话？"
 
 #: src/features/session-commands.tsx:215
 #: src/features/session-commands.tsx:252
@@ -4394,11 +4069,7 @@ msgstr "压缩上下文"
 msgid "Summary"
 msgstr "摘要"
 
-#: src/features/me-notifications.tsx:174
-#~ msgid "Suppress popup banners while you are actively typing in WezTerm (still updates app badge)."
-#~ msgstr "正在电脑前操作 WezTerm 时静默弹窗，仅同步更新应用角标。"
-
-#: src/features/me-notifications.tsx:179
+#: src/features/me-notifications.tsx:178
 msgid "Suppress popups while you are typing in WezTerm or viewing WezDeck in the foreground on any device (still syncs badge)."
 msgstr "你在电脑端 WezTerm 或任意设备前台查看 WezDeck 时，其它设备不弹窗（仍同步角标与已读清零）。"
 
@@ -4406,21 +4077,9 @@ msgstr "你在电脑端 WezTerm 或任意设备前台查看 WezDeck 时，其它
 msgid "Switch agent"
 msgstr "切换 Agent"
 
-#: src/features/session-switcher.tsx:226
-#~ msgid "Switch chat"
-#~ msgstr "切换对话"
-
 #: src/features/session-handoff.tsx:56
 msgid "Switch mode"
 msgstr "切换模式"
-
-#: src/features/session-switcher.tsx:195
-#~ msgid "Switch session"
-#~ msgstr "切换会话"
-
-#: src/features/session-header.tsx:197
-#~ msgid "Switch session (Alt+g)"
-#~ msgstr "切换会话（Alt+g）"
 
 #: src/features/session-commands.tsx:235
 #: src/features/session-skills.tsx:65
@@ -4472,18 +4131,9 @@ msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 msgid "Tap an option to send its number into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字"
 
-#: src/features/session-key-panel.tsx:52
-#~ msgid "Tap to send into the agent pane"
-#~ msgstr "点一下就会发到 Agent 窗格"
-
 #: src/features/session-info.tsx:100
 msgid "Tappable Ask options"
 msgstr "问答可点选项"
-
-#. placeholder {0}: history.length
-#: src/features/session-title-history.tsx:171
-#~ msgid "Task history ({0})"
-#~ msgstr "任务轨迹（{0}）"
 
 #: src/features/session-title-history.tsx:174
 msgid "Task history ({count})"
@@ -4509,7 +4159,7 @@ msgstr "终端按键"
 msgid "Terminal screen"
 msgstr "终端画面"
 
-#: src/features/me-notifications.tsx:356
+#: src/features/me-notifications.tsx:315
 msgid "Test notification sent"
 msgstr "已发送测试通知"
 
@@ -4585,10 +4235,6 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 msgid "Theme"
 msgstr "主题"
 
-#: src/features/session-todos.tsx:101
-#~ msgid "They stay with the repo, so any session can pick them up."
-#~ msgstr "待办事项会保留在仓库中，任何会话都可以继续处理。"
-
 #: src/features/chat-command.tsx:181
 #: src/features/chat-command.tsx:187
 msgid "Thinking"
@@ -4602,7 +4248,7 @@ msgstr "这个 agent 还没有列出能力"
 msgid "This browser"
 msgstr "当前浏览器"
 
-#: src/features/me-notifications.tsx:260
+#: src/features/me-notifications.tsx:233
 msgid "This browser does not support Web Push notifications."
 msgstr "当前浏览器不支持 Web Push 通知。"
 
@@ -4620,7 +4266,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/me-notifications.tsx:377
+#: src/features/me-notifications.tsx:336
 msgid "This device"
 msgstr "当前设备"
 
@@ -4714,7 +4360,7 @@ msgstr "工单"
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/me-notifications.tsx:149
+#: src/features/me-notifications.tsx:148
 msgid "Ticket waiting on you"
 msgstr "工单等你回复"
 
@@ -4787,10 +4433,6 @@ msgstr "待办"
 msgid "To-dos of {repo}"
 msgstr "{repo} 的待办"
 
-#: src/features/session-todos.tsx:101
-#~ msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
-#~ msgstr "{repo} 的待办：跟着仓库走，任何会话都能接着做"
-
 #: src/features/session-todos.tsx:100
 msgid "To-dos of this repo"
 msgstr "这个仓库的待办"
@@ -4858,11 +4500,6 @@ msgstr "内容超过 64 KB 已截断，完整内容请在终端查看。"
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
-#. placeholder {0}: item.user_turns
-#: src/features/session-title-history.tsx:92
-#~ msgid "Turn {0}"
-#~ msgstr "第 {0} 轮"
-
 #: src/features/session-title-history.tsx:94
 msgid "Turn {turns}"
 msgstr "第 {turns} 轮"
@@ -4874,10 +4511,6 @@ msgstr "在设置中启用写入后可编辑"
 #: src/features/session-commands.tsx:283
 msgid "Turn on write access in Settings to send commands"
 msgstr "在「我的」里启用写入后才能发送命令"
-
-#: src/features/session-key-panel.tsx:51
-#~ msgid "Turn on write access in Settings to send these keys"
-#~ msgstr "先在「我的 › 写入权限」启用，才能发送这些按键"
 
 #: src/features/remote-badge.tsx:82
 msgid "TURN relay"
@@ -4904,10 +4537,6 @@ msgstr "不可用"
 #: src/features/me-agents.tsx:200
 msgid "Unavailable agents ({disabledCount})"
 msgstr "不可用智能体（{disabledCount}）"
-
-#: src/features/session-new-direction.tsx:69
-#~ msgid "uncommitted changes"
-#~ msgstr "有未提交的改动"
 
 #: src/features/sent-history.tsx:379
 msgid "Unconfirmed ({unsettledCount})"
@@ -4961,10 +4590,6 @@ msgstr "正在更新极窄导航栏、公开页吸顶导航和架构目录…"
 msgid "Updating your selection…"
 msgstr "正在更新选择……"
 
-#: src/features/session-composer.tsx:136
-#~ msgid "Uploading {step}/{steps}…"
-#~ msgstr "正在上传 {step}/{steps}…"
-
 #: src/features/message-composer.tsx:127
 msgid "Uploading {step}/{total}…"
 msgstr "正在上传 {step}/{total}…"
@@ -4984,10 +4609,6 @@ msgstr "用量"
 msgid "Usage from"
 msgstr "用量来源"
 
-#: src/features/me-notifications.tsx:233
-msgid "Use background keepalive notifications (no FCM)"
-msgstr "改用后台保活通知（免 FCM）"
-
 #: src/features/me-agent-detail.tsx:201
 #: src/features/me-agent-detail.tsx:248
 msgid "Use CLI default"
@@ -5001,9 +4622,9 @@ msgstr "用浏览器菜单里的「安装应用」或「添加到主屏幕」。
 msgid "User"
 msgstr "用户级"
 
-#: src/features/me-notifications.tsx:302
-#~ msgid "VAPID push keys are not configured on the relay Worker yet."
-#~ msgstr "Relay Worker 尚未配置 VAPID 推送密钥。"
+#: src/features/me-notifications.tsx:361
+msgid "VAPID push keys are not configured on the relay Worker yet."
+msgstr "Relay Worker 尚未配置 VAPID 推送密钥。"
 
 #: src/features/ticket-reply.tsx:255
 msgid "Verification"
@@ -5043,7 +4664,7 @@ msgstr "主机尚未安装 vscode-links。"
 msgid "Waiting for"
 msgstr "等待类型"
 
-#: src/features/me-notifications.tsx:100
+#: src/features/me-notifications.tsx:99
 msgid "Waiting for approval or reply"
 msgstr "等待确认或回复"
 
@@ -5228,10 +4849,6 @@ msgstr "你的假设"
 msgid "What you saw"
 msgstr "你看到的现象"
 
-#: src/features/session-new.tsx:232
-#~ msgid "Where"
-#~ msgstr "选择位置"
-
 #: src/features/session-info.tsx:52
 msgid "Where it runs"
 msgstr "运行位置"
@@ -5292,22 +4909,9 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/session-list.tsx:242
-#~ msgctxt "filter"
-#~ msgid "Working"
-#~ msgstr "运行中"
-
 #: src/features/ticket-diff.tsx:410
 msgid "Working tree matches base commit (no diff)."
 msgstr "工作树与基线一致（无变更）。"
-
-#: src/features/session-purpose.tsx:72
-#~ msgid "Workstation description"
-#~ msgstr "工作站描述"
-
-#: src/features/session-info.tsx:265
-#~ msgid "Workstation purpose"
-#~ msgstr "工作站用途"
 
 #: src/features/session-info.tsx:69
 #: src/features/ticket-info.tsx:114
@@ -5315,10 +4919,6 @@ msgstr "工作树与基线一致（无变更）。"
 #: src/features/ticket-timeline.tsx:185
 msgid "Worktree"
 msgstr "工作树"
-
-#: src/features/session-new-panels.tsx:326
-#~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
-#~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
 #: src/features/session-worktree-lifecycle.tsx:49
 msgid "Worktree recycled"
@@ -5364,36 +4964,3 @@ msgstr "你的决定、补充信息，或对质疑的答复"
 #: src/features/ticket-reply.tsx:172
 msgid "Your reply"
 msgstr "你的回复"
-
-#: src/features/session-statusbar.tsx:246
-#~ msgid "仍在使用"
-#~ msgstr "仍在使用"
-
-#: src/features/session-statusbar.tsx:240
-#~ msgid "可复用"
-#~ msgstr "可复用"
-
-#: src/features/session-statusbar.tsx:243
-#~ msgid "有本地改动"
-#~ msgstr "有本地改动"
-
-#: src/features/session-statusbar.tsx:244
-#~ msgid "未交付"
-#~ msgstr "未交付"
-
-#: src/features/session-statusbar.tsx:314
-#~ msgid "未命名工作树"
-#~ msgstr "未命名工作树"
-
-#: src/features/session-statusbar.tsx:245
-#: src/features/session-statusbar.tsx:323
-#~ msgid "游离分支"
-#~ msgstr "游离分支"
-
-#: src/features/session-statusbar.tsx:242
-#~ msgid "等待处理"
-#~ msgstr "等待处理"
-
-#: src/features/session-statusbar.tsx:241
-#~ msgid "运行中"
-#~ msgstr "运行中"

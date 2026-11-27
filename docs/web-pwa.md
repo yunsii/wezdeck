@@ -178,11 +178,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.
-8. **Notifications: unified Web Push + WS keepalive fallback** (sessions + collab) via
+8. **Notifications: unified Web Push** (sessions + collab tickets) via
    `push_watcher.go` → `HostRelay` DO (`host-push.ts`, `web-push.ts`, `/relay/push/*`)
-   → `sw.js` (`push` + `setAppBadge` + `badge=0` auto-dismiss) / `push-local.ts`
-   (background-only WS fallback when FCM/GMS is unreachable); configured under
-   `/console/me/notifications` with cross-device foreground quiet and clipped titles.
+   → `sw.js` (`push` + `setAppBadge` + `badge=0` cross-device auto-dismiss);
+   configured under `/console/me/notifications` with cross-device foreground
+   quiet, FCM troubleshooting, and clipped titles (no prompts/diffs).
 
 ## PWA plumbing (phase 1)
 
@@ -530,6 +530,36 @@ Android app. Open question: [`diagnostics.md`](diagnostics.md#open-questions).
 Deviations from the plan: the run detail stays inline on the pushed ticket
 page (no sheet yet); jump keys are `g x/i/c/a/m` (总览 / `g o` is gone too: its Runtime, IME and WSL facts are 我的 › 本机 on this computer, `/console` opens 会话 on every device; 开发 and its `g d` are gone — 会话's worktree tree covers it, 在 VS Code 中打开 and 在终端中打开 (`o`, [remote-sessions](./remote-sessions.md#local-reads-and-writes)) live in 会话信息 on this computer, `/console/development` redirects to 会话); `?remote=1` is sticky
 per tab (sessionStorage) so in-app navigation keeps the remote path.
+
+## Web Push (sessions + collab)
+
+- **Pipeline**: `wezdeck-wsl` (`push_watcher.go`) watches `attention.json` and
+  `~/.agent/tickets/events.jsonl` on state edges → sends `push.emit` to
+  `HostRelay` DO (`host-push.ts`, `web-push.ts`, zero-dependency WebCrypto
+  RFC 8291/8292) → browser push service → `sw.js` (`push`, `setAppBadge`,
+  `notificationclick` deep-link). Payloads only carry clipped titles and status
+  phrases (never prompts, code, or diffs).
+- **Multi-device policy** (industry standard):
+  - **Any foreground device silences others**: while WezTerm is active on the
+    host (`< 15s`) *or* any connected Web/PWA client reports `visible: true`
+    via WS `focus`, popups are suppressed across all devices (silent badge sync
+    only).
+  - **All backgrounded → fan-out**: when every device is backgrounded or locked,
+    all subscribed devices receive the alert (avoids missed approvals when
+    switching from tablet/desktop to phone).
+  - **Cross-device read dismiss**: when pending count drops to `0`, `sw.js`
+    clears the app badge and closes stale WezDeck notifications across devices.
+- **Browser / Android caveats (why standard Web Push only)**:
+  - Chrome `Registration failed - push service error` means the browser cannot
+    reach Google FCM (`mtalk.google.com:5228`, `fcm.googleapis.com`, plus
+    Google Play Services on Android). Verify via `chrome://gcm-internals` and
+    route FCM/GMS through your proxy; `push-client.ts` auto-unsubscribes stale
+    VAPID subscriptions and surfaces this guidance in `/console/me/notifications`.
+  - Chrome Android installs a real WebAPK (`share_target`, app drawer, file
+    sharing), whereas Firefox Android uses shortcuts only (no `share_target`
+    and limited file sharing). We intentionally do **not** keep a WS-keepalive
+    notification fallback because Android Doze suspends background sockets and
+    creates false expectations; use native Web Push (FCM/APNs/Autopush) instead.
 
 ## Observability
 

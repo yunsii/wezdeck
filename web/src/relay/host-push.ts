@@ -18,11 +18,6 @@ export type PushEnv = {
   VAPID_SUBJECT?: string
 }
 
-export type DeviceFrameSender = (
-  deviceId: string,
-  frame: Record<string, unknown>,
-) => boolean
-
 function readVapid(env: PushEnv): VapidConfig | null {
   const publicKey = env.VAPID_PUBLIC_KEY?.trim() ?? ''
   const privateKey = env.VAPID_PRIVATE_KEY?.trim() ?? ''
@@ -38,7 +33,6 @@ export async function handlePushHttp(
   request: Request,
   storage: DurableObjectStorage,
   env: PushEnv,
-  sendToDevice?: DeviceFrameSender,
 ): Promise<Response> {
   const url = new URL(request.url)
   const action = url.pathname.slice('/push/'.length)
@@ -52,7 +46,6 @@ export async function handlePushHttp(
       ok: true,
       enabled: Boolean(vapid),
       subscribed: Boolean(mine),
-      mode: mine ? (mine.mode ?? 'webpush') : null,
       prefs: mine?.prefs ?? DEFAULT_PUSH_PREFS,
       devices: entries.size,
     })
@@ -76,32 +69,26 @@ export async function handlePushHttp(
   const key = `${PUSH_PREFIX}${deviceId}`
 
   if (action === 'subscribe' && request.method === 'POST') {
-    const mode = body.mode === 'ws' ? 'ws' : 'webpush'
+    const sub = body.subscription as
+      | { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
+      | undefined
+    const endpoint =
+      typeof sub?.endpoint === 'string' ? sub.endpoint.trim() : ''
+    const p256dh =
+      typeof sub?.keys?.p256dh === 'string' ? sub.keys.p256dh.trim() : ''
+    const auth = typeof sub?.keys?.auth === 'string' ? sub.keys.auth.trim() : ''
+    if (!endpoint.startsWith('https://') || !p256dh || !auth) {
+      return Response.json(
+        { ok: false, error: 'invalid push subscription' },
+        { status: 400 },
+      )
+    }
     const existing = await storage.get<StoredPushSub>(key)
     const prefs = body.prefs
       ? normalizePushPrefs(body.prefs)
       : (existing?.prefs ?? DEFAULT_PUSH_PREFS)
-    let endpoint = ''
-    let p256dh = ''
-    let auth = ''
-    if (mode === 'webpush') {
-      const sub = body.subscription as
-        | { endpoint?: string; keys?: { p256dh?: string; auth?: string } }
-        | undefined
-      endpoint = typeof sub?.endpoint === 'string' ? sub.endpoint.trim() : ''
-      p256dh =
-        typeof sub?.keys?.p256dh === 'string' ? sub.keys.p256dh.trim() : ''
-      auth = typeof sub?.keys?.auth === 'string' ? sub.keys.auth.trim() : ''
-      if (!endpoint.startsWith('https://') || !p256dh || !auth) {
-        return Response.json(
-          { ok: false, error: 'invalid push subscription' },
-          { status: 400 },
-        )
-      }
-    }
     const record: StoredPushSub = {
       device_id: deviceId,
-      mode,
       endpoint,
       keys: { p256dh, auth },
       prefs,
@@ -109,8 +96,8 @@ export async function handlePushHttp(
       ua: (request.headers.get('user-agent') ?? '').slice(0, 120),
     }
     await storage.put(key, record)
-    logRelayEvent('push_subscribed', { device_id: deviceId, mode })
-    return Response.json({ ok: true, subscribed: true, mode, prefs })
+    logRelayEvent('push_subscribed', { device_id: deviceId })
+    return Response.json({ ok: true, subscribed: true, prefs })
   }
 
   if (action === 'unsubscribe' && request.method === 'POST') {
@@ -136,45 +123,17 @@ export async function handlePushHttp(
   }
 
   if (action === 'test' && request.method === 'POST') {
+    if (!vapid) {
+      return Response.json(
+        { ok: false, error: 'VAPID keys not configured on relay' },
+        { status: 503 },
+      )
+    }
     const sub = await storage.get<StoredPushSub>(key)
     if (!sub) {
       return Response.json(
         { ok: false, error: 'device not subscribed' },
         { status: 404 },
-      )
-    }
-    if (sub.mode === 'ws') {
-      const delivered =
-        sendToDevice?.(deviceId, {
-          t: 'push.notify',
-          force: true,
-          kind: 'test',
-          title: 'WezDeck 测试通知',
-          body: '后台保活通道正常：切到后台时，会话待确认与工单关键节点将自动弹窗。',
-          tag: 'wezdeck:test',
-          url: '/console/me/notifications',
-        }) ?? false
-      logRelayEvent('push_test', {
-        device_id: deviceId,
-        mode: 'ws',
-        ok: delivered,
-      })
-      if (!delivered) {
-        return Response.json(
-          {
-            ok: false,
-            error:
-              'No active relay socket for this device — refresh the page and retry',
-          },
-          { status: 409 },
-        )
-      }
-      return Response.json({ ok: true, status: 200 })
-    }
-    if (!vapid) {
-      return Response.json(
-        { ok: false, error: 'VAPID keys not configured on relay' },
-        { status: 503 },
       )
     }
     const result = await sendWebPush(
@@ -214,9 +173,9 @@ export async function dispatchPushEmit(
   storage: DurableObjectStorage,
   env: PushEnv,
   focusedByDevice: Map<string, Set<string>>,
-  sendToDevice?: DeviceFrameSender,
 ): Promise<void> {
   const vapid = readVapid(env)
+  if (!vapid) return
   const kind = String(frame.kind ?? '') as PushEmitEvent['kind']
   const event: PushEmitEvent = {
     event_id: String(frame.event_id ?? ''),
@@ -254,27 +213,6 @@ export async function dispatchPushEmit(
         anyDeviceForeground,
       )
       if (!decision.deliver) {
-        suppressed++
-        return
-      }
-      if (sub.mode === 'ws') {
-        const delivered =
-          sendToDevice?.(sub.device_id, {
-            t: 'push.notify',
-            event_id: event.event_id,
-            kind: event.kind,
-            title: event.title,
-            body: event.body,
-            tag: event.tag,
-            url: event.url,
-            badge: event.badge,
-            silent: decision.silent,
-          }) ?? false
-        if (delivered) sent++
-        else suppressed++
-        return
-      }
-      if (!vapid) {
         suppressed++
         return
       }

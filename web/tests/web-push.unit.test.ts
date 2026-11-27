@@ -1,8 +1,7 @@
-// covers: web/src/relay/web-push.ts web/src/lib/push-local.ts web/src/lib/push-client.ts
+// covers: web/src/relay/web-push.ts web/src/lib/push-client.ts
 import { describe, expect, it } from 'vitest'
 
 import { isPushServiceError } from '#/lib/push-client'
-import { shouldPopWsNotification } from '#/lib/push-local'
 import {
   DEFAULT_PUSH_PREFS,
   base64UrlEncode,
@@ -194,25 +193,7 @@ describe('web-push (RFC 8291/8292 + noise suppression)', () => {
       reason: 'other_device_foreground_badge_only',
     })
 
-    // WS keepalive mode only pops when no tab on this device is visible (background-only)
-    const wsSub: StoredPushSub = { ...sub, mode: 'ws', endpoint: '' }
-    expect(
-      evaluatePushDelivery(wsSub, waitingEvent, new Set(['/console/collab'])),
-    ).toEqual({
-      deliver: true,
-      silent: true,
-      reason: 'foreground_ws_badge_only',
-    })
-    expect(evaluatePushDelivery(wsSub, waitingEvent, new Set())).toEqual({
-      deliver: true,
-      silent: false,
-    })
-
-    // Client-side background-only gate & push service error classifier
-    expect(shouldPopWsNotification({}, 'visible')).toBe(false)
-    expect(shouldPopWsNotification({}, 'hidden')).toBe(true)
-    expect(shouldPopWsNotification({ silent: true }, 'hidden')).toBe(false)
-    expect(shouldPopWsNotification({ force: true }, 'visible')).toBe(true)
+    // Push service error classifier
     expect(
       isPushServiceError(new Error('Registration failed - push service error')),
     ).toBe(true)

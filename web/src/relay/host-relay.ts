@@ -164,30 +164,12 @@ export class HostRelay extends DurableObject<RelayEnv> {
     }
   }
 
-  private sendToDevice(
-    deviceId: string,
-    frame: Record<string, unknown>,
-  ): boolean {
-    let delivered = false
-    for (const clientWs of this.openClients()) {
-      const cm = readAttachment(clientWs)
-      if (cm?.role === 'client' && cm.deviceId === deviceId) {
-        if (this.sendToClient(clientWs, frame, cm.cid, 'push_ws')) {
-          delivered = true
-        }
-      }
-    }
-    return delivered
-  }
-
   async fetch(request: Request): Promise<Response> {
     const role = request.headers.get('x-relay-role')
     if (request.headers.get('upgrade') !== 'websocket') {
       const url = new URL(request.url)
       if (url.pathname.startsWith('/push/')) {
-        return handlePushHttp(request, this.ctx.storage, this.env, (id, f) =>
-          this.sendToDevice(id, f),
-        )
+        return handlePushHttp(request, this.ctx.storage, this.env)
       }
       return Response.json(await this.presence())
     }
@@ -283,7 +265,6 @@ export class HostRelay extends DurableObject<RelayEnv> {
           this.ctx.storage,
           this.env,
           focusedByDevice,
-          (id, f) => this.sendToDevice(id, f),
         )
         return
       }

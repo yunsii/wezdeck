@@ -14,7 +14,6 @@ import {
   roomQuery,
 } from './remote-pairing'
 import { loadDeviceKey, signPayload } from './device-key'
-import { handleWsPushNotify } from './push-local'
 import { sendFocusFrame } from './remote-focus'
 import { ReplyParts } from './reply-parts'
 import { median, selectedPath } from './rtc-path'
@@ -296,11 +295,6 @@ class RemoteLink {
       case 'diag.request': {
         // pushed by the host (relay_diag.go); lib/host-diag.ts answers
         this.hostRequest?.(frame)
-        return
-      }
-      case 'push.notify': {
-        // background-only WS notification fallback (lib/push-local.ts)
-        handleWsPushNotify(frame)
         return
       }
       case 'res': {

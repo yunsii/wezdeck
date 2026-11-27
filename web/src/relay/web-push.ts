@@ -34,11 +34,8 @@ export const DEFAULT_PUSH_PREFS: PushPrefs = {
   quiet_when_desk_active: true,
 }
 
-export type PushMode = 'webpush' | 'ws'
-
 export type StoredPushSub = {
   device_id: string
-  mode?: PushMode
   endpoint: string
   keys: {
     p256dh: string
@@ -146,14 +143,6 @@ export function evaluatePushDelivery(
   })()
   if (!enabled) {
     return { deliver: false, silent: true, reason: 'pref_disabled' }
-  }
-  // WS keepalive notifications only pop when this device has NO visible tab
-  // (background-only); in the foreground we still allow silent badge sync.
-  if (sub.mode === 'ws' && focusedPaths.size > 0) {
-    if (typeof event.badge === 'number') {
-      return { deliver: true, silent: true, reason: 'foreground_ws_badge_only' }
-    }
-    return { deliver: false, silent: true, reason: 'foreground_ws_suppressed' }
   }
   if (event.target_path && focusedPaths.has(event.target_path)) {
     return { deliver: false, silent: true, reason: 'foreground_same_page' }

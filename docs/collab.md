@@ -287,9 +287,12 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
   _data/<id>/
     ticket.md meta.json progress.json events.jsonl   # existing (events gain the envelope)
     contract.md                # parent only, versioned in events by sha
+    dead_ends.md               # failed runs & rejected splits (bounded ≤2 KB injected into worker prompts)
     runs/<run>.launch.json     # §4
     runs/<run>.json            # run record (§8)
     runs/<run>.stream.jsonl    # raw CLI stream (replaces worker.log / implement.log)
+  workspaces/<id>/
+    AGENTS.md                  # repo-neutral top-level Manager Session charter (`ticket manager start|resume|park|gc`)
   .locks/{tickets.lock, scheduler.<id>.lock, slots/N.lock}
 ```
 

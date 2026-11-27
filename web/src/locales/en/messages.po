@@ -20,26 +20,6 @@ msgstr "· summary"
 msgid "(pick any)"
 msgstr "(pick any)"
 
-#. placeholder {0}: data.total_files
-#: src/features/ticket-diff.tsx:205
-#~ msgid "{0} files"
-#~ msgstr "{0} files"
-
-#. placeholder {0}: group.summary.running
-#: src/features/ticket-keys.tsx:203
-#~ msgid "{0} running"
-#~ msgstr "{0} running"
-
-#. placeholder {0}: history.length
-#: src/features/me-autotitle.tsx:199
-#~ msgid "{0} tasks"
-#~ msgstr "{0} tasks"
-
-#. placeholder {0}: group.summary.waiting
-#: src/features/ticket-keys.tsx:198
-#~ msgid "{0} waiting"
-#~ msgstr "{0} waiting"
-
 #: src/components/deck/session-tags.tsx:289
 #: src/components/deck/session-tags.tsx:540
 msgid "{ahead} ahead, {behind} behind upstream"
@@ -73,10 +53,6 @@ msgstr "{count} images"
 #: src/features/session-statusbar.tsx:161
 msgid "{count} monitors running"
 msgstr "{count} monitors running"
-
-#: src/features/session-switcher.tsx:127
-#~ msgid "{count} more need you"
-#~ msgstr "{count} more need you"
 
 #: src/features/session-worktree-manager.tsx:130
 msgid "{count} sessions"
@@ -146,10 +122,6 @@ msgstr "{off} need attention"
 #: src/features/console-collab.tsx:236
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} queued"
-
-#: src/features/session-new-direction.tsx:74
-#~ msgid "{reason} · opens one more"
-#~ msgstr "{reason} · opens one more"
 
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
@@ -243,15 +215,6 @@ msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} 
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
-#: src/features/session-purpose.tsx:197
-#~ msgid "+ Description"
-#~ msgstr "+ Description"
-
-#: src/features/session-new-direction.tsx:153
-#: src/features/session-new.tsx:424
-#~ msgid "+ New direction"
-#~ msgstr "+ New direction"
-
 #: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 task"
@@ -308,17 +271,13 @@ msgstr "A local-first workbench for AI coding agents. Every session keeps its We
 msgid "A message sent mid-turn"
 msgstr "A message sent mid-turn"
 
-#: src/features/me-notifications.tsx:143
+#: src/features/me-notifications.tsx:142
 msgid "A multi-repo fanout proposal is waiting for your approval."
 msgstr "A multi-repo fanout proposal is waiting for your approval."
 
 #: src/features/session-restart.tsx:49
 msgid "A new conversation is starting in this agent"
 msgstr "A new conversation is starting in this agent"
-
-#: src/features/session-new-panels.tsx:324
-#~ msgid "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
-#~ msgstr "A new workstation for this direction, off the latest main branch, like Ctrl+k g d at the desk."
 
 #: src/features/landing-page.tsx:128
 msgid "A paired phone or tablet reaches the host over WebRTC, the relay as fallback. Writing takes a device you approved on the host."
@@ -336,7 +295,7 @@ msgstr "A person (taken over)"
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
-#: src/features/me-notifications.tsx:150
+#: src/features/me-notifications.tsx:149
 msgid "A worker raised a question or challenge needing your decision."
 msgstr "A worker raised a question or challenge needing your decision."
 
@@ -359,10 +318,6 @@ msgstr "Action sent; waiting for the agent to continue…"
 #: src/features/me-autotitle.tsx:169
 msgid "Active"
 msgstr "Active"
-
-#: src/features/me-notifications.tsx:407
-msgid "Active channel: Background keepalive (WebSocket, no FCM). Alerts only pop while WezDeck stays alive in the background and stay silent in the foreground."
-msgstr "Active channel: Background keepalive (WebSocket, no FCM). Alerts only pop while WezDeck stays alive in the background and stay silent in the foreground."
 
 #: src/features/me-autotitle.tsx:427
 msgid "Active CLI"
@@ -505,10 +460,6 @@ msgstr "Already the latest"
 msgid "Always allow"
 msgstr "Always allow"
 
-#: src/features/session-elicitation.tsx:210
-#~ msgid "Answer sent; waiting for Grok to continue…"
-#~ msgstr "Answer sent; waiting for Grok to continue…"
-
 #: src/features/session-ask-claude.tsx:207
 #: src/features/session-elicitation.tsx:209
 msgid "Answer sent; waiting for the agent to continue…"
@@ -632,10 +583,6 @@ msgstr "Auto · {provider}"
 msgid "Auto ({autoChain})"
 msgstr "Auto ({autoChain})"
 
-#: src/features/me-autotitle.tsx:380
-#~ msgid "Auto (Grok → Claude → Codex)"
-#~ msgstr "Auto (Grok → Claude → Codex)"
-
 #: src/features/me-agent-detail.tsx:73
 msgid "Auto compact"
 msgstr "Auto compact"
@@ -685,17 +632,9 @@ msgstr "Back"
 msgid "Back to agents"
 msgstr "Back to agents"
 
-#: src/features/session-new.tsx:227
-#~ msgid "Back to message"
-#~ msgstr "Back to message"
-
 #: src/features/console-collab.tsx:153
 msgid "Back to parent ticket"
 msgstr "Back to parent ticket"
-
-#: src/features/session-new.tsx:227
-#~ msgid "Back to place"
-#~ msgstr "Back to place"
 
 #: src/features/console-collab-run.tsx:137
 msgid "Backend"
@@ -713,14 +652,6 @@ msgstr "Background"
 #: src/features/me-autotitle.tsx:363
 msgid "Background auto-titling"
 msgstr "Background auto-titling"
-
-#: src/features/me-notifications.tsx:476
-msgid "Background keepalive (no FCM)"
-msgstr "Background keepalive (no FCM)"
-
-#: src/features/me-notifications.tsx:318
-msgid "Background keepalive notifications enabled"
-msgstr "Background keepalive notifications enabled"
 
 #: src/features/session-background.tsx:133
 #: src/features/session-info.tsx:92
@@ -769,7 +700,7 @@ msgstr "Branch"
 msgid "Breakdowns"
 msgstr "Breakdowns"
 
-#: src/features/me-notifications.tsx:214
+#: src/features/me-notifications.tsx:205
 msgid "Browser push service (FCM/GMS) is unreachable on this device."
 msgstr "Browser push service (FCM/GMS) is unreachable on this device."
 
@@ -919,9 +850,9 @@ msgstr "Child tickets"
 msgid "Children"
 msgstr "Children"
 
-#: src/features/me-notifications.tsx:217
-msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM through your proxy, switch to Firefox/Edge, or use background WebSocket notifications below without FCM."
-msgstr "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM through your proxy, switch to Firefox/Edge, or use background WebSocket notifications below without FCM."
+#: src/features/me-notifications.tsx:208
+msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge."
+msgstr "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge."
 
 #: src/features/console-activity.tsx:110
 msgid "claimed"
@@ -943,18 +874,9 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer.tsx:314
-#~ msgid "Clear"
-#~ msgstr "Clear"
-
 #: src/features/session-composer-tools.tsx:161
 msgid "Clear input"
 msgstr "Clear input"
-
-#: src/features/session-composer.tsx:478
-#: src/features/session-composer.tsx:479
-#~ msgid "Clear input (Esc Esc)"
-#~ msgstr "Clear input (Esc Esc)"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:274
@@ -987,21 +909,9 @@ msgstr "Close"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
-#: src/features/session-commands.tsx:273
-#~ msgid "Close commands"
-#~ msgstr "Close commands"
-
-#: src/features/session-key-panel.tsx:47
-#~ msgid "Close keys"
-#~ msgstr "Close keys"
-
 #: src/features/console-keys.tsx:123
 msgid "Close the viewer"
 msgstr "Close the viewer"
-
-#: src/features/session-todos.tsx:98
-#~ msgid "Close to-dos"
-#~ msgstr "Close to-dos"
 
 #: src/features/console-activity.tsx:114
 #: src/features/tickets-view.tsx:128
@@ -1021,7 +931,7 @@ msgstr "Collab data unavailable: {unavailable}"
 msgid "Collab metrics"
 msgstr "Collab metrics"
 
-#: src/features/me-notifications.tsx:138
+#: src/features/me-notifications.tsx:137
 #: src/features/ticket-keys.tsx:91
 #: src/features/tickets-view.tsx:347
 msgid "Collab tickets"
@@ -1066,10 +976,6 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
-#: src/features/session-new-direction.tsx:70
-#~ msgid "commits not in main yet"
-#~ msgstr "commits not in main yet"
-
 #: src/features/chat-turn.tsx:143
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
@@ -1081,10 +987,6 @@ msgstr "compacting the context"
 #: src/features/console-keys.tsx:99
 msgid "Composer"
 msgstr "Composer"
-
-#: src/features/session-composer.tsx:237
-#~ msgid "Composer tools"
-#~ msgstr "Composer tools"
 
 #: src/features/me-agent-detail.tsx:339
 msgid "Configured"
@@ -1142,11 +1044,6 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:403
-#: src/features/session-list.tsx:293
-#~ msgid "Connection details"
-#~ msgstr "Connection details"
-
 #: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "Connection failed"
@@ -1193,10 +1090,6 @@ msgstr "Context compactions"
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "context usage"
-
-#: src/features/session-new-panels.tsx:349
-#~ msgid "Continue"
-#~ msgstr "Continue"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history.tsx:228
@@ -1393,10 +1286,6 @@ msgstr "Creating sessions"
 msgid "Creating the session group…"
 msgstr "Creating the session group…"
 
-#: src/features/session-new-panels.tsx:35
-#~ msgid "Creating the worktree…"
-#~ msgstr "Creating the worktree…"
-
 #: src/features/ticket-new.tsx:242
 msgid "Creating…"
 msgstr "Creating…"
@@ -1489,10 +1378,6 @@ msgstr "Deny"
 msgid "Depends on"
 msgstr "Depends on"
 
-#: src/features/session-new-panels.tsx:331
-#~ msgid "Description"
-#~ msgstr "Description"
-
 #: src/features/session-info.tsx:91
 msgid "Desk idle for"
 msgstr "Desk idle for"
@@ -1534,18 +1419,12 @@ msgstr "Diff review feedback:"
 msgid "Direct"
 msgstr "Direct"
 
-#: src/features/session-new-direction.tsx:121
-#: src/features/session-new-panels.tsx:264
-#: src/features/session-new.tsx:424
-#~ msgid "Direction"
-#~ msgstr "Direction"
-
 #: src/features/session-empty.tsx:48
 #: src/features/session-info.tsx:66
 msgid "Directory"
 msgstr "Directory"
 
-#: src/features/me-notifications.tsx:436
+#: src/features/me-notifications.tsx:390
 msgid "Disable on this device"
 msgstr "Disable on this device"
 
@@ -1612,10 +1491,6 @@ msgstr "done {when}"
 msgid "Draft"
 msgstr "Draft"
 
-#: src/features/session-new-panels.tsx:313
-#~ msgid "e.g. ux, ci, i18n"
-#~ msgstr "e.g. ux, ci, i18n"
-
 #: src/features/session-commands.tsx:129
 msgid "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 msgstr "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
@@ -1638,15 +1513,11 @@ msgstr "Edit and resend"
 msgid "Edit group name"
 msgstr "Edit group name"
 
-#: src/features/session-purpose.tsx:169
-#~ msgid "Edit the description"
-#~ msgstr "Edit the description"
-
 #: src/features/me-agent-detail.tsx:71
 msgid "Effort"
 msgstr "Effort"
 
-#: src/features/me-notifications.tsx:456
+#: src/features/me-notifications.tsx:406
 msgid "Enable notifications"
 msgstr "Enable notifications"
 
@@ -1662,9 +1533,7 @@ msgstr "Enabled on this computer"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 
-#: src/features/me-notifications.tsx:232
-#: src/features/me-notifications.tsx:455
-#: src/features/me-notifications.tsx:475
+#: src/features/me-notifications.tsx:405
 msgid "Enabling…"
 msgstr "Enabling…"
 
@@ -1711,10 +1580,6 @@ msgstr "Estimated from this machine's past runs, not by the planner."
 #: src/features/me-host.tsx:37
 msgid "Event stream"
 msgstr "Event stream"
-
-#: src/features/session-new-direction.tsx:175
-#~ msgid "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
-#~ msgstr "Every {direction} workstation is busy: opens one more in parallel, with the same purpose."
 
 #: src/features/console-usage.tsx:168
 msgid "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
@@ -1769,7 +1634,7 @@ msgstr "Failed runs"
 msgid "Failed to refresh links"
 msgstr "Failed to refresh links"
 
-#: src/features/me-notifications.tsx:156
+#: src/features/me-notifications.tsx:155
 msgid "Failure or merge conflict"
 msgstr "Failure or merge conflict"
 
@@ -1801,10 +1666,6 @@ msgstr "Finished"
 msgid "finished its turn"
 msgstr "finished its turn"
 
-#: src/features/session-new-panels.tsx:126
-#~ msgid "First message to the agent"
-#~ msgstr "First message to the agent"
-
 #: src/features/session-info.tsx:83
 msgid "First turn"
 msgstr "First turn"
@@ -1816,10 +1677,6 @@ msgstr "Fit"
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
 msgstr "Focus session search or return to list"
-
-#: src/features/session-composer.tsx:272
-#~ msgid "Follow-ups of this repo"
-#~ msgstr "Follow-ups of this repo"
 
 #: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
@@ -1976,23 +1833,10 @@ msgstr "How it will be done"
 msgid "How the WebSocket is billed"
 msgstr "How the WebSocket is billed"
 
-#: src/features/session-new-direction.tsx:65
-#~ msgid "idle"
-#~ msgstr "idle"
-
-#: src/features/session-list.tsx:247
-#~ msgctxt "filter"
-#~ msgid "Idle"
-#~ msgstr "Idle"
-
 #: src/features/session-status-text.ts:21
 msgctxt "session status"
 msgid "Idle"
 msgstr "Idle"
-
-#: src/features/session-new-direction.tsx:65
-#~ msgid "idle · {count} workstations"
-#~ msgstr "idle · {count} workstations"
 
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
@@ -2079,11 +1923,11 @@ msgstr "Instance"
 msgid "Integration"
 msgstr "Integration"
 
-#: src/features/me-notifications.tsx:157
+#: src/features/me-notifications.tsx:156
 msgid "Integration conflict, verification failure, or run error."
 msgstr "Integration conflict, verification failure, or run error."
 
-#: src/features/me-notifications.tsx:164
+#: src/features/me-notifications.tsx:163
 msgid "Integration verification passed and awaits delivery confirmation."
 msgstr "Integration verification passed and awaits delivery confirmation."
 
@@ -2136,10 +1980,6 @@ msgstr "Keep planning"
 #: src/features/console-keys.tsx:277
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
-
-#: src/features/session-composer.tsx:251
-#~ msgid "Keys"
-#~ msgstr "Keys"
 
 #: src/features/me-agent-detail.tsx:131
 msgid "Kimi API key"
@@ -2310,7 +2150,7 @@ msgstr "Log stream"
 msgid "Login"
 msgstr "Login"
 
-#: src/features/me-notifications.tsx:108
+#: src/features/me-notifications.tsx:107
 msgid "Long turn completed"
 msgstr "Long turn completed"
 
@@ -2334,10 +2174,6 @@ msgstr "manage tool permission rules"
 #: src/features/session-worktree-manager.tsx:172
 msgid "Manage worktree"
 msgstr "Manage worktree"
-
-#: src/features/session-statusbar.tsx:289
-#~ msgid "Manage worktrees"
-#~ msgstr "Manage worktrees"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -2436,8 +2272,8 @@ msgstr "Messages"
 msgid "Metrics window"
 msgstr "Metrics window"
 
-#: src/features/me-notifications.tsx:117
-#: src/features/me-notifications.tsx:120
+#: src/features/me-notifications.tsx:116
+#: src/features/me-notifications.tsx:119
 msgid "Minimum duration"
 msgstr "Minimum duration"
 
@@ -2498,20 +2334,6 @@ msgstr "Native"
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
-#: src/features/session-new-panels.tsx:172
-#: src/features/session-new-panels.tsx:327
-#~ msgid "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
-#~ msgstr "Needs letters or digits: it becomes the directory and branch. Put the rest in the description."
-
-#: src/features/session-header.tsx:237
-#~ msgid "Needs you"
-#~ msgstr "Needs you"
-
-#: src/features/session-list.tsx:237
-#~ msgctxt "filter"
-#~ msgid "Needs you"
-#~ msgstr "Needs you"
-
 #: src/features/ticket-diff.tsx:311
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
@@ -2530,37 +2352,13 @@ msgstr "New agent process"
 msgid "New conversation"
 msgstr "New conversation"
 
-#: src/features/session-restart.tsx:37
-#: src/features/session-restart.tsx:46
-#: src/features/session-restart.tsx:53
-#~ msgctxt "quick same-pane"
-#~ msgid "New conversation"
-#~ msgstr "New conversation"
-
 #: src/features/session-restart.tsx:125
 msgid "New conversation (/new)"
 msgstr "New conversation (/new)"
 
-#: src/features/session-new-direction.tsx:183
-#~ msgid "new direction"
-#~ msgstr "new direction"
-
-#: src/features/session-new-panels.tsx:305
-#: src/features/session-new.tsx:232
-#~ msgid "New direction"
-#~ msgstr "New direction"
-
 #: src/features/console-keys.tsx:104
 msgid "New line"
 msgstr "New line"
-
-#: src/features/session-chat-group.tsx:120
-#: src/features/session-chat-group.tsx:240
-#: src/features/session-list.tsx:127
-#: src/features/session-list.tsx:251
-#: src/features/session-new.tsx:222
-#~ msgid "New round"
-#~ msgstr "New round"
 
 #: src/features/sent-history.tsx:167
 #: src/features/session-chat-group.tsx:213
@@ -2663,10 +2461,6 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:211
-#~ msgid "No agent is working right now."
-#~ msgstr "No agent is working right now."
-
 #: src/features/session-list.tsx:315
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
@@ -2699,10 +2493,6 @@ msgstr "No headless runs recorded for this ticket."
 #: src/features/session-list.tsx:60
 msgid "No human message yet"
 msgstr "No human message yet"
-
-#: src/features/session-list.tsx:213
-#~ msgid "No idle sessions."
-#~ msgstr "No idle sessions."
 
 #: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
@@ -2744,10 +2534,6 @@ msgstr "No recent result"
 msgid "No sent messages recorded yet."
 msgstr "No sent messages recorded yet."
 
-#: src/features/session-statusbar.tsx:338
-#~ msgid "No session"
-#~ msgstr "No session"
-
 #: src/features/me-autotitle.tsx:147
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
@@ -2782,7 +2568,7 @@ msgstr "no upstream"
 msgid "No upstream branch: nothing to compare with."
 msgstr "No upstream branch: nothing to compare with."
 
-#: src/features/me-notifications.tsx:174
+#: src/features/me-notifications.tsx:173
 msgid "Noise control"
 msgstr "Noise control"
 
@@ -2848,10 +2634,6 @@ msgstr "Note"
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
-#: src/features/session-list.tsx:209
-#~ msgid "Nothing is waiting on you."
-#~ msgstr "Nothing is waiting on you."
-
 #: src/features/tickets-view.tsx:528
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
@@ -2866,7 +2648,7 @@ msgstr "Nothing matches"
 msgid "Nothing to follow up in this repo."
 msgstr "Nothing to follow up in this repo."
 
-#: src/features/me-notifications.tsx:266
+#: src/features/me-notifications.tsx:239
 msgid "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 msgstr "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 
@@ -2874,15 +2656,15 @@ msgstr "Notification permission is blocked in browser settings. Re-enable notifi
 msgid "Notifications"
 msgstr "Notifications"
 
-#: src/features/me-notifications.tsx:331
+#: src/features/me-notifications.tsx:290
 msgid "Notifications disabled on this device"
 msgstr "Notifications disabled on this device"
 
-#: src/features/me-notifications.tsx:305
+#: src/features/me-notifications.tsx:277
 msgid "Notifications enabled on this device"
 msgstr "Notifications enabled on this device"
 
-#: src/features/me-notifications.tsx:109
+#: src/features/me-notifications.tsx:108
 msgid "Notify when a long agent turn finishes (off by default)."
 msgstr "Notify when a long agent turn finishes (off by default)."
 
@@ -2893,7 +2675,7 @@ msgstr "now {label}"
 #: src/features/console-me.tsx:199
 #: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
-#: src/features/me-notifications.tsx:46
+#: src/features/me-notifications.tsx:45
 msgid "Off"
 msgstr "Off"
 
@@ -2911,15 +2693,11 @@ msgstr "Offline, try again later"
 
 #: src/features/me-autotitle.tsx:117
 #: src/features/me-autotitle.tsx:369
-#: src/features/me-notifications.tsx:45
+#: src/features/me-notifications.tsx:44
 msgid "On"
 msgstr "On"
 
-#: src/features/session-switcher.tsx:242
-#~ msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
-#~ msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
-
-#: src/features/me-notifications.tsx:253
+#: src/features/me-notifications.tsx:226
 msgid "On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications."
 msgstr "On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications."
 
@@ -3020,10 +2798,6 @@ msgstr "Opening the connection is one request."
 msgid "Opening…"
 msgstr "Opening…"
 
-#: src/features/session-new-direction.tsx:185
-#~ msgid "opens one more"
-#~ msgstr "opens one more"
-
 #: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
@@ -3065,10 +2839,6 @@ msgstr "output {outputTokens}"
 msgid "Output rate"
 msgstr "Output rate"
 
-#: src/features/session-info.tsx:86
-#~ msgid "Output tokens"
-#~ msgstr "Output tokens"
-
 #: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:317
 #: src/features/ticket-info.tsx:227
@@ -3087,11 +2857,11 @@ msgstr "Pages, the relay handshake and the usage check; static files are free."
 msgid "Pair again"
 msgstr "Pair again"
 
-#: src/features/me-notifications.tsx:44
+#: src/features/me-notifications.tsx:43
 msgid "Pair first"
 msgstr "Pair first"
 
-#: src/features/me-notifications.tsx:246
+#: src/features/me-notifications.tsx:219
 msgid "Pair this device with your host first to enable remote push notifications."
 msgstr "Pair this device with your host first to enable remote push notifications."
 
@@ -3136,7 +2906,7 @@ msgstr "Path"
 msgid "Pending"
 msgstr "Pending"
 
-#: src/features/me-notifications.tsx:101
+#: src/features/me-notifications.tsx:100
 msgid "Permission prompts, Ask questions, and plan approvals."
 msgstr "Permission prompts, Ask questions, and plan approvals."
 
@@ -3153,14 +2923,6 @@ msgstr "Phone or tablet"
 #: src/features/session-split.tsx:198
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
-
-#: src/features/console-keys.tsx:71
-#~ msgid "Pick a session (grouped by repository)"
-#~ msgstr "Pick a session (grouped by repository)"
-
-#: src/features/session-split.tsx:185
-#~ msgid "Pick a session on the left. j / k move through the list."
-#~ msgstr "Pick a session on the left. j / k move through the list."
 
 #: src/features/session-commands.tsx:255
 #: src/features/session-skills.tsx:62
@@ -3245,7 +3007,7 @@ msgstr "Pull last week's metrics into the weekly report."
 msgid "Purpose"
 msgstr "Purpose"
 
-#: src/features/me-notifications.tsx:380
+#: src/features/me-notifications.tsx:339
 msgid "Push alerts only carry clipped titles and status labels — never prompts, source code, or diffs."
 msgstr "Push alerts only carry clipped titles and status labels — never prompts, source code, or diffs."
 
@@ -3286,19 +3048,11 @@ msgstr "Quick controls"
 msgid "Quick keys"
 msgstr "Quick keys"
 
-#: src/features/session-key-panel.tsx:45
-#~ msgid "Quick keys unavailable"
-#~ msgstr "Quick keys unavailable"
-
 #: src/features/ticket-keys.tsx:113
 msgid "Quiet for over a week ({count})"
 msgstr "Quiet for over a week ({count})"
 
-#: src/features/me-notifications.tsx:173
-#~ msgid "Quiet while active at desk"
-#~ msgstr "Quiet while active at desk"
-
-#: src/features/me-notifications.tsx:178
+#: src/features/me-notifications.tsx:177
 msgid "Quiet while active on another device"
 msgstr "Quiet while active on another device"
 
@@ -3325,7 +3079,7 @@ msgstr "Read document"
 msgid "Ready"
 msgstr "Ready"
 
-#: src/features/me-notifications.tsx:163
+#: src/features/me-notifications.tsx:162
 msgid "Ready to deliver"
 msgstr "Ready to deliver"
 
@@ -3419,10 +3173,6 @@ msgstr "Reload"
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-status-band.tsx:14
-#~ msgid "Remote access"
-#~ msgstr "Remote access"
-
 #: src/features/me-devices.tsx:246
 msgid "Remote devices"
 msgstr "Remote devices"
@@ -3464,10 +3214,6 @@ msgstr "Reopen"
 msgid "Replace API key"
 msgstr "Replace API key"
 
-#: src/features/session-handoff.tsx:244
-#~ msgid "Replace this pane with {target} and paste a continuation brief"
-#~ msgstr "Replace this pane with {target} and paste a continuation brief"
-
 #: src/features/session-handoff.tsx:317
 msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
 msgstr "Replace this pane with {target}; choose a handoff brief or a blank switch"
@@ -3505,10 +3251,6 @@ msgstr "Reply"
 #: src/features/ticket-reply.tsx:231
 msgid "Reply and continue"
 msgstr "Reply and continue"
-
-#: src/features/session-list.tsx:54
-#~ msgid "Replying…"
-#~ msgstr "Replying…"
 
 #: src/features/console-collab.tsx:252
 msgid "Repo"
@@ -3600,10 +3342,6 @@ msgstr "Resets {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
-#: src/features/session-restart.tsx:157
-#~ msgid "Respawn the pane; the agent resumes this conversation (F5)"
-#~ msgstr "Respawn the pane; the agent resumes this conversation (F5)"
-
 #: src/features/session-restart.tsx:101
 #: src/features/session-restart.tsx:110
 msgid "Restart"
@@ -3617,10 +3355,6 @@ msgstr "Restart session"
 #: src/features/console-keys.tsx:84
 msgid "Restart the agent and resume this conversation"
 msgstr "Restart the agent and resume this conversation"
-
-#: src/features/session-restart.tsx:158
-#~ msgid "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
-#~ msgstr "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
 
 #: src/features/session-restart.tsx:158
 msgid "Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)"
@@ -3650,10 +3384,6 @@ msgstr "Resume / fresh hit"
 msgid "Resume a conversation"
 msgstr "Resume a conversation"
 
-#: src/features/ticket-reply.tsx:301
-#~ msgid "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
-#~ msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
-
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
@@ -3672,10 +3402,6 @@ msgstr "Retry loading earlier"
 msgid "Reusable"
 msgstr "Reusable"
 
-#: src/features/session-new-direction.tsx:185
-#~ msgid "reuse idle"
-#~ msgstr "reuse idle"
-
 #: src/features/collab-metrics.tsx:121
 msgid "reuse reasons"
 msgstr "reuse reasons"
@@ -3684,18 +3410,9 @@ msgstr "reuse reasons"
 msgid "Reuses"
 msgstr "Reuses"
 
-#: src/features/session-new-direction.tsx:174
-#~ msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
-#~ msgstr "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
-
 #: src/features/sent-history.tsx:111
 msgid "Review"
 msgstr "Review"
-
-#. placeholder {0}: file.path
-#: src/features/ticket-diff.tsx:185
-#~ msgid "Review note for {repoName}/{0}…"
-#~ msgstr "Review note for {repoName}/{0}…"
 
 #: src/features/ticket-diff.tsx:188
 msgid "Review note for {repoName}/{filePath}…"
@@ -3716,10 +3433,6 @@ msgstr "Revoking takes effect at once: the device's next read or write is refuse
 #: src/features/me-host.tsx:38
 msgid "Rime collector"
 msgstr "Rime collector"
-
-#: src/features/console-collab.tsx:122
-#~ msgid "Route"
-#~ msgstr "Route"
 
 #: src/features/ticket-runs.tsx:138
 msgid "RSS"
@@ -3880,10 +3593,6 @@ msgstr "Saved"
 msgid "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 msgstr "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, effort=high, and compact/max-context (262144 or 1048576 for [1m]). Restart the Kimi pane for /status to refresh."
 
-#: src/features/me-agent-detail.tsx:142
-#~ msgid "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
-#~ msgstr "Saving writes Base URL, all Claude tiers, auto-compact and effort to match the Kimi Claude Code guide. Restart the Kimi pane for /status to refresh."
-
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/me-agent-detail.tsx:306
@@ -3970,10 +3679,6 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:246
-#~ msgid "Send Enter, Esc or Ctrl+C into the agent pane"
-#~ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
-
 #: src/features/chat-pending.tsx:73
 msgid "Send failed"
 msgstr "Send failed"
@@ -3986,13 +3691,9 @@ msgstr "Send failed: {errorText}"
 msgid "Send review ({noteCount})"
 msgstr "Send review ({noteCount})"
 
-#: src/features/me-notifications.tsx:425
+#: src/features/me-notifications.tsx:379
 msgid "Send test notification"
 msgstr "Send test notification"
-
-#: src/features/session-new.tsx:467
-#~ msgid "Send the first message below to create the workspace and start the agent."
-#~ msgstr "Send the first message below to create the workspace and start the agent."
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -4010,7 +3711,7 @@ msgstr "Sending the first message…"
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
-#: src/features/me-notifications.tsx:424
+#: src/features/me-notifications.tsx:378
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Sending…"
 msgstr "Sending…"
@@ -4091,7 +3792,7 @@ msgid "Session titles"
 msgstr "Session titles"
 
 #: src/features/collab-metrics.tsx:154
-#: src/features/me-notifications.tsx:96
+#: src/features/me-notifications.tsx:95
 msgid "Sessions"
 msgstr "Sessions"
 
@@ -4130,11 +3831,6 @@ msgstr "shipped"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
-#. placeholder {0}: ordered.length
-#: src/features/session-title-history.tsx:152
-#~ msgid "Show all {0} tasks"
-#~ msgstr "Show all {0} tasks"
-
 #: src/features/session-title-history.tsx:154
 msgid "Show all {total} tasks"
 msgstr "Show all {total} tasks"
@@ -4158,11 +3854,6 @@ msgstr "Show initial prompt"
 #: src/features/session-background.tsx:118
 msgid "Show the call"
 msgstr "Show the call"
-
-#. placeholder {0}: messages.length
-#: src/features/ticket-run-chat.tsx:230
-#~ msgid "Showing {0} of {total} items"
-#~ msgstr "Showing {0} of {total} items"
 
 #: src/features/ticket-run-chat.tsx:233
 msgid "Showing {shownCount} of {total} items"
@@ -4200,10 +3891,6 @@ msgstr "Skills this agent was given"
 #: src/features/console-shell.tsx:401
 msgid "Skip to content"
 msgstr "Skip to content"
-
-#: src/features/session-composer.tsx:259
-#~ msgid "Slash commands for Claude"
-#~ msgstr "Slash commands for Claude"
 
 #: src/features/ticket-timeline.tsx:115
 msgid "slot {slot}"
@@ -4253,7 +3940,7 @@ msgstr "Sources on this computer"
 msgid "Split proposal {pid}"
 msgstr "Split proposal {pid}"
 
-#: src/features/me-notifications.tsx:142
+#: src/features/me-notifications.tsx:141
 msgid "Split proposal ready"
 msgstr "Split proposal ready"
 
@@ -4277,18 +3964,6 @@ msgstr "Start /new in the current agent (Ctrl+N)"
 #: src/features/console-keys.tsx:80
 msgid "Start a blank agent process in this pane"
 msgstr "Start a blank agent process in this pane"
-
-#: src/features/session-restart.tsx:36
-#~ msgid "Start a blank conversation in this pane"
-#~ msgstr "Start a blank conversation in this pane"
-
-#: src/features/session-restart.tsx:59
-#~ msgid "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
-#~ msgstr "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
-
-#: src/features/session-restart.tsx:33
-#~ msgid "Start a blank conversation?"
-#~ msgstr "Start a blank conversation?"
 
 #: src/features/session-commands.tsx:215
 #: src/features/session-commands.tsx:252
@@ -4394,11 +4069,7 @@ msgstr "summarise the context"
 msgid "Summary"
 msgstr "Summary"
 
-#: src/features/me-notifications.tsx:174
-#~ msgid "Suppress popup banners while you are actively typing in WezTerm (still updates app badge)."
-#~ msgstr "Suppress popup banners while you are actively typing in WezTerm (still updates app badge)."
-
-#: src/features/me-notifications.tsx:179
+#: src/features/me-notifications.tsx:178
 msgid "Suppress popups while you are typing in WezTerm or viewing WezDeck in the foreground on any device (still syncs badge)."
 msgstr "Suppress popups while you are typing in WezTerm or viewing WezDeck in the foreground on any device (still syncs badge)."
 
@@ -4406,21 +4077,9 @@ msgstr "Suppress popups while you are typing in WezTerm or viewing WezDeck in th
 msgid "Switch agent"
 msgstr "Switch agent"
 
-#: src/features/session-switcher.tsx:226
-#~ msgid "Switch chat"
-#~ msgstr "Switch chat"
-
 #: src/features/session-handoff.tsx:56
 msgid "Switch mode"
 msgstr "Switch mode"
-
-#: src/features/session-switcher.tsx:195
-#~ msgid "Switch session"
-#~ msgstr "Switch session"
-
-#: src/features/session-header.tsx:197
-#~ msgid "Switch session (Alt+g)"
-#~ msgstr "Switch session (Alt+g)"
 
 #: src/features/session-commands.tsx:235
 #: src/features/session-skills.tsx:65
@@ -4472,18 +4131,9 @@ msgstr "Tap an option to send its number and Enter into the agent pane."
 msgid "Tap an option to send its number into the agent pane."
 msgstr "Tap an option to send its number into the agent pane."
 
-#: src/features/session-key-panel.tsx:52
-#~ msgid "Tap to send into the agent pane"
-#~ msgstr "Tap to send into the agent pane"
-
 #: src/features/session-info.tsx:100
 msgid "Tappable Ask options"
 msgstr "Tappable Ask options"
-
-#. placeholder {0}: history.length
-#: src/features/session-title-history.tsx:171
-#~ msgid "Task history ({0})"
-#~ msgstr "Task history ({0})"
 
 #: src/features/session-title-history.tsx:174
 msgid "Task history ({count})"
@@ -4509,7 +4159,7 @@ msgstr "Terminal keys"
 msgid "Terminal screen"
 msgstr "Terminal screen"
 
-#: src/features/me-notifications.tsx:356
+#: src/features/me-notifications.tsx:315
 msgid "Test notification sent"
 msgstr "Test notification sent"
 
@@ -4585,10 +4235,6 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 msgid "Theme"
 msgstr "Theme"
 
-#: src/features/session-todos.tsx:101
-#~ msgid "They stay with the repo, so any session can pick them up."
-#~ msgstr "They stay with the repo, so any session can pick them up."
-
 #: src/features/chat-command.tsx:181
 #: src/features/chat-command.tsx:187
 msgid "Thinking"
@@ -4602,7 +4248,7 @@ msgstr "This agent lists no skills yet"
 msgid "This browser"
 msgstr "This browser"
 
-#: src/features/me-notifications.tsx:260
+#: src/features/me-notifications.tsx:233
 msgid "This browser does not support Web Push notifications."
 msgstr "This browser does not support Web Push notifications."
 
@@ -4620,7 +4266,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/me-notifications.tsx:377
+#: src/features/me-notifications.tsx:336
 msgid "This device"
 msgstr "This device"
 
@@ -4714,7 +4360,7 @@ msgstr "Ticket pages"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/me-notifications.tsx:149
+#: src/features/me-notifications.tsx:148
 msgid "Ticket waiting on you"
 msgstr "Ticket waiting on you"
 
@@ -4787,10 +4433,6 @@ msgstr "To-dos"
 msgid "To-dos of {repo}"
 msgstr "To-dos of {repo}"
 
-#: src/features/session-todos.tsx:101
-#~ msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
-#~ msgstr "To-dos of {repo}: they stay with the repo, any session can pick them up"
-
 #: src/features/session-todos.tsx:100
 msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
@@ -4858,11 +4500,6 @@ msgstr "Truncated at 64 KB — check the terminal for the full payload."
 msgid "Trust this worktree and continue"
 msgstr "Trust this worktree and continue"
 
-#. placeholder {0}: item.user_turns
-#: src/features/session-title-history.tsx:92
-#~ msgid "Turn {0}"
-#~ msgstr "Turn {0}"
-
 #: src/features/session-title-history.tsx:94
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
@@ -4874,10 +4511,6 @@ msgstr "Turn on write access in Settings to edit"
 #: src/features/session-commands.tsx:283
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
-
-#: src/features/session-key-panel.tsx:51
-#~ msgid "Turn on write access in Settings to send these keys"
-#~ msgstr "Turn on write access in Settings to send these keys"
 
 #: src/features/remote-badge.tsx:82
 msgid "TURN relay"
@@ -4904,10 +4537,6 @@ msgstr "Unavailable"
 #: src/features/me-agents.tsx:200
 msgid "Unavailable agents ({disabledCount})"
 msgstr "Unavailable agents ({disabledCount})"
-
-#: src/features/session-new-direction.tsx:69
-#~ msgid "uncommitted changes"
-#~ msgstr "uncommitted changes"
 
 #: src/features/sent-history.tsx:379
 msgid "Unconfirmed ({unsettledCount})"
@@ -4961,10 +4590,6 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/session-composer.tsx:136
-#~ msgid "Uploading {step}/{steps}…"
-#~ msgstr "Uploading {step}/{steps}…"
-
 #: src/features/message-composer.tsx:127
 msgid "Uploading {step}/{total}…"
 msgstr "Uploading {step}/{total}…"
@@ -4984,10 +4609,6 @@ msgstr "Usage"
 msgid "Usage from"
 msgstr "Usage from"
 
-#: src/features/me-notifications.tsx:233
-msgid "Use background keepalive notifications (no FCM)"
-msgstr "Use background keepalive notifications (no FCM)"
-
 #: src/features/me-agent-detail.tsx:201
 #: src/features/me-agent-detail.tsx:248
 msgid "Use CLI default"
@@ -5001,9 +4622,9 @@ msgstr "Use the browser menu: “Install app” / “Add to Home screen”."
 msgid "User"
 msgstr "User"
 
-#: src/features/me-notifications.tsx:302
-#~ msgid "VAPID push keys are not configured on the relay Worker yet."
-#~ msgstr "VAPID push keys are not configured on the relay Worker yet."
+#: src/features/me-notifications.tsx:361
+msgid "VAPID push keys are not configured on the relay Worker yet."
+msgstr "VAPID push keys are not configured on the relay Worker yet."
 
 #: src/features/ticket-reply.tsx:255
 msgid "Verification"
@@ -5043,7 +4664,7 @@ msgstr "vscode-links is not installed on the host."
 msgid "Waiting for"
 msgstr "Waiting for"
 
-#: src/features/me-notifications.tsx:100
+#: src/features/me-notifications.tsx:99
 msgid "Waiting for approval or reply"
 msgstr "Waiting for approval or reply"
 
@@ -5228,10 +4849,6 @@ msgstr "What you assume"
 msgid "What you saw"
 msgstr "What you saw"
 
-#: src/features/session-new.tsx:232
-#~ msgid "Where"
-#~ msgstr "Where"
-
 #: src/features/session-info.tsx:52
 msgid "Where it runs"
 msgstr "Where it runs"
@@ -5292,22 +4909,9 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/session-list.tsx:242
-#~ msgctxt "filter"
-#~ msgid "Working"
-#~ msgstr "Working"
-
 #: src/features/ticket-diff.tsx:410
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
-
-#: src/features/session-purpose.tsx:72
-#~ msgid "Workstation description"
-#~ msgstr "Workstation description"
-
-#: src/features/session-info.tsx:265
-#~ msgid "Workstation purpose"
-#~ msgstr "Workstation purpose"
 
 #: src/features/session-info.tsx:69
 #: src/features/ticket-info.tsx:114
@@ -5315,10 +4919,6 @@ msgstr "Working tree matches base commit (no diff)."
 #: src/features/ticket-timeline.tsx:185
 msgid "Worktree"
 msgstr "Worktree"
-
-#: src/features/session-new-panels.tsx:326
-#~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
-#~ msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 
 #: src/features/session-worktree-lifecycle.tsx:49
 msgid "Worktree recycled"
@@ -5364,36 +4964,3 @@ msgstr "Your decision, extra context, or an answer to the challenge"
 #: src/features/ticket-reply.tsx:172
 msgid "Your reply"
 msgstr "Your reply"
-
-#: src/features/session-statusbar.tsx:246
-#~ msgid "仍在使用"
-#~ msgstr "仍在使用"
-
-#: src/features/session-statusbar.tsx:240
-#~ msgid "可复用"
-#~ msgstr "可复用"
-
-#: src/features/session-statusbar.tsx:243
-#~ msgid "有本地改动"
-#~ msgstr "有本地改动"
-
-#: src/features/session-statusbar.tsx:244
-#~ msgid "未交付"
-#~ msgstr "未交付"
-
-#: src/features/session-statusbar.tsx:314
-#~ msgid "未命名工作树"
-#~ msgstr "未命名工作树"
-
-#: src/features/session-statusbar.tsx:245
-#: src/features/session-statusbar.tsx:323
-#~ msgid "游离分支"
-#~ msgstr "游离分支"
-
-#: src/features/session-statusbar.tsx:242
-#~ msgid "等待处理"
-#~ msgstr "等待处理"
-
-#: src/features/session-statusbar.tsx:241
-#~ msgid "运行中"
-#~ msgstr "运行中"

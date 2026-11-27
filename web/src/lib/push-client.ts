@@ -4,25 +4,19 @@
 import { loadDeviceKey } from './device-key'
 import { remoteLink } from './remote-link'
 import { readPairedToken, relayBase, roomQuery } from './remote-pairing'
-import type { PushMode, PushPrefs } from '#/relay/web-push'
+import type { PushPrefs } from '#/relay/web-push'
 import { DEFAULT_PUSH_PREFS } from '#/relay/web-push'
 
-export type { PushMode, PushPrefs }
+export type { PushPrefs }
 export { DEFAULT_PUSH_PREFS }
 
 export type PushSupportState =
-  | 'ready'
-  | 'ws-only'
-  | 'ios-install-required'
-  | 'unsupported'
-  | 'denied'
-  | 'unpaired'
+  'ready' | 'ios-install-required' | 'unsupported' | 'denied' | 'unpaired'
 
 export type PushStatusResponse = {
   ok: boolean
   enabled: boolean
   subscribed: boolean
-  mode?: PushMode | null
   prefs: PushPrefs
   devices: number
 }
@@ -51,11 +45,14 @@ export function detectPushSupport(): PushSupportState {
     window.matchMedia('(display-mode: standalone)').matches ||
     (navigator as { standalone?: boolean }).standalone === true
   if (isIOS && !standalone) return 'ios-install-required'
-  if (!('Notification' in window)) return 'unsupported'
-  if (Notification.permission === 'denied') return 'denied'
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    return 'ws-only'
+  if (
+    !('serviceWorker' in navigator) ||
+    !('PushManager' in window) ||
+    !('Notification' in window)
+  ) {
+    return 'unsupported'
   }
+  if (Notification.permission === 'denied') return 'denied'
   return 'ready'
 }
 
@@ -147,7 +144,7 @@ export async function fetchPushStatus(): Promise<PushStatusResponse> {
 
 export async function subscribeDevicePush(
   prefs: PushPrefs = DEFAULT_PUSH_PREFS,
-): Promise<{ subscribed: boolean; mode: PushMode; prefs: PushPrefs }> {
+): Promise<{ subscribed: boolean; prefs: PushPrefs }> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') {
     throw new Error('Notification permission was not granted')
@@ -177,13 +174,11 @@ export async function subscribeDevicePush(
   const deviceId = await resolvePushDeviceId()
   const result = await pushFetch<{
     subscribed: boolean
-    mode: PushMode
     prefs: PushPrefs
   }>('subscribe', {
     method: 'POST',
     body: JSON.stringify({
       device_id: deviceId,
-      mode: 'webpush',
       subscription: {
         endpoint: json.endpoint,
         keys: json.keys,
@@ -191,31 +186,6 @@ export async function subscribeDevicePush(
       prefs,
     }),
   })
-  remoteLink.reportFocus()
-  return result
-}
-
-export async function subscribeWsFallbackPush(
-  prefs: PushPrefs = DEFAULT_PUSH_PREFS,
-): Promise<{ subscribed: boolean; mode: PushMode; prefs: PushPrefs }> {
-  const permission = await Notification.requestPermission()
-  if (permission !== 'granted') {
-    throw new Error('Notification permission was not granted')
-  }
-  const deviceId = await resolvePushDeviceId()
-  const result = await pushFetch<{
-    subscribed: boolean
-    mode: PushMode
-    prefs: PushPrefs
-  }>('subscribe', {
-    method: 'POST',
-    body: JSON.stringify({
-      device_id: deviceId,
-      mode: 'ws',
-      prefs,
-    }),
-  })
-  remoteLink.start()
   remoteLink.reportFocus()
   return result
 }
