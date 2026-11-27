@@ -77,7 +77,7 @@ describe('architecture page: capabilities match the source', () => {
     const source = repo(`${RUNTIME}/RuntimeWebServer.cs`)
     const block = source.slice(
       source.indexOf('["capabilities"]'),
-      source.indexOf('},', source.indexOf('["capabilities"]')),
+      source.indexOf('["observed_at"]', source.indexOf('["capabilities"]')),
     )
     const caps = [...block.matchAll(/"([a-z_.]+)"/g)]
       .map((m) => m[1])
