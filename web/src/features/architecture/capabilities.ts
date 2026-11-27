@@ -189,6 +189,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Read a plan doc, artifact, or checkout file within the session scope (redacted, bounded, with line targeting)',
       ),
       c(
+        'collab.run.chat',
+        '把工单无头运行（子单 / 独立工人 / 调研）解析为统一 ChatThread 对话流（优先原生转录，回退 stream.jsonl）',
+        'Parse a headless ticket run into unified ChatThread messages (native transcript first, stream.jsonl fallback)',
+      ),
+      c(
+        'collab.diff',
+        '读取工单或父单集成工作树相对基线的净变更 Diff（限文件数与大小、脱敏），供全屏 Diff 抽屉审阅',
+        'Read bounded, redacted net git diffs for ticket or integration worktrees against their base commit',
+      ),
+      c(
         'upload.get',
         '已上传图片的原图分块',
         'A chunk of an uploaded image’s original',

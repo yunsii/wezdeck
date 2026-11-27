@@ -394,6 +394,8 @@ export type HostReadAction =
   | 'session.git'
   | 'session.skills'
   | 'session.autotitle.status'
+  | 'collab.run.chat'
+  | 'collab.diff'
   /** local Runtime only: the host's diagnostics requests for this page */
   | 'diag.pending'
   /** local Runtime only (serve.go): the relay does not list devices */
