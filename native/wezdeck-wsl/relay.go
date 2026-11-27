@@ -19,14 +19,18 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/coder/websocket"
 	"github.com/pion/webrtc/v4"
 )
+
+const relayDrainTimeout = 5 * time.Second
 
 const relayDefaultURL = "wss://wezdeck.yuns.love/relay/host"
 
@@ -62,16 +66,33 @@ type relaySignal struct {
 }
 
 type relay struct {
-	wmu   sync.Mutex // serializes socket writes
-	mu    sync.Mutex
-	conn  *websocket.Conn
-	peers map[string]*webrtc.PeerConnection
+	wmu      sync.Mutex // serializes socket writes
+	mu       sync.Mutex
+	conn     *websocket.Conn
+	peers    map[string]*webrtc.PeerConnection
+	inflight sync.WaitGroup
 	// clients: web console pages seen recently, for host → page pushes
 	// (relay_diag.go)
 	clients map[string]*clientChan
 	// authed: cid → the approved device that said hello on it (relay_auth.go)
 	authed map[string]string
 	log    *os.File
+}
+
+// waitInflight waits for in-flight RPCs to finish up to timeout so a relay
+// restart never cuts off a message send or permission key mid-execution.
+func (r *relay) waitInflight(timeout time.Duration) bool {
+	done := make(chan struct{})
+	go func() {
+		r.inflight.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
 }
 
 func relayLogPath() string {
@@ -140,23 +161,53 @@ func runRelay() error {
 			defer f.Close()
 		}
 	}
-	r.serveControl()
-	go startAutoTitler(context.Background())
-	backoff := time.Second
+	rootCtx, stopSignals := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stopSignals()
+
+	cleanupControl := r.serveControl()
+	defer cleanupControl()
+	go startAutoTitler(rootCtx)
+
+	backoff := 250 * time.Millisecond
 	for {
+		if rootCtx.Err() != nil {
+			break
+		}
 		started := time.Now()
-		err := r.session(url, token)
-		r.closePeers()
-		if time.Since(started) > time.Minute {
-			backoff = time.Second
+		err := r.session(rootCtx, url, token)
+		if rootCtx.Err() != nil {
+			break
+		}
+		// Close code 4000 means a newer host relay replaced us during overlap
+		// handoff: drain in-flight RPCs and exit cleanly instead of fighting it.
+		if websocket.CloseStatus(err) == 4000 {
+			r.logf("replaced_draining", "timeout_ms=%d", relayDrainTimeout.Milliseconds())
+			drained := r.waitInflight(relayDrainTimeout)
+			r.closePeers()
+			r.logf("replaced_drained", "clean=%t", drained)
+			return nil
+		}
+		// Keep healthy P2P WebRTC peers alive across transient WS disconnects
+		// (e.g. Cloudflare DO recycle); ICE failure detection cleans up dead ones.
+		if time.Since(started) > 10*time.Second {
+			backoff = 250 * time.Millisecond
 		}
 		wait := backoff + time.Duration(rand.Int63n(int64(backoff/2)+1))
 		r.logf("disconnected", "err=%q retry_in_ms=%d", errText(err), wait.Milliseconds())
-		time.Sleep(wait)
+		select {
+		case <-rootCtx.Done():
+		case <-time.After(wait):
+		}
 		if backoff < time.Minute {
 			backoff *= 2
 		}
 	}
+
+	r.logf("draining", "timeout_ms=%d", relayDrainTimeout.Milliseconds())
+	drained := r.waitInflight(relayDrainTimeout)
+	r.closePeers()
+	r.logf("drained", "clean=%t", drained)
+	return nil
 }
 
 func errText(err error) string {
@@ -166,8 +217,8 @@ func errText(err error) string {
 	return err.Error()
 }
 
-func (r *relay) session(url, token string) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (r *relay) session(parent context.Context, url, token string) error {
+	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 	dialCtx, dialCancel := context.WithTimeout(ctx, 15*time.Second)
 	conn, _, err := websocket.Dial(dialCtx, url, &websocket.DialOptions{
@@ -185,7 +236,11 @@ func (r *relay) session(url, token string) error {
 		r.mu.Lock()
 		r.conn = nil
 		r.mu.Unlock()
-		conn.CloseNow()
+		if parent.Err() != nil {
+			_ = conn.Close(websocket.StatusNormalClosure, "relay shutting down")
+		} else {
+			conn.CloseNow()
+		}
 	}()
 	host, _ := os.Hostname()
 	r.send(relayFrame{T: "hello", Host: host, Ver: "1"})
@@ -238,7 +293,9 @@ func (r *relay) session(url, token string) error {
 		switch f.T {
 		case "rpc":
 			r.touchClient(f.Cid)
+			r.inflight.Add(1)
 			go func(f relayFrame) {
+				defer r.inflight.Done()
 				res := handleRPC(f, "websocket", r)
 				res.Cid = f.Cid
 				r.send(res)
@@ -450,7 +507,9 @@ func (r *relay) answer(cid string, data json.RawMessage) {
 				// the DataChannel belongs to this cid: requests carry it like the
 				// DO path does (diag.submit only accepts the cids it asked)
 				f.Cid = cid
+				r.inflight.Add(1)
 				go func() {
+					defer r.inflight.Done()
 					res := handleRPC(f, "webrtc", r)
 					res.Cid = ""
 					body, _ := json.Marshal(res)

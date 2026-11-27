@@ -362,7 +362,16 @@ job_relay() {
 }
 
 job_web() {
-  local deployed want built reused=''
+  local deployed want built reused='' relay_do_want relay_do_deployed
+  # Deploy standalone HostRelay DO Worker ONLY when web/src/relay or
+  # wrangler.relay.jsonc actually changed (so normal UI deploys never drop WS).
+  relay_do_want="$(scripts/dev/source-fingerprint.sh web/src/relay web/wrangler.relay.jsonc)"
+  relay_do_deployed="$(release_state_get deployed_relay_do_fp)"
+  if [[ $force == 1 || "$relay_do_deployed" != "$relay_do_want" ]]; then
+    phase "wrangler deploy wezdeck-relay-do ($relay_do_want)"
+    (cd web && corepack pnpm exec wrangler deploy -c wrangler.relay.jsonc) || return 1
+    echo "ok: deployed relay-do $relay_do_want (was ${relay_do_deployed:-none})"
+  fi
   want="$(scripts/dev/source-fingerprint.sh web)"
   deployed="$(deployed_build)"
   if [[ $force == 0 && "$deployed" == "$want" ]]; then
@@ -376,8 +385,8 @@ job_web() {
     phase "vite build $want"
     (cd web && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
   fi
-  phase "wrangler deploy (upload assets, then the worker)"
-  (cd web && corepack pnpm exec wrangler deploy) || return 1
+  phase "wrangler deploy wezdeck (assets + worker; HostRelay DO untouched)"
+  (cd web && corepack pnpm exec wrangler deploy -c dist/server/wrangler.json) || return 1
   phase "live canary probe ($SITE)"
   if ! release_live_canary "$SITE" "$want"; then
     phase "canary failed — rolling back Cloudflare worker"
@@ -600,7 +609,9 @@ run_coordinator_loop() {
     notify_clients "$head" "$batch_count"
 
     # 7. Record deployed SHA & kick off Stage 3 async regression OUTSIDE locks.
-    release_state_update deployed "sha=$target_sha" "web_fp=$web_fp" "relay_fp=$relay_fp" "run_dir=$RUN"
+    local relay_do_fp
+    relay_do_fp="$(scripts/dev/source-fingerprint.sh web/src/relay web/wrangler.relay.jsonc)"
+    release_state_update deployed "sha=$target_sha" "web_fp=$web_fp" "relay_fp=$relay_fp" "relay_do_fp=$relay_do_fp" "run_dir=$RUN"
     printf '%s event=batch_deployed batch=%d head=%s commits=%d %s logs=%s\n' \
       "$(date -Iseconds)" "$batch_num" "$head" "$batch_count" "${summary[*]}" "$RUN" >>"$STATE/release.log"
     say '✓' batch "batch #$batch_num deployed $head (${batch_count} commit(s), ${summary[*]})"

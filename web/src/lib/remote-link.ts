@@ -1,8 +1,23 @@
 import type { UsageReply } from '#/lib/usage-contract'
-import { OPEN_ACTIONS, refusal, retriable } from './remote-auth'
+import {
+  OPEN_ACTIONS,
+  isTransientReconnectError,
+  refusal,
+  retriable,
+} from './remote-auth'
+import {
+  NOT_PAIRED,
+  adoptPairingHash,
+  forcedRemote,
+  readPairedToken,
+  relayBase,
+  roomQuery,
+} from './remote-pairing'
 import { loadDeviceKey, signPayload } from './device-key'
 import { ReplyParts } from './reply-parts'
 import { median, selectedPath } from './rtc-path'
+
+export { NOT_PAIRED, forcedRemote }
 
 // Remote access to the home host when the loopback Runtime is unreachable
 // (phone / tablet on wezdeck.yuns.love). One WebSocket to the HostRelay
@@ -37,9 +52,10 @@ export interface RemoteState {
   pathDetail?: string
 }
 
-const TOKEN_KEY = 'wezdeck.remote.token'
 const PING_MS = 2_000
 const RPC_TIMEOUT_MS = 10_000
+const RECONNECT_GRACE_MS = 6_000
+const OFFLINE_RTC_GRACE_MS = 2_000
 const RTC_OPEN_TIMEOUT_MS = 15_000
 const RTC_RETRY_MS = 60_000
 
@@ -49,103 +65,6 @@ type Pending = {
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
 }
-
-function storage() {
-  try {
-    return globalThis.localStorage
-  } catch {
-    return undefined
-  }
-}
-
-/** `#pair=<token>` in the URL stores the client token on this device. */
-/** Token from a pairing link opened in this page; wins over (possibly stale or unwritable) storage. */
-let pairedToken = ''
-
-/**
- * Adopt a `#pair=` token; true when a new one was taken. Links come from anyone:
- * replacing a token this device holds needs the person's OK, or one tapped
- * link silently swaps the pairing (unauthorized until re-paired).
- */
-function adoptPairingHash(): boolean {
-  if (typeof location === 'undefined') return false
-  const match = /[#&]pair=([^&]+)/.exec(location.hash)
-  if (!match) return false
-  // tokens are [A-Za-z0-9] (install-remote-relay.sh): anything else, or a
-  // %-escape that would make decodeURIComponent throw, is not a pairing link
-  const token = /^[A-Za-z0-9_-]{16,128}$/.test(match[1]) ? match[1] : ''
-  let current = ''
-  try {
-    current = storage()?.getItem(TOKEN_KEY) ?? ''
-  } catch {
-    current = ''
-  }
-  const replace =
-    Boolean(token) &&
-    (!current ||
-      current === token ||
-      window.confirm(
-        document.documentElement.lang.startsWith('zh')
-          ? '这个链接会替换这台设备现在的配对，确定吗？'
-          : 'This link replaces the pairing on this device. Continue?',
-      ))
-  if (replace) {
-    pairedToken = token
-    try {
-      storage()?.setItem(TOKEN_KEY, pairedToken)
-    } catch {
-      // Storage blocked (private mode / in-app browser): the token from the
-      // link still applies to this page via pairedToken.
-    }
-  }
-  // keep the router's entry state (__TSR_index / key): null here made the
-  // first entry look like it came from outside the app (useCanGoBack, the
-  // tab-history rule and the transition direction all read it)
-  history.replaceState(
-    history.state as unknown,
-    '',
-    location.pathname + location.search,
-  )
-  return replace && token !== current
-}
-
-/**
- * `?remote=1` forces the remote link even where loopback works (acceptance on
- * the host). Remembered for the tab so in-app navigation keeps it.
- */
-export function forcedRemote() {
-  if (typeof location === 'undefined') return false
-  try {
-    if (new URLSearchParams(location.search).get('remote') === '1')
-      sessionStorage.setItem('wezdeck.remote.forced', '1')
-    return sessionStorage.getItem('wezdeck.remote.forced') === '1'
-  } catch {
-    return new URLSearchParams(location.search).get('remote') === '1'
-  }
-}
-
-/** `?room=` (sticky per tab) selects a separate relay room — used by tests. */
-function relayRoom() {
-  if (typeof location === 'undefined') return ''
-  try {
-    const fromUrl = new URLSearchParams(location.search).get('room')
-    if (fromUrl) sessionStorage.setItem('wezdeck.remote.room', fromUrl)
-    return sessionStorage.getItem('wezdeck.remote.room') ?? ''
-  } catch {
-    return new URLSearchParams(location.search).get('room') ?? ''
-  }
-}
-
-const roomQuery = () =>
-  relayRoom() ? `?room=${encodeURIComponent(relayRoom())}` : ''
-
-function relayBase() {
-  const configured = import.meta.env.VITE_WEZDECK_RELAY_URL?.trim()
-  if (configured) return configured.replace(/\/$/, '')
-  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
-}
-
-export const NOT_PAIRED = 'this device is not paired'
 
 class RemoteLink {
   state: RemoteState = {
@@ -167,15 +86,11 @@ class RemoteLink {
   private started = false
   private wsRetry = 1_000
   private rtcTimer?: ReturnType<typeof setTimeout>
+  private offlineRtcTimer?: ReturnType<typeof setTimeout>
   private hashListener?: () => void
 
   token() {
-    if (pairedToken) return pairedToken
-    try {
-      return storage()?.getItem(TOKEN_KEY) ?? ''
-    } catch {
-      return ''
-    }
+    return readPairedToken()
   }
 
   /** Idempotent; called by the first consumer (getCollab / the badge). */
@@ -220,13 +135,21 @@ class RemoteLink {
     ws.onmessage = (event) => this.onFrame(String(event.data), 'websocket')
     ws.onopen = () => {
       opened = true
-      this.wsRetry = 1_000
+      this.wsRetry = 300
     }
     ws.onclose = (event) => {
       if (this.ws !== ws) return
       this.ws = undefined
-      this.closeRtc('relay socket closed')
-      this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
+      const dcOpen = this.dc?.readyState === 'open'
+      // Keep an open P2P WebRTC DataChannel alive across transient relay
+      // WebSocket blinks (e.g. Cloudflare DO recycle); only tear it down on
+      // token rotation (4401) or when no direct channel is open.
+      if (event.code === 4401) {
+        this.closeRtc('pairing token rotated')
+      } else if (!dcOpen) {
+        this.closeRtc('relay socket closed')
+        this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
+      }
       // 4401: the DO evicted us after the token was rotated. A handshake that
       // never opened may be a refused token too; the browser hides the 401,
       // so ask /relay/auth before retrying.
@@ -238,14 +161,16 @@ class RemoteLink {
             : this.tokenRefused()
       void refused.then((isRefused) => {
         if (isRefused) {
+          this.closeRtc('pairing token rejected')
           this.set({
             mode: 'unauthorized',
             rtcNote: 'pairing token rejected; pair this device again',
           })
           return
         }
-        setTimeout(() => this.openSocket(), this.wsRetry)
-        this.wsRetry = Math.min(this.wsRetry * 2, 30_000)
+        const delay = opened ? 300 : this.wsRetry
+        setTimeout(() => this.openSocket(), delay)
+        this.wsRetry = Math.min(Math.max(this.wsRetry * 2, 600), 30_000)
       })
     }
   }
@@ -291,16 +216,37 @@ class RemoteLink {
       }
       case 'host': {
         const online = Boolean(frame.online)
+        const dcOpen = this.dc?.readyState === 'open'
+        if (online) {
+          clearTimeout(this.offlineRtcTimer)
+          this.offlineRtcTimer = undefined
+          this.set({
+            hostSince: (frame.since as string | null) ?? null,
+            mode: dcOpen ? 'webrtc' : 'websocket',
+          })
+          if (!dcOpen) this.scheduleRtc(0)
+          return
+        }
+        if (dcOpen) {
+          // Host WS blinked while P2P DataChannel is still open: hold WebRTC
+          // briefly so a transient DO/WS recycle does not drop live traffic.
+          clearTimeout(this.offlineRtcTimer)
+          this.offlineRtcTimer = setTimeout(() => {
+            this.offlineRtcTimer = undefined
+            if (this.dc?.readyState !== 'open') return
+            this.set({
+              hostSince: (frame.since as string | null) ?? null,
+              mode: 'host-offline',
+            })
+            this.closeRtc('host offline')
+          }, OFFLINE_RTC_GRACE_MS)
+          return
+        }
         this.set({
           hostSince: (frame.since as string | null) ?? null,
-          mode: online
-            ? this.dc?.readyState === 'open'
-              ? 'webrtc'
-              : 'websocket'
-            : 'host-offline',
+          mode: 'host-offline',
         })
-        if (online) this.scheduleRtc(0)
-        else this.closeRtc('host offline')
+        this.closeRtc('host offline')
         return
       }
       case 'sig': {
@@ -412,9 +358,22 @@ class RemoteLink {
     try {
       return await this.rpcOnce(action, args)
     } catch (error) {
-      if (!retriable(error, action) || this.helloWs !== this.ws) throw error
-      this.helloWs = undefined
-      return this.rpcOnce(action, args)
+      if (retriable(error, action) && this.helloWs === this.ws) {
+        this.helloWs = undefined
+        return this.rpcOnce(action, args)
+      }
+      // Transient reconnect window (relay restart or DO handoff): wait up to
+      // RECONNECT_GRACE_MS for the link to come back and retry once. Because
+      // these errors happen before the host executes the action, retrying a
+      // signed write with its original nonce is safe and idempotent.
+      if (isTransientReconnectError(error)) {
+        const recovered = await this.ready(RECONNECT_GRACE_MS)
+        if (recovered) {
+          if (!OPEN_ACTIONS.has(action)) this.helloWs = undefined
+          return this.rpcOnce(action, args)
+        }
+      }
+      throw error
     }
   }
 

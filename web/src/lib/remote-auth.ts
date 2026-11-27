@@ -22,6 +22,7 @@ export const OPEN_ACTIONS = new Set([
   'session.restart',
   'session.delete',
   'session.handoff',
+  'session.autotitle.update',
   'ticket.new',
   'worktree.describe',
   'host.warp.set',
@@ -34,7 +35,10 @@ export const OPEN_ACTIONS = new Set([
  */
 export function describeError(error: string) {
   if (!error.startsWith('device not approved')) return error || 'remote error'
-  return document.documentElement.lang.startsWith('zh')
+  const zh =
+    typeof document !== 'undefined' &&
+    document.documentElement.lang.startsWith('zh')
+  return zh
     ? '这台设备还没获批，暂时看不到电脑上的内容：到 我的 › 设备授权 提交申请，在电脑上批准它。'
     : 'This device is not approved yet, so the host shows it nothing: request access in Settings › Device access and approve it on the host.'
 }
@@ -57,3 +61,18 @@ export function refusal(error: string) {
 /** a read the host refused as not approved, which a fresh hello may cure */
 export const retriable = (error: unknown, action: string) =>
   error instanceof NotApprovedError && !OPEN_ACTIONS.has(action)
+
+/**
+ * Transient transport errors returned BEFORE the host executed the action
+ * (e.g. during a relay restart or Cloudflare DO handoff): safe to retry once
+ * after waiting briefly for the link to recover.
+ */
+export const isTransientReconnectError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false
+  const msg = error.message
+  return (
+    msg === 'host offline' ||
+    msg === 'home host is offline' ||
+    msg === 'remote link is not connected'
+  )
+}

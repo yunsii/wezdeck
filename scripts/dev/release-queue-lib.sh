@@ -67,6 +67,8 @@ elif mode == "deployed":
         st["deployed_web_fp"] = kv["web_fp"]
     if kv.get("relay_fp"):
         st["deployed_relay_fp"] = kv["relay_fp"]
+    if kv.get("relay_do_fp"):
+        st["deployed_relay_do_fp"] = kv["relay_do_fp"]
     if kv.get("run_dir"):
         st["last_run_dir"] = kv["run_dir"]
     # Keep only commits that arrived after this deployed SHA (handled via desired_sha check)
@@ -180,6 +182,9 @@ release_live_canary() {
   # /relay/health is authenticated before DO lookup: 200 with a valid client
   # token, 401 without one (never 404/5xx).
   relay_token="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
+  if [[ -z "$relay_token" && -f "$HOME/.config/shell-env.d/wezdeck-remote.env" ]]; then
+    relay_token="$(sed -n 's/^WEZDECK_RELAY_CLIENT_TOKEN=//p' "$HOME/.config/shell-env.d/wezdeck-remote.env" | tail -1)"
+  fi
   if [[ -n "$relay_token" ]]; then
     relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$site/relay/health" 2>/dev/null || echo 000)"
     if [[ "$relay_code" != 200 ]]; then

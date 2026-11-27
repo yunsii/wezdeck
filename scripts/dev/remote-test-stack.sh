@@ -248,6 +248,11 @@ FAKE
     (cd "$REPO/web" && WEZDECK_BUILD_ID="$web_id" \
       corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
   fi
+  if [[ -f "$REPO/web/.dev.vars" ]]; then
+    for d in "$REPO/web/dist/server" "$REPO/web/dist/wezdeck_relay_do"; do
+      [[ -d "$d" && ! -f "$d/.dev.vars" ]] && cp -f "$REPO/web/.dev.vars" "$d/.dev.vars"
+    done
+  fi
   # the whole subshell is redirected and backgrounded: an un-redirected
   # backgrounded `cd && cmd` keeps $(…) callers' pipe open forever
   (cd "$REPO/web" && exec env VITE_WEZDECK_RUNTIME_URL=http://127.0.0.1:9 \

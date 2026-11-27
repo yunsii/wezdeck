@@ -435,16 +435,20 @@ func relayControlPath() string {
 }
 
 // serveControl: the relay's local control socket (0600, this user only).
-func (r *relay) serveControl() {
+// Returns a cleanup callback that removes the socket only if its inode still
+// matches this instance (preventing a draining process from unlinking a newer
+// relay's socket).
+func (r *relay) serveControl() func() {
 	path := relayControlPath()
 	_ = os.MkdirAll(filepath.Dir(path), 0o700)
 	_ = os.Remove(path)
 	ln, err := net.Listen("unix", path)
 	if err != nil {
 		r.logf("control_error", "path=%s err=%q", path, err)
-		return
+		return func() {}
 	}
 	_ = os.Chmod(path, 0o600)
+	ownInfo, _ := os.Stat(path)
 	mux := http.NewServeMux()
 	// local-mode pages, through the bridge (serve.go remote.diag.*)
 	mux.HandleFunc("/diag/pending", func(w http.ResponseWriter, req *http.Request) {
@@ -491,7 +495,18 @@ func (r *relay) serveControl() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(r.requestDiagnostics(wait, body.Reason, body.Steps))
 	})
-	go func() { _ = http.Serve(ln, mux) }()
+	srv := &http.Server{Handler: mux}
+	go func() { _ = srv.Serve(ln) }()
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		_ = srv.Shutdown(ctx)
+		cancel()
+		if ownInfo != nil {
+			if curInfo, err := os.Stat(path); err == nil && os.SameFile(ownInfo, curInfo) {
+				_ = os.Remove(path)
+			}
+		}
+	}
 }
 
 // runDiag is `wezdeck-wsl diag`: ask the running relay, print its JSON answer.

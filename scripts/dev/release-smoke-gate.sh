@@ -62,6 +62,9 @@ fi
 if [[ -d web/dist/server && ! -f web/dist/server/.dev.vars ]]; then
   cp -f web/.dev.vars web/dist/server/.dev.vars
 fi
+if [[ -d web/dist/wezdeck_relay_do && ! -f web/dist/wezdeck_relay_do/.dev.vars ]]; then
+  cp -f web/.dev.vars web/dist/wezdeck_relay_do/.dev.vars
+fi
 env_lines="$(WEZDECK_TEST_STACK_DIR="$SMOKE_DIR" WEZDECK_TEST_STACK_PORT="$SMOKE_PORT" \
   scripts/dev/remote-test-stack.sh start | grep '^export ')"
 eval "$env_lines"
