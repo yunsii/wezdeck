@@ -1,7 +1,9 @@
 // Decide whether Enter in the session composer sends vs inserts a newline.
 // Touch-only phones keep Enter = newline (no Shift+Enter on soft keyboards),
 // while desktops and tablets with a hardware keyboard (with or without a
-// trackpad) use Enter = send and Shift+Enter = newline.
+// trackpad) use Enter = send and Shift+Enter = newline. A per-device preference
+// (`auto` | `newline` | `send`) can override plain Enter explicitly.
+import type { EnterMode } from '#/lib/enter-pref'
 
 export type HardwareKeyEvent = {
   code?: string
@@ -13,6 +15,8 @@ export type HardwareKeyEvent = {
 }
 
 export type EnterSendInput = {
+  /** per-device preference override (`auto` by default) */
+  mode?: EnterMode
   /** `(hover: none) and (pointer: coarse)` */
   coarsePrimary: boolean
   /** `(any-pointer: fine) or (any-hover: hover)` — mouse / trackpad attached */
@@ -124,6 +128,26 @@ export function isSoftKeyboardOpen(): boolean {
   })
 }
 
+export function resolveEnterKeyHint({
+  mode = 'auto',
+  coarsePrimary,
+  anyFinePointer,
+  wide,
+  sawHardwareKey,
+}: {
+  mode?: EnterMode
+  coarsePrimary: boolean
+  anyFinePointer: boolean
+  wide: boolean
+  sawHardwareKey: boolean
+}): 'enter' | 'send' {
+  if (mode === 'newline') return 'enter'
+  if (mode === 'send') return 'send'
+  const breaksLine =
+    coarsePrimary && (!wide || (!anyFinePointer && !sawHardwareKey))
+  return breaksLine ? 'enter' : 'send'
+}
+
 export function shouldEnterSend(input: EnterSendInput): boolean {
   if (input.key !== 'Enter') return false
   // IME candidate confirmation (拼音 → 汉字) must never send
@@ -132,6 +156,10 @@ export function shouldEnterSend(input: EnterSendInput): boolean {
   if (input.shiftKey || input.altKey) return false
   // Ctrl/⌘+Enter sends everywhere
   if (input.ctrlKey || input.metaKey) return true
+  // Per-device explicit override (e.g. phone with a physical keyboard, or
+  // desktop user who prefers Enter = newline)
+  if (input.mode === 'newline') return false
+  if (input.mode === 'send') return true
   // Desktop / laptop (fine / hover primary pointer)
   if (!input.coarsePrimary) return true
   // Touch-primary phone (<768 px): plain Enter always inserts a newline even

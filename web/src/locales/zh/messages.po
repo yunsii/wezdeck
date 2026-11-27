@@ -46,8 +46,8 @@ msgid "{by} proposes splitting off a ticket"
 msgstr "{by} 提议拆出一张单"
 
 #: src/features/console-sessions.tsx:312
-#: src/features/message-composer.tsx:134
-#: src/features/message-composer.tsx:164
+#: src/features/message-composer.tsx:136
+#: src/features/message-composer.tsx:166
 msgid "{count} images"
 msgstr "{count} 张图片"
 
@@ -374,7 +374,7 @@ msgstr "Agent 会话"
 msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
 
-#: src/features/console-me.tsx:61
+#: src/features/console-me.tsx:62
 #: src/features/me-agents.tsx:176
 msgid "Agents"
 msgstr "智能体"
@@ -516,12 +516,12 @@ msgstr "API 错误"
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
-#: src/features/console-me.tsx:58
+#: src/features/console-me.tsx:59
 #: src/features/me-app.tsx:36
 msgid "App"
 msgstr "应用"
 
-#: src/features/console-me.tsx:57
+#: src/features/console-me.tsx:58
 msgid "Appearance"
 msgstr "外观"
 
@@ -606,6 +606,7 @@ msgstr "已附带截图（随工单永久保存）"
 msgid "Attachments"
 msgstr "附件"
 
+#: src/features/console-me.tsx:186
 #: src/features/me-autotitle.tsx:165
 #: src/features/me-autotitle.tsx:337
 #: src/features/session-statusbar.tsx:96
@@ -642,7 +643,11 @@ msgstr "Auto mode 服务端"
 msgid "Auto off"
 msgstr "未开 Auto"
 
-#: src/features/console-me.tsx:62
+#: src/features/console-me.tsx:192
+msgid "Auto sends on desktop and tablet keyboards, and breaks lines on phones. Shift+Enter always breaks lines; Ctrl/⌘+Enter always sends."
+msgstr "自动模式下，桌面与平板外接键盘按回车发送、手机端回车换行。Shift+Enter 始终换行，Ctrl/⌘+Enter 始终发送。"
+
+#: src/features/console-me.tsx:63
 msgid "Auto titles"
 msgstr "自动标题"
 
@@ -664,7 +669,7 @@ msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:115
-#: src/features/console-me.tsx:387
+#: src/features/console-me.tsx:405
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:81
@@ -705,7 +710,7 @@ msgstr "后台自动更新标题"
 msgid "Background tasks"
 msgstr "后台任务"
 
-#: src/features/console-me.tsx:168
+#: src/features/console-me.tsx:170
 msgid "Bar"
 msgstr "细线"
 
@@ -725,11 +730,11 @@ msgstr "二进制文件已变更"
 msgid "Blank switch"
 msgstr "空白切换"
 
-#: src/features/console-me.tsx:169
+#: src/features/console-me.tsx:171
 msgid "Block"
 msgstr "方块"
 
-#: src/features/console-me.tsx:174
+#: src/features/console-me.tsx:176
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
@@ -1113,7 +1118,7 @@ msgstr "已连接"
 msgid "Connecting…"
 msgstr "连接中…"
 
-#: src/features/console-me.tsx:53
+#: src/features/console-me.tsx:54
 msgid "Connection"
 msgstr "连接"
 
@@ -1403,8 +1408,8 @@ msgstr "当前样本来自前台 WezTerm 窗口。"
 msgid "Daemon"
 msgstr "常驻后台"
 
-#: src/features/console-me.tsx:157
-#: src/features/console-me.tsx:206
+#: src/features/console-me.tsx:159
+#: src/features/console-me.tsx:224
 #: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "深色"
@@ -1494,13 +1499,13 @@ msgstr "终端空闲"
 msgid "Detached"
 msgstr "游离分支"
 
-#: src/features/console-me.tsx:54
+#: src/features/console-me.tsx:55
 msgid "Device access"
 msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
-#: src/features/console-me.tsx:324
+#: src/features/console-me.tsx:342
 #: src/features/console-shell.tsx:101
 msgid "Diagnostics"
 msgstr "诊断"
@@ -1623,11 +1628,11 @@ msgstr "推理力度"
 msgid "Enable notifications"
 msgstr "开启推送通知"
 
-#: src/features/console-me.tsx:195
+#: src/features/console-me.tsx:213
 msgid "Enabled"
 msgstr "已启用"
 
-#: src/features/console-me.tsx:194
+#: src/features/console-me.tsx:212
 msgid "Enabled on this computer"
 msgstr "本机，已启用"
 
@@ -1657,6 +1662,11 @@ msgstr "端点"
 #: src/features/session-plan-keys.tsx:64
 msgid "Enter"
 msgstr "回车"
+
+#: src/features/console-me.tsx:180
+#: src/features/console-me.tsx:182
+msgid "Enter key"
+msgstr "回车键"
 
 #: src/features/session-new.tsx:276
 msgid "Enter to send · Shift+Enter for newline"
@@ -1920,11 +1930,11 @@ msgstr "主机信号"
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
-#: src/features/console-me.tsx:106
+#: src/features/console-me.tsx:107
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:294
+#: src/features/console-me.tsx:312
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
 #: src/features/public-header.tsx:87
@@ -2003,7 +2013,7 @@ msgstr "各阶段初始消息（估算 token）"
 msgid "Initiator"
 msgstr "发起方"
 
-#: src/features/message-composer.tsx:178
+#: src/features/message-composer.tsx:180
 msgid "Input cleared"
 msgstr "已清空输入"
 
@@ -2044,7 +2054,7 @@ msgstr "集成验收未通过"
 msgid "Integration verification passed and awaits delivery confirmation."
 msgstr "集成验证已通过，等待确认交付。"
 
-#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:61
 msgid "Interaction debugging"
 msgstr "交互调试"
 
@@ -2110,8 +2120,8 @@ msgstr "局域网"
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "改动落在 {where}；不推送、不提 MR"
 
-#: src/features/console-me.tsx:130
 #: src/features/console-me.tsx:132
+#: src/features/console-me.tsx:134
 #: src/features/console-shared.tsx:412
 #: src/features/console-shared.tsx:414
 msgid "Language"
@@ -2125,7 +2135,7 @@ msgstr "变更较大，已截断以适应移动查看。"
 msgid "last {lastSeen}"
 msgstr "最近 {lastSeen}"
 
-#: src/features/console-me.tsx:113
+#: src/features/console-me.tsx:114
 msgid "Last direct attempt"
 msgstr "上次直连"
 
@@ -2177,8 +2187,8 @@ msgstr "级别"
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
-#: src/features/console-me.tsx:156
-#: src/features/console-me.tsx:206
+#: src/features/console-me.tsx:158
+#: src/features/console-me.tsx:224
 #: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "浅色"
@@ -2394,7 +2404,7 @@ msgstr "统计窗口"
 msgid "Minimum duration"
 msgstr "最小时长阈值"
 
-#: src/features/console-me.tsx:76
+#: src/features/console-me.tsx:77
 msgid "Mode"
 msgstr "模式"
 
@@ -2534,6 +2544,10 @@ msgstr "有新版本"
 #: src/features/me-app.tsx:61
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
+
+#: src/features/console-me.tsx:187
+msgid "Newline"
+msgstr "换行"
 
 #: src/features/console-keys.tsx:66
 msgid "Next / previous running session"
@@ -2726,7 +2740,7 @@ msgstr "未实现"
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:234
+#: src/features/console-me.tsx:252
 msgid "Not paired"
 msgstr "未配对"
 
@@ -2774,7 +2788,7 @@ msgstr "没有匹配项"
 msgid "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 msgstr "浏览器已拦截此站点的通知权限，请在浏览器设置中重新允许。"
 
-#: src/features/console-me.tsx:55
+#: src/features/console-me.tsx:56
 msgid "Notifications"
 msgstr "通知"
 
@@ -2794,7 +2808,7 @@ msgstr "单轮长耗时任务完成时推送（默认关闭，减少打扰）。
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-me.tsx:199
+#: src/features/console-me.tsx:217
 #: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
 #: src/features/me-notifications.tsx:45
@@ -2836,7 +2850,7 @@ msgstr "只有可复用的工作树才能在这里回收或移除"
 msgid "Only this trace"
 msgstr "只看这个 trace"
 
-#: src/features/message-composer.tsx:97
+#: src/features/message-composer.tsx:99
 msgid "Only up to {MAX_IMAGES} images fit in one message"
 msgstr "一条消息最多附带 {MAX_IMAGES} 张图片"
 
@@ -2997,7 +3011,7 @@ msgstr "需先配对"
 msgid "Pair this device with your host first to enable remote push notifications."
 msgstr "请先与宿主机完成配对，再开启远程推送通知。"
 
-#: src/features/console-me.tsx:89
+#: src/features/console-me.tsx:90
 msgid "Pairing command"
 msgstr "配对命令"
 
@@ -3053,7 +3067,7 @@ msgstr "权限审批、提问等你回复与计划待确认。"
 msgid "Phase"
 msgstr "阶段"
 
-#: src/features/console-me.tsx:82
+#: src/features/console-me.tsx:83
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
@@ -3423,7 +3437,7 @@ msgstr "本仓工单与快速提单"
 msgid "Repository"
 msgstr "仓库"
 
-#: src/features/console-me.tsx:215
+#: src/features/console-me.tsx:233
 #: src/features/me-agents.tsx:152
 #: src/features/session-new-panels.tsx:73
 msgid "Repository default"
@@ -3450,7 +3464,7 @@ msgstr "申请授权"
 msgid "Request changes"
 msgstr "请修改"
 
-#: src/features/console-me.tsx:108
+#: src/features/console-me.tsx:109
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
@@ -3657,7 +3671,7 @@ msgstr "立即后台执行"
 msgid "Run started"
 msgstr "启动运行"
 
-#: src/features/console-me.tsx:85
+#: src/features/console-me.tsx:86
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
@@ -3844,8 +3858,9 @@ msgid "Select a target repository first."
 msgstr "请先选择目标仓库。"
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:387
-#: src/features/message-composer.tsx:389
+#: src/features/console-me.tsx:188
+#: src/features/message-composer.tsx:397
+#: src/features/message-composer.tsx:399
 #: src/features/ticket-manager-panel.tsx:132
 msgid "Send"
 msgstr "发送"
@@ -3991,9 +4006,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:422
-#: src/features/console-me.tsx:426
-#: src/features/console-me.tsx:450
+#: src/features/console-me.tsx:440
+#: src/features/console-me.tsx:444
+#: src/features/console-me.tsx:468
 #: src/features/console-shell.tsx:108
 msgid "Settings"
 msgstr "我的"
@@ -4299,8 +4314,8 @@ msgctxt "git"
 msgid "Synced"
 msgstr "已同步"
 
-#: src/features/console-me.tsx:155
-#: src/features/console-me.tsx:206
+#: src/features/console-me.tsx:157
+#: src/features/console-me.tsx:224
 #: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "跟随系统"
@@ -4358,8 +4373,8 @@ msgstr "终端画面"
 msgid "Test notification sent"
 msgstr "已发送测试通知"
 
-#: src/features/console-me.tsx:162
 #: src/features/console-me.tsx:164
+#: src/features/console-me.tsx:166
 msgid "Text caret"
 msgstr "输入光标"
 
@@ -4432,8 +4447,8 @@ msgstr "上一个会话请求已过期，请重新开始。"
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "命令后面的文字会成为新会话的名字（「{name}」），之后每次 /clear 都会沿用，Claude 也不再自动生成标题。仍要发送吗？"
 
-#: src/features/console-me.tsx:149
 #: src/features/console-me.tsx:151
+#: src/features/console-me.tsx:153
 #: src/features/console-shared.tsx:385
 #: src/features/console-shared.tsx:387
 msgid "Theme"
@@ -4456,17 +4471,17 @@ msgstr "当前浏览器"
 msgid "This browser does not support Web Push notifications."
 msgstr "当前浏览器不支持 Web Push 通知。"
 
-#: src/features/console-me.tsx:59
-#: src/features/console-me.tsx:232
+#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:250
 #: src/features/console-shell.tsx:344
 msgid "This computer"
 msgstr "本机"
 
-#: src/features/console-me.tsx:76
+#: src/features/console-me.tsx:77
 msgid "This computer (local Runtime)"
 msgstr "本机（本地运行时）"
 
-#: src/features/console-me.tsx:78
+#: src/features/console-me.tsx:79
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
@@ -4484,7 +4499,7 @@ msgstr "当前设备"
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "这台设备还没获批（我的 › 设备授权）。"
 
-#: src/features/console-me.tsx:100
+#: src/features/console-me.tsx:101
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
@@ -4788,11 +4803,11 @@ msgstr "不可用智能体（{disabledCount}）"
 msgid "Unconfirmed ({unsettledCount})"
 msgstr "未确认 ({unsettledCount})"
 
-#: src/features/console-me.tsx:170
+#: src/features/console-me.tsx:172
 msgid "Underscore"
 msgstr "下划线"
 
-#: src/features/message-composer.tsx:180
+#: src/features/message-composer.tsx:182
 msgid "Undo"
 msgstr "撤销"
 
@@ -4836,8 +4851,8 @@ msgstr "正在更新极窄导航栏、公开页吸顶导航和架构目录…"
 msgid "Updating your selection…"
 msgstr "正在更新选择……"
 
-#: src/features/message-composer.tsx:145
-#: src/features/message-composer.tsx:155
+#: src/features/message-composer.tsx:147
+#: src/features/message-composer.tsx:157
 msgid "Uploading {step}/{total}…"
 msgstr "正在上传 {step}/{total}…"
 
@@ -4847,7 +4862,7 @@ msgstr "正在上传 {step}/{total}…"
 msgid "Uptime"
 msgstr "运行时长"
 
-#: src/features/console-me.tsx:56
+#: src/features/console-me.tsx:57
 #: src/features/session-info.tsx:55
 msgid "Usage"
 msgstr "用量"
@@ -4915,7 +4930,7 @@ msgstr "等待类型"
 msgid "Waiting for approval or reply"
 msgstr "等待确认或回复"
 
-#: src/features/console-me.tsx:197
+#: src/features/console-me.tsx:215
 msgid "Waiting for the host"
 msgstr "等电脑确认"
 
