@@ -8,7 +8,7 @@ import type mermaid from 'mermaid'
 import { useEffect, useId, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
-import { Skeleton } from '#/components/ui/skeleton'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { normalizeMermaidSvg } from '#/lib/mermaid-svg'
 import type { NormalizedMermaidSvg } from '#/lib/mermaid-svg'
 import { cn } from '#/lib/utils'
@@ -167,14 +167,14 @@ export function MermaidBlock({ code }: { code: string }) {
           </pre>
         </div>
       ) : !rendered ? (
-        <div
+        <SkeletonGroup
           data-testid="mermaid-loading"
           className="flex min-h-40 w-full flex-col justify-center gap-2.5 p-4"
         >
           <Skeleton className="mx-auto h-5 w-2/5 rounded-lg" />
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="mx-auto h-4 w-3/5 rounded-lg" />
-        </div>
+        </SkeletonGroup>
       ) : (
         <div
           data-testid="mermaid-svg"

@@ -4,6 +4,8 @@
 // px-4 alone, which left the skeleton flush on the right.
 import { useLingui } from '@lingui/react/macro'
 
+import { SkeletonGroup } from '#/components/ui/skeleton'
+
 const bar = 'rounded-full bg-brand-deck'
 
 export function SessionListSkeleton() {
@@ -19,32 +21,34 @@ export function SessionListSkeleton() {
         data-testid="session-skeleton"
         className="bg-brand-surface"
       >
-        <div className="border-b border-brand-edge bg-brand-deck px-3 py-2">
-          <div className="h-3 w-24 rounded-full bg-brand-edge" />
-        </div>
-        <ul className="chat-list">
-          {[0.58, 0.42, 0.5].map((width, index) => (
-            <li
-              key={width}
-              className="flex min-h-15 items-center gap-3 px-3 py-2"
-            >
-              <div className="size-10 shrink-0 rounded-full bg-brand-deck" />
-              <div className="grid min-w-0 flex-1 gap-1.5">
-                <div className="flex items-center justify-between gap-2">
+        <SkeletonGroup>
+          <div className="border-b border-brand-edge bg-brand-deck px-3 py-2">
+            <div className="h-3 w-24 rounded-full bg-brand-edge" />
+          </div>
+          <ul className="chat-list">
+            {[0.58, 0.42, 0.5].map((width, index) => (
+              <li
+                key={width}
+                className="flex min-h-15 items-center gap-3 px-3 py-2"
+              >
+                <div className="size-10 shrink-0 rounded-full bg-brand-deck" />
+                <div className="grid min-w-0 flex-1 gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div
+                      className={`${bar} h-4 min-w-0`}
+                      style={{ width: `${width * 100}%` }}
+                    />
+                    <div className={`${bar} h-3 w-10 shrink-0`} />
+                  </div>
                   <div
-                    className={`${bar} h-4 min-w-0`}
-                    style={{ width: `${width * 100}%` }}
+                    className={`${bar} h-3 max-w-full`}
+                    style={{ width: `${[0.72, 0.55, 0.64][index] * 100}%` }}
                   />
-                  <div className={`${bar} h-3 w-10 shrink-0`} />
                 </div>
-                <div
-                  className={`${bar} h-3 max-w-full`}
-                  style={{ width: `${[0.72, 0.55, 0.64][index] * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        </SkeletonGroup>
       </div>
     </div>
   )

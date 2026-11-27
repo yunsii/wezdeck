@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
-import { Skeleton } from '#/components/ui/skeleton'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { highlightLines, langOf } from '#/lib/highlight'
 import type { Token } from '#/lib/highlight'
 import { extractMarkdownHeadings } from '#/lib/host-file-link'
@@ -40,31 +40,31 @@ export function FileLoadingSkeleton() {
       data-testid="host-file-loading"
       role="status"
       aria-live="polite"
+      aria-label={t`Loading…`}
       className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-8"
     >
-      <div className="flex flex-1 flex-col gap-5 rounded-2xl border border-brand-edge/70 bg-brand-surface p-5 sm:p-8">
-        <div className="flex items-center justify-between gap-3 border-b border-brand-edge pb-4">
-          <Skeleton className="h-7 w-2/3 rounded-lg" />
-          <span className="shrink-0 text-meta text-brand-muted">
-            {t`Loading…`}
-          </span>
-        </div>
-        <div className="grid gap-2.5">
-          <Skeleton className="h-4 w-full rounded" />
-          <Skeleton className="h-4 w-11/12 rounded" />
-          <Skeleton className="h-4 w-4/5 rounded" />
-        </div>
-        <Skeleton className="h-44 w-full rounded-xl" />
-        <div className="grid gap-2.5">
-          <Skeleton className="h-5 w-1/3 rounded-lg" />
-          <Skeleton className="h-4 w-full rounded" />
-          <Skeleton className="h-4 w-10/12 rounded" />
-          <Skeleton className="h-4 w-3/4 rounded" />
-        </div>
-        <div className="grid gap-2.5 pt-2">
-          <Skeleton className="h-4 w-full rounded" />
-          <Skeleton className="h-4 w-5/6 rounded" />
-        </div>
+      <div className="flex flex-1 flex-col rounded-2xl border border-brand-edge/70 bg-brand-surface p-5 sm:p-8">
+        <SkeletonGroup className="flex flex-col gap-5">
+          <div className="border-b border-brand-edge pb-4">
+            <Skeleton className="h-7 w-2/3 rounded-lg" />
+          </div>
+          <div className="grid gap-2.5">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-11/12 rounded" />
+            <Skeleton className="h-4 w-4/5 rounded" />
+          </div>
+          <Skeleton className="h-44 w-full rounded-xl" />
+          <div className="grid gap-2.5">
+            <Skeleton className="h-5 w-1/3 rounded-lg" />
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-10/12 rounded" />
+            <Skeleton className="h-4 w-3/4 rounded" />
+          </div>
+          <div className="grid gap-2.5 pt-2">
+            <Skeleton className="h-4 w-full rounded" />
+            <Skeleton className="h-4 w-5/6 rounded" />
+          </div>
+        </SkeletonGroup>
       </div>
     </div>
   )

@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
-import { Skeleton } from '#/components/ui/skeleton'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { trace } from '#/lib/client-trace'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
@@ -70,15 +70,17 @@ function DiffLoadingSkeleton() {
       data-testid="ticket-diff-loading"
       role="status"
       aria-live="polite"
+      aria-label={t`Loading diff…`}
       className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-3 py-5 sm:px-6"
     >
-      <div className="flex flex-1 flex-col gap-4 rounded-2xl border border-brand-edge bg-brand-surface p-5">
-        <div className="flex items-center justify-between border-b border-brand-edge pb-3">
-          <Skeleton className="h-5 w-48 rounded" />
-          <span className="text-meta text-brand-muted">{t`Loading diff…`}</span>
-        </div>
-        <Skeleton className="h-44 w-full rounded-xl" />
-        <Skeleton className="h-44 w-full rounded-xl" />
+      <div className="flex flex-1 flex-col rounded-2xl border border-brand-edge bg-brand-surface p-5">
+        <SkeletonGroup className="flex flex-col gap-4">
+          <div className="border-b border-brand-edge pb-3">
+            <Skeleton className="h-5 w-48 rounded" />
+          </div>
+          <Skeleton className="h-44 w-full rounded-xl" />
+          <Skeleton className="h-44 w-full rounded-xl" />
+        </SkeletonGroup>
       </div>
     </div>
   )

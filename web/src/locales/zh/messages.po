@@ -97,7 +97,7 @@ msgstr "{days} 天前"
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
-#: src/features/ticket-diff.tsx:206
+#: src/features/ticket-diff.tsx:208
 msgid "{fileCount} files"
 msgstr "{fileCount} 个文件"
 
@@ -713,7 +713,7 @@ msgstr "基线提交"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:147
+#: src/features/ticket-diff.tsx:149
 msgid "Binary file changed"
 msgstr "二进制文件已变更"
 
@@ -1383,7 +1383,7 @@ msgstr "当前 API 密钥"
 msgid "Current runner"
 msgstr "当前运行状态"
 
-#: src/features/console-shared.tsx:349
+#: src/features/console-shared.tsx:357
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
@@ -1393,7 +1393,7 @@ msgstr "常驻后台"
 
 #: src/features/console-me.tsx:157
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:386
+#: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "深色"
 
@@ -1417,7 +1417,7 @@ msgstr "此浏览器新会话的默认智能体"
 msgid "Default mode: auto mode is off"
 msgstr "默认模式：未开启 Auto 模式"
 
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:214
 msgid "Degraded"
 msgstr "受限"
 
@@ -1946,7 +1946,7 @@ msgstr "图片查看"
 msgid "Images"
 msgstr "图片"
 
-#: src/features/console-shared.tsx:347
+#: src/features/console-shared.tsx:355
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
@@ -2090,12 +2090,12 @@ msgstr "改动落在 {where}；不推送、不提 MR"
 
 #: src/features/console-me.tsx:130
 #: src/features/console-me.tsx:132
-#: src/features/console-shared.tsx:404
-#: src/features/console-shared.tsx:406
+#: src/features/console-shared.tsx:412
+#: src/features/console-shared.tsx:414
 msgid "Language"
 msgstr "语言"
 
-#: src/features/ticket-diff.tsx:270
+#: src/features/ticket-diff.tsx:272
 msgid "Large diff was capped for mobile viewing."
 msgstr "变更较大，已截断以适应移动查看。"
 
@@ -2157,7 +2157,7 @@ msgstr "与上游一致。"
 
 #: src/features/console-me.tsx:156
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "浅色"
 
@@ -2193,7 +2193,7 @@ msgstr "加载更早（还有 {start} 条）"
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
-#: src/features/ticket-diff.tsx:78
+#: src/features/ticket-diff.tsx:73
 msgid "Loading diff…"
 msgstr "加载变更中…"
 
@@ -2206,16 +2206,16 @@ msgstr "正在加载原图…"
 #: src/features/console-collab-run.tsx:210
 #: src/features/console-collab.tsx:117
 #: src/features/console-diagnostics.tsx:110
-#: src/features/console-shared.tsx:210
+#: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:106
-#: src/features/host-file-body.tsx:49
+#: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:245
-#: src/features/session-skeleton.tsx:18
+#: src/features/session-skeleton.tsx:20
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
 #: src/features/tickets-view.tsx:270
@@ -2416,7 +2416,7 @@ msgstr "需要确认"
 #~ msgid "Needs you"
 #~ msgstr "等你"
 
-#: src/features/ticket-diff.tsx:221
+#: src/features/ticket-diff.tsx:223
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "变更 Diff"
@@ -2554,7 +2554,7 @@ msgstr "否"
 msgid "No active session"
 msgstr "当前没有远控会话"
 
-#: src/features/ticket-diff.tsx:260
+#: src/features/ticket-diff.tsx:262
 msgid "No active worktree diff is available for this ticket."
 msgstr "当前工单没有可用的工作树变更。"
 
@@ -2579,7 +2579,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
 
-#: src/features/ticket-run-chat.tsx:217
+#: src/features/ticket-run-chat.tsx:219
 msgid "No conversation messages recorded for this run."
 msgstr "此次运行暂无对话记录。"
 
@@ -2591,7 +2591,7 @@ msgstr "还没有设备申请授权。"
 msgid "No earlier conversations in this project"
 msgstr "这个项目里没有更早的会话"
 
-#: src/features/console-shared.tsx:356
+#: src/features/console-shared.tsx:364
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 
@@ -2655,7 +2655,7 @@ msgstr "暂无已记录的会话标题。"
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
-#: src/features/ticket-diff.tsx:158
+#: src/features/ticket-diff.tsx:160
 msgid "No text diff available"
 msgstr "无文本差异内容"
 
@@ -2799,7 +2799,7 @@ msgstr "未启用"
 msgid "Off (client classifier)"
 msgstr "关闭（客户端分类器）"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:215
 msgid "Offline"
 msgstr "离线"
 
@@ -3187,7 +3187,7 @@ msgstr "读了 {reads} 个文件"
 msgid "Read document"
 msgstr "阅读文档"
 
-#: src/features/console-shared.tsx:211
+#: src/features/console-shared.tsx:213
 #: src/features/console-status-band.tsx:40
 #: src/features/me-host.tsx:60
 #: src/features/me-host.tsx:157
@@ -3214,8 +3214,8 @@ msgstr "回收工作树"
 #: src/features/host-file-sheet.tsx:77
 #: src/features/host-file-sheet.tsx:78
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:229
-#: src/features/ticket-diff.tsx:230
+#: src/features/ticket-diff.tsx:231
+#: src/features/ticket-diff.tsx:232
 msgid "Refresh"
 msgstr "刷新"
 
@@ -3580,7 +3580,7 @@ msgid "run"
 msgstr "运行"
 
 #: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:240
+#: src/features/ticket-run-chat.tsx:242
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3689,7 +3689,7 @@ msgstr "Runtime API"
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime 离线时无法获取诊断数据。"
 
-#: src/features/console-shared.tsx:360
+#: src/features/console-shared.tsx:368
 msgid "Runtime reported reason:"
 msgstr "Runtime 报告的原因："
 
@@ -3986,7 +3986,7 @@ msgstr "跳到发起的调用"
 #~ msgid "Showing {0} of {total} items"
 #~ msgstr ""
 
-#: src/features/ticket-run-chat.tsx:231
+#: src/features/ticket-run-chat.tsx:233
 msgid "Showing {shownCount} of {total} items"
 msgstr "已显示 {shownCount} / {total} 条"
 
@@ -4264,7 +4264,7 @@ msgstr "已同步"
 
 #: src/features/console-me.tsx:155
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:384
+#: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "跟随系统"
 
@@ -4365,7 +4365,7 @@ msgstr "实际观察到的行为、报错或数据"
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "你期望对方提供的约定或行为——对方会先核实这一点"
 
-#: src/features/console-shared.tsx:352
+#: src/features/console-shared.tsx:360
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
@@ -4393,8 +4393,8 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 
 #: src/features/console-me.tsx:149
 #: src/features/console-me.tsx:151
-#: src/features/console-shared.tsx:377
-#: src/features/console-shared.tsx:379
+#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:387
 msgid "Theme"
 msgstr "主题"
 
@@ -4846,7 +4846,7 @@ msgstr "等电脑确认"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
-#: src/features/ticket-run-chat.tsx:216
+#: src/features/ticket-run-chat.tsx:218
 msgid "Waiting for worker output…"
 msgstr "等待工人输出…"
 
@@ -5084,7 +5084,7 @@ msgstr "运行中"
 #~ msgid "Working"
 #~ msgstr "运行中"
 
-#: src/features/ticket-diff.tsx:304
+#: src/features/ticket-diff.tsx:306
 msgid "Working tree matches base commit (no diff)."
 msgstr "工作树与基线一致（无变更）。"
 

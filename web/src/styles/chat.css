@@ -15,6 +15,27 @@
   animation: led-breathe 2.4s ease-in-out infinite;
 }
 
+/* Single-container skeleton pulse (<SkeletonGroup>): animate opacity on ONE
+   wrapper around static <Skeleton> bars rather than per-bar animate-pulse
+   (which spawns N GPU layers) or background-color keyframes (which re-rasterize
+   the entire HiDPI scroller on CPU every vsync). GPU composites one texture's
+   alpha uniform at 0 px repaint while `contain: layout paint` isolates it
+   inside its card away from persistent headers. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.52;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.8s ease-in-out infinite;
+  contain: layout paint;
+}
+
 /* Chat: what just arrived slides in. */
 @keyframes chat-in {
   from {
@@ -77,6 +98,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .led-running circle,
+  .skeleton-pulse,
   .chat-in {
     animation: none;
   }

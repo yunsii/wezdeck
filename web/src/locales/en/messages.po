@@ -97,7 +97,7 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/ticket-diff.tsx:206
+#: src/features/ticket-diff.tsx:208
 msgid "{fileCount} files"
 msgstr "{fileCount} files"
 
@@ -713,7 +713,7 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:147
+#: src/features/ticket-diff.tsx:149
 msgid "Binary file changed"
 msgstr "Binary file changed"
 
@@ -1383,7 +1383,7 @@ msgstr "Current API key"
 msgid "Current runner"
 msgstr "Current runner"
 
-#: src/features/console-shared.tsx:349
+#: src/features/console-shared.tsx:357
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
@@ -1393,7 +1393,7 @@ msgstr "Daemon"
 
 #: src/features/console-me.tsx:157
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:386
+#: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "Dark"
 
@@ -1417,7 +1417,7 @@ msgstr "Default agent for new sessions in this browser"
 msgid "Default mode: auto mode is off"
 msgstr "Default mode: auto mode is off"
 
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:214
 msgid "Degraded"
 msgstr "Degraded"
 
@@ -1946,7 +1946,7 @@ msgstr "Image viewer"
 msgid "Images"
 msgstr "Images"
 
-#: src/features/console-shared.tsx:347
+#: src/features/console-shared.tsx:355
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
@@ -2090,12 +2090,12 @@ msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
 #: src/features/console-me.tsx:130
 #: src/features/console-me.tsx:132
-#: src/features/console-shared.tsx:404
-#: src/features/console-shared.tsx:406
+#: src/features/console-shared.tsx:412
+#: src/features/console-shared.tsx:414
 msgid "Language"
 msgstr "Language"
 
-#: src/features/ticket-diff.tsx:270
+#: src/features/ticket-diff.tsx:272
 msgid "Large diff was capped for mobile viewing."
 msgstr "Large diff was capped for mobile viewing."
 
@@ -2157,7 +2157,7 @@ msgstr "Level with upstream."
 
 #: src/features/console-me.tsx:156
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "Light"
 
@@ -2193,7 +2193,7 @@ msgstr "Load earlier ({start} more)"
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
-#: src/features/ticket-diff.tsx:78
+#: src/features/ticket-diff.tsx:73
 msgid "Loading diff…"
 msgstr "Loading diff…"
 
@@ -2206,16 +2206,16 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:210
 #: src/features/console-collab.tsx:117
 #: src/features/console-diagnostics.tsx:110
-#: src/features/console-shared.tsx:210
+#: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:106
-#: src/features/host-file-body.tsx:49
+#: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:245
-#: src/features/session-skeleton.tsx:18
+#: src/features/session-skeleton.tsx:20
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
 #: src/features/tickets-view.tsx:270
@@ -2416,7 +2416,7 @@ msgstr "Needs a decision"
 #~ msgid "Needs you"
 #~ msgstr "Needs you"
 
-#: src/features/ticket-diff.tsx:221
+#: src/features/ticket-diff.tsx:223
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "Net diff"
@@ -2554,7 +2554,7 @@ msgstr "no"
 msgid "No active session"
 msgstr "No active session"
 
-#: src/features/ticket-diff.tsx:260
+#: src/features/ticket-diff.tsx:262
 msgid "No active worktree diff is available for this ticket."
 msgstr "No active worktree diff is available for this ticket."
 
@@ -2579,7 +2579,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
 
-#: src/features/ticket-run-chat.tsx:217
+#: src/features/ticket-run-chat.tsx:219
 msgid "No conversation messages recorded for this run."
 msgstr "No conversation messages recorded for this run."
 
@@ -2591,7 +2591,7 @@ msgstr "No device has asked for access yet."
 msgid "No earlier conversations in this project"
 msgstr "No earlier conversations in this project"
 
-#: src/features/console-shared.tsx:356
+#: src/features/console-shared.tsx:364
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
@@ -2655,7 +2655,7 @@ msgstr "No session titles recorded yet."
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
-#: src/features/ticket-diff.tsx:158
+#: src/features/ticket-diff.tsx:160
 msgid "No text diff available"
 msgstr "No text diff available"
 
@@ -2799,7 +2799,7 @@ msgstr "Off"
 msgid "Off (client classifier)"
 msgstr "Off (client classifier)"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:215
 msgid "Offline"
 msgstr "Offline"
 
@@ -3187,7 +3187,7 @@ msgstr "read {reads} files"
 msgid "Read document"
 msgstr "Read document"
 
-#: src/features/console-shared.tsx:211
+#: src/features/console-shared.tsx:213
 #: src/features/console-status-band.tsx:40
 #: src/features/me-host.tsx:60
 #: src/features/me-host.tsx:157
@@ -3214,8 +3214,8 @@ msgstr "Recycle worktree"
 #: src/features/host-file-sheet.tsx:77
 #: src/features/host-file-sheet.tsx:78
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:229
-#: src/features/ticket-diff.tsx:230
+#: src/features/ticket-diff.tsx:231
+#: src/features/ticket-diff.tsx:232
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -3580,7 +3580,7 @@ msgid "run"
 msgstr "run"
 
 #: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:240
+#: src/features/ticket-run-chat.tsx:242
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3689,7 +3689,7 @@ msgstr "Runtime API"
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 
-#: src/features/console-shared.tsx:360
+#: src/features/console-shared.tsx:368
 msgid "Runtime reported reason:"
 msgstr "Runtime reported reason:"
 
@@ -3986,7 +3986,7 @@ msgstr "Show the call"
 #~ msgid "Showing {0} of {total} items"
 #~ msgstr "Showing {0} of {total} items"
 
-#: src/features/ticket-run-chat.tsx:231
+#: src/features/ticket-run-chat.tsx:233
 msgid "Showing {shownCount} of {total} items"
 msgstr "Showing {shownCount} of {total} items"
 
@@ -4264,7 +4264,7 @@ msgstr "Synced"
 
 #: src/features/console-me.tsx:155
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:384
+#: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "System"
 
@@ -4365,7 +4365,7 @@ msgstr "The behaviour, error or data you actually observed"
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
-#: src/features/console-shared.tsx:352
+#: src/features/console-shared.tsx:360
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
@@ -4393,8 +4393,8 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 
 #: src/features/console-me.tsx:149
 #: src/features/console-me.tsx:151
-#: src/features/console-shared.tsx:377
-#: src/features/console-shared.tsx:379
+#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:387
 msgid "Theme"
 msgstr "Theme"
 
@@ -4846,7 +4846,7 @@ msgstr "Waiting for the host"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
 
-#: src/features/ticket-run-chat.tsx:216
+#: src/features/ticket-run-chat.tsx:218
 msgid "Waiting for worker output…"
 msgstr "Waiting for worker output…"
 
@@ -5084,7 +5084,7 @@ msgstr "Working"
 #~ msgid "Working"
 #~ msgstr "Working"
 
-#: src/features/ticket-diff.tsx:304
+#: src/features/ticket-diff.tsx:306
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
 

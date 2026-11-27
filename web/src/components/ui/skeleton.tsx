@@ -5,13 +5,23 @@ function Skeleton({ className, ...props }: React.ComponentProps<'span'>) {
     <span
       aria-hidden="true"
       data-slot="skeleton"
-      // Static placeholder (0 fps repaint): animating opacity spawns per-bar GPU
-      // layers and animating background-color re-rasterizes the full HiDPI
-      // scroller layer every vsync, flickering bottom tiles on tablet GPUs.
+      // Static bar — always group bars inside ONE <SkeletonGroup> so the GPU
+      // composites a single opacity layer at 0 CPU repaint instead of N layers
+      // per bar or full-scroller background-color re-rasterization.
       className={cn('block rounded bg-brand-soft', className)}
       {...props}
     />
   )
 }
 
-export { Skeleton }
+function SkeletonGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="skeleton-group"
+      className={cn('skeleton-pulse', className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton, SkeletonGroup }
