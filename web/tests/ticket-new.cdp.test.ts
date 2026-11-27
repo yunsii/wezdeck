@@ -91,7 +91,7 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
     await sheet.getByLabel('标题').fill('从手机提的测试单')
     await sheet.getByLabel('你看到的现象').fill('手机上看到 X')
     await sheet.getByLabel('你的假设').fill('对方应该提供 Y')
-    await sheet.getByRole('checkbox').check()
+    await sheet.getByRole('checkbox', { name: /创建后立即开始处理/ }).check()
     await sheet.getByRole('button', { name: '创建工单' }).click()
     await page.waitForURL(/\/console\/collab\/req-[A-Za-z0-9_.-]+$/, {
       timeout: 20_000,

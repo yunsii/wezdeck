@@ -185,6 +185,8 @@ export function buildChatGroups(
     }
   >()
   for (const row of rows) {
+    // Top-level ticket Manager Sessions live under 工单, not duplicated in 会话.
+    if (row.ticket_id) continue
     const repoKey = row.repo_root || row.repo || row.cwd || row.id
     const repoLabel =
       repoName(row) ||
@@ -264,6 +266,7 @@ export function flattenChats(groups: Array<ChatRepoGroup>): Array<SessionChat> {
 export function unreadChatCount(rows: Array<SessionCard>): number {
   const keys = new Set<string>()
   for (const row of rows) {
+    if (row.ticket_id) continue
     if (needsYou(row)) keys.add(worktreeKey(row))
   }
   return keys.size

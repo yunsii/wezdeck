@@ -19,6 +19,7 @@ import { CollabTopBar } from './collab-top-bar'
 import { pct } from './console-collab-format'
 import { Reading } from './inspector'
 import { TicketHeader } from './ticket-header'
+import { TicketManagerPanel } from './ticket-manager-panel'
 import { TicketPipeline, useGateLabel } from './ticket-pipeline'
 import { TicketProposals } from './ticket-proposals'
 import { TicketReply, TicketSections, openQuestion } from './ticket-reply'
@@ -154,6 +155,7 @@ export function TicketReading({
           </div>
         ) : null}
         <TicketPipeline data={data} />
+        <TicketManagerPanel ticket={ticket} poll={livePoll} />
         <TicketProposals
           id={ticket.id}
           proposals={data.proposals}

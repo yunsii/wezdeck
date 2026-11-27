@@ -101,6 +101,7 @@ function NewTicketSheet({
   const [observed, setObserved] = useState('')
   const [assumed, setAssumed] = useState('')
   const [run, setRun] = useState(false)
+  const [withManager, setWithManager] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const fromKey = from || keys[0] || ''
@@ -124,6 +125,11 @@ function NewTicketSheet({
         assumed: assumed.trim(),
         run,
       })) as { id: string; run: string; run_error?: string }
+      if (withManager && res.id) {
+        await hostWrite('ticket.manager.start', { id: res.id }).catch(
+          () => undefined,
+        )
+      }
       await client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
       onClose()
       void navigate({
@@ -206,6 +212,14 @@ function NewTicketSheet({
         <label className="flex min-h-11 items-center gap-2 text-body">
           <Checkbox checked={run} disabled={busy} onCheckedChange={setRun} />
           {t`Start working on it now (a headless run on the host)`}
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-body">
+          <Checkbox
+            checked={withManager}
+            disabled={busy}
+            onCheckedChange={setWithManager}
+          />
+          {t`Open a repo-neutral Manager Session for this ticket`}
         </label>
         {error ? (
           <p role="alert" className="text-caption text-brand-error">

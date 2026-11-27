@@ -97,7 +97,7 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/ticket-diff.tsx:206
+#: src/features/ticket-diff.tsx:294
 msgid "{fileCount} files"
 msgstr "{fileCount} files"
 
@@ -142,7 +142,7 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/console-collab.tsx:234
+#: src/features/console-collab.tsx:236
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} queued"
 
@@ -154,7 +154,7 @@ msgstr "{queuedCount} queued"
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
-#: src/features/console-collab.tsx:232
+#: src/features/console-collab.tsx:234
 #: src/features/ticket-keys.tsx:205
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
@@ -221,7 +221,7 @@ msgstr "{untracked} untracked"
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} tokens"
 
-#: src/features/console-collab.tsx:237
+#: src/features/console-collab.tsx:239
 #: src/features/ticket-keys.tsx:200
 msgid "{waitingCount} waiting"
 msgstr "{waitingCount} waiting"
@@ -323,7 +323,7 @@ msgstr "A person"
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
-#: src/features/ticket-new.tsx:172
+#: src/features/ticket-new.tsx:178
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
@@ -655,7 +655,7 @@ msgid "Availability and note"
 msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:124
-#: src/features/console-collab.tsx:110
+#: src/features/console-collab.tsx:111
 #: src/features/console-me.tsx:387
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
@@ -671,7 +671,7 @@ msgstr "Back to agents"
 #~ msgid "Back to message"
 #~ msgstr "Back to message"
 
-#: src/features/console-collab.tsx:152
+#: src/features/console-collab.tsx:153
 msgid "Back to parent ticket"
 msgstr "Back to parent ticket"
 
@@ -713,7 +713,7 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:147
+#: src/features/ticket-diff.tsx:195
 msgid "Binary file changed"
 msgstr "Binary file changed"
 
@@ -781,7 +781,7 @@ msgstr "Cache"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:254
+#: src/features/console-collab.tsx:256
 #: src/features/session-info.tsx:96
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -871,7 +871,7 @@ msgstr "Checking…"
 msgid "Checkout"
 msgstr "Checkout"
 
-#: src/features/console-collab.tsx:249
+#: src/features/console-collab.tsx:251
 msgid "Child"
 msgstr "Child"
 
@@ -883,8 +883,8 @@ msgstr "Child finished"
 msgid "Child tickets"
 msgstr "Child tickets"
 
-#: src/features/console-collab.tsx:229
-#: src/features/console-collab.tsx:244
+#: src/features/console-collab.tsx:231
+#: src/features/console-collab.tsx:246
 msgid "Children"
 msgstr "Children"
 
@@ -1022,6 +1022,10 @@ msgstr "Commands"
 msgid "Commands and skills"
 msgstr "Commands and skills"
 
+#: src/features/ticket-diff.tsx:175
+msgid "Comment"
+msgstr "Comment"
+
 #: src/features/session-git.tsx:233
 msgctxt "git"
 msgid "Commits"
@@ -1075,7 +1079,7 @@ msgstr "Confirm revoke"
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
-#: src/features/console-collab.tsx:357
+#: src/features/console-collab.tsx:359
 msgid "conflict"
 msgstr "conflict"
 
@@ -1332,7 +1336,7 @@ msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {
 msgid "Create session"
 msgstr "Create session"
 
-#: src/features/ticket-new.tsx:222
+#: src/features/ticket-new.tsx:236
 msgid "Create ticket"
 msgstr "Create ticket"
 
@@ -1352,7 +1356,7 @@ msgstr "Creating the session group…"
 #~ msgid "Creating the worktree…"
 #~ msgstr "Creating the worktree…"
 
-#: src/features/ticket-new.tsx:222
+#: src/features/ticket-new.tsx:236
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -1440,7 +1444,7 @@ msgstr "Deliver first message"
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:252
+#: src/features/console-collab.tsx:254
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1480,6 +1484,10 @@ msgstr "Diagram preview unavailable"
 #: src/features/ticket-header.tsx:125
 msgid "Diff"
 msgstr "Diff"
+
+#: src/features/ticket-diff.tsx:263
+msgid "Diff review feedback:"
+msgstr "Diff review feedback:"
 
 #: src/features/remote-badge.tsx:91
 msgid "Direct"
@@ -1770,7 +1778,7 @@ msgstr "Force delete session and worktree"
 msgid "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 msgstr "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 
-#: src/features/ticket-new.tsx:167
+#: src/features/ticket-new.tsx:173
 msgid "From"
 msgstr "From"
 
@@ -2009,8 +2017,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:350
-#: src/features/console-collab.tsx:351
+#: src/features/console-collab.tsx:352
+#: src/features/console-collab.tsx:353
 msgid "Integration"
 msgstr "Integration"
 
@@ -2095,7 +2103,7 @@ msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/ticket-diff.tsx:270
+#: src/features/ticket-diff.tsx:374
 msgid "Large diff was capped for mobile viewing."
 msgstr "Large diff was capped for mobile viewing."
 
@@ -2178,6 +2186,7 @@ msgid "list available commands"
 msgstr "list available commands"
 
 #: src/features/console-collab-run.tsx:58
+#: src/features/ticket-manager-panel.tsx:254
 msgid "live"
 msgstr "live"
 
@@ -2185,6 +2194,7 @@ msgstr "live"
 msgid "Load earlier"
 msgstr "Load earlier"
 
+#: src/features/ticket-manager-panel.tsx:305
 #: src/features/ticket-run-chat.tsx:190
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
@@ -2193,7 +2203,7 @@ msgstr "Load earlier ({start} more)"
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
-#: src/features/ticket-diff.tsx:78
+#: src/features/ticket-diff.tsx:85
 msgid "Loading diff…"
 msgstr "Loading diff…"
 
@@ -2204,7 +2214,7 @@ msgstr "Loading original…"
 #: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
 #: src/features/console-collab-run.tsx:210
-#: src/features/console-collab.tsx:117
+#: src/features/console-collab.tsx:118
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
@@ -2276,6 +2286,27 @@ msgstr "Managed in host configuration"
 msgid "Managed override"
 msgstr "Managed override"
 
+#: src/features/ticket-manager-panel.tsx:244
+#: src/features/ticket-manager-panel.tsx:251
+msgid "Manager session"
+msgstr "Manager session"
+
+#: src/features/ticket-manager-panel.tsx:319
+msgid "Manager session is parked. Sending a message wakes it automatically."
+msgstr "Manager session is parked. Sending a message wakes it automatically."
+
+#: src/features/ticket-manager-panel.tsx:318
+msgid "Manager session is ready — send an instruction below to start orchestrating."
+msgstr "Manager session is ready — send an instruction below to start orchestrating."
+
+#: src/features/ticket-manager-panel.tsx:185
+msgid "Manager session parked"
+msgstr "Manager session parked"
+
+#: src/features/ticket-manager-panel.tsx:173
+msgid "Manager session started"
+msgstr "Manager session started"
+
 #: src/features/session-title-history.tsx:84
 msgid "Manual"
 msgstr "Manual"
@@ -2314,7 +2345,7 @@ msgstr "May stop to ask you:"
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/console-collab.tsx:362
+#: src/features/console-collab.tsx:364
 msgid "merged"
 msgstr "merged"
 
@@ -2327,6 +2358,10 @@ msgstr "Message"
 #: src/features/session-composer-tools.tsx:57
 msgid "Message actions"
 msgstr "Message actions"
+
+#: src/features/ticket-manager-panel.tsx:112
+msgid "Message the ticket manager (Ctrl+Enter to send)…"
+msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
 #: src/features/session-composer.tsx:305
 msgid "Message to the agent"
@@ -2416,7 +2451,7 @@ msgstr "Needs a decision"
 #~ msgid "Needs you"
 #~ msgstr "Needs you"
 
-#: src/features/ticket-diff.tsx:221
+#: src/features/ticket-diff.tsx:309
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "Net diff"
@@ -2502,7 +2537,7 @@ msgstr "New session title"
 
 #: src/features/console-keys.tsx:111
 #: src/features/ticket-new.tsx:66
-#: src/features/ticket-new.tsx:161
+#: src/features/ticket-new.tsx:167
 msgid "New ticket"
 msgstr "New ticket"
 
@@ -2554,7 +2589,7 @@ msgstr "no"
 msgid "No active session"
 msgstr "No active session"
 
-#: src/features/ticket-diff.tsx:260
+#: src/features/ticket-diff.tsx:364
 msgid "No active worktree diff is available for this ticket."
 msgstr "No active worktree diff is available for this ticket."
 
@@ -2655,7 +2690,7 @@ msgstr "No session titles recorded yet."
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
-#: src/features/ticket-diff.tsx:158
+#: src/features/ticket-diff.tsx:206
 msgid "No text diff available"
 msgstr "No text diff available"
 
@@ -2663,7 +2698,7 @@ msgstr "No text diff available"
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
-#: src/features/console-collab.tsx:58
+#: src/features/console-collab.tsx:59
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
@@ -2739,6 +2774,7 @@ msgid "Not set"
 msgstr "Not set"
 
 #: src/features/me-agent-detail.tsx:278
+#: src/features/ticket-diff.tsx:175
 msgid "Note"
 msgstr "Note"
 
@@ -2833,6 +2869,10 @@ msgstr "Only reusable worktrees can be managed here"
 #: src/features/console-diagnostics.tsx:390
 msgid "Only this trace"
 msgstr "Only this trace"
+
+#: src/features/ticket-new.tsx:222
+msgid "Open a repo-neutral Manager Session for this ticket"
+msgstr "Open a repo-neutral Manager Session for this ticket"
 
 #: src/features/chat-images.tsx:51
 msgid "Open image"
@@ -3000,6 +3040,14 @@ msgstr "Pane role"
 msgid "Parallelism"
 msgstr "Parallelism"
 
+#: src/features/ticket-manager-panel.tsx:275
+msgid "Park"
+msgstr "Park"
+
+#: src/features/ticket-manager-panel.tsx:254
+msgid "parked"
+msgstr "parked"
+
 #: src/features/console-collab-run.tsx:172
 msgid "Part"
 msgstr "Part"
@@ -3097,6 +3145,10 @@ msgstr "Progress"
 #: src/features/repo-links.tsx:49
 msgid "Project config"
 msgstr "Project config"
+
+#: src/features/ticket-manager-panel.tsx:60
+msgid "Promote this ticket to a repo-neutral Manager Session for conversational orchestration."
+msgstr "Promote this ticket to a repo-neutral Manager Session for conversational orchestration."
 
 #: src/features/console-collab-run.tsx:168
 msgid "Prompt composition"
@@ -3214,8 +3266,8 @@ msgstr "Recycle worktree"
 #: src/features/host-file-sheet.tsx:77
 #: src/features/host-file-sheet.tsx:78
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:229
-#: src/features/ticket-diff.tsx:230
+#: src/features/ticket-diff.tsx:332
+#: src/features/ticket-diff.tsx:333
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -3375,7 +3427,7 @@ msgstr "Reply and continue"
 #~ msgid "Replying…"
 #~ msgstr "Replying…"
 
-#: src/features/console-collab.tsx:250
+#: src/features/console-collab.tsx:252
 msgid "Repo"
 msgstr "Repo"
 
@@ -3551,6 +3603,19 @@ msgstr "Reuses"
 #~ msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
 #~ msgstr "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
 
+#. placeholder {0}: file.path
+#: src/features/ticket-diff.tsx:185
+#~ msgid "Review note for {repoName}/{0}…"
+#~ msgstr "Review note for {repoName}/{0}…"
+
+#: src/features/ticket-diff.tsx:186
+msgid "Review note for {repoName}/{filePath}…"
+msgstr "Review note for {repoName}/{filePath}…"
+
+#: src/features/ticket-diff.tsx:275
+msgid "Review notes sent"
+msgstr "Review notes sent"
+
 #: src/features/me-devices.tsx:210
 msgid "Revoke"
 msgstr "Revoke"
@@ -3624,8 +3689,8 @@ msgstr "Run started"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:274
-#: src/features/console-collab.tsx:275
+#: src/features/console-collab.tsx:276
+#: src/features/console-collab.tsx:277
 #: src/features/tickets-view.tsx:134
 msgid "running"
 msgstr "running"
@@ -3753,7 +3818,7 @@ msgstr "Scheduler active"
 msgid "Scheduler ended"
 msgstr "Scheduler ended"
 
-#: src/features/console-collab.tsx:253
+#: src/features/console-collab.tsx:255
 msgid "Scope"
 msgstr "Scope"
 
@@ -3803,6 +3868,7 @@ msgstr "seen"
 #: src/features/console-keys.tsx:98
 #: src/features/session-composer.tsx:381
 #: src/features/session-composer.tsx:383
+#: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "Send"
 
@@ -3817,6 +3883,10 @@ msgstr "Send Ctrl+B: the running command keeps going in the background and the a
 #: src/features/session-composer.tsx:246
 #~ msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 #~ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
+
+#: src/features/ticket-diff.tsx:325
+msgid "Send review ({noteCount})"
+msgstr "Send review ({noteCount})"
 
 #: src/features/me-notifications.tsx:320
 msgid "Send test notification"
@@ -3843,6 +3913,7 @@ msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
 #: src/features/me-notifications.tsx:319
+#: src/features/ticket-manager-panel.tsx:126
 msgid "Sending…"
 msgstr "Sending…"
 
@@ -4133,11 +4204,15 @@ msgstr "Start agent"
 msgid "Start fresh"
 msgstr "Start fresh"
 
+#: src/features/ticket-manager-panel.tsx:71
+msgid "Start manager session"
+msgstr "Start manager session"
+
 #: src/features/session-handoff.tsx:61
 msgid "Start without context"
 msgstr "Start without context"
 
-#: src/features/ticket-new.tsx:208
+#: src/features/ticket-new.tsx:214
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
 
@@ -4163,6 +4238,7 @@ msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
 #: src/features/session-subagents.tsx:80
+#: src/features/ticket-manager-panel.tsx:71
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -4170,7 +4246,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:251
+#: src/features/console-collab.tsx:253
 #: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:85
 #: src/features/session-worktree-detail.tsx:65
@@ -4357,11 +4433,11 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/ticket-new.tsx:193
+#: src/features/ticket-new.tsx:199
 msgid "The behaviour, error or data you actually observed"
 msgstr "The behaviour, error or data you actually observed"
 
-#: src/features/ticket-new.tsx:203
+#: src/features/ticket-new.tsx:209
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
@@ -4517,7 +4593,7 @@ msgstr "Ticket info"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:117
+#: src/features/console-collab.tsx:118
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
@@ -4527,7 +4603,7 @@ msgstr "Ticket waiting on you"
 
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
-#: src/features/console-collab.tsx:112
+#: src/features/console-collab.tsx:113
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
 msgid "Tickets"
@@ -4554,7 +4630,7 @@ msgid "Time the relay was actually handling messages; while idle it hibernates a
 msgstr "Time the relay was actually handling messages; while idle it hibernates and is not counted."
 
 #: src/features/session-info.tsx:61
-#: src/features/ticket-new.tsx:176
+#: src/features/ticket-new.tsx:182
 msgid "Title"
 msgstr "Title"
 
@@ -4578,7 +4654,7 @@ msgstr "tmux session"
 msgid "tmux window"
 msgstr "tmux window"
 
-#: src/features/ticket-new.tsx:168
+#: src/features/ticket-new.tsx:174
 msgid "To"
 msgstr "To"
 
@@ -4698,6 +4774,10 @@ msgstr "turns"
 #: src/features/ticket-runs.tsx:134
 msgid "Turns"
 msgstr "Turns"
+
+#: src/features/ticket-manager-panel.tsx:113
+msgid "Type a message to wake and steer the ticket manager…"
+msgstr "Type a message to wake and steer the ticket manager…"
 
 #: src/features/me-autotitle.tsx:398
 #: src/features/me-host.tsx:90
@@ -4916,6 +4996,10 @@ msgstr "Waiting on you"
 msgid "WakaTime"
 msgstr "WakaTime"
 
+#: src/features/ticket-manager-panel.tsx:288
+msgid "Wake"
+msgstr "Wake"
+
 #: src/features/ticket-runs.tsx:137
 msgid "Wall"
 msgstr "Wall"
@@ -4990,7 +5074,7 @@ msgstr "What should it work on?"
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 
-#: src/features/ticket-new.tsx:183
+#: src/features/ticket-new.tsx:189
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
@@ -5007,11 +5091,11 @@ msgstr "What this session's agent was given, read from its own record. Tap one t
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
-#: src/features/ticket-new.tsx:197
+#: src/features/ticket-new.tsx:203
 msgid "What you assume"
 msgstr "What you assume"
 
-#: src/features/ticket-new.tsx:187
+#: src/features/ticket-new.tsx:193
 msgid "What you saw"
 msgstr "What you saw"
 
@@ -5084,7 +5168,7 @@ msgstr "Working"
 #~ msgid "Working"
 #~ msgstr "Working"
 
-#: src/features/ticket-diff.tsx:304
+#: src/features/ticket-diff.tsx:408
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
 

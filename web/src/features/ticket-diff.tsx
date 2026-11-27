@@ -1,24 +1,31 @@
 // Fullscreen ticket Net Diff drawer backed by `collab.diff`.
 // Renders changed files grouped by repo/worktree using `chat-diff.tsx`'s
-// Shiki-highlighted `ToolBody` with dual line numbers.
+// Shiki-highlighted `ToolBody`, with per-file review notes that can be bundled
+// and sent back to the ticket's Manager Session (or worker reply).
 import { useLingui } from '@lingui/react/macro'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
   ChevronRight,
   FileCode2,
   GitBranch,
+  MessageSquarePlus,
   RefreshCw,
+  Send,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { Skeleton } from '#/components/ui/skeleton'
+import { Textarea } from '#/components/ui/textarea'
 import { trace } from '#/lib/client-trace'
-import { hostRead } from '#/lib/runtime-client'
+import { collabKey } from '#/lib/collab-query'
+import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
+import { useDeviceState } from './device-state'
 
 type DiffFile = {
   path: string
@@ -86,60 +93,101 @@ function DiffLoadingSkeleton() {
 
 function DiffFileCard({
   file,
+  repoName,
   defaultOpen,
+  canAnnotate,
+  note,
+  onNoteChange,
 }: {
   file: DiffFile
+  repoName: string
   defaultOpen: boolean
+  canAnnotate: boolean
+  note: string
+  onNoteChange: (next: string) => void
 }) {
   const { t } = useLingui()
   const [open, setOpen] = useState(defaultOpen)
+  const [editingNote, setEditingNote] = useState(false)
   const badgeClass =
     STATUS_STYLE[file.status] ?? 'bg-brand-soft text-brand-muted'
 
+  const filePath = file.path
   return (
     <div
       data-testid="ticket-diff-file"
       data-file={file.path}
       className="min-w-0 overflow-hidden rounded-xl border border-brand-edge bg-brand-surface"
     >
-      <Button
-        variant="plain"
-        size="none"
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left hover:bg-brand-soft/60"
-      >
-        {open ? (
-          <ChevronDown size={15} className="shrink-0 text-brand-label" />
-        ) : (
-          <ChevronRight size={15} className="shrink-0 text-brand-label" />
-        )}
-        <span
-          className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded font-mono text-meta font-semibold',
-            badgeClass,
-          )}
+      <div className="flex min-h-10 items-center gap-1 pr-2">
+        <Button
+          variant="plain"
+          size="none"
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex min-h-10 min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-brand-soft/60"
         >
-          {file.status}
-        </span>
-        <FileCode2
-          size={14}
-          aria-hidden
-          className="shrink-0 text-brand-muted"
-        />
-        <span className="min-w-0 flex-1 truncate font-mono text-caption text-brand-text">
-          {file.path}
-        </span>
-        <span className="flex shrink-0 items-center gap-1.5 font-mono text-meta tabular-nums">
-          {file.additions > 0 ? (
-            <span className="text-brand-done">+{file.additions}</span>
-          ) : null}
-          {file.deletions > 0 ? (
-            <span className="text-brand-error">-{file.deletions}</span>
-          ) : null}
-        </span>
-      </Button>
+          {open ? (
+            <ChevronDown size={15} className="shrink-0 text-brand-label" />
+          ) : (
+            <ChevronRight size={15} className="shrink-0 text-brand-label" />
+          )}
+          <span
+            className={cn(
+              'inline-flex size-5 shrink-0 items-center justify-center rounded font-mono text-meta font-semibold',
+              badgeClass,
+            )}
+          >
+            {file.status}
+          </span>
+          <FileCode2
+            size={14}
+            aria-hidden
+            className="shrink-0 text-brand-muted"
+          />
+          <span className="min-w-0 flex-1 truncate font-mono text-caption text-brand-text">
+            {file.path}
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 font-mono text-meta tabular-nums">
+            {file.additions > 0 ? (
+              <span className="text-brand-done">+{file.additions}</span>
+            ) : null}
+            {file.deletions > 0 ? (
+              <span className="text-brand-error">-{file.deletions}</span>
+            ) : null}
+          </span>
+        </Button>
+        {canAnnotate ? (
+          <Button
+            variant="ghost"
+            size="none"
+            type="button"
+            data-testid="ticket-diff-annotate"
+            onClick={() => setEditingNote((prev) => !prev)}
+            className={cn(
+              'inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-meta',
+              note.trim() ? 'text-brand-running' : 'text-brand-muted',
+            )}
+          >
+            <MessageSquarePlus size={13} aria-hidden />
+            <span className="hidden sm:inline">
+              {note.trim() ? t`Note` : t`Comment`}
+            </span>
+          </Button>
+        ) : null}
+      </div>
+      {editingNote || note.trim() ? (
+        <div className="border-t border-brand-edge bg-brand-deck/60 px-3 py-2">
+          <Textarea
+            rows={2}
+            value={note}
+            onChange={(e) => onNoteChange(e.target.value)}
+            placeholder={t`Review note for ${repoName}/${filePath}…`}
+            className="min-h-10 resize-none text-caption"
+          />
+        </div>
+      ) : null}
       {open ? (
         <div className="border-t border-brand-edge p-2">
           {file.binary ? (
@@ -167,15 +215,22 @@ function DiffFileCard({
 export function TicketDiffSheet({
   ticketId,
   title,
+  hasManager = false,
   open,
   onClose,
 }: {
   ticketId: string
   title: string
+  hasManager?: boolean
   open: boolean
   onClose: () => void
 }) {
   const { t } = useLingui()
+  const device = useDeviceState()
+  const client = useQueryClient()
+  const canWrite = device.state === 'approved'
+  const [notes, setNotes] = useState<Record<string, string>>({})
+
   const diffQuery = useQuery({
     queryKey: ['remote', 'collab.diff', ticketId],
     enabled: open && Boolean(ticketId),
@@ -194,6 +249,39 @@ export function TicketDiffSheet({
       deletions: diffQuery.data.total_deletions,
     })
   }, [open, ticketId, diffQuery.data])
+
+  const filledNotes = Object.entries(notes).filter(
+    ([, v]) => v.trim().length > 0,
+  )
+  const noteCount = filledNotes.length
+
+  const sendReviewMutation = useMutation({
+    mutationFn: async () => {
+      const lines = filledNotes.map(
+        ([fileKey, body]) => `- \`${fileKey}\`: ${body.trim()}`,
+      )
+      const summary = `${t`Diff review feedback:`}\n${lines.join('\n')}`
+      if (hasManager) {
+        return hostWrite('ticket.manager.send', { id: ticketId, text: summary })
+      }
+      return hostWrite('reply', {
+        id: ticketId,
+        decision: summary,
+        continue: true,
+      })
+    },
+    onSuccess: () => {
+      setNotes({})
+      toast(t`Review notes sent`)
+      void client.invalidateQueries({
+        queryKey: collabKey('show', { id: ticketId }),
+      })
+      onClose()
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : String(err))
+    },
+  })
 
   const data = diffQuery.data
   const fileCount = data?.total_files ?? 0
@@ -222,22 +310,38 @@ export function TicketDiffSheet({
       subtitle={subtitle}
       testId="ticket-diff-sheet"
       actions={
-        <Button
-          variant="ghost"
-          size="none"
-          type="button"
-          aria-label={t`Refresh`}
-          title={t`Refresh`}
-          disabled={diffQuery.isFetching}
-          onClick={() => void diffQuery.refetch()}
-          className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
-        >
-          <RefreshCw
-            size={14}
-            aria-hidden
-            className={cn(diffQuery.isFetching && 'animate-spin')}
-          />
-        </Button>
+        <div className="flex items-center gap-1">
+          {canWrite && noteCount > 0 ? (
+            <Button
+              variant="solid"
+              size="none"
+              type="button"
+              data-testid="ticket-diff-send-review"
+              disabled={sendReviewMutation.isPending}
+              onClick={() => sendReviewMutation.mutate()}
+              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
+            >
+              <Send size={13} aria-hidden />
+              <span>{t`Send review (${noteCount})`}</span>
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="none"
+            type="button"
+            aria-label={t`Refresh`}
+            title={t`Refresh`}
+            disabled={diffQuery.isFetching}
+            onClick={() => void diffQuery.refetch()}
+            className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
+          >
+            <RefreshCw
+              size={14}
+              aria-hidden
+              className={cn(diffQuery.isFetching && 'animate-spin')}
+            />
+          </Button>
+        </div>
       }
     >
       <div className="flex min-h-full w-full min-w-0 flex-col">
@@ -305,13 +409,22 @@ export function TicketDiffSheet({
                   </p>
                 ) : (
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
-                    {repo.files.map((file, idx) => (
-                      <DiffFileCard
-                        key={file.path}
-                        file={file}
-                        defaultOpen={idx < 10}
-                      />
-                    ))}
+                    {repo.files.map((file, idx) => {
+                      const fileKey = `${repo.repo}/${file.path}`
+                      return (
+                        <DiffFileCard
+                          key={file.path}
+                          file={file}
+                          repoName={repo.repo}
+                          defaultOpen={idx < 10}
+                          canAnnotate={canWrite}
+                          note={notes[fileKey] ?? ''}
+                          onNoteChange={(val) =>
+                            setNotes((prev) => ({ ...prev, [fileKey]: val }))
+                          }
+                        />
+                      )
+                    })}
                   </div>
                 )}
               </section>

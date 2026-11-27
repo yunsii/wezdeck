@@ -50,4 +50,6 @@ export type SessionCard = {
   visited?: number
   /** managed profile on the pane (claude_kimi, …); avatar corner badge */
   agent_profile?: string
+  /** set when this session is a top-level ticket Manager Session (deduped from 会话 list) */
+  ticket_id?: string
 }

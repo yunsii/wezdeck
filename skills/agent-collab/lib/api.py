@@ -189,6 +189,7 @@ def summary(tid: str) -> dict[str, Any]:
         "runs": len(runs),
         "running": in_flight_runs(tid),
         "last_run": run_summary(runs[-1]) if runs else None,
+        "manager_session": mj.get("manager_session") if isinstance(mj.get("manager_session"), dict) else None,
     }
 
 
