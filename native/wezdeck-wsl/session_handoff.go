@@ -297,7 +297,7 @@ func buildHandoffBrief(e attentionEntry, transcript, fromAgent, toAgent, note st
 	if title == "" {
 		title = e.WindowName
 	}
-	if t := readSessionTitle(transcript, fromAgent); t != "" {
+	if t := resolveSessionTitle(e.SessionID, transcript, fromAgent); t != "" {
 		title = t
 	}
 	if title == "" {

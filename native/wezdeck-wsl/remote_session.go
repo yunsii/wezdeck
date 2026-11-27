@@ -460,7 +460,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			}
 			card.Agent = agent
 			card.Transcript = true
-			card.Title = readSessionTitle(path, agent)
+			card.Title = resolveSessionTitle(e.SessionID, path, agent)
 			// the newest turn's own timestamp; mtime only for formats
 			// without one (remote_activity.go: Claude touches idle files)
 			if at := lastTurnAt(path, agent); at > 0 {
@@ -768,7 +768,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	var loadedTranscript *transcript
 	if path != "" {
 		out["agent"] = agent
-		if title := readSessionTitle(path, agent); title != "" {
+		if title := resolveSessionTitle(a.ID, path, agent); title != "" {
 			out["title"] = title
 		}
 		if p, ok := adapterFor(agent).(planReader); ok {

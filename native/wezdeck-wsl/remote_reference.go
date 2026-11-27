@@ -22,7 +22,7 @@ func sessionReference(e attentionEntry, transcript, agent string) string {
 	}
 	_, cwd, _, _, _, _ := paneState(e)
 	name := e.AgentName
-	if title := readSessionTitle(transcript, agent); title != "" {
+	if title := resolveSessionTitle(e.SessionID, transcript, agent); title != "" {
 		name = title
 	}
 	if name == "" {

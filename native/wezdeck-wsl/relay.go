@@ -141,6 +141,7 @@ func runRelay() error {
 		}
 	}
 	r.serveControl()
+	go startAutoTitler(context.Background())
 	backoff := time.Second
 	for {
 		started := time.Now()
