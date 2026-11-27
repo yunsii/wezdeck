@@ -142,14 +142,11 @@ describe('Agy worktree trust in new session', () => {
       const view = page.getByTestId('new-session-view')
       await view.getByPlaceholder('要它做什么？').fill('Read the README')
       await view.getByRole('combobox', { name: '智能体' }).click()
-      const disabledClaude = page.getByRole('option', {
-        name: 'Claude (已停用)',
+      await page.getByRole('option', { name: 'Antigravity' }).waitFor({
+        timeout: 5_000,
       })
-      await disabledClaude.waitFor({ timeout: 5_000 })
-      const isDisabled =
-        (await disabledClaude.getAttribute('aria-disabled')) === 'true' ||
-        (await disabledClaude.isDisabled())
-      expect(isDisabled).toBe(true)
+      // disabled profiles are hidden from the new-session picker
+      expect(await page.getByRole('option', { name: /Claude/ }).count()).toBe(0)
       await page.getByRole('option', { name: 'Antigravity' }).click()
       await view.getByRole('button', { name: '创建会话' }).click()
       await page.waitForURL('**/console/sessions/job-agy-job', {

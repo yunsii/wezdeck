@@ -34,7 +34,7 @@ async function pageWithProfiles(
     },
   }
   let codexModel = ''
-  await context.route('http://127.0.0.1:35791/**', async (route) => {
+  await context.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const json = (body: unknown) =>
       route.fulfill({
@@ -344,21 +344,14 @@ describe('Agent settings layout', () => {
         'agent_profile: codex\nmodel: gpt-6.2-sol\ndisabled: true\nnote: 用于交互和队列',
       )
     const preferred = page.getByRole('combobox', { name: '默认智能体' })
-    expect(await preferred.getByTestId('agent-avatar').count()).toBe(1)
     await preferred.click()
-    await expect
-      .poll(() =>
-        page
-          .getByRole('option', { name: 'Codex (已停用)' })
-          .getByTestId('agent-avatar')
-          .count(),
-      )
-      .toBe(1)
+    const agyOpt = page.getByRole('option', { name: 'Antigravity' })
+    await agyOpt.waitFor()
+    expect(await agyOpt.getByTestId('agent-avatar').count()).toBe(1)
+    const options = await page.getByRole('option').allTextContents()
     expect(
-      await page
-        .getByRole('option', { name: 'Codex (已停用)' })
-        .getAttribute('aria-disabled'),
-    ).toBe('true')
+      options.some((o) => ['Codex', 'Claude', 'Claude · gateway'].includes(o)),
+    ).toBe(false)
     await context.close()
   })
 })

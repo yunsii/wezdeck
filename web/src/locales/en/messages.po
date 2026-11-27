@@ -304,10 +304,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:296
-#: src/features/session-new-panels.tsx:303
-#: src/features/session-new-panels.tsx:330
-#: src/features/session-new-panels.tsx:360
+#: src/features/session-new-panels.tsx:299
+#: src/features/session-new-panels.tsx:306
+#: src/features/session-new-panels.tsx:333
+#: src/features/session-new-panels.tsx:363
 msgid "Agent"
 msgstr "Agent"
 
@@ -330,7 +330,7 @@ msgstr "agent settings and execution mode"
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/session-new-panels.tsx:174
+#: src/features/session-new-panels.tsx:177
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy is waiting for this worktree to be trusted."
 
@@ -1081,7 +1081,7 @@ msgstr "Could not copy the reference: {reason}"
 msgid "Could not copy to clipboard"
 msgstr "Could not copy to clipboard"
 
-#: src/features/session-new-panels.tsx:179
+#: src/features/session-new-panels.tsx:182
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -1117,7 +1117,7 @@ msgstr "Create workspace"
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
-#: src/features/session-new-panels.tsx:170
+#: src/features/session-new-panels.tsx:173
 msgid "Creating the session group…"
 msgstr "Creating the session group…"
 
@@ -1256,9 +1256,7 @@ msgid "Disable this agent"
 msgstr "Disable this agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:70
 #: src/features/me-agents.tsx:122
-#: src/features/session-new-panels.tsx:78
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -1509,7 +1507,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:281
+#: src/features/session-new-panels.tsx:284
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -1567,7 +1565,7 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/session-new-panels.tsx:82
+#: src/features/session-new-panels.tsx:85
 msgid "host default"
 msgstr "host default"
 
@@ -2278,7 +2276,7 @@ msgstr "No upstream branch: nothing to compare with."
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
 #: src/features/me-agents.tsx:129
-#: src/features/session-new-panels.tsx:80
+#: src/features/session-new-panels.tsx:83
 msgid "Not configured"
 msgstr "Not configured"
 
@@ -2343,7 +2341,7 @@ msgstr "Nothing is created until you confirm."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-new-panels.tsx:146
+#: src/features/session-new-panels.tsx:149
 #: src/features/session-skills.tsx:236
 #: src/features/session-worktree-manager.tsx:384
 msgid "Nothing matches"
@@ -2842,16 +2840,16 @@ msgstr "Repo filter"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:64
-#: src/features/session-new-panels.tsx:225
-#: src/features/session-new-panels.tsx:232
-#: src/features/session-new-panels.tsx:259
-#: src/features/session-new-panels.tsx:360
+#: src/features/session-new-panels.tsx:228
+#: src/features/session-new-panels.tsx:235
+#: src/features/session-new-panels.tsx:262
+#: src/features/session-new-panels.tsx:363
 msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:280
-#: src/features/me-agents.tsx:60
-#: src/features/session-new-panels.tsx:69
+#: src/features/me-agents.tsx:63
+#: src/features/session-new-panels.tsx:72
 msgid "Repository default"
 msgstr "Repository default"
 
@@ -2900,7 +2898,7 @@ msgstr "resets {reset}"
 msgid "Resets {reset}"
 msgstr "Resets {reset}"
 
-#: src/features/session-new-panels.tsx:167
+#: src/features/session-new-panels.tsx:170
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
@@ -3139,8 +3137,8 @@ msgstr "Saving…"
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-new-panels.tsx:112
-#: src/features/session-new-panels.tsx:113
+#: src/features/session-new-panels.tsx:115
+#: src/features/session-new-panels.tsx:116
 msgid "Search"
 msgstr "Search"
 
@@ -3211,7 +3209,7 @@ msgstr "Send the first message below."
 msgid "Sending action…"
 msgstr "Sending action…"
 
-#: src/features/session-new-panels.tsx:176
+#: src/features/session-new-panels.tsx:179
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -3455,12 +3453,12 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new-panels.tsx:178
+#: src/features/session-new-panels.tsx:181
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new-panels.tsx:169
 #: src/features/session-new-panels.tsx:172
+#: src/features/session-new-panels.tsx:175
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 

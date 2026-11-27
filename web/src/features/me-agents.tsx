@@ -55,22 +55,22 @@ export function AgentsPage() {
           }
           onValueChange={setPreferred}
           options={[
-            {
-              value: '',
-              label: t`Repository default`,
-              icon: <AgentAvatar size={24} />,
-              disabled: rows.some(
-                (profile) => profile.default && profile.disabled,
-              ),
-            },
-            ...rows.map((profile) => ({
-              value: profile.id,
-              icon: <AgentAvatar profile={profile.id} size={24} />,
-              label: profile.disabled
-                ? `${profile.label} (${t`Disabled`})`
-                : profile.label,
-              disabled: profile.disabled,
-            })),
+            ...(rows.some((profile) => profile.default && profile.disabled)
+              ? []
+              : [
+                  {
+                    value: '',
+                    label: t`Repository default`,
+                    icon: <AgentAvatar size={24} />,
+                  },
+                ]),
+            ...rows
+              .filter((profile) => !profile.disabled)
+              .map((profile) => ({
+                value: profile.id,
+                icon: <AgentAvatar profile={profile.id} size={24} />,
+                label: profile.label,
+              })),
           ]}
         />
       </div>
