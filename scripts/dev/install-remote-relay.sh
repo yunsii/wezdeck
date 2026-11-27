@@ -83,7 +83,11 @@ EOF
 case "$MODE" in
   install)
     ensure_tokens
-    "$REPO_ROOT/native/wezdeck-wsl/build.sh"
+    if [[ "${WEZDECK_RELAY_SKIP_BUILD:-}" != 1 ]]; then
+      "$REPO_ROOT/native/wezdeck-wsl/build.sh"
+    else
+      [[ -x "$BIN" ]] || { echo "relay: prebuilt binary missing" >&2; exit 1; }
+    fi
     mkdir -p "$UNIT_DIR"
     unit_text > "$UNIT_DIR/$UNIT"
     systemctl --user daemon-reload

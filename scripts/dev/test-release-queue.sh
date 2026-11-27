@@ -42,4 +42,16 @@ release_state_update verified "sha=cccccccccccccccccccccccccccccccccccccccc" "st
 assert_eq "$(release_state_get verify_status)" "ok" "verify ok"
 assert_eq "$(release_state_get deployed_sha)" "cccccccccccccccccccccccccccccccccccccccc" "deployed preserved"
 
+# Land and deploy update the same state from different locks/processes.
+for i in $(seq 1 12); do
+  release_state_update enqueue "$(printf '%040d' "$i")" "$(printf '%08d' "$i")" "feat: $i" &
+done
+wait
+assert_eq "$(python3 - "$(release_state_file)" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as stream:
+    print(len(json.load(stream)["pending_commits"]))
+PY
+)" "12" "concurrent enqueues retained"
+
 echo "PASS: release-queue-lib state machine tests"

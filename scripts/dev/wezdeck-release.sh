@@ -26,9 +26,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SITE="${WEZDECK_SITE:-https://wezdeck.yuns.love}"
 UNIT=wezdeck-relay
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/wezdeck"
+RECYCLE="$REPO/scripts/dev/release-recycle.py"
 
 # shellcheck source=scripts/dev/release-queue-lib.sh
 source "$REPO/scripts/dev/release-queue-lib.sh"
+# shellcheck source=scripts/dev/release-snapshot.sh
+source "$REPO/scripts/dev/release-snapshot.sh"
 
 only=()
 force=0
@@ -96,6 +99,7 @@ deployed_build() {
 
 if [[ "$subcmd" == status ]]; then
   release_print_status
+  python3 "$RECYCLE" status --state "$STATE" --repo "$REPO"
   exit 0
 fi
 
@@ -149,24 +153,26 @@ check_master_ready() {
   checkout_clean || { echo 'release: master checkout must be clean before integration' >&2; return 1; }
 }
 
+recycle_cli() {
+  python3 "$RECYCLE" "$1" --state "$STATE" --repo "$REPO" "${@:2}"
+}
+
+start_recycle_watch() {
+  [[ "${WEZDECK_RELEASE_RECYCLE_NO_WATCH:-}" != 1 ]] || return 0
+  nohup setsid -f python3 "$RECYCLE" watch --state "$STATE" --repo "$REPO" \
+    >>"$STATE/release/recycle-watch.log" 2>&1 </dev/null &
+  disown 2>/dev/null || true
+}
+
 recycle_landed_source() {
   local source="${WEZDECK_RELEASE_LAND_SOURCE:-}" recycle_out
   [[ -n "$land_commit" && -n "$source" && "$source" != "$REPO" ]] || return 0
   ((wait_deploy)) || return 0
-  if [[ ! -d "$source" ]] ||
-     [[ "$(git -C "$source" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" != "$common_dir" ]] ||
-     [[ "$(git -C "$source" rev-parse HEAD 2>/dev/null)" != "$land_commit" ]] ||
-     [[ -n "$(git -C "$source" status --porcelain --untracked-files=normal 2>/dev/null)" ]]; then
-    say '!' recycle 'source worktree changed or is dirty; release succeeded, recycle skipped'
+  if ! recycle_out="$(recycle_cli reconcile --source "$source" --expected "$land_commit" 2>&1)"; then
+    say '!' recycle "release succeeded, source close-out pending: $(tail -1 <<<"$recycle_out")"
     return 4
   fi
-  say '▶' recycle 'align delivered workstation to origin/HEAD'
-  if ! recycle_out="$(scripts/runtime/worktree/worktree-task recycle \
-      --cwd "$source" -y --require-delivered --no-clean-files --keep-temp-branches 2>&1)"; then
-    say '✗' recycle "release succeeded, recycle failed: $(tail -1 <<<"$recycle_out")"
-    return 4
-  fi
-  say '✓' recycle "$(tail -1 <<<"$recycle_out")"
+  say '✓' recycle "${recycle_out:-source worktree already aligned}"
 }
 
 autofix_staged() {
@@ -232,6 +238,12 @@ land_stage() {
       exit 1
     fi
     landed_sha="$(git rev-parse HEAD)" || exit 1
+    local source="${WEZDECK_RELEASE_LAND_SOURCE:-}"
+    if [[ -n "$land_commit" && -n "$source" && $wait_deploy == 1 ]] &&
+       { wanted relay || wanted web; }; then
+      recycle_cli record --source "$source" --expected "$land_commit" || exit 1
+      start_recycle_watch
+    fi
     if wanted push && [[ "$remote_head" != "$landed_sha" ]]; then
       if git push -q origin "$landed_sha:refs/heads/master"; then
         break
@@ -242,6 +254,10 @@ land_stage() {
         continue
       fi
       echo "release: git push origin master failed" >&2
+      if [[ -n "$land_commit" && -n "$source" ]] && fetch_master &&
+         ! git merge-base --is-ancestor "$land_commit" refs/remotes/origin/master; then
+        recycle_cli cancel --source "$source" --expected "$land_commit"
+      fi
       exit 1
     fi
     break
@@ -324,15 +340,16 @@ watch_until() {
 job_build() {
   if wanted relay; then
     phase "relay binary (skipped when current)"
-    PATH="$HOME/.local/go/bin:$PATH" native/wezdeck-wsl/build.sh || return 1
+    (cd "$BATCH_TREE" && PATH="$HOME/.local/go/bin:$PATH" native/wezdeck-wsl/build.sh) || return 1
   fi
   if wanted web; then
     local want built
-    want="$(scripts/dev/source-fingerprint.sh web)"
-    built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' web/dist/client/build.json 2>/dev/null)"
+    want="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web)" || return 1
+    [[ -n "$want" ]] || return 1
+    built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' "$BATCH_TREE/web/dist/client/build.json" 2>/dev/null)"
     if [[ "$built" != "$want" || $force == 1 ]]; then
       phase "vite build $want"
-      (cd web && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
+      (cd "$BATCH_TREE/web" && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
     else
       phase "web/dist already at $want"
     fi
@@ -344,20 +361,22 @@ job_smoke() {
   local args=()
   ((relay_changed)) && args+=(--go)
   ((web_changed)) && args+=(--web)
-  scripts/dev/release-smoke-gate.sh "${args[@]}"
+  (cd "$BATCH_TREE" && scripts/dev/release-smoke-gate.sh "${args[@]}")
 }
 
 job_gate_full() {
-  scripts/dev/web-affected-tests.sh --base "$batch_base" --run
+  (cd "$BATCH_TREE" && scripts/dev/web-affected-tests.sh --base "$batch_base" --run)
 }
 
 job_relay() {
-  local want running installed expected seen i
-  want="$(cat native/wezdeck-wsl/bin/.version)"
+  local want running installed expected seen i staged
+  want="$(cat "$BATCH_TREE/native/wezdeck-wsl/bin/.version")" || return 1
+  [[ -n "$want" ]] || return 1
   running="$(relay_running_version)"
   expected="$REPO/native/wezdeck-wsl/bin/wezdeck-wsl relay"
   installed="$(systemctl --user cat "$UNIT" 2>/dev/null | sed -n 's/^ExecStart=//p' | tail -1)"
-  if [[ "$running" == "$want" && "$installed" == "$expected" && $force == 0 ]]; then
+  if [[ "$running" == "$want" && "$installed" == "$expected" &&
+        "$(cat "$REPO/native/wezdeck-wsl/bin/.version" 2>/dev/null)" == "$want" && $force == 0 ]]; then
     echo "skip: relay already runs $want"
     return 0
   fi
@@ -365,9 +384,18 @@ job_relay() {
   if [[ -x "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" && "$running" != "$want" ]]; then
     cp -f "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" "$STATE/release/wezdeck-wsl.last-known" 2>/dev/null || true
   fi
+  staged="$REPO/native/wezdeck-wsl/bin/.wezdeck-wsl-release.$$"
+  mkdir -p "$REPO/native/wezdeck-wsl/bin" || return 1
+  install -m 755 "$BATCH_TREE/native/wezdeck-wsl/bin/wezdeck-wsl" "$staged" || return 1
+  mv -f "$staged" "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" || return 1
+  printf '%s\n' "$want" >"$REPO/native/wezdeck-wsl/bin/.version"
+  if [[ "$running" == "$want" && "$installed" == "$expected" && $force == 0 ]]; then
+    echo "skip: relay already runs $want (primary binary refreshed)"
+    return 0
+  fi
   if [[ "$installed" != "$expected" ]]; then
     phase "repairing $UNIT ExecStart before restart"
-    scripts/dev/install-remote-relay.sh || return 1
+    WEZDECK_RELAY_SKIP_BUILD=1 scripts/dev/install-remote-relay.sh || return 1
   else
     phase "restarting $UNIT with $want"
     systemctl --user restart "$UNIT" || return 1
@@ -387,28 +415,30 @@ job_web() {
   local deployed want built reused='' relay_do_want relay_do_deployed
   # Deploy standalone HostRelay DO Worker ONLY when web/src/relay or
   # wrangler.relay.jsonc actually changed (so normal UI deploys never drop WS).
-  relay_do_want="$(scripts/dev/source-fingerprint.sh web/src/relay web/wrangler.relay.jsonc)"
+  relay_do_want="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web/src/relay web/wrangler.relay.jsonc)" || return 1
+  [[ -n "$relay_do_want" ]] || return 1
   relay_do_deployed="$(release_state_get deployed_relay_do_fp)"
   if [[ $force == 1 || "$relay_do_deployed" != "$relay_do_want" ]]; then
     phase "wrangler deploy wezdeck-relay-do ($relay_do_want)"
-    (cd web && corepack pnpm exec wrangler deploy -c wrangler.relay.jsonc) || return 1
+    (cd "$BATCH_TREE/web" && corepack pnpm exec wrangler deploy -c wrangler.relay.jsonc) || return 1
     echo "ok: deployed relay-do $relay_do_want (was ${relay_do_deployed:-none})"
   fi
-  want="$(scripts/dev/source-fingerprint.sh web)"
+  want="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web)" || return 1
+  [[ -n "$want" ]] || return 1
   deployed="$(deployed_build)"
   if [[ $force == 0 && "$deployed" == "$want" ]]; then
     echo "skip: $SITE already serves $want"
     return 0
   fi
-  built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' web/dist/client/build.json 2>/dev/null)"
+  built="$(sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p' "$BATCH_TREE/web/dist/client/build.json" 2>/dev/null)"
   if [[ "$built" == "$want" ]]; then
     reused=' (reused dist)'
   else
     phase "vite build $want"
-    (cd web && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
+    (cd "$BATCH_TREE/web" && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
   fi
   phase "wrangler deploy wezdeck (assets + worker; HostRelay DO untouched)"
-  (cd web && corepack pnpm exec wrangler deploy -c dist/server/wrangler.json) || return 1
+  (cd "$BATCH_TREE/web" && corepack pnpm exec wrangler deploy -c dist/server/wrangler.json) || return 1
   phase "live canary probe ($SITE)"
   if ! release_live_canary "$SITE" "$want"; then
     phase "canary failed — rolling back Cloudflare worker"
@@ -552,6 +582,12 @@ run_coordinator_loop() {
 
     RUN="$(mktemp -d "$STATE/release/$(date +%Y%m%d-%H%M%S).XXXXXX")" || return 1
     reset_jobs
+    if ! release_snapshot_prepare "$target_sha" >"$RUN/snapshot.log" 2>&1; then
+      release_state_update failed "sha=$target_sha" "phase=snapshot_failed" "error=source snapshot failed" "run_dir=$RUN"
+      say '✗' done "batch $head snapshot failed (log $RUN/snapshot.log)"
+      return 1
+    fi
+    say '✓' snapshot "source pinned at $head"
     release_state_update phase "phase=building" "deploying_sha=$target_sha" "deploying_short=$head" \
       "batch_count=$batch_count" "run_dir=$RUN" "coordinator_pid=$$"
     printf '%s event=batch_started batch=%d head=%s commits=%d logs=%s\n' \
@@ -572,9 +608,15 @@ run_coordinator_loop() {
       return 1
     fi
 
-    local web_fp relay_fp live_web live_relay
-    web_fp="$(scripts/dev/source-fingerprint.sh web)"
-    relay_fp="$(cat native/wezdeck-wsl/bin/.version 2>/dev/null || scripts/dev/source-fingerprint.sh native/wezdeck-wsl)"
+    local web_fp relay_fp relay_do_fp live_web live_relay
+    if ! web_fp="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web 2>>"$RUN/fingerprint.log")" ||
+       ! relay_fp="$(cat "$BATCH_TREE/native/wezdeck-wsl/bin/.version" 2>/dev/null || "$BATCH_TREE/scripts/dev/source-fingerprint.sh" native/wezdeck-wsl 2>>"$RUN/fingerprint.log")" ||
+       ! relay_do_fp="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web/src/relay web/wrangler.relay.jsonc 2>>"$RUN/fingerprint.log")" ||
+       [[ -z "$web_fp" || -z "$relay_fp" || -z "$relay_do_fp" ]]; then
+      release_state_update failed "sha=$target_sha" "phase=build_failed" "error=source fingerprint failed" "run_dir=$RUN"
+      say '✗' done "batch $head source fingerprint failed (log $RUN/fingerprint.log)"
+      return 1
+    fi
     live_web="$(deployed_build || true)"
     live_relay="$(relay_running_version || true)"
     web_changed=0; relay_changed=0
@@ -632,9 +674,8 @@ run_coordinator_loop() {
     notify_clients "$head" "$batch_count"
 
     # 7. Record deployed SHA & kick off Stage 3 async regression OUTSIDE locks.
-    local relay_do_fp
-    relay_do_fp="$(scripts/dev/source-fingerprint.sh web/src/relay web/wrangler.relay.jsonc)"
     release_state_update deployed "sha=$target_sha" "web_fp=$web_fp" "relay_fp=$relay_fp" "relay_do_fp=$relay_do_fp" "run_dir=$RUN"
+    start_recycle_watch
     printf '%s event=batch_deployed batch=%d head=%s commits=%d %s logs=%s\n' \
       "$(date -Iseconds)" "$batch_num" "$head" "$batch_count" "${summary[*]}" "$RUN" >>"$STATE/release.log"
     say '✓' batch "batch #$batch_num deployed $head (${batch_count} commit(s), ${summary[*]})"

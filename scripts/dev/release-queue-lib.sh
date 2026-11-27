@@ -12,7 +12,9 @@ release_state_update() {
   local file
   file="$(release_state_file)"
   mkdir -p "$(dirname "$file")"
-  python3 - "$file" "$mode" "$@" <<'PY'
+  (
+    flock -x 9
+    python3 - "$file" "$mode" "$@" <<'PY'
 import json, os, sys, tempfile, time
 
 path, mode, *args = sys.argv[1:]
@@ -105,6 +107,7 @@ finally:
     if os.path.exists(tmp):
         os.unlink(tmp)
 PY
+  ) 9>>"$file.lock"
 }
 
 release_state_get() {
