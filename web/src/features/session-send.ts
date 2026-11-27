@@ -376,10 +376,15 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
      * ChatThread's bubble props: the queue, and resend / edit / remove on a
      * lost (未送达) or failed one — resend only while this device may write
      */
-    pendingProps: (canWrite: boolean, onEdit?: (item: Pending) => void) => ({
+    pendingProps: (
+      canWrite: boolean,
+      onEdit?: (item: Pending) => void,
+      onTicket?: (item: Pending) => void,
+    ) => ({
       pending: pendingRaw,
       onResend: canWrite ? (item: Pending) => void resend(item) : undefined,
       onEdit,
+      onTicket: canWrite ? onTicket : undefined,
       onDismiss: dismiss,
     }),
   }

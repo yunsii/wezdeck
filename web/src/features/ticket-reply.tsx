@@ -19,6 +19,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { Disclosure } from '#/components/ui/disclosure'
 import { ticketDraftKey, useDraft } from '#/lib/use-draft'
 import { ChatMarkdown } from './chat-markdown'
+import { MessagePayloadView } from './chat-attachments'
 import { TicketThread } from './ticket-thread-view'
 
 export { openQuestion } from '#/lib/ticket-thread'
@@ -241,16 +242,22 @@ export function TicketReply({
 export function TicketSections({
   sections,
   waiting = false,
+  ticketId,
+  attachments = [],
 }: {
   sections: Array<{ title: string; text: string }>
   /** the ticket waits on you: open the thread, mark the question */
   waiting?: boolean
+  ticketId?: string
+  attachments?: Array<string>
 }) {
   const { t } = useLingui()
   // the ticket template's fixed headings, in the page language; any other
   // heading an agent wrote stays as written
   const names: Partial<Record<string, string>> = {
     Summary: t`Summary`,
+    'Original request': t`Original request`,
+    Attachments: t`Attachments`,
     Assumptions: t`Assumptions`,
     Verification: t`Verification`,
     Thread: t`Thread`,
@@ -260,39 +267,87 @@ export function TicketSections({
   const shown = sections.filter(
     (section) => section.text.replace(/^##.*$/m, '').trim().length > 0,
   )
-  if (shown.length === 0) return null
+  const hasAttachmentsSection = shown.some(
+    (section) => section.title === 'Attachments',
+  )
+  if (shown.length === 0 && attachments.length === 0) return null
   return (
     <div className="overflow-hidden rounded-2xl bg-brand-surface">
-      {shown.map((section) => (
+      {shown.map((section) => {
+        const body = section.text.replace(/^##.*\n?/m, '').trim()
+        return (
+          <Disclosure
+            key={section.title}
+            // the summary is what you came for: open; the rest one tap away
+            defaultOpen={
+              section.title === 'Summary' ||
+              section.title === 'Attachments' ||
+              (waiting && section.title === 'Thread')
+            }
+            className="border-b border-brand-edge last:border-b-0"
+            triggerClassName="min-h-12 px-4 text-body font-medium"
+            title={names[section.title] ?? section.title}
+          >
+            {section.title === 'Thread' ? (
+              <TicketThread
+                text={section.text.replace(/^##.*\n?/m, '')}
+                waiting={waiting}
+              />
+            ) : section.title === 'Original request' ? (
+              <div
+                className="px-4 pb-4 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-text"
+                data-testid="ticket-original-request"
+              >
+                <MessagePayloadView
+                  text={body}
+                  attachments={attachments}
+                  ticketId={ticketId}
+                  tone="surface"
+                />
+              </div>
+            ) : section.title === 'Attachments' && attachments.length > 0 ? (
+              <div
+                className="px-4 pb-4 text-brand-text"
+                data-testid="ticket-attachments"
+              >
+                <MessagePayloadView
+                  text=""
+                  attachments={attachments}
+                  ticketId={ticketId}
+                  tone="surface"
+                />
+              </div>
+            ) : (
+              <div
+                className="px-4 pb-4 text-brand-text"
+                data-testid="ticket-section-md"
+              >
+                <ChatMarkdown text={body} className="text-caption" />
+              </div>
+            )}
+          </Disclosure>
+        )
+      })}
+      {!hasAttachmentsSection && attachments.length > 0 ? (
         <Disclosure
-          key={section.title}
-          // the summary is what you came for: open; the rest one tap away
-          defaultOpen={
-            section.title === 'Summary' ||
-            (waiting && section.title === 'Thread')
-          }
+          defaultOpen
           className="border-b border-brand-edge last:border-b-0"
           triggerClassName="min-h-12 px-4 text-body font-medium"
-          title={names[section.title] ?? section.title}
+          title={t`Attachments`}
         >
-          {section.title === 'Thread' ? (
-            <TicketThread
-              text={section.text.replace(/^##.*\n?/m, '')}
-              waiting={waiting}
+          <div
+            className="px-4 pb-4 text-brand-text"
+            data-testid="ticket-attachments"
+          >
+            <MessagePayloadView
+              text=""
+              attachments={attachments}
+              ticketId={ticketId}
+              tone="surface"
             />
-          ) : (
-            <div
-              className="px-4 pb-4 text-brand-text"
-              data-testid="ticket-section-md"
-            >
-              <ChatMarkdown
-                text={section.text.replace(/^##.*\n?/m, '').trim()}
-                className="text-caption"
-              />
-            </div>
-          )}
+          </div>
         </Disclosure>
-      ))}
+      ) : null}
     </div>
   )
 }

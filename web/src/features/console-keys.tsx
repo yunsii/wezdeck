@@ -93,6 +93,10 @@ function useKeyGroups(): Array<Group> {
           keys: ['h'],
           what: t`Sent messages history`,
         },
+        {
+          keys: ['t'],
+          what: t`Repo tickets & quick ticket`,
+        },
       ],
     },
     {

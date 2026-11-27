@@ -1,5 +1,5 @@
 // Host-backed sent message outbox types and TanStack Query reader.
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import { hostRead } from '#/lib/runtime-client'
 
@@ -67,6 +67,7 @@ export function useSentHistory({
     queryKey: sentListKey(scope, session, onlyUnsettled),
     enabled: enabled && typeof window !== 'undefined',
     staleTime: 3_000,
+    placeholderData: keepPreviousData,
     queryFn: async () =>
       (await hostRead('sent.list', {
         scope,

@@ -380,7 +380,6 @@ export type HostReadAction =
   | 'sessions'
   | 'session'
   | 'upload.get'
-  | 'todos'
   | 'sent.list'
   | 'repos'
   | 'repo.links'

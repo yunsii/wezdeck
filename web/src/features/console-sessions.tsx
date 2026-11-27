@@ -33,6 +33,8 @@ import {
   useSessionWrites,
 } from './session-send'
 import { OutboxNotice, useSentHistoryControl } from './sent-history'
+import { QuickTicketSheet } from './ticket-quick-form'
+import type { MessagePayload } from './composer-images'
 import { toast } from 'sonner'
 import { useResumeSheet } from './session-commands'
 import { SessionStatusBar } from './session-statusbar'
@@ -188,7 +190,7 @@ function useLeaveMissingSession(id: string, gone: boolean) {
   }, [gone, id, client, locale, navigate])
 }
 
-function draftTodo(composer: Composer, text: string) {
+function draftQuote(composer: Composer, text: string) {
   composer.setText((current) =>
     current.trim() ? `${current.trimEnd()}\n${text}` : text,
   )
@@ -210,6 +212,78 @@ const formatStaleAt = (ms: number) =>
         second: '2-digit',
       })
     : '—'
+
+function useSentToTicketSheet(sessionId: string) {
+  const { t } = useLingui()
+  const [seed, setSeed] = useState<{
+    round: number
+    payload: MessagePayload
+  } | null>(null)
+  const [open, setOpen] = useState(false)
+  const openWith = (payload: MessagePayload) => {
+    setSeed((prev) => ({ round: (prev?.round ?? 0) + 1, payload }))
+    setOpen(true)
+  }
+  const sheet = seed ? (
+    <QuickTicketSheet
+      key={seed.round}
+      open={open}
+      onOpenChange={setOpen}
+      title={t`Turn message into ticket`}
+      testId="sent-to-ticket-sheet"
+      sessionId={sessionId}
+      initialPayload={seed.payload}
+      draftKey={`sent-to-ticket:${sessionId}`}
+    />
+  ) : null
+  return { openWith, sheet }
+}
+
+function usePendingCallbacks({
+  readOnly,
+  canSendNow,
+  composer,
+  dismiss,
+  openTicket,
+}: {
+  readOnly: boolean
+  canSendNow: boolean
+  composer: Composer
+  dismiss: (item: {
+    text: string
+    attachments?: Array<string>
+    at: number
+    sentId?: string
+    clientOp?: string
+  }) => void
+  openTicket: (payload: MessagePayload) => void
+}) {
+  const { t } = useLingui()
+  const editPending = !readOnly
+    ? (item: {
+        text: string
+        attachments?: Array<string>
+        at: number
+        sentId?: string
+        clientOp?: string
+      }) => {
+        composer.replacePayload({
+          text: item.text,
+          attachments: item.attachments ?? [],
+        })
+        dismiss(item)
+        toast(t`Loaded back into input`)
+      }
+    : undefined
+  const ticketPending = canSendNow
+    ? (item: { text: string; attachments?: Array<string> }) =>
+        openTicket({
+          text: item.text,
+          attachments: item.attachments ?? [],
+        })
+    : undefined
+  return { editPending, ticketPending }
+}
 
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
@@ -287,6 +361,7 @@ export function SessionDetail({ id }: { id: string }) {
     }),
   })
   const canSendNow = !readOnly && device.state === 'approved' && !blocked
+  const sentToTicket = useSentToTicketSheet(id)
   const sentHistory = useSentHistoryControl({
     session: id,
     writable: canSendNow,
@@ -301,28 +376,20 @@ export function SessionDetail({ id }: { id: string }) {
           return send({ ...p, note: count ? t`${count} images` : '' })
         }
       : undefined,
+    onCreateTicket: canSendNow ? sentToTicket.openWith : undefined,
   })
-  const editPending = !readOnly
-    ? (item: {
-        text: string
-        attachments?: Array<string>
-        at: number
-        sentId?: string
-        clientOp?: string
-      }) => {
-        composer.replacePayload({
-          text: item.text,
-          attachments: item.attachments ?? [],
-        })
-        dismiss(item)
-        toast(t`Loaded back into input`)
-      }
-    : undefined
+  const { editPending, ticketPending } = usePendingCallbacks({
+    readOnly,
+    canSendNow,
+    composer,
+    dismiss,
+    openTicket: sentToTicket.openWith,
+  })
   const wide = useIsWidePhoneFirst()
   return (
     <HostFileProvider
       sessionId={id}
-      onQuote={!readOnly ? (text) => draftTodo(composer, text) : undefined}
+      onQuote={!readOnly ? (text) => draftQuote(composer, text) : undefined}
     >
       <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 md:h-full md:min-h-0 md:gap-0 md:overflow-hidden">
         <SessionHeader
@@ -336,8 +403,8 @@ export function SessionDetail({ id }: { id: string }) {
           onNewConversation={() =>
             send({ text: '/new', attachments: [], note: '' })
           }
-          onTodoUse={
-            !readOnly ? (text) => draftTodo(composer, text) : undefined
+          onTicketUse={
+            !readOnly ? (payload) => composer.appendPayload(payload) : undefined
           }
           onRename={(title) => renameSession(send, title)}
         />
@@ -364,7 +431,11 @@ export function SessionDetail({ id }: { id: string }) {
           atCompaction={atCompaction}
           autoFailed={paging.autoFailed}
           onLoadManual={paging.loadManual}
-          pendingProps={writes.pendingProps(canSendNow, editPending)}
+          pendingProps={writes.pendingProps(
+            canSendNow,
+            editPending,
+            ticketPending,
+          )}
           onRun={run}
         />
 
@@ -432,6 +503,7 @@ export function SessionDetail({ id }: { id: string }) {
           <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
           {!readOnly && resume.element}
           {sentHistory.sheet}
+          {sentToTicket.sheet}
         </form>
       </div>
     </HostFileProvider>

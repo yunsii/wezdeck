@@ -48,8 +48,6 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		}
 	case "attach":
 		result, err = attachTicket(args)
-	case "todo":
-		result, err = writeTodo(args)
 	case "clear":
 		result, err = clearAttention(args)
 	case "session.new":
@@ -70,6 +68,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = startSessionHandoff(args)
 	case "session.autotitle.update":
 		result, err = updateAutoTitle(args)
+	case "ticket.draft":
+		result, err = draftTicket(args)
 	case "ticket.new":
 		result, err = createTicket(args)
 	case "ticket.manager.start":

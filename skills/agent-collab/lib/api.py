@@ -190,6 +190,8 @@ def summary(tid: str) -> dict[str, Any]:
         "running": in_flight_runs(tid),
         "last_run": run_summary(runs[-1]) if runs else None,
         "manager_session": mj.get("manager_session") if isinstance(mj.get("manager_session"), dict) else None,
+        "attachments_count": len(mj.get("attachments") or []),
+        "enrich_status": mj.get("enrich_status"),
     }
 
 
@@ -381,6 +383,9 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
                                      children_detail),
         "meta": {k: v for k, v in meta.items() if k not in ("lease_until",)},
         "sessions": mj.get("sessions") or {},
+        "attachments": mj.get("attachments") or [],
+        "enrich_status": mj.get("enrich_status"),
+        "origin_session": mj.get("origin_session"),
         "sections": sections,
         "children": children,
         "children_detail": children_detail,

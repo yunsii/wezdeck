@@ -32,6 +32,7 @@ var uploadMime = map[string]string{
 func uploadGet(args json.RawMessage) (any, error) {
 	var a struct {
 		Name   string `json:"name"`
+		Ticket string `json:"ticket"`
 		Offset int64  `json:"offset"`
 	}
 	if json.Unmarshal(args, &a) != nil {
@@ -42,7 +43,14 @@ func uploadGet(args json.RawMessage) (any, error) {
 	if base != a.Name || !strings.HasPrefix(base, "img-") || !ok {
 		return nil, errors.New("not a phone image")
 	}
-	data, err := os.ReadFile(filepath.Join(uploadDir(), base))
+	var data []byte
+	var err error
+	if a.Ticket != "" && ticketIDPattern.MatchString(a.Ticket) {
+		data, err = os.ReadFile(filepath.Join(ticketsRoot(), "_data", a.Ticket, "attachments", base))
+	}
+	if len(data) == 0 {
+		data, err = os.ReadFile(filepath.Join(uploadDir(), base))
+	}
 	if err != nil {
 		return nil, errors.New("image is no longer on the host (kept 30 days)")
 	}

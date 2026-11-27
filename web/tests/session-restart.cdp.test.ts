@@ -175,8 +175,8 @@ describe.runIf(attention && devicesFile && stack)(
           return { offset: f.top - c.top, formHeight: c.height }
         })
       const beforeMenus = await layout()
-      await page.getByTestId('session-todos-button').click()
-      await page.getByTestId('todo-panel').waitFor()
+      await page.getByTestId('session-tickets-button').click()
+      await page.getByTestId('repo-tickets-sheet').waitFor()
       expect(await layout()).toEqual(beforeMenus)
       await page.keyboard.press('Escape')
       await page.getByTestId('composer-tools-button').click()
@@ -215,7 +215,7 @@ describe.runIf(attention && devicesFile && stack)(
       const shell = page.getByTestId('session-actions-sheet')
       await shell.waitFor()
       expect(await page.getByTestId('composer-tools-button').count()).toBe(1)
-      expect(await page.getByTestId('session-todos-button').count()).toBe(1)
+      expect(await page.getByTestId('session-tickets-button').count()).toBe(1)
       const actions = page.getByTestId('session-restart')
       expect(await actions.locator('[data-restart=new] kbd').isVisible()).toBe(
         false,

@@ -6,12 +6,14 @@
 // are. The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { Info, ListTodo, MoreHorizontal } from 'lucide-react'
+import { Info, MoreHorizontal, Ticket } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 
 import { cn } from '#/lib/utils'
 import { AgentAvatar } from './agent-avatar'
+import type { MessagePayload } from './composer-images'
+import { jumpPending } from './console-jump-keys'
 import type { Detail } from './console-sessions'
 import { useSessions } from './console-sessions'
 import { useAgo } from './tickets-view'
@@ -26,7 +28,7 @@ import { useSessionKeys, useSessionNav } from './session-switcher'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
 import { SessionActionsSheet } from './session-actions'
-import { TodoSheet, useTodos } from './session-todos'
+import { RepoTicketsSheet, useRepoTickets } from './session-tickets'
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
@@ -127,6 +129,35 @@ export function SessionUsageAlerts({
   )
 }
 
+function useTicketsShortcut(enabled: boolean, onOpen: () => void) {
+  useEffect(() => {
+    if (!enabled) return
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (
+        event.key !== 't' ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        document.querySelector('[role=dialog], [role=alertdialog]') ||
+        jumpPending()
+      )
+        return
+      event.preventDefault()
+      trace('session-controls', {
+        action: 'open',
+        type: 'tickets',
+        via: 'keyboard',
+      })
+      onOpen()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [enabled, onOpen])
+}
+
 export function SessionHeader({
   id,
   data,
@@ -137,7 +168,7 @@ export function SessionHeader({
   canWrite,
   onRun,
   onNewConversation,
-  onTodoUse,
+  onTicketUse,
 }: {
   id: string
   data: Detail | undefined
@@ -152,16 +183,16 @@ export function SessionHeader({
     args: Record<string, unknown>,
   ) => Promise<boolean>
   onNewConversation: () => Promise<boolean>
-  onTodoUse?: (text: string) => void
+  onTicketUse?: (payload: MessagePayload) => void
 }) {
   const { t } = useLingui()
   const [infoOpen, setInfoOpen] = useState(false)
-  const [todosOpen, setTodosOpen] = useState(false)
+  const [ticketsOpen, setTicketsOpen] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
-  const todos = useTodos(id, Boolean(data))
-  const todoCount = (todos.data?.todos ?? []).filter(
-    (todo) => !todo.done,
-  ).length
+  const repoTickets = useRepoTickets(id, Boolean(data))
+  const ticketCount = repoTickets.openTickets.length
+  const openTickets = useCallback(() => setTicketsOpen(true), [])
+  useTicketsShortcut(Boolean(data), openTickets)
   const focusSearchOrList = useCallback(() => {
     const search = document.querySelector<HTMLInputElement>(
       '[data-testid=chat-search]',
@@ -255,20 +286,21 @@ export function SessionHeader({
             onClick={() => {
               trace('session-controls', {
                 action: 'open',
-                type: 'todos',
-                count: todoCount,
+                type: 'tickets',
+                count: ticketCount,
               })
-              setTodosOpen(true)
+              setTicketsOpen(true)
             }}
-            aria-label={t`To-dos`}
+            aria-label={t`Repo tickets`}
+            title={t`Repo tickets (t)`}
             aria-haspopup="dialog"
-            data-testid="session-todos-button"
+            data-testid="session-tickets-button"
             className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
           >
-            <ListTodo size={19} aria-hidden />
-            {todoCount ? (
+            <Ticket size={19} aria-hidden />
+            {ticketCount ? (
               <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-brand-running px-0.5 text-center text-meta leading-4 text-brand-deck tabular-nums">
-                {todoCount}
+                {ticketCount}
               </span>
             ) : null}
           </Button>
@@ -313,12 +345,12 @@ export function SessionHeader({
             onRename={onRename}
             renameDisabled={renameDisabled}
           />
-          <TodoSheet
+          <RepoTicketsSheet
             session={id}
             writable={canWrite}
-            open={todosOpen}
-            onOpenChange={setTodosOpen}
-            onUse={onTodoUse}
+            open={ticketsOpen}
+            onOpenChange={setTicketsOpen}
+            onUsePayload={onTicketUse}
           />
           <SessionActionsSheet
             id={id}

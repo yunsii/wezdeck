@@ -12,7 +12,7 @@ import { useQuery } from '@tanstack/react-query'
 import { hostRead } from '#/lib/runtime-client'
 
 export type ImageSource =
-  | { kind: 'upload'; name: string }
+  | { kind: 'upload'; name: string; ticket?: string }
   | { kind: 'session'; id: string; ref: string }
 
 type Chunk = { mime: string; size: number; offset: number; data: string }
@@ -21,11 +21,19 @@ const decode = (data: string) =>
   Uint8Array.from(atob(data), (c) => c.charCodeAt(0))
 
 const sourceKey = (src: ImageSource) =>
-  src.kind === 'upload' ? `u:${src.name}` : `s:${src.id}:${src.ref}`
+  src.kind === 'upload'
+    ? src.ticket
+      ? `u:${src.ticket}:${src.name}`
+      : `u:${src.name}`
+    : `s:${src.id}:${src.ref}`
 
 const call = (src: ImageSource, extra: Record<string, unknown>) =>
   src.kind === 'upload'
-    ? hostRead('upload.get', { name: src.name, ...extra })
+    ? hostRead('upload.get', {
+        name: src.name,
+        ...(src.ticket ? { ticket: src.ticket } : {}),
+        ...extra,
+      })
     : hostRead('session.image', { id: src.id, ref: src.ref, ...extra })
 
 /** The host said the file is gone (uploads are kept 30 days); not worth retrying. */

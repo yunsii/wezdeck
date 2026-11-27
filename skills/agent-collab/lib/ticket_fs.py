@@ -609,9 +609,9 @@ def list_inbox(to_key: str) -> list[dict[str, Any]]:
 # and implement still needs observed / assumed / snippet-ref).
 PHASE_VIEW_SECTIONS: dict[str, tuple[str, ...]] = {
     # research: contract to verify; skip empty Decision / prior Implement / Thread
-    "research": ("Summary", "Assumptions"),
+    "research": ("Summary", "Original request", "Attachments", "Assumptions"),
     # implement: same contract + agreed verification/decision; optional Implement
-    "implement": ("Summary", "Assumptions", "Verification", "Decision", "Implement"),
+    "implement": ("Summary", "Original request", "Attachments", "Assumptions", "Verification", "Decision", "Implement"),
 }
 
 
@@ -687,8 +687,8 @@ def render_phase_view(meta: dict[str, Any], body: str, phase: str) -> str:
     for section_title in wanted:
         block = extract_h2_section(body, section_title)
         if block is None or not block.strip():
-            # Implement block is optional (first pass); others should exist.
-            if section_title == "Implement":
+            # Implement / Original request / Attachments are optional; others should exist.
+            if section_title in ("Implement", "Original request", "Attachments"):
                 continue
             missing.append(section_title)
             continue

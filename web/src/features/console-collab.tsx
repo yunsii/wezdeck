@@ -4,7 +4,7 @@
 // integration), and compact flat run rows that open RunDetail in a sheet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { useLayoutEffect } from 'react'
 
 import { BackButton } from '#/components/deck/back-button'
@@ -170,9 +170,21 @@ export function TicketReading({
             questions={data.questions}
           />
         ) : null}
+        {data.enrich_status === 'pending' ? (
+          <p
+            role="status"
+            data-testid="ticket-enriching-banner"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-running/10 px-3 py-2 text-meta text-brand-running"
+          >
+            <Sparkles size={14} aria-hidden />
+            {t`AI is structuring the title and assumptions in the background…`}
+          </p>
+        ) : null}
         <TicketSections
           sections={data.sections}
           waiting={ticket.status === 'waiting_initiator'}
+          ticketId={ticket.id}
+          attachments={data.attachments ?? []}
         />
         {data.children_detail.length > 0 ? (
           <ChildrenTable children={data.children_detail} onOpen={onOpen} />

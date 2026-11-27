@@ -24,7 +24,6 @@ import { useIsWide } from '#/lib/use-media'
 import { NOT_PAIRED } from '#/lib/remote-link'
 import { RepoLinksSheet, RepoSectionHeader } from './repo-links'
 import type { RepoLinksTarget } from './repo-links'
-import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { NewSessionButton } from './session-new'
 import { useStageText } from './session-new-panels'
@@ -373,7 +372,6 @@ export function SessionList({
           ))}
         </div>
       )}
-      <OpenTodos />
       <RepoLinksSheet
         open={linksOpen}
         onOpenChange={setLinksOpen}
