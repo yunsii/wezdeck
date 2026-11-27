@@ -1,6 +1,7 @@
 // covers: web/src/features/pwa-boot.tsx web/src/features/me-app.tsx web/src/features/console-shell.tsx
 // covers: web/src/features/console-status-band.tsx
 // covers: web/src/features/remote-badge.tsx web/src/features/landing-page.tsx
+// covers: web/src/features/console-me.tsx web/src/features/me-entry-row.tsx
 // covers: web/src/features/inspector.tsx web/public/*
 import { chromium, devices } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
@@ -77,6 +78,13 @@ describe('PWA shell on phone and desktop', () => {
     ).toBe(0)
     await tabs.getByRole('link', { name: /我的/ }).click()
     await page.waitForURL(/\/console\/me$/)
+    const menuIcons = await page
+      .locator('[data-me]')
+      .evaluateAll((rows) =>
+        rows.map((row) => row.querySelectorAll(':scope > svg').length),
+      )
+    expect(menuIcons.length).toBeGreaterThan(5)
+    expect(menuIcons.every((count) => count === 2)).toBe(true)
     // connection status still lives on the 我的 › 连接 row, not in sub-page headers
     await page
       .locator('[data-me=connection] [data-testid=remote-badge-compact]')
@@ -104,6 +112,43 @@ describe('PWA shell on phone and desktop', () => {
     await page.getByRole('dialog').waitFor({ timeout: 5_000 })
     await page.close()
   }, 60_000)
+
+  it('phone 320px: settings icons and labels stay within the row', async () => {
+    const context = await browser.newContext({
+      ...devices['iPhone 13'],
+      viewport: { width: 320, height: 700 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await open(
+      page,
+      `${base}/zh/console/me?remote=1#pair=${token}`,
+      '[data-me=agents]',
+    )
+    const rows = await page.locator('[data-me]').evaluateAll((links) =>
+      links.map((link) => {
+        const icons = link.querySelectorAll(':scope > svg')
+        const label = link.querySelector('span')!
+        return {
+          icons: icons.length,
+          iconRight: icons[0].getBoundingClientRect().right,
+          labelLeft: label.getBoundingClientRect().left,
+          right: link.getBoundingClientRect().right,
+          viewport: document.documentElement.clientWidth,
+        }
+      }),
+    )
+    expect(rows.length).toBeGreaterThan(5)
+    expect(
+      rows.every(
+        (row) =>
+          row.icons === 2 &&
+          row.iconRight < row.labelLeft &&
+          row.right <= row.viewport + 1,
+      ),
+    ).toBe(true)
+    await context.close()
+  })
 
   it('desktop: j / k move the selection and the URL follows', async () => {
     const context = await browser.newContext({

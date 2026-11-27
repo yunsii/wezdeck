@@ -31,6 +31,8 @@ const NEW_ID = '00000000-0000-4000-8000-000000000001'
 
 describe.runIf(attention && devicesFile && stack)(
   'Restart and new conversation',
+  // Restart and handoff cases share one tmux fixture.
+  // eslint-disable-next-line max-lines-per-function
   () => {
     let browser: Browser
     const dir = mkdtempSync(join(tmpdir(), 'wd-restart-'))
@@ -203,6 +205,18 @@ describe.runIf(attention && devicesFile && stack)(
         .getByTestId('session-handoff-mode')
         .getByRole('radio', { name: /空白切换/ })
         .waitFor()
+      expect(
+        await page
+          .getByTestId('session-handoff-mode')
+          .getByRole('radio')
+          .locator('svg')
+          .count(),
+      ).toBe(2)
+      expect(
+        await page
+          .locator('[data-handoff=grok] [data-testid=agent-avatar]')
+          .count(),
+      ).toBe(1)
       await page.locator('[data-handoff=grok]').click()
       const handoff = page.getByTestId('session-handoff-confirm')
       const blank = handoff.getByRole('radio', { name: /空白切换/ })

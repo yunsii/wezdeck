@@ -304,10 +304,10 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:260
-#: src/features/session-new-panels.tsx:267
-#: src/features/session-new-panels.tsx:292
-#: src/features/session-new-panels.tsx:322
+#: src/features/session-new-panels.tsx:296
+#: src/features/session-new-panels.tsx:303
+#: src/features/session-new-panels.tsx:330
+#: src/features/session-new-panels.tsx:360
 msgid "Agent"
 msgstr "智能体"
 
@@ -325,12 +325,12 @@ msgstr "Agent 会话"
 msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
 
-#: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:85
+#: src/features/console-me.tsx:126
+#: src/features/me-agents.tsx:87
 msgid "Agents"
 msgstr "智能体"
 
-#: src/features/session-new-panels.tsx:155
+#: src/features/session-new-panels.tsx:174
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
@@ -426,12 +426,12 @@ msgstr "API 错误"
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
-#: src/features/console-me.tsx:122
+#: src/features/console-me.tsx:123
 #: src/features/me-app.tsx:36
 msgid "App"
 msgstr "应用"
 
-#: src/features/console-me.tsx:121
+#: src/features/console-me.tsx:122
 msgid "Appearance"
 msgstr "外观"
 
@@ -464,7 +464,7 @@ msgstr "请先在「设备授权」中批准这台设备，再使用主机控制
 msgid "Approved"
 msgstr "已批准"
 
-#: src/features/console-me.tsx:49
+#: src/features/console-me.tsx:50
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
 
@@ -510,12 +510,12 @@ msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:85
 #: src/features/console-collab.tsx:89
-#: src/features/console-me.tsx:464
+#: src/features/console-me.tsx:436
 #: src/features/ticket-header.tsx:39
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:166
+#: src/features/me-agents.tsx:168
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
@@ -544,7 +544,7 @@ msgstr "后台运行"
 msgid "Background tasks"
 msgstr "后台任务"
 
-#: src/features/console-me.tsx:231
+#: src/features/console-me.tsx:232
 msgid "Bar"
 msgstr "细线"
 
@@ -556,15 +556,15 @@ msgstr "基线提交"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:61
 msgid "Blank switch"
 msgstr "空白切换"
 
-#: src/features/console-me.tsx:232
+#: src/features/console-me.tsx:233
 msgid "Block"
 msgstr "方块"
 
-#: src/features/console-me.tsx:237
+#: src/features/console-me.tsx:238
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
@@ -634,7 +634,7 @@ msgid "cancel"
 msgstr "取消"
 
 #: src/features/session-delete.tsx:137
-#: src/features/session-handoff.tsx:274
+#: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
 #: src/features/ticket-proposals.tsx:231
@@ -657,7 +657,7 @@ msgstr "能力"
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
-#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:60
 msgid "Carry a brief"
 msgstr "携带简报"
 
@@ -679,7 +679,7 @@ msgstr "变更"
 msgid "Changing One Client…"
 msgstr "正在切换 One Client…"
 
-#: src/features/console-me.tsx:90
+#: src/features/console-me.tsx:91
 msgid "Check again"
 msgstr "重新检查"
 
@@ -687,7 +687,7 @@ msgstr "重新检查"
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: src/features/console-me.tsx:36
+#: src/features/console-me.tsx:37
 #: src/features/me-app.tsx:87
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
@@ -903,7 +903,7 @@ msgstr "已连接"
 msgid "Connecting…"
 msgstr "连接中…"
 
-#: src/features/console-me.tsx:118
+#: src/features/console-me.tsx:119
 msgid "Connection"
 msgstr "连接"
 
@@ -993,7 +993,7 @@ msgstr "复制"
 msgid "Copy “{label}: …”"
 msgstr "复制「{label}：…」"
 
-#: src/features/console-me.tsx:87
+#: src/features/console-me.tsx:88
 msgid "Copy command"
 msgstr "复制命令"
 
@@ -1019,8 +1019,8 @@ msgstr "复制原始日志"
 #: src/features/copy-reference.tsx:127
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:139
-#: src/features/me-agents.tsx:140
+#: src/features/me-agents.tsx:141
+#: src/features/me-agents.tsx:142
 #: src/features/session-chat-group.tsx:118
 #: src/features/session-chat-group.tsx:235
 #: src/features/session-chat-row.tsx:61
@@ -1077,7 +1077,7 @@ msgstr "复制引用失败：{reason}"
 msgid "Could not copy to clipboard"
 msgstr "无法复制到剪贴板"
 
-#: src/features/session-new-panels.tsx:160
+#: src/features/session-new-panels.tsx:179
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -1113,7 +1113,7 @@ msgstr "创建工作区"
 msgid "Creating sessions"
 msgstr "创建中的会话"
 
-#: src/features/session-new-panels.tsx:151
+#: src/features/session-new-panels.tsx:170
 msgid "Creating the session group…"
 msgstr "正在创建会话组…"
 
@@ -1155,8 +1155,8 @@ msgstr "当前样本来自前台 WezTerm 窗口。"
 msgid "Daemon"
 msgstr "常驻后台"
 
-#: src/features/console-me.tsx:220
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:221
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:386
 msgid "Dark"
 msgstr "深色"
@@ -1221,12 +1221,12 @@ msgstr "终端空闲"
 msgid "Detached"
 msgstr "游离分支"
 
-#: src/features/console-me.tsx:119
+#: src/features/console-me.tsx:120
 msgid "Device access"
 msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:173
-#: src/features/console-me.tsx:403
+#: src/features/console-me.tsx:375
 #: src/features/console-shell.tsx:100
 msgid "Diagnostics"
 msgstr "诊断"
@@ -1251,9 +1251,9 @@ msgid "Disable this agent"
 msgstr "停用此 Agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:68
-#: src/features/me-agents.tsx:120
-#: src/features/session-new-panels.tsx:66
+#: src/features/me-agents.tsx:70
+#: src/features/me-agents.tsx:122
+#: src/features/session-new-panels.tsx:78
 msgid "Disabled"
 msgstr "已停用"
 
@@ -1320,15 +1320,15 @@ msgstr "修改组名"
 msgid "Effort"
 msgstr "推理力度"
 
-#: src/features/console-me.tsx:302
+#: src/features/console-me.tsx:259
 msgid "Enabled"
 msgstr "已启用"
 
-#: src/features/console-me.tsx:301
+#: src/features/console-me.tsx:258
 msgid "Enabled on this computer"
 msgstr "本机，已启用"
 
-#: src/features/console-me.tsx:41
+#: src/features/console-me.tsx:42
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备密钥，也不需要批准。手机、平板和其他电脑需要各自单独启用。"
 
@@ -1504,7 +1504,7 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-new-panels.tsx:245
+#: src/features/session-new-panels.tsx:281
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
@@ -1513,20 +1513,20 @@ msgstr "组名"
 msgid "Haiku tier"
 msgstr "Haiku 档"
 
-#: src/features/session-handoff.tsx:59
-#: src/features/session-handoff.tsx:235
+#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:239
 msgid "Hand off"
 msgstr "接力"
 
-#: src/features/session-handoff.tsx:300
+#: src/features/session-handoff.tsx:304
 msgid "Hand off / switch"
 msgstr "交接 / 切换"
 
-#: src/features/session-handoff.tsx:285
+#: src/features/session-handoff.tsx:289
 msgid "Hand off to {to}"
 msgstr "接力给 {to}"
 
-#: src/features/session-handoff.tsx:295
+#: src/features/session-handoff.tsx:299
 msgid "Hand off to another agent"
 msgstr "接力给另一个 agent"
 
@@ -1534,15 +1534,15 @@ msgstr "接力给另一个 agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责调研和实现，需要你拍板时再来问你。"
 
-#: src/features/session-handoff.tsx:176
+#: src/features/session-handoff.tsx:180
 msgid "Handed off to {toAgent}"
 msgstr "已接力给 {toAgent}"
 
-#: src/features/session-handoff.tsx:167
+#: src/features/session-handoff.tsx:171
 msgid "Handoff brief"
 msgstr "接力 brief"
 
-#: src/features/session-handoff.tsx:186
+#: src/features/session-handoff.tsx:190
 msgid "Handoff failed"
 msgstr "接力失败"
 
@@ -1562,7 +1562,7 @@ msgstr "收起初始消息"
 msgid "hit {hit}%"
 msgstr "命中 {hit}%"
 
-#: src/features/session-new-panels.tsx:70
+#: src/features/session-new-panels.tsx:82
 msgid "host default"
 msgstr "主机默认"
 
@@ -1581,11 +1581,11 @@ msgstr "主机信号"
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
-#: src/features/console-me.tsx:169
+#: src/features/console-me.tsx:170
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:383
+#: src/features/console-me.tsx:345
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"
@@ -1692,7 +1692,7 @@ msgstr "实例"
 msgid "Integration"
 msgstr "集成"
 
-#: src/features/console-me.tsx:124
+#: src/features/console-me.tsx:125
 msgid "Interaction debugging"
 msgstr "交互调试"
 
@@ -1752,8 +1752,8 @@ msgstr "局域网"
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "改动落在 {where}；不推送、不提 MR"
 
-#: src/features/console-me.tsx:193
-#: src/features/console-me.tsx:195
+#: src/features/console-me.tsx:194
+#: src/features/console-me.tsx:196
 #: src/features/console-shared.tsx:404
 #: src/features/console-shared.tsx:406
 msgid "Language"
@@ -1763,7 +1763,7 @@ msgstr "语言"
 msgid "last {lastSeen}"
 msgstr "最近 {lastSeen}"
 
-#: src/features/console-me.tsx:176
+#: src/features/console-me.tsx:177
 msgid "Last direct attempt"
 msgstr "上次直连"
 
@@ -1815,8 +1815,8 @@ msgstr "级别"
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
-#: src/features/console-me.tsx:219
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:220
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:385
 msgid "Light"
 msgstr "浅色"
@@ -1860,7 +1860,7 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:101
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:83
+#: src/features/me-agents.tsx:85
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
@@ -1963,7 +1963,7 @@ msgstr "消息数"
 msgid "Metrics window"
 msgstr "统计窗口"
 
-#: src/features/console-me.tsx:139
+#: src/features/console-me.tsx:140
 msgid "Mode"
 msgstr "模式"
 
@@ -2267,8 +2267,8 @@ msgstr "没有上游分支，无法比较。"
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:127
-#: src/features/session-new-panels.tsx:68
+#: src/features/me-agents.tsx:129
+#: src/features/session-new-panels.tsx:80
 msgid "Not configured"
 msgstr "未配置"
 
@@ -2292,7 +2292,7 @@ msgstr "未实现"
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:334
+#: src/features/console-me.tsx:291
 msgid "Not paired"
 msgstr "未配对"
 
@@ -2333,7 +2333,7 @@ msgstr "确认之前不会建任何单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-new-panels.tsx:127
+#: src/features/session-new-panels.tsx:146
 #: src/features/session-skills.tsx:236
 #: src/features/session-worktree-manager.tsx:331
 msgid "Nothing matches"
@@ -2347,7 +2347,7 @@ msgstr "这个仓库暂时没有要跟进的事。"
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-me.tsx:306
+#: src/features/console-me.tsx:263
 msgid "Off"
 msgstr "未启用"
 
@@ -2454,7 +2454,7 @@ msgstr "正在打开…"
 msgid "OPPO remote control"
 msgstr "OPPO 远控"
 
-#: src/features/session-handoff.tsx:253
+#: src/features/session-handoff.tsx:257
 msgid "Optional note"
 msgstr "补充说明"
 
@@ -2512,7 +2512,7 @@ msgstr "页面、中转握手和用量查询；静态文件免费。"
 msgid "Pair again"
 msgstr "需重新配对"
 
-#: src/features/console-me.tsx:152
+#: src/features/console-me.tsx:153
 msgid "Pairing command"
 msgstr "配对命令"
 
@@ -2546,7 +2546,7 @@ msgstr "待批准"
 msgid "Phase"
 msgstr "阶段"
 
-#: src/features/console-me.tsx:145
+#: src/features/console-me.tsx:146
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
@@ -2773,15 +2773,15 @@ msgstr "更换 API 密钥"
 #~ msgid "Replace this pane with {target} and paste a continuation brief"
 #~ msgstr "用 {target} 替换本格，并粘贴接续 brief"
 
-#: src/features/session-handoff.tsx:313
+#: src/features/session-handoff.tsx:317
 msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
 msgstr "将此窗格替换为 {target}；选择交接简报或空白切换"
 
-#: src/features/session-handoff.tsx:248
+#: src/features/session-handoff.tsx:252
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "用 {to} 替换本格。源会话 transcript 仍在磁盘上；首条消息会粘贴一段接续 brief。之后 F5 仍起 {to}。不会 recycle worktree。"
 
-#: src/features/session-handoff.tsx:249
+#: src/features/session-handoff.tsx:253
 msgid "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
 msgstr "将此窗格替换为没有上下文的 {to}。不会发送续接简报或首条消息，也不会读取旧记录。工作树保持不变；之后按 F5 仍会使用 {to}。"
 
@@ -2823,16 +2823,16 @@ msgstr "仓库筛选"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:64
-#: src/features/session-new-panels.tsx:203
-#: src/features/session-new-panels.tsx:210
-#: src/features/session-new-panels.tsx:230
-#: src/features/session-new-panels.tsx:322
+#: src/features/session-new-panels.tsx:225
+#: src/features/session-new-panels.tsx:232
+#: src/features/session-new-panels.tsx:259
+#: src/features/session-new-panels.tsx:360
 msgid "Repository"
 msgstr "仓库"
 
-#: src/features/console-me.tsx:323
+#: src/features/console-me.tsx:280
 #: src/features/me-agents.tsx:60
-#: src/features/session-new-panels.tsx:61
+#: src/features/session-new-panels.tsx:69
 msgid "Repository default"
 msgstr "按仓库设置"
 
@@ -2849,7 +2849,7 @@ msgstr "仓库外链（GitHub / CNB 及项目外链）"
 msgid "Repository root"
 msgstr "仓库根目录"
 
-#: src/features/console-me.tsx:62
+#: src/features/console-me.tsx:63
 msgid "Request access"
 msgstr "申请授权"
 
@@ -2857,7 +2857,7 @@ msgstr "申请授权"
 msgid "Request changes"
 msgstr "请修改"
 
-#: src/features/console-me.tsx:171
+#: src/features/console-me.tsx:172
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
@@ -2881,7 +2881,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new-panels.tsx:148
+#: src/features/session-new-panels.tsx:167
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -3005,7 +3005,7 @@ msgstr "转到后台"
 msgid "Run metrics"
 msgstr "运行指标"
 
-#: src/features/console-me.tsx:148
+#: src/features/console-me.tsx:149
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
@@ -3118,8 +3118,8 @@ msgstr "保存中…"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-new-panels.tsx:100
-#: src/features/session-new-panels.tsx:101
+#: src/features/session-new-panels.tsx:112
+#: src/features/session-new-panels.tsx:113
 msgid "Search"
 msgstr "搜索"
 
@@ -3190,11 +3190,11 @@ msgstr "在下方发第一条消息。"
 msgid "Sending action…"
 msgstr "正在发送操作……"
 
-#: src/features/session-new-panels.tsx:157
+#: src/features/session-new-panels.tsx:176
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
-#: src/features/session-handoff.tsx:200
+#: src/features/session-handoff.tsx:204
 msgid "Sending the handoff brief…"
 msgstr "正在发送接续 brief…"
 
@@ -3270,7 +3270,7 @@ msgstr "会话"
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
-#: src/features/console-me.tsx:316
+#: src/features/console-me.tsx:273
 #: src/features/console-shell.tsx:104
 msgid "Settings"
 msgstr "我的"
@@ -3418,7 +3418,7 @@ msgstr "启动 Agent"
 msgid "Start fresh"
 msgstr "新开"
 
-#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:61
 msgid "Start without context"
 msgstr "不带上下文启动"
 
@@ -3434,12 +3434,12 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new-panels.tsx:159
+#: src/features/session-new-panels.tsx:178
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new-panels.tsx:150
-#: src/features/session-new-panels.tsx:153
+#: src/features/session-new-panels.tsx:169
+#: src/features/session-new-panels.tsx:172
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -3495,7 +3495,7 @@ msgstr "摘要"
 #~ msgid "Switch chat"
 #~ msgstr "切换对话"
 
-#: src/features/session-handoff.tsx:55
+#: src/features/session-handoff.tsx:56
 msgid "Switch mode"
 msgstr "切换模式"
 
@@ -3513,11 +3513,11 @@ msgstr "切换模式"
 msgid "switch the model"
 msgstr "切换模型"
 
-#: src/features/session-handoff.tsx:285
+#: src/features/session-handoff.tsx:289
 msgid "Switch to {to}"
 msgstr "切换到 {to}"
 
-#: src/features/session-handoff.tsx:175
+#: src/features/session-handoff.tsx:179
 msgid "Switched to {toAgent}"
 msgstr "已切换到 {toAgent}"
 
@@ -3525,7 +3525,7 @@ msgstr "已切换到 {toAgent}"
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
-#: src/features/session-handoff.tsx:201
+#: src/features/session-handoff.tsx:205
 msgid "Switching agent…"
 msgstr "正在切换 agent…"
 
@@ -3534,8 +3534,8 @@ msgctxt "git"
 msgid "Synced"
 msgstr "已同步"
 
-#: src/features/console-me.tsx:218
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:219
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:384
 msgid "System"
 msgstr "跟随系统"
@@ -3581,8 +3581,8 @@ msgstr "终端画面"
 msgid "Terminal screen"
 msgstr "终端画面"
 
-#: src/features/console-me.tsx:225
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:226
+#: src/features/console-me.tsx:228
 msgid "Text caret"
 msgstr "输入光标"
 
@@ -3646,8 +3646,8 @@ msgstr "上一个会话请求已过期，请重新开始。"
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "命令后面的文字会成为新会话的名字（「{name}」），之后每次 /clear 都会沿用，Claude 也不再自动生成标题。仍要发送吗？"
 
-#: src/features/console-me.tsx:212
-#: src/features/console-me.tsx:214
+#: src/features/console-me.tsx:213
+#: src/features/console-me.tsx:215
 #: src/features/console-shared.tsx:377
 #: src/features/console-shared.tsx:379
 msgid "Theme"
@@ -3670,17 +3670,17 @@ msgstr "这个 agent 还没有列出能力"
 msgid "This browser"
 msgstr "当前浏览器"
 
-#: src/features/console-me.tsx:123
-#: src/features/console-me.tsx:332
+#: src/features/console-me.tsx:124
+#: src/features/console-me.tsx:289
 #: src/features/console-shell.tsx:264
 msgid "This computer"
 msgstr "本机"
 
-#: src/features/console-me.tsx:139
+#: src/features/console-me.tsx:140
 msgid "This computer (local Runtime)"
 msgstr "本机（本地运行时）"
 
-#: src/features/console-me.tsx:141
+#: src/features/console-me.tsx:142
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
@@ -3690,7 +3690,7 @@ msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "这台设备还没获批（我的 › 设备授权）。"
 
-#: src/features/console-me.tsx:163
+#: src/features/console-me.tsx:164
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
@@ -3698,7 +3698,7 @@ msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:60
 msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对链接还不够。会在这个浏览器里生成一把密钥，只存在本机；电脑对每台设备批准一次，同时开通读取和写入。"
 
@@ -3917,7 +3917,7 @@ msgstr "不可用"
 #~ msgid "uncommitted changes"
 #~ msgstr "有未提交的改动"
 
-#: src/features/console-me.tsx:233
+#: src/features/console-me.tsx:234
 msgid "Underscore"
 msgstr "下划线"
 
@@ -3962,7 +3962,7 @@ msgstr "正在上传 {step}/{steps}…"
 msgid "Uptime"
 msgstr "运行时长"
 
-#: src/features/console-me.tsx:120
+#: src/features/console-me.tsx:121
 #: src/features/session-info.tsx:53
 msgid "Usage"
 msgstr "用量"
@@ -4009,11 +4009,11 @@ msgstr "主机尚未安装 vscode-links。"
 msgid "Waiting for"
 msgstr "等待类型"
 
-#: src/features/console-me.tsx:304
+#: src/features/console-me.tsx:261
 msgid "Waiting for the host"
 msgstr "等电脑确认"
 
-#: src/features/console-me.tsx:74
+#: src/features/console-me.tsx:75
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
@@ -4124,7 +4124,7 @@ msgstr "要解决什么"
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
-#: src/features/session-handoff.tsx:259
+#: src/features/session-handoff.tsx:263
 msgid "What should the next agent do first?"
 msgstr "希望下一个 agent 先做什么？"
 

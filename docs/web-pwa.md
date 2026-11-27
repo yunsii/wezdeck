@@ -75,7 +75,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
    filter (`c` / `Ctrl+N` on a keyboard) enters `/console/sessions/new` directly
    (no blocking modal): repository and agent sit in a flat setup card above the
-   composer (searchable picker sheet on phones; anchored selects when wide);
+   composer (icon-bearing searchable picker sheet on phones; anchored selects when wide);
    sending starts the async job and replaces the URL with `/console/sessions/job-<id>`
    at once, showing the first message, live steps, optional trust confirmation,
    and retry/edit recovery before replacing into the real session id (while
@@ -98,7 +98,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    moves left out; sessions are not in it. 会话 left rail is an IM chat list (one titled row for a single session,
    multi-session ones adding per-session sub-rows; repo section heads; unread = needs-you badge; no status Segmented);
    opening resolves the focus session (sub-rows open their own). Grok Ask shows tappable options
-   from `elicitation`) · 我的 (an index of groups, each row showing
+   from `elicitation`) · 我的 (an icon-led index of groups, each row showing
    how it stands — 连接 / 写入权限 / 用量 / 外观 / 应用 — each group a pushed
    page `/console/me/$page` with a back bar; the tab bar stays, re-tapping
    我的 returns to the index; write access is per device: phone, tablet or

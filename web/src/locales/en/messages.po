@@ -304,10 +304,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:260
-#: src/features/session-new-panels.tsx:267
-#: src/features/session-new-panels.tsx:292
-#: src/features/session-new-panels.tsx:322
+#: src/features/session-new-panels.tsx:296
+#: src/features/session-new-panels.tsx:303
+#: src/features/session-new-panels.tsx:330
+#: src/features/session-new-panels.tsx:360
 msgid "Agent"
 msgstr "Agent"
 
@@ -325,12 +325,12 @@ msgstr "Agent sessions"
 msgid "agent settings and execution mode"
 msgstr "agent settings and execution mode"
 
-#: src/features/console-me.tsx:125
-#: src/features/me-agents.tsx:85
+#: src/features/console-me.tsx:126
+#: src/features/me-agents.tsx:87
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/session-new-panels.tsx:155
+#: src/features/session-new-panels.tsx:174
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy is waiting for this worktree to be trusted."
 
@@ -426,12 +426,12 @@ msgstr "API error"
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
-#: src/features/console-me.tsx:122
+#: src/features/console-me.tsx:123
 #: src/features/me-app.tsx:36
 msgid "App"
 msgstr "App"
 
-#: src/features/console-me.tsx:121
+#: src/features/console-me.tsx:122
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -464,7 +464,7 @@ msgstr "Approve this device in Device access to use host controls."
 msgid "Approved"
 msgstr "Approved"
 
-#: src/features/console-me.tsx:49
+#: src/features/console-me.tsx:50
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 
@@ -510,12 +510,12 @@ msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:85
 #: src/features/console-collab.tsx:89
-#: src/features/console-me.tsx:464
+#: src/features/console-me.tsx:436
 #: src/features/ticket-header.tsx:39
 msgid "Back"
 msgstr "Back"
 
-#: src/features/me-agents.tsx:166
+#: src/features/me-agents.tsx:168
 msgid "Back to agents"
 msgstr "Back to agents"
 
@@ -544,7 +544,7 @@ msgstr "Background"
 msgid "Background tasks"
 msgstr "Background tasks"
 
-#: src/features/console-me.tsx:231
+#: src/features/console-me.tsx:232
 msgid "Bar"
 msgstr "Bar"
 
@@ -556,15 +556,15 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:61
 msgid "Blank switch"
 msgstr "Blank switch"
 
-#: src/features/console-me.tsx:232
+#: src/features/console-me.tsx:233
 msgid "Block"
 msgstr "Block"
 
-#: src/features/console-me.tsx:237
+#: src/features/console-me.tsx:238
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 
@@ -634,7 +634,7 @@ msgid "cancel"
 msgstr "cancel"
 
 #: src/features/session-delete.tsx:137
-#: src/features/session-handoff.tsx:274
+#: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
 #: src/features/ticket-proposals.tsx:231
@@ -657,7 +657,7 @@ msgstr "Capabilities"
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
-#: src/features/session-handoff.tsx:59
+#: src/features/session-handoff.tsx:60
 msgid "Carry a brief"
 msgstr "Carry a brief"
 
@@ -679,7 +679,7 @@ msgstr "Changes"
 msgid "Changing One Client…"
 msgstr "Changing One Client…"
 
-#: src/features/console-me.tsx:90
+#: src/features/console-me.tsx:91
 msgid "Check again"
 msgstr "Check again"
 
@@ -687,7 +687,7 @@ msgstr "Check again"
 msgid "Check for updates"
 msgstr "Check for updates"
 
-#: src/features/console-me.tsx:36
+#: src/features/console-me.tsx:37
 #: src/features/me-app.tsx:87
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
@@ -903,7 +903,7 @@ msgstr "Connected"
 msgid "Connecting…"
 msgstr "Connecting…"
 
-#: src/features/console-me.tsx:118
+#: src/features/console-me.tsx:119
 msgid "Connection"
 msgstr "Connection"
 
@@ -993,7 +993,7 @@ msgstr "Copy"
 msgid "Copy “{label}: …”"
 msgstr "Copy “{label}: …”"
 
-#: src/features/console-me.tsx:87
+#: src/features/console-me.tsx:88
 msgid "Copy command"
 msgstr "Copy command"
 
@@ -1019,8 +1019,8 @@ msgstr "Copy raw line"
 #: src/features/copy-reference.tsx:127
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:139
-#: src/features/me-agents.tsx:140
+#: src/features/me-agents.tsx:141
+#: src/features/me-agents.tsx:142
 #: src/features/session-chat-group.tsx:118
 #: src/features/session-chat-group.tsx:235
 #: src/features/session-chat-row.tsx:61
@@ -1077,7 +1077,7 @@ msgstr "Could not copy the reference: {reason}"
 msgid "Could not copy to clipboard"
 msgstr "Could not copy to clipboard"
 
-#: src/features/session-new-panels.tsx:160
+#: src/features/session-new-panels.tsx:179
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -1113,7 +1113,7 @@ msgstr "Create workspace"
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
-#: src/features/session-new-panels.tsx:151
+#: src/features/session-new-panels.tsx:170
 msgid "Creating the session group…"
 msgstr "Creating the session group…"
 
@@ -1155,8 +1155,8 @@ msgstr "Current sample is from the foreground WezTerm window."
 msgid "Daemon"
 msgstr "Daemon"
 
-#: src/features/console-me.tsx:220
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:221
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:386
 msgid "Dark"
 msgstr "Dark"
@@ -1221,12 +1221,12 @@ msgstr "Desk idle for"
 msgid "Detached"
 msgstr "Detached"
 
-#: src/features/console-me.tsx:119
+#: src/features/console-me.tsx:120
 msgid "Device access"
 msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:173
-#: src/features/console-me.tsx:403
+#: src/features/console-me.tsx:375
 #: src/features/console-shell.tsx:100
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -1251,9 +1251,9 @@ msgid "Disable this agent"
 msgstr "Disable this agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:68
-#: src/features/me-agents.tsx:120
-#: src/features/session-new-panels.tsx:66
+#: src/features/me-agents.tsx:70
+#: src/features/me-agents.tsx:122
+#: src/features/session-new-panels.tsx:78
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -1320,15 +1320,15 @@ msgstr "Edit group name"
 msgid "Effort"
 msgstr "Effort"
 
-#: src/features/console-me.tsx:302
+#: src/features/console-me.tsx:259
 msgid "Enabled"
 msgstr "Enabled"
 
-#: src/features/console-me.tsx:301
+#: src/features/console-me.tsx:258
 msgid "Enabled on this computer"
 msgstr "Enabled on this computer"
 
-#: src/features/console-me.tsx:41
+#: src/features/console-me.tsx:42
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 
@@ -1504,7 +1504,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:245
+#: src/features/session-new-panels.tsx:281
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -1513,20 +1513,20 @@ msgstr "Group name"
 msgid "Haiku tier"
 msgstr "Haiku tier"
 
-#: src/features/session-handoff.tsx:59
-#: src/features/session-handoff.tsx:235
+#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:239
 msgid "Hand off"
 msgstr "Hand off"
 
-#: src/features/session-handoff.tsx:300
+#: src/features/session-handoff.tsx:304
 msgid "Hand off / switch"
 msgstr "Hand off / switch"
 
-#: src/features/session-handoff.tsx:285
+#: src/features/session-handoff.tsx:289
 msgid "Hand off to {to}"
 msgstr "Hand off to {to}"
 
-#: src/features/session-handoff.tsx:295
+#: src/features/session-handoff.tsx:299
 msgid "Hand off to another agent"
 msgstr "Hand off to another agent"
 
@@ -1534,15 +1534,15 @@ msgstr "Hand off to another agent"
 msgid "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 msgstr "Hand work to another repository as a ticket. A headless agent researches and implements, and asks when it needs you."
 
-#: src/features/session-handoff.tsx:176
+#: src/features/session-handoff.tsx:180
 msgid "Handed off to {toAgent}"
 msgstr "Handed off to {toAgent}"
 
-#: src/features/session-handoff.tsx:167
+#: src/features/session-handoff.tsx:171
 msgid "Handoff brief"
 msgstr "Handoff brief"
 
-#: src/features/session-handoff.tsx:186
+#: src/features/session-handoff.tsx:190
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
@@ -1562,7 +1562,7 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/session-new-panels.tsx:70
+#: src/features/session-new-panels.tsx:82
 msgid "host default"
 msgstr "host default"
 
@@ -1581,11 +1581,11 @@ msgstr "Host signals"
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
-#: src/features/console-me.tsx:169
+#: src/features/console-me.tsx:170
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/console-me.tsx:383
+#: src/features/console-me.tsx:345
 #: src/features/landing-page.tsx:74
 #: src/features/landing-page.tsx:104
 msgid "How it fits together"
@@ -1692,7 +1692,7 @@ msgstr "Instance"
 msgid "Integration"
 msgstr "Integration"
 
-#: src/features/console-me.tsx:124
+#: src/features/console-me.tsx:125
 msgid "Interaction debugging"
 msgstr "Interaction debugging"
 
@@ -1752,8 +1752,8 @@ msgstr "LAN"
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
-#: src/features/console-me.tsx:193
-#: src/features/console-me.tsx:195
+#: src/features/console-me.tsx:194
+#: src/features/console-me.tsx:196
 #: src/features/console-shared.tsx:404
 #: src/features/console-shared.tsx:406
 msgid "Language"
@@ -1763,7 +1763,7 @@ msgstr "Language"
 msgid "last {lastSeen}"
 msgstr "last {lastSeen}"
 
-#: src/features/console-me.tsx:176
+#: src/features/console-me.tsx:177
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
@@ -1815,8 +1815,8 @@ msgstr "Level"
 msgid "Level with upstream."
 msgstr "Level with upstream."
 
-#: src/features/console-me.tsx:219
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:220
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:385
 msgid "Light"
 msgstr "Light"
@@ -1860,7 +1860,7 @@ msgstr "Loading original…"
 #: src/features/console-diagnostics.tsx:101
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:83
+#: src/features/me-agents.tsx:85
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
@@ -1963,7 +1963,7 @@ msgstr "Messages"
 msgid "Metrics window"
 msgstr "Metrics window"
 
-#: src/features/console-me.tsx:139
+#: src/features/console-me.tsx:140
 msgid "Mode"
 msgstr "Mode"
 
@@ -2267,8 +2267,8 @@ msgstr "No upstream branch: nothing to compare with."
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:127
-#: src/features/session-new-panels.tsx:68
+#: src/features/me-agents.tsx:129
+#: src/features/session-new-panels.tsx:80
 msgid "Not configured"
 msgstr "Not configured"
 
@@ -2292,7 +2292,7 @@ msgstr "not done"
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
-#: src/features/console-me.tsx:334
+#: src/features/console-me.tsx:291
 msgid "Not paired"
 msgstr "Not paired"
 
@@ -2333,7 +2333,7 @@ msgstr "Nothing is created until you confirm."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-new-panels.tsx:127
+#: src/features/session-new-panels.tsx:146
 #: src/features/session-skills.tsx:236
 #: src/features/session-worktree-manager.tsx:331
 msgid "Nothing matches"
@@ -2347,7 +2347,7 @@ msgstr "Nothing to follow up in this repo."
 msgid "now {label}"
 msgstr "now {label}"
 
-#: src/features/console-me.tsx:306
+#: src/features/console-me.tsx:263
 msgid "Off"
 msgstr "Off"
 
@@ -2454,7 +2454,7 @@ msgstr "Opening…"
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
 
-#: src/features/session-handoff.tsx:253
+#: src/features/session-handoff.tsx:257
 msgid "Optional note"
 msgstr "Optional note"
 
@@ -2512,7 +2512,7 @@ msgstr "Pages, the relay handshake and the usage check; static files are free."
 msgid "Pair again"
 msgstr "Pair again"
 
-#: src/features/console-me.tsx:152
+#: src/features/console-me.tsx:153
 msgid "Pairing command"
 msgstr "Pairing command"
 
@@ -2546,7 +2546,7 @@ msgstr "Pending"
 msgid "Phase"
 msgstr "Phase"
 
-#: src/features/console-me.tsx:145
+#: src/features/console-me.tsx:146
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
@@ -2773,15 +2773,15 @@ msgstr "Replace API key"
 #~ msgid "Replace this pane with {target} and paste a continuation brief"
 #~ msgstr "Replace this pane with {target} and paste a continuation brief"
 
-#: src/features/session-handoff.tsx:313
+#: src/features/session-handoff.tsx:317
 msgid "Replace this pane with {target}; choose a handoff brief or a blank switch"
 msgstr "Replace this pane with {target}; choose a handoff brief or a blank switch"
 
-#: src/features/session-handoff.tsx:248
+#: src/features/session-handoff.tsx:252
 msgid "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 msgstr "Replace this pane with {to}. The source transcript stays on disk; a short brief is pasted as the first message. Later F5 keeps {to}. Does not recycle the worktree."
 
-#: src/features/session-handoff.tsx:249
+#: src/features/session-handoff.tsx:253
 msgid "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
 msgstr "Replace this pane with a blank {to}. No continuation brief or first message is sent, and the old transcript is not read. The worktree stays unchanged; later F5 keeps {to}."
 
@@ -2823,16 +2823,16 @@ msgstr "Repo filter"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:64
-#: src/features/session-new-panels.tsx:203
-#: src/features/session-new-panels.tsx:210
-#: src/features/session-new-panels.tsx:230
-#: src/features/session-new-panels.tsx:322
+#: src/features/session-new-panels.tsx:225
+#: src/features/session-new-panels.tsx:232
+#: src/features/session-new-panels.tsx:259
+#: src/features/session-new-panels.tsx:360
 msgid "Repository"
 msgstr "Repository"
 
-#: src/features/console-me.tsx:323
+#: src/features/console-me.tsx:280
 #: src/features/me-agents.tsx:60
-#: src/features/session-new-panels.tsx:61
+#: src/features/session-new-panels.tsx:69
 msgid "Repository default"
 msgstr "Repository default"
 
@@ -2849,7 +2849,7 @@ msgstr "Repository links (GitHub / CNB and project links)"
 msgid "Repository root"
 msgstr "Repository root"
 
-#: src/features/console-me.tsx:62
+#: src/features/console-me.tsx:63
 msgid "Request access"
 msgstr "Request access"
 
@@ -2857,7 +2857,7 @@ msgstr "Request access"
 msgid "Request changes"
 msgstr "Request changes"
 
-#: src/features/console-me.tsx:171
+#: src/features/console-me.tsx:172
 msgid "Requests (WebRTC / relay)"
 msgstr "Requests (WebRTC / relay)"
 
@@ -2881,7 +2881,7 @@ msgstr "resets {reset}"
 msgid "Resets {reset}"
 msgstr "Resets {reset}"
 
-#: src/features/session-new-panels.tsx:148
+#: src/features/session-new-panels.tsx:167
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
@@ -3005,7 +3005,7 @@ msgstr "Run in background"
 msgid "Run metrics"
 msgstr "Run metrics"
 
-#: src/features/console-me.tsx:148
+#: src/features/console-me.tsx:149
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
@@ -3118,8 +3118,8 @@ msgstr "Saving…"
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-new-panels.tsx:100
-#: src/features/session-new-panels.tsx:101
+#: src/features/session-new-panels.tsx:112
+#: src/features/session-new-panels.tsx:113
 msgid "Search"
 msgstr "Search"
 
@@ -3190,11 +3190,11 @@ msgstr "Send the first message below."
 msgid "Sending action…"
 msgstr "Sending action…"
 
-#: src/features/session-new-panels.tsx:157
+#: src/features/session-new-panels.tsx:176
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
-#: src/features/session-handoff.tsx:200
+#: src/features/session-handoff.tsx:204
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
@@ -3270,7 +3270,7 @@ msgstr "Sessions"
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
-#: src/features/console-me.tsx:316
+#: src/features/console-me.tsx:273
 #: src/features/console-shell.tsx:104
 msgid "Settings"
 msgstr "Settings"
@@ -3418,7 +3418,7 @@ msgstr "Start agent"
 msgid "Start fresh"
 msgstr "Start fresh"
 
-#: src/features/session-handoff.tsx:60
+#: src/features/session-handoff.tsx:61
 msgid "Start without context"
 msgstr "Start without context"
 
@@ -3434,12 +3434,12 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new-panels.tsx:159
+#: src/features/session-new-panels.tsx:178
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new-panels.tsx:150
-#: src/features/session-new-panels.tsx:153
+#: src/features/session-new-panels.tsx:169
+#: src/features/session-new-panels.tsx:172
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -3495,7 +3495,7 @@ msgstr "Summary"
 #~ msgid "Switch chat"
 #~ msgstr "Switch chat"
 
-#: src/features/session-handoff.tsx:55
+#: src/features/session-handoff.tsx:56
 msgid "Switch mode"
 msgstr "Switch mode"
 
@@ -3513,11 +3513,11 @@ msgstr "Switch mode"
 msgid "switch the model"
 msgstr "switch the model"
 
-#: src/features/session-handoff.tsx:285
+#: src/features/session-handoff.tsx:289
 msgid "Switch to {to}"
 msgstr "Switch to {to}"
 
-#: src/features/session-handoff.tsx:175
+#: src/features/session-handoff.tsx:179
 msgid "Switched to {toAgent}"
 msgstr "Switched to {toAgent}"
 
@@ -3525,7 +3525,7 @@ msgstr "Switched to {toAgent}"
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
-#: src/features/session-handoff.tsx:201
+#: src/features/session-handoff.tsx:205
 msgid "Switching agent…"
 msgstr "Switching agent…"
 
@@ -3534,8 +3534,8 @@ msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
 
-#: src/features/console-me.tsx:218
-#: src/features/console-me.tsx:311
+#: src/features/console-me.tsx:219
+#: src/features/console-me.tsx:268
 #: src/features/console-shared.tsx:384
 msgid "System"
 msgstr "System"
@@ -3581,8 +3581,8 @@ msgstr "Terminal"
 msgid "Terminal screen"
 msgstr "Terminal screen"
 
-#: src/features/console-me.tsx:225
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:226
+#: src/features/console-me.tsx:228
 msgid "Text caret"
 msgstr "Text caret"
 
@@ -3646,8 +3646,8 @@ msgstr "The previous session request expired. Start a new one."
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 
-#: src/features/console-me.tsx:212
-#: src/features/console-me.tsx:214
+#: src/features/console-me.tsx:213
+#: src/features/console-me.tsx:215
 #: src/features/console-shared.tsx:377
 #: src/features/console-shared.tsx:379
 msgid "Theme"
@@ -3670,17 +3670,17 @@ msgstr "This agent lists no skills yet"
 msgid "This browser"
 msgstr "This browser"
 
-#: src/features/console-me.tsx:123
-#: src/features/console-me.tsx:332
+#: src/features/console-me.tsx:124
+#: src/features/console-me.tsx:289
 #: src/features/console-shell.tsx:264
 msgid "This computer"
 msgstr "This computer"
 
-#: src/features/console-me.tsx:139
+#: src/features/console-me.tsx:140
 msgid "This computer (local Runtime)"
 msgstr "This computer (local Runtime)"
 
-#: src/features/console-me.tsx:141
+#: src/features/console-me.tsx:142
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
@@ -3690,7 +3690,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
 
-#: src/features/console-me.tsx:163
+#: src/features/console-me.tsx:164
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
@@ -3698,7 +3698,7 @@ msgstr "This device is not paired. On the host run scripts/dev/install-remote-re
 msgid "this device is offline"
 msgstr "this device is offline"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:60
 msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 msgstr "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 
@@ -3917,7 +3917,7 @@ msgstr "Unavailable"
 #~ msgid "uncommitted changes"
 #~ msgstr "uncommitted changes"
 
-#: src/features/console-me.tsx:233
+#: src/features/console-me.tsx:234
 msgid "Underscore"
 msgstr "Underscore"
 
@@ -3962,7 +3962,7 @@ msgstr "Uploading {step}/{steps}…"
 msgid "Uptime"
 msgstr "Uptime"
 
-#: src/features/console-me.tsx:120
+#: src/features/console-me.tsx:121
 #: src/features/session-info.tsx:53
 msgid "Usage"
 msgstr "Usage"
@@ -4009,11 +4009,11 @@ msgstr "vscode-links is not installed on the host."
 msgid "Waiting for"
 msgstr "Waiting for"
 
-#: src/features/console-me.tsx:304
+#: src/features/console-me.tsx:261
 msgid "Waiting for the host"
 msgstr "Waiting for the host"
 
-#: src/features/console-me.tsx:74
+#: src/features/console-me.tsx:75
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
 
@@ -4124,7 +4124,7 @@ msgstr "What it solves"
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
-#: src/features/session-handoff.tsx:259
+#: src/features/session-handoff.tsx:263
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 

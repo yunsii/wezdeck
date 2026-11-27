@@ -7,6 +7,7 @@ import { cn } from '#/lib/utils'
 export type SelectOption = {
   value: string
   label: React.ReactNode
+  icon?: React.ReactNode
   disabled?: boolean
 }
 
@@ -51,10 +52,20 @@ export function Select({
           className,
         )}
       >
-        <BaseSelect.Value className="min-w-0 truncate">
-          {(current) =>
-            options.find((option) => option.value === current)?.label ?? ''
-          }
+        <BaseSelect.Value className="min-w-0 flex-1">
+          {(current) => {
+            const option = options.find((item) => item.value === current)
+            return (
+              <span className="flex min-w-0 items-center gap-2">
+                {option?.icon ? (
+                  <span aria-hidden className="inline-flex shrink-0">
+                    {option.icon}
+                  </span>
+                ) : null}
+                <span className="min-w-0 truncate">{option?.label ?? ''}</span>
+              </span>
+            )
+          }}
         </BaseSelect.Value>
         <BaseSelect.Icon>
           <ChevronDown size={14} aria-hidden="true" />
@@ -82,7 +93,14 @@ export function Select({
                     lg ? 'min-h-11 text-body' : 'min-h-8 text-meta',
                   )}
                 >
-                  <BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
+                  {option.icon ? (
+                    <span aria-hidden className="inline-flex shrink-0">
+                      {option.icon}
+                    </span>
+                  ) : null}
+                  <BaseSelect.ItemText className="min-w-0 flex-1 truncate">
+                    {option.label}
+                  </BaseSelect.ItemText>
                   <BaseSelect.ItemIndicator>
                     <Check size={14} aria-hidden="true" />
                   </BaseSelect.ItemIndicator>

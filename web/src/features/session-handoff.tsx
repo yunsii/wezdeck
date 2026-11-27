@@ -6,7 +6,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft, RotateCcw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useSessions } from './console-sessions'
 import { useAgentProfiles } from './agent-profiles'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import { seedQueuedPending } from './session-send'
 
 const AGENTS = ['claude', 'codex', 'grok', 'agy'] as const
@@ -56,10 +57,10 @@ function ModeSelector({
     >
       {(
         [
-          ['handoff', t`Hand off`, t`Carry a brief`],
-          ['switch', t`Blank switch`, t`Start without context`],
+          ['handoff', t`Hand off`, t`Carry a brief`, ArrowRightLeft],
+          ['switch', t`Blank switch`, t`Start without context`, RotateCcw],
         ] as const
-      ).map(([value, label, description]) => (
+      ).map(([value, label, description, Icon]) => (
         <Button
           key={value}
           type="button"
@@ -73,7 +74,10 @@ function ModeSelector({
               : 'border-brand-border'
           }`}
         >
-          <span className="text-caption font-medium">{label}</span>
+          <span className="flex items-center gap-2 text-caption font-medium">
+            <Icon size={16} aria-hidden className="shrink-0 text-brand-label" />
+            {label}
+          </span>
           <span className="text-meta text-brand-muted">{description}</span>
         </Button>
       ))}
@@ -191,7 +195,7 @@ export function HandoffActions({
   }
 
   const action =
-    'flex h-10 items-center justify-center gap-1.5 rounded-xl px-2 text-caption disabled:opacity-40'
+    'flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-2 text-caption disabled:opacity-40'
   const busy = Boolean(jobId) && currentJob?.stage !== 'failed'
 
   if (busy) {
@@ -318,8 +322,10 @@ export function HandoffActions({
             }}
             className={action}
           >
-            <ArrowRightLeft size={14} aria-hidden />
-            {target}
+            <span aria-hidden className="inline-flex shrink-0">
+              <AgentAvatar agent={target} size={24} />
+            </span>
+            <span className="min-w-0 truncate">{agentLabel(target)}</span>
           </Button>
         ))}
       </div>

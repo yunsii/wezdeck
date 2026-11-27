@@ -311,8 +311,10 @@ async function checkMobilePicker(page: Page) {
   expect(await prompt.inputValue()).toBe('从手机开的新会话')
   const agent = view.getByRole('combobox', { name: '智能体' })
   if (await agent.count()) {
+    expect(await agent.getByTestId('agent-avatar').count()).toBe(1)
     await agent.click()
     const choices = sheet.getByTestId('new-session-picker').getByRole('option')
+    expect(await choices.first().getByTestId('agent-avatar').count()).toBe(1)
     let picked = false
     for (const choice of await choices.all()) {
       if (!(await choice.isEnabled())) continue
