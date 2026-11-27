@@ -75,4 +75,18 @@ describe('session cache', () => {
     expect(disk.start).toBe(50)
     expect(trimForDisk(page(0, 10, 'full')).messages).toHaveLength(10)
   })
+  it('disk copy extends back to keep the latest user message when a turn exceeds DISK_KEEP', () => {
+    const longTurn = {
+      start: 0,
+      span: 'since',
+      messages: Array.from({ length: DISK_KEEP + 40 }, (_, i) => ({
+        role: i === 15 ? 'user' : 'tool',
+        text: `m${i}`,
+      })),
+    }
+    const disk = trimForDisk(longTurn)
+    expect(disk.start).toBe(15)
+    expect(disk.messages[0]).toEqual({ role: 'user', text: 'm15' })
+    expect(disk.messages).toHaveLength(DISK_KEEP + 25)
+  })
 })

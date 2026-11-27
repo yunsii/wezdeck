@@ -806,7 +806,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 				relayLogf("session_cursor", "id=%s agent=%s outcome=revision_reset", a.ID, agent)
 			}
 		}
-		start, end, span := sessionWindow(t.messages, windowArgs)
+		start, end, span := sessionWindowLogged(a.ID, agent, t.messages, windowArgs)
 		out["messages"] = append([]chatMessage(nil), t.messages[start:end]...)
 		compactions, lastCompact := t.compactions()
 		if e.TurnStarted > 0 && (e.Status == "running" || e.Status == "waiting") {

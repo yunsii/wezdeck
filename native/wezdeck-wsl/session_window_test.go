@@ -45,3 +45,31 @@ func TestSessionWindowResetsStaleCodexCursor(t *testing.T) {
 		t.Fatalf("got %d:%d %s, want 7:10 since", start, end, span)
 	}
 }
+
+func TestSessionWindowIncludesLatestUserMessage(t *testing.T) {
+	// Long tool-heavy turn: latest user prompt is at 25, followed by 74 tool/assistant messages (> default limit 60).
+	msgs := make([]chatMessage, 100)
+	for i := range msgs {
+		msgs[i].Role = "tool"
+	}
+	msgs[25].Role = "user"
+	if start, end, span := sessionWindow(msgs, sessionArgs{}); start != 25 || end != 100 || span != "full" {
+		t.Fatalf("expected full window extended to latest user at 25, got %d..%d %s", start, end, span)
+	}
+
+	// When a user message already sits inside the tail 60, keep the normal 40..100 window.
+	msgs[80].Role = "user"
+	if start, end, span := sessionWindow(msgs, sessionArgs{}); start != 40 || end != 100 || span != "full" {
+		t.Fatalf("expected normal 40..100 when user already in window, got %d..%d %s", start, end, span)
+	}
+
+	// Safety bound: a user message farther back than sessionLatestUserMaxExtra does not pull unbounded history.
+	huge := make([]chatMessage, 600)
+	for i := range huge {
+		huge[i].Role = "tool"
+	}
+	huge[5].Role = "user"
+	if start, end, span := sessionWindow(huge, sessionArgs{}); start != 540 || end != 600 || span != "full" {
+		t.Fatalf("expected bounded 540..600 when latest user exceeds max extra, got %d..%d %s", start, end, span)
+	}
+}

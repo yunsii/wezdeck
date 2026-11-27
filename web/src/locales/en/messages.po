@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:486
+#: src/features/chat-thread.tsx:494
 msgid "· summary"
 msgstr "· summary"
 
@@ -172,7 +172,7 @@ msgstr "{taskCount} tasks"
 msgid "{tools} tool calls"
 msgstr "{tools} tool calls"
 
-#: src/features/chat-controls.tsx:55
+#: src/features/chat-controls.tsx:60
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
@@ -750,7 +750,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:506
+#: src/features/console-sessions.tsx:484
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -1082,11 +1082,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:470
+#: src/features/chat-thread.tsx:478
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:471
+#: src/features/chat-thread.tsx:479
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1914,7 +1914,7 @@ msgstr "is queued"
 msgid "joins the current turn"
 msgstr "joins the current turn"
 
-#: src/features/chat-sticky.tsx:136
+#: src/features/chat-sticky.tsx:137
 msgid "Jump to your message: {text}"
 msgstr "Jump to your message: {text}"
 
@@ -2045,7 +2045,7 @@ msgstr "list available commands"
 msgid "live"
 msgstr "live"
 
-#: src/features/chat-controls.tsx:68
+#: src/features/chat-controls.tsx:76
 msgid "Load earlier"
 msgstr "Load earlier"
 
@@ -2057,7 +2057,7 @@ msgstr "Loaded on this page"
 msgid "Loading original…"
 msgstr "Loading original…"
 
-#: src/features/chat-controls.tsx:65
+#: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
 #: src/features/console-collab-run.tsx:210
 #: src/features/console-collab.tsx:111
@@ -2669,7 +2669,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/console-sessions.tsx:529
+#: src/features/console-sessions.tsx:507
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -3265,6 +3265,10 @@ msgstr "Resume a conversation"
 msgid "Retry"
 msgstr "Retry"
 
+#: src/features/chat-controls.tsx:75
+msgid "Retry loading earlier"
+msgstr "Retry loading earlier"
+
 #: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
 msgstr "Reusable"
@@ -3679,7 +3683,7 @@ msgstr "Show all tags"
 msgid "Show fewer"
 msgstr "Show fewer"
 
-#: src/features/chat-controls.tsx:67
+#: src/features/chat-controls.tsx:73
 msgid "Show history before compaction"
 msgstr "Show history before compaction"
 
@@ -3744,7 +3748,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:513
+#: src/features/console-sessions.tsx:491
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4018,7 +4022,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:295
+#: src/features/console-sessions.tsx:264
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4112,7 +4116,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/console-sessions.tsx:291
+#: src/features/console-sessions.tsx:260
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4122,7 +4126,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:507
+#: src/features/console-sessions.tsx:485
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4589,7 +4593,7 @@ msgstr "Warning"
 msgid "Warnings"
 msgstr "Warnings"
 
-#: src/features/console-sessions.tsx:283
+#: src/features/console-sessions.tsx:252
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 

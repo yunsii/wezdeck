@@ -42,7 +42,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    link only → collab sections only (no "Runtime offline" pages).
 4. **Mobile IA — three bottom tabs** (revised 2026-11-23; 现在 retired — its
    bands reshuffled on every agent turn and it duplicated both lists).
-   会话 is the home: one unified Telegram-style full-bleed flat IM list across mobile and desktop (no outer rounded cards; inset hairlines aligned to the text column; compact mobile top bar merging search, connection badge and +; quiet `bg-brand-deck` repo strips). Single-session worktrees render a flat 40 px avatar row with session title only (no inline worktree description); multi-session worktrees render a compact foldable header plus left-rail-guided 36 px sub-rows when expanded, and collapse into a full group row keeping avatar, focus preview, timestamp and unread count. Waiting and done sessions auto-sync incrementally in the background (`session-autosync.ts`, concurrency 2, watermarked by `(status, waiting_kind, ts)`, traced as `session-autosync`) so tapping in opens straight from cache. Agent brand avatar, Kimi/gateway as a corner badge; unread badge on line 2; no status Segmented; then the
+   会话 is the home: one unified Telegram-style full-bleed flat IM list across mobile and desktop (no outer rounded cards; inset hairlines aligned to the text column; compact mobile top bar merging search, connection badge and +; quiet `bg-brand-deck` repo strips). Single-session worktrees render a flat 40 px avatar row with session title only (no inline worktree description); multi-session worktrees render a compact foldable header plus left-rail-guided 36 px sub-rows when expanded, and collapse into a full group row keeping avatar, focus preview, timestamp and unread count. Waiting, done, and top 4 newest running sessions auto-sync incrementally in the background (`session-autosync.ts`, concurrency 2, waiting > done > running, running warm-refreshed every 15 s while visible, watermarked by `(status, waiting_kind, ts)`, traced as `session-autosync`) so tapping in opens straight from cache. Agent brand avatar, Kimi/gateway as a corner badge; unread badge on line 2; no status Segmented; then the
    repo → worktree → pane tree ordered by the group's latest stable turn
    start or completion (`order_at`), never by visits or streaming output;
    待跟进 to-dos at the bottom. Opening a session does not move its group.
@@ -418,8 +418,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   the agent works is open, shows its last 3 calls ("N earlier calls" above)
   with a breathing light on the call in flight (host `pending`: sent, no
   result yet) and a check on finished ones, and collapses once the run is
-  over (a tap still opens it in full); "N messages, showing M" with 加载更早 keeping the reading
-  position; a message sent from the web console shows at once at the end of the
+  over (a tap still opens it in full); initial `full` window extends back past the 60-message tail when needed so a tool-heavy turn never hides the latest user message (up to +400 messages; `trimForDisk` keeps the same invariant, and stale caches without a user prompt backfill automatically); scrolling up near the top automatically preloads earlier messages while anchoring the visible `[data-msg]` right before merge (stopping at compaction boundaries and on error, traced as `chat-preload`), with "N messages, showing M" and manual `加载更早` kept as fallback; a message sent from the web console shows at once at the end of the
   thread as the user bubble faded (like Claude Code's queued input) and
   becomes a normal user bubble only when the transcript shows it — in
   place, solidifying from the faded opacity (`chat-settle`), never a

@@ -1,8 +1,10 @@
-// Background pre-sync for sessions that need attention (waiting / done):
+// Background pre-sync for active sessions (waiting / done / running):
 // the shell already polls the session list every 5 s, so when a session enters
 // waiting or finishes (or advances its timestamp while there), we incrementally
 // pull its latest messages into the persisted TanStack Query cache before the
-// user taps in. Deduplicated by (status, waiting_kind, ts), concurrency-capped,
+// user taps in. Running sessions (up to RUNNING_SYNC_LIMIT newest) also warm
+// immediately when cold/stale and refresh incrementally every 15 s while the
+// tab is visible, capped behind waiting/done in the shared concurrency pool,
 // paused while hidden / offline, and traced as `session-autosync`.
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
@@ -14,6 +16,8 @@ import type { SessionCard } from './session-card'
 import { detailKey, readDetail } from './session-detail-read'
 
 export const AUTO_SYNC_LIMIT = 10
+export const RUNNING_SYNC_LIMIT = 4
+export const RUNNING_SYNC_INTERVAL_MS = 15_000
 export const AUTO_SYNC_CONCURRENCY = 2
 export const AUTO_SYNC_RETRY_MS = 30_000
 
@@ -21,8 +25,11 @@ export type AutoSyncTarget = {
   id: string
   sig: string
   status: string
-  reason: 'cold' | 'stale'
+  reason: 'cold' | 'stale' | 'running-refresh'
 }
+
+export const isRunningCard = (row: Pick<SessionCard, 'status'>) =>
+  row.status === 'running'
 
 export function syncSignature(
   row: Pick<SessionCard, 'status' | 'waiting_kind' | 'ts'>,
@@ -45,22 +52,28 @@ export function isCacheCurrent(
 }
 
 /**
- * Pick attention sessions (`waiting` / `done`) whose detail cache is missing
- * or behind the latest list snapshot. Pure and unit-tested.
+ * Pick attention (`waiting` / `done`) and top `running` sessions whose detail
+ * cache is missing, behind the latest list snapshot, or due for a throttled
+ * background refresh. Priority: waiting > done > running (newest first).
+ * Pure and unit-tested.
  */
 export function pickAutoSyncTargets({
   sessions,
   activeId,
   synced,
+  syncedAt = new Map<string, number>(),
   inFlight,
   failedAt,
   getCached,
   now = Date.now(),
   limit = AUTO_SYNC_LIMIT,
+  runningLimit = RUNNING_SYNC_LIMIT,
+  runningIntervalMs = RUNNING_SYNC_INTERVAL_MS,
 }: {
   sessions: Array<SessionCard>
   activeId?: string
   synced: ReadonlyMap<string, string>
+  syncedAt?: ReadonlyMap<string, number>
   inFlight: ReadonlySet<string>
   failedAt: ReadonlyMap<string, number>
   getCached: (
@@ -68,11 +81,16 @@ export function pickAutoSyncTargets({
   ) => Pick<Detail, 'status' | 'waiting_kind' | 'ts' | 'messages'> | undefined
   now?: number
   limit?: number
+  runningLimit?: number
+  runningIntervalMs?: number
 }): {
   targets: Array<AutoSyncTarget>
   alreadyCurrent: Array<{ id: string; sig: string }>
 } {
-  const candidates = sessions
+  const rank = (row: SessionCard) =>
+    needsYou(row) ? 3 : isDoneUnread(row) ? 2 : isRunningCard(row) ? 1 : 0
+
+  const attention = sessions
     .filter(
       (row) =>
         !row.restart_pending &&
@@ -81,11 +99,23 @@ export function pickAutoSyncTargets({
         (needsYou(row) || isDoneUnread(row)),
     )
     .sort((a, b) => {
-      const aw = needsYou(a) ? 1 : 0
-      const bw = needsYou(b) ? 1 : 0
-      if (aw !== bw) return bw - aw
+      const dr = rank(b) - rank(a)
+      if (dr !== 0) return dr
       return b.ts - a.ts || a.id.localeCompare(b.id)
     })
+
+  const running = sessions
+    .filter(
+      (row) =>
+        !row.restart_pending &&
+        row.id !== activeId &&
+        !needsAttention(row) &&
+        isRunningCard(row),
+    )
+    .sort((a, b) => b.ts - a.ts || a.id.localeCompare(b.id))
+    .slice(0, runningLimit)
+
+  const candidates = [...attention, ...running]
 
   const targets: Array<AutoSyncTarget> = []
   const alreadyCurrent: Array<{ id: string; sig: string }> = []
@@ -93,10 +123,28 @@ export function pickAutoSyncTargets({
   for (const row of candidates) {
     if (targets.length >= limit) break
     const sig = syncSignature(row)
-    if (synced.get(row.id) === sig || inFlight.has(row.id)) continue
+    if (inFlight.has(row.id)) continue
     const lastFail = failedAt.get(`${row.id}|${sig}`)
     if (lastFail !== undefined && now - lastFail < AUTO_SYNC_RETRY_MS) continue
     const cached = getCached(row.id)
+    const isRun = isRunningCard(row) && !needsAttention(row)
+
+    if (isRun) {
+      const lastAt = syncedAt.get(row.id)
+      const current = isCacheCurrent(cached, row)
+      if (current && lastAt !== undefined && now - lastAt < runningIntervalMs) {
+        continue
+      }
+      targets.push({
+        id: row.id,
+        sig,
+        status: row.status,
+        reason: !cached ? 'cold' : current ? 'running-refresh' : 'stale',
+      })
+      continue
+    }
+
+    if (synced.get(row.id) === sig) continue
     if (isCacheCurrent(cached, row)) {
       alreadyCurrent.push({ id: row.id, sig })
       continue
@@ -113,8 +161,8 @@ export function pickAutoSyncTargets({
 }
 
 /**
- * Shell-level background sync for waiting and done sessions so tapping into
- * them renders the newest messages immediately from cache.
+ * Shell-level background sync for waiting, done, and top running sessions so
+ * tapping into them renders recent messages immediately from cache.
  */
 export function useAutoSyncAttentionSessions(
   sessions: Array<SessionCard> | undefined,
@@ -122,6 +170,7 @@ export function useAutoSyncAttentionSessions(
 ) {
   const client = useQueryClient()
   const syncedRef = useRef(new Map<string, string>())
+  const syncedAtRef = useRef(new Map<string, number>())
   const inFlightRef = useRef(new Set<string>())
   const failedAtRef = useRef(new Map<string, number>())
   const latestRef = useRef({ sessions, activeId })
@@ -134,6 +183,13 @@ export function useAutoSyncAttentionSessions(
       mountedRef.current = false
     }
   }, [])
+
+  const hasRunning = Boolean(
+    sessions?.some(
+      (row) =>
+        !row.restart_pending && row.id !== activeId && isRunningCard(row),
+    ),
+  )
 
   useEffect(() => {
     const runSweep = () => {
@@ -148,21 +204,29 @@ export function useAutoSyncAttentionSessions(
       const list = latestRef.current.sessions
       if (!list?.length) return
 
-      // Drop watermarks for sessions that left attention so a later return
-      // to waiting/done always re-checks the cache.
-      const attentionIds = new Set(
+      // Drop watermarks for sessions that left waiting/done/running so a later
+      // return always re-checks the cache.
+      const trackedIds = new Set(
         list
-          .filter((row) => !row.restart_pending && needsAttention(row))
+          .filter(
+            (row) =>
+              !row.restart_pending &&
+              (needsAttention(row) || isRunningCard(row)),
+          )
           .map((row) => row.id),
       )
       for (const id of syncedRef.current.keys()) {
-        if (!attentionIds.has(id)) syncedRef.current.delete(id)
+        if (!trackedIds.has(id)) syncedRef.current.delete(id)
+      }
+      for (const id of syncedAtRef.current.keys()) {
+        if (!trackedIds.has(id)) syncedAtRef.current.delete(id)
       }
 
       const { targets, alreadyCurrent } = pickAutoSyncTargets({
         sessions: list,
         activeId: latestRef.current.activeId,
         synced: syncedRef.current,
+        syncedAt: syncedAtRef.current,
         inFlight: inFlightRef.current,
         failedAt: failedAtRef.current,
         getCached: (id) => client.getQueryData<Detail>(detailKey(id)),
@@ -187,6 +251,7 @@ export function useAutoSyncAttentionSessions(
           })
           .then(() => {
             syncedRef.current.set(target.id, target.sig)
+            syncedAtRef.current.set(target.id, Date.now())
             failedAtRef.current.delete(`${target.id}|${target.sig}`)
             trace('session-autosync', {
               id: target.id,
@@ -215,14 +280,18 @@ export function useAutoSyncAttentionSessions(
 
     runSweep()
 
+    const timer = hasRunning
+      ? window.setInterval(runSweep, RUNNING_SYNC_INTERVAL_MS)
+      : undefined
     const onWake = () => {
       if (document.visibilityState === 'visible') runSweep()
     }
     document.addEventListener('visibilitychange', onWake)
     window.addEventListener('online', runSweep)
     return () => {
+      if (timer !== undefined) window.clearInterval(timer)
       document.removeEventListener('visibilitychange', onWake)
       window.removeEventListener('online', runSweep)
     }
-  }, [client, sessions, activeId])
+  }, [client, sessions, activeId, hasRunning])
 }
