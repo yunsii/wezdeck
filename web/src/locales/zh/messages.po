@@ -3844,8 +3844,8 @@ msgid "Select a target repository first."
 msgstr "请先选择目标仓库。"
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:373
-#: src/features/message-composer.tsx:375
+#: src/features/message-composer.tsx:387
+#: src/features/message-composer.tsx:389
 #: src/features/ticket-manager-panel.tsx:132
 msgid "Send"
 msgstr "发送"
