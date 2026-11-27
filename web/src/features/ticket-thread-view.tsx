@@ -82,12 +82,19 @@ export function TicketThread({
                 // anywhere, not break-word: long paths / ids must not widen the bubble
                 'rounded-xl px-3.5 py-2.5 text-body leading-relaxed [overflow-wrap:anywhere]',
                 mine
-                  ? 'whitespace-pre-wrap bg-brand-text text-brand-deck'
+                  ? 'bg-brand-text text-brand-deck'
                   : 'bg-brand-deck text-brand-text',
                 asking && 'ring-2 ring-brand-waiting',
               )}
             >
-              {mine ? entry.text : <ChatMarkdown text={entry.text} />}
+              <ChatMarkdown
+                text={entry.text}
+                className={
+                  mine
+                    ? 'text-brand-deck [&_a]:text-brand-deck [&_blockquote]:border-brand-deck/40 [&_blockquote]:text-brand-deck/80 [&_code]:bg-brand-deck/15 [&_code]:text-brand-deck'
+                    : undefined
+                }
+              />
             </div>
             <span
               className={cn(

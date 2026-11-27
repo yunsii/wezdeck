@@ -343,13 +343,18 @@ function TicketRow({
           />
         </ContextMenu.Trigger>
         <ContextMenu.Portal>
-          <ContextMenu.Positioner className="z-50 outline-none">
-            <ContextMenu.Popup className="min-w-44 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none">
+          <ContextMenu.Positioner className="z-[60]">
+            <ContextMenu.Popup
+              data-deck
+              data-testid="ticket-row-context-menu"
+              className="motion-pop min-w-44 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none"
+            >
               <ContextMenu.Item
+                data-testid="ticket-row-copy-reference"
                 className={menuItemClass}
                 onClick={() => void copy()}
               >
-                <Hash size={15} className="text-brand-muted" aria-hidden />
+                <Hash size={14} aria-hidden />
                 {t`Copy reference`}
               </ContextMenu.Item>
             </ContextMenu.Popup>

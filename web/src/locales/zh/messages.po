@@ -563,7 +563,7 @@ msgstr "通知管理会话修复验收"
 msgid "Ask manager to resolve conflict"
 msgstr "通知管理会话解决冲突"
 
-#: src/features/ticket-reply.tsx:254
+#: src/features/ticket-reply.tsx:276
 msgid "Assumptions"
 msgstr "假设"
 
@@ -758,7 +758,7 @@ msgstr "缓存"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:257
+#: src/features/console-collab.tsx:326
 #: src/features/session-info.tsx:96
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -849,10 +849,6 @@ msgstr "检查中…"
 msgid "Checkout"
 msgstr "检出代码"
 
-#: src/features/console-collab.tsx:252
-msgid "Child"
-msgstr "子单"
-
 #: src/features/ticket-timeline.tsx:124
 msgid "Child finished"
 msgstr "子单结束"
@@ -862,7 +858,7 @@ msgid "Child tickets"
 msgstr "子工单"
 
 #: src/features/console-collab.tsx:232
-#: src/features/console-collab.tsx:247
+#: src/features/console-collab.tsx:245
 msgid "Children"
 msgstr "子单"
 
@@ -1216,7 +1212,7 @@ msgstr "复制原始日志"
 #: src/features/session-info-actions.tsx:115
 #: src/features/ticket-info.tsx:186
 #: src/features/ticket-keys.tsx:267
-#: src/features/ticket-keys.tsx:353
+#: src/features/ticket-keys.tsx:358
 msgid "Copy reference"
 msgstr "复制引用"
 
@@ -1367,7 +1363,7 @@ msgstr "深色"
 msgid "data as of {time}"
 msgstr "数据截至 {time}"
 
-#: src/features/ticket-reply.tsx:257
+#: src/features/ticket-reply.tsx:280
 msgid "Decision"
 msgstr "决定"
 
@@ -1422,7 +1418,7 @@ msgstr "交付策略：业务仓仅推分支并开待审 MR（绝不自动合并
 msgid "Deny"
 msgstr "拒绝"
 
-#: src/features/console-collab.tsx:255
+#: src/features/console-collab.tsx:332
 msgid "Depends on"
 msgstr "依赖"
 
@@ -1641,7 +1637,7 @@ msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协�
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
 
-#: src/features/ticket-run-chat.tsx:97
+#: src/features/ticket-run-chat.tsx:148
 msgid "Execution conversation"
 msgstr "执行过程"
 
@@ -1920,6 +1916,7 @@ msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
 #: src/features/ticket-pipeline.tsx:337
+#: src/features/ticket-reply.tsx:278
 #: src/features/ticket-timeline.tsx:207
 msgid "Implement"
 msgstr "实施"
@@ -1977,11 +1974,6 @@ msgstr "已安装"
 #: src/features/me-host.tsx:127
 msgid "Instance"
 msgstr "实例"
-
-#: src/features/console-collab.tsx:352
-#: src/features/console-collab.tsx:353
-#~ msgid "Integration"
-#~ msgstr "集成"
 
 #: src/features/me-notifications.tsx:156
 msgid "Integration conflict, verification failure, or run error."
@@ -2168,7 +2160,7 @@ msgid "Load earlier"
 msgstr "加载更早"
 
 #: src/features/ticket-manager-panel.tsx:315
-#: src/features/ticket-run-chat.tsx:190
+#: src/features/ticket-run-chat.tsx:241
 msgid "Load earlier ({start} more)"
 msgstr "加载更早（还有 {start} 条）"
 
@@ -2190,7 +2182,7 @@ msgstr "正在加载原图…"
 
 #: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
-#: src/features/console-collab-run.tsx:210
+#: src/features/console-collab-run.tsx:216
 #: src/features/console-collab.tsx:119
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:212
@@ -2317,10 +2309,6 @@ msgstr "可能停下来问你："
 #: src/features/ticket-timeline.tsx:152
 msgid "Merge"
 msgstr "合并分支"
-
-#: src/features/console-collab.tsx:364
-#~ msgid "merged"
-#~ msgstr "已合并"
 
 #: src/features/session-composer.tsx:176
 msgid "Message"
@@ -2546,7 +2534,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
 
-#: src/features/ticket-run-chat.tsx:219
+#: src/features/ticket-run-chat.tsx:270
 msgid "No conversation messages recorded for this run."
 msgstr "此次运行暂无对话记录。"
 
@@ -3333,10 +3321,6 @@ msgstr "回复"
 msgid "Reply and continue"
 msgstr "回复并继续"
 
-#: src/features/console-collab.tsx:253
-msgid "Repo"
-msgstr "仓库"
-
 #: src/features/collab-metrics.tsx:98
 msgid "Repo filter"
 msgstr "仓库筛选"
@@ -3527,12 +3511,12 @@ msgstr "内存"
 msgid "RSS p95 / peak"
 msgstr "内存 p95 / 峰值"
 
-#: src/features/ticket-run-chat.tsx:132
+#: src/features/ticket-run-chat.tsx:183
 msgid "run"
 msgstr "运行"
 
-#: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:242
+#: src/features/ticket-run-chat.tsx:200
+#: src/features/ticket-run-chat.tsx:296
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3560,7 +3544,7 @@ msgstr "运行结束"
 msgid "Run in background"
 msgstr "转到后台"
 
-#: src/features/ticket-run-chat.tsx:175
+#: src/features/ticket-run-chat.tsx:226
 msgid "Run log"
 msgstr "原始日志"
 
@@ -3576,8 +3560,8 @@ msgstr "启动运行"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
-#: src/features/console-collab.tsx:277
-#: src/features/console-collab.tsx:278
+#: src/features/console-collab.tsx:260
+#: src/features/console-collab.tsx:261
 #: src/features/tickets-view.tsx:134
 msgid "running"
 msgstr "运行中"
@@ -3701,7 +3685,6 @@ msgstr "调度运行中"
 msgid "Scheduler ended"
 msgstr "调度结束"
 
-#: src/features/console-collab.tsx:256
 #: src/features/sent-history.tsx:356
 msgid "Scope"
 msgstr "改动范围"
@@ -3942,7 +3925,7 @@ msgstr "查看初始消息"
 msgid "Show the call"
 msgstr "跳到发起的调用"
 
-#: src/features/ticket-run-chat.tsx:233
+#: src/features/ticket-run-chat.tsx:287
 msgid "Showing {shownCount} of {total} items"
 msgstr "已显示 {shownCount} / {total} 条"
 
@@ -3991,7 +3974,7 @@ msgstr "分支快照"
 msgid "Socket"
 msgstr "套接字"
 
-#: src/features/ticket-reply.tsx:258
+#: src/features/ticket-reply.tsx:281
 msgid "Solution"
 msgstr "方案"
 
@@ -4115,7 +4098,6 @@ msgstr "正在启动…"
 msgid "State"
 msgstr "状态"
 
-#: src/features/console-collab.tsx:254
 #: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:85
 #: src/features/session-worktree-detail.tsx:65
@@ -4156,7 +4138,7 @@ msgstr "正在提交答案……"
 msgid "summarise the context"
 msgstr "压缩上下文"
 
-#: src/features/ticket-reply.tsx:253
+#: src/features/ticket-reply.tsx:275
 msgid "Summary"
 msgstr "摘要"
 
@@ -4229,6 +4211,10 @@ msgstr "问答可点选项"
 #: src/features/session-title-history.tsx:174
 msgid "Task history ({count})"
 msgstr "任务轨迹（{count}）"
+
+#: src/features/ticket-run-chat.tsx:74
+msgid "Task prompt ({promptCount})"
+msgstr "任务提示词（{promptCount}）"
 
 #: src/features/session-info.tsx:129
 #: src/features/ticket-info.tsx:243
@@ -4414,7 +4400,7 @@ msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTe
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "工作树还有本地改动，请进入会话检查后再删除。"
 
-#: src/features/ticket-reply.tsx:256
+#: src/features/ticket-reply.tsx:279
 #: src/features/ticket-thread-view.tsx:54
 msgid "Thread"
 msgstr "讨论"
@@ -4616,7 +4602,7 @@ msgstr "在「我的」里启用写入后才能发送命令"
 msgid "TURN relay"
 msgstr "TURN 中继"
 
-#: src/features/ticket-run-chat.tsx:161
+#: src/features/ticket-run-chat.tsx:212
 msgid "turns"
 msgstr "轮"
 
@@ -4726,7 +4712,7 @@ msgstr "用户级"
 msgid "VAPID push keys are not configured on the relay Worker yet."
 msgstr "Relay Worker 尚未配置 VAPID 推送密钥。"
 
-#: src/features/ticket-reply.tsx:255
+#: src/features/ticket-reply.tsx:277
 msgid "Verification"
 msgstr "核实"
 
@@ -4776,7 +4762,7 @@ msgstr "等电脑确认"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
-#: src/features/ticket-run-chat.tsx:218
+#: src/features/ticket-run-chat.tsx:269
 msgid "Waiting for worker output…"
 msgstr "等待工人输出…"
 
@@ -4788,7 +4774,7 @@ msgstr "在等你"
 msgid "Waiting for you"
 msgstr "等待处理"
 
-#: src/features/ticket-thread-view.tsx:98
+#: src/features/ticket-thread-view.tsx:105
 msgid "Waiting for your answer"
 msgstr "等你回答"
 
