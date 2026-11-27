@@ -335,7 +335,10 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			continue
 		}
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
-		if e.interrupted(interrupt) {
+		readOnly := codexPaneUnavailable(e.AgentName, cmd)
+		if readOnly {
+			e = e.asReadOnly()
+		} else if e.interrupted(interrupt) {
 			e.Status = "idle"
 			e.RunningKind = ""
 		}
@@ -369,7 +372,7 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		// window, TUI redraws) would reorder idle sessions, so they are only
 		// the fallback for agents without a transcript.
 		if path, agent := findTranscript(e.SessionID); path != "" {
-			if !paneOwnsSessionAgent(cmd, profile, agent) {
+			if !readOnly && !paneOwnsSessionAgent(cmd, profile, agent) {
 				continue
 			}
 			card.Agent = agent

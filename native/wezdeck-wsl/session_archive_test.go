@@ -142,6 +142,14 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 		if readOnly && (detail["status"] != "idle" || detail["waiting_kind"] != "" || detail["focus"] != nil || detail["screen"] != nil) {
 			t.Fatalf("expected read-only history, got %#v", detail)
 		}
+		list, err := listSessions()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cards := list.(map[string]any)["sessions"].([]sessionCard)
+		if len(cards) != 1 || cards[0].ID != id || cards[0].Status != detail["status"] || cards[0].WaitingKind != detail["waiting_kind"] {
+			t.Fatalf("list and detail must agree on status, got %+v", cards)
+		}
 	}
 	check(false)
 	run("respawn-pane", "-k", "-t", pane, "exec "+bin)
