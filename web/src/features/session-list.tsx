@@ -46,7 +46,12 @@ import {
 import { useStickyMembers } from './session-stable'
 import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
-import { readDraft, sessionDraftKey, useDraftRevision } from '#/lib/use-draft'
+import {
+  readDraft,
+  sessionDraftKey,
+  useDraftRevision,
+  visibleDraft,
+} from '#/lib/use-draft'
 
 function useChatPreviewLabels() {
   const { t } = useLingui()
@@ -204,9 +209,10 @@ export function SessionList({
   const rows = sessions.data?.sessions ?? []
   const creatingJobs = sessions.data?.creating_jobs ?? []
   useDraftRevision()
+  // Draft badge only shows after leaving the session's detail view
   const rowsWithDrafts = rows.map((row) => ({
     ...row,
-    draft: readDraft(sessionDraftKey(row.id)),
+    draft: visibleDraft(row.id, selected, readDraft(sessionDraftKey(row.id))),
   }))
   const groups = buildChatGroups(rowsWithDrafts)
   const previewLabels = useChatPreviewLabels()

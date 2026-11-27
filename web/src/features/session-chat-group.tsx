@@ -93,7 +93,7 @@ function SessionSubRow({
   const tone = chatTone(session)
   const title = session.title?.trim()
   const prompt = humanPrompt(session.last_prompt).trim()
-  const draft = session.draft?.trim()
+  const draft = selected ? '' : (session.draft?.trim() ?? '')
   const compact =
     tone === 'idle' && !title && !prompt && !draft && !session.restart_pending
   const statusLabel = session.restart_pending
@@ -312,8 +312,8 @@ export function ChatGroupRow({
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
     ? 'waiting'
     : 'done'
-  const hasDraft = chat.sessions.some((session) =>
-    Boolean(session.draft?.trim()),
+  const hasDraft = chat.sessions.some(
+    (session) => session.id !== selectedId && Boolean(session.draft?.trim()),
   )
   const header = collapsed ? (
     <Button

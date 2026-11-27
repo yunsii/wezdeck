@@ -123,7 +123,7 @@ export function ChatRow({
               </span>
               <span className="flex min-w-0 items-center justify-between gap-2 text-caption">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  {row.draft?.trim() ? (
+                  {!selected && row.draft?.trim() ? (
                     <span
                       data-testid="chat-draft"
                       className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"

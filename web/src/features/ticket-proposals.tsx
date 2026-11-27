@@ -14,6 +14,7 @@ import type { TicketProposal } from '#/lib/runtime-contract'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { Textarea } from '#/components/ui/textarea'
+import { ChatMarkdown } from './chat-markdown'
 import { useDeviceState } from './device-state'
 
 /** `depends_on` keys / ids → readable names (sibling items, else existing children) */
@@ -114,9 +115,10 @@ function ProposalCard({
         </p>
       </header>
       <Part title={t`What it solves`}>
-        <p className="text-caption leading-relaxed whitespace-pre-wrap">
-          {proposal.summary?.problem ?? proposal.reason ?? ''}
-        </p>
+        <ChatMarkdown
+          text={proposal.summary?.problem ?? proposal.reason ?? ''}
+          className="text-caption"
+        />
       </Part>
       {(proposal.status_check ?? []).length > 0 ? (
         <Part title={t`What already exists`}>
@@ -125,9 +127,10 @@ function ProposalCard({
       ) : null}
       <Part title={t`How it will be done`}>
         {proposal.summary?.approach ? (
-          <p className="text-caption leading-relaxed whitespace-pre-wrap">
-            {proposal.summary.approach}
-          </p>
+          <ChatMarkdown
+            text={proposal.summary.approach}
+            className="text-caption"
+          />
         ) : null}
         <ol className="grid">
           {proposal.items.map((item) => (
@@ -166,8 +169,10 @@ function ProposalCard({
         triggerClassName="min-h-11 text-caption font-medium"
         title={t`Technical details`}
       >
-        <div className="grid gap-2 pb-3 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
-          {proposal.contract ? <p>{proposal.contract}</p> : null}
+        <div className="grid gap-2 pb-3 text-caption leading-relaxed text-brand-muted">
+          {proposal.contract ? (
+            <ChatMarkdown text={proposal.contract} className="text-caption" />
+          ) : null}
           {proposal.items.map((item) =>
             item.assumed ? (
               <p key={item.key}>

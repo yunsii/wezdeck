@@ -6,6 +6,7 @@ import { getCollab } from '#/lib/runtime-client'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { num, pct, usd } from './console-collab-format'
+import { ChatMarkdown } from './chat-markdown'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 
@@ -101,9 +102,12 @@ export function RunDetail({
           className="grid gap-2"
           title={t`Final output`}
         >
-          <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-meta whitespace-pre-wrap text-brand-muted">
-            {record.final_text_tail}
-          </pre>
+          <div className="max-h-96 overflow-auto rounded-xl border border-brand-border bg-brand-deck p-3 text-brand-text">
+            <ChatMarkdown
+              text={record.final_text_tail}
+              className="text-caption"
+            />
+          </div>
         </Disclosure>
       ) : null}
       {/* provenance for debugging: trigger, command, backend, tokens,

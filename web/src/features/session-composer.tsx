@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { toast } from 'sonner'
 import { setDiagnosticsPage, trace } from '#/lib/client-trace'
-import { useMediaQuery } from '#/lib/use-media'
+import { useIsWide, useMediaQuery } from '#/lib/use-media'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
 import { cn } from '#/lib/utils'
 import { TodoPanel, useTodos } from './session-todos'
@@ -27,6 +27,11 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
+import {
+  isHardwareOnlyKey,
+  isSoftKeyboardOpen,
+  shouldEnterSend,
+} from './composer-enter'
 import { useSpaceToFocus } from './composer-keys'
 import {
   MAX_IMAGES,
@@ -347,10 +352,20 @@ export function ComposerBox({
   // one tool panel at a time, above the toolbar
   const [panel, setPanel] = useState<Panel>(null)
   const complete = useSkillCompletion(composer, session)
-  // a touch keyboard has one Enter key and no Shift+Enter: there Enter is
-  // a new line and the button sends (as in Telegram / WhatsApp); with a
-  // mouse and keyboard Enter sends, Shift+Enter breaks the line
-  const touch = useMediaQuery('(hover: none) and (pointer: coarse)', false)
+  // Touch-only phones have no Shift+Enter so Enter breaks the line; desktops
+  // and tablets with a hardware keyboard (with or without a trackpad) use
+  // Enter to send and Shift+Enter for a newline.
+  const coarsePrimary = useMediaQuery(
+    '(hover: none) and (pointer: coarse)',
+    false,
+  )
+  const anyFinePointer = useMediaQuery(
+    '(any-pointer: fine), (any-hover: hover)',
+    true,
+  )
+  const wide = useIsWide()
+  const [sawHardwareKey, setSawHardwareKey] = useState(false)
+  const touchOnly = coarsePrimary && !anyFinePointer && !sawHardwareKey
   const canSend = !composer.progress && composer.ready && !blocked
 
   useSpaceToFocus()
@@ -454,6 +469,8 @@ export function ComposerBox({
             complete.track(event.target.selectionStart)
           }}
           onKeyDown={(event) => {
+            if (!sawHardwareKey && isHardwareOnlyKey(event))
+              setSawHardwareKey(true)
             if (complete.key(event)) return
             if (tokenKey(event, composer.setText)) return
             // Esc blurs (IM); clear stays on the × button with undo
@@ -462,12 +479,24 @@ export function ComposerBox({
               event.currentTarget.blur()
               return
             }
-            if (event.key !== 'Enter') return
-            // the IME's Enter picks a candidate (拼音 → 汉字), it is not a send
-            if (event.nativeEvent.isComposing || event.keyCode === 229) return
-            if (event.shiftKey || event.altKey) return
-            // Ctrl/⌘+Enter sends everywhere, plain Enter only off touch
-            if (touch && !(event.ctrlKey || event.metaKey)) return
+            if (
+              !shouldEnterSend({
+                coarsePrimary,
+                anyFinePointer,
+                wide,
+                sawHardwareKey: sawHardwareKey || isHardwareOnlyKey(event),
+                softKeyboardOpen: isSoftKeyboardOpen(),
+                key: event.key,
+                code: event.code,
+                shiftKey: event.shiftKey,
+                altKey: event.altKey,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                isComposing: event.nativeEvent.isComposing,
+                keyCode: event.keyCode,
+              })
+            )
+              return
             event.preventDefault()
             if (canSend) event.currentTarget.form?.requestSubmit()
           }}
@@ -488,7 +517,7 @@ export function ComposerBox({
               composer.pick(files)
             }
           }}
-          enterKeyHint={touch ? 'enter' : 'send'}
+          enterKeyHint={touchOnly ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
           className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
