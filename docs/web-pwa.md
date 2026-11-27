@@ -447,6 +447,9 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
   the page reopened. The composer keeps a single input row: `＋` opens a
   portalled Sheet for images, commands, skills and clearing the draft;
+  its 40 px touch target stays put while the text starts after 44 px of
+  left inset. On desktop, supported actions show their actual shortcut
+  in a hover hint or a trailing key label (send, `/new`, fresh process);
   picked thumbnails remain above the input. The header's 待办 counter opens
   a repository-scoped Sheet with a flat list and a sticky add field. The
   header's `⋯` opens session actions, with the running interrupt visible

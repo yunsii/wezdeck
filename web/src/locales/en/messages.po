@@ -250,7 +250,7 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
-#: src/features/session-restart.tsx:131
+#: src/features/session-restart.tsx:139
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 
@@ -2263,7 +2263,7 @@ msgstr "Needs a decision"
 #~ msgstr "Needs you"
 
 #: src/features/session-restart.tsx:62
-#: src/features/session-restart.tsx:136
+#: src/features/session-restart.tsx:144
 msgid "New agent process"
 msgstr "New agent process"
 
@@ -2278,7 +2278,7 @@ msgstr "New conversation"
 #~ msgid "New conversation"
 #~ msgstr "New conversation"
 
-#: src/features/session-restart.tsx:124
+#: src/features/session-restart.tsx:125
 msgid "New conversation (/new)"
 msgstr "New conversation (/new)"
 
@@ -3215,7 +3215,7 @@ msgstr "Resets {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
-#: src/features/session-restart.tsx:143
+#: src/features/session-restart.tsx:157
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "Respawn the pane; the agent resumes this conversation (F5)"
 
@@ -3225,7 +3225,7 @@ msgid "Restart"
 msgstr "Restart"
 
 #: src/features/session-restart.tsx:63
-#: src/features/session-restart.tsx:148
+#: src/features/session-restart.tsx:162
 msgid "Restart session"
 msgstr "Restart session"
 
@@ -3530,6 +3530,7 @@ msgstr "seen"
 
 #: src/features/console-keys.tsx:93
 #: src/features/session-composer.tsx:362
+#: src/features/session-composer.tsx:364
 msgid "Send"
 msgstr "Send"
 
@@ -3787,7 +3788,7 @@ msgstr "Start"
 msgid "Start /new in the current agent"
 msgstr "Start /new in the current agent"
 
-#: src/features/session-restart.tsx:119
+#: src/features/session-restart.tsx:120
 msgid "Start /new in the current agent (Ctrl+N)"
 msgstr "Start /new in the current agent (Ctrl+N)"
 

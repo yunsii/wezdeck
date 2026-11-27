@@ -351,7 +351,7 @@ export function ComposerBox({
           enterKeyHint={touchOnly ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent py-2 pl-14 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent py-2 pl-11 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         <Button
           variant="solid"
@@ -360,6 +360,8 @@ export function ComposerBox({
           size="round"
           type="submit"
           aria-label={t`Send`}
+          aria-keyshortcuts="Control+Enter Meta+Enter"
+          title={`${t`Send`} · Ctrl/⌘+Enter`}
           disabled={!canSend}
           className="absolute right-1.5 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full disabled:opacity-30"
         >

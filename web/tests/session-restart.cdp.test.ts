@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium } from '@playwright/test'
-import type { Browser } from '@playwright/test'
+import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // 按键 › 重启会话 / 新开会话 (session-restart.tsx → relay session.restart).
@@ -28,6 +28,42 @@ const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
 const stack = process.env.WEZDECK_TEST_STACK_DIR ?? ''
 const repo = join(import.meta.dirname, '..', '..')
 const NEW_ID = '00000000-0000-4000-8000-000000000001'
+
+async function checkComposerInset(page: Page) {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    const inset = await page.evaluate(() => {
+      const field =
+        document.querySelector<HTMLTextAreaElement>('#session-composer')
+      const button = document.querySelector<HTMLElement>(
+        '[data-testid=composer-tools-button]',
+      )
+      if (!field || !button) return null
+      return {
+        gap:
+          field.getBoundingClientRect().left +
+          parseFloat(getComputedStyle(field).paddingLeft) -
+          button.getBoundingClientRect().right,
+        padding: parseFloat(getComputedStyle(field).paddingLeft),
+      }
+    })
+    expect(inset?.padding).toBe(44)
+    expect(inset?.gap).toBeGreaterThanOrEqual(1)
+  }
+}
+
+async function checkDesktopShortcuts(page: Page) {
+  expect(await page.locator('[data-restart=new] kbd').isVisible()).toBe(true)
+  expect(
+    await page.locator('[data-restart=new]').getAttribute('aria-keyshortcuts'),
+  ).toBe('Control+N Meta+N')
+  expect(await page.locator('[data-restart=fresh] kbd').innerText()).toContain(
+    'Ctrl/⌘+Shift+N',
+  )
+  expect(
+    await page.locator('button[aria-label="发送"]').getAttribute('title'),
+  ).toContain('Ctrl/⌘+Enter')
+}
 
 describe.runIf(attention && devicesFile && stack)(
   'Restart and new conversation',
@@ -109,7 +145,7 @@ describe.runIf(attention && devicesFile && stack)(
       await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
 
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
-      await page.setViewportSize({ width: 390, height: 844 })
+      await checkComposerInset(page)
       await page.getByTestId('session-statusbar').waitFor()
       const layout = () =>
         page.evaluate(() => {
@@ -163,6 +199,9 @@ describe.runIf(attention && devicesFile && stack)(
       expect(await page.getByTestId('composer-tools-button').count()).toBe(1)
       expect(await page.getByTestId('session-todos-button').count()).toBe(1)
       const actions = page.getByTestId('session-restart')
+      expect(await actions.locator('[data-restart=new] kbd').isVisible()).toBe(
+        false,
+      )
       await expect
         .poll(() => actions.locator('[data-restart=new]').textContent())
         .toContain('/new')
@@ -195,6 +234,7 @@ describe.runIf(attention && devicesFile && stack)(
         .toContain('/new')
       await openKeys()
       await page.setViewportSize({ width: 1280, height: 800 })
+      await checkDesktopShortcuts(page)
       // 取消 sends nothing and brings the pair back
       await page.locator('[data-restart=resume]').click()
       await confirm.waitFor({ timeout: 5_000 })
