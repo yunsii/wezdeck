@@ -16,6 +16,8 @@ const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 
+// These navigation cases share one tmux fixture and run serially.
+// eslint-disable-next-line max-lines-per-function
 describe.runIf(attention)('A session list that holds still', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-st-')), 'sock')
@@ -235,6 +237,22 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.goBack()
     await page.waitForURL('**/console/sessions?remote=1')
     await expect.poll(scrollTop).toBe(80)
+
+    await page.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('.vt-page')!
+      el.scrollTop = el.scrollHeight
+      window.dispatchEvent(new Event('resize'))
+    })
+    await expect.poll(scrollTop).toBe(80)
+
+    await page.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('.vt-page')!
+      window.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+      el.scrollTop = 160
+      window.dispatchEvent(new Event('resize'))
+    })
+    await page.waitForTimeout(100)
+    expect(await scrollTop()).toBe(160)
     await context.close()
   }, 60_000)
 })
