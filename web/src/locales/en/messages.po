@@ -21,7 +21,7 @@ msgid "(pick any)"
 msgstr "(pick any)"
 
 #: src/components/deck/session-tags.tsx:289
-#: src/components/deck/session-tags.tsx:540
+#: src/components/deck/session-tags.tsx:544
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -149,7 +149,7 @@ msgid "{staged} staged"
 msgstr "{staged} staged"
 
 #: src/components/deck/session-tags.tsx:287
-#: src/components/deck/session-tags.tsx:538
+#: src/components/deck/session-tags.tsx:542
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -452,7 +452,7 @@ msgstr "All repos"
 msgid "All sent messages have been confirmed."
 msgstr "All sent messages have been confirmed."
 
-#: src/components/deck/session-tags.tsx:495
+#: src/components/deck/session-tags.tsx:499
 msgid "All tags"
 msgstr "All tags"
 
@@ -2712,7 +2712,7 @@ msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
 #: src/components/deck/session-tags.tsx:290
-#: src/components/deck/session-tags.tsx:541
+#: src/components/deck/session-tags.tsx:545
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -3867,8 +3867,8 @@ msgid "Select a target repository first."
 msgstr "Select a target repository first."
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:340
-#: src/features/message-composer.tsx:342
+#: src/features/message-composer.tsx:345
+#: src/features/message-composer.tsx:347
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "Send"
@@ -4039,7 +4039,7 @@ msgstr "Shortcuts"
 msgid "Show all {total} tasks"
 msgstr "Show all {total} tasks"
 
-#: src/components/deck/session-tags.tsx:483
+#: src/components/deck/session-tags.tsx:487
 msgid "Show all tags"
 msgstr "Show all tags"
 

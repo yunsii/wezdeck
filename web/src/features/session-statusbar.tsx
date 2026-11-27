@@ -211,9 +211,14 @@ export function SessionStatusBar({
   if (!model && !mode && !background.length && !metrics.length && !custom)
     return null
   return (
-    // mt-1: 10 px under the composer, as the toolbar's buttons sit 10 px
-    // above it (the toolbar box pads its 32 px buttons by 4 px)
-    <div data-testid="session-statusbar" className="mt-1 grid gap-1">
+    // Integer 24 px rows (`h-6` = 63.0 physical px at 2.625× DPR) with `gap-0`
+    // keep ~4 px visual separation between the 20 px pills while snapping every
+    // row boundary to exact physical pixels; `isolate` decouples stacking from
+    // the blinking composer pill above.
+    <div
+      data-testid="session-statusbar"
+      className="isolate mt-0.5 grid gap-0 md:mt-0"
+    >
       {model || mode || background.length || metrics.length ? (
         // the agent: its model, execution mode, what runs in the background by kind
         <TagLine

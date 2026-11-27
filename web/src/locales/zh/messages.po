@@ -21,7 +21,7 @@ msgid "(pick any)"
 msgstr "（可多选）"
 
 #: src/components/deck/session-tags.tsx:289
-#: src/components/deck/session-tags.tsx:540
+#: src/components/deck/session-tags.tsx:544
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "领先上游 {ahead}，落后 {behind}"
 
@@ -149,7 +149,7 @@ msgid "{staged} staged"
 msgstr "已暂存 {staged} 个"
 
 #: src/components/deck/session-tags.tsx:287
-#: src/components/deck/session-tags.tsx:538
+#: src/components/deck/session-tags.tsx:542
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 
@@ -452,7 +452,7 @@ msgstr "全部仓库"
 msgid "All sent messages have been confirmed."
 msgstr "所有已发送消息均已确认入录。"
 
-#: src/components/deck/session-tags.tsx:495
+#: src/components/deck/session-tags.tsx:499
 msgid "All tags"
 msgstr "全部标签"
 
@@ -2712,7 +2712,7 @@ msgid "No uncommitted changes."
 msgstr "没有未提交的改动。"
 
 #: src/components/deck/session-tags.tsx:290
-#: src/components/deck/session-tags.tsx:541
+#: src/components/deck/session-tags.tsx:545
 msgid "no upstream"
 msgstr "无上游"
 
@@ -3867,8 +3867,8 @@ msgid "Select a target repository first."
 msgstr "请先选择目标仓库。"
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:340
-#: src/features/message-composer.tsx:342
+#: src/features/message-composer.tsx:345
+#: src/features/message-composer.tsx:347
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "发送"
@@ -4039,7 +4039,7 @@ msgstr "快捷键"
 msgid "Show all {total} tasks"
 msgstr "展开全部 {total} 项任务"
 
-#: src/components/deck/session-tags.tsx:483
+#: src/components/deck/session-tags.tsx:487
 msgid "Show all tags"
 msgstr "显示全部标签"
 

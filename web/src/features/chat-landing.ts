@@ -172,12 +172,18 @@ export function useHoldBottomOnResize({
           holding.current = false
           return
         }
-        if (!touching.current) el.scrollTop = bottomOf(el)
+        if (!touching.current) {
+          const target = bottomOf(el)
+          if (Math.abs(target - el.scrollTop) > 1) el.scrollTop = target
+        }
         requestAnimationFrame(frame)
       }
       requestAnimationFrame(frame)
     }
     const onFocus = (event: FocusEvent) => {
+      // On wide desktop/tablet splits the composer sits outside the thread
+      // scroller; virtual-keyboard resizes are already handled by onViewport.
+      if (wide) return
       if (event.target instanceof HTMLTextAreaElement) hold(1_000, event.type)
     }
     const onViewport = () => hold(500, 'viewport')

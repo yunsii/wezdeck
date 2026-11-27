@@ -240,6 +240,60 @@ describe('Status bar', () => {
   )
 })
 
+describe('Status bar HiDPI geometry', () => {
+  it(
+    'locks Agy statusbar rows to 24 px integer height at 2.625x DPR with isolated stacking',
+    { timeout: 30_000 },
+    async () => {
+      const browser = await chromium.launch()
+      try {
+        await assertAgyStatusbarGeometry(browser)
+      } finally {
+        await browser.close()
+      }
+    },
+  )
+})
+
+async function assertAgyStatusbarGeometry(browser: Browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1292, height: 866 },
+    deviceScaleFactor: 2.625,
+    colorScheme: 'dark',
+    locale: 'zh-CN',
+  })
+  const page = await context.newPage()
+  await page.goto(`${base}/zh/console/me/interactions#agy-mode-bar`)
+  const demo = page.getByTestId('agy-mode-bar-demo')
+  await demo.waitFor({ timeout: 20_000 })
+  const metrics = await demo.evaluate((root) => {
+    const bars = [
+      ...root.querySelectorAll<HTMLElement>('[data-testid=session-statusbar]'),
+    ]
+    const rows = [
+      ...root.querySelectorAll<HTMLElement>(
+        '[data-testid=statusbar-agent], [data-testid=statusbar-custom]',
+      ),
+    ]
+    return {
+      barCount: bars.length,
+      allIsolated: bars.every(
+        (b) => getComputedStyle(b).isolation === 'isolate',
+      ),
+      rowHeights: rows.map((r) =>
+        Number(r.getBoundingClientRect().height.toFixed(2)),
+      ),
+    }
+  })
+  expect(metrics.barCount).toBeGreaterThan(0)
+  expect(metrics.allIsolated).toBe(true)
+  expect(metrics.rowHeights.length).toBeGreaterThan(0)
+  for (const h of metrics.rowHeights) {
+    expect(h).toBe(24)
+  }
+  await context.close()
+}
+
 async function checkCopyPath(page: Page, sheet: Locator) {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   const firstRow = sheet
