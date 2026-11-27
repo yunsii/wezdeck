@@ -832,11 +832,13 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if agent == "claude" {
 			// what its subagents (Agent tool, forked skills) are doing
 			out["subagents"] = subagentsOf(path)
-			if size := claudeContextSize(e.SessionID); size > 0 {
+		}
+		if lr, ok := adapterFor(agent).(limitsReader); ok {
+			if size := lr.ContextSize(e.SessionID); size > 0 {
 				usage.ContextLimit = size
 				out["usage"] = usage
 			}
-			if limits := claudeAccountLimits(); limits != nil {
+			if limits := lr.AccountLimits(usage.Model); limits != nil {
 				out["account"] = limits
 			}
 		}

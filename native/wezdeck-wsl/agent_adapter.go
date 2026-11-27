@@ -54,11 +54,19 @@ type planReader interface {
 	PlanTool() string
 }
 
+// limitsReader: account rate limits and per-session context window size
+// reported by the agent CLI's statusLine tap.
+type limitsReader interface {
+	AccountLimits(model string) *accountLimits
+	ContextSize(sessionID string) int
+}
+
 // capabilitiesOf: the declared capabilities plus the derived ones.
 func capabilitiesOf(a agentAdapter) agentCaps {
 	caps := a.Capabilities()
 	_, caps.AskOptions = a.(askReader)
 	_, caps.PlanReview = a.(planReader)
+	_, caps.AccountLimits = a.(limitsReader)
 	return caps
 }
 
@@ -97,6 +105,7 @@ type agentCaps struct {
 	// "token_count" (Codex events) or "none".
 	Usage string `json:"usage"`
 	// AccountLimits: the 5 h / 7 d limits reported by the CLI's status line.
+	// Derived: the adapter is a limitsReader.
 	AccountLimits bool `json:"account_limits"`
 	// MidTurnInput: what a message sent mid-turn does — "queue" or "steer".
 	MidTurnInput string `json:"mid_turn_input"`
@@ -219,8 +228,10 @@ func (claudeAdapter) ToolKind(name string, input map[string]any) string {
 	return toolKindByName(claudeToolKinds, name, input)
 }
 func (claudeAdapter) Capabilities() agentCaps {
-	return agentCaps{Usage: "transcript", AccountLimits: true, MidTurnInput: "queue", Title: true}
+	return agentCaps{Usage: "transcript", MidTurnInput: "queue", Title: true}
 }
+func (claudeAdapter) AccountLimits(_ string) *accountLimits { return claudeAccountLimits() }
+func (claudeAdapter) ContextSize(sessionID string) int      { return claudeContextSize(sessionID) }
 
 // Grok: ~/.grok/sessions/*/<id>/chat_history.jsonl; title from summary.json.
 type grokAdapter struct{}

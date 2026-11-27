@@ -50,21 +50,22 @@ func TestEveryAdapterDeclaresCapabilities(t *testing.T) {
 	}
 	// derived, never declared: the hand-written part leaves them alone
 	for _, a := range agentAdapters {
-		if c := a.Capabilities(); c.AskOptions || c.PlanReview {
+		if c := a.Capabilities(); c.AskOptions || c.PlanReview || c.AccountLimits {
 			t.Errorf("%s declares a derived capability: %+v", a.Name(), c)
 		}
 	}
-	// claude and grok wire Ask and plan review; agy wires Ask only; codex neither yet
-	want := map[string][2]bool{
-		"claude": {true, true},
-		"grok":   {true, true},
-		"agy":    {true, false},
-		"codex":  {false, false},
+	// claude wires Ask+Plan+Limits; grok Ask+Plan; agy Ask+Limits; codex none yet
+	want := map[string][3]bool{
+		"claude": {true, true, true},
+		"grok":   {true, true, false},
+		"agy":    {true, false, true},
+		"codex":  {false, false, false},
 	}
 	for name, on := range want {
 		c := capabilitiesOf(adapterFor(name))
-		if c.AskOptions != on[0] || c.PlanReview != on[1] {
-			t.Errorf("%s: ask_options=%v plan_review=%v, want %v/%v", name, c.AskOptions, c.PlanReview, on[0], on[1])
+		if c.AskOptions != on[0] || c.PlanReview != on[1] || c.AccountLimits != on[2] {
+			t.Errorf("%s: ask_options=%v plan_review=%v account_limits=%v, want %v/%v/%v",
+				name, c.AskOptions, c.PlanReview, c.AccountLimits, on[0], on[1], on[2])
 		}
 	}
 	if planToolOf("claude") != "ExitPlanMode" || planToolOf("grok") != "" || planToolOf("codex") != "" || planToolOf("nope") != "" {
