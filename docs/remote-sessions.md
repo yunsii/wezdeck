@@ -521,6 +521,11 @@ knows, grouped `session` / `location` / `transcript` / `state` as
 | `mid_turn_input` | what a message sent mid-turn does | `queue` / `queue` / `steer` |
 | `title` | the agent names sessions, honours `/rename` | ✓ / ✓ / – |
 
+For a Grok prompt with multiple questions, a single-choice digit confirms the
+current question. For multiple choice, digits toggle options and Enter confirms
+the current question. The Web card follows the terminal's question counter
+when the host can read it.
+
 Tool `kind`: `command`, `read`, `edit`, `write`, `search`, `task`, `todo`,
 `web`, `ask`, `other` — from each adapter's name table, falling back to the
 input's shape (edit pairs → edit, whole content → write, a command →

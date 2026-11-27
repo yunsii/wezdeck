@@ -142,8 +142,8 @@ function promptSections(
         en: 'An unanswered ask_user_question in updates.jsonl (agent_grok.go)',
       },
       keys: {
-        zh: '一次一题：单选序号 + Enter；多选序号只切换，Enter 单独提交；点击后立即显示发送 / 等待状态',
-        en: 'One at a time: digit + Enter for single choice; digits only toggle multi-select, Enter submits separately; immediate sending / waiting feedback',
+        zh: '逐题作答。单选序号直接确认当前题，多选序号切换选项，Enter 确认当前题。',
+        en: 'Answer one question at a time. Digits confirm single-choice answers. For multiple choice, digits toggle options and Enter confirms the question.',
       },
       demo: (
         <AskCard

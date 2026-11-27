@@ -431,7 +431,6 @@ describe('Interaction debugging page', () => {
     await card.getByRole('button', { name: /6\. 第六项/ }).click()
     await card.getByTestId('grok-ask-loading').waitFor()
     await expect.poll(() => log.textContent()).toContain('grok-ask → 6')
-    await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')
     await card.getByText('报告包含哪些部分？').waitFor()
     await expect
       .poll(() => card.getByText('周报采用哪种数据源？').count())
@@ -444,10 +443,7 @@ describe('Interaction debugging page', () => {
       .poll(() => card.getByTestId('grok-ask-loading').count())
       .toBe(0)
     await expect.poll(() => log.textContent()).toContain('grok-ask → 2')
-    // Toggling must not submit; the first question contributed the only Enter.
-    expect(
-      ((await log.textContent()) ?? '').match(/grok-ask → Enter/g),
-    ).toHaveLength(1)
+    expect(await log.textContent()).not.toContain('grok-ask → Enter')
 
     await card.getByRole('button', { name: /3\. 下周计划/ }).click()
     await expect

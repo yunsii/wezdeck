@@ -49,7 +49,8 @@ export function SessionElicitation({
   const { t } = useLingui()
   const questions = elicitation.questions
   const askId = elicitation.tool_call_id ?? ''
-  const digitConfirms = agent === 'agy'
+  const digitConfirms =
+    agent === 'agy' || (agent === 'grok' && questions.length > 1)
   const [progress, setProgress] = useState({ id: askId, step: 0 })
   const [selected, setSelected] = useState<{
     id: string
@@ -248,9 +249,8 @@ export async function pickElicitationOption(
   }
   if (optionIndex >= 0 && optionIndex <= 8) {
     if (!(await put(String(optionIndex + 1)))) return false
-    // Multi-select digits only toggle; Agy single-select digits confirm and
-    // advance immediately without Enter (a trailing Enter would auto-confirm
-    // the next question's default option).
+    // Multi-select digits only toggle. Agy and Grok's multi-question dialog
+    // advance on a single-choice digit. Enter would answer the next question.
     if (multiSelect || digitConfirms) return true
     return put('Enter')
   }
