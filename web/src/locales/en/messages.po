@@ -958,7 +958,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:241
+#: src/features/session-send.ts:259
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -4142,7 +4142,7 @@ msgstr "This list of shortcuts"
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
-#: src/features/session-follow.ts:71
+#: src/features/session-follow.ts:78
 msgid "This pane switched sessions"
 msgstr "This pane switched sessions"
 

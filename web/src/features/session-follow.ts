@@ -15,6 +15,7 @@ import { trace } from '#/lib/client-trace'
 import { useLocale } from '#/lib/locale-context'
 
 import { useSessions } from './console-sessions'
+import { transferPending } from './session-send'
 
 const toasted = new Set<string>()
 /** Session ids this page already left via an auto-follow (cycle break). */
@@ -45,6 +46,10 @@ export function resetSessionFollowState() {
   leftViaFollow.clear()
 }
 
+export function isPendingResolution(from: string, to: string) {
+  return from.startsWith('pending-') && !to.startsWith('pending-')
+}
+
 export function sessionIdFromPath(path: string) {
   return /\/console\/sessions\/([^/]+)\/?$/.exec(path)?.[1]
 }
@@ -64,9 +69,11 @@ function useNavigateToSession() {
         return
       }
       leftViaFollow.add(from)
+      const resolvingPending = isPendingResolution(from, to)
+      if (resolvingPending) transferPending(from, to)
       const key = followKey(from, to)
       const first = !toasted.has(key)
-      if (first) {
+      if (first && !resolvingPending) {
         toasted.add(key)
         toast(t`This pane switched sessions`)
       }

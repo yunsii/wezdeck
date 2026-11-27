@@ -221,6 +221,18 @@ invalidate_typed_resume_after_new() {
       agent_session_pin_pane "$pane_id" "$new_sid" grok "$cwd" || true
       tmux set-option -p -t "$pane_id" -u @wezterm_agent_discarded_session_id 2>/dev/null || true
     fi
+  elif [[ "$agent_for_pin" == "agy" ]] \
+    && declare -F attention_mark_cleared >/dev/null 2>&1 \
+    && [[ -n "$tmux_socket" && -n "$pane_id" ]]; then
+    # Agy only allocates a real conversationId and fires SessionStart when the
+    # first user prompt is sent. Mark cleared_to a temporary pending-* id now
+    # so the web console switches to the blank session immediately.
+    local pending_uuid=""
+    pending_uuid="$(cat /proc/sys/kernel/random/uuid 2>/dev/null || true)"
+    if [[ -n "$pending_uuid" ]]; then
+      new_sid="pending-$pending_uuid"
+      attention_mark_cleared "$tmux_socket" "$pane_id" "$new_sid" "${prev_sid:-}" "${tmux_session:-}" 2>/dev/null || true
+    fi
   fi
 
   runtime_log_info agent_cli "${hk_label} invalidated typed resume after /new" \
