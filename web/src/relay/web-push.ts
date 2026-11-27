@@ -34,8 +34,11 @@ export const DEFAULT_PUSH_PREFS: PushPrefs = {
   quiet_when_desk_active: true,
 }
 
+export type PushMode = 'webpush' | 'ws'
+
 export type StoredPushSub = {
   device_id: string
+  mode?: PushMode
   endpoint: string
   keys: {
     p256dh: string
@@ -111,6 +114,7 @@ export function evaluatePushDelivery(
   sub: StoredPushSub,
   event: PushEmitEvent,
   focusedPaths: ReadonlySet<string>,
+  anyDeviceForeground = false,
 ): { deliver: boolean; silent: boolean; reason?: string } {
   if (event.kind === 'test') {
     return { deliver: true, silent: false }
@@ -143,14 +147,26 @@ export function evaluatePushDelivery(
   if (!enabled) {
     return { deliver: false, silent: true, reason: 'pref_disabled' }
   }
+  // WS keepalive notifications only pop when this device has NO visible tab
+  // (background-only); in the foreground we still allow silent badge sync.
+  if (sub.mode === 'ws' && focusedPaths.size > 0) {
+    if (typeof event.badge === 'number') {
+      return { deliver: true, silent: true, reason: 'foreground_ws_badge_only' }
+    }
+    return { deliver: false, silent: true, reason: 'foreground_ws_suppressed' }
+  }
   if (event.target_path && focusedPaths.has(event.target_path)) {
     return { deliver: false, silent: true, reason: 'foreground_same_page' }
   }
-  if (event.desk_active && prefs.quiet_when_desk_active) {
+  if (
+    (event.desk_active || anyDeviceForeground) &&
+    prefs.quiet_when_desk_active
+  ) {
+    const reason = event.desk_active ? 'desk_active' : 'other_device_foreground'
     if (typeof event.badge === 'number') {
-      return { deliver: true, silent: true, reason: 'desk_active_badge_only' }
+      return { deliver: true, silent: true, reason: `${reason}_badge_only` }
     }
-    return { deliver: false, silent: true, reason: 'desk_active' }
+    return { deliver: false, silent: true, reason }
   }
   return { deliver: true, silent: false }
 }

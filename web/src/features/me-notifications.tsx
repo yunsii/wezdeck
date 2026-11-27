@@ -3,20 +3,23 @@
 // per-event toggles, desk-active quiet mode, and end-to-end test delivery.
 import { useLingui } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, BellOff, Send } from 'lucide-react'
-import { useState } from 'react'
+import { Bell, BellOff, Radio, Send } from 'lucide-react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
 import { trace } from '#/lib/client-trace'
+import { remoteLink } from '#/lib/remote-link'
 import {
   DEFAULT_PUSH_PREFS,
   detectPushSupport,
   fetchPushStatus,
+  isPushServiceError,
   sendTestPush,
   subscribeDevicePush,
+  subscribeWsFallbackPush,
   unsubscribeDevicePush,
   updatePushPrefs,
 } from '#/lib/push-client'
@@ -26,15 +29,19 @@ const QUERY_KEY = ['push', 'status'] as const
 
 export function useNotificationsSummary(): string {
   const { t } = useLingui()
-  const support = detectPushSupport()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const support = mounted ? detectPushSupport() : 'unpaired'
   const status = useQuery({
     queryKey: QUERY_KEY,
-    enabled: support !== 'unpaired',
+    enabled: mounted && support !== 'unpaired',
     staleTime: 30_000,
     retry: false,
     queryFn: fetchPushStatus,
   })
-  if (support === 'unpaired') return t`Pair first`
+  if (!mounted || support === 'unpaired') return t`Pair first`
   if (status.data?.subscribed) return t`On`
   return t`Off`
 }
@@ -168,8 +175,8 @@ function NotificationPrefsSections({
           </h3>
         </div>
         <PrefRow
-          label={t`Quiet while active at desk`}
-          hint={t`Suppress popup banners while you are actively typing in WezTerm (still updates app badge).`}
+          label={t`Quiet while active on another device`}
+          hint={t`Suppress popups while you are typing in WezTerm or viewing WezDeck in the foreground on any device (still syncs badge).`}
           checked={prefs.quiet_when_desk_active}
           disabled={disabled}
           onChange={(v) => onChange('quiet_when_desk_active', v)}
@@ -179,20 +186,114 @@ function NotificationPrefsSections({
   )
 }
 
+function PushErrorCallout({
+  errorText,
+  wsPending,
+  onEnableWs,
+}: {
+  errorText: string
+  wsPending: boolean
+  onEnableWs: () => void
+}) {
+  const { t } = useLingui()
+  if (!errorText) return null
+  if (!isPushServiceError(errorText)) {
+    return (
+      <p role="alert" className="text-meta text-brand-error">
+        {errorText}
+      </p>
+    )
+  }
+  return (
+    <div
+      role="alert"
+      data-testid="push-service-error-guide"
+      className="grid gap-2.5 rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 p-3 text-caption text-brand-text"
+    >
+      <p className="font-medium">
+        {t`Browser push service (FCM/GMS) is unreachable on this device.`}
+      </p>
+      <p className="text-meta text-brand-muted">
+        {t`Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM through your proxy, switch to Firefox/Edge, or use background WebSocket notifications below without FCM.`}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="solid"
+          size="sm"
+          type="button"
+          data-testid="push-fallback-ws-button"
+          disabled={wsPending}
+          onClick={onEnableWs}
+          className="inline-flex items-center gap-1.5"
+        >
+          <Radio size={14} aria-hidden />
+          <span>
+            {wsPending
+              ? t`Enabling…`
+              : t`Use background keepalive notifications (no FCM)`}
+          </span>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function PushSupportBanner({ support }: { support: string }) {
+  const { t } = useLingui()
+  if (support === 'unpaired') {
+    return (
+      <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
+        {t`Pair this device with your host first to enable remote push notifications.`}
+      </p>
+    )
+  }
+  if (support === 'ios-install-required') {
+    return (
+      <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
+        {t`On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications.`}
+      </p>
+    )
+  }
+  if (support === 'unsupported') {
+    return (
+      <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
+        {t`This browser does not support Web Push notifications.`}
+      </p>
+    )
+  }
+  return (
+    <p className="rounded-xl bg-brand-error/10 px-3 py-2.5 text-caption text-brand-error">
+      {t`Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe.`}
+    </p>
+  )
+}
+
 export function NotificationsPage() {
   const { t } = useLingui()
   const client = useQueryClient()
-  const support = detectPushSupport()
+  const [mounted, setMounted] = useState(false)
+  // Re-evaluate push support once remoteLink adopts a `#pair=` hash or connects.
+  useSyncExternalStore(
+    remoteLink.subscribe,
+    remoteLink.snapshot,
+    remoteLink.snapshot,
+  )
+  useEffect(() => {
+    setMounted(true)
+    remoteLink.start()
+  }, [])
+  const support = mounted ? detectPushSupport() : 'unpaired'
   const [errorText, setErrorText] = useState('')
 
   const statusQuery = useQuery({
     queryKey: QUERY_KEY,
-    enabled: support !== 'unpaired',
+    enabled: mounted && support !== 'unpaired',
     retry: false,
     queryFn: fetchPushStatus,
   })
 
   const subscribed = Boolean(statusQuery.data?.subscribed)
+  const mode = statusQuery.data?.mode ?? (subscribed ? 'webpush' : null)
   const relayEnabled = statusQuery.data?.enabled ?? true
   const prefs: PushPrefs = statusQuery.data?.prefs ?? DEFAULT_PUSH_PREFS
 
@@ -200,8 +301,21 @@ export function NotificationsPage() {
     mutationFn: () => subscribeDevicePush(prefs),
     onSuccess: () => {
       setErrorText('')
-      trace('push-perm', { action: 'subscribed' })
+      trace('push-perm', { action: 'subscribed', mode: 'webpush' })
       toast(t`Notifications enabled on this device`)
+      void client.invalidateQueries({ queryKey: QUERY_KEY })
+    },
+    onError: (err) => {
+      setErrorText(err instanceof Error ? err.message : String(err))
+    },
+  })
+
+  const enableWsMutation = useMutation({
+    mutationFn: () => subscribeWsFallbackPush(prefs),
+    onSuccess: () => {
+      setErrorText('')
+      trace('push-perm', { action: 'subscribed', mode: 'ws' })
+      toast(t`Background keepalive notifications enabled`)
       void client.invalidateQueries({ queryKey: QUERY_KEY })
     },
     onError: (err) => {
@@ -281,81 +395,98 @@ export function NotificationsPage() {
           )}
         </div>
 
-        {support === 'unpaired' ? (
-          <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
-            {t`Pair this device with your host first to enable remote push notifications.`}
-          </p>
-        ) : support === 'ios-install-required' ? (
-          <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
-            {t`On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications.`}
-          </p>
-        ) : support === 'unsupported' ? (
-          <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
-            {t`This browser does not support Web Push notifications.`}
-          </p>
-        ) : support === 'denied' ? (
-          <p className="rounded-xl bg-brand-error/10 px-3 py-2.5 text-caption text-brand-error">
-            {t`Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe.`}
-          </p>
-        ) : !relayEnabled ? (
-          <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
-            {t`VAPID push keys are not configured on the relay Worker yet.`}
-          </p>
+        {support !== 'ready' && support !== 'ws-only' ? (
+          <PushSupportBanner support={support} />
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            {subscribed ? (
-              <>
-                <Button
-                  variant="solid"
-                  type="button"
-                  data-testid="push-test-button"
-                  disabled={testMutation.isPending}
-                  onClick={() => testMutation.mutate()}
-                  className="inline-flex min-h-10 items-center gap-1.5"
-                >
-                  <Send size={14} aria-hidden />
-                  <span>
-                    {testMutation.isPending
-                      ? t`Sending…`
-                      : t`Send test notification`}
-                  </span>
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  data-testid="push-disable-button"
-                  disabled={disableMutation.isPending}
-                  onClick={() => disableMutation.mutate()}
-                  className="min-h-10"
-                >
-                  {t`Disable on this device`}
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="solid"
-                type="button"
-                data-testid="push-enable-button"
-                disabled={enableMutation.isPending || statusQuery.isPending}
-                onClick={() => enableMutation.mutate()}
-                className="inline-flex min-h-10 items-center gap-1.5"
+          <div className="grid gap-2.5">
+            {subscribed && mode === 'ws' ? (
+              <p
+                data-testid="push-ws-mode-hint"
+                className="rounded-xl bg-brand-deck px-3 py-2 text-meta text-brand-muted"
               >
-                <Bell size={15} aria-hidden />
-                <span>
-                  {enableMutation.isPending
-                    ? t`Enabling…`
-                    : t`Enable notifications`}
-                </span>
-              </Button>
-            )}
+                {t`Active channel: Background keepalive (WebSocket, no FCM). Alerts only pop while WezDeck stays alive in the background and stay silent in the foreground.`}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              {subscribed ? (
+                <>
+                  <Button
+                    variant="solid"
+                    type="button"
+                    data-testid="push-test-button"
+                    disabled={testMutation.isPending}
+                    onClick={() => testMutation.mutate()}
+                    className="inline-flex min-h-10 items-center gap-1.5"
+                  >
+                    <Send size={14} aria-hidden />
+                    <span>
+                      {testMutation.isPending
+                        ? t`Sending…`
+                        : t`Send test notification`}
+                    </span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    data-testid="push-disable-button"
+                    disabled={disableMutation.isPending}
+                    onClick={() => disableMutation.mutate()}
+                    className="min-h-10"
+                  >
+                    {t`Disable on this device`}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {support === 'ready' && relayEnabled ? (
+                    <Button
+                      variant="solid"
+                      type="button"
+                      data-testid="push-enable-button"
+                      disabled={
+                        enableMutation.isPending || statusQuery.isPending
+                      }
+                      onClick={() => enableMutation.mutate()}
+                      className="inline-flex min-h-10 items-center gap-1.5"
+                    >
+                      <Bell size={15} aria-hidden />
+                      <span>
+                        {enableMutation.isPending
+                          ? t`Enabling…`
+                          : t`Enable notifications`}
+                      </span>
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant={
+                      support === 'ready' && relayEnabled ? 'outline' : 'solid'
+                    }
+                    type="button"
+                    data-testid="push-ws-enable-button"
+                    disabled={
+                      enableWsMutation.isPending || statusQuery.isPending
+                    }
+                    onClick={() => enableWsMutation.mutate()}
+                    className="inline-flex min-h-10 items-center gap-1.5"
+                  >
+                    <Radio size={15} aria-hidden />
+                    <span>
+                      {enableWsMutation.isPending
+                        ? t`Enabling…`
+                        : t`Background keepalive (no FCM)`}
+                    </span>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
-        {errorText ? (
-          <p role="alert" className="text-meta text-brand-error">
-            {errorText}
-          </p>
-        ) : null}
+        <PushErrorCallout
+          errorText={errorText}
+          wsPending={enableWsMutation.isPending}
+          onEnableWs={() => enableWsMutation.mutate()}
+        />
       </section>
 
       <NotificationPrefsSections

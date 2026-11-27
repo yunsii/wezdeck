@@ -2,22 +2,44 @@
 // Talks to `/relay/push/*` (authenticated by the paired client token) and
 // manages `ServiceWorkerRegistration.pushManager` subscriptions + device prefs.
 import { loadDeviceKey } from './device-key'
+import { remoteLink } from './remote-link'
 import { readPairedToken, relayBase, roomQuery } from './remote-pairing'
-import type { PushPrefs } from '#/relay/web-push'
+import type { PushMode, PushPrefs } from '#/relay/web-push'
 import { DEFAULT_PUSH_PREFS } from '#/relay/web-push'
 
-export type { PushPrefs }
+export type { PushMode, PushPrefs }
 export { DEFAULT_PUSH_PREFS }
 
 export type PushSupportState =
-  'ready' | 'ios-install-required' | 'unsupported' | 'denied' | 'unpaired'
+  | 'ready'
+  | 'ws-only'
+  | 'ios-install-required'
+  | 'unsupported'
+  | 'denied'
+  | 'unpaired'
 
 export type PushStatusResponse = {
   ok: boolean
   enabled: boolean
   subscribed: boolean
+  mode?: PushMode | null
   prefs: PushPrefs
   devices: number
+}
+
+export function isPushServiceError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? '')
+  return /push service error|push service not available|registration failed/i.test(
+    msg,
+  )
+}
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }
 
 export function detectPushSupport(): PushSupportState {
@@ -29,14 +51,11 @@ export function detectPushSupport(): PushSupportState {
     window.matchMedia('(display-mode: standalone)').matches ||
     (navigator as { standalone?: boolean }).standalone === true
   if (isIOS && !standalone) return 'ios-install-required'
-  if (
-    !('serviceWorker' in navigator) ||
-    !('PushManager' in window) ||
-    !('Notification' in window)
-  ) {
-    return 'unsupported'
-  }
+  if (!('Notification' in window)) return 'unsupported'
   if (Notification.permission === 'denied') return 'denied'
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return 'ws-only'
+  }
   return 'ready'
 }
 
@@ -128,7 +147,7 @@ export async function fetchPushStatus(): Promise<PushStatusResponse> {
 
 export async function subscribeDevicePush(
   prefs: PushPrefs = DEFAULT_PUSH_PREFS,
-): Promise<{ subscribed: boolean; prefs: PushPrefs }> {
+): Promise<{ subscribed: boolean; mode: PushMode; prefs: PushPrefs }> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') {
     throw new Error('Notification permission was not granted')
@@ -137,20 +156,34 @@ export async function subscribeDevicePush(
   if (!config.enabled || !config.vapid_public_key) {
     throw new Error('Push is not configured on the relay yet')
   }
+  const expectedKey = base64UrlToUint8Array(config.vapid_public_key)
   const reg = await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
+  // Self-heal stale subscriptions whose VAPID key differs from the relay's key.
+  if (sub?.options.applicationServerKey) {
+    const existingKey = new Uint8Array(sub.options.applicationServerKey)
+    if (!bytesEqual(existingKey, expectedKey)) {
+      await sub.unsubscribe().catch(() => undefined)
+      sub = null
+    }
+  }
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlToUint8Array(config.vapid_public_key),
+      applicationServerKey: expectedKey,
     })
   }
   const json = sub.toJSON()
   const deviceId = await resolvePushDeviceId()
-  return pushFetch('subscribe', {
+  const result = await pushFetch<{
+    subscribed: boolean
+    mode: PushMode
+    prefs: PushPrefs
+  }>('subscribe', {
     method: 'POST',
     body: JSON.stringify({
       device_id: deviceId,
+      mode: 'webpush',
       subscription: {
         endpoint: json.endpoint,
         keys: json.keys,
@@ -158,6 +191,33 @@ export async function subscribeDevicePush(
       prefs,
     }),
   })
+  remoteLink.reportFocus()
+  return result
+}
+
+export async function subscribeWsFallbackPush(
+  prefs: PushPrefs = DEFAULT_PUSH_PREFS,
+): Promise<{ subscribed: boolean; mode: PushMode; prefs: PushPrefs }> {
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') {
+    throw new Error('Notification permission was not granted')
+  }
+  const deviceId = await resolvePushDeviceId()
+  const result = await pushFetch<{
+    subscribed: boolean
+    mode: PushMode
+    prefs: PushPrefs
+  }>('subscribe', {
+    method: 'POST',
+    body: JSON.stringify({
+      device_id: deviceId,
+      mode: 'ws',
+      prefs,
+    }),
+  })
+  remoteLink.start()
+  remoteLink.reportFocus()
+  return result
 }
 
 export async function unsubscribeDevicePush(): Promise<void> {

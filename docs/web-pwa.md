@@ -178,11 +178,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.
-8. **Notifications: unified Web Push** (sessions + collab tickets) via
-   `wezdeck-wsl` (`push_watcher.go`) → `HostRelay` DO (`host-push.ts`,
-   `web-push.ts`, `/relay/push/*`) → `sw.js` (`push` + `setAppBadge` + deep-link),
-   configured under `/console/me/notifications` (`me-notifications.tsx`;
-   iOS 16.4+ installed app; clipped titles only, no prompts/diffs).
+8. **Notifications: unified Web Push + WS keepalive fallback** (sessions + collab) via
+   `push_watcher.go` → `HostRelay` DO (`host-push.ts`, `web-push.ts`, `/relay/push/*`)
+   → `sw.js` (`push` + `setAppBadge` + `badge=0` auto-dismiss) / `push-local.ts`
+   (background-only WS fallback when FCM/GMS is unreachable); configured under
+   `/console/me/notifications` with cross-device foreground quiet and clipped titles.
 
 ## PWA plumbing (phase 1)
 

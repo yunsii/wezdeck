@@ -188,6 +188,17 @@ self.addEventListener('push', (event) => {
         } catch {
           // badge API unsupported on this platform
         }
+        // Cross-device read sync: when pending count hits 0, clear stale alerts.
+        if (data.badge === 0 && self.registration.getNotifications) {
+          try {
+            const open = await self.registration.getNotifications()
+            for (const n of open) {
+              if (n.tag !== 'wezdeck:test') n.close()
+            }
+          } catch {
+            // ignore platform refusal
+          }
+        }
       }
       if (data.silent) return
       const title = String(data.title || 'WezDeck')
