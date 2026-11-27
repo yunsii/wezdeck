@@ -1,7 +1,9 @@
 // covers: web/src/features/session-statusbar.tsx web/src/features/session-usage.tsx
 // covers: web/src/features/session-header.tsx web/src/features/console-sessions.tsx
+// covers: web/src/features/session-worktree-manager.tsx
+// covers: web/src/features/console-interactions-demos.tsx
 import { chromium } from '@playwright/test'
-import type { Browser } from '@playwright/test'
+import type { Browser, Locator, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // The status bar under the composer (交互调试 › 底部状态栏): one line like
@@ -50,6 +52,29 @@ describe('Status bar', () => {
     expect(agent).toContain('monitor 1')
     const all = (await bar.innerText()).replace(/\s+/g, ' ')
     expect(all).not.toContain('auto')
+    const worktrees = page.getByTestId('status-worktrees')
+    if (
+      !(await worktrees.first().isVisible()) ||
+      (await worktrees.first().getAttribute('inert')) !== null
+    ) {
+      await page.getByTestId('statusbar-custom-more').click()
+    }
+    await worktrees.last().click()
+    const sheet = page.getByTestId('worktree-manager')
+    await sheet.waitFor()
+    await sheet.getByTestId('status-worktree-list').waitFor()
+    expect(await sheet.getByRole('alert').count()).toBe(0)
+    expect(await sheet.getByText('Agent 工具与注意力').count()).toBe(1)
+    const sheetBox = await sheet.boundingBox()
+    expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeGreaterThan(840)
+    expect(await sheet.getByRole('button', { name: '复制路径' }).count()).toBe(
+      3,
+    )
+    await checkCopyPath(page, sheet)
+    if (process.env.WEZDECK_VISUAL_SHOTS) await captureThemePair(page, 'phone')
+    await page.keyboard.press('Escape')
+    await sheet.waitFor({ state: 'hidden' })
+    await page.keyboard.press('Escape')
     const opensUp = async (testId: string, list: string) => {
       const button = page.getByTestId(testId)
       if (
@@ -73,11 +98,41 @@ describe('Status bar', () => {
       await popup.waitFor({ state: 'hidden' })
       await page.keyboard.press('Escape')
     }
-    await opensUp('status-worktrees', 'status-worktree-list')
     await opensUp('status-shell', 'background-tasks')
     await opensUp('status-monitor', 'background-tasks')
-    expect(await page.getByTestId('status-worktree-list').count()).toBe(0)
+    expect(await page.getByTestId('worktree-manager').count()).toBe(0)
     await context.close()
+  })
+
+  it('opens the worktree overview as one anchored list on wide screens', async () => {
+    const page = await browser.newPage({
+      viewport: { width: 1100, height: 850 },
+      locale: 'zh-CN',
+    })
+    try {
+      await page.goto(`${base}/zh/console/me/interactions#status-bar`)
+      const button = page.getByTestId('status-worktrees')
+      await button.waitFor()
+      if ((await button.getAttribute('inert')) !== null)
+        await page.getByTestId('statusbar-custom-more').click()
+      await button.last().click()
+      const panel = page.getByTestId('worktree-manager')
+      await panel.waitFor()
+      await expect
+        .poll(() => panel.evaluate((el) => getComputedStyle(el).opacity))
+        .toBe('1')
+      expect(await panel.getAttribute('data-slot')).toBe('popover-content')
+      expect(await panel.getByRole('alert').count()).toBe(0)
+      expect(
+        await panel.getByTestId('status-worktree-list').locator('li').count(),
+      ).toBe(3)
+      if (process.env.WEZDECK_VISUAL_SHOTS)
+        await captureThemePair(page, 'desktop')
+      await page.keyboard.press('Escape')
+      await panel.waitFor({ state: 'hidden' })
+    } finally {
+      await page.close()
+    }
   })
 
   it('shows a folded quota alert in the header and clears it when the tag fits', async () => {
@@ -175,3 +230,34 @@ describe('Status bar', () => {
     },
   )
 })
+
+async function checkCopyPath(page: Page, sheet: Locator) {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  const firstRow = sheet
+    .getByTestId('status-worktree-list')
+    .locator('li')
+    .first()
+  const path = await firstRow
+    .locator('p[title^="/"]')
+    .last()
+    .getAttribute('title')
+  await firstRow.getByRole('button', { name: '复制路径' }).click()
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(path)
+}
+
+async function captureThemePair(page: Page, viewport: 'phone' | 'desktop') {
+  const original = await page.evaluate(() =>
+    document.documentElement.getAttribute('data-theme'),
+  )
+  await page.screenshot({ path: `/tmp/wezdeck-worktrees-${viewport}.png` })
+  await page.evaluate(() =>
+    document.documentElement.setAttribute('data-theme', 'dark'),
+  )
+  await page.screenshot({ path: `/tmp/wezdeck-worktrees-${viewport}-dark.png` })
+  await page.evaluate((theme) => {
+    if (theme === null) document.documentElement.removeAttribute('data-theme')
+    else document.documentElement.setAttribute('data-theme', theme)
+  }, original)
+}

@@ -141,6 +141,14 @@ Every linked worktree is a **workstation for one direction** (`ux`, `ci`, `i18n`
 - **Directions with several workstations.** A direction may hold parallel slots: `ux`, `ux-2`, `ux-3` …, each with its own directory, branch and transcripts. Typing a name an existing workstation already has (`Ctrl+k g d`, 新会话) opens the next slot — the prompt says so — marked with `branch.dev/ux-2.workstationDirection=ux` and inheriting the purpose unless one is typed. Membership is only that key: nothing is guessed from a `-N` suffix (a direction may be called `ci-2`). `wt_workstation_slots` lists a direction's slots.
 - **Idle and reuse.** A slot is **idle** when its git half holds — `worktree-task idle`: no uncommitted changes beyond recycle's allowlisted leftovers, and the tip is in `origin/HEAD` (an ancestor, or its content absorbed by a squash; pushed-only is *not* idle, since recycle rewrites `origin/<branch>`) — and its agent is neither mid-turn nor waiting on you (attention). How long since it was touched does not count. The web console's 新会话 is **message-first**: the sheet opens on a location bar (default = latest-visited direction with an idle slot) plus the first message; tapping the bar opens the place layer (`workstations` read: directions newest visit first, each with its slots' states), and "+ New direction" is a third layer for name + purpose. A direction with an idle slot reuses it — `reuse-workstation <path>` fetches and checks idle again (refuses with the reason, exit 3), makes sure the window exists (`worktree-task launch --existing`), then `worktree-task recycle --fresh-agent`: same directory, branch and purpose on the latest `origin/HEAD` with a blank agent; the last conversation stays resumable. A direction whose slots are all busy opens one more; a new name starts a new direction. A slot is never renamed to serve another direction.
 
+The web conversation's `工作树 N` status entry opens its worktree overview in
+one step: a bottom sheet on phones, an anchored upward list on wide screens.
+Directions show their name, purpose and slots; the main checkout and ticket /
+OpenClaw trees remain visible under 其他. Each row shows state, branch and path
+with a copy action. This is a read view; recycle and reclaim still use their
+guarded workstation workflows. Open, result, close and copy leave
+`worktree-view` diagnostic trace events without recording paths.
+
 ```mermaid
 flowchart TD
   P["primary checkout<br/>repo root · master"] -->|"Ctrl+k g d / 新会话<br/>name + purpose"| W["workstation &lt;name&gt;<br/>branch dev/&lt;name&gt;<br/>purpose = branch description"]

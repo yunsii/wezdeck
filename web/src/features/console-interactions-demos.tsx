@@ -19,6 +19,7 @@ import type { Message } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import { SessionUsageAlerts } from './session-header'
 import { SessionStatusBar } from './session-statusbar'
+import type { WorkstationDirection } from './session-worktree-manager'
 import type { Detail } from './console-sessions'
 import { BACKGROUND } from './console-interactions-samples'
 import type { Subagent } from './session-subagents'
@@ -449,6 +450,34 @@ const STATUS_SAMPLE: Detail = {
   background: BACKGROUND.slice(0, 2),
 }
 
+const STATUS_WORKSTATIONS: WorkstationDirection[] = [
+  {
+    name: 'agent',
+    description: 'Agent 工具与注意力',
+    slots: [
+      {
+        path: STATUS_SAMPLE.worktrees?.[1]?.path ?? '',
+        name: 'dev-agent',
+        branch: 'dev/agent',
+        state: 'running',
+        sessions: ['demo-agent'],
+      },
+    ],
+  },
+  {
+    name: 'probe',
+    description: '隔离验证',
+    slots: [
+      {
+        path: STATUS_SAMPLE.worktrees?.[2]?.path ?? '',
+        name: 'task-probe',
+        branch: '',
+        state: 'detached',
+      },
+    ],
+  },
+]
+
 /**
  * The status bar under the composer, as on a phone: agent, branch, git,
  * node, worktrees, background tasks on one line; worktrees and background
@@ -464,7 +493,11 @@ export function StatusBarDemo() {
           发消息
         </span>
       </div>
-      <SessionStatusBar data={STATUS_SAMPLE} onVisibleUsage={setVisibleUsage} />
+      <SessionStatusBar
+        data={STATUS_SAMPLE}
+        onVisibleUsage={setVisibleUsage}
+        workstationsSample={STATUS_WORKSTATIONS}
+      />
     </div>
   )
 }
@@ -510,7 +543,10 @@ export function GitChurnDemo() {
           发消息
         </span>
       </div>
-      <SessionStatusBar data={sample} />
+      <SessionStatusBar
+        data={sample}
+        workstationsSample={STATUS_WORKSTATIONS}
+      />
     </div>
   )
 }

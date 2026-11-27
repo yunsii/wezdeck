@@ -49,7 +49,7 @@ msgstr "{by} 提议拆出一张单"
 msgid "{count} images"
 msgstr "{count} 张图片"
 
-#: src/features/session-statusbar.tsx:167
+#: src/features/session-statusbar.tsx:161
 msgid "{count} monitors running"
 msgstr "{count} 个 Monitor 运行中"
 
@@ -57,11 +57,11 @@ msgstr "{count} 个 Monitor 运行中"
 #~ msgid "{count} more need you"
 #~ msgstr "还有 {count} 个等你"
 
-#: src/features/session-statusbar.tsx:358
+#: src/features/session-worktree-manager.tsx:126
 msgid "{count} sessions"
 msgstr "{count} 个会话"
 
-#: src/features/session-statusbar.tsx:168
+#: src/features/session-statusbar.tsx:162
 msgid "{count} shells running"
 msgstr "{count} 个 Shell 运行中"
 
@@ -86,7 +86,7 @@ msgstr "{hours} 小时前"
 msgid "{label} {percent}% used"
 msgstr "{label}已用 {percent}%"
 
-#: src/features/session-statusbar.tsx:254
+#: src/features/session-worktree-manager.tsx:336
 msgid "{linked} linked worktrees"
 msgstr "{linked} 个关联 worktree"
 
@@ -264,7 +264,7 @@ msgstr "工单要发给另一个仓库。"
 msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 msgstr "每个约 {minLow}–{minHigh} 分钟，内存峰值约 {gb} GB"
 
-#: src/features/session-statusbar.tsx:114
+#: src/features/session-statusbar.tsx:108
 msgid "Accept edits"
 msgstr "自动编辑"
 
@@ -473,7 +473,7 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/session-statusbar.tsx:102
+#: src/features/session-statusbar.tsx:96
 msgid "Auto"
 msgstr "Auto"
 
@@ -481,7 +481,7 @@ msgstr "Auto"
 msgid "Auto compact"
 msgstr "自动压缩窗口"
 
-#: src/features/session-statusbar.tsx:103
+#: src/features/session-statusbar.tsx:97
 msgid "Auto mode enabled"
 msgstr "已开启 Auto 模式"
 
@@ -489,11 +489,11 @@ msgstr "已开启 Auto 模式"
 msgid "Auto mode server"
 msgstr "Auto mode 服务端"
 
-#: src/features/session-statusbar.tsx:126
+#: src/features/session-statusbar.tsx:120
 msgid "Auto off"
 msgstr "未开 Auto"
 
-#: src/features/session-statusbar.tsx:115
+#: src/features/session-statusbar.tsx:109
 msgid "Auto-approves edits; auto mode off"
 msgstr "自动批准编辑（未开启 Auto 模式）"
 
@@ -992,6 +992,11 @@ msgstr "复制错误信息"
 msgid "Copy link"
 msgstr "复制链接"
 
+#: src/features/session-worktree-manager.tsx:206
+#: src/features/session-worktree-manager.tsx:207
+msgid "Copy path"
+msgstr "复制路径"
+
 #: src/features/console-diagnostics.tsx:350
 msgid "Copy raw line"
 msgstr "复制原始日志"
@@ -1041,6 +1046,10 @@ msgstr "费用与额度"
 #: src/features/me-devices.tsx:307
 msgid "Could not change the device: {changeError}"
 msgstr "操作失败：{changeError}"
+
+#: src/features/session-worktree-manager.tsx:292
+msgid "Could not copy path"
+msgstr "无法复制路径"
 
 #: src/features/copy-reference.tsx:29
 msgid "Could not copy the reference: {reason}"
@@ -1099,6 +1108,10 @@ msgstr "跨仓协作"
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
+#: src/features/session-worktree-manager.tsx:172
+msgid "Current"
+msgstr "当前"
+
 #: src/features/me-agent-detail.tsx:214
 msgid "Current API key"
 msgstr "当前 API 密钥"
@@ -1133,7 +1146,7 @@ msgstr "默认智能体"
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
-#: src/features/session-statusbar.tsx:127
+#: src/features/session-statusbar.tsx:121
 msgid "Default mode: auto mode is off"
 msgstr "默认模式：未开启 Auto 模式"
 
@@ -1167,6 +1180,11 @@ msgstr "依赖"
 #: src/features/session-info.tsx:83
 msgid "Desk idle for"
 msgstr "终端空闲"
+
+#: src/features/session-worktree-manager.tsx:119
+#: src/features/session-worktree-manager.tsx:188
+msgid "Detached"
+msgstr "游离分支"
 
 #: src/features/console-me.tsx:119
 msgid "Device access"
@@ -1327,7 +1345,7 @@ msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终�
 msgid "Execution mode"
 msgstr "执行模式"
 
-#: src/features/session-statusbar.tsx:133
+#: src/features/session-statusbar.tsx:127
 msgid "Execution mode: {mode}"
 msgstr "执行模式：{mode}"
 
@@ -1418,11 +1436,11 @@ msgstr "发起仓库"
 msgid "From anywhere"
 msgstr "随处可用"
 
-#: src/features/session-statusbar.tsx:108
+#: src/features/session-statusbar.tsx:102
 msgid "Full access"
 msgstr "完全访问"
 
-#: src/features/session-statusbar.tsx:109
+#: src/features/session-statusbar.tsx:103
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
@@ -1589,6 +1607,10 @@ msgstr "进行中"
 #: src/features/me-app.tsx:44
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
+
+#: src/features/session-worktree-manager.tsx:120
+msgid "In use"
+msgstr "仍在使用"
 
 #: src/features/console-collab-run.tsx:132
 msgid "Initial prompt"
@@ -1795,10 +1817,14 @@ msgstr "正在加载原图…"
 #: src/features/session-header.tsx:206
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
-#: src/features/session-statusbar.tsx:301
+#: src/features/session-worktree-manager.tsx:316
 #: src/features/tickets-view.tsx:288
 msgid "Loading…"
 msgstr "加载中…"
+
+#: src/features/session-worktree-manager.tsx:117
+msgid "Local changes"
+msgstr "有本地改动"
 
 #: src/features/console-diagnostics.tsx:199
 msgid "Log entry"
@@ -1817,6 +1843,10 @@ msgstr "登录"
 msgid "made progress"
 msgstr "有进展"
 
+#: src/features/session-worktree-manager.tsx:175
+msgid "Main checkout"
+msgstr "主工作树"
+
 #: src/features/session-skills.tsx:79
 msgid "manage MCP servers"
 msgstr "管理 MCP 服务"
@@ -1827,8 +1857,8 @@ msgid "manage tool permission rules"
 msgstr "管理工具权限规则"
 
 #: src/features/session-statusbar.tsx:289
-msgid "Manage worktrees"
-msgstr "管理工作树"
+#~ msgid "Manage worktrees"
+#~ msgstr "管理工作树"
 
 #: src/features/me-agent-detail.tsx:363
 msgid "Managed in host configuration"
@@ -2111,7 +2141,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/session-statusbar.tsx:348
+#: src/features/session-worktree-manager.tsx:331
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
 
@@ -2144,8 +2174,8 @@ msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
 #: src/features/session-statusbar.tsx:338
-msgid "No session"
-msgstr "无会话"
+#~ msgid "No session"
+#~ msgstr "无会话"
 
 #: src/features/session-list.tsx:192
 msgid "No sessions match that search."
@@ -2184,6 +2214,10 @@ msgstr "未配置"
 #: src/features/console-usage.tsx:126
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
+
+#: src/features/session-worktree-manager.tsx:118
+msgid "Not delivered"
+msgstr "未交付"
 
 #: src/features/chat-pending.tsx:66
 msgid "Not delivered: the agent went idle without it"
@@ -2240,6 +2274,7 @@ msgstr "现在没有等你处理的工单。需要你回复或运行失败的会
 
 #: src/features/session-new-panels.tsx:126
 #: src/features/session-skills.tsx:236
+#: src/features/session-worktree-manager.tsx:331
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2370,6 +2405,10 @@ msgstr "发起会话"
 msgid "Other"
 msgstr "其他"
 
+#: src/features/session-worktree-manager.tsx:256
+msgid "Other worktrees"
+msgstr "其他工作树"
+
 #: src/features/session-commands.tsx:219
 #: src/features/session-skills.tsx:75
 msgid "outline a plan before editing"
@@ -2453,11 +2492,11 @@ msgstr "选择会话（按仓库分组）"
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
-#: src/features/session-statusbar.tsx:120
+#: src/features/session-statusbar.tsx:114
 msgid "Plan"
 msgstr "计划模式"
 
-#: src/features/session-statusbar.tsx:121
+#: src/features/session-statusbar.tsx:115
 msgid "Plan mode"
 msgstr "计划模式"
 
@@ -2813,6 +2852,10 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 msgid "Retry"
 msgstr "重试"
 
+#: src/features/session-worktree-manager.tsx:114
+msgid "Reusable"
+msgstr "可复用"
+
 #: src/features/session-new-direction.tsx:185
 #~ msgid "reuse idle"
 #~ msgstr "复用空闲"
@@ -2886,6 +2929,7 @@ msgstr "运行中"
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-status-band.tsx:38
+#: src/features/session-worktree-manager.tsx:115
 msgid "Running"
 msgstr "运行中"
 
@@ -3013,6 +3057,11 @@ msgstr "搜索会话"
 #: src/features/session-skills.tsx:227
 msgid "Search skills"
 msgstr "搜索能力"
+
+#: src/features/session-worktree-manager.tsx:307
+#: src/features/session-worktree-manager.tsx:308
+msgid "Search worktrees"
+msgstr "搜索工作树"
 
 #: src/features/console-shell.tsx:335
 msgid "Sections"
@@ -3828,6 +3877,10 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 msgid "waiting for you"
 msgstr "在等你"
 
+#: src/features/session-worktree-manager.tsx:116
+msgid "Waiting for you"
+msgstr "等待处理"
+
 #: src/features/ticket-thread-view.tsx:97
 msgid "Waiting for your answer"
 msgstr "等你回答"
@@ -4028,7 +4081,10 @@ msgstr "工作树"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
-#: src/features/session-statusbar.tsx:296
+#: src/features/session-worktree-manager.tsx:351
+#: src/features/session-worktree-manager.tsx:356
+#: src/features/session-worktree-manager.tsx:373
+#: src/features/session-worktree-manager.tsx:381
 msgid "Worktrees"
 msgstr "工作树"
 
@@ -4058,35 +4114,47 @@ msgstr "你的决定、补充信息，或对质疑的答复"
 msgid "Your reply"
 msgstr "你的回复"
 
-#: src/features/session-statusbar.tsx:246
-msgid "仍在使用"
-msgstr "仍在使用"
+#: src/features/session-worktree-manager.tsx:174
+#~ msgid "主工作树"
+#~ msgstr ""
 
-#: src/features/session-statusbar.tsx:240
-msgid "可复用"
-msgstr "可复用"
+#: src/features/session-worktree-manager.tsx:119
+#~ msgid "仍在使用"
+#~ msgstr "仍在使用"
 
-#: src/features/session-statusbar.tsx:243
-msgid "有本地改动"
-msgstr "有本地改动"
+#: src/features/session-worktree-manager.tsx:252
+#~ msgid "其他工作树"
+#~ msgstr ""
 
-#: src/features/session-statusbar.tsx:244
-msgid "未交付"
-msgstr "未交付"
+#: src/features/session-worktree-manager.tsx:113
+#~ msgid "可复用"
+#~ msgstr "可复用"
+
+#: src/features/session-worktree-manager.tsx:171
+#~ msgid "当前"
+#~ msgstr ""
+
+#: src/features/session-worktree-manager.tsx:116
+#~ msgid "有本地改动"
+#~ msgstr "有本地改动"
+
+#: src/features/session-worktree-manager.tsx:117
+#~ msgid "未交付"
+#~ msgstr "未交付"
 
 #: src/features/session-statusbar.tsx:314
-msgid "未命名工作树"
-msgstr "未命名工作树"
+#~ msgid "未命名工作树"
+#~ msgstr "未命名工作树"
 
-#: src/features/session-statusbar.tsx:245
-#: src/features/session-statusbar.tsx:323
-msgid "游离分支"
-msgstr "游离分支"
+#: src/features/session-worktree-manager.tsx:118
+#: src/features/session-worktree-manager.tsx:187
+#~ msgid "游离分支"
+#~ msgstr "游离分支"
 
-#: src/features/session-statusbar.tsx:242
-msgid "等待处理"
-msgstr "等待处理"
+#: src/features/session-worktree-manager.tsx:115
+#~ msgid "等待处理"
+#~ msgstr "等待处理"
 
-#: src/features/session-statusbar.tsx:241
-msgid "运行中"
-msgstr "运行中"
+#: src/features/session-worktree-manager.tsx:114
+#~ msgid "运行中"
+#~ msgstr "运行中"
