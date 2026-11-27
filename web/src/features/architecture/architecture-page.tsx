@@ -87,7 +87,8 @@ export function ArchitecturePage() {
       {/* Compact sticky chapter rail on narrow / medium screens */}
       <nav
         aria-label={p(COPY.toc)}
-        className="sticky top-[3.5rem] z-20 border-b border-brand-edge bg-brand-surface/95 backdrop-blur xl:hidden"
+        data-testid="architecture-toc-mobile"
+        className="sticky top-14 z-20 border-b border-brand-edge bg-brand-surface/95 backdrop-blur xl:hidden"
       >
         <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-4 py-1.5 [scrollbar-width:none] sm:px-5 [&::-webkit-scrollbar]:hidden">
           {toc.map((item) => {
