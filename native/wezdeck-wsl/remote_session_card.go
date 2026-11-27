@@ -61,3 +61,10 @@ func sessionOrderSource(e attentionEntry, fallbackSource string) string {
 	}
 	return fallbackSource
 }
+
+func sessionFallbackTime(attentionAt, windowAt int64) (int64, string) {
+	if attentionAt > 0 || windowAt <= 0 {
+		return attentionAt, "attention"
+	}
+	return windowAt, "window_activity"
+}

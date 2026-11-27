@@ -90,8 +90,10 @@ Each `sessions` card reports `ts` with `time_source` and `order_at` with
 `order_source`. Display time comes from a transcript turn, transcript mtime,
 attention state, or tmux `window_activity`; active turns order by their start,
 completed turns by attention completion, and archived cards by their live
-timestamp. A card with no transcript may fall back to tmux window activity,
-which can advance without a new user message. The relay writes
+timestamp. A card with no transcript uses its attention timestamp; only one
+without either timestamp falls back to tmux window activity. A tmux window
+can contain several sessions, so its activity cannot establish that a given
+session received a message. The relay writes
 `event=session_order` to `relay.log` when ordering or source changes, when a
 fallback display time changes, and on the first observed mtime/window fallback.
 Ordinary transcript output with stable ordering is omitted. Rows include

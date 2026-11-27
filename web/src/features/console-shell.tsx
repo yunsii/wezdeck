@@ -34,6 +34,7 @@ import { useFollowSessionRedirect } from './session-follow'
 import { installClientTrace } from '#/lib/client-trace'
 import { RECENT_START_MS } from './runtime-restart'
 import { remoteLink } from '#/lib/remote-link'
+import { useSessionListScroll } from './session-list-scroll'
 
 export function ConsoleRouteLayout() {
   return (
@@ -161,6 +162,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
     sessions: unreadChatCount(sessions.data?.sessions ?? []),
   }
   const scroller = useRef<HTMLDivElement>(null)
+  useSessionListScroll(scroller)
   const router = useRouter()
   const goToTab = useGoToTab()
   // sections are first-level pages: they hold the first history entry only
