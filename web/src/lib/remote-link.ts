@@ -17,7 +17,16 @@ import {
 } from './remote-pairing'
 import { loadDeviceKey } from './device-key'
 import { sendFocusFrame } from './remote-focus'
-import { notReadyError, recordLinkEvent } from './remote-link-trace'
+import {
+  classifyRpcTimeout,
+  closeSocketSafely,
+  evalHostPresence,
+  nextWsBackoff,
+  notReadyError,
+  parseRelayFrame,
+  recordLinkEvent,
+  recordRpcTiming,
+} from './remote-link-trace'
 import type { RemoteMode, RemotePath, RemoteState } from './remote-link-trace'
 import { RemoteRtc } from './remote-rtc'
 import { ReplyParts } from './reply-parts'
@@ -41,6 +50,8 @@ const OFFLINE_RTC_GRACE_MS = 2_000
 
 type Frame = Record<string, unknown> & { t: string; id?: string }
 type Pending = {
+  action: string
+  startedAt: number
   resolve: (value: unknown) => void
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
@@ -209,7 +220,7 @@ class RemoteLink {
         })
         clearTimeout(this.wsReconnectTimer)
         this.wsReconnectTimer = setTimeout(() => this.openSocket(), delay)
-        this.wsRetry = Math.min(Math.max(this.wsRetry * 2, 600), 30_000)
+        this.wsRetry = nextWsBackoff(this.wsRetry)
       })
     }
   }
@@ -222,13 +233,7 @@ class RemoteLink {
     this.wsRetry = 300
     const prev = this.ws
     this.ws = undefined
-    if (prev) {
-      try {
-        prev.close(4008, reason)
-      } catch {
-        // already closing/closed
-      }
-    }
+    closeSocketSafely(prev, 4008, reason)
     if (!this.rtc.isOpen()) {
       this.rtc.close(reason)
       this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
@@ -278,12 +283,8 @@ class RemoteLink {
   }
 
   private onFrame(raw: string, via: 'websocket' | 'webrtc') {
-    let frame: Frame
-    try {
-      frame = JSON.parse(raw) as Frame
-    } catch {
-      return
-    }
+    const frame = parseRelayFrame(raw)
+    if (!frame) return
     this.lastFrameAt = Date.now()
     this.missedPongs = 0
     clearTimeout(this.wakeProbeTimer)
@@ -295,59 +296,60 @@ class RemoteLink {
         if (joined !== null) this.onFrame(joined, via)
         return
       }
-      case 'host': {
+      case 'host':
         this.onHostFrame(frame)
         return
-      }
-      case 'sig': {
+      case 'sig':
         this.rtc.handleAnswer(
           frame.data as
             { type?: string; sdp?: string; samePublic?: string } | undefined,
         )
         return
-      }
       case 'pong': {
         const sent = this.pings.get(frame.id ?? '')
         if (sent === undefined || frame.ok === false) return
         this.pings.delete(frame.id ?? '')
-        const activeVia = this.rtc.isOpen() ? 'webrtc' : 'websocket'
-        if (via !== activeVia) return
+        if (via !== (this.rtc.isOpen() ? 'webrtc' : 'websocket')) return
         this.samples = [...this.samples, performance.now() - sent].slice(-5)
         this.set({ rttMs: Math.round(median(this.samples)) })
         return
       }
-      case 'diag.request': {
+      case 'diag.request':
         this.hostRequest?.(frame)
         return
-      }
-      case 'res': {
-        const entry = this.pending.get(frame.id ?? '')
-        if (!entry) return
-        this.pending.delete(frame.id ?? '')
-        clearTimeout(entry.timer)
-        this.set({
-          rpcCount: {
-            ...this.state.rpcCount,
-            [via]: this.state.rpcCount[via] + 1,
-          },
-        })
-        if (frame.ok === false) entry.reject(refusal(String(frame.error ?? '')))
-        else entry.resolve(frame.result)
+      case 'res':
+        this.onResFrame(frame, via)
         return
-      }
     }
   }
 
+  private onResFrame(frame: Frame, via: 'websocket' | 'webrtc') {
+    const entry = this.pending.get(frame.id ?? '')
+    if (!entry) return
+    this.pending.delete(frame.id ?? '')
+    clearTimeout(entry.timer)
+    recordRpcTiming({
+      action: entry.action,
+      via,
+      clientMs: performance.now() - entry.startedAt,
+      hostMs: typeof frame.host_ms === 'number' ? frame.host_ms : undefined,
+      ok: frame.ok !== false,
+    })
+    this.set({
+      rpcCount: {
+        ...this.state.rpcCount,
+        [via]: this.state.rpcCount[via] + 1,
+      },
+    })
+    if (frame.ok === false) entry.reject(refusal(String(frame.error ?? '')))
+    else entry.resolve(frame.result)
+  }
+
   private onHostFrame(frame: Frame) {
-    const online = Boolean(frame.online)
-    const nextSince = (frame.since as string | null) ?? null
-    const sinceChanged = Boolean(
-      online &&
-      this.state.hostSince &&
-      nextSince &&
-      nextSince !== this.state.hostSince,
+    const { online, nextSince, sinceChanged } = evalHostPresence(
+      frame,
+      this.state.hostSince,
     )
-    recordLinkEvent('host_presence', { online, since: nextSince, sinceChanged })
     const dcOpen = this.rtc.isOpen()
     if (online) {
       clearTimeout(this.offlineRtcTimer)
@@ -422,17 +424,11 @@ class RemoteLink {
     via: 'webrtc' | 'websocket',
     timeoutMs: number,
   ) {
-    const silentMs = this.lastFrameAt ? Date.now() - this.lastFrameAt : -1
-    recordLinkEvent('rpc_timeout', { action, via, timeoutMs, silentMs })
-    if (via === 'webrtc' && silentMs > 3_000) {
-      this.rtc.close('WebRTC RPC timeout')
-      return
-    }
-    if (via === 'websocket' && silentMs > 5_000) {
+    const step = classifyRpcTimeout(action, via, timeoutMs, this.lastFrameAt)
+    if (step === 'close-rtc') this.rtc.close('WebRTC RPC timeout')
+    else if (step === 'reconnect-ws')
       this.forceReconnect(`rpc timeout (${action})`)
-      return
-    }
-    this.sendPing()
+    else this.sendPing()
   }
 
   /** Resolves once a transport can carry requests (first page load races the socket). */
@@ -494,7 +490,13 @@ class RemoteLink {
         this.probeAfterTimeout(action, via, timeoutMs)
         reject(new Error('remote host did not answer in time'))
       }, timeoutMs)
-      this.pending.set(id, { resolve, reject, timer })
+      this.pending.set(id, {
+        action,
+        startedAt: performance.now(),
+        resolve,
+        reject,
+        timer,
+      })
       if (!this.send({ t: 'rpc', id, action, args })) {
         clearTimeout(timer)
         this.pending.delete(id)

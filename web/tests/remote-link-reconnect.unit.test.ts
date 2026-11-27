@@ -10,7 +10,9 @@ import {
   linkEventsSnapshot,
   nextRtcRetryDelay,
   recordLinkEvent,
+  recordRpcTiming,
   resetLinkEvents,
+  rpcLatencySnapshot,
 } from '#/lib/remote-link-trace'
 
 describe('remote reconnect retry classification', () => {
@@ -69,5 +71,52 @@ describe('remote link trace & WebRTC backoff helpers', () => {
     expect(snap).toHaveLength(80)
     expect(snap[0]?.data?.seq).toBe(15)
     expect(snap.at(-1)?.data?.seq).toBe(94)
+  })
+
+  it('records slow RPCs with host_ms vs rtt_ms split and computes rolling summary', () => {
+    resetLinkEvents()
+    recordRpcTiming({
+      action: 'session',
+      via: 'websocket',
+      clientMs: 240,
+      hostMs: 90,
+      ok: true,
+    })
+    recordRpcTiming({
+      action: 'sessions',
+      via: 'websocket',
+      clientMs: 1_850,
+      hostMs: 1_620,
+      ok: true,
+    })
+    recordRpcTiming({
+      action: 'sent.list',
+      via: 'webrtc',
+      clientMs: 110,
+      hostMs: 80,
+      ok: true,
+    })
+
+    const events = linkEventsSnapshot()
+    expect(events).toHaveLength(1)
+    expect(events[0]?.event).toBe('rpc_slow')
+    expect(events[0]?.data).toEqual({
+      action: 'sessions',
+      via: 'websocket',
+      ok: true,
+      clientMs: 1850,
+      hostMs: 1620,
+      rttMs: 230,
+    })
+
+    const latency = rpcLatencySnapshot()
+    expect(latency).toMatchObject({
+      count: 3,
+      slowCount: 1,
+      clientP50Ms: 240,
+      clientMaxMs: 1850,
+      hostP50Ms: 90,
+      rttP50Ms: 150,
+    })
   })
 })

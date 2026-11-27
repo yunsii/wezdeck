@@ -173,6 +173,35 @@ internal sealed partial class RuntimeWebServer : IDisposable
             return;
         }
 
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            await HandleApiHttpAsync(context);
+        }
+        finally
+        {
+            var elapsedMs = stopwatch.ElapsedMilliseconds;
+            var statusCode = context.Response.StatusCode;
+            if (elapsedMs >= SlowHttpRequestMs || statusCode >= StatusCodes.Status500InternalServerError)
+            {
+                logger.Warn("wezdeck_runtime", "slow http request", new Dictionary<string, string?>
+                {
+                    ["method"] = context.Request.Method,
+                    ["path"] = context.Request.Path.Value ?? string.Empty,
+                    ["status"] = statusCode.ToString(CultureInfo.InvariantCulture),
+                    ["elapsed_ms"] = elapsedMs.ToString(CultureInfo.InvariantCulture),
+                    ["threshold_ms"] = SlowHttpRequestMs.ToString(CultureInfo.InvariantCulture),
+                });
+            }
+        }
+    }
+
+    private const int SlowHttpRequestMs = 500;
+    private const int SlowBridgeReadMs = 300;
+    private const int SlowBridgeWriteMs = 1000;
+
+    private async Task HandleApiHttpAsync(HttpContext context)
+    {
         if (HttpMethods.IsPost(context.Request.Method) && await TryHandleRemoteWriteAsync(context))
         {
             return;
@@ -367,13 +396,28 @@ internal sealed partial class RuntimeWebServer : IDisposable
 
     private object ReadBridge(string domain, string action, object payload, bool write = false)
     {
+        var stopwatch = Stopwatch.StartNew();
+        var slowThresholdMs = write ? SlowBridgeWriteMs : SlowBridgeReadMs;
         try
         {
             // writes: longer than the slowest one (the ticket CLI, 60 s), so
             // a still-running write is not reported failed and sent again
-            return write
+            var result = write
                 ? writeBridge.Call(domain, action, payload, 75_000)
                 : wslBridge.Call(domain, action, payload, 8_000);
+            var elapsedMs = stopwatch.ElapsedMilliseconds;
+            if (elapsedMs >= slowThresholdMs)
+            {
+                logger.Warn("wezdeck_runtime", "slow wsl bridge call", new Dictionary<string, string?>
+                {
+                    ["domain"] = domain,
+                    ["action"] = action,
+                    ["write"] = write ? "1" : "0",
+                    ["elapsed_ms"] = elapsedMs.ToString(CultureInfo.InvariantCulture),
+                    ["threshold_ms"] = slowThresholdMs.ToString(CultureInfo.InvariantCulture),
+                });
+            }
+            return result;
         }
         catch (Exception exception)
         {
@@ -381,6 +425,8 @@ internal sealed partial class RuntimeWebServer : IDisposable
             {
                 ["domain"] = domain,
                 ["action"] = action,
+                ["write"] = write ? "1" : "0",
+                ["elapsed_ms"] = stopwatch.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture),
                 ["error"] = exception.Message,
             });
             return new Dictionary<string, object?>

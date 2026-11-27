@@ -14,12 +14,9 @@ package main
 //   - every write is logged (category=relay event=write).
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -267,54 +264,6 @@ func replacementForArchived(id string, recent []recentEntry, entries map[string]
 	return ""
 }
 
-// gitRepoMeta: repo family label + main checkout root + this worktree path.
-// Soft-fails fast so listSessions stays snappy when git is missing or slow.
-func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
-	worktree = cwd
-	if cwd == "" {
-		return "", "", ""
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "git", "-C", cwd, "rev-parse", "--show-toplevel", "--git-common-dir").Output()
-	if err != nil {
-		return filepath.Base(cwd), "", cwd
-	}
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if len(lines) == 0 || lines[0] == "" {
-		return filepath.Base(cwd), "", cwd
-	}
-	worktree = lines[0]
-	repo = filepath.Base(worktree)
-	if len(lines) < 2 || lines[1] == "" {
-		return repo, worktree, worktree
-	}
-	common := lines[1]
-	if !filepath.IsAbs(common) {
-		common = filepath.Clean(filepath.Join(cwd, common))
-	}
-	repoRoot = mainWorktreeFromGitCommon(common)
-	if repoRoot == "" {
-		repoRoot = worktree
-	} else {
-		repo = filepath.Base(repoRoot)
-	}
-	return repo, repoRoot, worktree
-}
-
-// mainWorktreeFromGitCommon turns git-common-dir into the primary checkout path.
-func mainWorktreeFromGitCommon(common string) string {
-	clean := filepath.Clean(common)
-	const marker = string(filepath.Separator) + ".git" + string(filepath.Separator) + "worktrees" + string(filepath.Separator)
-	if i := strings.Index(clean, marker); i >= 0 {
-		return clean[:i]
-	}
-	if filepath.Base(clean) == ".git" {
-		return filepath.Dir(clean)
-	}
-	return ""
-}
-
 func paneRole(index int) string {
 	if index <= 1 {
 		return "primary"
@@ -341,15 +290,24 @@ func deskActivity(e attentionEntry) int64 {
 var sessionIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,128}$`)
 
 func listSessions() (any, error) {
-	return listSessionsFor(false)
+	return listSessionsWithTiming(false, nil)
 }
 
 func listSessionsFor(includeArchived bool) (any, error) {
+	return listSessionsWithTiming(includeArchived, nil)
+}
+
+func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error) {
+	t0 := time.Now()
 	active, recent, err := readAttentionDoc()
+	timing.add("read_ms", time.Since(t0))
 	if err != nil {
 		return nil, err
 	}
+	t1 := time.Now()
 	entries, paneSnap, closed := liveSessionsWithContext(active, recent)
+	timing.add("live_ms", time.Since(t1))
+	tCards := time.Now()
 	now := time.Now()
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
@@ -465,6 +423,8 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			}
 		}
 	}
+	timing.add("cards_ms", time.Since(tCards))
+	tPost := time.Now()
 	// Resume on pane A while the prior "new" session still runs on pane B:
 	// both would list; the empty splash on A is noise — drop it when B still
 	// has visible chat (same worktree). A fresh /new with no sibling content
@@ -472,10 +432,13 @@ func listSessionsFor(includeArchived bool) (any, error) {
 	cards = dropEmptyHandoffSplashes(cards, recent)
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
+	redirects := sessionRedirectsFromSnap(recent, entries, paneSnap)
+	jobs := activeNewSessionJobsFor(cards)
+	timing.add("post_ms", time.Since(tPost))
 	return map[string]any{
 		"v": 1, "ok": true, "sessions": cards,
-		"creating_jobs": activeNewSessionJobsFor(cards),
-		"redirects":     sessionRedirects(recent, entries),
+		"creating_jobs": jobs,
+		"redirects":     redirects,
 	}, nil
 }
 
@@ -562,7 +525,11 @@ func sessionRedirects(recent []recentEntry, entries map[string]attentionEntry) [
 			sockets[r.TmuxSocket] = true
 		}
 	}
-	pins := agentSessionPins(sockets)
+	return sessionRedirectsFromSnap(recent, entries, snapshotTmuxPanes(sockets))
+}
+
+func sessionRedirectsFromSnap(recent []recentEntry, entries map[string]attentionEntry, snap map[string]tmuxPaneSnap) []sessionRedirect {
+	pins := agentSessionPinsFromSnap(snap)
 	seen := map[string]bool{}
 	var out []sessionRedirect
 	add := func(from, to, fromPane, fromSocket string) {
@@ -606,10 +573,14 @@ func backgroundOf(e attentionEntry) []bgTask {
 }
 
 func sessionDetail(args json.RawMessage) (any, error) {
-	return sessionDetailFor(args, false)
+	return sessionDetailWithTiming(args, false, nil)
 }
 
 func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
+	return sessionDetailWithTiming(args, includeArchived, nil)
+}
+
+func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing *rpcTiming) (any, error) {
 	var a sessionArgs
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
@@ -620,11 +591,16 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	if a.Limit > 5000 {
 		a.Limit = 5000
 	}
+	tRead := time.Now()
 	active, recent, err := readAttentionDoc()
+	timing.add("read_ms", time.Since(tRead))
 	if err != nil {
 		return nil, err
 	}
+	tLive := time.Now()
 	entries := liveSessionsFrom(active, recent)
+	timing.add("live_ms", time.Since(tLive))
+	tMeta := time.Now()
 	e, ok := entries[a.ID]
 	path, agent := "", ""
 	cmd, profile, paneAlive := "", "", false
@@ -732,6 +708,8 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	var agyPending *pendingCall
 	var loadedTranscript *transcript
 	var allMsgsForOutbox []chatMessage
+	timing.add("meta_ms", time.Since(tMeta))
+	tTranscript := time.Now()
 	if path != "" {
 		out["agent"] = agent
 		if title := resolveSessionTitle(a.ID, path, agent); title != "" {
@@ -841,13 +819,16 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 			}
 		}
 	}
+	timing.add("transcript_ms", time.Since(tTranscript))
 	if outbox := reconcileSessionOutbox(a.ID, allMsgsForOutbox, e.busy(), time.Now().UnixMilli()); len(outbox) > 0 {
 		out["outbox"] = outbox
 	}
 	if readOnly {
 		return out, nil
 	}
+	tScreen := time.Now()
 	screen, err := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-J", "-t", e.TmuxPane, "-S", "-60").Output()
+	timing.add("screen_ms", time.Since(tScreen))
 	if err == nil {
 		trimmed := strings.TrimRight(string(screen), "\n ")
 		out["screen"] = trimmed

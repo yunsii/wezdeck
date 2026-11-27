@@ -30,3 +30,16 @@ tmux got the paste and Enter, not that the agent recorded it in the
 transcript. Compare these stages with `wezdeck-wsl diag` when a message is
 missing. The local diagnostics page also reads the current `web-client.log`
 alongside the Windows and WSL logs.
+
+## Local bridge & HTTP slow-request timing
+
+- `wezdeck-wsl serve` logs `event=bridge_rpc` (`via=local`, excluding fast
+  `bridge.status` / `remote.diag.pending` heartbeats) and threshold-gated
+  `event=bridge_rpc_slow` (`>= 300 ms`, override `WEZDECK_BRIDGE_SLOW_RPC_MS`,
+  with `read_ms` / `live_ms` / `cards_ms` / `meta_ms` / `transcript_ms` phase
+  breakdowns on `remote.sessions` / `remote.session`) into `relay.log`.
+- `RuntimeWebServer` logs `slow http request` (`>= 500 ms` or HTTP 5xx) and
+  `slow wsl bridge call` (`>= 300 ms` read / `>= 1000 ms` write, plus
+  `elapsed_ms` on bridge failures) into `helper.log` under `wezdeck_runtime`.
+- Summarise both local bridge and remote relay RPC timings together via
+  `scripts/dev/relay-latency-report.sh` (`--via local` for loopback only).

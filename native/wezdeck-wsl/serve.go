@@ -8,7 +8,15 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 )
+
+// High-frequency loopback heartbeats stay silent on the happy fast path;
+// slow calls and errors still log.
+var bridgeQuietActions = map[string]bool{
+	"bridge.status":       true,
+	"remote.diag.pending": true,
+}
 
 func socketPath() string {
 	if value := os.Getenv("WEZDECK_WSL_SOCKET"); value != "" {
@@ -38,6 +46,7 @@ func serve() error {
 	if err := os.Chmod(path, 0o600); err != nil {
 		return err
 	}
+	defer initBridgeLog()()
 	go exitWhenReplaced(listener)
 	for {
 		conn, err := listener.Accept()
@@ -76,6 +85,9 @@ func writeResponse(w io.Writer, value response) {
 }
 
 func dispatch(req request) response {
+	started := time.Now()
+	var timing rpcTiming
+	fullAction := req.Domain + "." + req.Action
 	res := response{
 		Version:      2,
 		TraceID:      req.TraceID,
@@ -83,13 +95,24 @@ func dispatch(req request) response {
 		Action:       req.Action,
 		DecisionPath: "wsl_socket",
 	}
+	defer func() {
+		ms := time.Since(started).Milliseconds()
+		slowMS := slowThresholdMS("WEZDECK_BRIDGE_SLOW_RPC_MS", bridgeSlowRPCDefaultMS)
+		isSlow := slowMS > 0 && ms >= slowMS
+		if !bridgeQuietActions[fullAction] || !res.OK || isSlow {
+			relayLogf("bridge_rpc", "via=local action=%q ok=%t ms=%d err=%q", fullAction, res.OK, ms, res.Error)
+		}
+		if isSlow {
+			relayLogf("bridge_rpc_slow", "via=local action=%q ok=%t ms=%d threshold_ms=%d%s err=%q", fullAction, res.OK, ms, slowMS, timing.suffix(), res.Error)
+		}
+	}()
 	if req.Version != 2 {
 		res.Status = "bad_version"
 		res.Error = "version must be 2"
 		return res
 	}
 	var err error
-	switch req.Domain + "." + req.Action {
+	switch fullAction {
 	case "workspace.catalog":
 		res.Result, err = runDump("dump-workspace-catalog.lua", nil, catalogEnv())
 	case "git.status":
@@ -104,9 +127,9 @@ func dispatch(req request) response {
 		"collab.run", "collab.prompt", "collab.transcript", "collab.metrics":
 		res.Result, err = runCollab(req.Action, req.Payload)
 	case "remote.sessions":
-		res.Result, err = listSessionsFor(true)
+		res.Result, err = listSessionsWithTiming(true, &timing)
 	case "remote.session":
-		res.Result, err = sessionDetailFor(req.Payload, true)
+		res.Result, err = sessionDetailWithTiming(req.Payload, true, &timing)
 	case "remote.upload.get", "remote.sent.list",
 		"remote.repos", "remote.repo.links", "remote.agent.profiles", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
 		"remote.session.handoff.job", "remote.session.autotitle.status", "remote.session.image", "remote.session.file",
@@ -117,7 +140,7 @@ func dispatch(req request) response {
 		if len(payload) == 0 || string(payload) == "null" {
 			payload = json.RawMessage("{}")
 		}
-		res.Result, _, err = readRPC(req.Action, payload)
+		res.Result, _, err = readRPC(req.Action, payload, &timing)
 	case "remote.devices":
 		// local only: the relay never lists devices to a paired phone
 		res.Result, err = listDevices()

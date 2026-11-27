@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -31,6 +32,8 @@ import (
 )
 
 const relayDrainTimeout = 5 * time.Second
+const relaySlowRPCDefaultMS int64 = 500
+const bridgeSlowRPCDefaultMS int64 = 300
 
 const relayDefaultURL = "wss://wezdeck.yuns.love/relay/host"
 
@@ -53,8 +56,40 @@ type relayFrame struct {
 	OK     *bool           `json:"ok,omitempty"`
 	Result any             `json:"result,omitempty"`
 	Error  string          `json:"error,omitempty"`
+	HostMS *int64          `json:"host_ms,omitempty"`
 	Host   string          `json:"host,omitempty"`
 	Ver    string          `json:"ver,omitempty"`
+}
+
+// rpcTiming collects optional per-phase millisecond breakdowns for hot-path
+// RPCs; formatted only when an RPC crosses the slow threshold.
+type rpcTiming struct {
+	parts []string
+}
+
+func (t *rpcTiming) add(name string, d time.Duration) {
+	if t == nil {
+		return
+	}
+	t.parts = append(t.parts, fmt.Sprintf("%s=%d", name, d.Milliseconds()))
+}
+
+func (t *rpcTiming) suffix() string {
+	if t == nil || len(t.parts) == 0 {
+		return ""
+	}
+	return " " + strings.Join(t.parts, " ")
+}
+
+func slowThresholdMS(envKey string, fallback int64) int64 {
+	raw := strings.TrimSpace(os.Getenv(envKey))
+	if raw == "" {
+		return fallback
+	}
+	if v, err := strconv.ParseInt(raw, 10, 64); err == nil {
+		return v
+	}
+	return fallback
 }
 
 type relaySignal struct {
@@ -118,19 +153,53 @@ func (r *relay) logf(event string, format string, args ...any) {
 // logs after its RPC has returned
 var activeRelay *relay
 
+var (
+	bridgeLogMu   sync.Mutex
+	bridgeLogFile *os.File
+)
+
+func initBridgeLog() func() {
+	path := relayLogPath()
+	if path == "" {
+		return func() {}
+	}
+	f, err := openRelayLog(path)
+	if err != nil {
+		return func() {}
+	}
+	bridgeLogMu.Lock()
+	bridgeLogFile = f
+	bridgeLogMu.Unlock()
+	return func() {
+		bridgeLogMu.Lock()
+		if bridgeLogFile == f {
+			bridgeLogFile = nil
+		}
+		bridgeLogMu.Unlock()
+		_ = f.Close()
+	}
+}
+
 func relayLogf(event, format string, args ...any) {
 	if r := activeRelay; r != nil {
 		r.logf(event, format, args...)
 		return
 	}
 	// no relay in this process (the Runtime bridge, `serve`): the same row
-	// goes to relay.log, so local writes are on record next to remote ones
+	// goes to relay.log, so local writes and timings are on record next to remote ones
 	line := fmt.Sprintf("%s category=relay event=%s %s\n", time.Now().Format(time.RFC3339Nano), event, fmt.Sprintf(format, args...))
 	fmt.Fprint(os.Stderr, line)
+	bridgeLogMu.Lock()
+	f := bridgeLogFile
+	bridgeLogMu.Unlock()
+	if f != nil {
+		_, _ = f.WriteString(line)
+		return
+	}
 	if path := relayLogPath(); path != "" {
-		if f, err := openRelayLog(path); err == nil {
-			_, _ = f.WriteString(line)
-			_ = f.Close()
+		if opened, err := openRelayLog(path); err == nil {
+			_, _ = opened.WriteString(line)
+			_ = opened.Close()
 		}
 	}
 }
@@ -348,7 +417,15 @@ func (r *relay) send(f relayFrame) {
 // paired devices; the Runtime bridge (serve.go, domain "remote") serves the
 // same set to a browser on the host itself, which reads over loopback and
 // never pairs. Writes are not here: they need an approved device's signature.
-func readRPC(action string, args json.RawMessage) (any, bool, error) {
+func firstTiming(list []*rpcTiming) *rpcTiming {
+	if len(list) == 0 {
+		return nil
+	}
+	return list[0]
+}
+
+func readRPC(action string, args json.RawMessage, timingOpt ...*rpcTiming) (any, bool, error) {
+	timing := firstTiming(timingOpt)
 	var result any
 	var err error
 	switch action {
@@ -357,9 +434,9 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 	case "host.oppo.status":
 		result = oppoStatus()
 	case "sessions":
-		result, err = listSessions()
+		result, err = listSessionsWithTiming(false, timing)
 	case "session":
-		result, err = sessionDetail(args)
+		result, err = sessionDetailWithTiming(args, false, timing)
 	case "upload.get":
 		result, err = uploadGet(args)
 	case "sent.list":
@@ -407,7 +484,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 // allowlist, sessions, …) need a connection that said hello as an approved
 // device (relay_auth.go); writes (send / key / reply / attach / upload …)
 // carry their own signature from an approved device (remote_device_keys.go).
-func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
+func dispatchRPC(f relayFrame, via string, r *relay, timingOpt ...*rpcTiming) (any, error) {
+	timing := firstTiming(timingOpt)
 	switch f.Action {
 	case "device.register":
 		out, err := registerDeviceOutcome(f.Args)
@@ -430,7 +508,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 			return nil, err
 		}
 	}
-	if result, ok, err := readRPC(f.Action, f.Args); ok {
+	if result, ok, err := readRPC(f.Action, f.Args, timing); ok {
 		return result, err
 	}
 	switch f.Action {
@@ -456,16 +534,23 @@ var signedActions = map[string]bool{
 	"session.handoff": true, "session.autotitle.update": true, "ticket.draft": true, "ticket.new": true, "ticket.manager.start": true, "ticket.manager.park": true, "ticket.manager.send": true, "worktree.describe": true, "worktree.recycle": true, "worktree.remove": true, "host.warp.set": true,
 }
 
-// handleRPC answers one request frame and logs it.
+// handleRPC answers one request frame and logs it. Slow RPCs also emit a
+// threshold-gated `rpc_slow` row with optional phase breakdowns, and every
+// response carries `host_ms` so the browser can separate host time from RTT.
 func handleRPC(f relayFrame, via string, r *relay) relayFrame {
 	started := time.Now()
-	result, err := dispatchRPC(f, via, r)
+	var timing rpcTiming
+	result, err := dispatchRPC(f, via, r, &timing)
 	ok := err == nil
-	r.logf("rpc", "via=%s action=%q ok=%t ms=%d err=%q", via, f.Action, ok, time.Since(started).Milliseconds(), errText(err))
-	if err != nil {
-		return relayFrame{T: "res", ID: f.ID, OK: &ok, Error: err.Error()}
+	ms := time.Since(started).Milliseconds()
+	r.logf("rpc", "via=%s action=%q ok=%t ms=%d err=%q", via, f.Action, ok, ms, errText(err))
+	if slowMS := slowThresholdMS("WEZDECK_RELAY_SLOW_RPC_MS", relaySlowRPCDefaultMS); slowMS > 0 && ms >= slowMS {
+		r.logf("rpc_slow", "via=%s action=%q ok=%t ms=%d threshold_ms=%d%s err=%q", via, f.Action, ok, ms, slowMS, timing.suffix(), errText(err))
 	}
-	return relayFrame{T: "res", ID: f.ID, OK: &ok, Result: result}
+	if err != nil {
+		return relayFrame{T: "res", ID: f.ID, OK: &ok, Error: err.Error(), HostMS: &ms}
+	}
+	return relayFrame{T: "res", ID: f.ID, OK: &ok, Result: result, HostMS: &ms}
 }
 
 func relayICEServers() []webrtc.ICEServer {
