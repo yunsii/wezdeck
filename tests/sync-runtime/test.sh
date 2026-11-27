@@ -96,3 +96,35 @@ read -r outcome waited < <(helper_install_wait "$pid" "$out_file" 2)
 set +e; wait "$pid"; ec=$?; set -e
 [[ "$ec" == 143 ]] || fail "the hung installer was not stopped (exit $ec)"
 pass "a hung installer times out and is stopped"
+
+# The agent shell can omit Windows PATH entries even while WSL interop works.
+# shellcheck disable=SC1091
+source "$REPO_ROOT/scripts/runtime/windows-shell-lib.sh"
+# shellcheck disable=SC1091
+source "$LIB_DIR/sync-preflight-lib.sh"
+mkdir -p "$TEST_ROOT/windows-bin" "$TEST_ROOT/WezTerm"
+cat >"$TEST_ROOT/windows-bin/powershell.exe" <<'EOF'
+#!/usr/bin/env bash
+printf 'interop-ok'
+EOF
+chmod +x "$TEST_ROOT/windows-bin/powershell.exe"
+(
+  PATH=/usr/bin:/bin
+  windows_powershell_exe() { printf '%s\n' "$TEST_ROOT/windows-bin/powershell.exe"; }
+  sync_trace() { :; }
+  check_windows_powershell_interop /mnt/c/Users/Test
+  [[ "$(command -v powershell.exe)" == "$TEST_ROOT/windows-bin/powershell.exe" ]]
+) || fail 'PowerShell outside PATH was not resolved for later sync steps'
+pass 'PowerShell outside PATH is found and added for later sync steps'
+
+# The installed WezTerm may live on a non-C drive, absent from agent PATH.
+# shellcheck disable=SC1091
+source "$REPO_ROOT/scripts/dev/wezterm-canary-exe-lib.sh"
+: >"$TEST_ROOT/WezTerm/wezterm.exe"
+(
+  PATH=/usr/bin:/bin
+  windows_run_powershell_command_utf8() { printf 'E:\\Program Files\\WezTerm\\wezterm.exe\r\n'; }
+  wslpath() { printf '%s\n' "$TEST_ROOT/WezTerm/wezterm.exe"; }
+  [[ "$(find_wezterm_exe)" == "$TEST_ROOT/WezTerm/wezterm.exe" ]]
+) || fail 'WezTerm install record outside common directories was ignored'
+pass 'WezTerm resolves from a non-C installation record'
