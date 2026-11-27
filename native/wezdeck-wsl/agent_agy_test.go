@@ -174,9 +174,15 @@ func TestAgyPendingAskAndSettlement(t *testing.T) {
 	if err := os.WriteFile(path, []byte(openAsk), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	el := (agyAdapter{}).PendingAsk(path, "")
+	el := (agyAdapter{}).PendingAsk(path, "Question 2/2: Extras?\n> 1. Logs\n  2. Metrics")
 	if el == nil || el.ToolCallID != "agy-step-1" || len(el.Questions) != 2 {
 		t.Fatalf("pending ask: %+v", el)
+	}
+	if el.CurrentStep != 2 {
+		t.Fatalf("current_step = %d, want 2", el.CurrentStep)
+	}
+	if got := (agyAdapter{}).PendingAsk(path, "Question 1/3: unrelated"); got == nil || got.CurrentStep != 0 {
+		t.Fatalf("mismatched total should leave current_step=0: %+v", got)
 	}
 	if el.Questions[0].Question != "Which mode?" || len(el.Questions[0].Options) != 2 || el.Questions[0].Options[0].Label != "(Recommended) Auto" || el.Questions[0].MultiSelect {
 		t.Fatalf("q0: %+v", el.Questions[0])

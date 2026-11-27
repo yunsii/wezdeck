@@ -249,7 +249,9 @@ export function AskCard({
     )
   return (
     <SessionElicitation
+      agent={agent}
       elicitation={elicitation}
+      screen={screen}
       disabled={disabled}
       sendKey={sendKey}
     />

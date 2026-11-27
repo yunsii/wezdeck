@@ -5,6 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button'
+import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import {
@@ -26,29 +27,44 @@ export type ElicitQuestion = {
 export type Elicitation = {
   tool_call_id?: string
   questions: Array<ElicitQuestion>
+  /** Agy: 1-based active question read from the pane ("Question X/Y:") */
+  current_step?: number
   /** Claude: all answered, the TUI waits on its "Submit answers" page */
   review?: boolean
 }
 
 export function SessionElicitation({
+  agent,
   elicitation,
+  screen,
   disabled,
   sendKey,
 }: {
+  agent?: string
   elicitation: Elicitation
+  screen?: string
   disabled: boolean
   sendKey: (key: string) => Promise<unknown>
 }) {
   const { t } = useLingui()
   const questions = elicitation.questions
   const askId = elicitation.tool_call_id ?? ''
+  const digitConfirms = agent === 'agy'
   const [progress, setProgress] = useState({ id: askId, step: 0 })
   const [selected, setSelected] = useState<{
     id: string
     byStep: Record<number, Array<number>>
   }>({ id: askId, byStep: {} })
+  const hostStep =
+    elicitation.current_step && elicitation.current_step >= 1
+      ? Math.min(elicitation.current_step - 1, questions.length - 1)
+      : undefined
   const step =
-    progress.id === askId ? Math.min(progress.step, questions.length - 1) : 0
+    hostStep !== undefined
+      ? hostStep
+      : progress.id === askId
+        ? Math.min(progress.step, questions.length - 1)
+        : 0
   const current = questions[step]
   const selections = selected.id === askId ? selected.byStep : {}
   const picked = selections[step] ?? []
@@ -58,10 +74,13 @@ export function SessionElicitation({
 
   const pick = async (optionIndex: number) => {
     const toggle = Boolean(current.multi_select)
-    const stayWaiting = !toggle && last
+    // When the host reports the live pane step, hold the card in waiting state
+    // until the next poll confirms the pane advanced (prevents double-taps from
+    // leaking into the next question).
+    const stayWaiting = !toggle && (last || hostStep !== undefined)
     const ok = await run(
       `opt-${optionIndex}`,
-      () => pickElicitationOption(optionIndex, sendKey, toggle),
+      () => pickElicitationOption(optionIndex, sendKey, toggle, digitConfirms),
       { kind: toggle ? 'toggle' : 'submit', stayWaiting },
     )
     if (!ok) return
@@ -75,14 +94,16 @@ export function SessionElicitation({
       })
       return
     }
-    if (!last) setProgress({ id: askId, step: step + 1 })
+    if (!last && hostStep === undefined)
+      setProgress({ id: askId, step: step + 1 })
   }
 
   const submit = async () => {
     const ok = await run('submit', () => sendKey('Enter'), {
-      stayWaiting: last,
+      stayWaiting: last || hostStep !== undefined,
     })
-    if (ok && !last) setProgress({ id: askId, step: step + 1 })
+    if (ok && !last && hostStep === undefined)
+      setProgress({ id: askId, step: step + 1 })
   }
 
   return (
@@ -198,18 +219,31 @@ export function SessionElicitation({
         idle={
           current.multi_select
             ? t`Multiple choice: tap to toggle options, then press Enter.`
-            : t`Tap an option to send its number and Enter into the agent pane.`
+            : digitConfirms
+              ? t`Tap an option to send its number into the agent pane.`
+              : t`Tap an option to send its number and Enter into the agent pane.`
         }
       />
+      {screen ? (
+        <Disclosure
+          triggerClassName="min-h-8 text-meta font-normal text-brand-label"
+          title={t`Terminal`}
+        >
+          <pre className="max-h-64 overflow-auto overscroll-contain font-mono text-meta leading-snug text-brand-muted">
+            {screen}
+          </pre>
+        </Disclosure>
+      ) : null}
     </div>
   )
 }
 
-/** Drive Grok Ask. A failed write stops the rest so Enter cannot submit a default. */
+/** Drive Grok / Agy Ask. A failed write stops the rest so Enter cannot submit a default. */
 export async function pickElicitationOption(
   optionIndex: number,
   sendKey: (key: string) => Promise<unknown> | void,
   multiSelect = false,
+  digitConfirms = false,
 ): Promise<boolean> {
   const put = async (key: string) => {
     if ((await sendKey(key)) === false) return false
@@ -223,13 +257,15 @@ export async function pickElicitationOption(
   }
   if (optionIndex >= 0 && optionIndex <= 8) {
     if (!(await put(String(optionIndex + 1)))) return false
-  } else {
-    for (let i = 0; i < 12; i++) if (!(await put('Up'))) return false
-    for (let i = 0; i < optionIndex; i++) if (!(await put('Down'))) return false
-    if (multiSelect) return put('Space')
+    // Multi-select digits only toggle; Agy single-select digits confirm and
+    // advance immediately without Enter (a trailing Enter would auto-confirm
+    // the next question's default option).
+    if (multiSelect || digitConfirms) return true
+    return put('Enter')
   }
-  // Multi-select digits only toggle; Enter belongs to the explicit submit button.
-  if (multiSelect) return true
+  for (let i = 0; i < 12; i++) if (!(await put('Up'))) return false
+  for (let i = 0; i < optionIndex; i++) if (!(await put('Down'))) return false
+  if (multiSelect) return put('Space')
   return put('Enter')
 }
 

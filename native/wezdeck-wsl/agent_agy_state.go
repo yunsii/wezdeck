@@ -10,13 +10,46 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
+var agyAskStepRe = regexp.MustCompile(`Question\s+(\d+)/(\d+)`)
+
+// agyAskCurrentStep parses Agy's "Question X/Y:" header from the pane tail so
+// multi-question prompts stay synced with the live TUI step (1-based, 0 if absent).
+func agyAskCurrentStep(screen string, total int) int {
+	if total <= 1 {
+		return 0
+	}
+	tail := agyScreenTail(screen, 30)
+	if tail == "" {
+		return 0
+	}
+	step := 0
+	for _, m := range agyAskStepRe.FindAllStringSubmatch(tail, -1) {
+		if len(m) != 3 {
+			continue
+		}
+		cur, err1 := strconv.Atoi(m[1])
+		tot, err2 := strconv.Atoi(m[2])
+		if err1 == nil && err2 == nil && tot == total && cur >= 1 && cur <= total {
+			step = cur
+		}
+	}
+	return step
+}
+
 // PendingAsk implements askReader: returns the newest unanswered ask_question
 // tool call in transcript_full.jsonl so the web renders tappable options.
-func (agyAdapter) PendingAsk(path, _ string) *elicitation { return pendingAgyElicitation(path) }
+func (agyAdapter) PendingAsk(path, screen string) *elicitation {
+	el := pendingAgyElicitation(path)
+	if el != nil && len(el.Questions) > 1 {
+		el.CurrentStep = agyAskCurrentStep(screen, len(el.Questions))
+	}
+	return el
+}
 
 func pendingAgyElicitation(path string) *elicitation {
 	data, err := readTailFile(path, 2<<20)

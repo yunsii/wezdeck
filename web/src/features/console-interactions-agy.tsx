@@ -185,8 +185,8 @@ export function agySections(
         en: 'PreToolUse hook (ask_question) sets attention to waiting / elicitation_dialog; the unanswered ask_question in transcript_full.jsonl supplies questions and options (agent_agy_state.go)',
       },
       keys: {
-        zh: '选项序号 1–4；多选切换后 Enter 提交',
-        en: 'Option digit 1–4; Enter submits after toggling multi-select choices',
+        zh: '单选点选项直接发数字 1–9（无需 Enter，避免跳过下一题）；多选切换后按 Enter 提交',
+        en: 'Single choice sends digit 1–9 directly (no trailing Enter); multi-select toggles then Enter submits',
       },
       demo: (
         <AskCard

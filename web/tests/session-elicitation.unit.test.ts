@@ -43,4 +43,24 @@ describe('pickElicitationOption (Grok Ask)', () => {
       'Space',
     ])
   })
+
+  it('Agy single-select sends only the digit without trailing Enter so question 2 is never skipped', async () => {
+    const keys: Array<string> = []
+    await expect(
+      pickElicitationOption(0, sender(keys), false, true),
+    ).resolves.toBe(true)
+    expect(keys).toEqual(['1'])
+  })
+
+  it('Agy options beyond 9 still navigate with arrows and Enter', async () => {
+    const keys: Array<string> = []
+    await expect(
+      pickElicitationOption(9, sender(keys), false, true),
+    ).resolves.toBe(true)
+    expect(keys).toEqual([
+      ...Array(12).fill('Up'),
+      ...Array(9).fill('Down'),
+      'Enter',
+    ])
+  })
 })

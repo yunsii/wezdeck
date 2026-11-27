@@ -132,6 +132,21 @@ describe('Interaction debugging page', () => {
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('agy-permission → Enter')
+    await page.goto(`${base}/zh/console/me/interactions#agy-ask`)
+    await expect
+      .poll(() =>
+        page.getByTestId('interaction-detail').getAttribute('data-interaction'),
+      )
+      .toBe('agy-ask')
+    const agyAsk = page.getByTestId('interaction-detail')
+    await agyAsk.getByRole('button', { name: /1\.\s*权限审批卡片/ }).click()
+    await expect
+      .poll(() => agyAsk.textContent())
+      .toContain('需要顺带同步哪些验证？')
+    const agyAskLog =
+      (await page.getByTestId('interaction-log').textContent()) ?? ''
+    expect(agyAskLog).toContain('agy-ask → 1')
+    expect(agyAskLog).not.toContain('agy-ask → Enter')
     await page.goto(`${base}/zh/console/me/interactions#grok-plan`)
     await expect
       .poll(() =>

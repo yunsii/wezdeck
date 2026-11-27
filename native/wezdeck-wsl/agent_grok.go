@@ -46,6 +46,9 @@ type elicitQuestion struct {
 type elicitation struct {
 	ToolCallID string           `json:"tool_call_id,omitempty"`
 	Questions  []elicitQuestion `json:"questions"`
+	// CurrentStep: 1-based active question index read from the TUI pane (Agy
+	// "Question X/Y:"), so multi-question cards stay synced with the terminal.
+	CurrentStep int `json:"current_step,omitempty"`
 	// Review: every question is answered and the TUI waits on its "Submit
 	// answers" page (Claude, read from the pane) — Enter sends them
 	Review bool `json:"review,omitempty"`
