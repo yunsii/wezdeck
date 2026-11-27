@@ -90,6 +90,17 @@ cmd_run() {
     return
   fi
 
+  local cur_phase=""
+  if [[ "$phase" == "auto" ]]; then
+    cur_phase="$(awk -F': ' '/^phase:/{print $2; exit}' "$root/_data/$id/ticket.md" | tr -d '"')"
+    case "$cur_phase" in
+      approved_to_implement|research_done|implement_incomplete|implementing)
+        ticket_log "auto phase: ticket at phase=$cur_phase → skipping research, running implement"
+        phase="implement"
+        ;;
+    esac
+  fi
+
   wt_path="$(ticket_prepare_worker_cwd "$id" "$backend" "$no_worktree" "$steal")"
 
   if [[ "$phase" == "research" || "$phase" == "auto" ]]; then
@@ -251,7 +262,11 @@ gen = int(mj.get("claim_gen") or meta.get("claim_gen") or 0) + 1
 until = mod.now_epoch() + int(hours * 3600)
 meta["status"] = "in_progress"
 meta["owner"] = "worker" if as_worker else "human"
-meta["phase"] = "claim" if as_worker else "session"
+if as_worker:
+    if meta.get("phase") not in ("approved_to_implement", "research_done", "implement_incomplete", "implementing"):
+        meta["phase"] = "claim"
+else:
+    meta["phase"] = "session"
 meta["claimed_by"] = by
 meta["claim_gen"] = gen
 meta["lease_until"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(until))
