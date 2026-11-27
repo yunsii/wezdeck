@@ -644,12 +644,10 @@ prefix `bg·shell:`). Long-lived servers stay on `●` while outstanding; emit r
 | --- | --- | --- | --- |
 | Claude | `PreToolUse`/`PostToolUse` Bash `run_in_background` / `backgroundTaskId` → sidecar | sidecar after reconcile of `/tmp/claude-*/…/tasks/<id>.output` | `UserPromptSubmit`; task output `[exited with code…]`; promote on tool wake |
 | Grok | optional sidecar + `Stop.backgroundTasks[]` | merge Stop payload ∪ sidecar; default `type=shell` only | `Notification` `task_complete`; empty outstanding → `done` |
+| Agy | native `Stop.fullyIdle` (`adapters/agy.sh`) | `fullyIdle=false` (or omitted + `NO_TOOL_CALL`) keeps plain `running` + logs `agy stop deferred; not fullyIdle`; abnormal `terminationReason` (`ERROR`/`USER_CANCELED`/`MAX_*`) still lands `done` | next `Stop` with `fullyIdle=true` → `done` (`PreInvocation` / `PostToolUse` fast-path skip while already fresh `running`; override `WEZDECK_AGY_FASTPATH=0` / `WEZDECK_AGY_RUNNING_REFRESH_MS`) |
 | Codex | unsupported (Stop stays `done`) | — | — |
 
-Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add
-`monitor` / `subagent`); `WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT` (default `/tmp`; tasks-dir scan root, test hook). Sidecar dir:
-`<state>/agent-attention/bg-sidecar/<session_id>.json`. Lib:
-`scripts/runtime/agent-attention/lib/bg-outstanding.sh`.
+Env: `WEZTERM_ATTENTION_BG_TYPES` (default `shell`; comma-list may add `monitor` / `subagent`); `WEZTERM_ATTENTION_CLAUDE_TASKS_ROOT` (default `/tmp`, test hook). Sidecar: `<state>/agent-attention/bg-sidecar/<session_id>.json`. Lib: `scripts/runtime/agent-attention/lib/bg-outstanding.sh`.
 
 **Stability (2026-09-29):** `UserPromptSubmit` reconciles sidecar (does not
 wipe live tasks). Cross-session `bg_bump_alive_entries` will not demote to

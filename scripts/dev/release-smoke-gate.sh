@@ -34,6 +34,22 @@ fi
 if ((check_web)); then
   (cd web && corepack pnpm exec vitest run --config vitest.unit.config.ts tests/architecture.unit.test.ts)
   [[ -f web/dist/client/build.json ]] || { echo "smoke-gate: web/dist/client/build.json missing" >&2; exit 1; }
+  node - web/dist/server/wrangler.json <<'NODE'
+const fs = require('node:fs')
+const config = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+const bound = new Set((config.durable_objects?.bindings || []).map((item) => item.class_name))
+const deleted = (config.migrations || []).flatMap((item) => item.deleted_classes || [])
+const conflict = deleted.find((name) => bound.has(name))
+if (conflict) {
+  console.error(`smoke-gate: Durable Object ${conflict} is bound and scheduled for deletion`)
+  process.exit(1)
+}
+const bindings = config.durable_objects?.bindings || []
+if (bindings.length && bindings.every((item) => item.script_name) && config.migrations?.length) {
+  console.error('smoke-gate: frontend Worker has only external Durable Object bindings but still declares local migrations')
+  process.exit(1)
+}
+NODE
   js_count="$(find web/dist/client/assets -maxdepth 1 -name '*.js' 2>/dev/null | wc -l)"
   ((js_count > 0)) || { echo "smoke-gate: no built JS assets in web/dist/client/assets" >&2; exit 1; }
 fi

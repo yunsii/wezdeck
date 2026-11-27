@@ -456,7 +456,7 @@ function MeSubPage({ page }: { page: MePage }) {
       {page === 'interactions' || page === 'agents' ? (
         body
       ) : (
-        <section className="grid gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">
+        <section className="grid min-w-0 gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">
           {body}
         </section>
       )}

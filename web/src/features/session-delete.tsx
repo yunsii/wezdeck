@@ -6,9 +6,14 @@ import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
+import { forgetOpened } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { hostWrite } from '#/lib/runtime-client'
-import { hideDeletedSessions, sessionDeleteKey } from './session-delete-state'
+import {
+  LAST_SESSION_KEY,
+  hideDeletedSessions,
+  sessionDeleteKey,
+} from './session-delete-state'
 import type {
   SessionDeleteReply,
   SessionDeleteRequest,
@@ -88,6 +93,7 @@ export function useDeleteSession() {
     )
       return
     mutation.mutate({ id: session.id, force: options?.force })
+    forgetOpened(LAST_SESSION_KEY, session.id)
     if (selected) {
       void navigate({
         to: '/{-$locale}/console/sessions',

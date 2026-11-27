@@ -54,6 +54,7 @@ export interface RemoteState {
 
 const PING_MS = 2_000
 const RPC_TIMEOUT_MS = 10_000
+const SLOW_WORKTREE_WRITE = /^worktree\.(recycle|remove)$/
 const RECONNECT_GRACE_MS = 6_000
 const OFFLINE_RTC_GRACE_MS = 2_000
 const RTC_OPEN_TIMEOUT_MS = 15_000
@@ -379,11 +380,12 @@ class RemoteLink {
 
   private async rpcOnce(action: string, args: Record<string, unknown>) {
     this.start()
+    const timeoutMs = SLOW_WORKTREE_WRITE.test(action) ? 90_000 : RPC_TIMEOUT_MS
     // no token: nothing will ever connect, so say why now instead of after
     // the timeout (a browser on the host itself reads tickets through the
     // local Runtime and never got paired)
     if (!this.token()) throw new Error(NOT_PAIRED)
-    if (!(await this.ready(RPC_TIMEOUT_MS))) {
+    if (!(await this.ready(timeoutMs))) {
       throw new Error(
         this.state.mode === 'host-offline'
           ? 'home host is offline'
@@ -400,7 +402,7 @@ class RemoteLink {
         this.pending.delete(id)
         this.parts.drop(id)
         reject(new Error('remote host did not answer in time'))
-      }, RPC_TIMEOUT_MS)
+      }, timeoutMs)
       this.pending.set(id, { resolve, reject, timer })
       if (!this.send({ t: 'rpc', id, action, args })) {
         clearTimeout(timer)

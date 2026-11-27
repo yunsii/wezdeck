@@ -25,6 +25,8 @@ type autoTitleConfig struct {
 type autoTitleProviderInfo struct {
 	ID        string `json:"id"`
 	Available bool   `json:"available"`
+	Disabled  bool   `json:"disabled,omitempty"`
+	Note      string `json:"note,omitempty"`
 	Model     string `json:"model"`
 }
 
@@ -151,7 +153,14 @@ func autoTitleProviderExists(bin string) bool {
 	if home == "" {
 		return false
 	}
-	for _, dir := range []string{".local/bin", ".grok/bin", ".codex/bin"} {
+	for _, dir := range []string{
+		".local/bin",
+		".local/share/fnm/aliases/default/bin",
+		".fnm/aliases/default/bin",
+		".nvm/current/bin",
+		".grok/bin",
+		".codex/bin",
+	} {
 		p := filepath.Join(home, dir, bin)
 		if info, err := os.Stat(p); err == nil && !info.IsDir() && info.Mode()&0o111 != 0 {
 			return true
@@ -170,23 +179,38 @@ func envOrDefault(keys []string, fallback string) string {
 }
 
 func listAutoTitleProviders() []autoTitleProviderInfo {
-	return []autoTitleProviderInfo{
-		{
-			ID:        "grok",
-			Available: autoTitleProviderExists("grok"),
-			Model:     envOrDefault([]string{"WEZDECK_AUTOTITLE_MODEL_GROK", "ADV_MODEL_GROK"}, "grok-4.5"),
-		},
-		{
-			ID:        "claude",
-			Available: autoTitleProviderExists("claude"),
-			Model:     envOrDefault([]string{"WEZDECK_AUTOTITLE_MODEL_CLAUDE", "ADV_MODEL_CLAUDE"}, "claude-opus-5[1m]"),
-		},
-		{
-			ID:        "codex",
-			Available: autoTitleProviderExists("codex"),
-			Model:     envOrDefault([]string{"WEZDECK_AUTOTITLE_MODEL_CODEX", "ADV_MODEL_CODEX"}, "gpt-5.5"),
-		},
+	specs := []struct {
+		id       string
+		envKeys  []string
+		fallback string
+	}{
+		{"grok", []string{"WEZDECK_AUTOTITLE_MODEL_GROK", "ADV_MODEL_GROK"}, "grok-4.5"},
+		{"claude", []string{"WEZDECK_AUTOTITLE_MODEL_CLAUDE", "ADV_MODEL_CLAUDE"}, "claude-opus-5[1m]"},
+		{"codex", []string{"WEZDECK_AUTOTITLE_MODEL_CODEX", "ADV_MODEL_CODEX"}, "gpt-5.5"},
 	}
+	out := make([]autoTitleProviderInfo, 0, len(specs))
+	for _, s := range specs {
+		settings, _ := readAgentProfileSettings(s.id)
+		installed := autoTitleProviderExists(s.id)
+		out = append(out, autoTitleProviderInfo{
+			ID:        s.id,
+			Available: installed && !settings.Disabled,
+			Disabled:  settings.Disabled,
+			Note:      settings.Note,
+			Model:     envOrDefault(s.envKeys, s.fallback),
+		})
+	}
+	return out
+}
+
+func enabledAutoTitleOrder() []string {
+	var order []string
+	for _, p := range listAutoTitleProviders() {
+		if p.Available && !p.Disabled {
+			order = append(order, p.ID)
+		}
+	}
+	return order
 }
 
 func resolveEffectiveAutoTitleProvider(cfgProvider string, providers []autoTitleProviderInfo) (id, model string) {

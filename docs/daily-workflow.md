@@ -29,17 +29,15 @@ another drive still pass the same health gate.
 
 **Standing close-out (wezdeck):** worktrees isolate changes; deliver **directly to mainline (no PR)**, then always recycle the workstation onto `origin/HEAD`, and keep primary `master` / `WEZDECK_REPO` as the machine source of truth — see [`workspaces.md` Maintenance loop](./workspaces.md#maintenance-loop-wezdeck-standing-policy).
 
-Reset a primary checkout or a workstation in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. **Agents:** load `worktree-recycle` and run its `run.sh` with `-y` when the user already asked to reset — or as the default after mainline delivery — do not re-ask about squash delivery, push, or bootstrap. **Humans / debug CLI:**
+Reset a primary checkout or a workstation in place onto `origin/HEAD` instead of reclaiming it. Fast path: fetch + dirty check + hard-reset + remote sync (delivery gate off by default; branch name forced to the slug mapping). End state: local tip **and** `origin/<same branch>` both match the default tip; project init is left to the follow-up task. A waited `wezdeck-release.sh --land HEAD` recycles its clean source worktree after the release succeeds; `--no-wait` leaves it for a later close-out. The default release gates on core smoke and live canary, while `--gate` also waits for the full affected regression before deployment. A failed release or a source changed during release leaves it untouched. **Agents:** use the repo's `worktree-task recycle` directly for manual resets or a standalone round with no release script. Run `--dry-run` when the target or effect is uncertain. Do not hand-roll `git reset`.
 
 ```bash
-skills/worktree-recycle/run.sh recycle -y --fresh-agent --task "describe the next round"
-# equivalent hard ops only:
 scripts/runtime/worktree/worktree-task recycle -y --fresh-agent --task "describe the next round"
 ```
 
 `--fresh-agent` unpins typed resume and cold-respawns the worktree’s agent pane (`WEZDECK_FORCE_FRESH_SESSION=1`), so you do not need a manual `Ctrl+Shift+n` after the reset.
 
-Full semantics (fast path, optional `--require-delivered`, temp-branch prune, debug-file allowlist, brief file, opt-in `--with-init`): [`workspaces.md` Workstations / Recycle](./workspaces.md#recycle-primary-or-workstation-round-reset). A workstation whose direction is done ends with `Ctrl+k g r` / `worktree-task reclaim`.
+Full semantics (fast path, optional `--require-delivered`, temp-branch prune and debug-file allowlist): [`workspaces.md` Workstations / Recycle](./workspaces.md#recycle-primary-or-workstation-round-reset). A workstation whose direction is done ends with `Ctrl+k g r` / `worktree-task reclaim`.
 
 ### Manual / recovery
 

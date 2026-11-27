@@ -273,14 +273,36 @@ func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
 		t.Fatal("workspace trust prompt must not be treated as permission prompt")
 	}
 	// Incremental polls pass an empty out["messages"] slice; pending must still come from full transcript.
+	screenWithAlways := strings.Join([]string{
+		"Run this command?",
+		"  git push origin master",
+		"> Yes, run command",
+		"  Yes, and always allow for commands that start with \"git push\"",
+		"  No, deny",
+	}, "\n")
 	out := map[string]any{"status": "running", "waiting_kind": "", "messages": []chatMessage{}}
-	applyAgyScreenPermission(out, pendingPermission(tr.messages, ""), "Run this command?\n> Yes, run command\n  No, deny")
+	applyAgyScreenPermission(out, pendingPermission(tr.messages, ""), screenWithAlways)
 	if out["status"] != "waiting" || out["waiting_kind"] != "permission_prompt" {
 		t.Fatalf("status not escalated to waiting: %+v", out)
 	}
 	perm, ok := out["permission"].(*pendingCall)
 	if !ok || perm == nil || perm.Tool != "run_command" || !strings.Contains(perm.Body, "git push origin master") {
 		t.Fatalf("permission card: %+v", out["permission"])
+	}
+	if len(perm.Options) != 3 ||
+		perm.Options[0].Kind != "allow" || strings.Join(perm.Options[0].Keys, ",") != "Enter" ||
+		perm.Options[1].Kind != "always" || strings.Join(perm.Options[1].Keys, ",") != "Down,Enter" ||
+		!strings.Contains(perm.Options[1].Label, "git push") ||
+		perm.Options[2].Kind != "deny" || strings.Join(perm.Options[2].Keys, ",") != "Escape" {
+		t.Fatalf("parsed permission options: %+v", perm.Options)
+	}
+	// If the cursor in tmux already moved to the 2nd row, keys adjust relative to it.
+	shifted := agyPermissionOptions("Do you want to proceed?\n  1. Yes\n> 2. Yes, and always allow 'git push'\n  3. No")
+	if len(shifted) != 3 ||
+		strings.Join(shifted[0].Keys, ",") != "Up,Enter" ||
+		strings.Join(shifted[1].Keys, ",") != "Enter" ||
+		strings.Join(shifted[2].Keys, ",") != "Escape" {
+		t.Fatalf("shifted cursor options: %+v", shifted)
 	}
 	// Idle/completed turns or turns without an unanswered tool call must NEVER lock the composer.
 	outIdle := map[string]any{"status": "done", "waiting_kind": ""}

@@ -19,9 +19,12 @@ import type { Message } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import { SessionUsageAlerts } from './session-header'
 import { SessionStatusBar } from './session-statusbar'
-import type { WorkstationDirection } from './session-worktree-manager'
 import type { Detail } from './console-sessions'
-import { BACKGROUND } from './console-interactions-samples'
+import {
+  BACKGROUND,
+  STATUS_WORKSTATIONS,
+  STATUS_WORKTREE_PATHS,
+} from './console-interactions-samples'
 import type { Subagent } from './session-subagents'
 
 const THREAD: Array<Message> = Array.from({ length: 8 }, (_, i) => ({
@@ -434,51 +437,25 @@ const STATUS_SAMPLE: Detail = {
   },
   worktrees: [
     {
-      path: '/home/yuns/github/wezterm-config',
+      path: STATUS_WORKTREE_PATHS.primary,
       branch: 'master',
       current: true,
     },
     {
-      path: '/home/yuns/github/.worktrees/wezterm-config/dev-agent',
+      path: STATUS_WORKTREE_PATHS.agent,
       branch: 'dev/agent',
     },
     {
-      path: '/home/yuns/github/.worktrees/wezterm-config/task-probe',
+      path: STATUS_WORKTREE_PATHS.probe,
       branch: '(detached)',
+    },
+    {
+      path: STATUS_WORKTREE_PATHS.ready,
+      branch: 'dev/ready',
     },
   ],
   background: BACKGROUND.slice(0, 2),
 }
-
-const STATUS_WORKSTATIONS: WorkstationDirection[] = [
-  {
-    name: 'agent',
-    description: 'Agent 工具与注意力',
-    slots: [
-      {
-        path: STATUS_SAMPLE.worktrees?.[1]?.path ?? '',
-        name: 'dev-agent',
-        branch: 'dev/agent',
-        description: 'Agent 工具与注意力',
-        state: 'running',
-        sessions: ['demo-agent'],
-      },
-    ],
-  },
-  {
-    name: 'probe',
-    description: '隔离验证',
-    slots: [
-      {
-        path: STATUS_SAMPLE.worktrees?.[2]?.path ?? '',
-        name: 'task-probe',
-        branch: '',
-        description: '隔离验证',
-        state: 'detached',
-      },
-    ],
-  },
-]
 
 /**
  * The status bar under the composer, as on a phone: agent, branch, git,

@@ -70,7 +70,7 @@ Type=simple
 EnvironmentFile=$ENV_FILE
 # ticket api resolves the repo and python3 from these (no login shell here).
 Environment=WEZDECK_REPO=$REPO_ROOT
-Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=$HOME/.local/bin:$HOME/.local/share/fnm/aliases/default/bin:$HOME/.fnm/aliases/default/bin:$HOME/.grok/bin:$HOME/.codex/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=$BIN relay
 Restart=always
 RestartSec=5

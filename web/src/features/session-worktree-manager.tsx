@@ -24,6 +24,7 @@ export type WorkstationSlot = {
   path: string
   name: string
   branch: string
+  head?: string
   description?: string
   state: string
   reason?: string
@@ -240,6 +241,30 @@ function WorktreeRows({
   )
 }
 
+function useWorktreeCopy(wide: boolean) {
+  const { t } = useLingui()
+  const [copied, setCopied] = useState('')
+  const copy = async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(path)
+      setCopied(path)
+      setTimeout(() => setCopied(''), 1_500)
+      trace('worktree-view', {
+        action: 'copy',
+        mode: wide ? 'popover' : 'sheet',
+      })
+    } catch {
+      setCopied('')
+      toast.error(t`Could not copy path`)
+      trace('worktree-view', {
+        action: 'copy_error',
+        mode: wide ? 'popover' : 'sheet',
+      })
+    }
+  }
+  return { copied, copy }
+}
+
 export function WorktreeManager({
   list,
   repoPath,
@@ -255,8 +280,9 @@ export function WorktreeManager({
   const [open, setOpen] = useState(false)
   const [selectedPath, setSelectedPath] = useState<string | null>(null)
   const [sampleDirections, setSampleDirections] = useState(sample)
+  const [removedPaths, setRemovedPaths] = useState<string[]>([])
   const [query, setQuery] = useState('')
-  const [copied, setCopied] = useState('')
+  const { copied, copy } = useWorktreeCopy(wide)
   const openedAt = useRef(0)
   const reported = useRef(false)
   const linked = list.length - 1
@@ -272,7 +298,11 @@ export function WorktreeManager({
   const directions = sample ? sampleDirections : workstations.data?.directions
   const pending = !sample && workstations.isPending
   const error = !sample && workstations.isError ? workstations.error : null
-  const groups = worktreeGroups(list, directions, t`Other worktrees`)
+  const groups = worktreeGroups(
+    list.filter((item) => !removedPaths.includes(item.path)),
+    directions,
+    t`Other worktrees`,
+  )
   const shown = filterWorktreeGroups(groups, query)
   const selectedGroup = groups.find((group) =>
     group.rows.some((row) => row.path === selectedPath),
@@ -303,31 +333,17 @@ export function WorktreeManager({
       ms: Math.round(performance.now() - openedAt.current),
     })
   }, [open, wide, pending, error, directions])
-  const copy = async (path: string) => {
-    try {
-      await navigator.clipboard.writeText(path)
-      setCopied(path)
-      setTimeout(() => setCopied(''), 1_500)
-      trace('worktree-view', {
-        action: 'copy',
-        mode: wide ? 'popover' : 'sheet',
-      })
-    } catch {
-      setCopied('')
-      toast.error(t`Could not copy path`)
-      trace('worktree-view', {
-        action: 'copy_error',
-        mode: wide ? 'popover' : 'sheet',
-      })
-    }
-  }
-  const { writable, saveDescription, openSession, newSession } =
+  const { writable, saveDescription, openSession, newSession, manage } =
     useWorktreeActions({
       repoPath,
       selected,
       selectedGroup,
       sample,
       setSampleDirections,
+      onRemove: (path) => {
+        setRemovedPaths((current) => [...current, path])
+        setSelectedPath(null)
+      },
       close: () => changeOpen(false),
     })
   const content = selected ? (
@@ -344,6 +360,7 @@ export function WorktreeManager({
       onNewSession={
         selected.sessions?.length && writable ? newSession : undefined
       }
+      onManage={manage}
     />
   ) : (
     <div className="min-w-0 px-4 md:px-2">

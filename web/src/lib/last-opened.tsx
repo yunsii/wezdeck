@@ -30,6 +30,24 @@ export function rememberOpened(scope: string, id: string, filter?: string) {
   if (filter) store(`${scope}:${filter}`, id)
 }
 
+/** forget `id` when it no longer exists, so a wide split never bounces back to it */
+export function forgetOpened(
+  scope: string,
+  id: string,
+  filters: Array<string> = ['all'],
+) {
+  if (!id) return
+  try {
+    if (localStorage.getItem(scope) === id) localStorage.removeItem(scope)
+    for (const filter of filters) {
+      const key = `${scope}:${filter}`
+      if (localStorage.getItem(key) === id) localStorage.removeItem(key)
+    }
+  } catch {
+    // storage blocked
+  }
+}
+
 /** renders nothing; records id (overall and under filter) when it changes */
 export function RememberOpened({
   storageKey,

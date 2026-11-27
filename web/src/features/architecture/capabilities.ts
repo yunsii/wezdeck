@@ -315,6 +315,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',
       ),
       c(
+        'worktree.recycle',
+        '确认后回收已交付且空闲的工作站，重验 HEAD、Git 与 Agent 状态',
+        'After confirmation, reset a delivered idle workstation with fresh HEAD, Git and agent checks',
+      ),
+      c(
+        'worktree.remove',
+        '确认后移除无人使用的工作树，保留分支与对话记录',
+        'After confirmation, remove an unused checkout while keeping its branch and conversations',
+      ),
+      c(
         'session.delete',
         '停止并删除一条会话，检查是否可回收空工作树',
         'Stop and delete one session and check whether its empty worktree can be reclaimed',

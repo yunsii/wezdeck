@@ -20,6 +20,8 @@ const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
 const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 
+// Navigation cases share one tmux fixture.
+// eslint-disable-next-line max-lines-per-function
 describe.runIf(attention)('Session keys on the phone', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-nav-')), 'sock')
@@ -139,6 +141,48 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await expect.poll(() => sheet.count()).toBe(0)
     await context.close()
   })
+
+  it.each([390, 1280])(
+    'session header content centers at %ipx',
+    async (width) => {
+      const context = await browser.newContext({
+        ...(width < 768 ? devices['iPhone 13'] : {}),
+        viewport: { width, height: 800 },
+        locale: 'zh-CN',
+      })
+      const page = await context.newPage()
+      await openList(page)
+      await page.locator('[data-session=nav-c]').click()
+      await page.waitForURL('**/console/sessions/nav-c')
+      await page
+        .getByTestId('session-title')
+        .getByTestId('agent-avatar')
+        .waitFor()
+      const centers = await page.evaluate(() => {
+        const center = (el: Element) => {
+          const rect = el.getBoundingClientRect()
+          return rect.y + rect.height / 2
+        }
+        const header = document.querySelector('[data-testid=session-header]')!
+        const title = header.querySelector('[data-testid=session-title]')!
+        return {
+          header: center(header),
+          title: center(title),
+          controls: [...header.querySelectorAll('button')]
+            .filter((button) => button !== title && button.offsetWidth > 0)
+            .map(center),
+        }
+      })
+      expect(Math.abs(centers.title - centers.header)).toBeLessThanOrEqual(1)
+      expect(centers.controls.length).toBeGreaterThan(0)
+      expect(
+        centers.controls.every(
+          (center) => Math.abs(center - centers.title) <= 1,
+        ),
+      ).toBe(true)
+      await context.close()
+    },
+  )
 
   it('the info sheet closes by swiping down, not by a small drag', async () => {
     const context = await browser.newContext({

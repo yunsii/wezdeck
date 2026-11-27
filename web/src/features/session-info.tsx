@@ -413,7 +413,6 @@ export function SessionInfo({
               ) : null}
             </section>
           ) : null}
-          {confirmation}
 
           <TechnicalDetailsSection
             groups={technicalGroups}
@@ -423,6 +422,7 @@ export function SessionInfo({
           />
         </div>
       </Sheet>
+      {confirmation}
       <RepoLinksSheet
         open={linksOpen}
         onOpenChange={setLinksOpen}

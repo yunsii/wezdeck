@@ -21,90 +21,97 @@ describe('Status bar', () => {
     await browser.close()
   })
 
-  it('one line; worktrees and background tasks open upward', async () => {
-    const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      locale: 'zh-CN',
-      hasTouch: true,
-    })
-    const page = await context.newPage()
-    await page.goto(`${base}/zh/console/me/interactions#status-bar`)
-    const bar = page.getByTestId('session-statusbar')
-    await bar.waitFor({ timeout: 20_000 })
-    // two lines, one row each: the agent, then the checkout
-    const rowsOf = (testId: string) =>
-      page.getByTestId(testId).evaluate((el) => {
-        const box = el.getBoundingClientRect()
-        const tops = [...el.querySelectorAll<HTMLElement>('.session-tag')]
-          .map((t) => t.getBoundingClientRect())
-          .filter((r) => r.bottom <= box.bottom + 1)
-          .map((r) => r.top)
-          .sort((a, b) => a - b)
-        return tops.filter((top, k) => k === 0 || top - (tops[k - 1] ?? 0) > 6)
-          .length
+  it(
+    'one line; worktrees and background tasks open upward',
+    { timeout: 45_000 },
+    async () => {
+      const context = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        locale: 'zh-CN',
+        hasTouch: true,
       })
-    expect(await rowsOf('statusbar-agent')).toBe(1)
-    expect(await rowsOf('statusbar-custom')).toBe(1)
-    const agent = (
-      await page.getByTestId('statusbar-agent').innerText()
-    ).replace(/\s+/g, ' ')
-    expect(agent).toContain('Opus 5.5')
-    // background tasks by kind: a Bash (shell) and a Monitor
-    expect(agent).toContain('shell 1')
-    expect(agent).toContain('monitor 1')
-    const all = (await bar.innerText()).replace(/\s+/g, ' ')
-    expect(all).not.toContain('auto')
-    const worktrees = page.getByTestId('status-worktrees')
-    if (
-      !(await worktrees.first().isVisible()) ||
-      (await worktrees.first().getAttribute('inert')) !== null
-    ) {
-      await page.getByTestId('statusbar-custom-more').click()
-    }
-    await worktrees.last().click()
-    const sheet = page.getByTestId('worktree-manager')
-    await sheet.waitFor()
-    await sheet.getByTestId('status-worktree-list').waitFor()
-    expect(await sheet.getByRole('alert').count()).toBe(0)
-    expect(await sheet.getByText('Agent 工具与注意力').count()).toBe(1)
-    const sheetBox = await sheet.boundingBox()
-    expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeGreaterThan(840)
-    expect(await sheet.getByRole('button', { name: '复制路径' }).count()).toBe(
-      3,
-    )
-    await checkCopyPath(page, sheet)
-    if (process.env.WEZDECK_VISUAL_SHOTS) await captureThemePair(page, 'phone')
-    await exerciseMobileWorktreeActions(page, sheet)
-    await sheet.waitFor({ state: 'hidden' })
-    await page.keyboard.press('Escape')
-    const opensUp = async (testId: string, list: string) => {
-      const button = page.getByTestId(testId)
+      const page = await context.newPage()
+      await page.goto(`${base}/zh/console/me/interactions#status-bar`)
+      const bar = page.getByTestId('session-statusbar')
+      await bar.waitFor({ timeout: 20_000 })
+      // two lines, one row each: the agent, then the checkout
+      const rowsOf = (testId: string) =>
+        page.getByTestId(testId).evaluate((el) => {
+          const box = el.getBoundingClientRect()
+          const tops = [...el.querySelectorAll<HTMLElement>('.session-tag')]
+            .map((t) => t.getBoundingClientRect())
+            .filter((r) => r.bottom <= box.bottom + 1)
+            .map((r) => r.top)
+            .sort((a, b) => a - b)
+          return tops.filter(
+            (top, k) => k === 0 || top - (tops[k - 1] ?? 0) > 6,
+          ).length
+        })
+      expect(await rowsOf('statusbar-agent')).toBe(1)
+      expect(await rowsOf('statusbar-custom')).toBe(1)
+      const agent = (
+        await page.getByTestId('statusbar-agent').innerText()
+      ).replace(/\s+/g, ' ')
+      expect(agent).toContain('Opus 5.5')
+      // background tasks by kind: a Bash (shell) and a Monitor
+      expect(agent).toContain('shell 1')
+      expect(agent).toContain('monitor 1')
+      const all = (await bar.innerText()).replace(/\s+/g, ' ')
+      expect(all).not.toContain('auto')
+      const worktrees = page.getByTestId('status-worktrees')
       if (
-        !(await button.first().isVisible()) ||
-        (await button.first().getAttribute('inert')) !== null
+        !(await worktrees.first().isVisible()) ||
+        (await worktrees.first().getAttribute('inert')) !== null
       ) {
-        // folded away: it lives in the +N panel
-        await page
-          .getByTestId(
-            `${testId === 'status-worktrees' ? 'statusbar-custom' : 'statusbar-agent'}-more`,
-          )
-          .click()
+        await page.getByTestId('statusbar-custom-more').click()
       }
-      const top = (await page.getByTestId(testId).last().boundingBox())?.y ?? 0
-      await page.getByTestId(testId).last().click()
-      const popup = page.getByTestId(list)
-      await popup.waitFor({ timeout: 3_000 })
-      const box = await popup.boundingBox()
-      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(top + 1)
+      await worktrees.last().click()
+      const sheet = page.getByTestId('worktree-manager')
+      await sheet.waitFor()
+      await sheet.getByTestId('status-worktree-list').waitFor()
+      expect(await sheet.getByRole('alert').count()).toBe(0)
+      expect(await sheet.getByText('Agent 工具与注意力').count()).toBe(1)
+      const sheetBox = await sheet.boundingBox()
+      expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeGreaterThan(840)
+      expect(
+        await sheet.getByRole('button', { name: '复制路径' }).count(),
+      ).toBe(4)
+      await checkCopyPath(page, sheet)
+      if (process.env.WEZDECK_VISUAL_SHOTS)
+        await captureThemePair(page, 'phone')
+      await exerciseMobileWorktreeActions(page, sheet)
+      await sheet.waitFor({ state: 'hidden' })
       await page.keyboard.press('Escape')
-      await popup.waitFor({ state: 'hidden' })
-      await page.keyboard.press('Escape')
-    }
-    await opensUp('status-shell', 'background-tasks')
-    await opensUp('status-monitor', 'background-tasks')
-    expect(await page.getByTestId('worktree-manager').count()).toBe(0)
-    await context.close()
-  })
+      const opensUp = async (testId: string, list: string) => {
+        const button = page.getByTestId(testId)
+        if (
+          !(await button.first().isVisible()) ||
+          (await button.first().getAttribute('inert')) !== null
+        ) {
+          // folded away: it lives in the +N panel
+          await page
+            .getByTestId(
+              `${testId === 'status-worktrees' ? 'statusbar-custom' : 'statusbar-agent'}-more`,
+            )
+            .click()
+        }
+        const top =
+          (await page.getByTestId(testId).last().boundingBox())?.y ?? 0
+        await page.getByTestId(testId).last().click()
+        const popup = page.getByTestId(list)
+        await popup.waitFor({ timeout: 3_000 })
+        const box = await popup.boundingBox()
+        expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(top + 1)
+        await page.keyboard.press('Escape')
+        await popup.waitFor({ state: 'hidden' })
+        await page.keyboard.press('Escape')
+      }
+      await opensUp('status-shell', 'background-tasks')
+      await opensUp('status-monitor', 'background-tasks')
+      expect(await page.getByTestId('worktree-manager').count()).toBe(0)
+      await context.close()
+    },
+  )
 
   it('opens the worktree overview as one anchored list on wide screens', async () => {
     const page = await browser.newPage({
@@ -127,7 +134,7 @@ describe('Status bar', () => {
       expect(await panel.getByRole('alert').count()).toBe(0)
       expect(
         await panel.getByTestId('status-worktree-list').locator('li').count(),
-      ).toBe(3)
+      ).toBe(4)
       if (process.env.WEZDECK_VISUAL_SHOTS)
         await captureThemePair(page, 'desktop')
       await exerciseDesktopWorktreeActions(page, panel)
@@ -265,9 +272,7 @@ async function exerciseMobileWorktreeActions(page: Page, sheet: Locator) {
     .toBe(true)
   await sheet.getByRole('button', { name: '返回' }).click()
   await sheet.getByText('新的用途').waitFor()
-  await sheet
-    .getByRole('button', { name: '管理工作树: wezterm-config' })
-    .click()
+  await sheet.getByRole('button', { name: '管理工作树: wezdeck' }).click()
   expect(
     await sheet
       .getByTestId('worktree-detail')

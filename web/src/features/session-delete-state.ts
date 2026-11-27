@@ -7,6 +7,34 @@ import type { SessionCard } from './session-card'
 import type { NewSessionJob } from './session-new-route'
 
 export const sessionDeleteKey = ['session.delete'] as const
+export const LAST_SESSION_KEY = 'wezdeck-last-session'
+
+const MISSING_TTL_MS = 30_000
+const missingSessions = new Map<string, number>()
+
+export const isMissingSessionError = (error: unknown) =>
+  /session not found|ended or not tracked/i.test(
+    error instanceof Error ? error.message : String(error ?? ''),
+  )
+
+export function markSessionMissing(id: string) {
+  if (id) missingSessions.set(id, Date.now() + MISSING_TTL_MS)
+}
+
+export function clearSessionMissing(id: string) {
+  missingSessions.delete(id)
+}
+
+export function isSessionMissing(id: string, detailError?: unknown) {
+  if (detailError && isMissingSessionError(detailError)) return true
+  const until = missingSessions.get(id)
+  if (until === undefined) return false
+  if (Date.now() > until) {
+    missingSessions.delete(id)
+    return false
+  }
+  return true
+}
 
 export type SessionsReply = {
   sessions: Array<SessionCard>

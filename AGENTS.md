@@ -39,7 +39,7 @@ One line per topic: the trigger words, then the doc. Details live in the doc.
 - Capability sources, user-level links, agent profiles, `WEZDECK_REPO`, upstream
   skills → [`docs/skill-sources.md`](docs/skill-sources.md).
 - 「重置开发分支」 / recycle a checkout or workstation onto `origin/HEAD` / next round →
-  skill [`worktree-recycle`](skills/worktree-recycle/SKILL.md) (not hand-rolled
+  [`worktree-task recycle`](scripts/runtime/worktree/worktree-task) (not hand-rolled
   `git reset`; `--fresh-agent` for a blank round) —
   [`docs/workspaces.md`](docs/workspaces.md#recycle-primary-or-workstation-round-reset).
 - Workspaces → [`docs/workspaces.md`](docs/workspaces.md); keybindings →

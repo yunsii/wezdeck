@@ -62,7 +62,7 @@ msgstr "{count} 个 Monitor 运行中"
 #~ msgid "{count} more need you"
 #~ msgstr "还有 {count} 个等你"
 
-#: src/features/session-worktree-manager.tsx:129
+#: src/features/session-worktree-manager.tsx:130
 msgid "{count} sessions"
 msgstr "{count} 个会话"
 
@@ -95,7 +95,7 @@ msgstr "{hours} 小时前"
 msgid "{label} {percent}% used"
 msgstr "{label}已用 {percent}%"
 
-#: src/features/session-worktree-manager.tsx:389
+#: src/features/session-worktree-manager.tsx:406
 msgid "{linked} linked worktrees"
 msgstr "{linked} 个关联 worktree"
 
@@ -164,7 +164,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · 外链"
 
-#: src/features/me-autotitle.tsx:212
+#: src/features/me-autotitle.tsx:214
 msgid "{taskCount} tasks"
 msgstr "{taskCount} 项任务"
 
@@ -176,7 +176,7 @@ msgstr "{tools} 次工具调用"
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:172
 #: src/features/ticket-runs.tsx:88
 msgid "{turns} turns"
 msgstr "{turns} 轮"
@@ -222,7 +222,7 @@ msgstr "↓ {tokens} tokens"
 #~ msgid "+ New direction"
 #~ msgstr "+ 新方向"
 
-#: src/features/me-autotitle.tsx:212
+#: src/features/me-autotitle.tsx:214
 msgid "1 task"
 msgstr "1 项任务"
 
@@ -314,11 +314,11 @@ msgstr "账号额度"
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "操作已发送，等待 Agent 继续……"
 
-#: src/features/me-autotitle.tsx:168
+#: src/features/me-autotitle.tsx:170
 msgid "Active"
 msgstr "活跃"
 
-#: src/features/me-autotitle.tsx:417
+#: src/features/me-autotitle.tsx:427
 msgid "Active CLI"
 msgstr "当前生效 CLI"
 
@@ -346,7 +346,7 @@ msgstr "已补齐 data-testid 属性，14 个单元测试全部通过。"
 msgid "after"
 msgstr "依赖"
 
-#: src/features/session-permission.tsx:173
+#: src/features/session-permission.tsx:303
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
@@ -357,7 +357,7 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent"
 msgstr "智能体"
 
-#: src/features/me-autotitle.tsx:368
+#: src/features/me-autotitle.tsx:376
 msgid "Agent CLI used to generate titles"
 msgstr "用于生成标题的本地智能体 CLI"
 
@@ -377,7 +377,7 @@ msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
 
 #: src/features/console-me.tsx:130
-#: src/features/me-agents.tsx:87
+#: src/features/me-agents.tsx:176
 msgid "Agents"
 msgstr "智能体"
 
@@ -426,17 +426,21 @@ msgstr "全部档位"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/session-permission.tsx:311
+#: src/features/session-permission.tsx:205
 msgid "Allow"
 msgstr "允许"
 
-#: src/features/session-permission.tsx:172
+#: src/features/session-permission.tsx:302
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "允许会确认默认选中的 Yes（Enter）；拒绝发送 Esc。持久化白名单规则需在终端选择。"
 
 #: src/features/remote-badge.tsx:146
 msgid "Allow LAN direct"
 msgstr "授权以局域网直连"
+
+#: src/features/session-permission.tsx:301
+msgid "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
+msgstr "允许仅放行本次；始终允许会保存上方显示的规则；拒绝发送 Esc。"
 
 #: src/features/ticket-proposals.tsx:335
 msgid "already done"
@@ -445,6 +449,10 @@ msgstr "已实现"
 #: src/features/me-app.tsx:64
 msgid "Already the latest"
 msgstr "已是最新版本"
+
+#: src/features/session-permission.tsx:245
+msgid "Always allow"
+msgstr "始终允许"
 
 #: src/features/session-elicitation.tsx:210
 #~ msgid "Answer sent; waiting for Grok to continue…"
@@ -455,7 +463,7 @@ msgstr "已是最新版本"
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "答案已发送，等待 Agent 继续……"
 
-#: src/features/session-permission.tsx:198
+#: src/features/session-permission.tsx:328
 msgid "Antigravity asks to run this"
 msgstr "Antigravity 请求执行此操作"
 
@@ -510,15 +518,15 @@ msgstr "批准计划"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
-#: src/features/session-permission.tsx:170
+#: src/features/session-permission.tsx:298
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。选择继续规划后，可以在下面输入框里说明要改什么。"
 
-#: src/features/session-permission.tsx:311
+#: src/features/session-permission.tsx:205
 msgid "Approve the plan"
 msgstr "批准计划"
 
-#: src/features/me-autotitle.tsx:317
+#: src/features/me-autotitle.tsx:319
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 
@@ -537,7 +545,7 @@ msgstr "已批准"
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
 
-#: src/features/me-autotitle.tsx:168
+#: src/features/me-autotitle.tsx:170
 msgid "Archived"
 msgstr "已归档"
 
@@ -553,14 +561,15 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/me-autotitle.tsx:164
+#: src/features/me-autotitle.tsx:166
+#: src/features/me-autotitle.tsx:340
 #: src/features/session-statusbar.tsx:96
 #: src/features/session-title-history.tsx:89
 msgid "Auto"
 msgstr "Auto"
 
-#: src/features/me-autotitle.tsx:117
-#: src/features/me-autotitle.tsx:163
+#: src/features/me-autotitle.tsx:119
+#: src/features/me-autotitle.tsx:165
 msgid "Auto · {eff}"
 msgstr "自动 · {eff}"
 
@@ -568,9 +577,13 @@ msgstr "自动 · {eff}"
 msgid "Auto · {provider}"
 msgstr "自动 · {provider}"
 
+#: src/features/me-autotitle.tsx:340
+msgid "Auto ({autoChain})"
+msgstr "自动（{autoChain}）"
+
 #: src/features/me-autotitle.tsx:380
-msgid "Auto (Grok → Claude → Codex)"
-msgstr "自动（Grok → Claude → Codex）"
+#~ msgid "Auto (Grok → Claude → Codex)"
+#~ msgstr "自动（Grok → Claude → Codex）"
 
 #: src/features/me-agent-detail.tsx:73
 msgid "Auto compact"
@@ -596,11 +609,11 @@ msgstr "自动标题"
 msgid "Auto-approves edits; auto mode off"
 msgstr "自动批准编辑（未开启 Auto 模式）"
 
-#: src/features/me-autotitle.tsx:370
+#: src/features/me-autotitle.tsx:378
 msgid "Auto-title agent CLI"
 msgstr "自动标题智能体 CLI"
 
-#: src/features/me-autotitle.tsx:305
+#: src/features/me-autotitle.tsx:307
 msgid "Auto-title settings saved"
 msgstr "自动标题配置已保存"
 
@@ -612,12 +625,12 @@ msgstr "可用状态与备注"
 #: src/features/console-collab.tsx:104
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
-#: src/features/session-worktree-manager.tsx:443
+#: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:39
 msgid "Back"
 msgstr "返回"
 
-#: src/features/me-agents.tsx:168
+#: src/features/me-agents.tsx:240
 msgid "Back to agents"
 msgstr "返回智能体列表"
 
@@ -637,12 +650,12 @@ msgstr "后端"
 msgid "background"
 msgstr "后台"
 
-#: src/features/session-permission.tsx:51
+#: src/features/session-permission.tsx:82
 msgid "Background"
 msgstr "后台运行"
 
-#: src/features/me-autotitle.tsx:353
-#: src/features/me-autotitle.tsx:355
+#: src/features/me-autotitle.tsx:361
+#: src/features/me-autotitle.tsx:363
 msgid "Background auto-titling"
 msgstr "后台自动更新标题"
 
@@ -681,7 +694,7 @@ msgstr "被前置阻塞"
 
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:69
-#: src/features/session-worktree-detail.tsx:65
+#: src/features/session-worktree-detail.tsx:70
 msgid "Branch"
 msgstr "分支"
 
@@ -713,7 +726,7 @@ msgstr "按目标仓库"
 msgid "By trigger"
 msgstr "按触发来源"
 
-#: src/features/session-permission.tsx:47
+#: src/features/session-permission.tsx:78
 msgid "Bypass sandbox"
 msgstr "绕过沙箱"
 
@@ -737,7 +750,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:481
+#: src/features/console-sessions.tsx:506
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -745,10 +758,11 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/session-delete.tsx:137
+#: src/features/session-delete.tsx:143
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
+#: src/features/session-worktree-lifecycle.tsx:87
 #: src/features/ticket-proposals.tsx:236
 msgid "Cancel"
 msgstr "取消"
@@ -832,7 +846,7 @@ msgstr "子单"
 msgid "claimed"
 msgstr "认领"
 
-#: src/features/session-permission.tsx:199
+#: src/features/session-permission.tsx:329
 msgid "Claude asks to run this"
 msgstr "Claude 请求执行"
 
@@ -844,7 +858,7 @@ msgstr "Claude 命令"
 msgid "Claude commands, sent into the pane"
 msgstr "Claude 命令，发进窗格执行"
 
-#: src/features/session-permission.tsx:196
+#: src/features/session-permission.tsx:326
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
@@ -869,7 +883,7 @@ msgstr "清空输入"
 msgid "Clear search"
 msgstr "清除搜索"
 
-#: src/features/session-chat-group.tsx:151
+#: src/features/session-chat-group.tsx:155
 #: src/features/session-chat-row.tsx:71
 #: src/features/session-clear.tsx:114
 msgid "Clearing…"
@@ -931,7 +945,7 @@ msgstr "协作指标"
 msgid "Collab tickets"
 msgstr "协作工单"
 
-#: src/features/session-chat-group.tsx:406
+#: src/features/session-chat-group.tsx:410
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
@@ -993,6 +1007,14 @@ msgstr "确认"
 #: src/features/ticket-proposals.tsx:266
 msgid "Confirm and start"
 msgstr "确认并开始"
+
+#: src/features/session-worktree-lifecycle.tsx:96
+msgid "Confirm recycle"
+msgstr "确认回收"
+
+#: src/features/session-worktree-lifecycle.tsx:96
+msgid "Confirm removal"
+msgstr "确认移除"
 
 #: src/features/me-devices.tsx:210
 msgid "Confirm revoke"
@@ -1083,7 +1105,7 @@ msgstr "上下文占用"
 
 #: src/features/session-composer.tsx:81
 #: src/features/session-info-actions.tsx:115
-#: src/features/session-permission.tsx:180
+#: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:174
 msgid "Copied"
 msgstr "已复制"
@@ -1111,9 +1133,9 @@ msgstr "已复制：{shown}"
 
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:81
-#: src/features/session-permission.tsx:106
-#: src/features/session-permission.tsx:217
-#: src/features/session-permission.tsx:258
+#: src/features/session-permission.tsx:137
+#: src/features/session-permission.tsx:347
+#: src/features/session-permission.tsx:388
 msgid "Copy"
 msgstr "复制"
 
@@ -1134,10 +1156,10 @@ msgstr "复制错误信息"
 msgid "Copy link"
 msgstr "复制链接"
 
-#: src/features/session-worktree-detail.tsx:76
-#: src/features/session-worktree-detail.tsx:77
-#: src/features/session-worktree-manager.tsx:223
+#: src/features/session-worktree-detail.tsx:81
+#: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
+#: src/features/session-worktree-manager.tsx:225
 msgid "Copy path"
 msgstr "复制路径"
 
@@ -1149,10 +1171,10 @@ msgstr "复制原始日志"
 #: src/features/copy-reference.tsx:127
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:141
-#: src/features/me-agents.tsx:142
-#: src/features/session-chat-group.tsx:142
-#: src/features/session-chat-group.tsx:252
+#: src/features/me-agents.tsx:83
+#: src/features/me-agents.tsx:84
+#: src/features/session-chat-group.tsx:146
+#: src/features/session-chat-group.tsx:256
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
@@ -1196,7 +1218,7 @@ msgstr "费用与额度"
 msgid "Could not change the device: {changeError}"
 msgstr "操作失败：{changeError}"
 
-#: src/features/session-worktree-manager.tsx:317
+#: src/features/session-worktree-manager.tsx:258
 msgid "Could not copy path"
 msgstr "无法复制路径"
 
@@ -1204,7 +1226,7 @@ msgstr "无法复制路径"
 msgid "Could not copy the reference: {reason}"
 msgstr "复制引用失败：{reason}"
 
-#: src/features/session-permission.tsx:181
+#: src/features/session-permission.tsx:311
 msgid "Could not copy to clipboard"
 msgstr "无法复制到剪贴板"
 
@@ -1212,11 +1234,11 @@ msgstr "无法复制到剪贴板"
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
-#: src/features/me-agents.tsx:31
+#: src/features/me-agents.tsx:120
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
-#: src/features/me-autotitle.tsx:325
+#: src/features/me-autotitle.tsx:327
 msgid "Could not read auto-title status."
 msgstr "无法读取自动标题状态。"
 
@@ -1275,7 +1297,7 @@ msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
 #: src/features/session-title-history.tsx:93
-#: src/features/session-worktree-manager.tsx:184
+#: src/features/session-worktree-manager.tsx:185
 msgid "Current"
 msgstr "当前"
 
@@ -1283,7 +1305,7 @@ msgstr "当前"
 msgid "Current API key"
 msgstr "当前 API 密钥"
 
-#: src/features/me-autotitle.tsx:414
+#: src/features/me-autotitle.tsx:424
 msgid "Current runner"
 msgstr "当前运行状态"
 
@@ -1291,7 +1313,7 @@ msgstr "当前运行状态"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
-#: src/features/session-permission.tsx:49
+#: src/features/session-permission.tsx:80
 msgid "Daemon"
 msgstr "常驻后台"
 
@@ -1309,11 +1331,11 @@ msgstr "数据截至 {time}"
 msgid "Decision"
 msgstr "决定"
 
-#: src/features/me-agents.tsx:47
+#: src/features/me-agents.tsx:136
 msgid "Default agent"
 msgstr "默认智能体"
 
-#: src/features/me-agents.tsx:45
+#: src/features/me-agents.tsx:134
 msgid "Default agent for new sessions in this browser"
 msgstr "此浏览器新会话的默认智能体"
 
@@ -1325,13 +1347,13 @@ msgstr "默认模式：未开启 Auto 模式"
 msgid "Degraded"
 msgstr "受限"
 
-#: src/features/session-delete.tsx:127
+#: src/features/session-delete.tsx:133
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
-#: src/features/session-chat-group.tsx:281
-#: src/features/session-chat-row.tsx:201
-#: src/features/session-delete.tsx:103
+#: src/features/session-chat-group.tsx:285
+#: src/features/session-chat-row.tsx:206
+#: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:391
 msgid "Delete session"
 msgstr "删除会话"
@@ -1340,7 +1362,7 @@ msgstr "删除会话"
 msgid "Deliver first message"
 msgstr "发送首条消息"
 
-#: src/features/session-permission.tsx:327
+#: src/features/session-permission.tsx:221
 msgid "Deny"
 msgstr "拒绝"
 
@@ -1356,9 +1378,9 @@ msgstr "依赖"
 msgid "Desk idle for"
 msgstr "终端空闲"
 
-#: src/features/session-worktree-detail.tsx:67
-#: src/features/session-worktree-manager.tsx:122
-#: src/features/session-worktree-manager.tsx:200
+#: src/features/session-worktree-detail.tsx:72
+#: src/features/session-worktree-manager.tsx:123
+#: src/features/session-worktree-manager.tsx:201
 msgid "Detached"
 msgstr "游离分支"
 
@@ -1393,7 +1415,8 @@ msgid "Disable this agent"
 msgstr "停用此 Agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:122
+#: src/features/me-agents.tsx:59
+#: src/features/me-autotitle.tsx:395
 msgid "Disabled"
 msgstr "已停用"
 
@@ -1416,7 +1439,7 @@ msgstr "已派发"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
-#: src/features/session-chat-group.tsx:129
+#: src/features/session-chat-group.tsx:127
 #: src/features/session-list.tsx:56
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
@@ -1430,7 +1453,7 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:63
+#: src/features/session-chat-group.tsx:65
 #: src/features/session-chat-row.tsx:132
 #: src/features/ticket-keys.tsx:200
 msgid "Draft"
@@ -1452,8 +1475,8 @@ msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 msgid "Edit and resend"
 msgstr "修改重发"
 
-#: src/features/session-chat-group.tsx:259
-#: src/features/session-chat-group.tsx:438
+#: src/features/session-chat-group.tsx:264
+#: src/features/session-chat-group.tsx:443
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "修改组名"
@@ -1542,7 +1565,7 @@ msgstr "执行模式：{mode}"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/session-chat-group.tsx:343
+#: src/features/session-chat-group.tsx:347
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -1610,11 +1633,11 @@ msgstr "聚焦会话搜索或返回列表"
 #~ msgid "Follow-ups of this repo"
 #~ msgstr "这个仓库的待跟进事项"
 
-#: src/features/session-delete.tsx:126
+#: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 msgstr "强制删除「{title}」及其工作树？未提交的改动和本地文件将丢失。分支和会话记录会保留。"
 
-#: src/features/session-delete.tsx:102
+#: src/features/session-delete.tsx:108
 #: src/features/session-info.tsx:410
 msgid "Force delete session and worktree"
 msgstr "强制删除会话和工作树"
@@ -1639,8 +1662,8 @@ msgstr "完全访问"
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
-#: src/features/session-permission.tsx:227
-#: src/features/session-permission.tsx:268
+#: src/features/session-permission.tsx:357
+#: src/features/session-permission.tsx:398
 msgid "Full view"
 msgstr "完整查看"
 
@@ -1817,7 +1840,7 @@ msgstr "进行中"
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "在 Safari 里点「分享」，再选「添加到主屏幕」。"
 
-#: src/features/session-worktree-manager.tsx:123
+#: src/features/session-worktree-manager.tsx:124
 msgid "In use"
 msgstr "仍在使用"
 
@@ -1899,7 +1922,7 @@ msgstr "刚刚"
 msgid "just restarted"
 msgstr "刚重启"
 
-#: src/features/session-permission.tsx:327
+#: src/features/session-permission.tsx:221
 msgid "Keep planning"
 msgstr "继续规划"
 
@@ -2031,20 +2054,20 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:85
-#: src/features/me-autotitle.tsx:332
+#: src/features/me-agents.tsx:174
+#: src/features/me-autotitle.tsx:334
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
-#: src/features/session-worktree-manager.tsx:365
+#: src/features/session-worktree-manager.tsx:382
 #: src/features/tickets-view.tsx:286
 msgid "Loading…"
 msgstr "加载中…"
 
-#: src/features/session-worktree-manager.tsx:120
+#: src/features/session-worktree-manager.tsx:121
 msgid "Local changes"
 msgstr "有本地改动"
 
@@ -2065,7 +2088,7 @@ msgstr "登录"
 msgid "made progress"
 msgstr "有进展"
 
-#: src/features/session-worktree-manager.tsx:187
+#: src/features/session-worktree-manager.tsx:188
 msgid "Main checkout"
 msgstr "主工作树"
 
@@ -2078,7 +2101,7 @@ msgstr "管理 MCP 服务"
 msgid "manage tool permission rules"
 msgstr "管理工具权限规则"
 
-#: src/features/session-worktree-manager.tsx:171
+#: src/features/session-worktree-manager.tsx:172
 msgid "Manage worktree"
 msgstr "管理工作树"
 
@@ -2098,7 +2121,7 @@ msgstr "受管模型覆盖"
 msgid "Manual"
 msgstr "手动"
 
-#: src/features/me-autotitle.tsx:160
+#: src/features/me-autotitle.tsx:162
 msgid "Manual /rename"
 msgstr "手动 /rename"
 
@@ -2106,10 +2129,10 @@ msgstr "手动 /rename"
 msgid "Mark done"
 msgstr "标为完成"
 
-#: src/features/session-chat-group.tsx:150
-#: src/features/session-chat-group.tsx:292
+#: src/features/session-chat-group.tsx:154
+#: src/features/session-chat-group.tsx:296
 #: src/features/session-chat-row.tsx:70
-#: src/features/session-chat-row.tsx:212
+#: src/features/session-chat-row.tsx:217
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 msgid "Mark read"
@@ -2206,7 +2229,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:167
 #: src/features/session-title-history.tsx:86
 msgid "Native"
 msgstr "原生"
@@ -2270,7 +2293,7 @@ msgstr "换行"
 #~ msgid "New round"
 #~ msgstr "新一轮"
 
-#: src/features/session-chat-group.tsx:207
+#: src/features/session-chat-group.tsx:211
 #: src/features/session-list.tsx:153
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
@@ -2291,12 +2314,12 @@ msgstr "新会话（c）"
 msgid "New session group"
 msgstr "新会话组"
 
-#: src/features/session-chat-group.tsx:275
-#: src/features/session-chat-group.tsx:453
+#: src/features/session-chat-group.tsx:274
+#: src/features/session-chat-group.tsx:458
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:376
 #: src/features/session-new.tsx:437
-#: src/features/session-worktree-detail.tsx:167
+#: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "在此组新建会话"
 
@@ -2403,7 +2426,7 @@ msgstr "还没有人工消息"
 #~ msgid "No idle sessions."
 #~ msgstr "没有空闲的会话。"
 
-#: src/features/session-worktree-manager.tsx:384
+#: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
 
@@ -2415,7 +2438,7 @@ msgstr "没有匹配的外链。"
 msgid "No links resolved for this repository."
 msgstr "这个仓库没有解析出外链。"
 
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:348
 msgid "No local CLI available"
 msgstr "无可用本地 CLI"
 
@@ -2443,7 +2466,7 @@ msgstr "暂无最近的连接结果"
 #~ msgid "No session"
 #~ msgstr "无会话"
 
-#: src/features/me-autotitle.tsx:146
+#: src/features/me-autotitle.tsx:148
 msgid "No session titles recorded yet."
 msgstr "暂无已记录的会话标题。"
 
@@ -2476,7 +2499,7 @@ msgstr "没有上游分支，无法比较。"
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:129
+#: src/features/me-agents.tsx:71
 #: src/features/session-new-panels.tsx:83
 msgid "Not configured"
 msgstr "未配置"
@@ -2485,7 +2508,7 @@ msgstr "未配置"
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "还没接入：Worker 需要一个只读的 Cloudflare 分析 Token（密钥 CF_ACCOUNT_ID 和 CF_ANALYTICS_TOKEN，权限「Account Analytics: Read」）。"
 
-#: src/features/session-worktree-manager.tsx:121
+#: src/features/session-worktree-manager.tsx:122
 msgid "Not delivered"
 msgstr "未交付"
 
@@ -2544,7 +2567,7 @@ msgstr "现在没有等你处理的工单。需要你回复或运行失败的会
 
 #: src/features/session-new-panels.tsx:149
 #: src/features/session-skills.tsx:236
-#: src/features/session-worktree-manager.tsx:384
+#: src/features/session-worktree-manager.tsx:401
 msgid "Nothing matches"
 msgstr "没有匹配项"
 
@@ -2557,8 +2580,8 @@ msgid "now {label}"
 msgstr "状态：{label}"
 
 #: src/features/console-me.tsx:268
-#: src/features/me-autotitle.tsx:114
-#: src/features/me-autotitle.tsx:362
+#: src/features/me-autotitle.tsx:116
+#: src/features/me-autotitle.tsx:370
 msgid "Off"
 msgstr "未启用"
 
@@ -2574,8 +2597,8 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/me-autotitle.tsx:116
-#: src/features/me-autotitle.tsx:361
+#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:369
 msgid "On"
 msgstr "开启"
 
@@ -2586,6 +2609,11 @@ msgstr "开启"
 #: src/features/remote-badge.tsx:141
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "只为让浏览器给出本机局域网地址，主机才能主动直连；拿到后立刻关闭麦克风，不录音。"
+
+#: src/features/session-worktree-lifecycle.tsx:108
+#: src/features/session-worktree-lifecycle.tsx:127
+msgid "Only reusable worktrees can be managed here"
+msgstr "只有可复用的工作树才能在这里回收或移除"
 
 #: src/features/console-diagnostics.tsx:390
 msgid "Only this trace"
@@ -2625,13 +2653,13 @@ msgstr "打开仓库外链"
 msgid "Open repository links (key: l)"
 msgstr "打开仓库外链（快捷键：l）"
 
-#: src/features/session-delete.tsx:49
-#: src/features/session-delete.tsx:71
-#: src/features/session-worktree-detail.tsx:152
+#: src/features/session-delete.tsx:54
+#: src/features/session-delete.tsx:76
+#: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/console-sessions.tsx:504
+#: src/features/console-sessions.tsx:529
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2689,7 +2717,7 @@ msgstr "发起会话"
 msgid "Other"
 msgstr "其他"
 
-#: src/features/session-worktree-manager.tsx:275
+#: src/features/session-worktree-manager.tsx:304
 msgid "Other worktrees"
 msgstr "其他工作树"
 
@@ -2756,7 +2784,7 @@ msgstr "组成"
 msgid "partly done"
 msgstr "部分实现"
 
-#: src/features/session-worktree-detail.tsx:71
+#: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "路径"
 
@@ -2774,7 +2802,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:188
+#: src/features/session-split.tsx:195
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -2861,7 +2889,7 @@ msgstr "拆分方案：{n} 张子单"
 msgid "Pull last week's metrics into the weekly report."
 msgstr "把上周的数据拉进周报里。"
 
-#: src/features/session-worktree-detail.tsx:106
+#: src/features/session-worktree-detail.tsx:111
 msgid "Purpose"
 msgstr "用途"
 
@@ -2933,11 +2961,16 @@ msgstr "原因"
 msgid "Recent commits"
 msgstr "最近提交"
 
+#: src/features/session-worktree-lifecycle.tsx:64
+#: src/features/session-worktree-lifecycle.tsx:119
+msgid "Recycle worktree"
+msgstr "回收工作树"
+
 #: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "刷新"
 
-#: src/features/me-autotitle.tsx:432
+#: src/features/me-autotitle.tsx:442
 msgid "Refresh active sessions now"
 msgstr "立即刷新活跃会话"
 
@@ -2946,19 +2979,19 @@ msgstr "立即刷新活跃会话"
 msgid "Refresh links"
 msgstr "刷新外链"
 
-#: src/features/me-autotitle.tsx:296
+#: src/features/me-autotitle.tsx:298
 msgid "Refreshing session titles in the background…"
 msgstr "正在后台刷新活跃会话标题……"
 
-#: src/features/me-autotitle.tsx:248
+#: src/features/me-autotitle.tsx:250
 msgid "Regenerate"
 msgstr "重算"
 
-#: src/features/me-autotitle.tsx:242
+#: src/features/me-autotitle.tsx:244
 msgid "Regenerate title now"
 msgstr "立即重新生成标题"
 
-#: src/features/me-autotitle.tsx:295
+#: src/features/me-autotitle.tsx:297
 msgid "Regenerating title for this session…"
 msgstr "正在重新生成该会话标题……"
 
@@ -3017,6 +3050,15 @@ msgstr "移除"
 #: src/features/composer-picked.tsx:62
 msgid "Remove image"
 msgstr "移除图片"
+
+#: src/features/session-worktree-lifecycle.tsx:71
+msgid "Remove this worktree? Its branch and conversation history stay available. A worktree in use cannot be removed."
+msgstr "移除这个工作树？分支和会话历史会保留。正在使用的工作树不能移除。"
+
+#: src/features/session-worktree-lifecycle.tsx:64
+#: src/features/session-worktree-lifecycle.tsx:134
+msgid "Remove worktree"
+msgstr "移除工作树"
 
 #: src/features/session-info-actions.tsx:131
 msgid "Rename"
@@ -3097,7 +3139,7 @@ msgid "Repository"
 msgstr "仓库"
 
 #: src/features/console-me.tsx:283
-#: src/features/me-agents.tsx:63
+#: src/features/me-agents.tsx:152
 #: src/features/session-new-panels.tsx:72
 msgid "Repository default"
 msgstr "按仓库设置"
@@ -3147,6 +3189,10 @@ msgstr "调研失败"
 msgid "Resend"
 msgstr "重发"
 
+#: src/features/session-worktree-lifecycle.tsx:70
+msgid "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
+msgstr "将工作树重置到最新默认分支并重启智能体？未交付或有本地改动时会拒绝回收。"
+
 #: src/features/session-header.tsx:110
 msgid "resets {reset}"
 msgstr "{reset}重置"
@@ -3181,7 +3227,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/session-chat-group.tsx:124
+#: src/features/session-chat-group.tsx:122
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -3209,7 +3255,7 @@ msgstr "恢复会话"
 msgid "Retry"
 msgstr "重试"
 
-#: src/features/session-worktree-manager.tsx:117
+#: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
 msgstr "可复用"
 
@@ -3301,7 +3347,7 @@ msgstr "运行中"
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-status-band.tsx:38
-#: src/features/session-worktree-manager.tsx:118
+#: src/features/session-worktree-manager.tsx:119
 msgid "Running"
 msgstr "运行中"
 
@@ -3327,7 +3373,7 @@ msgstr "运行次数"
 msgid "Runs and cost"
 msgstr "运行与花费"
 
-#: src/features/me-autotitle.tsx:348
+#: src/features/me-autotitle.tsx:356
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标题始终贴合当前任务；手动 /rename 的标题不会被覆盖。"
 
@@ -3377,7 +3423,7 @@ msgstr "终端同键"
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/session-purpose.tsx:118
-#: src/features/session-worktree-detail.tsx:131
+#: src/features/session-worktree-detail.tsx:136
 msgid "Save"
 msgstr "保存"
 
@@ -3386,7 +3432,7 @@ msgid "Save availability and note"
 msgstr "保存可用状态与备注"
 
 #: src/features/me-agent-detail.tsx:23
-#: src/features/session-worktree-detail.tsx:45
+#: src/features/session-worktree-detail.tsx:50
 msgid "Saved"
 msgstr "已保存"
 
@@ -3404,8 +3450,8 @@ msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 
 msgid "Saving…"
 msgstr "保存中…"
 
-#: src/features/me-autotitle.tsx:396
-#: src/features/me-autotitle.tsx:398
+#: src/features/me-autotitle.tsx:406
+#: src/features/me-autotitle.tsx:408
 msgid "Scan interval"
 msgstr "扫描周期"
 
@@ -3455,8 +3501,8 @@ msgstr "搜索会话"
 msgid "Search skills"
 msgstr "搜索能力"
 
-#: src/features/session-worktree-manager.tsx:356
-#: src/features/session-worktree-manager.tsx:357
+#: src/features/session-worktree-manager.tsx:373
+#: src/features/session-worktree-manager.tsx:374
 msgid "Search worktrees"
 msgstr "搜索工作树"
 
@@ -3521,27 +3567,27 @@ msgstr "会话操作"
 msgid "Session active"
 msgstr "远控会话进行中"
 
-#: src/features/session-delete.tsx:67
+#: src/features/session-delete.tsx:72
 msgid "Session deleted"
 msgstr "会话已删除"
 
-#: src/features/session-delete.tsx:61
+#: src/features/session-delete.tsx:66
 msgid "Session deleted and worktree removed"
 msgstr "会话已删除，工作树已移除"
 
-#: src/features/session-delete.tsx:63
+#: src/features/session-delete.tsx:68
 msgid "Session deleted. Another process is using the worktree."
 msgstr "会话已删除，仍有进程正在使用此工作树。"
 
-#: src/features/session-delete.tsx:64
+#: src/features/session-delete.tsx:69
 msgid "Session deleted. The worktree could not be removed."
 msgstr "会话已删除，工作树移除失败。"
 
-#: src/features/session-delete.tsx:65
+#: src/features/session-delete.tsx:70
 msgid "Session deleted. The worktree has changes outside the default branch."
 msgstr "会话已删除，工作树还有未合入默认分支的提交。"
 
-#: src/features/session-delete.tsx:62
+#: src/features/session-delete.tsx:67
 msgid "Session deleted. The worktree has local changes."
 msgstr "会话已删除，工作树还有本地改动。"
 
@@ -3563,7 +3609,7 @@ msgstr "会话信息"
 msgid "Session pages"
 msgstr "会话"
 
-#: src/features/me-autotitle.tsx:439
+#: src/features/me-autotitle.tsx:449
 msgid "Session titles"
 msgstr "会话标题列表"
 
@@ -3690,7 +3736,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:488
+#: src/features/console-sessions.tsx:513
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -3810,7 +3856,7 @@ msgstr "状态"
 #: src/features/console-collab.tsx:222
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
-#: src/features/session-worktree-detail.tsx:60
+#: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:104
 #: src/features/tickets-view.tsx:197
 msgid "Status"
@@ -3943,7 +3989,7 @@ msgstr "技术细节"
 
 #: src/features/session-elicitation.tsx:221
 #: src/features/session-info-actions.tsx:168
-#: src/features/session-permission.tsx:333
+#: src/features/session-permission.tsx:442
 msgid "Terminal"
 msgstr "终端画面"
 
@@ -3964,7 +4010,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:285
+#: src/features/console-sessions.tsx:295
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -4058,7 +4104,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/console-sessions.tsx:281
+#: src/features/console-sessions.tsx:291
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4068,7 +4114,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:507
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -4100,7 +4146,7 @@ msgstr "本仓库"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
 
-#: src/features/session-delete.tsx:47
+#: src/features/session-delete.tsx:52
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "工作树还有本地改动，请进入会话检查后再删除。"
 
@@ -4178,7 +4224,7 @@ msgstr "标题"
 msgid "Title source"
 msgstr "标题来源"
 
-#: src/features/me-autotitle.tsx:303
+#: src/features/me-autotitle.tsx:305
 msgid "Title unlocked; auto-titling will resume."
 msgstr "已解除锁定，后续将恢复自动更新标题。"
 
@@ -4257,7 +4303,7 @@ msgstr "Trace"
 msgid "Trace ID or text"
 msgstr "Trace ID 或文本"
 
-#: src/features/me-autotitle.tsx:419
+#: src/features/me-autotitle.tsx:429
 msgid "Tracked titles"
 msgstr "已记录标题数"
 
@@ -4272,8 +4318,8 @@ msgstr "过程记录"
 msgid "Trigger"
 msgstr "触发来源"
 
-#: src/features/session-permission.tsx:133
-#: src/features/session-permission.tsx:295
+#: src/features/session-permission.tsx:164
+#: src/features/session-permission.tsx:425
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "内容超过 64 KB 已截断，完整内容请在终端查看。"
 
@@ -4290,7 +4336,7 @@ msgstr "信任此工作树并继续"
 msgid "Turn {turns}"
 msgstr "第 {turns} 轮"
 
-#: src/features/session-worktree-detail.tsx:134
+#: src/features/session-worktree-detail.tsx:139
 msgid "Turn on write access in Settings to edit"
 msgstr "在设置中启用写入后可编辑"
 
@@ -4311,10 +4357,14 @@ msgstr "TURN 中继"
 msgid "Turns"
 msgstr "轮数"
 
-#: src/features/me-autotitle.tsx:388
+#: src/features/me-autotitle.tsx:398
 #: src/features/me-host.tsx:90
 msgid "Unavailable"
 msgstr "不可用"
+
+#: src/features/me-agents.tsx:200
+msgid "Unavailable agents ({disabledCount})"
+msgstr "不可用智能体（{disabledCount}）"
 
 #: src/features/session-new-direction.tsx:69
 #~ msgid "uncommitted changes"
@@ -4332,11 +4382,11 @@ msgstr "撤销"
 msgid "Unknown"
 msgstr "未知"
 
-#: src/features/me-autotitle.tsx:234
+#: src/features/me-autotitle.tsx:236
 msgid "Unlock"
 msgstr "解锁"
 
-#: src/features/me-autotitle.tsx:228
+#: src/features/me-autotitle.tsx:230
 msgid "Unlock to resume auto-titling"
 msgstr "解除锁定并恢复自动更新"
 
@@ -4441,7 +4491,7 @@ msgstr "等待电脑确认这台设备。在电脑上运行："
 msgid "waiting for you"
 msgstr "在等你"
 
-#: src/features/session-worktree-manager.tsx:119
+#: src/features/session-worktree-manager.tsx:120
 msgid "Waiting for you"
 msgstr "等待处理"
 
@@ -4487,7 +4537,7 @@ msgid "waiting on you"
 msgstr "等你回复"
 
 #: src/features/landing-page.tsx:215
-#: src/features/session-chat-group.tsx:128
+#: src/features/session-chat-group.tsx:126
 #: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:397
 #: src/features/tickets-view.tsx:532
@@ -4523,7 +4573,7 @@ msgstr "警告"
 msgid "Warnings"
 msgstr "警告"
 
-#: src/features/console-sessions.tsx:273
+#: src/features/console-sessions.tsx:283
 msgid "Web sending is unavailable for this session."
 msgstr "此会话暂时无法从网页发送消息。"
 
@@ -4590,7 +4640,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录。点一项放进消息；在输入框里输入 {trigger} 可补全。"
 
 #: src/features/session-purpose.tsx:90
-#: src/features/session-worktree-detail.tsx:116
+#: src/features/session-worktree-detail.tsx:121
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
 
@@ -4661,7 +4711,7 @@ msgstr "运行中"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
-#: src/features/session-chat-group.tsx:127
+#: src/features/session-chat-group.tsx:125
 #: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "运行中"
@@ -4690,10 +4740,18 @@ msgstr "工作树"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "工作站 {slug}，分支 dev/{slug}（重名会加 -2）"
 
-#: src/features/session-worktree-manager.tsx:404
-#: src/features/session-worktree-manager.tsx:412
-#: src/features/session-worktree-manager.tsx:430
-#: src/features/session-worktree-manager.tsx:451
+#: src/features/session-worktree-lifecycle.tsx:49
+msgid "Worktree recycled"
+msgstr "工作树已回收"
+
+#: src/features/session-worktree-lifecycle.tsx:49
+msgid "Worktree removed"
+msgstr "工作树已移除"
+
+#: src/features/session-worktree-manager.tsx:421
+#: src/features/session-worktree-manager.tsx:429
+#: src/features/session-worktree-manager.tsx:447
+#: src/features/session-worktree-manager.tsx:468
 msgid "Worktrees"
 msgstr "工作树"
 

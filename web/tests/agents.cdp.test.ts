@@ -154,6 +154,15 @@ describe('Agent settings layout', () => {
       )
     })
     expect(gap).toBeLessThanOrEqual(1)
+    // Disabled agents are folded behind a toggle by default; enabled first row is selected.
+    expect(await page.locator('[data-agent-profile=claude]').count()).toBe(0)
+    const disabledToggle = page.getByTestId('agents-disabled-toggle')
+    await disabledToggle.waitFor()
+    expect(await disabledToggle.getAttribute('aria-expanded')).toBe('false')
+    expect(await disabledToggle.textContent()).toContain('不可用智能体（2）')
+    expect(await detail.locator('h2').textContent()).toBe('Claude · Kimi')
+    await disabledToggle.click()
+    expect(await disabledToggle.getAttribute('aria-expanded')).toBe('true')
     expect(
       await page
         .locator('[data-agent-profile=claude_sub2api] span.truncate')
@@ -170,7 +179,6 @@ describe('Agent settings layout', () => {
       .toBe(
         '[wezdeck 智能体] Claude · Kimi\nagent_profile: claude_kimi\nmodel: kimi-k3[1m]',
       )
-    expect(await detail.locator('h2').textContent()).toBe('Claude')
     expect(
       await page
         .locator('[data-agent-profile=agy]')
@@ -309,6 +317,7 @@ describe('Agent settings layout', () => {
       true,
     )
     const detail = page.getByTestId('agent-detail')
+    await page.getByTestId('agents-disabled-toggle').click()
     await page.locator('[data-agent-profile=claude]').click()
     expect(await detail.getByTestId('agent-profile-note').inputValue()).toBe(
       '当前不可用',

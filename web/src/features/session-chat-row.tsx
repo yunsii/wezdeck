@@ -6,7 +6,7 @@ import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, Hash, Plus } from 'lucide-react'
+import { CheckCheck, Hash, Plus, Trash2 } from 'lucide-react'
 
 import { useLocale } from '#/lib/locale-context'
 import { recordVisit } from '#/lib/session-visits'
@@ -198,6 +198,11 @@ export function ChatRow({
                     className={menuItemClass}
                     onClick={() => deleteSession(row, selected)}
                   >
+                    <Trash2
+                      size={14}
+                      aria-hidden
+                      className="text-brand-error"
+                    />
                     {t`Delete session`}
                   </ContextMenu.Item>
                 </>

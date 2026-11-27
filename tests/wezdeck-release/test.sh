@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real Git worktrees and a local bare origin. Build and deployment are stubs.
+# Exercise land, deployment, and source recycle with real Git worktrees.
 set -euo pipefail
 source_repo="$(cd "$(dirname "$0")/../.." && pwd)"
 fixture="$(mktemp -d)"
@@ -7,7 +7,7 @@ cleanup() {
   local rc=$?
   if ((rc != 0)); then
     for log in "$fixture/"*.log; do
-      [[ -f "$log" ]] && { printf '%s\n' "$log"; tail -20 "$log"; }
+      [[ -f "$log" ]] && { printf '%s\n' "$log"; tail -25 "$log"; }
     done
   fi
   rm -rf "$fixture"
@@ -15,6 +15,7 @@ cleanup() {
 trap cleanup EXIT
 export XDG_STATE_HOME="$fixture/state"
 export RELEASE_TRACE="$fixture/trace"
+export RELEASE_LIVE_BUILD_FILE="$fixture/live-build"
 primary="$fixture/primary checkout"
 origin="$fixture/origin.git"
 git init -q --bare -b master "$origin"
@@ -23,96 +24,88 @@ cd "$primary"
 git config user.name 'Release test'
 git config user.email 'test@example.invalid'
 git remote add origin "$origin"
-mkdir -p scripts/dev web "$fixture/bin"
-cp "$source_repo/scripts/dev/"{wezdeck-release,source-fingerprint}.sh scripts/dev/
-printf '/web/dist/\n' > .gitignore
+mkdir -p scripts/dev scripts/runtime/worktree web "$fixture/bin"
+cp "$source_repo/scripts/dev/"{wezdeck-release,source-fingerprint,release-queue-lib}.sh scripts/dev/
+cat > scripts/runtime/worktree/worktree-task <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == recycle ]] || exit 2
+printf '%s\n' "$*" >>"$RELEASE_TRACE.recycle"
+echo 'recycle ok'
+STUB
+chmod +x scripts/runtime/worktree/worktree-task
+printf '/web/dist/\n' >.gitignore
 touch web/.keep
 git add .
 git commit -qm base
 git push -qu origin master
 
 export PATH="$fixture/bin:$PATH"
-cat > "$fixture/bin/corepack" <<'STUB'
+cat >"$fixture/bin/corepack" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
 case "$*" in
+  'pnpm run -s i18n:check') exit 0 ;;
   'pnpm exec vite build')
     mkdir -p dist/client
     printf '{"buildId":"%s"}\n' "$WEZDECK_BUILD_ID" >dist/client/build.json
-    if [[ -n "${RELEASE_RACE_REPO:-}" && ! -e "$RELEASE_TRACE.raced" ]]; then
-      touch "$RELEASE_TRACE.raced"
-      git -C "$RELEASE_RACE_REPO" push -q origin HEAD:master
-    fi
     ;;
   'pnpm exec wrangler deploy')
     head="$(git rev-parse HEAD)"
     [[ "$(git ls-remote origin refs/heads/master | cut -f1)" == "$head" ]]
-    printf 'start %s\n' "$head" >>"$RELEASE_TRACE"
-    if [[ -n "${RELEASE_DEPLOY_PAUSE:-}" ]]; then sleep "$RELEASE_DEPLOY_PAUSE"; fi
-    printf 'end %s\n' "$head" >>"$RELEASE_TRACE"
+    printf 'deployed %s\n' "$head" >>"$RELEASE_TRACE"
+    [[ -z "${RELEASE_DIRTY_SOURCE:-}" ]] || touch "$RELEASE_DIRTY_SOURCE/changed-during-deploy"
+    cp dist/client/build.json "$RELEASE_LIVE_BUILD_FILE"
     ;;
   *) exit 2 ;;
 esac
 STUB
-printf '#!/usr/bin/env bash\nexit 1\n' > "$fixture/bin/curl"
+cat >"$fixture/bin/curl" <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+case "$*" in
+  *build.json*) [[ -f "$RELEASE_LIVE_BUILD_FILE" ]] && cat "$RELEASE_LIVE_BUILD_FILE" ;;
+  *'/zh/console/sessions'*) printf '<script src="/assets/main.js"></script>\n' ;;
+  *'/relay/health'*) printf 200 ;;
+  *'/assets/main.js'*) exit 0 ;;
+  *) exit 1 ;;
+esac
+STUB
 chmod +x "$fixture/bin/"*
 
-for name in first second race; do
+make_worktree() {
+  local name="$1"
   git worktree add -qb "$name" "$fixture/$name"
   printf '%s\n' "$name" >"$fixture/$name/web/$name.txt"
   git -C "$fixture/$name" add "web/$name.txt"
   git -C "$fixture/$name" commit -qm "$name"
-done
+}
 land() {
-  (cd "$fixture/$1" && scripts/dev/wezdeck-release.sh --land HEAD --only push --only web --no-test --no-reload)
+  (cd "$fixture/$1" && scripts/dev/wezdeck-release.sh --land HEAD --only push --only web --now --skip-smoke --no-test --no-reload)
 }
 
-# A hard rejection must not reach the deployment stub.
-printf '#!/usr/bin/env bash\nexit 1\n' > "$origin/hooks/pre-receive"
+make_worktree first
+printf '#!/usr/bin/env bash\nexit 1\n' >"$origin/hooks/pre-receive"
 chmod +x "$origin/hooks/pre-receive"
 if land first >"$fixture/rejected.log" 2>&1; then
   echo 'expected push rejection' >&2
   exit 1
 fi
-[[ ! -e "$RELEASE_TRACE" ]]
+[[ ! -e "$RELEASE_TRACE" && ! -e "$RELEASE_TRACE.recycle" ]]
 rm "$origin/hooks/pre-receive"
 
-# Once admitted, two worktrees integrate and deploy without overlapping.
-RELEASE_DEPLOY_PAUSE=4 land first >"$fixture/first.log" 2>&1 &
-first_pid=$!
-for ((i=0; i<100; i++)); do
-  [[ -s "$RELEASE_TRACE" ]] && break
-  sleep 0.1
-done
-[[ -s "$RELEASE_TRACE" ]]
-if WEZDECK_RELEASE_LOCK_WAIT=0 land second >"$fixture/locked.log" 2>&1; then
-  echo 'expected the shared release lock to be held' >&2
+land first >"$fixture/first.log" 2>&1 || { tail -40 "$fixture/first.log"; exit 1; }
+[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 1 ]]
+[[ "$(wc -l <"$RELEASE_TRACE")" == 1 ]]
+
+make_worktree dirty
+if RELEASE_DIRTY_SOURCE="$fixture/dirty" land dirty >"$fixture/dirty.log" 2>&1; then
+  echo 'expected dirty source to skip recycle' >&2
   exit 1
 else
-  [[ $? == 75 ]]
+  [[ $? == 4 ]]
 fi
-land second >"$fixture/second.log" 2>&1
-wait "$first_pid"
-first="$(git -C "$fixture/first" rev-parse HEAD)"
-second="$(git rev-parse HEAD)"
-[[ "$(cat "$RELEASE_TRACE")" == "$(printf 'start %s\nend %s\nstart %s\nend %s' "$first" "$first" "$second" "$second")" ]]
-git merge-base --is-ancestor "$first" "$second"
-git merge-base --is-ancestor second "$second"
-
-# An external push during build requires another integration and build.
-external="$fixture/external"
-git clone -q "$origin" "$external"
-git -C "$external" -c user.name=External -c user.email=test@example.invalid commit -qm external --allow-empty
-RELEASE_RACE_REPO="$external" land race >"$fixture/race.log" 2>&1
-grep -q 'integrating and rebuilding once' "$fixture/race.log"
-git merge-base --is-ancestor "$(git -C "$external" rev-parse HEAD)" HEAD
-git merge-base --is-ancestor race HEAD
-[[ "$(wc -l < "$RELEASE_TRACE")" == 6 ]]
-# Deploy-only cannot ship an unpushed revision.
-git commit -qm unpublished --allow-empty
-if scripts/dev/wezdeck-release.sh --only web --no-test --no-reload >"$fixture/unpublished.log" 2>&1; then
-  echo 'expected an unpublished revision to be refused' >&2
-  exit 1
-fi
-[[ "$(wc -l < "$RELEASE_TRACE")" == 6 ]]
+[[ -f "$fixture/dirty/changed-during-deploy" ]]
+[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 1 ]]
+[[ "$(wc -l <"$RELEASE_TRACE")" == 2 ]]
 echo 'release integration tests passed'

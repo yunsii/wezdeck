@@ -1,5 +1,5 @@
 .sync-target
-# worktree-recycle --task brief (also in WT_RECYCLE_CLEAN_GLOBS)
+# Legacy recycle --task brief (also in WT_RECYCLE_CLEAN_GLOBS)
 .task-brief.md
 # Python bytecode from runtime helpers (e.g. grok-focus-filter)
 __pycache__/

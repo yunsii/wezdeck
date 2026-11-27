@@ -66,7 +66,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    Switching replaces the history entry, so back returns to
    the list. The shell restores its saved scroll offset after navigation and
    suppresses scroll anchoring during return; touch ends the correction.
-   Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
+   Icon-prefixed row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
    filter (`c` / `Ctrl+N` on a keyboard) enters `/console/sessions/new` directly
    (no blocking modal): repository and agent sit in a flat setup card above the
@@ -303,7 +303,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   front (browsers drop it while hidden), released on leaving; unsupported
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
-- Session header (`session-header.tsx`), pinned while the thread scrolls:
+- Session header (`session-header.tsx`), pinned with balanced vertical padding while the thread scrolls:
   back, agent avatar + session title (tapping opens 会话信息; `/rename` lives there), and **ⓘ 会话信息** at the far right — no status/waiting chip in
   the header, since running, done, and waiting prompts are already visible in
   the thread itself (while the session list and tab badges surface waiting

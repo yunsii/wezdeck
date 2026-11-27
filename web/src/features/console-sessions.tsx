@@ -12,6 +12,8 @@ import type { LedTone } from '#/components/deck/led'
 import type { GitStatus } from '#/components/deck/session-tags'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
+import { trace } from '#/lib/client-trace'
+import { forgetOpened } from '#/lib/last-opened'
 import { hostRead } from '#/lib/runtime-client'
 import { PAGE, mergeReply } from '#/lib/session-cache'
 import type { TokenRate } from '#/lib/turn-progress'
@@ -39,6 +41,14 @@ import type { Message } from './chat-thread'
 import type { PendingCall } from './session-permission'
 import type { SessionCard } from './session-card'
 import { detailKey, readDetail } from './session-detail-read'
+import {
+  LAST_SESSION_KEY,
+  clearSessionMissing,
+  hideDeletedSessions,
+  isMissingSessionError,
+  markSessionMissing,
+} from './session-delete-state'
+import type { SessionsReply } from './session-delete-state'
 
 export type { SessionCard }
 export { useSessions } from './session-delete-state'
@@ -286,17 +296,31 @@ function useComposerBlock(data: Detail | undefined, approved: boolean) {
       : ''
 }
 
-function useLeaveMissingSession(gone: boolean) {
+function useLeaveMissingSession(id: string, gone: boolean) {
   const { locale } = useLocale()
   const navigate = useNavigate()
+  const client = useQueryClient()
   useEffect(() => {
     if (!gone) return
+    // Evict the missing id from both the cached session list and last-opened
+    // storage before leaving: otherwise wide-split usePickDefault immediately
+    // navigates right back to the same dead id, trapping the main thread in an
+    // infinite replaceState loop (scrolling keeps working on the compositor
+    // while every click and relay reconnect hangs, 2026-11-27).
+    markSessionMissing(id)
+    forgetOpened(LAST_SESSION_KEY, id)
+    client.setQueryData<SessionsReply>(
+      ['remote', 'sessions'],
+      (data) => data && hideDeletedSessions(data, new Set([id])),
+    )
+    void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+    trace('session-missing-leave', { id })
     void navigate({
       to: '/{-$locale}/console/sessions',
       params: { locale: locale === 'en' ? undefined : locale },
       replace: true,
     })
-  }, [gone, locale, navigate])
+  }, [gone, id, client, locale, navigate])
 }
 
 function draftTodo(composer: Composer, text: string) {
@@ -360,10 +384,11 @@ export function SessionDetail({ id }: { id: string }) {
     to: '/{-$locale}/console/sessions',
     params: { locale: locale === 'en' ? undefined : locale },
   })
-  const gone =
-    detail.isError &&
-    /session not found|ended or not tracked/i.test(String(detail.error.message))
-  useLeaveMissingSession(gone)
+  const gone = detail.isError && isMissingSessionError(detail.error)
+  useEffect(() => {
+    if (data && !gone) clearSessionMissing(id)
+  }, [data, gone, id])
+  useLeaveMissingSession(id, gone)
   const blocked = useComposerBlock(data, device.state === 'approved')
   const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({
