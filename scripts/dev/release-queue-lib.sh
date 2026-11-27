@@ -155,9 +155,9 @@ PY
 }
 
 # Post-deploy live canary: confirms the public Cloudflare site actually serves
-# the new buildId, HTML shell, entry JS bundle, and HostRelay status endpoint.
+# the new buildId, HTML shell, entry JS bundle, and HostRelay /relay/health gate.
 release_live_canary() {
-  local site="$1" want="$2" i served html script
+  local site="$1" want="$2" i served html script relay_code relay_token
   for ((i = 1; i <= 5; i++)); do
     served="$(curl -fsS -m 8 -H 'cache-control: no-cache' "$site/build.json?t=$(date +%s%N)" 2>/dev/null |
       sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p')"
@@ -168,7 +168,7 @@ release_live_canary() {
     echo "canary: $site/build.json returned '${served:-empty}', expected '$want'" >&2
     return 1
   fi
-  html="$(curl -fsS -m 10 -H 'cache-control: no-cache' "$site/zh/console/sessions" 2>/dev/null)" || {
+  html="$(curl -fsS --compressed -m 10 -H 'cache-control: no-cache' "$site/zh/console/sessions" 2>/dev/null | tr -d '\0')" || {
     echo "canary: GET $site/zh/console/sessions failed" >&2
     return 1
   }
@@ -177,11 +177,23 @@ release_live_canary() {
     echo "canary: entry JS '${script:-missing}' unreachable on $site" >&2
     return 1
   fi
-  if ! curl -fsS -m 8 -o /dev/null "$site/relay/status"; then
-    echo "canary: $site/relay/status unreachable" >&2
-    return 1
+  # /relay/health is authenticated before DO lookup: 200 with a valid client
+  # token, 401 without one (never 404/5xx).
+  relay_token="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
+  if [[ -n "$relay_token" ]]; then
+    relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$site/relay/health" 2>/dev/null || echo 000)"
+    if [[ "$relay_code" != 200 ]]; then
+      echo "canary: $site/relay/health returned HTTP $relay_code (expected 200)" >&2
+      return 1
+    fi
+  else
+    relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$site/relay/health" 2>/dev/null || echo 000)"
+    if [[ "$relay_code" != 401 && "$relay_code" != 200 ]]; then
+      echo "canary: $site/relay/health returned HTTP $relay_code (expected 401/200)" >&2
+      return 1
+    fi
   fi
-  echo "ok: live canary healthy ($want, entry $script)"
+  echo "ok: live canary healthy ($want, entry $script, relay HTTP $relay_code)"
 }
 
 release_rollback_web() {
