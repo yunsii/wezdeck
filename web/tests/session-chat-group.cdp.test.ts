@@ -1,4 +1,4 @@
-// covers: web/src/features/session-chat-group.tsx
+// covers: web/src/features/session-chat-group.tsx web/src/features/agent-avatar.tsx
 // covers: web/src/features/session-collapse.ts
 // covers: web/src/features/session-list.tsx web/src/features/session-switcher.tsx
 // A worktree with two agent sessions (grok + codex): a foldable header and
