@@ -398,8 +398,9 @@ primary `master`. The pipeline splits into three stages:
    land lock immediately so concurrent worktrees never stall behind builds or
    tests.
 2. **Singleton coalesced deploy (`wezdeck-deploy.lock`)**: after a short
-   debounce window (`WEZDECK_RELEASE_COALESCE_S=5`, `--now` to skip), builds
-   changed artifacts, runs the mandatory **L0 core availability smoke gate**
+   debounce window (`WEZDECK_RELEASE_COALESCE_S=5`, `--now` to skip), fixes the
+   batch to an isolated local clone at its target commit, builds changed
+   artifacts there, and runs the mandatory **L0 core availability smoke gate**
    (`scripts/dev/release-smoke-gate.sh` + `web/tests/smoke-core.cdp.test.ts` on
    an isolated `:3019` stack: connect, authorize, list/open session, send
    message, answer prompt — aborting before deploy if anything fails), deploys
@@ -424,6 +425,11 @@ primary `master`. The pipeline splits into three stages:
    once to ship all of them together in a single coalesced batch; callers with
    default `--wait` (override with `--no-wait`) return once their commit is an
    ancestor of `deployed_sha`.
+   A waited `--land` also records a local recycle intent before push; an
+   independent watcher and later release invocations reconcile it only when
+   `deployed_sha` contains the source commit. `release status` reports skipped
+   or failed close-outs. The reusable clone is not a managed workstation and
+   does not follow later `master` updates during a batch.
 3. **Detached async regression (`scripts/dev/release-async-verify.sh`)**: runs
    `web-affected-tests.sh` outside all locks in a dedicated detached worktree
    and automatically cancels stale runs when a newer batch ships.
