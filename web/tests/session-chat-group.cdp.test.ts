@@ -203,7 +203,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     await context.close()
   })
 
-  it('the switcher lists every session of the worktree', async () => {
+  it('tapping the session title opens Session info with its title', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -213,16 +213,10 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     await page.locator('[data-session=grp-codex]').click()
     await page.waitForURL('**/console/sessions/grp-codex')
     await page.getByTestId('session-title').click()
-    const sheet = page.getByTestId('session-switcher')
+    const sheet = page.getByTestId('session-info')
     await sheet.waitFor()
-    await sheet.locator('[data-session-id=grp-grok]').waitFor()
-    await expect
-      .poll(() =>
-        sheet.locator('[aria-current=page]').getAttribute('data-session-id'),
-      )
-      .toBe('grp-codex')
-    await sheet.locator('[data-session-id=grp-grok]').click()
-    await page.waitForURL('**/console/sessions/grp-grok')
+    await sheet.getByTestId('session-info-title').waitFor()
+    await page.keyboard.press('Escape')
     await expect.poll(() => sheet.count()).toBe(0)
     await context.close()
   })

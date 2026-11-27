@@ -65,8 +65,7 @@ foldable header plus left-rail-guided stable sub-rows
 unread and direct link, so two busy agents no longer take turns repainting
 one shared focus row and every session stays reachable; the header folds
 back into a full group chat row keeping focus avatar, preview, time and unread count, remembered per worktree
-(`session-collapse.ts`, localStorage best-effort). Waiting and done sessions auto-sync incrementally into the persisted query cache in the background (`web/src/features/session-autosync.ts`, traced as `session-autosync`) so opening them needs no click-time wait. The switcher sheet and
-`Alt+j` / `Alt+k` / `Alt+l` jumps likewise target every session, not just
+(`session-collapse.ts`, localStorage best-effort). Waiting and done sessions auto-sync incrementally into the persisted query cache in the background (`web/src/features/session-autosync.ts`, traced as `session-autosync`) so opening them needs no click-time wait. `Alt+j` / `Alt+k` / `Alt+l` jumps likewise target every session, not just
 each worktree's focus. Browser-local unsent composer text appears as a 草稿
 marker on the second line of each session row and collapsed group, while the
 status preview remains visible. Chat groups order by the latest stable turn

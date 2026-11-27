@@ -195,17 +195,16 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       await page.waitForTimeout(200)
     }
 
-    // queued bubbles belong to their session: switch away and back
-    await page.getByTestId('session-title').click()
-    const sheet = page.getByTestId('session-switcher')
-    await sheet.getByRole('button', { name: /other-agent|另一个会话/ }).click()
+    // queued bubbles belong to their session: switch away via list and back
+    await page.getByRole('button', { name: '返回' }).click()
+    await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
+    await page.locator('[data-session=other-session]').click()
     await page.waitForURL('**/console/sessions/other-session')
     await page.waitForTimeout(500)
     expect(await page.locator('[data-pending]').count()).toBe(0)
-    await page.getByTestId('session-title').click()
-    await sheet
-      .getByRole('button', { name: /demo-agent|整理移动端交互/ })
-      .click()
+    await page.getByRole('button', { name: '返回' }).click()
+    await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
+    await page.locator('[data-session=demo-session]').click()
     await page.waitForURL('**/console/sessions/demo-session')
     await bubble.waitFor({ timeout: 5_000 })
 

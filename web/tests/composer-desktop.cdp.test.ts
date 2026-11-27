@@ -221,12 +221,13 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await page.keyboard.press('Escape')
     await newSheet.waitFor({ state: 'hidden', timeout: 2_000 })
 
-    // Alt+/ (the desk's pending overlay) opens the session picker
+    // Alt+/ focuses the session list search box on wide screens
     await page.evaluate(() => (document.activeElement as HTMLElement).blur())
     await page.keyboard.press('Alt+Slash')
-    const picker = page.getByTestId('session-switcher')
-    await picker.waitFor({ timeout: 2_000 })
-    await page.keyboard.press('Escape')
+    const focused = () =>
+      page.evaluate(() => document.activeElement?.getAttribute('data-testid'))
+    await expect.poll(focused).toBe('chat-search')
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
 
     await caretFollowsPreference(page)
     await context.close()

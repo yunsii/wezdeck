@@ -67,8 +67,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    with a CDP screencast). Pressing the open row adds no veil. In a
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
-   session waiting on you / finished / running in the list's order — on the
-   phone the title opens the same grouped switcher sheet as `Alt+g` / `Alt+x`.
+   session waiting on you / finished / running in the list's order, and `Alt+g` / `Alt+x` / `Alt+/` focus the list search box (or return to the list on narrow screens). Tapping the conversation title opens 会话信息 directly (Telegram style; the separate switcher sheet was retired).
    Switching replaces the history entry, so back returns to
    the list. The shell restores its saved scroll offset after navigation and
    suppresses scroll anchoring during return; touch ends the correction.
@@ -309,8 +308,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session title (opens the session switcher; `/rename` lives in
-  会话信息), and **ⓘ 会话信息** at the far right — no status/waiting chip in
+  back, session title (tapping opens 会话信息; `/rename` lives there), and **ⓘ 会话信息** at the far right — no status/waiting chip in
   the header, since running, done, and waiting prompts are already visible in
   the thread itself (while the session list and tab badges surface waiting
   sessions before entry). The composer agent row shows context used
@@ -383,7 +381,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (it used to end up in the leaving page's snapshot). Toasts sit in a
   `toast-layer` that never moves; toasts are the deck's ink card (`.deck-toast`, sonner unstyled, under the session bar via `--toast-top`; 交互调试 › 消息提示).
 - 会话信息 (`session-info.tsx`), a 3-tier Telegram-profile bottom sheet portalled to `<body>` (the
-  header's backdrop blur would otherwise trap a fixed sheet): compact quick-action icon tiles (复制引用, 重命名, 仓库外链, local 终端 / VS Code) + 标为已读 when unread; first-screen 概览 (status · mode, model, cwd) & 用量 (context, output · rate · cache, 5h/7d limits); group management (在此组新建会话 + red-isolated 删除会话); and a default-collapsed 技术详情 `Disclosure` keeping all host `meta` groups, rate breakdown and `capabilities` tap-to-copy. Esc, the backdrop or × closes it.
+  header's backdrop blur would otherwise trap a fixed sheet): profile header with agent avatar, full tap-to-copy session title and tags; compact quick-action icon tiles (复制引用, 重命名, 仓库外链, local 终端 / VS Code) + 标为已读 when unread; first-screen 概览 (status · mode, model, cwd) & 用量 (context, output · rate · cache, 5h/7d limits); group management (在此组新建会话 + red-isolated 删除会话); and a default-collapsed 技术详情 `Disclosure` keeping all host `meta` groups, rate breakdown and `capabilities` tap-to-copy. Esc, the backdrop or × closes it.
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new

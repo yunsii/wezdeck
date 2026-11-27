@@ -68,7 +68,7 @@ function useKeyGroups(): Array<Group> {
         },
         {
           keys: ['Alt+G', 'Alt+X', 'Alt+/'],
-          what: t`Pick a session (grouped by repository)`,
+          what: t`Focus session search or return to list`,
           host: true,
         },
         {

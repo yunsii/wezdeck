@@ -118,7 +118,7 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await context.close()
   })
 
-  it('the title opens the switcher; picking a session goes there', async () => {
+  it('the title opens Session info showing the full title', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -128,20 +128,15 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await page.locator('[data-session=nav-a]').click()
     await page.waitForURL('**/console/sessions/nav-a')
     await page.getByTestId('session-title').click()
-    const sheet = page.getByTestId('session-switcher')
+    const sheet = page.getByTestId('session-info')
     await sheet.waitFor()
-    await expect
-      .poll(() =>
-        sheet.locator('[aria-current=page]').getAttribute('data-session-id'),
-      )
-      .toBe('nav-a')
-    await sheet.locator('[data-session-id=nav-c]').click()
-    await page.waitForURL('**/console/sessions/nav-c')
+    await sheet.getByTestId('session-info-title').waitFor()
+    await page.keyboard.press('Escape')
     await expect.poll(() => sheet.count()).toBe(0)
     await context.close()
   })
 
-  it('the switcher sheet closes by swiping down, not by a small drag', async () => {
+  it('the info sheet closes by swiping down, not by a small drag', async () => {
     const context = await browser.newContext({
       ...devices['iPhone 13'],
       locale: 'zh-CN',
@@ -150,7 +145,7 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await openList(page)
     await page.locator('[data-session=nav-a]').click()
     await page.waitForURL('**/console/sessions/nav-a')
-    const sheet = page.getByTestId('session-switcher')
+    const sheet = page.getByTestId('session-info')
     const cdp = await context.newCDPSession(page)
     const drag = async (dy: number) => {
       const box = await sheet.boundingBox()

@@ -7,6 +7,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
@@ -14,11 +15,14 @@ import { Disclosure } from '#/components/ui/disclosure'
 import { Field, FieldList } from '#/components/ui/field'
 import { SectionHeading } from '#/components/ui/section-heading'
 import { Sheet } from '#/components/ui/sheet'
+import { copyText } from '#/lib/clipboard'
+import { AgentAvatar } from './agent-avatar'
 import type { Detail } from './console-sessions'
 import { useSessions } from './console-sessions'
 import { useDeviceState } from './device-state'
 import { RepoLinksSheet, useRepoLinksKey } from './repo-links'
 import type { RepoLinksTarget } from './repo-links'
+import { chatTone } from './session-chats'
 import { ClearButton } from './session-clear'
 import { useDeleteSession } from './session-delete'
 import { useSessionDeleteReview } from './session-delete-state'
@@ -157,6 +161,74 @@ function TechnicalDetailsSection({
   )
 }
 
+function SessionInfoHeader({
+  data,
+  profile,
+}: {
+  data: Detail
+  profile?: string
+}) {
+  const { t } = useLingui()
+  const fullTitle = data.title?.trim() || ''
+  const tone = chatTone({
+    status: data.status,
+    running_kind: data.running_kind,
+    waiting_kind: data.waiting_kind,
+    ts: data.ts ?? 0,
+    restart_pending: data.restart_pending,
+  })
+  const copyTitle = () => {
+    if (!fullTitle) return
+    void copyText(fullTitle).then(() => {
+      const shown =
+        fullTitle.length > 40 ? `${fullTitle.slice(0, 39)}…` : fullTitle
+      toast(t`Copied: ${shown}`)
+    })
+  }
+  return (
+    <div className="flex items-start gap-3 px-1">
+      <AgentAvatar
+        agent={data.agent}
+        profile={profile}
+        size={44}
+        tone={tone}
+        className="mt-0.5"
+      />
+      <div className="grid min-w-0 flex-1 gap-1.5">
+        {fullTitle ? (
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            data-testid="session-info-title"
+            title={t`Copy value`}
+            onClick={copyTitle}
+            className="text-left text-title leading-snug font-semibold break-words text-brand-text"
+          >
+            {fullTitle}
+          </Button>
+        ) : (
+          <p
+            data-testid="session-info-title"
+            className="text-title leading-snug font-semibold text-brand-label"
+          >
+            {t`Untitled session`}
+          </p>
+        )}
+        {data.agent || data.branch || data.git ? (
+          <TagLine testId="info-tags">
+            {data.agent && data.agent !== 'agent' ? (
+              <AgentTag agent={data.agent} />
+            ) : null}
+            {data.branch ? <BranchTag branch={data.branch} /> : null}
+            {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
+          </TagLine>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 export function SessionInfo({
   data,
   open,
@@ -216,17 +288,7 @@ export function SessionInfo({
         testId="session-info"
       >
         <div className="grid gap-3 px-3 pb-2">
-          {data.agent || data.branch || data.git ? (
-            <TagLine testId="info-tags" className="px-1">
-              {data.agent && data.agent !== 'agent' ? (
-                <AgentTag agent={data.agent} />
-              ) : null}
-              {data.branch ? <BranchTag branch={data.branch} /> : null}
-              {data.git ? (
-                <GitStatusButton id={data.id} git={data.git} />
-              ) : null}
-            </TagLine>
-          ) : null}
+          <SessionInfoHeader data={data} profile={card?.agent_profile} />
 
           <SessionInfoQuickActions
             data={data}
