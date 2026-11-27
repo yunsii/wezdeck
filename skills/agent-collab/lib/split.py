@@ -192,10 +192,11 @@ def cmd_draft(argv: list[str]) -> dict[str, Any]:
               .replace("{{REPOS}}", repos).replace("{{MAX_CHILDREN}}", str(MAX_CHILDREN)))
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
         fh.write(prompt)
+    backend = collab.opt(argv, "--backend") or os.environ.get("TICKET_BACKEND") or "claude"
     import research  # noqa: PLC0415 — only draft needs the research substrate
     try:
         r = research.run(["--from", src, "--repos", repos, "--title", f"plan: {title}", "--prompt-file", fh.name,
-                          "--backend", collab.opt(argv, "--backend") or "claude"])
+                          "--backend", backend])
     finally:
         os.unlink(fh.name)
     plan = r.get("result") or {}
@@ -212,7 +213,6 @@ def cmd_draft(argv: list[str]) -> dict[str, Any]:
         pid = collab.cmd_plan(["--from", src, "--repos", repos, "--title", title, "--contract", fh.name])["id"]
     finally:
         os.unlink(fh.name)
-    backend = collab.opt(argv, "--backend") or "claude"
     prop = record(pid, {"origin": "draft", "research": r.get("id"), "items": items, "warnings": warnings(items),
                         "summary": plan["summary"], "status_check": plan["status_check"],
                         "risks": [str(x) for x in plan.get("risks") or []],
@@ -248,7 +248,7 @@ def cmd_propose(argv: list[str]) -> dict[str, Any]:
     if errs:
         raise collab.CollabError("; ".join(errs))
     prop = record(pid, {"origin": "split", "by": by, "reason": collab.opt(argv, "--reason"), "items": [item],
-                        "outcome": outcome(pid, [item], collab.opt(argv, "--backend") or "claude")})
+                        "outcome": outcome(pid, [item], collab.opt(argv, "--backend") or os.environ.get("TICKET_BACKEND") or "claude")})
     collab.progress(pid, "split_proposed", f"{by} proposes '{item['title']}' — needs user confirmation "
                     f"(`ticket fanout approve --parent {pid} --proposal {prop['id']}`)")
     return {"parent": pid, "proposal": prop}
@@ -313,7 +313,8 @@ def cmd_approve(argv: list[str]) -> dict[str, Any]:
     if pending(pid, "draft"):
         return {**res, "scheduler": "draft_pending"}
     extra = ["--mock"] if "--mock" in argv else []
-    extra += ["--backend", collab.opt(argv, "--backend") or "claude"]
+    default_backend = (prop.get("outcome") or {}).get("backend") or os.environ.get("TICKET_BACKEND") or "claude"
+    extra += ["--backend", collab.opt(argv, "--backend") or default_backend]
     return {**res, "scheduler": collab.cmd_run(["--parent", pid, "--detach", *extra])}
 
 

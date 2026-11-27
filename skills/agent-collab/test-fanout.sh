@@ -287,6 +287,17 @@ mkplan "$tmp/rej.stream.jsonl" '[{"key":"r","to":"rx","title":"t","observed":"o"
 RP="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/rej.stream.jsonl" "$run" fanout draft --from src --repos rx --title "rej" --goal-file "$tmp/goal.md" | jq -r .parent)"
 check "reject: draft rejected, parent terminal rejected + plan_rejected, still no children" \
   bash -c "'$run' fanout reject --parent '$RP' --proposal p1 --reason 'split by layer instead' | jq -e '.ok' >/dev/null && grep -q '^status: rejected$' '$TICKETS_ROOT/_data/$RP/ticket.md' && grep -q 'phase: plan_rejected' '$TICKETS_ROOT/_data/$RP/ticket.md' && [ \"\$('$run' fanout status --parent '$RP' | jq '.children|length')\" = 0 ]"
+# approve --run without --backend inherits the draft's outcome.backend (e.g. codex)
+cat >"$tmp/codex-draft.stream.jsonl" <<'EOF'
+{"type":"thread.started","thread_id":"th-plan"}
+{"type":"item.completed","item":{"type":"agent_message","text":"```json\n{\"summary\":{\"problem\":\"p\",\"approach\":\"a\"},\"status_check\":[{\"item\":\"x\",\"status\":\"missing\",\"evidence\":\"e\"}],\"risks\":[],\"contract\":\"# C\\n\",\"children\":[{\"key\":\"k1\",\"to\":\"rx\",\"title\":\"t1\",\"effect\":\"e1\",\"observed\":\"o\",\"assumed\":\"a\",\"scope\":[\"src/k1/**\"]}]}\n```"}}
+{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":5,"output_tokens":5}}
+EOF
+CP="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/codex-draft.stream.jsonl" "$run" fanout draft --from src --repos rx --title "codex draft" --goal-file "$tmp/goal.md" --backend codex | jq -r .parent)"
+"$run" fanout approve --parent "$CP" --proposal p1 --run --mock >/dev/null
+for _ in $(seq 1 150); do grep -q '"scheduler_end"' "$TICKETS_ROOT/_data/$CP/events.jsonl" 2>/dev/null && break; sleep 0.2; done
+check "approve --run without --backend inherits proposal outcome.backend (codex)" \
+  jq -e -s '[.[]|select(.kind=="scheduler_start")][0].backend=="codex"' "$TICKETS_ROOT/_data/$CP/events.jsonl"
 
 # split: a running child proposes a sibling inside its own scope; the user confirms
 P11="$(c plan --from src --title "split" --contract "$tmp/contract.md" | jq -r .id)"

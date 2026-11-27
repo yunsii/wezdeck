@@ -377,6 +377,23 @@ def try_slot(pool: int) -> Slot | None:
 # ------------------------------------------------------------------ scheduler
 
 
+def _proposal_backend(pid: str) -> str | None:
+    p = ticket_fs.data_dir(pid) / "proposals.json"
+    if not p.is_file():
+        return None
+    try:
+        props = json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    for status in ("approved", "pending"):
+        for prop in reversed(props):
+            if prop.get("status") == status:
+                b = (prop.get("outcome") or {}).get("backend")
+                if isinstance(b, str) and b:
+                    return b
+    return None
+
+
 class Scheduler:
     def __init__(self, parent: str, argv: list[str]):
         self.parent = parent
@@ -384,7 +401,7 @@ class Scheduler:
         self.pool = int(os.environ.get("TICKET_MAX_PARALLEL", "8"))
         self.cap = int(opt(argv, "--max-parallel") or self.pool)
         self.per_repo = int(opt(argv, "--per-repo") or os.environ.get("TICKET_MAX_PER_REPO", "4"))
-        self.backend = opt(argv, "--backend") or "claude"
+        self.backend = opt(argv, "--backend") or os.environ.get("TICKET_BACKEND") or _proposal_backend(parent) or "claude"
         self.mock = "--mock" in argv
         self.integrate = "--no-integrate" not in argv
         self.estimate = mem_estimate_mb(self.backend)
