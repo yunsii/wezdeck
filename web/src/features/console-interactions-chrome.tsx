@@ -2,6 +2,8 @@
 // the git panel and churn, the status bar, session tags and toasts (split
 // from console-interactions-sections.tsx, which keeps the prompts and the
 // stream).
+import { toast } from 'sonner'
+import { Button } from '#/components/ui/button'
 import type { Section } from './console-interactions-sections'
 import { TaskEventRow } from './chat-command'
 import type { Message } from './chat-thread'
@@ -11,12 +13,77 @@ import {
   GitChurnDemo,
   StatusBarDemo,
   TagsDemo,
-  ToastDemo,
 } from './console-interactions-demos'
 import { GIT, TASK_NOTES } from './console-interactions-samples'
 import { SkillsDemo } from './console-interactions-skills'
 import { RepoLinksButton } from './repo-links'
 import type { RepoLinksReply } from './repo-links-model'
+
+const TOASTS: Array<{ id: string; label: string; show: () => void }> = [
+  { id: 'plain', label: '普通', show: () => toast('已复制引用') },
+  {
+    id: 'action',
+    label: '带撤销',
+    show: () =>
+      toast('已清空输入', { action: { label: '撤销', onClick: () => {} } }),
+  },
+  {
+    id: 'error',
+    label: '错误',
+    show: () => toast.error('复制引用失败：剪贴板不可用'),
+  },
+  {
+    id: 'updated',
+    label: '带副标题（已更新）',
+    show: () =>
+      toast('已更新到新版本', {
+        id: 'demo-updated',
+        description: '发布网页 513d7da6',
+      }),
+  },
+  {
+    id: 'sticky',
+    label: '常驻（新版本）',
+    show: () =>
+      toast('有新版本', {
+        id: 'demo-sticky',
+        duration: Infinity,
+        action: { label: '刷新', onClick: () => {} },
+      }),
+  },
+  {
+    id: 'long',
+    label: '长文本',
+    show: () =>
+      toast(
+        '已在 tmux 中打开：wezterm-config / dev-agent（会话 primary），终端窗口已切到前台',
+      ),
+  },
+]
+
+/**
+ * Every kind of toast the console shows, from the real Toaster: an ink card
+ * like the user's message, its action a pill, an error with its icon. On the
+ * session page they drop in under the top bar (--toast-top), never over it.
+ */
+function ToastDemo() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {TOASTS.map((kind) => (
+        <Button
+          key={kind.id}
+          variant="plain"
+          type="button"
+          data-toast-kind={kind.id}
+          onClick={kind.show}
+          className="rounded-full bg-brand-surface px-3 py-1.5 text-caption"
+        >
+          {kind.label}
+        </Button>
+      ))}
+    </div>
+  )
+}
 
 const SAMPLE_REPO_LINKS: RepoLinksReply = {
   cli_available: true,
