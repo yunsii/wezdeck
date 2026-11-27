@@ -60,11 +60,19 @@ left rail, `32 px` bottom status bar, `min-h-16` 64 px / `min-h-14` 56 px rows,
 `h-8` 32 px repo headings, `56 px` inset-shadow split head) so neither `.vt-split-list`
 nor `.list-row` transitions land on half-pixel boundaries at 1.25x or 2.625x DPR
 (e.g. a `68 px` rail sits at `178.5` physical px on a 2.625x tablet and caused
-5,752 changed pixels across switches). `.vt-split-list` also carries
-`will-change: transform` so switching between a short and a tall conversation
-never promotes/demotes the sticky rail's compositor layer (which previously
-flipped every uninvolved row's text between grayscale and subpixel LCD
-antialiasing at 1.25x–2.625x DPR). Covered by `split-list-stability.cdp.test.ts`.
+5,752 changed pixels across switches). Wide splits (`session-split.tsx`,
+`tickets-view.tsx`, `console-me.tsx`, `console-diagnostics.tsx`) lock the split
+grid to `h-[100cqh] overflow-hidden` and give `.vt-split-pane` its own
+`overflow-y-auto` scroller instead of pinning `.vt-split-list` via
+`position: sticky; will-change: transform` inside a scrolling `.vt-page` (on
+Chrome 152 HiDPI tablets, jumping `.vt-page.scrollTop` from 0 to 958 while
+switching from `我的` to `会话` caused GPU sticky-layer flicker with zero DOM
+shifts until composer focus forced a main-thread commit). In the same pass,
+`SwipeActions` omits idle `translateX(0px)` layers and hidden underlay buttons
+until a horizontal drag starts, and `motion.css` scopes `view-transition-name`
+to `html:active-view-transition` so idle wide screens carry no permanent
+view-transition compositor layers. Covered by `split-list-stability.cdp.test.ts`
+and `split-switch.cdp.test.ts`.
 
 Live-device list-flicker observability (2026-11-27): `client-trace.ts` records
 `layout-shift` (`PerformanceObserver` CLS ≥ 0.001, ignoring recent input, noting

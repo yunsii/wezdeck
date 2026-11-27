@@ -476,8 +476,8 @@ export function ConsoleMePage() {
   // a desk-sized window: the groups on the left in a SplitColumn, the chosen one beside them
   if (wide)
     return (
-      // the divider runs the window's height, as beside 会话 and 工单
-      <div className="grid grid-cols-[minmax(260px,320px)_minmax(0,1fr)] items-stretch">
+      // independent scroll panes: divider runs the full window height
+      <div className="grid h-[100cqh] grid-cols-[minmax(260px,320px)_minmax(0,1fr)] items-stretch overflow-hidden">
         <SplitColumn
           label={t`Settings`}
           className="bg-brand-deck [--split-pad:0.75rem]"
@@ -492,7 +492,7 @@ export function ConsoleMePage() {
         <div
           data-testid="me-pane"
           className={cn(
-            'vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge',
+            'vt-split-pane h-full min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-brand-edge',
             known === 'interactions' || known === 'agents'
               ? 'py-[var(--page-x)] pr-[var(--page-x)]'
               : 'p-[var(--page-x)] md:px-6 md:py-5',

@@ -5,6 +5,10 @@ import type { RefObject } from 'react'
 import { trace } from '#/lib/client-trace'
 
 const isSessionList = (path: string) => /\/console\/sessions\/?$/.test(path)
+const isWideViewport = () =>
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(min-width: 768px)').matches
 
 // Android can close the detail's keyboard after the list renders, and that
 // viewport resize can scroll the shared page back to the detail's bottom.
@@ -100,7 +104,7 @@ export function useSessionListScroll(
     const stopRestoring = router.subscribe(
       'onRendered',
       ({ fromLocation, toLocation }) => {
-        if (!isSessionList(toLocation.pathname)) return
+        if (!isSessionList(toLocation.pathname) || isWideViewport()) return
         if (
           !restorePending.current &&
           fromLocation &&

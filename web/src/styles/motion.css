@@ -52,13 +52,13 @@ html[data-theme='dark'] {
 ::view-transition-new(root) {
   animation: none;
 }
-.vt-band {
+html:active-view-transition .vt-band {
   view-transition-name: band;
 }
-.vt-sidebar {
+html:active-view-transition .vt-sidebar {
   view-transition-name: sidebar;
 }
-.vt-page {
+html:active-view-transition .vt-page {
   view-transition-name: page;
 }
 html:active-view-transition-type(within) .vt-split-list {
@@ -97,7 +97,7 @@ html:active-view-transition-type(within) .vt-split-pane {
 ::view-transition-new(split-pane) {
   mix-blend-mode: normal;
 }
-.toast-layer {
+html:active-view-transition .toast-layer {
   view-transition-name: toasts;
 }
 .toast-layer [data-sonner-toast] {

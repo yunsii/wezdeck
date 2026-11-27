@@ -348,7 +348,7 @@ export function TicketsView({
     const current =
       id ?? held.current ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
     return (
-      <div className="grid grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-stretch">
+      <div className="grid h-[100cqh] grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-stretch overflow-hidden">
         <TicketListKeys
           ids={[...recent, ...older].map((ticket) => ticket.id)}
           current={current}
@@ -376,9 +376,9 @@ export function TicketsView({
             selected={current}
           />
         </SplitColumn>
-        {/* flat like 会话's pane: the divider is its left edge, page tall */}
+        {/* flat like 会话's pane: independent scroller beside the list */}
         <div
-          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge px-[var(--page-x)]"
+          className="vt-split-pane h-full min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-brand-edge px-[var(--page-x)]"
           data-testid="ticket-pane"
         >
           {current ? (

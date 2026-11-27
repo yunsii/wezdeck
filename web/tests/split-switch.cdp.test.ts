@@ -47,7 +47,9 @@ async function frames(page: Page, title: string, act: () => Promise<void>) {
     }) as typeof document.startViewTransition
     const t0 = performance.now()
     const tick = () => {
-      const el = document.querySelector<HTMLElement>('.vt-page')
+      const el =
+        document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
+        document.querySelector<HTMLElement>('.vt-page')
       w.f.push({
         t: performance.now() - t0,
         key:
@@ -222,7 +224,9 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
         .poll(
           () =>
             page.evaluate(() => {
-              const el = document.querySelector('.vt-page')
+              const el =
+                document.querySelector('.vt-split-pane.overflow-y-auto') ??
+                document.querySelector('.vt-page')
               return el ? el.scrollHeight - el.clientHeight : 0
             }),
           { timeout: 15_000 },
@@ -230,7 +234,9 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
         .toBeGreaterThan(120)
       await page.waitForTimeout(800)
       await page.evaluate(() => {
-        const el = document.querySelector('.vt-page')
+        const el =
+          document.querySelector('.vt-split-pane.overflow-y-auto') ??
+          document.querySelector('.vt-page')
         if (el) el.scrollTop = 120
       })
       const f = await frames(page, '[data-testid=ticket-pane] h1', () =>
@@ -260,9 +266,17 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       await page.getByTestId('ticket-pane').locator('h1').first().waitFor()
       await page.waitForTimeout(1500)
       const pageScroll = () =>
-        page.evaluate(() => document.querySelector('.vt-page')?.scrollTop ?? -1)
+        page.evaluate(
+          () =>
+            (
+              document.querySelector('.vt-split-pane.overflow-y-auto') ??
+              document.querySelector('.vt-page')
+            )?.scrollTop ?? -1,
+        )
       await page.evaluate(() => {
-        const el = document.querySelector('.vt-page')
+        const el =
+          document.querySelector('.vt-split-pane.overflow-y-auto') ??
+          document.querySelector('.vt-page')
         if (el) el.scrollTop = 300
       })
       const before = await pageScroll()

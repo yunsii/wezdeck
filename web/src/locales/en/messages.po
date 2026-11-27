@@ -123,7 +123,7 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/console-collab.tsx:205
+#: src/features/console-collab.tsx:208
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} queued"
 
@@ -135,7 +135,7 @@ msgstr "{queuedCount} queued"
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
-#: src/features/console-collab.tsx:203
+#: src/features/console-collab.tsx:206
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
 
@@ -201,7 +201,7 @@ msgstr "{untracked} untracked"
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} tokens"
 
-#: src/features/console-collab.tsx:208
+#: src/features/console-collab.tsx:211
 msgid "{waitingCount} waiting"
 msgstr "{waitingCount} waiting"
 
@@ -622,7 +622,7 @@ msgid "Availability and note"
 msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:85
-#: src/features/console-collab.tsx:104
+#: src/features/console-collab.tsx:107
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
@@ -740,7 +740,7 @@ msgstr "Cache"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:225
+#: src/features/console-collab.tsx:228
 #: src/features/session-info.tsx:95
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -829,7 +829,7 @@ msgstr "Checking…"
 msgid "Checkout"
 msgstr "Checkout"
 
-#: src/features/console-collab.tsx:220
+#: src/features/console-collab.tsx:223
 msgid "Child"
 msgstr "Child"
 
@@ -837,8 +837,8 @@ msgstr "Child"
 msgid "Child finished"
 msgstr "Child finished"
 
-#: src/features/console-collab.tsx:200
-#: src/features/console-collab.tsx:215
+#: src/features/console-collab.tsx:203
+#: src/features/console-collab.tsx:218
 msgid "Children"
 msgstr "Children"
 
@@ -1024,7 +1024,7 @@ msgstr "Confirm revoke"
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
-#: src/features/console-collab.tsx:328
+#: src/features/console-collab.tsx:331
 msgid "conflict"
 msgstr "conflict"
 
@@ -1366,7 +1366,7 @@ msgstr "Deliver first message"
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:223
+#: src/features/console-collab.tsx:226
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1885,8 +1885,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:321
-#: src/features/console-collab.tsx:322
+#: src/features/console-collab.tsx:324
+#: src/features/console-collab.tsx:325
 msgid "Integration"
 msgstr "Integration"
 
@@ -2060,7 +2060,7 @@ msgstr "Loading original…"
 #: src/features/chat-controls.tsx:65
 #: src/features/console-activity.tsx:249
 #: src/features/console-collab-run.tsx:210
-#: src/features/console-collab.tsx:111
+#: src/features/console-collab.tsx:114
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
@@ -2165,7 +2165,7 @@ msgstr "May stop to ask you:"
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/console-collab.tsx:333
+#: src/features/console-collab.tsx:336
 msgid "merged"
 msgstr "merged"
 
@@ -2812,7 +2812,7 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
-#: src/features/session-split.tsx:195
+#: src/features/session-split.tsx:199
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
 
@@ -3131,7 +3131,7 @@ msgstr "Reply and continue"
 #~ msgid "Replying…"
 #~ msgstr "Replying…"
 
-#: src/features/console-collab.tsx:221
+#: src/features/console-collab.tsx:224
 msgid "Repo"
 msgstr "Repo"
 
@@ -3348,8 +3348,8 @@ msgstr "Run started"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:245
-#: src/features/console-collab.tsx:246
+#: src/features/console-collab.tsx:248
+#: src/features/console-collab.tsx:249
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "running"
@@ -3477,7 +3477,7 @@ msgstr "Scheduler active"
 msgid "Scheduler ended"
 msgstr "Scheduler ended"
 
-#: src/features/console-collab.tsx:224
+#: src/features/console-collab.tsx:227
 msgid "Scope"
 msgstr "Scope"
 
@@ -3861,7 +3861,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:222
+#: src/features/console-collab.tsx:225
 #: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:65
@@ -4191,13 +4191,13 @@ msgstr "Ticket info"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:111
+#: src/features/console-collab.tsx:114
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
-#: src/features/console-collab.tsx:106
+#: src/features/console-collab.tsx:109
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
 msgid "Tickets"

@@ -89,16 +89,21 @@ export function SwipeActions({
     </Button>
   )
 
+  const swiping = dragging || offset !== 0
   return (
     <div className="relative overflow-hidden" data-swipe={id ?? ''}>
-      {left ? underlay('left', left, openLeft) : null}
-      {right ? underlay('right', right, openRight) : null}
+      {swiping && left ? underlay('left', left, openLeft) : null}
+      {swiping && right ? underlay('right', right, openRight) : null}
       <div
         className="relative bg-brand-surface touch-pan-y"
-        style={{
-          transform: `translateX(${offset}px)`,
-          transition: dragging ? 'none' : 'transform 180ms ease-out',
-        }}
+        style={
+          swiping
+            ? {
+                transform: `translateX(${offset}px)`,
+                transition: dragging ? 'none' : 'transform 180ms ease-out',
+              }
+            : undefined
+        }
         // capture: ContextMenu.Trigger stopPropagation on touchstart would
         // otherwise hide the gesture from a bubbling listener
         onTouchStartCapture={(event) => {

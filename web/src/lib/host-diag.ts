@@ -104,7 +104,9 @@ const pageId = () =>
   ).join(''))
 
 const scroller = () =>
-  document.getElementById('console-main')?.parentElement ?? null
+  document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
+  document.getElementById('console-main')?.parentElement ??
+  null
 
 function findTarget(step: Step): HTMLElement | null {
   if (step.selector) {

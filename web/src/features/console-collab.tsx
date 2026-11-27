@@ -93,7 +93,10 @@ export function TicketReading({
   // another ticket starts at its top, before it paints (the router no
   // longer restores a detail page's scroll: view-transition.ts)
   useLayoutEffect(() => {
-    document.querySelector('.vt-page')?.scrollTo({ top: 0 })
+    ;(
+      document.querySelector('.vt-split-pane.overflow-y-auto') ??
+      document.querySelector('.vt-page')
+    )?.scrollTo({ top: 0 })
   }, [id])
   const data = show.data
   if (!data || !data.ok || !data.ticket) {

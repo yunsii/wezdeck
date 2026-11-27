@@ -192,7 +192,7 @@ export function ConsoleDiagnosticsPage() {
 
   if (wide)
     return (
-      <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-stretch">
+      <div className="grid h-[100cqh] grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-stretch overflow-hidden">
         <SplitColumn
           label={t`Log stream`}
           className="bg-brand-surface [--split-pad:0.75rem]"
@@ -207,7 +207,7 @@ export function ConsoleDiagnosticsPage() {
         </SplitColumn>
         <div
           data-testid="diagnostics-pane"
-          className="vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge bg-brand-surface p-[var(--page-x)]"
+          className="vt-split-pane h-full min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-l border-brand-edge bg-brand-surface p-[var(--page-x)]"
         >
           {detail ?? (
             <p className="py-10 text-center text-caption text-brand-muted">

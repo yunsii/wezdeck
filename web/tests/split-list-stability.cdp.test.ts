@@ -1,6 +1,6 @@
-// covers: web/src/features/session-chat-row.tsx web/src/features/session-chat-group.tsx
-// covers: web/src/features/session-list.tsx web/src/features/session-list-trace.ts web/src/components/deck/split-column.tsx
-// covers: web/src/features/repo-links.tsx
+// covers: web/src/features/session-chat-row.tsx web/src/features/session-chat-group.tsx web/src/features/session-row-swipe.tsx
+// covers: web/src/features/session-list.tsx web/src/features/session-list-trace.ts web/src/features/session-split.tsx web/src/components/deck/split-column.tsx
+// covers: web/src/features/repo-links.tsx web/src/styles/motion.css
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -294,4 +294,61 @@ describe.runIf(attention)('Wide split: list stability', () => {
       await context.close()
     }
   }, 60_000)
+
+  it('switching from 我的 to 会话 keeps .vt-page un-scrolled with isolated compositor panes', async () => {
+    const context = await stack.browser.newContext({
+      viewport: { width: 1292, height: 866 },
+      deviceScaleFactor: 2.625,
+    })
+    const page = await context.newPage()
+    await page.goto(
+      `${base}/zh/console/sessions/st-tall?remote=1#pair=${token}`,
+    )
+    await page.locator('[data-session=st-tall]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(400)
+
+    await page.locator('aside.vt-sidebar a[href*="/console/me"]').click()
+    await page.locator('[data-me=agents]').waitFor({ timeout: 10_000 })
+    await page.locator('[data-me=agents]').click()
+    await page.locator('[data-testid=agents-page]').waitFor({ timeout: 10_000 })
+
+    await page.locator('aside.vt-sidebar a[href*="/console/sessions"]').click()
+    await page.locator('[data-session=st-tall]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(500)
+
+    const state = await page.evaluate(() => {
+      const vtPage = document.querySelector<HTMLElement>('.vt-page')!
+      const pane = document.querySelector<HTMLElement>('.vt-split-pane')!
+      const list = document.querySelector<HTMLElement>('.vt-split-list')!
+      const swipeRow = document.querySelector<HTMLElement>(
+        '.vt-split-list [data-swipe] > div',
+      )
+      return {
+        pageScrollTop: vtPage.scrollTop,
+        pageRoom: vtPage.scrollHeight - vtPage.clientHeight,
+        pageVtName: getComputedStyle(vtPage).viewTransitionName,
+        paneScrollTop: pane.scrollTop,
+        paneRoom: pane.scrollHeight - pane.clientHeight,
+        listPosition: getComputedStyle(list).position,
+        listWillChange: getComputedStyle(list).willChange,
+        idleSwipeTransform: swipeRow
+          ? getComputedStyle(swipeRow).transform
+          : 'none',
+        idleSwipeButtons: document.querySelectorAll(
+          '.vt-split-list [data-testid=chat-swipe-copy], .vt-split-list [data-testid=chat-swipe-mark-read]',
+        ).length,
+      }
+    })
+    expect(state.pageScrollTop).toBe(0)
+    expect(state.pageRoom).toBeLessThanOrEqual(1)
+    expect(state.pageVtName).toBe('none')
+    expect(state.paneRoom).toBeGreaterThan(200)
+    expect(state.paneScrollTop).toBeGreaterThan(200)
+    expect(state.listPosition).not.toBe('sticky')
+    expect(state.listWillChange).toBe('auto')
+    expect(state.idleSwipeTransform).toBe('none')
+    expect(state.idleSwipeButtons).toBe(0)
+
+    await context.close()
+  }, 45_000)
 })

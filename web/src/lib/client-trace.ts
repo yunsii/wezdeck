@@ -96,9 +96,11 @@ function viewport() {
   }
 }
 
-/** The page's main scroller (console shell) and where it stands. */
+/** The active content scroller (wide split pane or main console column). */
 function scroller() {
-  const el = document.getElementById('console-main')?.parentElement
+  const el =
+    document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
+    document.getElementById('console-main')?.parentElement
   if (!el) return null
   return {
     top: Math.round(el.scrollTop),

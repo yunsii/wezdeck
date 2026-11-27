@@ -151,34 +151,38 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
   const switched = useRef(false)
   if (id && first.current && id !== first.current) switched.current = true
   return (
-    <div className="max-md:contents md:grid md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-stretch">
+    <div className="max-md:contents md:grid md:h-[100cqh] md:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] md:items-stretch md:overflow-hidden">
       {wide ? <DeskKeys id={id} /> : null}
       <div
         data-testid="session-list-column"
-        // as tall as the row (the whole conversation): the list inside is
-        // sticky, and sticky stays within its parent — a list-high wrapper
-        // let a long conversation's page scroll carry the list away
-        className={cn('max-md:contents md:self-stretch', id && 'max-md:hidden')}
+        // Independent scroll pane on wide screens: keeping the list out of the
+        // conversation's scroller eliminates sticky+will-change GPU flicker on
+        // HiDPI tablets when the thread jumps to its bottom.
+        className={cn(
+          'max-md:contents md:h-full md:min-h-0',
+          id && 'max-md:hidden',
+        )}
       >
         <SessionList selected={id ?? ''} split={wide} />
       </div>
       <div
-        // the divider is the pane's left edge, top to bottom of the page;
-        // the pane is at least the window tall, whatever the conversation's length
+        // Wide screens give the conversation its own .overflow-y-auto scroller
+        // so chat-scroll / sticky header / composer stay isolated from the list.
         className={cn(
-          'vt-split-pane max-md:contents md:flex md:min-h-[100cqh] md:min-w-0 md:flex-col md:border-l md:border-brand-edge md:pl-[var(--page-x)]',
+          'vt-split-pane max-md:contents md:block md:h-full md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain md:border-l md:border-brand-edge md:pl-[var(--page-x)]',
+          wide && 'overflow-y-auto',
           !id && 'max-md:hidden',
         )}
         data-testid="session-pane"
       >
         {id ? (
           // keyed with the detail: it fades in as a whole on a switch;
-          // flex like the pane, so the detail still fills its height
+          // min-h-full keeps short conversations filling the pane height
           <div
             key={id}
             data-testid="session-detail"
             className={cn(
-              'max-md:contents md:flex md:min-w-0 md:flex-1 md:flex-col',
+              'max-md:contents md:flex md:min-h-full md:min-w-0 md:flex-col',
               wide && switched.current && 'pane-enter',
             )}
           >
