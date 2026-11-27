@@ -287,7 +287,7 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
 describe.runIf(attention)('Wide split: layout', () => {
   const split = splitStack()
 
-  it('the list cards sit as far from the sidebar as from the divider', async () => {
+  it('the flat list rail sits flush between sidebar and divider with symmetric row padding', async () => {
     const page = await (
       await split.browser.newContext({ viewport: { width: 1280, height: 700 } })
     ).newPage()
@@ -298,16 +298,24 @@ describe.runIf(attention)('Wide split: layout', () => {
       const r = (sel: string) =>
         document.querySelector(sel)!.getBoundingClientRect()
       const main = r('#console-main')
-      const card = r('[data-repo]')
+      const repo = r('[data-repo]')
+      const row = document.querySelector<HTMLElement>(
+        '[data-session=sw-short]',
+      )!
+      const style = getComputedStyle(row)
       const pane = r('[data-testid=session-pane]')
       return {
-        left: Math.round(card.left - main.left),
-        right: Math.round(pane.left - card.right),
+        left: Math.round(repo.left - main.left),
+        right: Math.round(pane.left - repo.right),
+        padLeft: Math.round(parseFloat(style.paddingLeft)),
+        padRight: Math.round(parseFloat(style.paddingRight)),
       }
     })
-    // the gutter used to come on top of a full right padding: 10 vs 20
-    expect(gaps.left).toBeGreaterThan(0)
-    expect(Math.abs(gaps.left - gaps.right)).toBeLessThanOrEqual(1)
+    // Full-bleed flat rail (no card inset), with equal inner gutters on both sides
+    expect(gaps.left).toBe(0)
+    expect(gaps.right).toBe(0)
+    expect(gaps.padLeft).toBeGreaterThan(0)
+    expect(Math.abs(gaps.padLeft - gaps.padRight)).toBeLessThanOrEqual(1)
   }, 30_000)
 
   it('我的 has the split divider, full window height', async () => {

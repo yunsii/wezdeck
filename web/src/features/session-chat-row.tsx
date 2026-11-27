@@ -6,7 +6,7 @@ import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, GitFork, Hash, Plus } from 'lucide-react'
+import { CheckCheck, Hash, Plus } from 'lucide-react'
 
 import { useLocale } from '#/lib/locale-context'
 import { recordVisit } from '#/lib/session-visits'
@@ -16,7 +16,7 @@ import { prefetchSession } from './console-sessions'
 import { useCopySessionReference } from './copy-reference'
 import { useDeviceState } from './device-state'
 import type { SessionChat } from './session-chats'
-import { chatTone, workstationHint } from './session-chats'
+import { chatTone } from './session-chats'
 import { clearable, useClearSession } from './session-clear'
 import { useDeleteSession } from './session-delete'
 import { requestNewSession } from './session-new'
@@ -47,7 +47,6 @@ export function ChatRow({
   const client = useQueryClient()
   const row = chat.focus
   const tone = chatTone(row)
-  const hint = workstationHint(chat)
   const warm = () => prefetchSession(client, row.id)
   const selected = row.id === selectedId
   const canClear =
@@ -108,26 +107,15 @@ export function ChatRow({
             />
             <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
               <span className="flex items-baseline justify-between gap-2">
-                <span className="flex min-w-0 items-baseline gap-1.5">
-                  <span
-                    data-testid="chat-title"
-                    className={cn(
-                      'min-w-0 truncate text-body',
-                      chat.unread > 0 ? 'font-semibold' : 'font-medium',
-                    )}
-                  >
-                    {row.title?.trim() ||
-                      agentLabel(row.agent, row.agent_profile)}
-                  </span>
-                  {hint ? (
-                    <span
-                      data-testid="chat-workstation"
-                      className="inline-flex max-w-[40%] min-w-0 shrink items-center gap-0.5 truncate text-meta text-brand-label"
-                    >
-                      <GitFork size={11} aria-hidden className="shrink-0" />
-                      <span className="truncate">{hint}</span>
-                    </span>
-                  ) : null}
+                <span
+                  data-testid="chat-title"
+                  className={cn(
+                    'min-w-0 truncate text-body',
+                    chat.unread > 0 ? 'font-semibold' : 'font-medium',
+                  )}
+                >
+                  {row.title?.trim() ||
+                    agentLabel(row.agent, row.agent_profile)}
                 </span>
                 <span className="shrink-0 text-meta text-brand-label tabular-nums">
                   {timeLabel}

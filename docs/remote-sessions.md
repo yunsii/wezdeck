@@ -59,7 +59,7 @@ still be open in another pane because hooks from a shared app-server can
 inherit its original pane environment. Agy remains visible after a turn ends
 while its managed pane's bash launcher still has an `agy` child process;
 `pane_current_command` alone reports `bash`. The Web session list is one unified full-bleed Telegram-style IM rail across mobile and desktop:
-one flat row per single-session worktree (inline workstation hint only for named directions/purposes) — a worktree running several agent sessions gets a
+one flat row per single-session worktree (session title only, no inline worktree description) — a worktree running several agent sessions gets a
 foldable header plus left-rail-guided stable sub-rows
 (`web/src/features/session-chat-group.tsx`): own avatar, tone, preview,
 unread and direct link, so two busy agents no longer take turns repainting
