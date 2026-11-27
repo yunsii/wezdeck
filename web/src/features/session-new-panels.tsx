@@ -270,13 +270,17 @@ export function NewSessionSetupCard({
                       {
                         value: repo,
                         label: repoLabel,
-                        icon: <FolderGit2 size={20} />,
+                        icon: (
+                          <FolderGit2 size={20} className="text-brand-label" />
+                        ),
                       },
                     ]
                   : repositories.map(({ root, label }) => ({
                       value: root,
                       label,
-                      icon: <FolderGit2 size={20} />,
+                      icon: (
+                        <FolderGit2 size={20} className="text-brand-label" />
+                      ),
                     }))
               }
             />

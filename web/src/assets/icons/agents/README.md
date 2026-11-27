@@ -1,6 +1,6 @@
 # Agent avatars
 
-Brand marks used by the session chat list and 我的 → 智能体 (`AgentAvatar`).
+Brand marks used by `AgentAvatar` across the session chat list, 我的 → 智能体, and 新建会话 selectors. Claude, Codex, Grok, Kimi and gateway render crisp inline vector marks on unified circular plates; Antigravity renders `agy.png` scaled to the same ~64 % optical box inside its circular plate.
 
 | File              | Source                                                                               |
 | ----------------- | ------------------------------------------------------------------------------------ |

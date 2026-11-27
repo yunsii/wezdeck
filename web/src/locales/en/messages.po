@@ -355,10 +355,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:288
-#: src/features/session-new-panels.tsx:295
-#: src/features/session-new-panels.tsx:324
-#: src/features/session-new-panels.tsx:371
+#: src/features/session-new-panels.tsx:292
+#: src/features/session-new-panels.tsx:299
+#: src/features/session-new-panels.tsx:328
+#: src/features/session-new-panels.tsx:375
 msgid "Agent"
 msgstr "Agent"
 
@@ -1785,7 +1785,7 @@ msgstr "Goal"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:334
+#: src/features/session-new-panels.tsx:338
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -3346,7 +3346,7 @@ msgstr "Repo filter"
 #: src/features/session-new-panels.tsx:232
 #: src/features/session-new-panels.tsx:239
 #: src/features/session-new-panels.tsx:266
-#: src/features/session-new-panels.tsx:371
+#: src/features/session-new-panels.tsx:375
 msgid "Repository"
 msgstr "Repository"
 

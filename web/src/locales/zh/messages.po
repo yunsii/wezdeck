@@ -355,10 +355,10 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:288
-#: src/features/session-new-panels.tsx:295
-#: src/features/session-new-panels.tsx:324
-#: src/features/session-new-panels.tsx:371
+#: src/features/session-new-panels.tsx:292
+#: src/features/session-new-panels.tsx:299
+#: src/features/session-new-panels.tsx:328
+#: src/features/session-new-panels.tsx:375
 msgid "Agent"
 msgstr "智能体"
 
@@ -1785,7 +1785,7 @@ msgstr "目标描述"
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-new-panels.tsx:334
+#: src/features/session-new-panels.tsx:338
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
@@ -3346,7 +3346,7 @@ msgstr "仓库筛选"
 #: src/features/session-new-panels.tsx:232
 #: src/features/session-new-panels.tsx:239
 #: src/features/session-new-panels.tsx:266
-#: src/features/session-new-panels.tsx:371
+#: src/features/session-new-panels.tsx:375
 msgid "Repository"
 msgstr "仓库"
 
