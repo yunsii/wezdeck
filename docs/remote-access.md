@@ -412,11 +412,11 @@ primary `master`. The pipeline splits into three stages:
    Cloudflare Worker (`wezdeck-relay-do`, `web/wrangler.relay.jsonc`) bound via
    `script_name`, so routine frontend deploys never recycle the DO or drop live
    WebSocket/WebRTC links (`wezdeck-relay-do` deploys only when `web/src/relay`
-   changes). The frontend Worker keeps its historical `v1` migration; deleting
-   `HostRelay` while its external binding exists is rejected by Cloudflare and
-   is caught by the release smoke gate. When the host `wezdeck-wsl relay`
-   restarts, it drains in-flight RPCs for up to 5 s (`SIGTERM` / close code
-   `4000`), keeps P2P WebRTC peers
+   changes). The frontend Worker has no local DO migration after the split;
+   its old `HostRelay` namespace remains dormant. A bound class cannot also
+   have a delete migration, which the release smoke gate checks. When the host
+   `wezdeck-wsl relay` restarts, it drains in-flight RPCs for up to 5 s
+   (`SIGTERM` / close code `4000`), keeps P2P WebRTC peers
    alive across transient WS blinks, `HostRelay` buffers client RPCs for 3 s
    before broadcasting offline, and browsers transparently retry pre-execution
    offline errors across a 6 s reconnect grace window. If additional commits

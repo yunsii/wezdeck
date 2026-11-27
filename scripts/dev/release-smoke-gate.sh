@@ -44,6 +44,11 @@ if (conflict) {
   console.error(`smoke-gate: Durable Object ${conflict} is bound and scheduled for deletion`)
   process.exit(1)
 }
+const bindings = config.durable_objects?.bindings || []
+if (bindings.length && bindings.every((item) => item.script_name) && config.migrations?.length) {
+  console.error('smoke-gate: frontend Worker has only external Durable Object bindings but still declares local migrations')
+  process.exit(1)
+}
 NODE
   js_count="$(find web/dist/client/assets -maxdepth 1 -name '*.js' 2>/dev/null | wc -l)"
   ((js_count > 0)) || { echo "smoke-gate: no built JS assets in web/dist/client/assets" >&2; exit 1; }

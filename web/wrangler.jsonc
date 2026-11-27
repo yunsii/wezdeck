@@ -11,8 +11,8 @@
   "workers_dev": false,
   // HostRelay lives in its own standalone Worker (`wezdeck-relay-do`,
   // wrangler.relay.jsonc) under class `HostRelayDO` so routine frontend deploys
-  // never recycle the DO and v2 `deleted_classes: ["HostRelay"]` does not
-  // collide with the cross-script binding (Cloudflare error 10061).
+  // never recycle the DO. The old local HostRelay namespace remains dormant;
+  // a migration here would make local preview instantiate a class no longer exported.
   "durable_objects": {
     "bindings": [
       {
@@ -22,5 +22,4 @@
       },
     ],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HostRelay"] }],
 }
