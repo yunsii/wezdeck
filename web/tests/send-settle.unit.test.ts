@@ -121,6 +121,27 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
     expect(settle(failed, [ask('never pasted')], 0, false, NOW)).toHaveLength(1)
   })
 
+  it('uses the browser clock for a fresh resend and the host state on a different browser', () => {
+    const host: Array<SentRecord> = [
+      {
+        id: 'sent-resend',
+        client_op: 'resend',
+        kind: 'message',
+        text: 'hello',
+        created_at: NOW - 65_000,
+        status: 'pending',
+        transcript_end_at_send: 3,
+      },
+    ]
+    const local = [sent('hello', 3, { clientOp: 'resend', at: NOW })]
+    const merged = mergeOutboxPending(local, host)
+    expect(settle(merged, [], 0, false, NOW)[0].state).toBe('queued')
+    expect(settle(merged, [], 0, false, NOW + 60_000)[0].state).toBe('lost')
+    expect(
+      settle(mergeOutboxPending([], host), [], 0, false, NOW)[0].state,
+    ).toBe('queued')
+  })
+
   it('merges host outbox with local optimistic bubbles and deduplicates client_op', () => {
     const host: Array<SentRecord> = [
       {

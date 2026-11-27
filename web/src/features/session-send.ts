@@ -27,6 +27,11 @@ export function mergeOutboxPending(
   hostOutbox?: Array<SentRecord>,
 ): Array<Pending> {
   if (!hostOutbox?.length) return local
+  const localTimes = new Map(
+    local
+      .filter((item) => item.clientOp)
+      .map((item) => [item.clientOp, item.at]),
+  )
   const hostOps = new Set<string>()
   const hostItems: Array<Pending> = hostOutbox.map((rec) => {
     if (rec.client_op) hostOps.add(rec.client_op)
@@ -40,6 +45,7 @@ export function mergeOutboxPending(
       text: rec.text,
       attachments: rec.attachments ?? [],
       at: rec.created_at,
+      browserSentAt: rec.client_op ? localTimes.get(rec.client_op) : undefined,
       after: rec.transcript_end_at_send,
       sentId: rec.id,
       clientOp: rec.client_op,

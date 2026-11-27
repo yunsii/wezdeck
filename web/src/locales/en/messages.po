@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:515
+#: src/features/chat-thread.tsx:516
 msgid "· summary"
 msgstr "· summary"
 
@@ -1010,7 +1010,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:357
+#: src/features/session-send.ts:363
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1142,11 +1142,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:499
+#: src/features/chat-thread.tsx:500
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:500
+#: src/features/chat-thread.tsx:501
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -2047,7 +2047,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:263
+#: src/features/session-send.ts:269
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -4390,7 +4390,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-send.ts:343
+#: src/features/session-send.ts:349
 msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 
@@ -4718,7 +4718,7 @@ msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
 #: src/features/session-detail-parts.tsx:74
-#: src/features/session-send.ts:260
+#: src/features/session-send.ts:266
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 

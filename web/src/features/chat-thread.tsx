@@ -61,6 +61,7 @@ export type Pending = {
   text: string
   /** ms when sent; also the key */
   at: number
+  browserSentAt?: number
   note?: string
   /** uploaded names sent with it: the bubble shows them as the message will */
   attachments?: Array<string>
@@ -540,7 +541,6 @@ function CompactDivider({
  * delivered; now it stays as 未送达 until resent or removed, and a later
  * transcript line still settles it.
  */
-/** how long after sending an unmatched message counts as lost (agent idle) */
 export const LOST_AFTER_MS = 60_000
 
 export function settle(
@@ -580,11 +580,10 @@ export function settleMatches(
         : endsWithNote(text, '')
     )
       return true
-    if (attachments?.length) {
-      if (!attachments.every((name) => text.includes(name))) return false
-      return !typed || text.includes(typed)
-    }
-    return typed.length >= 4 && text.includes(typed)
+    return attachments?.length
+      ? attachments.every((name) => text.includes(name)) &&
+          (!typed || text.includes(typed))
+      : typed.length >= 4 && text.includes(typed)
   }
   const left: Array<Pending> = []
   for (const item of pending) {
@@ -607,9 +606,12 @@ export function settleMatches(
       left.push(item)
       continue
     }
+    const browserSentAt = item.sentId ? item.browserSentAt : item.at
     const waiting = item.state === 'sending' || busy
     left.push(
-      waiting || now - item.at < LOST_AFTER_MS
+      waiting ||
+        browserSentAt === undefined ||
+        now - browserSentAt < LOST_AFTER_MS
         ? item
         : { ...item, state: 'lost' },
     )
