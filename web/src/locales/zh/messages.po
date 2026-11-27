@@ -3660,7 +3660,7 @@ msgstr "已交付"
 
 #: src/features/console-keys.tsx:272
 msgid "Shortcuts"
-msgstr "键盘快捷键"
+msgstr "快捷键"
 
 #. placeholder {0}: ordered.length
 #: src/features/session-title-history.tsx:152
