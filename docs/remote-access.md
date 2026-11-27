@@ -408,11 +408,19 @@ primary `master`. The pipeline splits into three stages:
    connected browsers non-disruptively via `wezdeck-wsl diag --notify-update`
    (shows a sticky "New version available · Reload" toast and waits for a safe
    idle window instead of interrupting active users; pass `--force-reload` for
-   immediate device-check reloads). If additional commits landed on
-   `origin/master` while a batch was shipping, the coordinator loops once to
-   ship all of them together in a single coalesced batch; callers with default
-   `--wait` (override with `--no-wait`) return once their commit is an ancestor
-   of `deployed_sha`.
+   immediate device-check reloads). `HostRelay` runs in its own standalone
+   Cloudflare Worker (`wezdeck-relay-do`, `web/wrangler.relay.jsonc`) bound via
+   `script_name`, so routine frontend deploys never recycle the DO or drop live
+   WebSocket/WebRTC links (`wezdeck-relay-do` deploys only when `web/src/relay`
+   changes). When the host `wezdeck-wsl relay` restarts, it drains in-flight
+   RPCs for up to 5 s (`SIGTERM` / close code `4000`), keeps P2P WebRTC peers
+   alive across transient WS blinks, `HostRelay` buffers client RPCs for 3 s
+   before broadcasting offline, and browsers transparently retry pre-execution
+   offline errors across a 6 s reconnect grace window. If additional commits
+   landed on `origin/master` while a batch was shipping, the coordinator loops
+   once to ship all of them together in a single coalesced batch; callers with
+   default `--wait` (override with `--no-wait`) return once their commit is an
+   ancestor of `deployed_sha`.
 3. **Detached async regression (`scripts/dev/release-async-verify.sh`)**: runs
    `web-affected-tests.sh` outside all locks in a dedicated detached worktree
    and automatically cancels stale runs when a newer batch ships.

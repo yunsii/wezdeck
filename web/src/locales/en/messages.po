@@ -50,7 +50,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/session-composer.tsx:160
+#: src/features/session-composer.tsx:146
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -74,7 +74,7 @@ msgstr "{count} shells running"
 msgid "{count} tool calls"
 msgstr "{count} tool calls"
 
-#: src/features/session-commands.tsx:92
+#: src/features/session-commands.tsx:91
 msgid "{days} d ago"
 msgstr "{days} d ago"
 
@@ -82,7 +82,7 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/session-commands.tsx:90
+#: src/features/session-commands.tsx:89
 msgid "{hours} h ago"
 msgstr "{hours} h ago"
 
@@ -95,7 +95,7 @@ msgstr "{label} {percent}% used"
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
-#: src/features/session-commands.tsx:88
+#: src/features/session-commands.tsx:87
 msgid "{minutes} min ago"
 msgstr "{minutes} min ago"
 
@@ -230,7 +230,7 @@ msgstr "7 d"
 msgid "7-day limit"
 msgstr "7-day limit"
 
-#: src/features/session-todos.tsx:120
+#: src/features/session-todos.tsx:212
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
@@ -306,7 +306,7 @@ msgstr "Active"
 msgid "Active CLI"
 msgstr "Active CLI"
 
-#: src/features/session-todos.tsx:130
+#: src/features/session-todos.tsx:222
 msgid "Add"
 msgstr "Add"
 
@@ -355,7 +355,7 @@ msgstr "Agent name"
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
-#: src/features/session-commands.tsx:224
+#: src/features/session-commands.tsx:225
 #: src/features/session-skills.tsx:77
 msgid "agent settings and execution mode"
 msgstr "agent settings and execution mode"
@@ -443,11 +443,11 @@ msgstr "Answer sent; waiting for the agent to continue…"
 msgid "Antigravity asks to run this"
 msgstr "Antigravity asks to run this"
 
-#: src/features/session-commands.tsx:271
+#: src/features/session-commands.tsx:276
 msgid "Antigravity commands"
 msgstr "Antigravity commands"
 
-#: src/features/session-commands.tsx:279
+#: src/features/session-commands.tsx:285
 msgid "Antigravity commands, sent into the pane"
 msgstr "Antigravity commands, sent into the pane"
 
@@ -708,15 +708,15 @@ msgstr "Cache"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:119
+#: src/features/session-header.tsx:122
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:466
+#: src/features/console-sessions.tsx:481
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
-#: src/features/session-key-panel.tsx:19
+#: src/features/session-key-panel.tsx:16
 msgid "cancel"
 msgstr "cancel"
 
@@ -799,11 +799,11 @@ msgstr "claimed"
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
-#: src/features/session-commands.tsx:271
+#: src/features/session-commands.tsx:276
 msgid "Claude commands"
 msgstr "Claude commands"
 
-#: src/features/session-commands.tsx:280
+#: src/features/session-commands.tsx:286
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
@@ -815,9 +815,7 @@ msgstr "Claude wants to leave plan mode and start on this plan"
 #~ msgid "Clear"
 #~ msgstr "Clear"
 
-#: src/features/session-composer.tsx:310
-#: src/features/session-composer.tsx:311
-#: src/features/session-composer.tsx:316
+#: src/features/session-composer-tools.tsx:121
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -858,20 +856,20 @@ msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
 #: src/features/session-commands.tsx:273
-msgid "Close commands"
-msgstr "Close commands"
+#~ msgid "Close commands"
+#~ msgstr "Close commands"
 
 #: src/features/session-key-panel.tsx:47
-msgid "Close keys"
-msgstr "Close keys"
+#~ msgid "Close keys"
+#~ msgstr "Close keys"
 
 #: src/features/console-keys.tsx:113
 msgid "Close the viewer"
 msgstr "Close the viewer"
 
 #: src/features/session-todos.tsx:98
-msgid "Close to-dos"
-msgstr "Close to-dos"
+#~ msgid "Close to-dos"
+#~ msgstr "Close to-dos"
 
 #: src/features/console-activity.tsx:114
 #: src/features/tickets-view.tsx:136
@@ -913,9 +911,8 @@ msgstr "Command output"
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
-#: src/features/session-commands.tsx:284
-#: src/features/session-composer.tsx:258
-#: src/features/session-composer.tsx:264
+#: src/features/session-commands.tsx:290
+#: src/features/session-composer-tools.tsx:91
 msgid "Commands"
 msgstr "Commands"
 
@@ -945,14 +942,14 @@ msgid "Composer"
 msgstr "Composer"
 
 #: src/features/session-composer.tsx:237
-msgid "Composer tools"
-msgstr "Composer tools"
+#~ msgid "Composer tools"
+#~ msgstr "Composer tools"
 
 #: src/features/me-agent-detail.tsx:339
 msgid "Configured"
 msgstr "Configured"
 
-#: src/features/session-key-panel.tsx:18
+#: src/features/session-key-panel.tsx:15
 msgid "confirm"
 msgstr "confirm"
 
@@ -1026,7 +1023,7 @@ msgstr "Console navigation"
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:116
+#: src/features/session-header.tsx:119
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1042,7 +1039,7 @@ msgstr "Context compacted automatically"
 msgid "Context compactions"
 msgstr "Context compactions"
 
-#: src/features/session-commands.tsx:257
+#: src/features/session-commands.tsx:258
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "context usage"
@@ -1051,7 +1048,7 @@ msgstr "context usage"
 #~ msgid "Continue"
 #~ msgstr "Continue"
 
-#: src/features/session-composer.tsx:95
+#: src/features/session-composer.tsx:81
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:180
 #: src/features/ticket-info.tsx:174
@@ -1080,7 +1077,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:95
+#: src/features/session-composer.tsx:81
 #: src/features/session-permission.tsx:106
 #: src/features/session-permission.tsx:217
 #: src/features/session-permission.tsx:258
@@ -1095,7 +1092,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:87
+#: src/features/session-composer.tsx:73
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1157,7 +1154,7 @@ msgstr "Copy value"
 msgid "Cost"
 msgstr "Cost"
 
-#: src/features/session-commands.tsx:262
+#: src/features/session-commands.tsx:263
 #: src/features/session-skills.tsx:64
 msgid "cost and limits"
 msgstr "cost and limits"
@@ -1387,7 +1384,7 @@ msgstr "Disconnecting…"
 msgid "Done"
 msgstr "Done"
 
-#: src/features/session-todos.tsx:193
+#: src/features/session-todos.tsx:168
 msgid "Done ({doneCount})"
 msgstr "Done ({doneCount})"
 
@@ -1405,7 +1402,7 @@ msgstr "Draft"
 #~ msgid "e.g. ux, ci, i18n"
 #~ msgstr "e.g. ux, ci, i18n"
 
-#: src/features/session-commands.tsx:130
+#: src/features/session-commands.tsx:129
 msgid "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 msgstr "Earlier conversations of this project. The pane switches to the one you pick; this page follows."
 
@@ -1568,8 +1565,8 @@ msgid "Focus session search or return to list"
 msgstr "Focus session search or return to list"
 
 #: src/features/session-composer.tsx:272
-msgid "Follow-ups of this repo"
-msgstr "Follow-ups of this repo"
+#~ msgid "Follow-ups of this repo"
+#~ msgstr "Follow-ups of this repo"
 
 #: src/features/session-delete.tsx:126
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
@@ -1664,7 +1661,7 @@ msgstr "Handoff failed"
 msgid "Headless worker"
 msgstr "Headless worker"
 
-#: src/features/session-todos.tsx:193
+#: src/features/session-todos.tsx:168
 msgid "Hide done"
 msgstr "Hide done"
 
@@ -1744,7 +1741,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:291
+#: src/features/session-composer-tools.tsx:65
 msgid "Images"
 msgstr "Images"
 
@@ -1781,7 +1778,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/session-composer.tsx:173
+#: src/features/session-composer.tsx:159
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -1815,9 +1812,13 @@ msgstr "Interaction debugging"
 msgid "internet"
 msgstr "internet"
 
-#: src/features/session-key-panel.tsx:20
+#: src/features/session-key-panel.tsx:17
 msgid "interrupt"
 msgstr "interrupt"
+
+#: src/features/session-actions.tsx:58
+msgid "Interrupt"
+msgstr "Interrupt"
 
 #: src/features/session-info.tsx:279
 msgid "is queued"
@@ -1835,7 +1836,7 @@ msgstr "Jump to your message: {text}"
 msgid "Just compacted; updates after the next reply"
 msgstr "Just compacted; updates after the next reply"
 
-#: src/features/session-commands.tsx:87
+#: src/features/session-commands.tsx:86
 msgid "just now"
 msgstr "just now"
 
@@ -1852,8 +1853,8 @@ msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
 #: src/features/session-composer.tsx:251
-msgid "Keys"
-msgstr "Keys"
+#~ msgid "Keys"
+#~ msgstr "Keys"
 
 #: src/features/me-agent-detail.tsx:131
 msgid "Kimi API key"
@@ -1940,7 +1941,7 @@ msgstr "Light"
 msgid "Limits"
 msgstr "Limits"
 
-#: src/features/session-header.tsx:120
+#: src/features/session-header.tsx:123
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1978,9 +1979,9 @@ msgstr "Loading original…"
 #: src/features/me-agents.tsx:85
 #: src/features/me-autotitle.tsx:332
 #: src/features/repo-links.tsx:309
-#: src/features/session-commands.tsx:133
+#: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:221
+#: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
@@ -2017,7 +2018,7 @@ msgstr "Main checkout"
 msgid "manage MCP servers"
 msgstr "manage MCP servers"
 
-#: src/features/session-commands.tsx:229
+#: src/features/session-commands.tsx:230
 #: src/features/session-skills.tsx:78
 msgid "manage tool permission rules"
 msgstr "manage tool permission rules"
@@ -2046,7 +2047,7 @@ msgstr "Manual"
 msgid "Manual /rename"
 msgstr "Manual /rename"
 
-#: src/features/session-todos.tsx:175
+#: src/features/session-todos.tsx:150
 msgid "Mark done"
 msgstr "Mark done"
 
@@ -2075,11 +2076,17 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:522
+#: src/features/session-composer.tsx:353
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:455
+#: src/features/session-composer-tools.tsx:43
+#: src/features/session-composer-tools.tsx:45
+#: src/features/session-composer-tools.tsx:57
+msgid "Message actions"
+msgstr "Message actions"
+
+#: src/features/session-composer.tsx:286
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2247,7 +2254,7 @@ msgstr "New ticket"
 msgid "New ticket (n)"
 msgstr "New ticket (n)"
 
-#: src/features/session-todos.tsx:108
+#: src/features/session-todos.tsx:199
 msgid "New to-do"
 msgstr "New to-do"
 
@@ -2316,7 +2323,7 @@ msgstr "No changes"
 msgid "No device has asked for access yet."
 msgstr "No device has asked for access yet."
 
-#: src/features/session-commands.tsx:140
+#: src/features/session-commands.tsx:139
 msgid "No earlier conversations in this project"
 msgstr "No earlier conversations in this project"
 
@@ -2481,7 +2488,7 @@ msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 msgid "Nothing matches"
 msgstr "Nothing matches"
 
-#: src/features/session-todos.tsx:147
+#: src/features/session-todos.tsx:117
 msgid "Nothing to follow up in this repo."
 msgstr "Nothing to follow up in this repo."
 
@@ -2533,7 +2540,7 @@ msgstr "Only this trace"
 msgid "Open image"
 msgstr "Open image"
 
-#: src/features/session-commands.tsx:164
+#: src/features/session-commands.tsx:163
 msgid "open in a pane"
 msgstr "open in a pane"
 
@@ -2569,7 +2576,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/console-sessions.tsx:489
+#: src/features/console-sessions.tsx:504
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2631,7 +2638,7 @@ msgstr "Other"
 msgid "Other worktrees"
 msgstr "Other worktrees"
 
-#: src/features/session-commands.tsx:219
+#: src/features/session-commands.tsx:220
 #: src/features/session-skills.tsx:75
 msgid "outline a plan before editing"
 msgstr "outline a plan before editing"
@@ -2640,7 +2647,7 @@ msgstr "outline a plan before editing"
 msgid "Output"
 msgstr "Output"
 
-#: src/features/session-header.tsx:118
+#: src/features/session-header.tsx:121
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2724,7 +2731,7 @@ msgstr "Pick a chat on the left. j / k move through the list."
 #~ msgid "Pick a session on the left. j / k move through the list."
 #~ msgstr "Pick a session on the left. j / k move through the list."
 
-#: src/features/session-commands.tsx:254
+#: src/features/session-commands.tsx:255
 #: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "pick an earlier one"
@@ -2801,11 +2808,11 @@ msgstr "Purpose"
 msgid "Put [{label}] at the caret"
 msgstr "Put [{label}] at the caret"
 
-#: src/features/session-todos.tsx:163
+#: src/features/session-todos.tsx:137
 msgid "Put into the message"
 msgstr "Put into the message"
 
-#: src/features/session-todos.tsx:164
+#: src/features/session-todos.tsx:138
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
@@ -2821,15 +2828,13 @@ msgstr "Queued messages"
 msgid "Quick controls"
 msgstr "Quick controls"
 
-#: src/features/session-composer.tsx:245
-#: src/features/session-key-panel.tsx:45
-#: src/features/session-key-panel.tsx:56
+#: src/features/session-key-panel.tsx:40
 msgid "Quick keys"
 msgstr "Quick keys"
 
 #: src/features/session-key-panel.tsx:45
-msgid "Quick keys unavailable"
-msgstr "Quick keys unavailable"
+#~ msgid "Quick keys unavailable"
+#~ msgstr "Quick keys unavailable"
 
 #: src/features/ticket-keys.tsx:96
 msgid "Quiet for over a week ({count})"
@@ -2965,7 +2970,7 @@ msgstr "Rename"
 msgid "Rename via /rename in the agent pane"
 msgstr "Rename via /rename in the agent pane"
 
-#: src/features/session-todos.tsx:210
+#: src/features/session-todos.tsx:185
 msgid "Reopen"
 msgstr "Reopen"
 
@@ -3081,7 +3086,7 @@ msgstr "Resend"
 msgid "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
 msgstr "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
 
-#: src/features/session-header.tsx:107
+#: src/features/session-header.tsx:110
 msgid "resets {reset}"
 msgstr "resets {reset}"
 
@@ -3127,7 +3132,7 @@ msgstr "Result"
 msgid "Resume / fresh hit"
 msgstr "Resume / fresh hit"
 
-#: src/features/session-commands.tsx:125
+#: src/features/session-commands.tsx:124
 msgid "Resume a conversation"
 msgstr "Resume a conversation"
 
@@ -3381,7 +3386,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:93
-#: src/features/session-composer.tsx:531
+#: src/features/session-composer.tsx:362
 msgid "Send"
 msgstr "Send"
 
@@ -3394,8 +3399,8 @@ msgid "Send Ctrl+B: the running command keeps going in the background and the ag
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
 #: src/features/session-composer.tsx:246
-msgid "Send Enter, Esc or Ctrl+C into the agent pane"
-msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
+#~ msgid "Send Enter, Esc or Ctrl+C into the agent pane"
+#~ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
 #: src/features/session-new.tsx:462
 msgid "Send the first message below to create the workspace and start the agent."
@@ -3423,6 +3428,11 @@ msgstr "Sending the handoff brief…"
 #: src/features/ticket-runs.tsx:133
 msgid "Session"
 msgstr "Session"
+
+#: src/features/session-actions.tsx:40
+#: src/features/session-header.tsx:280
+msgid "Session actions"
+msgstr "Session actions"
 
 #: src/features/host-quick-controls.tsx:90
 msgid "Session active"
@@ -3460,8 +3470,8 @@ msgstr "Session id"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "Session ID, tmux, transcript file and capabilities"
 
-#: src/features/session-header.tsx:209
-#: src/features/session-header.tsx:232
+#: src/features/session-header.tsx:229
+#: src/features/session-header.tsx:293
 #: src/features/session-info.tsx:289
 msgid "Session info"
 msgstr "Session info"
@@ -3480,7 +3490,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
-#: src/features/session-header.tsx:196
+#: src/features/session-header.tsx:216
 #: src/features/session-list.tsx:276
 #: src/features/session-list.tsx:397
 #: src/features/session-new-job.tsx:399
@@ -3556,6 +3566,7 @@ msgstr "Site navigation"
 msgid "Size"
 msgstr "Size"
 
+#: src/features/session-composer-tools.tsx:106
 #: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "Skills"
@@ -3573,8 +3584,8 @@ msgid "Skip to content"
 msgstr "Skip to content"
 
 #: src/features/session-composer.tsx:259
-msgid "Slash commands for Claude"
-msgstr "Slash commands for Claude"
+#~ msgid "Slash commands for Claude"
+#~ msgstr "Slash commands for Claude"
 
 #: src/features/me-host.tsx:154
 msgid "Socket"
@@ -3588,7 +3599,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:473
+#: src/features/console-sessions.tsx:488
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3643,8 +3654,8 @@ msgstr "Start a blank agent process in this pane"
 #~ msgid "Start a blank conversation?"
 #~ msgstr "Start a blank conversation?"
 
-#: src/features/session-commands.tsx:214
-#: src/features/session-commands.tsx:251
+#: src/features/session-commands.tsx:215
+#: src/features/session-commands.tsx:252
 #: src/features/session-skills.tsx:60
 #: src/features/session-skills.tsx:61
 #: src/features/session-skills.tsx:73
@@ -3727,8 +3738,8 @@ msgstr "submitted"
 msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
-#: src/features/session-commands.tsx:209
-#: src/features/session-commands.tsx:241
+#: src/features/session-commands.tsx:210
+#: src/features/session-commands.tsx:242
 #: src/features/session-skills.tsx:59
 #: src/features/session-skills.tsx:72
 msgid "summarise the context"
@@ -3737,6 +3748,10 @@ msgstr "summarise the context"
 #: src/features/ticket-reply.tsx:253
 msgid "Summary"
 msgstr "Summary"
+
+#: src/features/session-actions.tsx:81
+msgid "Switch agent"
+msgstr "Switch agent"
 
 #: src/features/session-switcher.tsx:226
 #~ msgid "Switch chat"
@@ -3754,7 +3769,7 @@ msgstr "Switch mode"
 #~ msgid "Switch session (Alt+g)"
 #~ msgstr "Switch session (Alt+g)"
 
-#: src/features/session-commands.tsx:234
+#: src/features/session-commands.tsx:235
 #: src/features/session-skills.tsx:65
 #: src/features/session-skills.tsx:76
 msgid "switch the model"
@@ -3805,8 +3820,8 @@ msgid "Tap an option to send its number into the agent pane."
 msgstr "Tap an option to send its number into the agent pane."
 
 #: src/features/session-key-panel.tsx:52
-msgid "Tap to send into the agent pane"
-msgstr "Tap to send into the agent pane"
+#~ msgid "Tap to send into the agent pane"
+#~ msgstr "Tap to send into the agent pane"
 
 #: src/features/session-info.tsx:99
 msgid "Tappable Ask options"
@@ -3833,6 +3848,10 @@ msgstr "Technical details"
 msgid "Terminal"
 msgstr "Terminal"
 
+#: src/features/session-actions.tsx:69
+msgid "Terminal keys"
+msgstr "Terminal keys"
+
 #: src/features/session-empty.tsx:72
 msgid "Terminal screen"
 msgstr "Terminal screen"
@@ -3846,7 +3865,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:284
+#: src/features/console-sessions.tsx:285
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -3898,7 +3917,7 @@ msgstr "The pane is restarting; the agent resumes in a moment"
 msgid "The previous session request expired. Start a new one."
 msgstr "The previous session request expired. Start a new one."
 
-#: src/features/session-commands.tsx:60
+#: src/features/session-commands.tsx:59
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 
@@ -3910,8 +3929,8 @@ msgid "Theme"
 msgstr "Theme"
 
 #: src/features/session-todos.tsx:101
-msgid "They stay with the repo, so any session can pick them up."
-msgstr "They stay with the repo, so any session can pick them up."
+#~ msgid "They stay with the repo, so any session can pick them up."
+#~ msgstr "They stay with the repo, so any session can pick them up."
 
 #: src/features/chat-command.tsx:181
 #: src/features/chat-command.tsx:187
@@ -3940,7 +3959,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/console-sessions.tsx:280
+#: src/features/console-sessions.tsx:281
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -3950,7 +3969,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:467
+#: src/features/console-sessions.tsx:482
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4080,16 +4099,15 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/session-todos.tsx:243
+#: src/features/session-todos.tsx:249
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:271
-#: src/features/session-composer.tsx:277
+#: src/features/session-header.tsx:259
 msgid "To-dos"
 msgstr "To-dos"
 
-#: src/features/session-todos.tsx:96
+#: src/features/session-todos.tsx:100
 msgid "To-dos of {repo}"
 msgstr "To-dos of {repo}"
 
@@ -4097,7 +4115,7 @@ msgstr "To-dos of {repo}"
 #~ msgid "To-dos of {repo}: they stay with the repo, any session can pick them up"
 #~ msgstr "To-dos of {repo}: they stay with the repo, any session can pick them up"
 
-#: src/features/session-todos.tsx:96
+#: src/features/session-todos.tsx:100
 msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
 
@@ -4177,13 +4195,13 @@ msgstr "Turn {turns}"
 msgid "Turn on write access in Settings to edit"
 msgstr "Turn on write access in Settings to edit"
 
-#: src/features/session-commands.tsx:277
+#: src/features/session-commands.tsx:283
 msgid "Turn on write access in Settings to send commands"
 msgstr "Turn on write access in Settings to send commands"
 
 #: src/features/session-key-panel.tsx:51
-msgid "Turn on write access in Settings to send these keys"
-msgstr "Turn on write access in Settings to send these keys"
+#~ msgid "Turn on write access in Settings to send these keys"
+#~ msgstr "Turn on write access in Settings to send these keys"
 
 #: src/features/remote-badge.tsx:82
 msgid "TURN relay"
@@ -4207,7 +4225,7 @@ msgstr "Unavailable"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-composer.tsx:175
+#: src/features/session-composer.tsx:161
 msgid "Undo"
 msgstr "Undo"
 
@@ -4223,8 +4241,8 @@ msgstr "Unlock"
 msgid "Unlock to resume auto-titling"
 msgstr "Unlock to resume auto-titling"
 
-#: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:183
+#: src/features/session-commands.tsx:160
+#: src/features/session-header.tsx:203
 #: src/features/session-info.tsx:217
 msgid "Untitled session"
 msgstr "Untitled session"
@@ -4250,7 +4268,7 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/session-composer.tsx:149
+#: src/features/session-composer.tsx:135
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -4377,7 +4395,7 @@ msgstr "Wall total"
 msgid "Warnings"
 msgstr "Warnings"
 
-#: src/features/console-sessions.tsx:272
+#: src/features/console-sessions.tsx:273
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 
@@ -4476,7 +4494,7 @@ msgstr "Why — the planner reads this (required)"
 msgid "Why reject"
 msgstr "Why reject"
 
-#: src/features/session-commands.tsx:246
+#: src/features/session-commands.tsx:247
 msgid "with what to keep"
 msgstr "with what to keep"
 

@@ -4,13 +4,11 @@
 import handler from '@tanstack/react-start/server-entry'
 
 import { localeRedirect } from './locale-redirect'
-import { relayFetch } from './relay/host-relay'
-import type { RelayEnv } from './relay/host-relay'
-
-export { HostRelay } from './relay/host-relay'
+import { relayFetch } from './relay/relay-fetch'
+import type { RelayFetchEnv } from './relay/relay-fetch'
 
 export default {
-  fetch(request: Request, env: RelayEnv) {
+  fetch(request: Request, env: RelayFetchEnv) {
     if (new URL(request.url).pathname.startsWith('/relay/')) {
       return relayFetch(request, env)
     }

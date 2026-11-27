@@ -162,7 +162,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sheet open), `Ctrl/⌘+N` starts `/new` in the current agent and
    `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane; `c` opens
    the full 新会话 flow for creating or reusing a worktree,
-   and the composer 快捷 panel exposes both same-pane actions on touch
+   and the header's 会话操作 Sheet exposes both same-pane actions on touch
    screens: 新对话 (`/new`, current agent process) and 新进程 (fresh process).
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
@@ -441,19 +441,20 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   wobble (< 8 px) never counts as scrolling away; a finger dragging the
   history down keeps it unpinned until it lifts (re-pinning from scroll
   events mid-drag flapped the state every frame). The follow observes the
-  whole page content, so a growing composer (toolbar, thumbnails, a long
+  whole page content, so a growing composer (thumbnails, a long
   draft) keeps a pinned thread at the bottom too. The reveal cursor never
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
-  the page reopened. One toolbar row above the composer holds every tool:
-  快捷 (always shown; disabled with a hint until write access is enabled on this device),
-  命令 / 待办 / 能力 when the session offers them, then 图片 once this device
-  may write. Picked thumbnails stay in their own row. Tool panels attach to
-  the input surface with one shared header and close affordance; the `/`
-  completion list uses the same surface treatment. 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
-  `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
-  closes once a key is sent (diagnostics are pulled by the host, see
-  remote-sessions.md "Diagnostics on demand"). Choices (digits,
+  the page reopened. The composer keeps a single input row: `＋` opens a
+  portalled Sheet for images, commands, skills and clearing the draft;
+  picked thumbnails remain above the input. The header's 待办 counter opens
+  a repository-scoped Sheet with a flat list and a sticky add field. The
+  header's `⋯` opens session actions, with the running interrupt visible
+  and terminal keys / agent switching under expandable rows. These Sheets
+  overlay the thread instead of growing the composer; open events use
+  `session-controls` with a menu type. Terminal keys include `Enter` confirm,
+  `Esc` cancel and `Ctrl+C` interrupt (host `key` RPC; `C-c` stops Grok).
+  Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
   permission prompts get tap targets; inline bodies clip so swipes scroll
   the thread; full text opens in a Sheet (`session-permission.tsx`). The composer is
@@ -469,7 +470,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared the moment send is
   tapped (back in mid-upload found the sent draft), put back on a failed
   upload / send, synced across mounted copies (`use-draft.ts` events); ×
-  clears with an undo (`composer-clear` trace); Esc blurs the field; errors have a
+  clears from the `＋` menu with an undo (`composer-clear` trace); Esc blurs the field; errors have a
   one-tap copy; a "terminal was just used" refusal counts down and resends
   (`session-send.ts`)
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller

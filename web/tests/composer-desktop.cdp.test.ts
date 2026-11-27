@@ -132,15 +132,15 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await page.keyboard.press('Space')
     expect(await box.evaluate((el) => el === document.activeElement)).toBe(true)
     expect(await box.inputValue()).toBe('')
-    // on a button Space still presses it (opens 快捷), focus stays there
-    const keys = page.getByRole('button', { name: '快捷键', exact: true })
+    // on a button Space still presses it (opens 会话操作), focus stays there
+    const keys = page.getByTestId('session-actions-button')
     await keys.focus()
     await page.keyboard.press('Space')
-    await page.getByTestId('session-quick-keys').waitFor({ timeout: 2_000 })
+    await page.getByTestId('session-actions-sheet').waitFor({ timeout: 2_000 })
     expect(await box.evaluate((el) => el === document.activeElement)).toBe(
       false,
     )
-    await keys.click()
+    await page.keyboard.press('Escape')
     await box.click()
     await box.pressSequentially('第一行')
     await page.keyboard.press('Shift+Enter')
@@ -214,13 +214,13 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
 
     await shortcutsSheet(page)
 
-    // Ctrl+N from inside the composer enters 新会话, Esc returns
+    // Ctrl+N from inside the composer runs /new in this pane.
     await box.click()
     await page.keyboard.press('Control+KeyN')
-    const newView = page.getByTestId('new-session-view')
-    await newView.waitFor({ timeout: 2_000 })
-    await page.keyboard.press('Escape')
-    await newView.waitFor({ state: 'hidden', timeout: 2_000 })
+    await expect
+      .poll(() => tmux('capture-pane', '-p', '-t', 'fresh'))
+      .toContain('/new')
+    expect(page.url()).toContain('/console/sessions/fresh-session')
 
     // Alt+/ focuses the session list search box on wide screens
     await page.evaluate(() => (document.activeElement as HTMLElement).blur())
@@ -335,6 +335,11 @@ async function caretAtEnd(box: Locator) {
 /** a reload keeps the picture with the draft, not only its [图片1] */
 async function pickSurvivesReload(page: Page) {
   const box = page.getByLabel('发给 Agent 的消息')
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem('wezdeck.draft.fresh-session'),
+    ),
+  ).toBe('第一行\n第二行 [图片1] ')
   await page.reload()
   await box.waitFor({ timeout: 15_000 })
   await expect
@@ -342,7 +347,12 @@ async function pickSurvivesReload(page: Page) {
       timeout: 5_000,
     })
     .toBe(1)
-  expect(await box.inputValue()).toBe('第一行\n第二行 [图片1] ')
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem('wezdeck.draft.fresh-session'),
+    ),
+  ).toBe('第一行\n第二行 [图片1] ')
+  await expect.poll(() => box.inputValue()).toBe('第一行\n第二行 [图片1] ')
   await box.click()
 }
 
@@ -388,24 +398,26 @@ async function clearThenLeaveMidUpload(page: Page) {
   await box.waitFor({ timeout: 15_000 })
   const clear = page.getByTestId('composer-clear')
   expect(await clear.count()).toBe(0)
-  // the composer sits evenly: toolbar buttons above, status bar below
-  // (polled: the bar comes with the session reply, after the composer)
-  const gaps = () =>
+  // The input keeps its one-line format and the status sits directly below.
+  const layout = () =>
     page.evaluate(() => {
-      const field = document.querySelector('[data-text-field]')
-      const button = field?.previousElementSibling?.querySelector('button')
+      const field = document.querySelector('[data-text-field="true"]')
       const pill = document.querySelector(
         '[data-testid=session-statusbar] .session-tag',
       )
-      if (!field || !button || !pill) return null
+      if (!field || !pill) return null
       const f = field.getBoundingClientRect()
-      return Math.abs(
-        f.top -
-          button.getBoundingClientRect().bottom -
-          (pill.getBoundingClientRect().top - f.bottom),
-      )
+      return {
+        height: f.height,
+        gap: pill.getBoundingClientRect().top - f.bottom,
+      }
     })
-  await expect.poll(gaps, { timeout: 10_000 }).toBeLessThan(1.5)
+  await expect
+    .poll(async () => (await layout())?.height, { timeout: 10_000 })
+    .toBe(48)
+  await expect
+    .poll(async () => (await layout())?.gap, { timeout: 10_000 })
+    .toBeGreaterThan(0)
   // the header is opaque: content scrolling under it never shows through
   const headerAlpha = await page
     .getByTestId('session-header')
@@ -418,6 +430,7 @@ async function clearThenLeaveMidUpload(page: Page) {
     })
   expect(headerAlpha).toBe(1)
   await box.fill('要清掉的草稿')
+  await page.getByTestId('composer-tools-button').click()
   await clear.click()
   expect(await box.inputValue()).toBe('')
   expect(

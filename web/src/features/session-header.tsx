@@ -6,7 +6,7 @@
 // are. The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { Info } from 'lucide-react'
+import { Info, ListTodo, MoreHorizontal } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 
@@ -24,6 +24,9 @@ import {
 } from './session-usage'
 import { useSessionKeys, useSessionNav } from './session-switcher'
 import { Button } from '#/components/ui/button'
+import { trace } from '#/lib/client-trace'
+import { SessionActionsSheet } from './session-actions'
+import { TodoSheet, useTodos } from './session-todos'
 
 const tokens = (n: number) =>
   n >= 10_000 ? `${(n / 10_000).toFixed(n >= 100_000 ? 0 : 1)} 万` : String(n)
@@ -131,6 +134,10 @@ export function SessionHeader({
   onRename,
   renameDisabled,
   visibleUsage,
+  canWrite,
+  onRun,
+  onNewConversation,
+  onTodoUse,
 }: {
   id: string
   data: Detail | undefined
@@ -139,9 +146,22 @@ export function SessionHeader({
   onRename?: (title: string) => void
   visibleUsage?: string
   renameDisabled?: boolean
+  canWrite: boolean
+  onRun: (
+    action: 'key' | 'session.restart',
+    args: Record<string, unknown>,
+  ) => Promise<boolean>
+  onNewConversation: () => Promise<boolean>
+  onTodoUse?: (text: string) => void
 }) {
   const { t } = useLingui()
   const [infoOpen, setInfoOpen] = useState(false)
+  const [todosOpen, setTodosOpen] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const todos = useTodos(id, Boolean(data))
+  const todoCount = (todos.data?.todos ?? []).filter(
+    (todo) => !todo.done,
+  ).length
   const focusSearchOrList = useCallback(() => {
     const search = document.querySelector<HTMLInputElement>(
       '[data-testid=chat-search]',
@@ -228,11 +248,52 @@ export function SessionHeader({
           <Button
             variant="plain"
             type="button"
+            onClick={() => {
+              trace('session-controls', {
+                action: 'open',
+                type: 'todos',
+                count: todoCount,
+              })
+              setTodosOpen(true)
+            }}
+            aria-label={t`To-dos`}
+            aria-haspopup="dialog"
+            data-testid="session-todos-button"
+            className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
+          >
+            <ListTodo size={19} aria-hidden />
+            {todoCount ? (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-brand-running px-0.5 text-center text-meta leading-4 text-brand-deck tabular-nums">
+                {todoCount}
+              </span>
+            ) : null}
+          </Button>
+        ) : null}
+        {data ? (
+          <Button
+            variant="plain"
+            type="button"
+            onClick={() => {
+              trace('session-controls', { action: 'open', type: 'actions' })
+              setActionsOpen(true)
+            }}
+            aria-label={t`Session actions`}
+            aria-haspopup="dialog"
+            data-testid="session-actions-button"
+            className="-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
+          >
+            <MoreHorizontal size={20} aria-hidden />
+          </Button>
+        ) : null}
+        {data ? (
+          <Button
+            variant="plain"
+            type="button"
             onClick={() => setInfoOpen(true)}
             aria-label={t`Session info`}
             aria-haspopup="dialog"
             data-testid="session-info-button"
-            className="-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
+            className="hidden size-10 shrink-0 items-center justify-center rounded-full text-brand-muted md:inline-flex"
           >
             <Info size={19} aria-hidden />
           </Button>
@@ -240,13 +301,32 @@ export function SessionHeader({
       </div>
       <SessionUsageAlerts data={data} visibleUsage={visibleUsage} />
       {data ? (
-        <SessionInfo
-          data={data}
-          open={infoOpen}
-          onClose={() => setInfoOpen(false)}
-          onRename={onRename}
-          renameDisabled={renameDisabled}
-        />
+        <>
+          <SessionInfo
+            data={data}
+            open={infoOpen}
+            onClose={() => setInfoOpen(false)}
+            onRename={onRename}
+            renameDisabled={renameDisabled}
+          />
+          <TodoSheet
+            session={id}
+            writable={canWrite}
+            open={todosOpen}
+            onOpenChange={setTodosOpen}
+            onUse={onTodoUse}
+          />
+          <SessionActionsSheet
+            id={id}
+            agent={data.agent}
+            running={data.status === 'running'}
+            disabled={!canWrite}
+            open={actionsOpen}
+            onOpenChange={setActionsOpen}
+            onRun={onRun}
+            onNewConversation={onNewConversation}
+          />
+        </>
       ) : null}
     </header>
   )

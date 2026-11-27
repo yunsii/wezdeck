@@ -148,6 +148,8 @@ export function useSkillCompletion(
     chip: agent ? (
       <SkillsChip count={reply?.skills.length} onOpen={() => setSheet(true)} />
     ) : null,
+    openSkills: () => setSheet(true),
+    hasSkills: Boolean(agent),
     sheet: agent ? (
       <SkillsSheet
         open={sheet}

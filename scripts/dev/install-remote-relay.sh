@@ -96,6 +96,7 @@ case "$MODE" in
     cd "$REPO_ROOT/web"
     printf '%s' "$WEZDECK_RELAY_HOST_TOKEN" | corepack pnpm exec wrangler secret put RELAY_HOST_TOKEN
     printf '%s' "$WEZDECK_RELAY_CLIENT_TOKEN" | corepack pnpm exec wrangler secret put RELAY_CLIENT_TOKEN
+    printf '%s' "$WEZDECK_RELAY_CLIENT_TOKEN" | corepack pnpm exec wrangler secret put RELAY_CLIENT_TOKEN -c wrangler.relay.jsonc
     ;;
   pair)
     load_tokens

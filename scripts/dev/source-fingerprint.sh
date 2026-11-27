@@ -9,11 +9,11 @@
 #   scripts/dev/source-fingerprint.sh native/wezdeck-wsl
 #   scripts/dev/source-fingerprint.sh web            # tests excluded (below)
 set -euo pipefail
-dir="${1:?usage: source-fingerprint.sh DIR}"
+(($# >= 1)) || { echo "usage: source-fingerprint.sh DIR [DIR...]" >&2; exit 2; }
 # what the build is made of: web tests change no build, so they must not
 # force a stack restart
-specs=("$dir")
-[[ "$dir" == web ]] && specs+=(':(exclude)web/tests' ':(exclude)web/vitest.*')
+specs=("$@")
+[[ "$#" -eq 1 && "$1" == web ]] && specs+=(':(exclude)web/tests' ':(exclude)web/vitest.*')
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo"
 commit="$(git log -1 --format=%h -- "${specs[@]}")"
