@@ -180,9 +180,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 7. **Writes**: ticket reply (and reply-and-continue) plus session send /
    keys, signed by an approved device key; close / re-run / new ticket still
    deferred.
-8. **Notifications: Web Push** for "waiting on you" / "failed" plus
-   `setAppBadge` count; subscription stored in the HostRelay DO, pushed when
-   the host relays the event. iOS needs 16.4+ and an installed app.
+8. **Notifications: unified Web Push** (sessions + collab tickets) via
+   `wezdeck-wsl` (`push_watcher.go`) → `HostRelay` DO (`host-push.ts`,
+   `web-push.ts`, `/relay/push/*`) → `sw.js` (`push` + `setAppBadge` + deep-link),
+   configured under `/console/me/notifications` (`me-notifications.tsx`;
+   iOS 16.4+ installed app; clipped titles only, no prompts/diffs).
 
 ## PWA plumbing (phase 1)
 

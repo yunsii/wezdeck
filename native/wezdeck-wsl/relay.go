@@ -167,6 +167,7 @@ func runRelay() error {
 	cleanupControl := r.serveControl()
 	defer cleanupControl()
 	go startAutoTitler(rootCtx)
+	go r.runPushWatcher(rootCtx)
 
 	backoff := 250 * time.Millisecond
 	for {

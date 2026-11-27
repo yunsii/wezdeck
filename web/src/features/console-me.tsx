@@ -8,7 +8,6 @@ import { BackButton } from '#/components/deck/back-button'
 import { SplitColumn } from '#/components/deck/split-column'
 import { StickyBar } from '#/components/deck/sticky-bar'
 
-import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
 import { rememberLocale } from '#/lib/locale-pref'
 import { useGoBack } from '#/lib/go-back'
@@ -21,7 +20,7 @@ import { useCaretShape } from '#/lib/caret-pref'
 import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
-import { DeviceList } from './me-devices'
+import { DeviceAccess } from './me-device-access'
 import { RemoteBadge } from './remote-badge'
 import { UsageCard } from './console-usage'
 import { HostPage, useHostSummary } from './me-host'
@@ -31,82 +30,13 @@ import { usePreferredAgentProfile } from './agent-profiles'
 import { AgentsPage } from './me-agents'
 import { AutoTitlePage, useAutoTitleSummary } from './me-autotitle'
 import { EntryRow } from './me-entry-row'
-
-function DeviceAccess() {
-  const { t } = useLingui()
-  const device = useDeviceState()
-  const command = `scripts/dev/install-remote-relay.sh --approve ${device.id ?? ''}`
-  if (device.state === 'checking')
-    return <p className="text-caption text-brand-muted">{t`Checking…`}</p>
-  if (device.state === 'approved' && device.id === 'local')
-    return (
-      <div className="grid gap-4">
-        <p className="text-body">
-          {t`Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own.`}
-        </p>
-        <DeviceList />
-      </div>
-    )
-  if (device.state === 'approved')
-    return (
-      <p className="text-body">
-        {t`Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once.`}
-        <span className="mt-1 block font-mono text-meta text-brand-label">
-          {device.id}
-        </span>
-      </p>
-    )
-  if (device.state === 'none')
-    return (
-      <div className="grid gap-2">
-        <p className="text-caption text-brand-muted">
-          {t`This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing.`}
-        </p>
-        <Button className="min-h-11" onClick={() => void device.enable()}>
-          {t`Request access`}
-        </Button>
-        {device.error ? (
-          <p role="alert" className="text-meta text-brand-error">
-            {device.error}
-          </p>
-        ) : null}
-      </div>
-    )
-  return (
-    <div className="grid gap-2">
-      <p className="text-body">
-        {t`Waiting for the host to approve this device. On the host run:`}
-      </p>
-      <code className="block rounded-xl bg-brand-deck px-3 py-2 font-mono text-meta break-all select-all">
-        {command}
-      </code>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          className="min-h-11"
-          onClick={() =>
-            void navigator.clipboard.writeText(command).catch(() => undefined)
-          }
-        >
-          {t`Copy command`}
-        </Button>
-        <Button className="min-h-11" onClick={() => void device.refresh()}>
-          {t`Check again`}
-        </Button>
-      </div>
-      {device.error ? (
-        <p role="alert" className="text-meta text-brand-error">
-          {device.error}
-        </p>
-      ) : null}
-    </div>
-  )
-}
+import { NotificationsPage, useNotificationsSummary } from './me-notifications'
 
 /** 我的 › …: one page per group, pushed from the index */
 export const ME_PAGES = [
   'connection',
   'writing',
+  'notifications',
   'usage',
   'appearance',
   'app',
@@ -122,6 +52,7 @@ function useMeTitles(): Record<MePage, string> {
   return {
     connection: t`Connection`,
     writing: t`Device access`,
+    notifications: t`Notifications`,
     usage: t`Usage`,
     appearance: t`Appearance`,
     app: t`App`,
@@ -270,6 +201,7 @@ function MeIndex({ active }: { active?: MePage }) {
   const authorized = consoleMode === 'local' || device.state === 'approved'
   const hostSummary = useHostSummary()
   const autoTitleSummary = useAutoTitleSummary()
+  const notificationsSummary = useNotificationsSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
   const group = 'me-list border-b border-brand-edge bg-brand-surface'
@@ -310,6 +242,12 @@ function MeIndex({ active }: { active?: MePage }) {
           active={active === 'writing'}
           title={titles.writing}
           value={writing}
+        />
+        <EntryRow
+          page="notifications"
+          active={active === 'notifications'}
+          title={titles.notifications}
+          value={notificationsSummary}
         />
         {remote.mode === 'unpaired' || device.state !== 'approved' ? null : (
           <EntryRow
@@ -411,6 +349,7 @@ function MeSubPage({ page }: { page: MePage }) {
   const body = {
     connection: <ConnectionPage />,
     writing: <DeviceAccess />,
+    notifications: <NotificationsPage />,
     usage: <UsageCard />,
     appearance: <AppearancePage />,
     app: (
@@ -457,7 +396,8 @@ function MeSubPage({ page }: { page: MePage }) {
       {page === 'interactions' ||
       page === 'agents' ||
       page === 'host' ||
-      page === 'autotitle' ? (
+      page === 'autotitle' ||
+      page === 'notifications' ? (
         body
       ) : (
         <section className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">

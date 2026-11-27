@@ -14,6 +14,7 @@ import {
   roomQuery,
 } from './remote-pairing'
 import { loadDeviceKey, signPayload } from './device-key'
+import { sendFocusFrame } from './remote-focus'
 import { ReplyParts } from './reply-parts'
 import { median, selectedPath } from './rtc-path'
 
@@ -89,9 +90,15 @@ class RemoteLink {
   private rtcTimer?: ReturnType<typeof setTimeout>
   private offlineRtcTimer?: ReturnType<typeof setTimeout>
   private hashListener?: () => void
+  private focusBound = false
 
   token() {
     return readPairedToken()
+  }
+
+  /** Report active route & visibility to HostRelay DO for push noise suppression. */
+  reportFocus(pathOverride?: string) {
+    sendFocusFrame(this.ws, pathOverride)
   }
 
   /** Idempotent; called by the first consumer (getCollab / the badge). */
@@ -105,6 +112,11 @@ class RemoteLink {
         if (adoptPairingHash()) location.reload()
       }
       window.addEventListener('hashchange', this.hashListener)
+    }
+    if (!this.focusBound) {
+      this.focusBound = true
+      document.addEventListener('visibilitychange', () => this.reportFocus())
+      window.addEventListener('popstate', () => this.reportFocus())
     }
     adoptPairingHash()
     if (!this.token()) return
@@ -137,6 +149,7 @@ class RemoteLink {
     ws.onopen = () => {
       opened = true
       this.wsRetry = 300
+      this.reportFocus()
     }
     ws.onclose = (event) => {
       if (this.ws !== ws) return
