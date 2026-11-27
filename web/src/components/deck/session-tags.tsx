@@ -382,7 +382,8 @@ export function TagLine({
       const reportVisible = onVisibleTagsRef.current
       if (reportVisible) {
         tags.forEach((tag, index) => {
-          tag.inert = rows[index] >= maxLines
+          const nextInert = rows[index] >= maxLines
+          if (tag.inert !== nextInert) tag.inert = nextInert
         })
         reportVisible(
           shown
@@ -391,9 +392,10 @@ export function TagLine({
             .join(' '),
         )
       }
-      const bottom = Math.max(
-        ...shown.map((tag) => tag.offsetTop + tag.offsetHeight),
-      )
+      const rawBottom = shown.length
+        ? Math.max(...shown.map((tag) => tag.offsetTop + tag.offsetHeight))
+        : 0
+      const bottom = maxLines === 1 ? Math.max(24, rawBottom) : rawBottom
       const next =
         firstHidden < 0
           ? { height: 0, hidden: 0, first: 0 }
@@ -463,9 +465,11 @@ export function TagLine({
           }
           className={cn(
             'relative flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
-            // Single-line bars cap height even before fold settles so arriving
-            // tags never expand the statusbar to 2 lines for a frame.
-            maxLines === 1 && !folded && 'max-h-6 overflow-hidden',
+            // Single-line bars lock to exact 24 px (`h-6` = 63.0 physical px at
+            // 2.625× DPR) so statusbar rows never sit on sub-pixel boundaries or
+            // expand to 2 lines for a frame while arriving tags settle.
+            maxLines === 1 && !folded && 'min-h-6 max-h-6 overflow-hidden',
+            maxLines === 1 && folded && 'min-h-6',
             // room for +N at the end of the last row shown
             folded && 'pr-10',
             className,

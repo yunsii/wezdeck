@@ -242,7 +242,11 @@ export function MessageComposer({
       ) : null}
       <div
         data-text-field
-        className="relative flex min-h-12 items-center rounded-3xl bg-brand-surface p-1"
+        // Dedicated static GPU layer (`transform-gpu`): isolates the textarea's
+        // 530 ms blinking caret and focus-ring repaints from the <form> and
+        // SessionStatusBar below so Chromium/Skia Graphite dirty-rect tracking
+        // never strobes the status bar on focus.
+        className="relative flex min-h-12 transform-gpu items-center rounded-3xl bg-brand-surface p-1"
       >
         {leadingSlot}
         <label htmlFor={inputId} className="sr-only">
@@ -255,6 +259,7 @@ export function MessageComposer({
           {...inputProps}
           value={draft.text}
           onFocus={(event) => {
+            if (wide && !isSoftKeyboardOpen()) return
             const form = event.currentTarget.form
             setTimeout(() => form?.scrollIntoView({ block: 'end' }), 300)
           }}
