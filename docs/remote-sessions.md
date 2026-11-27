@@ -410,6 +410,15 @@ bubbles (`PendingBubbles`) also offer 1-tap `To ticket` with zero re-upload.
 
 ## Diagnostics on demand
 
+Use the diagnostic ID (`op_id`) to join browser `web-write` traces to
+`event=write` and `event=pane_write` in `relay.log`. The pane row records
+the target, tmux step, and elapsed time. On failure it includes a bounded
+snapshot of attached client flags taken after the error.
+At `stage=submit` the paste succeeded and Enter failed. The composer keeps
+the draft and skips automatic retry. Check the terminal input before a
+manual retry. At `stage=dispatched` tmux accepted the command, and the
+outbox still waits for transcript confirmation.
+
 No 诊断 button: the host pulls what it needs. `wezdeck-wsl diag [--wait 15]
 [--reason TEXT] [--steps JSON | --steps-file F]` asks the running relay over
 its control socket (`~/.local/state/wezdeck/relay.sock`, 0600;

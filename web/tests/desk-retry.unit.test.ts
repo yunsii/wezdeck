@@ -42,6 +42,22 @@ describe('withDeskRetry (phone waits out input at the desk)', () => {
     expect(calls).toBe(1)
   })
 
+  it('does not resend an already pasted message even if the error says retry', async () => {
+    let calls = 0
+    await expect(
+      withDeskRetry(
+        async () => {
+          calls++
+          throw new Error('tmux submit failed after paste: retry in 1s')
+        },
+        () => {},
+        3,
+        noSleep,
+      ),
+    ).rejects.toThrow('submit failed after paste')
+    expect(calls).toBe(1)
+  })
+
   it('gives up after the allowed rounds', async () => {
     let calls = 0
     await expect(

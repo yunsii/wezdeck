@@ -1010,7 +1010,7 @@ msgstr "命令"
 msgid "Command output"
 msgstr "命令输出"
 
-#: src/features/session-send.ts:346
+#: src/features/session-send.ts:357
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
@@ -2047,7 +2047,7 @@ msgstr "打断"
 msgid "Interrupt"
 msgstr "中断"
 
-#: src/features/session-send.ts:260
+#: src/features/session-send.ts:263
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "已发送中断请求，Agent 尚未确认。"
 
@@ -4390,6 +4390,10 @@ msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
+#: src/features/session-send.ts:343
+msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
+msgstr "消息已粘贴，但 tmux 未能提交回车。重试前请检查终端输入框。诊断编号 {op_id}"
+
 #: src/features/session-restart.tsx:52
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
@@ -4714,7 +4718,7 @@ msgid "Turn {turns}"
 msgstr "第 {turns} 轮"
 
 #: src/features/session-detail-parts.tsx:74
-#: src/features/session-send.ts:257
+#: src/features/session-send.ts:260
 msgid "Turn interrupted"
 msgstr "已中断"
 

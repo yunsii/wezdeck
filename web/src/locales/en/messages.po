@@ -1010,7 +1010,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:346
+#: src/features/session-send.ts:357
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -2047,7 +2047,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:260
+#: src/features/session-send.ts:263
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -4390,6 +4390,10 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
+#: src/features/session-send.ts:343
+msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
+msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
+
 #: src/features/session-restart.tsx:52
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
@@ -4714,7 +4718,7 @@ msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
 #: src/features/session-detail-parts.tsx:74
-#: src/features/session-send.ts:257
+#: src/features/session-send.ts:260
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 

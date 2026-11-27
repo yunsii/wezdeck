@@ -35,7 +35,7 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 	case "send":
 		result, err = sendToSessionWithMeta(args, via, device, meta.ClientOp)
 	case "key":
-		result, err = keyToSession(args)
+		result, err = keyToSessionWithOp(args, meta.ClientOp)
 	case "sent.action":
 		result, err = writeSentAction(args)
 	case "upload":

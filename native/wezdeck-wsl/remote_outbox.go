@@ -219,7 +219,8 @@ func outboxRecordStart(rec sentRecord) (sentRecord, bool) {
 	if rec.ClientOp != "" {
 		for _, existing := range s.Items {
 			if existing.ClientOp == rec.ClientOp &&
-				(existing.Status == "pasting" || existing.Status == "pending" || existing.Status == "confirmed") {
+				(existing.Status == "pasting" || existing.Status == "pending" || existing.Status == "confirmed" ||
+					(existing.Status == "failed" && strings.HasPrefix(existing.Error, paneSubmitErrorPrefix))) {
 				return existing, true
 			}
 		}

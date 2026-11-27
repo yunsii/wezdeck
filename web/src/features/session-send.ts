@@ -79,7 +79,10 @@ export async function withDeskRetry<T>(
     try {
       return await attempt()
     } catch (error) {
-      const wait = /retry in (\d+)s/.exec((error as Error).message)
+      const wait =
+        /^(?:someone typed at the desk \d+s ago; )?retry in (\d+)s$/.exec(
+          (error as Error).message,
+        )
       if (!wait || round >= tries) throw error
       for (let left = Number(wait[1]); left > 0; left--) {
         onWait(left)
@@ -326,12 +329,20 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         // refused: the text goes back to the composer with the error
         if (!command) mark()
         void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
+        const partial = (error as Error).message.startsWith(
+          'tmux submit failed after paste: ',
+        )
         trace('web-write', {
           id: target,
           op_id,
           action: 'send',
-          stage: 'failed',
+          stage: partial ? 'submit-failed' : 'failed',
         })
+        if (partial) {
+          throw new Error(
+            t`The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: ${op_id}`,
+          )
+        }
         throw error
       }
       trace('web-write', {
