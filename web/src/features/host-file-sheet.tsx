@@ -1,33 +1,33 @@
-// Host file / plan / artifact reader sheet backed by `session.file`.
-// Supports Markdown (with TOC + lazy Mermaid + clickable nested file:// links)
-// and Shiki-highlighted source code with `#L10-L20` line highlighting.
+// Fullscreen host file / plan / artifact reader backed by `session.file`.
+// Supports Markdown (with sticky desktop TOC + lazy fit-width Mermaid + Shiki
+// fenced blocks + clickable nested file:// links) and syntax-highlighted code
+// with `#L10-L20` line highlighting.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
 import {
-  ArrowLeft,
   Check,
   Copy,
   FileCode2,
   FileText,
-  List,
   MessageSquarePlus,
   RefreshCw,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
-import { Disclosure } from '#/components/ui/disclosure'
 import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
 import { copyText } from '#/lib/clipboard'
-import { highlightLines, langOf } from '#/lib/highlight'
-import type { Token } from '#/lib/highlight'
-import { extractMarkdownHeadings, formatLineRange } from '#/lib/host-file-link'
+import { formatLineRange } from '#/lib/host-file-link'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
-import { ChatMarkdown } from './chat-markdown'
+import {
+  CodeFileBody,
+  FileLoadingSkeleton,
+  MarkdownFileBody,
+} from './host-file-body'
 import { HostFileContext } from './host-file-context'
 import type { OpenHostFileArgs } from './host-file-context'
 
@@ -49,154 +49,99 @@ type SessionFileResponse = {
   mtime?: number
 }
 
-function useCodeTokens(content: string, lang: string | null) {
-  const [tokens, setTokens] = useState<Array<Array<Token>> | null>(null)
-  useEffect(() => {
-    if (!lang || !content) {
-      setTokens(null)
-      return
-    }
-    let live = true
-    void highlightLines(content.split('\n'), lang).then((res) => {
-      if (live) setTokens(res)
-    })
-    return () => {
-      live = false
-    }
-  }, [content, lang])
-  return tokens
-}
-
-function CodeFileBody({
-  content,
-  path,
-  langHint,
-  lineStart,
-  lineEnd,
+function FileViewerActions({
+  data,
+  range,
+  copied,
+  isFetching,
+  onRefresh,
+  onCopy,
+  onQuote,
+  onClose,
 }: {
-  content: string
-  path: string
-  langHint?: string
-  lineStart?: number
-  lineEnd?: number
+  data?: SessionFileResponse
+  range: string
+  copied: 'none' | 'content' | 'path'
+  isFetching: boolean
+  onRefresh: () => void
+  onCopy: (kind: 'content' | 'path', value: string) => void
+  onQuote?: (text: string) => void
+  onClose: () => void
 }) {
-  const lines = useMemo(() => content.split('\n'), [content])
-  const lang = langHint || langOf(path)
-  const tokens = useCodeTokens(content, lang)
-  const targetRef = useRef<HTMLDivElement>(null)
-  const rangeEnd = lineStart ? Math.max(lineStart, lineEnd ?? lineStart) : 0
-  const numWidth = String(lines.length).length
-
-  useEffect(() => {
-    if (!lineStart || !targetRef.current) return
-    targetRef.current.scrollIntoView({ block: 'center', behavior: 'instant' })
-  }, [lineStart, path, content])
-
-  return (
-    <pre
-      data-testid="host-file-code"
-      data-lang={lang ?? undefined}
-      className="overflow-x-auto rounded-xl bg-brand-surface py-2 font-mono text-meta leading-snug"
-    >
-      {lines.map((raw, i) => {
-        const no = i + 1
-        const hit = Boolean(lineStart && no >= lineStart && no <= rangeEnd)
-        const lineTokens = tokens?.[i]
-        return (
-          <div
-            key={no}
-            ref={no === lineStart ? targetRef : undefined}
-            data-line={no}
-            data-highlighted={hit ? 'true' : undefined}
-            className={cn('flex min-w-0 px-2', hit && 'bg-brand-running/15')}
-          >
-            <span
-              aria-hidden
-              style={{ width: `${numWidth + 1}ch` }}
-              className={cn(
-                'shrink-0 pr-2 text-right tabular-nums select-none',
-                hit ? 'font-medium text-brand-running' : 'text-brand-label/70',
-              )}
-            >
-              {no}
-            </span>
-            <span className="min-w-0 flex-1 whitespace-pre">
-              {lineTokens
-                ? lineTokens.map((tok, ti) => (
-                    <span key={ti} className="code-token" style={tok.style}>
-                      {tok.content}
-                    </span>
-                  ))
-                : raw || ' '}
-            </span>
-          </div>
-        )
-      })}
-    </pre>
-  )
-}
-
-function MarkdownFileBody({ content }: { content: string }) {
   const { t } = useLingui()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const headings = useMemo(() => extractMarkdownHeadings(content), [content])
-
-  const jumpTo = (text: string) => {
-    const root = containerRef.current
-    if (!root) return
-    const nodes = root.querySelectorAll('h3, h4')
-    for (const node of nodes) {
-      if ((node.textContent || '').trim() === text) {
-        node.scrollIntoView({ block: 'start', behavior: 'smooth' })
-        return
-      }
-    }
-  }
-
   return (
-    <div
-      ref={containerRef}
-      data-testid="host-file-markdown"
-      className="grid gap-3"
-    >
-      {headings.length >= 2 ? (
-        <Disclosure
-          defaultOpen={false}
-          triggerClassName="rounded-xl bg-brand-surface px-3 py-2 text-caption font-medium text-brand-text"
-          panelClassName="pt-1.5"
-          title={
-            <span className="inline-flex items-center gap-1.5">
-              <List size={14} aria-hidden className="text-brand-muted" />
-              <span>{t`Contents`}</span>
-              <span className="font-mono text-meta font-normal text-brand-label tabular-nums">
-                {headings.length}
-              </span>
-            </span>
-          }
-        >
-          <ul className="grid gap-0.5 rounded-xl bg-brand-surface p-2">
-            {headings.map((h) => (
-              <li key={`${h.index}-${h.text}`}>
-                <Button
-                  variant="plain"
-                  size="none"
-                  type="button"
-                  onClick={() => jumpTo(h.text)}
-                  className={cn(
-                    'block w-full truncate rounded-lg px-2 py-1.5 text-left text-caption text-brand-muted hover:bg-brand-soft hover:text-brand-text',
-                    h.level === 3 && 'pl-5 text-meta',
-                  )}
-                >
-                  {h.text}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </Disclosure>
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="none"
+        type="button"
+        aria-label={t`Refresh`}
+        title={t`Refresh`}
+        disabled={isFetching}
+        onClick={onRefresh}
+        className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
+      >
+        <RefreshCw
+          size={14}
+          aria-hidden
+          className={cn(isFetching && 'animate-spin')}
+        />
+      </Button>
+      {data ? (
+        <>
+          <Button
+            variant="ghost"
+            size="none"
+            type="button"
+            aria-label={t`Copy path`}
+            title={t`Copy path`}
+            onClick={() => onCopy('path', data.path)}
+            className="hidden min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted sm:inline-flex"
+          >
+            {copied === 'path' ? (
+              <Check size={13} className="text-brand-done" aria-hidden />
+            ) : (
+              <Copy size={13} aria-hidden />
+            )}
+            <span>{t`Path`}</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="none"
+            type="button"
+            aria-label={t`Copy document`}
+            title={t`Copy document`}
+            onClick={() => onCopy('content', data.content)}
+            className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted"
+          >
+            {copied === 'content' ? (
+              <Check size={13} className="text-brand-done" aria-hidden />
+            ) : (
+              <Copy size={13} aria-hidden />
+            )}
+            <span className="hidden sm:inline">{t`Copy`}</span>
+          </Button>
+        </>
       ) : null}
-      <div className="rounded-xl bg-brand-surface px-4 py-3 text-brand-text">
-        <ChatMarkdown text={content} />
-      </div>
+      {data && onQuote ? (
+        <Button
+          variant="solid"
+          size="none"
+          type="button"
+          data-testid="host-file-quote"
+          onClick={() => {
+            const ref = range
+              ? `${data.rel_path || data.name} (${range})`
+              : data.rel_path || data.name
+            onQuote(t`Regarding ${ref}: `)
+            onClose()
+          }}
+          className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
+        >
+          <MessageSquarePlus size={13} aria-hidden />
+          <span>{t`Reply`}</span>
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -256,7 +201,7 @@ function FileViewerSheet({
     current?.label ||
     current?.path.split('/').at(-1) ||
     t`Document`
-  const subtitle = data?.rel_path || data?.path || current?.path || ''
+  const subtitleText = data?.rel_path || data?.path || current?.path || ''
   const range = formatLineRange(
     data?.line_start ?? current?.lineStart,
     data?.line_end ?? current?.lineEnd,
@@ -270,143 +215,92 @@ function FileViewerSheet({
     })
   }
 
+  const headerSubtitle = (
+    <div className="flex min-w-0 items-center gap-1.5 font-mono text-meta text-brand-muted">
+      {data?.kind === 'code' ? (
+        <FileCode2 size={13} aria-hidden className="shrink-0" />
+      ) : (
+        <FileText size={13} aria-hidden className="shrink-0" />
+      )}
+      <span className="truncate" title={subtitleText}>
+        {subtitleText}
+      </span>
+      {range ? (
+        <span className="shrink-0 rounded-md bg-brand-deck px-1.5 py-0.5 text-brand-running">
+          {range}
+        </span>
+      ) : null}
+    </div>
+  )
+
   return (
     <Sheet
       open={Boolean(current)}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}
+      fullscreen
+      onBack={stack.length > 1 ? onBack : undefined}
       title={displayName}
+      subtitle={headerSubtitle}
+      actions={
+        <FileViewerActions
+          data={data}
+          range={range}
+          copied={copied}
+          isFetching={fileQuery.isFetching}
+          onRefresh={() => void fileQuery.refetch()}
+          onCopy={copyValue}
+          onQuote={onQuote}
+          onClose={onClose}
+        />
+      }
       testId="host-file-sheet"
-      className="md:max-w-4xl"
     >
-      <div className="grid gap-3 px-3 pb-4">
-        <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-brand-surface px-3 py-2">
-          {stack.length > 1 ? (
-            <Button
-              variant="ghost"
-              size="none"
-              type="button"
-              onClick={onBack}
-              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-caption text-brand-text"
-            >
-              <ArrowLeft size={14} aria-hidden />
-              <span>{t`Back`}</span>
-            </Button>
-          ) : null}
-          <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 font-mono text-meta text-brand-muted">
-            {data?.kind === 'code' ? (
-              <FileCode2 size={14} aria-hidden className="shrink-0" />
-            ) : (
-              <FileText size={14} aria-hidden className="shrink-0" />
-            )}
-            <span className="truncate" title={subtitle}>
-              {subtitle}
-            </span>
-            {range ? (
-              <span className="shrink-0 rounded-md bg-brand-deck px-1.5 py-0.5 text-brand-running">
-                {range}
-              </span>
-            ) : null}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="none"
-              type="button"
-              aria-label={t`Refresh`}
-              title={t`Refresh`}
-              disabled={fileQuery.isFetching}
-              onClick={() => void fileQuery.refetch()}
-              className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
-            >
-              <RefreshCw
-                size={14}
-                aria-hidden
-                className={cn(fileQuery.isFetching && 'animate-spin')}
-              />
-            </Button>
-            {data ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="none"
-                  type="button"
-                  onClick={() => copyValue('path', data.path)}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted"
-                >
-                  {copied === 'path' ? (
-                    <Check size={13} className="text-brand-done" aria-hidden />
-                  ) : (
-                    <Copy size={13} aria-hidden />
-                  )}
-                  <span>{t`Path`}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="none"
-                  type="button"
-                  onClick={() => copyValue('content', data.content)}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 text-meta text-brand-muted"
-                >
-                  {copied === 'content' ? (
-                    <Check size={13} className="text-brand-done" aria-hidden />
-                  ) : (
-                    <Copy size={13} aria-hidden />
-                  )}
-                  <span>{t`Copy`}</span>
-                </Button>
-              </>
-            ) : null}
-            {data && onQuote ? (
-              <Button
-                variant="solid"
-                size="none"
-                type="button"
-                data-testid="host-file-quote"
-                onClick={() => {
-                  const ref = range
-                    ? `${data.rel_path || data.name} (${range})`
-                    : data.rel_path || data.name
-                  onQuote(t`Regarding ${ref}: `)
-                  onClose()
-                }}
-                className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
-              >
-                <MessageSquarePlus size={13} aria-hidden />
-                <span>{t`Reply`}</span>
-              </Button>
-            ) : null}
-          </div>
-        </div>
-
+      <div className="flex min-h-full w-full min-w-0 flex-col">
         {data?.truncated || data?.redacted ? (
-          <p
-            role="status"
-            className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-meta text-brand-text"
-          >
-            {data.truncated ? t`Showing the first 256 KB of this file.` : null}
-            {data.truncated && data.redacted ? ' ' : null}
-            {data.redacted
-              ? t`Sensitive tokens were redacted before leaving the host.`
-              : null}
-          </p>
+          <div className="mx-auto w-full max-w-6xl px-3 pt-3 sm:px-6">
+            <p
+              role="status"
+              className="rounded-xl bg-brand-waiting/10 px-3.5 py-2 text-meta text-brand-text"
+            >
+              {data.truncated
+                ? t`Showing the first 256 KB of this file.`
+                : null}
+              {data.truncated && data.redacted ? ' ' : null}
+              {data.redacted
+                ? t`Sensitive tokens were redacted before leaving the host.`
+                : null}
+            </p>
+          </div>
         ) : null}
 
         {fileQuery.isPending ? (
-          <p className="px-2 py-8 text-center text-caption text-brand-muted">
-            {t`Loading…`}
-          </p>
+          <FileLoadingSkeleton />
         ) : fileQuery.isError ? (
-          <p
-            role="alert"
-            data-testid="host-file-error"
-            className="rounded-xl bg-brand-error/10 px-3 py-2.5 text-caption text-brand-error"
-          >
-            {fileQuery.error instanceof Error
-              ? fileQuery.error.message
-              : String(fileQuery.error)}
-          </p>
+          <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
+            <div
+              role="alert"
+              data-testid="host-file-error"
+              className="grid w-full gap-3 rounded-2xl border border-brand-error/30 bg-brand-error/10 p-5 text-caption text-brand-error"
+            >
+              <p>
+                {fileQuery.error instanceof Error
+                  ? fileQuery.error.message
+                  : String(fileQuery.error)}
+              </p>
+              <div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={() => void fileQuery.refetch()}
+                >
+                  {t`Retry`}
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : data ? (
           data.kind === 'markdown' ? (
             <MarkdownFileBody content={data.content} />

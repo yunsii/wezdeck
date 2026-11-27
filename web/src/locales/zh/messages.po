@@ -226,6 +226,10 @@ msgstr "↓ {tokens} tokens"
 msgid "1 task"
 msgstr "1 项任务"
 
+#: src/features/mermaid-block.tsx:132
+msgid "1:1"
+msgstr "原尺寸"
+
 #: src/features/collab-metrics.tsx:52
 msgid "24h · no runs"
 msgstr "24 小时 · 无运行"
@@ -621,10 +625,9 @@ msgstr "自动标题配置已保存"
 msgid "Availability and note"
 msgstr "可用状态与备注"
 
-#: src/components/ui/sheet.tsx:85
+#: src/components/ui/sheet.tsx:119
 #: src/features/console-collab.tsx:107
 #: src/features/console-me.tsx:448
-#: src/features/host-file-sheet.tsx:294
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:46
@@ -899,7 +902,7 @@ msgstr "CLI 默认模型"
 msgid "CLI selects automatically"
 msgstr "由 CLI 自动选择"
 
-#: src/components/ui/sheet.tsx:97
+#: src/components/ui/sheet.tsx:144
 #: src/features/image-viewer.tsx:150
 msgid "Close"
 msgstr "关闭"
@@ -1075,7 +1078,8 @@ msgstr "控制台（{origin}）"
 msgid "Console navigation"
 msgstr "控制台导航"
 
-#: src/features/host-file-sheet.tsx:170
+#: src/features/host-file-body.tsx:211
+#: src/features/host-file-body.tsx:239
 msgid "Contents"
 msgstr "目录"
 
@@ -1109,6 +1113,7 @@ msgstr "上下文占用"
 #~ msgid "Continue"
 #~ msgstr "继续"
 
+#: src/features/doc-code-block.tsx:103
 #: src/features/session-composer.tsx:82
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
@@ -1120,11 +1125,11 @@ msgstr "已复制"
 msgid "Copied {label}"
 msgstr "已复制 {label}"
 
-#: src/features/host-file-sheet.tsx:268
+#: src/features/host-file-sheet.tsx:213
 msgid "Copied document"
 msgstr "已复制文档"
 
-#: src/features/host-file-sheet.tsx:268
+#: src/features/host-file-sheet.tsx:213
 msgid "Copied path"
 msgstr "已复制路径"
 
@@ -1145,7 +1150,8 @@ msgstr "已复制原始日志"
 msgid "Copied: {shown}"
 msgstr "已复制：{shown}"
 
-#: src/features/host-file-sheet.tsx:357
+#: src/features/doc-code-block.tsx:108
+#: src/features/host-file-sheet.tsx:122
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:82
 #: src/features/session-permission.tsx:137
@@ -1162,6 +1168,11 @@ msgstr "复制「{label}：…」"
 msgid "Copy command"
 msgstr "复制命令"
 
+#: src/features/host-file-sheet.tsx:112
+#: src/features/host-file-sheet.tsx:113
+msgid "Copy document"
+msgstr "复制文档"
+
 #: src/features/session-composer.tsx:74
 msgid "Copy error"
 msgstr "复制错误信息"
@@ -1171,6 +1182,8 @@ msgstr "复制错误信息"
 msgid "Copy link"
 msgstr "复制链接"
 
+#: src/features/host-file-sheet.tsx:96
+#: src/features/host-file-sheet.tsx:97
 #: src/features/session-worktree-detail.tsx:81
 #: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
@@ -1410,11 +1423,11 @@ msgstr "设备授权"
 msgid "Diagnostics"
 msgstr "诊断"
 
-#: src/features/mermaid-block.tsx:95
+#: src/features/mermaid-block.tsx:147
 msgid "Diagram"
 msgstr "图表"
 
-#: src/features/mermaid-block.tsx:109
+#: src/features/mermaid-block.tsx:162
 msgid "Diagram preview unavailable"
 msgstr "图表暂无法渲染"
 
@@ -1461,7 +1474,7 @@ msgstr "已派发"
 
 #: src/features/host-file-context.tsx:93
 #: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:258
+#: src/features/host-file-sheet.tsx:203
 msgid "Document"
 msgstr "文档"
 
@@ -1657,6 +1670,10 @@ msgstr "这一轮已结束"
 #: src/features/session-info.tsx:83
 msgid "First turn"
 msgstr "第一轮"
+
+#: src/features/mermaid-block.tsx:127
+msgid "Fit"
+msgstr "适应宽度"
 
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
@@ -2097,7 +2114,7 @@ msgstr "正在加载原图…"
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/host-file-sheet.tsx:398
+#: src/features/host-file-body.tsx:49
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
@@ -2829,7 +2846,7 @@ msgstr "组成"
 msgid "partly done"
 msgstr "部分实现"
 
-#: src/features/host-file-sheet.tsx:343
+#: src/features/host-file-sheet.tsx:106
 #: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "路径"
@@ -3016,8 +3033,8 @@ msgstr "最近提交"
 msgid "Recycle worktree"
 msgstr "回收工作树"
 
-#: src/features/host-file-sheet.tsx:317
-#: src/features/host-file-sheet.tsx:318
+#: src/features/host-file-sheet.tsx:78
+#: src/features/host-file-sheet.tsx:79
 #: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "刷新"
@@ -3035,7 +3052,7 @@ msgstr "刷新外链"
 msgid "Refreshing session titles in the background…"
 msgstr "正在后台刷新活跃会话标题……"
 
-#: src/features/host-file-sheet.tsx:371
+#: src/features/host-file-sheet.tsx:136
 msgid "Regarding {ref}: "
 msgstr "关于 {ref}："
 
@@ -3164,7 +3181,7 @@ msgstr "已回复，Agent 继续处理"
 msgid "replied: {body}"
 msgstr "回复：{body}"
 
-#: src/features/host-file-sheet.tsx:377
+#: src/features/host-file-sheet.tsx:142
 #: src/features/ticket-reply.tsx:222
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
@@ -3314,6 +3331,7 @@ msgstr "恢复会话"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:551
+#: src/features/host-file-sheet.tsx:299
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3621,7 +3639,7 @@ msgstr "正在发送第一条消息…"
 msgid "Sending the handoff brief…"
 msgstr "正在发送接续 brief…"
 
-#: src/features/host-file-sheet.tsx:391
+#: src/features/host-file-sheet.tsx:272
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "敏感令牌已在离开宿主机前自动脱敏。"
 
@@ -3755,7 +3773,7 @@ msgstr "查看初始消息"
 msgid "Show the call"
 msgstr "跳到发起的调用"
 
-#: src/features/host-file-sheet.tsx:388
+#: src/features/host-file-sheet.tsx:268
 msgid "Showing the first 256 KB of this file."
 msgstr "文件较大，仅显示前 256 KB。"
 
@@ -3823,7 +3841,7 @@ msgstr "Sonnet 档"
 
 #: src/features/console-collab-run.tsx:173
 #: src/features/console-diagnostics.tsx:350
-#: src/features/mermaid-block.tsx:100
+#: src/features/mermaid-block.tsx:152
 #: src/features/public-header.tsx:96
 msgid "Source"
 msgstr "来源"

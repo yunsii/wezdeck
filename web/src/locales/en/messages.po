@@ -226,6 +226,10 @@ msgstr "↓ {tokens} tokens"
 msgid "1 task"
 msgstr "1 task"
 
+#: src/features/mermaid-block.tsx:132
+msgid "1:1"
+msgstr "1:1"
+
 #: src/features/collab-metrics.tsx:52
 msgid "24h · no runs"
 msgstr "24h · no runs"
@@ -621,10 +625,9 @@ msgstr "Auto-title settings saved"
 msgid "Availability and note"
 msgstr "Availability and note"
 
-#: src/components/ui/sheet.tsx:85
+#: src/components/ui/sheet.tsx:119
 #: src/features/console-collab.tsx:107
 #: src/features/console-me.tsx:448
-#: src/features/host-file-sheet.tsx:294
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:46
@@ -899,7 +902,7 @@ msgstr "CLI default"
 msgid "CLI selects automatically"
 msgstr "CLI selects automatically"
 
-#: src/components/ui/sheet.tsx:97
+#: src/components/ui/sheet.tsx:144
 #: src/features/image-viewer.tsx:150
 msgid "Close"
 msgstr "Close"
@@ -1075,7 +1078,8 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/host-file-sheet.tsx:170
+#: src/features/host-file-body.tsx:211
+#: src/features/host-file-body.tsx:239
 msgid "Contents"
 msgstr "Contents"
 
@@ -1109,6 +1113,7 @@ msgstr "context usage"
 #~ msgid "Continue"
 #~ msgstr "Continue"
 
+#: src/features/doc-code-block.tsx:103
 #: src/features/session-composer.tsx:82
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
@@ -1120,11 +1125,11 @@ msgstr "Copied"
 msgid "Copied {label}"
 msgstr "Copied {label}"
 
-#: src/features/host-file-sheet.tsx:268
+#: src/features/host-file-sheet.tsx:213
 msgid "Copied document"
 msgstr "Copied document"
 
-#: src/features/host-file-sheet.tsx:268
+#: src/features/host-file-sheet.tsx:213
 msgid "Copied path"
 msgstr "Copied path"
 
@@ -1145,7 +1150,8 @@ msgstr "Copied the raw line"
 msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
-#: src/features/host-file-sheet.tsx:357
+#: src/features/doc-code-block.tsx:108
+#: src/features/host-file-sheet.tsx:122
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:82
 #: src/features/session-permission.tsx:137
@@ -1162,6 +1168,11 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
+#: src/features/host-file-sheet.tsx:112
+#: src/features/host-file-sheet.tsx:113
+msgid "Copy document"
+msgstr "Copy document"
+
 #: src/features/session-composer.tsx:74
 msgid "Copy error"
 msgstr "Copy error"
@@ -1171,6 +1182,8 @@ msgstr "Copy error"
 msgid "Copy link"
 msgstr "Copy link"
 
+#: src/features/host-file-sheet.tsx:96
+#: src/features/host-file-sheet.tsx:97
 #: src/features/session-worktree-detail.tsx:81
 #: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
@@ -1410,11 +1423,11 @@ msgstr "Device access"
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
-#: src/features/mermaid-block.tsx:95
+#: src/features/mermaid-block.tsx:147
 msgid "Diagram"
 msgstr "Diagram"
 
-#: src/features/mermaid-block.tsx:109
+#: src/features/mermaid-block.tsx:162
 msgid "Diagram preview unavailable"
 msgstr "Diagram preview unavailable"
 
@@ -1461,7 +1474,7 @@ msgstr "Dispatched"
 
 #: src/features/host-file-context.tsx:93
 #: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:258
+#: src/features/host-file-sheet.tsx:203
 msgid "Document"
 msgstr "Document"
 
@@ -1657,6 +1670,10 @@ msgstr "finished its turn"
 #: src/features/session-info.tsx:83
 msgid "First turn"
 msgstr "First turn"
+
+#: src/features/mermaid-block.tsx:127
+msgid "Fit"
+msgstr "Fit"
 
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
@@ -2097,7 +2114,7 @@ msgstr "Loading original…"
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/host-file-sheet.tsx:398
+#: src/features/host-file-body.tsx:49
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
@@ -2829,7 +2846,7 @@ msgstr "Part"
 msgid "partly done"
 msgstr "partly done"
 
-#: src/features/host-file-sheet.tsx:343
+#: src/features/host-file-sheet.tsx:106
 #: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "Path"
@@ -3016,8 +3033,8 @@ msgstr "Recent commits"
 msgid "Recycle worktree"
 msgstr "Recycle worktree"
 
-#: src/features/host-file-sheet.tsx:317
-#: src/features/host-file-sheet.tsx:318
+#: src/features/host-file-sheet.tsx:78
+#: src/features/host-file-sheet.tsx:79
 #: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "Refresh"
@@ -3035,7 +3052,7 @@ msgstr "Refresh links"
 msgid "Refreshing session titles in the background…"
 msgstr "Refreshing session titles in the background…"
 
-#: src/features/host-file-sheet.tsx:371
+#: src/features/host-file-sheet.tsx:136
 msgid "Regarding {ref}: "
 msgstr "Regarding {ref}: "
 
@@ -3164,7 +3181,7 @@ msgstr "Replied, the agent continues"
 msgid "replied: {body}"
 msgstr "replied: {body}"
 
-#: src/features/host-file-sheet.tsx:377
+#: src/features/host-file-sheet.tsx:142
 #: src/features/ticket-reply.tsx:222
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
@@ -3314,6 +3331,7 @@ msgstr "Resume a conversation"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:551
+#: src/features/host-file-sheet.tsx:299
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3621,7 +3639,7 @@ msgstr "Sending the first message…"
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
-#: src/features/host-file-sheet.tsx:391
+#: src/features/host-file-sheet.tsx:272
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
 
@@ -3755,7 +3773,7 @@ msgstr "Show initial prompt"
 msgid "Show the call"
 msgstr "Show the call"
 
-#: src/features/host-file-sheet.tsx:388
+#: src/features/host-file-sheet.tsx:268
 msgid "Showing the first 256 KB of this file."
 msgstr "Showing the first 256 KB of this file."
 
@@ -3823,7 +3841,7 @@ msgstr "Sonnet tier"
 
 #: src/features/console-collab-run.tsx:173
 #: src/features/console-diagnostics.tsx:350
-#: src/features/mermaid-block.tsx:100
+#: src/features/mermaid-block.tsx:152
 #: src/features/public-header.tsx:96
 msgid "Source"
 msgstr "Source"
