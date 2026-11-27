@@ -450,8 +450,7 @@ else
         npm i -g "chrome-devtools-mcp@${CDP_MCP_VERSION}"
       fi
       openclaw mcp add chrome-devtools \
-        --command chrome-devtools-mcp \
-        --arg --browser-url="http://127.0.0.1:${CDP_PORT}" \
+        --command "$REPO_ROOT/scripts/runtime/cli/wezdeck-cdp-mcp" \
         --arg --usageStatistics=false \
         --timeout 90 \
         --connect-timeout 60 \

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Start the configured browser slot without loading the WezTerm runtime.
+set -euo pipefail
+
+runtime_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$runtime_dir/windows-runtime-paths-lib.sh"
+source "$runtime_dir/windows-shell-lib.sh"
+source "$runtime_dir/browser-agent-status-lib.sh"
+source "$runtime_dir/runtime-log-lib.sh"
+source "$runtime_dir/runtime-env-lib.sh"
+
+action="${1:-ensure}"
+if (( $# > 1 )) || [[ "$action" != ensure && "$action" != focus && "$action" != cdp-url ]]; then
+  printf 'Usage: wezdeck-browser [ensure|focus|cdp-url]\n' >&2
+  exit 2
+fi
+
+backend="${WEZDECK_BROWSER_BACKEND:-}"
+runtime_env_load_managed
+backend="${backend:-${WEZDECK_BROWSER_BACKEND:-}}"
+if [[ "$backend" != ego && "$backend" != cdp ]]; then
+  printf 'Configure the browser slot with apply-browser-backend --set ego|cdp.\n' >&2
+  exit 2
+fi
+if [[ "$action" == cdp-url && "$backend" != cdp ]]; then
+  printf 'The configured browser slot is %s.\n' "$backend" >&2
+  exit 2
+fi
+
+# WSL shells may omit Windows executables from PATH.
+if [[ -d /mnt/c/Windows/System32 ]]; then
+  export PATH="$PATH:/mnt/c/Windows/System32:/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+fi
+windows_runtime_detect_paths || { printf 'Windows runtime paths unavailable.\n' >&2; exit 1; }
+
+if [[ "$backend" == ego ]]; then
+  flag=-Ensure
+  [[ "$action" != focus ]] || flag=-Focus
+  windows_run_powershell_script_utf8 "$(wslpath -w "$runtime_dir/ego-window.ps1")" \
+    "$flag" -Exe "$(browser_agent_ego_exe_win)" </dev/null
+  exit
+fi
+
+manager_config="$WINDOWS_RUNTIME_STATE_WSL/state/helper/manager-config.json"
+port="$(jq -er '.chromeDebugAutoStart | select(.enabled == true) | .remoteDebuggingPort | select(type == "number" and floor == . and . > 0 and . <= 65535)' "$manager_config")" || {
+  printf 'The installed Windows Runtime has no enabled CDP configuration.\n' >&2
+  exit 1
+}
+url="http://127.0.0.1:$port"
+
+cdp_ready() {
+  curl -fsS --noproxy '*' --max-time 1 "$url/json/version" 2>/dev/null |
+    jq -e '.webSocketDebuggerUrl | strings | startswith("ws://")' >/dev/null
+}
+
+if ! cdp_ready; then
+  # Reuse the installed configuration byte for byte. The manager's IPC
+  # mutex owns duplicate-start prevention, including concurrent MCP launches.
+  manager_exe="$(windows_powershell_quote "$WINDOWS_RUNTIME_STATE_WIN\\bin\\wezdeck-runtime.exe")"
+  manager_config_win="$(wslpath -w "$manager_config")"
+  manager_arg="$(windows_powershell_quote "--config \"$manager_config_win\"")"
+  windows_run_powershell_command_utf8 \
+    "\$ErrorActionPreference = 'Stop'; Start-Process -FilePath $manager_exe -ArgumentList $manager_arg" </dev/null
+  for (( attempt = 0; attempt < 40; attempt++ )); do
+    cdp_ready && break
+    sleep 0.25
+  done
+  if ! cdp_ready; then
+    runtime_log_warn browser_agent "CDP endpoint unavailable" "port=$port" || true
+    printf 'CDP endpoint did not become ready at %s. Check the Windows Runtime log.\n' "$url" >&2
+    exit 1
+  fi
+  runtime_log_info browser_agent "CDP endpoint ready" "port=$port" || true
+fi
+
+if [[ "$action" == focus ]]; then
+  # Inspect the active CDP browser without terminating its automation session.
+  windows_run_powershell_command_utf8 \
+    "\$ErrorActionPreference = 'Stop'; Start-Process -FilePath 'msedge.exe' -ArgumentList 'edge://inspect/#devices'" </dev/null
+else
+  printf '%s\n' "$url"
+fi

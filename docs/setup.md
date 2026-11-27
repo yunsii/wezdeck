@@ -4,6 +4,18 @@ Use this doc when you need prerequisites and local setup.
 
 ## Prerequisites
 
+On a Windows host using the web console without a resident WezTerm window,
+install the per-user Runtime startup task after the first runtime sync:
+
+```bash
+scripts/dev/install-headless-runtime-startup.sh
+```
+
+It starts the installed Runtime and keeps the current WSL distribution
+running at user login. The existing `WezDeck WSL Keepalive` task is reused.
+Check both tasks with `Get-ScheduledTask -TaskName 'WezDeck*'` and the
+local Runtime at `http://127.0.0.1:35791/api/v1/health`.
+
 - `hybrid-wsl` uses the Windows WezTerm nightly build plus a WSL domain configured in `wezterm-x/local/constants.lua`.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux 3.7+` must be available in the runtime environment that will host managed project tabs (DEC mode 2026 / sync needs 3.6+; copy-mode auto-refresh needs 3.7 `refresh-from-pane`). **If the OS/package-manager `tmux` already meets ≥ 3.7, use it — do not compile a user copy.** Only when the distro package is too old (e.g. Ubuntu 24.04 apt 3.4) install a user-prefix build to `~/.local/bin/tmux` and put that dir first on PATH. Cross-OS decision tree, package options, and fallback script: [`tmux-install.md`](./tmux-install.md). Why the floor: [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).
