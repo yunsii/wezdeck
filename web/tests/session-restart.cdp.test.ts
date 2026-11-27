@@ -1,4 +1,4 @@
-// covers: web/src/features/session-restart.tsx web/src/features/session-key-panel.tsx
+// covers: web/src/features/session-header.tsx web/src/features/session-restart.tsx web/src/features/session-key-panel.tsx
 // covers: web/src/features/session-handoff.tsx
 // covers: native/wezdeck-wsl/session_restart.go native/wezdeck-wsl/session_handoff.go
 import { execFileSync } from 'node:child_process'
@@ -49,6 +49,35 @@ async function checkComposerInset(page: Page) {
     })
     expect(inset?.padding).toBe(44)
     expect(inset?.gap).toBeGreaterThanOrEqual(1)
+  }
+}
+
+async function checkTitleGeometry(browser: Browser, page: Page) {
+  const firstPaint = await browser.newPage({
+    javaScriptEnabled: false,
+    locale: 'zh-CN',
+  })
+  const geometry = (target: Page) =>
+    target.evaluate(() => {
+      const header = document.querySelector('[data-testid=session-header]')!
+      const title = document.querySelector('[data-testid=session-title]')!
+      return {
+        height: header.getBoundingClientRect().height,
+        titleWidth: title.getBoundingClientRect().width,
+      }
+    })
+  try {
+    for (const width of [1280, 390]) {
+      const viewport = { width, height: 800 }
+      await firstPaint.setViewportSize(viewport)
+      await firstPaint.goto(page.url())
+      await page.setViewportSize(viewport)
+      await expect
+        .poll(() => geometry(page))
+        .toEqual(await geometry(firstPaint))
+    }
+  } finally {
+    await firstPaint.close()
   }
 }
 
@@ -165,6 +194,8 @@ describe.runIf(attention && devicesFile && stack)(
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
       await checkComposerInset(page)
       await page.getByTestId('session-statusbar').waitFor()
+      await checkTitleGeometry(browser, page)
+      await page.setViewportSize({ width: 390, height: 844 })
       const layout = () =>
         page.evaluate(() => {
           const field = document.querySelector('[data-text-field="true"]')

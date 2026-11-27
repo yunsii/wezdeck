@@ -2259,7 +2259,7 @@ msgstr "Loading original…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:245
+#: src/features/session-header.tsx:247
 #: src/features/session-skeleton.tsx:20
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
@@ -4006,7 +4006,7 @@ msgid "Session"
 msgstr "Session"
 
 #: src/features/session-actions.tsx:40
-#: src/features/session-header.tsx:284
+#: src/features/session-header.tsx:288
 msgid "Session actions"
 msgstr "Session actions"
 
@@ -4047,7 +4047,7 @@ msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "Session ID, tmux, transcript file and capabilities"
 
 #: src/features/session-header.tsx:233
-#: src/features/session-header.tsx:297
+#: src/features/session-header.tsx:303
 #: src/features/session-info.tsx:290
 msgid "Session info"
 msgstr "Session info"
@@ -4745,7 +4745,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-header.tsx:263
+#: src/features/session-header.tsx:265
 msgid "To-dos"
 msgstr "To-dos"
 
