@@ -22,6 +22,7 @@ import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
+import { cn } from '#/lib/utils'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import { jumpPending } from './console-jump-keys'
 import { useSessions } from './console-sessions'
@@ -118,6 +119,7 @@ export function NewSessionButton() {
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
   const device = useDeviceState()
+  const canCreate = device.state === 'approved'
   const navigate = useNavigate()
   const { id: currentId } = useParams({ strict: false })
   const req = useNewSessionRequest()
@@ -149,7 +151,7 @@ export function NewSessionButton() {
   // composer — where the browser lets the page have it (an installed app
   // window); a plain tab may keep it for a new window, `c` still works.
   useEffect(() => {
-    if (device.state !== 'approved') return
+    if (!canCreate) return
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (
@@ -177,17 +179,20 @@ export function NewSessionButton() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [device.state, openNew])
+  }, [canCreate, openNew])
 
-  if (device.state !== 'approved') return null
   return (
     <Button
       variant="solid"
       type="button"
+      disabled={!canCreate}
       onClick={() => openNew()}
       data-testid="new-session"
       title={t`New session (c)`}
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
+      className={cn(
+        'inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9',
+        !canCreate && 'invisible',
+      )}
     >
       <Plus size={18} aria-hidden />
       <span className="sr-only md:not-sr-only">{t`New session`}</span>

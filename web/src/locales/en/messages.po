@@ -323,7 +323,7 @@ msgstr "A person"
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
-#: src/features/ticket-new.tsx:178
+#: src/features/ticket-new.tsx:184
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
@@ -1332,11 +1332,11 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:270
+#: src/features/session-new.tsx:275
 msgid "Create session"
 msgstr "Create session"
 
-#: src/features/ticket-new.tsx:236
+#: src/features/ticket-new.tsx:242
 msgid "Create ticket"
 msgstr "Create ticket"
 
@@ -1356,7 +1356,7 @@ msgstr "Creating the session group…"
 #~ msgid "Creating the worktree…"
 #~ msgstr "Creating the worktree…"
 
-#: src/features/ticket-new.tsx:236
+#: src/features/ticket-new.tsx:242
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -1778,7 +1778,7 @@ msgstr "Force delete session and worktree"
 msgid "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 msgstr "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 
-#: src/features/ticket-new.tsx:173
+#: src/features/ticket-new.tsx:179
 msgid "From"
 msgstr "From"
 
@@ -2505,8 +2505,8 @@ msgstr "New line"
 #: src/features/session-list.tsx:155
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
-#: src/features/session-new.tsx:193
-#: src/features/session-new.tsx:437
+#: src/features/session-new.tsx:198
+#: src/features/session-new.tsx:442
 msgid "New session"
 msgstr "New session"
 
@@ -2514,11 +2514,11 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:189
+#: src/features/session-new.tsx:191
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:359
+#: src/features/session-new.tsx:364
 msgid "New session group"
 msgstr "New session group"
 
@@ -2526,7 +2526,7 @@ msgstr "New session group"
 #: src/features/session-chat-group.tsx:460
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:382
-#: src/features/session-new.tsx:437
+#: src/features/session-new.tsx:442
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "New session in this group"
@@ -2536,12 +2536,12 @@ msgid "New session title"
 msgstr "New session title"
 
 #: src/features/console-keys.tsx:111
-#: src/features/ticket-new.tsx:66
-#: src/features/ticket-new.tsx:167
+#: src/features/ticket-new.tsx:72
+#: src/features/ticket-new.tsx:173
 msgid "New ticket"
 msgstr "New ticket"
 
-#: src/features/ticket-new.tsx:62
+#: src/features/ticket-new.tsx:65
 msgid "New ticket (n)"
 msgstr "New ticket (n)"
 
@@ -2870,7 +2870,7 @@ msgstr "Only reusable worktrees can be managed here"
 msgid "Only this trace"
 msgstr "Only this trace"
 
-#: src/features/ticket-new.tsx:222
+#: src/features/ticket-new.tsx:228
 msgid "Open a repo-neutral Manager Session for this ticket"
 msgstr "Open a repo-neutral Manager Session for this ticket"
 
@@ -3892,7 +3892,7 @@ msgstr "Send review ({noteCount})"
 msgid "Send test notification"
 msgstr "Send test notification"
 
-#: src/features/session-new.tsx:462
+#: src/features/session-new.tsx:467
 msgid "Send the first message below to create the workspace and start the agent."
 msgstr "Send the first message below to create the workspace and start the agent."
 
@@ -3994,7 +3994,7 @@ msgstr "Sessions"
 #: src/features/session-list.tsx:281
 #: src/features/session-list.tsx:402
 #: src/features/session-new-job.tsx:399
-#: src/features/session-new.tsx:433
+#: src/features/session-new.tsx:438
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
@@ -4212,7 +4212,7 @@ msgstr "Start manager session"
 msgid "Start without context"
 msgstr "Start without context"
 
-#: src/features/ticket-new.tsx:214
+#: src/features/ticket-new.tsx:220
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
 
@@ -4433,11 +4433,11 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/ticket-new.tsx:199
+#: src/features/ticket-new.tsx:205
 msgid "The behaviour, error or data you actually observed"
 msgstr "The behaviour, error or data you actually observed"
 
-#: src/features/ticket-new.tsx:209
+#: src/features/ticket-new.tsx:215
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
@@ -4630,7 +4630,7 @@ msgid "Time the relay was actually handling messages; while idle it hibernates a
 msgstr "Time the relay was actually handling messages; while idle it hibernates and is not counted."
 
 #: src/features/session-info.tsx:61
-#: src/features/ticket-new.tsx:182
+#: src/features/ticket-new.tsx:188
 msgid "Title"
 msgstr "Title"
 
@@ -4654,7 +4654,7 @@ msgstr "tmux session"
 msgid "tmux window"
 msgstr "tmux window"
 
-#: src/features/ticket-new.tsx:174
+#: src/features/ticket-new.tsx:180
 msgid "To"
 msgstr "To"
 
@@ -5058,7 +5058,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new.tsx:246
+#: src/features/session-new.tsx:251
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -5066,7 +5066,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new.tsx:260
+#: src/features/session-new.tsx:265
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -5074,7 +5074,7 @@ msgstr "What should it work on?"
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 
-#: src/features/ticket-new.tsx:189
+#: src/features/ticket-new.tsx:195
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
@@ -5091,11 +5091,11 @@ msgstr "What this session's agent was given, read from its own record. Tap one t
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
-#: src/features/ticket-new.tsx:203
+#: src/features/ticket-new.tsx:209
 msgid "What you assume"
 msgstr "What you assume"
 
-#: src/features/ticket-new.tsx:193
+#: src/features/ticket-new.tsx:199
 msgid "What you saw"
 msgstr "What you saw"
 

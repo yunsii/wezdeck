@@ -31,6 +31,10 @@ froze ~140 ms and jumped); travel stays small (≤ 8 px). Verify with
 `grey-step`, `snap`, `row-fill` and the other findings fail the run, `jank`
 (main-thread stalls) is reported as a warning.
 
+Reserve the create button’s final space in session and ticket toolbars from
+the first render. Hide and disable it until write access is confirmed so
+the search field and neighboring controls keep their positions.
+
 ## Compositor layer discipline (Chromium HiDPI)
 
 On fractional-DPR displays (`1.25×` / `2.625×`, Chrome 152 / Android tablet Vulkan + Skia Graphite), Chromium `CompositeAfterPaint` promotes any CSS `opacity` or `transform` animation (`ActiveOpacityAnimation` / `ActiveTransformAnimation`) to a dedicated GPU layer and then overlap-promotes (`Overlap`) adjacent rows, dividers, and scrolling containers into temporary GPU squashing layers. Creating or destroying those layers toggles text between LCD subpixel and grayscale antialiasing and re-snaps fractional coordinates, reading as multi-row or title-bar flicker (2026-11-27).

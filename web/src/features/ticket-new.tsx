@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
+import { cn } from '#/lib/utils'
 import { jumpPending } from './console-jump-keys'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
@@ -25,6 +26,7 @@ type Target = { key: string; path: string }
 export function NewTicketButton() {
   const { t } = useLingui()
   const device = useDeviceState()
+  const canCreate = device.state === 'approved'
   const [open, setOpen] = useState(false)
   // a fresh form per opening (key), while the sheet stays mounted on close
   // so it can play its exit
@@ -34,6 +36,7 @@ export function NewTicketButton() {
     setOpen(true)
   }
   useEffect(() => {
+    if (!canCreate) return
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (
@@ -50,22 +53,25 @@ export function NewTicketButton() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
-  if (device.state !== 'approved') return null
+  }, [canCreate])
   return (
     <>
       <Button
         variant="solid"
         type="button"
+        disabled={!canCreate}
         onClick={show}
         data-testid="new-ticket"
         title={t`New ticket (n)`}
-        className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 px-0 text-body md:w-auto md:px-3"
+        className={cn(
+          'inline-flex size-9 shrink-0 items-center justify-center gap-1.5 px-0 text-body md:w-auto md:px-3',
+          !canCreate && 'invisible',
+        )}
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New ticket`}</span>
       </Button>
-      {round > 0 ? (
+      {canCreate && round > 0 ? (
         <NewTicketSheet
           key={round}
           open={open}

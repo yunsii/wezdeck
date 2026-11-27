@@ -323,7 +323,7 @@ msgstr "人工"
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
-#: src/features/ticket-new.tsx:178
+#: src/features/ticket-new.tsx:184
 msgid "A ticket goes to another repository."
 msgstr "工单要发给另一个仓库。"
 
@@ -1332,11 +1332,11 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:270
+#: src/features/session-new.tsx:275
 msgid "Create session"
 msgstr "创建会话"
 
-#: src/features/ticket-new.tsx:236
+#: src/features/ticket-new.tsx:242
 msgid "Create ticket"
 msgstr "创建工单"
 
@@ -1356,7 +1356,7 @@ msgstr "正在创建会话组…"
 #~ msgid "Creating the worktree…"
 #~ msgstr "正在创建工作树…"
 
-#: src/features/ticket-new.tsx:236
+#: src/features/ticket-new.tsx:242
 msgid "Creating…"
 msgstr "创建中…"
 
@@ -1778,7 +1778,7 @@ msgstr "强制删除会话和工作树"
 msgid "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 msgstr "库里有 metrics_v1 和 metrics_v2 两张表，要读 metrics_v2 吗？"
 
-#: src/features/ticket-new.tsx:173
+#: src/features/ticket-new.tsx:179
 msgid "From"
 msgstr "发起仓库"
 
@@ -2505,8 +2505,8 @@ msgstr "换行"
 #: src/features/session-list.tsx:155
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
-#: src/features/session-new.tsx:193
-#: src/features/session-new.tsx:437
+#: src/features/session-new.tsx:198
+#: src/features/session-new.tsx:442
 msgid "New session"
 msgstr "新会话"
 
@@ -2514,11 +2514,11 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:189
+#: src/features/session-new.tsx:191
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:359
+#: src/features/session-new.tsx:364
 msgid "New session group"
 msgstr "新会话组"
 
@@ -2526,7 +2526,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:460
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:382
-#: src/features/session-new.tsx:437
+#: src/features/session-new.tsx:442
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "在此组新建会话"
@@ -2536,12 +2536,12 @@ msgid "New session title"
 msgstr "新的会话标题"
 
 #: src/features/console-keys.tsx:111
-#: src/features/ticket-new.tsx:66
-#: src/features/ticket-new.tsx:167
+#: src/features/ticket-new.tsx:72
+#: src/features/ticket-new.tsx:173
 msgid "New ticket"
 msgstr "新工单"
 
-#: src/features/ticket-new.tsx:62
+#: src/features/ticket-new.tsx:65
 msgid "New ticket (n)"
 msgstr "新工单（n）"
 
@@ -2870,7 +2870,7 @@ msgstr "只有可复用的工作树才能在这里回收或移除"
 msgid "Only this trace"
 msgstr "只看这个 trace"
 
-#: src/features/ticket-new.tsx:222
+#: src/features/ticket-new.tsx:228
 msgid "Open a repo-neutral Manager Session for this ticket"
 msgstr "同时为该工单开启仓中立顶层管理会话"
 
@@ -3892,7 +3892,7 @@ msgstr "打包发送修改 ({noteCount})"
 msgid "Send test notification"
 msgstr "发送测试通知"
 
-#: src/features/session-new.tsx:462
+#: src/features/session-new.tsx:467
 msgid "Send the first message below to create the workspace and start the agent."
 msgstr "在下方发送第一条消息即可创建工作区并启动 Agent。"
 
@@ -3994,7 +3994,7 @@ msgstr "会话数"
 #: src/features/session-list.tsx:281
 #: src/features/session-list.tsx:402
 #: src/features/session-new-job.tsx:399
-#: src/features/session-new.tsx:433
+#: src/features/session-new.tsx:438
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
@@ -4212,7 +4212,7 @@ msgstr "开启管理会话"
 msgid "Start without context"
 msgstr "不带上下文启动"
 
-#: src/features/ticket-new.tsx:214
+#: src/features/ticket-new.tsx:220
 msgid "Start working on it now (a headless run on the host)"
 msgstr "创建后立即开始处理（在电脑上后台运行）"
 
@@ -4433,11 +4433,11 @@ msgstr "Agent 在问你（第 {number}/{total} 题）"
 msgid "The agent is waiting for your answer"
 msgstr "Agent 在等你回答"
 
-#: src/features/ticket-new.tsx:199
+#: src/features/ticket-new.tsx:205
 msgid "The behaviour, error or data you actually observed"
 msgstr "实际观察到的行为、报错或数据"
 
-#: src/features/ticket-new.tsx:209
+#: src/features/ticket-new.tsx:215
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "你期望对方提供的约定或行为——对方会先核实这一点"
 
@@ -4630,7 +4630,7 @@ msgid "Time the relay was actually handling messages; while idle it hibernates a
 msgstr "中转真正在处理消息的时间；空闲时休眠，不计时长。"
 
 #: src/features/session-info.tsx:61
-#: src/features/ticket-new.tsx:182
+#: src/features/ticket-new.tsx:188
 msgid "Title"
 msgstr "标题"
 
@@ -4654,7 +4654,7 @@ msgstr "tmux 会话"
 msgid "tmux window"
 msgstr "tmux 窗口"
 
-#: src/features/ticket-new.tsx:174
+#: src/features/ticket-new.tsx:180
 msgid "To"
 msgstr "目标仓库"
 
@@ -5058,7 +5058,7 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
-#: src/features/session-new.tsx:246
+#: src/features/session-new.tsx:251
 msgid "What do you want to solve?"
 msgstr "你想解决什么问题？"
 
@@ -5066,7 +5066,7 @@ msgstr "你想解决什么问题？"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new.tsx:260
+#: src/features/session-new.tsx:265
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -5074,7 +5074,7 @@ msgstr "要它做什么？"
 msgid "What should the next agent do first?"
 msgstr "希望下一个 agent 先做什么？"
 
-#: src/features/ticket-new.tsx:189
+#: src/features/ticket-new.tsx:195
 msgid "What the other repository should do"
 msgstr "要对方仓库做什么"
 
@@ -5091,11 +5091,11 @@ msgstr "这个会话的 agent 实际加载的能力，读自它自己的记录�
 msgid "What this workstation is for, one line"
 msgstr "这个工作站做什么，一行"
 
-#: src/features/ticket-new.tsx:203
+#: src/features/ticket-new.tsx:209
 msgid "What you assume"
 msgstr "你的假设"
 
-#: src/features/ticket-new.tsx:193
+#: src/features/ticket-new.tsx:199
 msgid "What you saw"
 msgstr "你看到的现象"
 
