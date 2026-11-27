@@ -27,6 +27,7 @@ import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
 import { usePreferredAgentProfile } from './agent-profiles'
 import { AgentsPage } from './me-agents'
+import { AutoTitlePage, useAutoTitleSummary } from './me-autotitle'
 import { EntryRow } from './me-entry-row'
 
 function DeviceAccess() {
@@ -110,6 +111,7 @@ export const ME_PAGES = [
   'host',
   'interactions',
   'agents',
+  'autotitle',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
 
@@ -124,6 +126,7 @@ function useMeTitles(): Record<MePage, string> {
     host: t`This computer`,
     interactions: t`Interaction debugging`,
     agents: t`Agents`,
+    autotitle: t`Auto titles`,
   }
 }
 
@@ -264,6 +267,7 @@ function MeIndex({ active }: { active?: MePage }) {
           : ''
   const authorized = consoleMode === 'local' || device.state === 'approved'
   const hostSummary = useHostSummary()
+  const autoTitleSummary = useAutoTitleSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
   const group = 'overflow-hidden rounded-2xl bg-brand-surface md:rounded-none'
@@ -279,6 +283,14 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.agents}
           value={preferredAgent || t`Repository default`}
         />
+        {authorized ? (
+          <EntryRow
+            page="autotitle"
+            active={active === 'autotitle'}
+            title={titles.autotitle}
+            value={autoTitleSummary}
+          />
+        ) : null}
         <EntryRow
           page="connection"
           active={active === 'connection'}
@@ -411,6 +423,7 @@ function MeSubPage({ page }: { page: MePage }) {
     host: <HostPage />,
     interactions: <InteractionsPage />,
     agents: <AgentsPage />,
+    autotitle: <AutoTitlePage />,
   }[page]
   return (
     <div

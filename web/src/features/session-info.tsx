@@ -57,6 +57,7 @@ function useLabels() {
     id: t`Session id`,
     agent: 'Agent',
     title: t`Title`,
+    title_source: t`Title source`,
     agent_name: t`Agent name`,
     window: t`tmux window`,
     model: t`Model`,

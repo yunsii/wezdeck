@@ -8,6 +8,7 @@ import {
   Monitor,
   Palette,
   ShieldCheck,
+  Sparkles,
   Wifi,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -19,6 +20,7 @@ import type { MePage } from './console-me'
 
 const ICONS: Record<MePage, LucideIcon> = {
   agents: Bot,
+  autotitle: Sparkles,
   connection: Wifi,
   writing: ShieldCheck,
   usage: ChartNoAxesCombined,

@@ -44,6 +44,7 @@ func TestParseAutoTitleOutput(t *testing.T) {
 		{"unchanged (still same task)", "", true, true},
 		{"__PROVIDER_UNAVAILABLE__", "", false, false},
 		{"Error: timeout", "", false, false},
+		{"我先根据会话规则写一条简洁标题，并写入计划文件供确认", "", false, false},
 		{"", "", false, false},
 		{"a", "", false, false},
 	}
@@ -247,3 +248,39 @@ func TestAutoTitlerSweepEndToEnd(t *testing.T) {
 		t.Fatalf("calls = %d, want 2", calls)
 	}
 }
+
+func TestAutoTitleConfigStatusAndUnlock(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WEZDECK_SESSION_TITLES_FILE", filepath.Join(dir, "session-titles.json"))
+	t.Setenv("WEZDECK_AUTOTITLE_CONFIG_FILE", filepath.Join(dir, "autotitle-config.json"))
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+
+	// Configure enabled=false, provider=claude, interval=60
+	res, err := updateAutoTitle(json.RawMessage(`{"op":"configure","enabled":false,"provider":"claude","interval_s":60}`))
+	if err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+	m := res.(map[string]any)
+	if m["enabled"] != false || m["provider"] != "claude" || m["interval_s"] != 60 {
+		t.Fatalf("unexpected status after configure: %#v", m)
+	}
+
+	// Reject unknown provider
+	if _, err := updateAutoTitle(json.RawMessage(`{"op":"configure","provider":"bogus"}`)); err == nil {
+		t.Fatal("expected error for unsupported provider")
+	}
+
+	// Lock & unlock title + source reporting
+	sid := "11111111-2222-3333-4444-555555555555"
+	lockSessionTitle(sid, "agy", "人工固定标题")
+	if src := resolveSessionTitleSource(sid, "", "agy"); src != "manual" {
+		t.Fatalf("locked source = %q, want manual", src)
+	}
+	if _, err := updateAutoTitle(json.RawMessage(`{"op":"unlock","session_id":"` + sid + `"}`)); err != nil {
+		t.Fatalf("unlock failed: %v", err)
+	}
+	if src := resolveSessionTitleSource(sid, "", "agy"); src != "auto" {
+		t.Fatalf("unlocked source = %q, want auto", src)
+	}
+}
+

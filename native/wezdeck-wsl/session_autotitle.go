@@ -380,7 +380,10 @@ func parseAutoTitleOutput(raw string) (string, bool, bool) {
 		return "", true, true
 	}
 	if strings.Contains(line, "__PROVIDER_UNAVAILABLE__") ||
-		strings.HasPrefix(strings.ToLower(line), "error:") {
+		strings.HasPrefix(strings.ToLower(line), "error:") ||
+		strings.HasPrefix(line, "我先") ||
+		strings.HasPrefix(line, "我将") ||
+		strings.Contains(line, "计划文件") {
 		return "", false, false
 	}
 	runes := []rune(line)
@@ -402,7 +405,11 @@ func runAutoTitleCLI(ctx context.Context, promptInput string) (output string, pr
 	if _, statErr := os.Stat(script); statErr != nil {
 		return "", "", fmt.Errorf("autotitle script missing: %w", statErr)
 	}
-	cmd := exec.CommandContext(ctx, "bash", script)
+	args := []string{script}
+	if cfg := loadAutoTitleConfig(); cfg.Provider != "" {
+		args = append(args, "--provider", cfg.Provider)
+	}
+	cmd := exec.CommandContext(ctx, "bash", args...)
 	cmd.Stdin = strings.NewReader(promptInput)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
@@ -607,13 +614,11 @@ func autoTitleInterval() time.Duration {
 }
 
 func startAutoTitler(ctx context.Context) {
-	if strings.TrimSpace(os.Getenv("WEZDECK_AUTOTITLE")) == "0" {
-		relayLogf("session_title_auto", "outcome=disabled")
-		return
-	}
 	titler := newAutoTitler()
-	interval := autoTitleInterval()
-	relayLogf("session_title_auto", "outcome=started interval_s=%d", int(interval.Seconds()))
+	setActiveTitler(titler)
+	cfg := loadAutoTitleConfig()
+	relayLogf("session_title_auto", "outcome=started enabled=%t provider=%q interval_s=%d",
+		cfg.Enabled, cfg.Provider, cfg.IntervalS)
 
 	// Initial short delay so relay startup / websocket connect finishes first.
 	timer := time.NewTimer(5 * time.Second)
@@ -623,10 +628,17 @@ func startAutoTitler(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			if entries, err := liveSessions(); err == nil && len(entries) > 0 {
-				titler.sweep(ctx, entries)
+			cfg = loadAutoTitleConfig()
+			if cfg.Enabled {
+				if entries, err := liveSessions(); err == nil && len(entries) > 0 {
+					titler.sweep(ctx, entries)
+				}
 			}
-			timer.Reset(interval)
+			next := time.Duration(cfg.IntervalS) * time.Second
+			if next < 10*time.Second {
+				next = autoTitleDefaultInterval
+			}
+			timer.Reset(next)
 		}
 	}
 }

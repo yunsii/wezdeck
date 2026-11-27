@@ -32,8 +32,12 @@ invocation through `skills/adversarial-review/lib/provider.sh`, defaulting to
 `grok` → `claude` → `codex`, overridable via `WEZDECK_AUTOTITLE_PROVIDER`).
 The prompt asks for `UNCHANGED` when the topic has not shifted; otherwise it
 writes a concise title to `~/.local/state/wezdeck/session-titles.json` (0600,
-atomic rename, 30-day prune). Precedence: explicit manual `/rename` (Claude
-`custom-title` or locked web `/rename`) > auto-title > agent native title.
+atomic rename, 30-day prune). Runtime settings (enabled, provider, scan
+interval) persist in `~/.local/state/wezdeck/autotitle-config.json` and are
+managed from `我的 › 自动标题` (`/console/me/autotitle`, backed by
+`session.autotitle.status` and signed `session.autotitle.update`). Precedence:
+explicit manual `/rename` (Claude `custom-title` or locked web `/rename`) >
+auto-title > agent native title; `会话信息` reports `title_source`.
 Triggering is debounced (first substantive turn runs immediately; subsequent
 updates require a settled turn, ≥90 s cooldown, and either ≥2 new substantive
 turns or ≥4 min since the last update, ignoring trivial acks like "可以" /

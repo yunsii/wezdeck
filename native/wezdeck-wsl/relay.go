@@ -310,6 +310,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = sessionGit(args)
 	case "session.skills":
 		result, err = sessionSkills(args)
+	case "session.autotitle.status":
+		result, err = autoTitleStatus()
 	case "session.image":
 		result, err = sessionImage(args)
 	default:
@@ -349,7 +351,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	case "usage":
 		return fetchUsage()
 	case "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart", "session.delete",
-		"session.handoff", "ticket.new", "worktree.describe", "host.warp.set":
+		"session.handoff", "session.autotitle.update", "ticket.new", "worktree.describe", "host.warp.set":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
@@ -365,7 +367,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 var signedActions = map[string]bool{
 	"send": true, "key": true, "reply": true, "attach": true, "upload": true,
 	"todo": true, "clear": true, "session.new": true, "session.new.trust": true, "agent.profile.configure": true, "agent.profile.model": true, "agent.profile.settings": true, "session.restart": true, "session.delete": true,
-	"session.handoff": true, "ticket.new": true, "worktree.describe": true, "host.warp.set": true,
+	"session.handoff": true, "session.autotitle.update": true, "ticket.new": true, "worktree.describe": true, "host.warp.set": true,
 }
 
 // handleRPC answers one request frame and logs it.
