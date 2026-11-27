@@ -1,4 +1,5 @@
 // covers: web/src/features/session-new.tsx web/src/features/ticket-new.tsx
+// covers: web/src/features/session-list.tsx web/src/features/ticket-search.tsx
 import { execFileSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -40,6 +41,23 @@ async function toolbarPositions(page: Page, approved: boolean) {
       await neighbor.waitFor()
       await page.evaluate(() => document.fonts.ready.then(() => undefined))
       positions.push({ route, width, rect: await neighbor.boundingBox() })
+      const search = page.locator('input[data-search]:visible').first()
+      if (await search.isVisible()) {
+        await search.focus()
+        const field = await search.evaluate((input) => ({
+          focused: document.activeElement === input,
+          fields: input.closest('label')?.querySelectorAll('[data-text-field]')
+            .length,
+          wrapperEdge: input.closest('label')?.hasAttribute('data-text-field'),
+          radius: parseFloat(getComputedStyle(input).borderTopLeftRadius),
+        }))
+        expect(field).toMatchObject({
+          focused: true,
+          fields: 1,
+          wrapperEdge: false,
+        })
+        expect(field.radius).toBeGreaterThan(0)
+      }
     }
   }
   return positions

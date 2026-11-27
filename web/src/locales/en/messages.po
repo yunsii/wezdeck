@@ -157,7 +157,7 @@ msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} subagents silent for a while"
 
-#: src/features/repo-links.tsx:239
+#: src/features/repo-links.tsx:264
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · Links"
 
@@ -895,7 +895,7 @@ msgid "Clear input"
 msgstr "Clear input"
 
 #: src/features/console-diagnostics.tsx:143
-#: src/features/repo-links.tsx:274
+#: src/features/repo-links.tsx:300
 #: src/features/session-list.tsx:108
 #: src/features/session-list.tsx:310
 #: src/features/ticket-search.tsx:42
@@ -1146,7 +1146,7 @@ msgid "Copied the raw line"
 msgstr "Copied the raw line"
 
 #: src/components/ui/field.tsx:61
-#: src/features/repo-links.tsx:73
+#: src/features/repo-links.tsx:74
 #: src/features/session-info.tsx:188
 #: src/features/session-title-history.tsx:62
 #: src/features/ticket-info.tsx:70
@@ -1185,8 +1185,8 @@ msgstr "Copy error"
 msgid "Copy failed"
 msgstr "Copy failed"
 
-#: src/features/repo-links.tsx:125
 #: src/features/repo-links.tsx:126
+#: src/features/repo-links.tsx:127
 msgid "Copy link"
 msgstr "Copy link"
 
@@ -1682,7 +1682,7 @@ msgstr "failed"
 msgid "Failed runs"
 msgstr "Failed runs"
 
-#: src/features/repo-links.tsx:206
+#: src/features/repo-links.tsx:231
 msgid "Failed to refresh links"
 msgstr "Failed to refresh links"
 
@@ -2198,7 +2198,7 @@ msgstr "Loading original…"
 #: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
-#: src/features/repo-links.tsx:309
+#: src/features/repo-links.tsx:146
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:247
@@ -2574,11 +2574,11 @@ msgstr "No human message yet"
 msgid "No linked worktrees"
 msgstr "No linked worktrees"
 
-#: src/features/repo-links.tsx:315
+#: src/features/repo-links.tsx:339
 msgid "No links match that search."
 msgstr "No links match that search."
 
-#: src/features/repo-links.tsx:317
+#: src/features/repo-links.tsx:341
 msgid "No links resolved for this repository."
 msgstr "No links resolved for this repository."
 
@@ -2822,12 +2822,12 @@ msgstr "Open in VS Code"
 msgid "Open now"
 msgstr "Open now"
 
-#: src/features/repo-links.tsx:418
-#: src/features/repo-links.tsx:468
+#: src/features/repo-links.tsx:442
+#: src/features/repo-links.tsx:492
 msgid "Open repository links"
 msgstr "Open repository links"
 
-#: src/features/repo-links.tsx:417
+#: src/features/repo-links.tsx:441
 #: src/features/session-info-actions.tsx:151
 msgid "Open repository links (key: l)"
 msgstr "Open repository links (key: l)"
@@ -2894,7 +2894,7 @@ msgstr "Opus tier"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/repo-links.tsx:52
+#: src/features/repo-links.tsx:53
 msgid "Other"
 msgstr "Other"
 
@@ -3055,7 +3055,7 @@ msgstr "Process"
 msgid "Progress"
 msgstr "Progress"
 
-#: src/features/repo-links.tsx:49
+#: src/features/repo-links.tsx:50
 msgid "Project config"
 msgstr "Project config"
 
@@ -3193,8 +3193,8 @@ msgstr "Refresh"
 msgid "Refresh active sessions now"
 msgstr "Refresh active sessions now"
 
-#: src/features/repo-links.tsx:288
-#: src/features/repo-links.tsx:289
+#: src/features/repo-links.tsx:314
+#: src/features/repo-links.tsx:315
 msgid "Refresh links"
 msgstr "Refresh links"
 
@@ -3258,7 +3258,7 @@ msgstr "Remote"
 msgid "Remote devices"
 msgstr "Remote devices"
 
-#: src/features/repo-links.tsx:50
+#: src/features/repo-links.tsx:51
 msgid "Remote project"
 msgstr "Remote project"
 
@@ -3341,7 +3341,7 @@ msgstr "Repo"
 msgid "Repo filter"
 msgstr "Repo filter"
 
-#: src/features/repo-links.tsx:48
+#: src/features/repo-links.tsx:49
 #: src/features/session-info.tsx:67
 #: src/features/session-new-panels.tsx:232
 #: src/features/session-new-panels.tsx:239
@@ -3356,8 +3356,8 @@ msgstr "Repository"
 msgid "Repository default"
 msgstr "Repository default"
 
-#: src/features/repo-links.tsx:239
-#: src/features/repo-links.tsx:432
+#: src/features/repo-links.tsx:264
+#: src/features/repo-links.tsx:456
 msgid "Repository links"
 msgstr "Repository links"
 
@@ -3711,11 +3711,11 @@ msgstr "Scope"
 msgid "Search"
 msgstr "Search"
 
-#: src/features/repo-links.tsx:265
+#: src/features/repo-links.tsx:291
 msgid "Search links"
 msgstr "Search links"
 
-#: src/features/repo-links.tsx:264
+#: src/features/repo-links.tsx:290
 msgid "Search links…"
 msgstr "Search links…"
 
@@ -3906,7 +3906,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 msgid "Settings"
 msgstr "Settings"
 
-#: src/features/repo-links.tsx:51
+#: src/features/repo-links.tsx:52
 msgid "Shared"
 msgstr "Shared"
 
@@ -4756,7 +4756,7 @@ msgstr "View the source"
 msgid "VS Code window focused"
 msgstr "VS Code window focused"
 
-#: src/features/repo-links.tsx:318
+#: src/features/repo-links.tsx:342
 msgid "vscode-links is not installed on the host."
 msgstr "vscode-links is not installed on the host."
 

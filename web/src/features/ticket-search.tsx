@@ -17,7 +17,7 @@ export function SearchBox({
 }) {
   const { t } = useLingui()
   return (
-    <label className="relative min-w-0 flex-1" data-text-field>
+    <label className="relative min-w-0 flex-1">
       <Search
         size={16}
         aria-hidden
