@@ -29,15 +29,16 @@ type autoTitleProviderInfo struct {
 }
 
 type autoTitleStatusItem struct {
-	SessionID string `json:"session_id"`
-	Agent     string `json:"agent"`
-	Title     string `json:"title"`
-	Source    string `json:"source"` // "auto" | "locked" | "native"
-	Provider  string `json:"provider,omitempty"`
-	UpdatedAt int64  `json:"updated_at,omitempty"`
-	UserTurns int    `json:"user_turns,omitempty"`
-	Locked    bool   `json:"locked,omitempty"`
-	Active    bool   `json:"active"`
+	SessionID string                 `json:"session_id"`
+	Agent     string                 `json:"agent"`
+	Title     string                 `json:"title"`
+	Source    string                 `json:"source"` // "auto" | "locked" | "native"
+	Provider  string                 `json:"provider,omitempty"`
+	UpdatedAt int64                  `json:"updated_at,omitempty"`
+	UserTurns int                    `json:"user_turns,omitempty"`
+	Locked    bool                   `json:"locked,omitempty"`
+	Active    bool                   `json:"active"`
+	History   []autoTitleHistoryItem `json:"history,omitempty"`
 }
 
 var (
@@ -281,6 +282,7 @@ func autoTitleStatus() (any, error) {
 			UserTurns: userTurns,
 			Locked:    locked,
 			Active:    true,
+			History:   resolveSessionTitleHistory(id, path, agent),
 		})
 	}
 
@@ -302,6 +304,7 @@ func autoTitleStatus() (any, error) {
 			UserTurns: rec.UserTurns,
 			Locked:    rec.Locked,
 			Active:    false,
+			History:   seedHistoryFromEntry(rec),
 		})
 	}
 

@@ -39,6 +39,7 @@ import {
 import { requestNewSession } from './session-new'
 import { worktreeKey } from './session-order'
 import { useStatusText } from './session-status-text'
+import { SessionTitleHistorySection } from './session-title-history'
 
 export { metaValue }
 export type { MetaGroup } from './session-info-meta'
@@ -326,6 +327,8 @@ export function SessionInfo({
               </FieldList>
             </section>
           ) : null}
+
+          <SessionTitleHistorySection history={data.title_history} />
 
           {usageRows.length ? (
             <section className="grid gap-1">

@@ -771,6 +771,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if title := resolveSessionTitle(a.ID, path, agent); title != "" {
 			out["title"] = title
 		}
+		if hist := resolveSessionTitleHistory(a.ID, path, agent); len(hist) > 0 {
+			out["title_history"] = hist
+		}
 		if p, ok := adapterFor(agent).(planReader); ok {
 			if plan := p.PendingPlan(path); plan != nil {
 				// awaiting_approval only while attention is waiting — after

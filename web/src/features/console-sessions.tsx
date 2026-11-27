@@ -96,12 +96,23 @@ export type AgentCapabilities = {
   title: boolean
 }
 
+export type TitleHistoryItem = {
+  title: string
+  at: number
+  ended_at?: number
+  user_turns?: number
+  source?: 'auto' | 'manual' | 'native'
+  provider?: string
+}
+
 export type Detail = StatusFields & {
   messages_rev?: number
   read_only?: boolean
   id: string
   name?: string
   title?: string
+  /** chronological task titles recorded for this session (session_autotitle.go) */
+  title_history?: Array<TitleHistoryItem>
   window?: string
   branch?: string
   /** working-tree status of the pane's cwd (git_status.go) */
