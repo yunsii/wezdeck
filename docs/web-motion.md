@@ -34,6 +34,8 @@ froze ~140 ms and jumped); travel stays small (≤ 8 px). Verify with
 Reserve the create button’s final space in session and ticket toolbars from
 the first render. Hide and disable it until write access is confirmed so
 the search field and neighboring controls keep their positions.
+The session detail title row also reserves the avatar and action slots
+while session data loads. Quota alerts can add a row when they are needed.
 
 ## Compositor layer discipline (Chromium HiDPI)
 

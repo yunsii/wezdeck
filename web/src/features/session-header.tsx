@@ -235,7 +235,9 @@ export function SessionHeader({
           >
             {agent ? (
               <AgentAvatar agent={agent} profile={profile} size={28} />
-            ) : null}
+            ) : (
+              <span aria-hidden className="size-7 shrink-0" />
+            )}
             <span
               className={cn(
                 'truncate',
@@ -248,60 +250,66 @@ export function SessionHeader({
           {/* agent, branch, git, node, worktrees and background tasks
               live in the status bar under the composer (session-statusbar) */}
         </div>
-        {data ? (
-          <Button
-            variant="plain"
-            type="button"
-            onClick={() => {
-              trace('session-controls', {
-                action: 'open',
-                type: 'todos',
-                count: todoCount,
-              })
-              setTodosOpen(true)
-            }}
-            aria-label={t`To-dos`}
-            aria-haspopup="dialog"
-            data-testid="session-todos-button"
-            className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
-          >
-            <ListTodo size={19} aria-hidden />
-            {todoCount ? (
-              <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-brand-running px-0.5 text-center text-meta leading-4 text-brand-deck tabular-nums">
-                {todoCount}
-              </span>
-            ) : null}
-          </Button>
-        ) : null}
-        {data ? (
-          <Button
-            variant="plain"
-            type="button"
-            onClick={() => {
-              trace('session-controls', { action: 'open', type: 'actions' })
-              setActionsOpen(true)
-            }}
-            aria-label={t`Session actions`}
-            aria-haspopup="dialog"
-            data-testid="session-actions-button"
-            className="-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted"
-          >
-            <MoreHorizontal size={20} aria-hidden />
-          </Button>
-        ) : null}
-        {data ? (
-          <Button
-            variant="plain"
-            type="button"
-            onClick={() => setInfoOpen(true)}
-            aria-label={t`Session info`}
-            aria-haspopup="dialog"
-            data-testid="session-info-button"
-            className="hidden size-10 shrink-0 items-center justify-center rounded-full text-brand-muted md:inline-flex"
-          >
-            <Info size={19} aria-hidden />
-          </Button>
-        ) : null}
+        <Button
+          variant="plain"
+          type="button"
+          disabled={!data}
+          onClick={() => {
+            trace('session-controls', {
+              action: 'open',
+              type: 'todos',
+              count: todoCount,
+            })
+            setTodosOpen(true)
+          }}
+          aria-label={t`To-dos`}
+          aria-haspopup="dialog"
+          data-testid="session-todos-button"
+          className={cn(
+            'relative inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted',
+            !data && 'invisible',
+          )}
+        >
+          <ListTodo size={19} aria-hidden />
+          {todoCount ? (
+            <span className="absolute -top-0.5 -right-0.5 min-w-4 rounded-full bg-brand-running px-0.5 text-center text-meta leading-4 text-brand-deck tabular-nums">
+              {todoCount}
+            </span>
+          ) : null}
+        </Button>
+        <Button
+          variant="plain"
+          type="button"
+          disabled={!data}
+          onClick={() => {
+            trace('session-controls', { action: 'open', type: 'actions' })
+            setActionsOpen(true)
+          }}
+          aria-label={t`Session actions`}
+          aria-haspopup="dialog"
+          data-testid="session-actions-button"
+          className={cn(
+            '-mr-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-brand-muted',
+            !data && 'invisible',
+          )}
+        >
+          <MoreHorizontal size={20} aria-hidden />
+        </Button>
+        <Button
+          variant="plain"
+          type="button"
+          disabled={!data}
+          onClick={() => setInfoOpen(true)}
+          aria-label={t`Session info`}
+          aria-haspopup="dialog"
+          data-testid="session-info-button"
+          className={cn(
+            'hidden size-10 shrink-0 items-center justify-center rounded-full text-brand-muted md:inline-flex',
+            !data && 'invisible',
+          )}
+        >
+          <Info size={19} aria-hidden />
+        </Button>
       </div>
       <SessionUsageAlerts data={data} visibleUsage={visibleUsage} />
       {data ? (
