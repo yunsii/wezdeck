@@ -365,7 +365,7 @@ elif [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
     log "backend select: writer=$writer → $reviewer vs $refuter (form=$select_form degraded=$select_degraded)"
     log "  reason: $select_reason"
   else
-    die "no review backends available for writer=$writer" 2
+    die "${SEL_REASON:-no review backends available} (writer=$writer)" 2
   fi
 fi
 # manual defaults if still empty

@@ -28,29 +28,16 @@ for ln in sys.stdin:
         ev = json.loads(ln)
     except Exception:
         continue
-    for key in ("text", "delta", "content", "message"):
-        v = ev.get(key)
-        if isinstance(v, str) and v.strip():
-            last = v
-        elif isinstance(v, dict):
-            c = v.get("content") or v.get("text")
-            if isinstance(c, str) and c.strip():
-                last = c
-            elif isinstance(c, list):
-                parts = []
-                for item in c:
-                    if isinstance(item, dict) and isinstance(item.get("text"), str):
-                        parts.append(item["text"])
-                    elif isinstance(item, str):
-                        parts.append(item)
-                if parts:
-                    last = "".join(parts)
-    if ev.get("type") in ("agent_message", "message", "item.completed"):
-        item = ev.get("item") or ev.get("message") or {}
-        if isinstance(item, dict):
+    if ev.get("type") == "item.completed":
+        item = ev.get("item") or {}
+        if item.get("type") == "agent_message":
             tx = item.get("text") or item.get("content")
             if isinstance(tx, str) and tx.strip():
                 last = tx
+    elif ev.get("type") in ("agent_message", "message"):
+        tx = ev.get("text") or ev.get("content") or ev.get("message")
+        if isinstance(tx, str) and tx.strip():
+            last = tx
 print(last)
 '
 }
@@ -62,7 +49,7 @@ codex__model()    { printf '%s' "${ADV_MODEL_CODEX:-gpt-5.5}"; }
 
 # stdin = full prompt; $1 = effort. Host CODEX_HOME via host-agent-invoke.
 codex__invoke() {
-  local effort="${1:-}" model gtmp raw
+  local effort="${1:-}" model gtmp raw rc=0 text
   model="$(codex__model)"
   gtmp="$(mktemp "${TMPDIR:-/tmp}/codex-prompt.XXXXXX")"
   cat >"$gtmp"
@@ -72,7 +59,16 @@ codex__invoke() {
       --cwd "${PWD:-.}" --prompt-file "$gtmp" \
       --model "$model" ${effort:+--effort "$effort"} \
       --capture
-  )" || true
+  )" || rc=$?
   rm -f "$gtmp"
-  printf '%s' "$raw" | _codex_extract_text
+  if [ "$rc" -ne 0 ]; then
+    printf 'codex invoke failed (exit %s)\n' "$rc" >&2
+    return 1
+  fi
+  text="$(printf '%s' "$raw" | _codex_extract_text)"
+  [ -n "$text" ] && grep -q '"type":"turn.completed"' <<< "$raw" || {
+    printf 'codex invoke failed: no completed agent message\n' >&2
+    return 1
+  }
+  printf '%s' "$text"
 }

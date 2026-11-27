@@ -13,7 +13,7 @@ claude__model()    { printf '%s' "${ADV_MODEL_CLAUDE:-claude-opus-5[1m]}"; }
 
 # stdin = full prompt (pack + INPUT); $1 = effort (may be empty)
 claude__invoke() {
-  local effort="${1:-}" model gtmp raw
+  local effort="${1:-}" model gtmp raw rc=0 code
   model="$(claude__model)"
   gtmp="$(mktemp "${TMPDIR:-/tmp}/claude-prompt.XXXXXX")"
   cat >"$gtmp"
@@ -23,7 +23,12 @@ claude__invoke() {
       --cwd "${PWD:-.}" --prompt-file "$gtmp" \
       --model "$model" ${effort:+--effort "$effort"} \
       --capture
-  )" || true
+  )" || rc=$?
   rm -f "$gtmp"
-  printf '%s' "$raw" | jq -r '.result // .text // empty'
+  if [ "$rc" -ne 0 ] || printf '%s' "$raw" | jq -e '.is_error == true' >/dev/null 2>&1; then
+    code="$(printf '%s' "$raw" | jq -r '.api_error_code // "cli_error"' 2>/dev/null)"
+    printf 'claude invoke failed: %s (exit %s)\n' "$code" "$rc" >&2
+    return 1
+  fi
+  printf '%s' "$raw" | jq -er '.result // .text | select(type == "string" and length > 0)'
 }

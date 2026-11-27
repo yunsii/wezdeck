@@ -219,8 +219,8 @@ if [ "${BASH_SOURCE[0]:-}" = "${0:-}" ]; then
       _pp="$(_provider_canonical "${2:-}")"
       provider_available "$_pp" || exit 1
       declare -F "${_pp}__invoke" >/dev/null 2>&1 || exit 1
-      _pout="$(printf 'Reply with exactly: ping-ok' | "${_pp}__invoke" '' 2>/dev/null)" || true
-      [ -n "$_pout" ] || exit 1
+      _pout="$(printf 'Reply with exactly: ping-ok' | "${_pp}__invoke" '')" || exit 1
+      [ "$_pout" = 'ping-ok' ] || { echo "provider probe returned an unexpected reply: $_pp" >&2; exit 1; }
       ;;
     *) echo "usage: provider.sh {selfcheck [name ...] | providers | probe <name>}" >&2; exit 1 ;;
   esac
