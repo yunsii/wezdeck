@@ -13,8 +13,29 @@ import { SessionStatusBar } from './session-statusbar'
 
 const AGY_RUN_COMMAND: PendingCall = {
   tool: 'run_command',
-  text: 'run_command Release relay and web console',
-  body: 'bash /home/yuns/github/wezterm-config/scripts/dev/wezdeck-release.sh',
+  text: 'run_command [unsandboxed] Release relay and web console after checking affected tests and validating i18n catalogs',
+  summary:
+    'Release relay and web console after checking affected tests and validating i18n catalogs (full summary wraps cleanly without ellipsis)',
+  flags: ['bypass-sandbox'],
+  body: [
+    'set -euo pipefail',
+    'cd /home/yuns/github/wezterm-config',
+    'git status --short',
+    'bash scripts/dev/check-web.sh',
+    'cd native/wezdeck-wsl && go test -count=1 ./...',
+    'cd /home/yuns/github/wezterm-config',
+    'for step in build push relay web reload; do',
+    '  printf "[release] checking %s\\n" "$step"',
+    'done',
+    '# verify remote stack & Playwright CDP suite before deploy',
+    'WEZDECK_TEST_STACK_PORT=3055 bash scripts/dev/remote-test-stack.sh start',
+    'cd web && corepack pnpm exec vitest run --config vitest.cdp.config.ts tests/interactions.cdp.test.ts',
+    'cd /home/yuns/github/wezterm-config',
+    'WEZDECK_TEST_STACK_PORT=3055 bash scripts/dev/remote-test-stack.sh stop',
+    '# land and deploy',
+    'bash /home/yuns/github/wezterm-config/scripts/dev/wezdeck-release.sh --land HEAD',
+    'echo "RELEASE_SCRIPT_END_MARKER"',
+  ].join('\n'),
 }
 
 const AGY_PERMISSION_SCREEN =

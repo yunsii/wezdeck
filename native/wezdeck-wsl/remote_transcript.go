@@ -41,6 +41,9 @@ type chatMessage struct {
 	// embedded base64 in the transcript — pasted at the desk, or returned by a
 	// tool; the phone fetches them with session.image (remote_image.go).
 	Images []string `json:"images,omitempty"`
+	// rawInput: unclipped tool arguments retained only while Pending so
+	// pendingPermission can render the complete summary and script/diff/args.
+	rawInput map[string]any
 }
 
 func lineCount(s string) int {
@@ -333,7 +336,8 @@ func (t *transcript) addTool(id, name, argsJSON, ts string) {
 	file, added, removed := toolStats(name, input)
 	t.messages = append(t.messages, chatMessage{Role: "tool", Tool: name, Text: toolSummary(name, input),
 		Body: toolBody(name, input), TS: ts, File: file, Added: added, Removed: removed,
-		Kind: t.toolKind(name, input), Background: input["run_in_background"] == true || input["IsDaemon"] == true})
+		Kind: t.toolKind(name, input), Background: input["run_in_background"] == true || input["IsDaemon"] == true,
+		rawInput: input})
 	if id != "" {
 		t.tools[id] = len(t.messages) - 1
 		t.messages[len(t.messages)-1].Pending = true
@@ -344,6 +348,7 @@ func (t *transcript) setResult(id, out string) {
 	if idx, ok := t.tools[id]; ok {
 		t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 		t.messages[idx].Pending = false
+		t.messages[idx].rawInput = nil
 		delete(t.tools, id)
 	}
 }

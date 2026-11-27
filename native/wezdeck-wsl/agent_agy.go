@@ -122,6 +122,7 @@ func (t *transcript) settleAgyPending() {
 	for _, idx := range t.agyPending {
 		if idx >= 0 && idx < len(t.messages) {
 			t.messages[idx].Pending = false
+			t.messages[idx].rawInput = nil
 		}
 	}
 	t.agyPending = nil
@@ -193,6 +194,7 @@ func (t *transcript) feedAgy(raw []byte) {
 					t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 				}
 				t.messages[idx].Pending = false
+				t.messages[idx].rawInput = nil
 			}
 		}
 	}

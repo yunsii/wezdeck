@@ -97,7 +97,17 @@ const MARK: Record<Row['kind'], string> = {
   note: '',
 }
 
-export function ToolBody({ text, file }: { text: string; file?: string }) {
+export function ToolBody({
+  text,
+  file,
+  className,
+  testId,
+}: {
+  text: string
+  file?: string
+  className?: string
+  testId?: string
+}) {
   const { rows, code } = parseBody(text)
   // a Write body is the file itself: colour it too
   const lang = code || file ? langOf(file) : null
@@ -107,7 +117,11 @@ export function ToolBody({ text, file }: { text: string; file?: string }) {
   let at = 0 // index into tokens (code rows only)
   return (
     <pre
-      className="max-h-80 max-w-full min-w-0 overflow-auto rounded-lg bg-brand-deck py-1.5 font-mono text-meta leading-snug"
+      data-testid={testId}
+      className={cn(
+        'max-h-80 max-w-full min-w-0 overflow-auto rounded-lg bg-brand-deck py-1.5 font-mono text-meta leading-snug',
+        className,
+      )}
       data-lang={lang ?? undefined}
     >
       {rows.map((row, index) => {

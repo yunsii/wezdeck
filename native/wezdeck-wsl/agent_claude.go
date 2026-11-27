@@ -364,6 +364,7 @@ func (t *transcript) feedLine(raw []byte) {
 			if b.ID != "" {
 				t.tools[b.ID] = len(t.messages) - 1
 				t.messages[len(t.messages)-1].Pending = true
+				t.messages[len(t.messages)-1].rawInput = input
 			}
 		case b.Type == "tool_result":
 			idx, ok := t.tools[b.ToolUseID]
@@ -398,6 +399,7 @@ func (t *transcript) feedLine(raw []byte) {
 			}
 			t.messages[idx].Result = clipLines(clip(out, 3000), 40)
 			t.messages[idx].Pending = false
+			t.messages[idx].rawInput = nil
 			t.trackTask(idx, out)
 			if body := patchBody(line.ToolUseResult.StructuredPatch); body != "" {
 				t.messages[idx].Body = body

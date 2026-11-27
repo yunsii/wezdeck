@@ -100,10 +100,27 @@ describe('Interaction debugging page', () => {
         page.getByTestId('interaction-detail').getAttribute('data-interaction'),
       )
       .toBe('agy-permission')
-    await page
-      .getByTestId('interaction-detail')
-      .getByRole('button', { name: '允许' })
-      .click()
+    const agyDetail = page.getByTestId('interaction-detail')
+    // Full summary wraps without ellipsis, risk flag badge is shown, full script is scrollable
+    const summaryText = await agyDetail
+      .getByTestId('permission-summary')
+      .innerText()
+    expect(summaryText).toContain('full summary wraps cleanly without ellipsis')
+    expect(
+      await agyDetail
+        .locator('[data-permission-flag="bypass-sandbox"]')
+        .count(),
+    ).toBe(1)
+    const bodyEl = agyDetail.getByTestId('permission-body')
+    expect(await bodyEl.innerText()).toContain('RELEASE_SCRIPT_END_MARKER')
+    // Expand button opens the full-view Sheet and Escape dismisses it
+    await agyDetail.getByTestId('permission-expand').click()
+    const sheet = page.getByTestId('permission-detail-sheet')
+    await sheet.waitFor({ timeout: 3_000 })
+    expect(await sheet.innerText()).toContain('RELEASE_SCRIPT_END_MARKER')
+    await page.keyboard.press('Escape')
+    await sheet.waitFor({ state: 'hidden', timeout: 3_000 })
+    await agyDetail.getByRole('button', { name: '允许' }).click()
     await expect
       .poll(() =>
         page

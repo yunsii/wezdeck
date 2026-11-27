@@ -292,7 +292,7 @@ msgstr "added"
 msgid "after"
 msgstr "after"
 
-#: src/features/session-permission.tsx:56
+#: src/features/session-permission.tsx:173
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
@@ -360,11 +360,11 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:108
+#: src/features/session-permission.tsx:314
 msgid "Allow"
 msgstr "Allow"
 
-#: src/features/session-permission.tsx:55
+#: src/features/session-permission.tsx:172
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
@@ -389,7 +389,7 @@ msgstr "Already the latest"
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
 
-#: src/features/session-permission.tsx:72
+#: src/features/session-permission.tsx:198
 msgid "Antigravity asks to run this"
 msgstr "Antigravity asks to run this"
 
@@ -440,11 +440,11 @@ msgstr "Approve plan"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/session-permission.tsx:53
+#: src/features/session-permission.tsx:170
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:108
+#: src/features/session-permission.tsx:314
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -527,6 +527,10 @@ msgstr "Backend"
 msgid "background"
 msgstr "background"
 
+#: src/features/session-permission.tsx:51
+msgid "Background"
+msgstr "Background"
+
 #: src/features/session-background.tsx:133
 #: src/features/session-info.tsx:84
 msgid "Background tasks"
@@ -588,6 +592,10 @@ msgstr "By target repo"
 #: src/features/collab-metrics.tsx:223
 msgid "By trigger"
 msgstr "By trigger"
+
+#: src/features/session-permission.tsx:47
+msgid "Bypass sandbox"
+msgstr "Bypass sandbox"
 
 #: src/features/console-collab-run.tsx:162
 msgid "Bytes"
@@ -688,7 +696,7 @@ msgstr "Children"
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/session-permission.tsx:73
+#: src/features/session-permission.tsx:199
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
@@ -700,7 +708,7 @@ msgstr "Claude commands"
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
-#: src/features/session-permission.tsx:70
+#: src/features/session-permission.tsx:196
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
@@ -935,6 +943,7 @@ msgstr "context usage"
 
 #: src/features/session-composer.tsx:90
 #: src/features/session-info.tsx:283
+#: src/features/session-permission.tsx:180
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copied"
 msgstr "Copied"
@@ -958,6 +967,9 @@ msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:90
+#: src/features/session-permission.tsx:106
+#: src/features/session-permission.tsx:217
+#: src/features/session-permission.tsx:258
 msgid "Copy"
 msgstr "Copy"
 
@@ -1032,6 +1044,10 @@ msgstr "Could not change the device: {changeError}"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
+#: src/features/session-permission.tsx:181
+msgid "Could not copy to clipboard"
+msgstr "Could not copy to clipboard"
+
 #: src/features/session-new-panels.tsx:160
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
@@ -1089,6 +1105,10 @@ msgstr "Current API key"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
+#: src/features/session-permission.tsx:49
+msgid "Daemon"
+msgstr "Daemon"
+
 #: src/features/console-me.tsx:220
 #: src/features/console-me.tsx:311
 #: src/features/console-shared.tsx:386
@@ -1130,7 +1150,7 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
-#: src/features/session-permission.tsx:126
+#: src/features/session-permission.tsx:332
 msgid "Deny"
 msgstr "Deny"
 
@@ -1404,6 +1424,11 @@ msgstr "Full access"
 msgid "Full access: auto-approves all actions"
 msgstr "Full access: auto-approves all actions"
 
+#: src/features/session-permission.tsx:227
+#: src/features/session-permission.tsx:268
+msgid "Full view"
+msgstr "Full view"
+
 #: src/features/session-git.tsx:220
 #: src/features/session-git.tsx:359
 msgid "Git status"
@@ -1637,7 +1662,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:126
+#: src/features/session-permission.tsx:332
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -3343,7 +3368,7 @@ msgstr "Tappable Ask options"
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/features/session-permission.tsx:132
+#: src/features/session-permission.tsx:338
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3638,6 +3663,11 @@ msgstr "Transcript"
 #: src/features/console-collab-run.tsx:107
 msgid "Trigger"
 msgstr "Trigger"
+
+#: src/features/session-permission.tsx:133
+#: src/features/session-permission.tsx:294
+msgid "Truncated at 64 KB — check the terminal for the full payload."
+msgstr "Truncated at 64 KB — check the terminal for the full payload."
 
 #: src/features/session-new-panels.tsx:344
 msgid "Trust this worktree and continue"

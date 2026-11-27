@@ -257,8 +257,8 @@ export function SessionPermissionKeys({
       )}
     >
       <p className="text-body font-medium">{t`The agent asks:`}</p>
-      <pre className="max-h-48 overflow-auto font-mono text-meta leading-snug text-brand-muted">
-        {(screen ?? '').split('\n').slice(-14).join('\n')}
+      <pre className="max-h-64 overflow-auto overscroll-contain font-mono text-meta leading-snug text-brand-muted">
+        {screen ?? ''}
       </pre>
       <div className="flex flex-wrap gap-2">
         {[
