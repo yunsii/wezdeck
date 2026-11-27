@@ -466,6 +466,11 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
     viewport: viewport(),
     viewportMeta: document.querySelector<HTMLMetaElement>('meta[name=viewport]')
       ?.content,
+    pointer: {
+      coarse: matchMedia('(hover: none) and (pointer: coarse)').matches,
+      anyFine: matchMedia('(any-pointer: fine), (any-hover: hover)').matches,
+      wide: matchMedia('(min-width: 768px)').matches,
+    },
     safeArea: safeArea(),
     scroller: scroller(),
     listScroller: listScroller(),

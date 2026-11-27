@@ -251,7 +251,8 @@ export function MessageComposer({
   )
   const wide = useIsWide()
   const [sawHardwareKey, setSawHardwareKey] = useState(false)
-  const touchOnly = coarsePrimary && !anyFinePointer && !sawHardwareKey
+  const enterBreaksLine =
+    coarsePrimary && (!wide || (!anyFinePointer && !sawHardwareKey))
   const canSend = !draft.progress && draft.ready && !blocked
 
   const assignRef = (node: HTMLTextAreaElement | null) => {
@@ -320,24 +321,37 @@ export function MessageComposer({
               event.currentTarget.blur()
               return
             }
-            if (
-              !shouldEnterSend({
-                coarsePrimary,
-                anyFinePointer,
-                wide,
-                sawHardwareKey: sawHardwareKey || isHardwareOnlyKey(event),
-                softKeyboardOpen: isSoftKeyboardOpen(),
-                key: event.key,
-                code: event.code,
-                shiftKey: event.shiftKey,
-                altKey: event.altKey,
-                ctrlKey: event.ctrlKey,
-                metaKey: event.metaKey,
-                isComposing: event.nativeEvent.isComposing,
-                keyCode: event.keyCode,
-              })
-            )
-              return
+            if (event.key !== 'Enter') return
+            const softKeyboardOpen = isSoftKeyboardOpen()
+            const hardwareKey = sawHardwareKey || isHardwareOnlyKey(event)
+            const sendOnEnter = shouldEnterSend({
+              coarsePrimary,
+              anyFinePointer,
+              wide,
+              sawHardwareKey: hardwareKey,
+              softKeyboardOpen,
+              key: event.key,
+              code: event.code,
+              shiftKey: event.shiftKey,
+              altKey: event.altKey,
+              ctrlKey: event.ctrlKey,
+              metaKey: event.metaKey,
+              isComposing: event.nativeEvent.isComposing,
+              keyCode: event.keyCode,
+            })
+            trace('composer-enter', {
+              send: sendOnEnter,
+              coarse: coarsePrimary,
+              anyFine: anyFinePointer,
+              wide,
+              softKb: softKeyboardOpen,
+              hwKey: hardwareKey,
+              code: event.code,
+              shift: event.shiftKey,
+              ctrl: event.ctrlKey || event.metaKey,
+              composing: event.nativeEvent.isComposing,
+            })
+            if (!sendOnEnter) return
             event.preventDefault()
             if (!canSend) return
             if (onSubmitForm) onSubmitForm()
@@ -356,7 +370,7 @@ export function MessageComposer({
               draft.pick(files)
             }
           }}
-          enterKeyHint={touchOnly ? 'enter' : 'send'}
+          enterKeyHint={enterBreaksLine ? 'enter' : 'send'}
           rows={1}
           placeholder={placeholder}
           className={
