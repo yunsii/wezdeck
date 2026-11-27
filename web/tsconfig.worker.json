@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/server.ts", "src/relay/**/*.ts"],
+  "include": [
+    "src/server.ts",
+    "src/relay/**/*.ts",
+    "tests/host-relay.unit.test.ts"
+  ],
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
     "lib": ["ES2022"],

@@ -5,8 +5,11 @@
 import Bowser from 'bowser'
 import { useEffect, useSyncExternalStore } from 'react'
 
+import { trace } from '#/lib/client-trace'
 import { createDeviceKey, loadDeviceKey } from '#/lib/device-key'
+import { describeError, isPairingGateError } from '#/lib/remote-auth'
 import { remoteLink } from '#/lib/remote-link'
+import { clearPairingInvite, readPairingInvite } from '#/lib/remote-pairing'
 import { hasLocalWrite } from '#/lib/runtime-client'
 
 export type DeviceWriteState = 'checking' | 'none' | 'pending' | 'approved'
@@ -36,18 +39,33 @@ async function ask(create: boolean) {
     const name =
       [info.browser, info.os, info.model].filter(Boolean).join(' · ') ||
       'browser'
+    const invite = readPairingInvite()
     const result = (await remoteLink.rpc('device.register', {
       public_key: key.publicRaw,
       name,
       info,
+      ...(invite ? { invite } : {}),
     })) as { state: 'pending' | 'approved' }
+    if (result.state === 'approved') clearPairingInvite()
     set({ state: result.state, id: key.id })
   } catch (error) {
+    const rawMessage = error instanceof Error ? error.message : String(error)
+    const message = describeError(rawMessage)
+    trace('device-register-error', { message: rawMessage.slice(0, 160) })
     const key = await loadDeviceKey()
+    if (isPairingGateError(error)) {
+      clearPairingInvite()
+      set({
+        state: 'none',
+        id: key?.id,
+        error: message,
+      })
+      return
+    }
     set({
       state: key ? 'pending' : 'none',
       id: key?.id,
-      error: (error as Error).message,
+      error: message,
     })
   }
 }
