@@ -553,14 +553,11 @@ fi
 # Shared audit context for attention-state-lib journal rows (best-effort).
 attention_audit_prepare() {
   local op="$1" st="${2:-}" prev="${3:-}" detail="${4:-}" focus_skipped="${5:-0}"
-  export AGENT_ATTENTION_AUDIT_OP="$op"
-  export AGENT_ATTENTION_AUDIT_SESSION_ID="${session_id:-}"
-  export AGENT_ATTENTION_AUDIT_STATUS="$st"
-  export AGENT_ATTENTION_AUDIT_PREV_STATUS="$prev"
-  export AGENT_ATTENTION_AUDIT_OP_DETAIL="$detail"
-  export AGENT_ATTENTION_AUDIT_FOCUS_SKIPPED="$focus_skipped"
-  export AGENT_ATTENTION_AUDIT_TMUX_PANE="${tmux_pane:-}"
-  export AGENT_ATTENTION_AUDIT_WEZTERM_PANE="${WEZTERM_PANE:-}"
+  export AGENT_ATTENTION_AUDIT_OP="$op" AGENT_ATTENTION_AUDIT_SESSION_ID="${session_id:-}"
+  export AGENT_ATTENTION_AUDIT_STATUS="$st" AGENT_ATTENTION_AUDIT_PREV_STATUS="$prev"
+  export AGENT_ATTENTION_AUDIT_OP_DETAIL="$detail" AGENT_ATTENTION_AUDIT_FOCUS_SKIPPED="$focus_skipped"
+  export AGENT_ATTENTION_AUDIT_TMUX_PANE="${tmux_pane:-}" AGENT_ATTENTION_AUDIT_WEZTERM_PANE="${WEZTERM_PANE:-}"
+  export AGENT_ATTENTION_PROVIDER="${provider:-}" AGENT_ATTENTION_RAW_EVENT="${raw_event:-}"
   # Transport is decided later for the tick; preview here for the journal.
   if [[ -z "${AGENT_ATTENTION_AUDIT_TRANSPORT:-}" ]]; then
     # shellcheck disable=SC1091

@@ -256,28 +256,66 @@ rm -rf "$sandbox"
 sandbox="$(mktemp -d)"
 setup_sandbox "$sandbox" "$socket" "$session" "%5"
 export WEZDECK_AGY_MANAGED=1
+export WEZTERM_ATTENTION_JOURNAL_FILE="$sandbox/wezterm-runtime/logs/transitions.jsonl"
 printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"<USER_REQUEST>\nfix agy prompt\nsecond line\n</USER_REQUEST>","workspacePaths":["/tmp"]}' \
   | "$agy_adapter" running >/dev/null 2>&1 || true
 assert_eq "Agy PreInvocation becomes running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
 assert_eq "Agy provider field" "agy" "$(field_for "$sandbox" "agy-session-1" "agent_name")"
 assert_eq "Agy lastUserInput becomes last_user_prompt" "fix agy prompt" "$(field_for "$sandbox" "agy-session-1" "last_user_prompt")"
+rev_after_start="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"<USER_REQUEST>\nfix agy prompt\nsecond line\n</USER_REQUEST>"}' \
+  | "$agy_adapter" running >/dev/null 2>&1 || true
+assert_eq "Agy repeat PreInvocation hits fast-path (no state rewrite)" "$rev_after_start" "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","toolCall":{"name":"run_command"}}' \
+  | "$agy_adapter" resolved >/dev/null 2>&1 || true
+assert_eq "Agy PostToolUse resolved while running hits fast-path" "$rev_after_start" "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"<USER_REQUEST>\nfollow-up prompt\n</USER_REQUEST>"}' \
+  | "$agy_adapter" running >/dev/null 2>&1 || true
+assert_eq "Agy PreInvocation with new prompt updates last_user_prompt" "follow-up prompt" "$(field_for "$sandbox" "agy-session-1" "last_user_prompt")"
 ask_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreToolUse","toolCall":{"name":"ask_question","args":{"questions":[{"question":"Ship now?"}]}}}' | "$agy_adapter" ask-waiting)"
 assert_eq "Agy ask-waiting becomes waiting" "waiting" "$(field_for "$sandbox" "agy-session-1" "status")"
 assert_eq "Agy ask-waiting sets elicitation_dialog" "elicitation_dialog" "$(field_for "$sandbox" "agy-session-1" "waiting_kind")"
 assert_eq "Agy ask-waiting returns allow decision" '{"decision":"allow"}' "$ask_decision"
-printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","lastUserInput":"fix agy prompt"}' \
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","lastUserInput":"follow-up prompt"}' \
   | "$agy_adapter" ask-resolved >/dev/null 2>&1 || true
 assert_eq "Agy ask-resolved returns to running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
-decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","fullyIdle":true}' | "$agy_adapter" done)"
-assert_eq "Agy Stop becomes done" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
+bg_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","terminationReason":"NO_TOOL_CALL","error":"","fullyIdle":false}' | "$agy_adapter" done)"
+assert_eq "Agy Stop with fullyIdle=false stays running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop with fullyIdle=false still returns stop decision" '{"decision":"stop"}' "$bg_decision"
+if grep -q 'agy stop deferred; not fullyIdle' "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null; then
+  pass=$((pass+1)); echo "  ✓ Agy deferred Stop logs observable breadcrumb"
+else
+  fail=$((fail+1)); echo "  ✗ Agy deferred Stop missing runtime.log breadcrumb" >&2
+fi
+bg_omitted_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","terminationReason":"NO_TOOL_CALL","error":""}' | "$agy_adapter" done)"
+assert_eq "Agy Stop with omitted fullyIdle + NO_TOOL_CALL stays running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop omitted fullyIdle still returns stop decision" '{"decision":"stop"}' "$bg_omitted_decision"
+cancel_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","terminationReason":"USER_CANCELED","error":"","fullyIdle":false}' | "$agy_adapter" done)"
+assert_eq "Agy Stop USER_CANCELED becomes done even when fullyIdle=false" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop USER_CANCELED sets canceled reason" "canceled" "$(field_for "$sandbox" "agy-session-1" "reason")"
+assert_eq "Agy Stop USER_CANCELED returns stop decision" '{"decision":"stop"}' "$cancel_decision"
+err_decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","terminationReason":"ERROR","error":"rate limited\nretry later","fullyIdle":false}' | "$agy_adapter" done)"
+assert_eq "Agy Stop ERROR becomes done" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop ERROR uses first line of error as reason" "rate limited" "$(field_for "$sandbox" "agy-session-1" "reason")"
+assert_eq "Agy Stop ERROR returns stop decision" '{"decision":"stop"}' "$err_decision"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"follow-up prompt"}' \
+  | "$agy_adapter" running >/dev/null 2>&1 || true
+assert_eq "Agy PreInvocation after done flips back to running" "running" "$(field_for "$sandbox" "agy-session-1" "status")"
+decision="$(printf '%s' '{"conversationId":"agy-session-1","hookEventName":"Stop","terminationReason":"NO_TOOL_CALL","error":"","fullyIdle":true}' | "$agy_adapter" done)"
+assert_eq "Agy Stop with fullyIdle=true becomes done" "done" "$(field_for "$sandbox" "agy-session-1" "status")"
+assert_eq "Agy Stop with empty error uses task done (not literal null)" "task done" "$(field_for "$sandbox" "agy-session-1" "reason")"
 assert_eq "Agy Stop returns decision" '{"decision":"stop"}' "$decision"
+last_jrn_prov="$(tail -n 1 "$WEZTERM_ATTENTION_JOURNAL_FILE" | jq -r '.provider // ""')"
+last_jrn_raw="$(tail -n 1 "$WEZTERM_ATTENTION_JOURNAL_FILE" | jq -r '.raw_event // ""')"
+assert_eq "Transition journal records provider=agy" "agy" "$last_jrn_prov"
+assert_eq "Transition journal records raw_event=Stop" "Stop" "$last_jrn_raw"
 AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" install --provider agy >/dev/null
 if AGENT_HOOKS_HOME="$sandbox/home" bash "$repo_root/scripts/dev/agent-hooks.sh" check --provider agy --quiet; then
   pass=$((pass+1)); echo "  ✓ Agy agent-hooks install and check healthy"
 else
   fail=$((fail+1)); echo "FAIL Agy agent-hooks check" >&2
 fi
-unset WEZDECK_AGY_MANAGED
+unset WEZDECK_AGY_MANAGED WEZTERM_ATTENTION_JOURNAL_FILE
 rm -rf "$sandbox"
 
 # Dedicated adapters/grok.sh (native ~/.grok/hooks install).
