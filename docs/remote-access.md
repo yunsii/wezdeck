@@ -183,7 +183,28 @@ mirrored as Worker secrets `RELAY_HOST_TOKEN` / `RELAY_CLIENT_TOKEN`:
   every host — `relay/auth.ts`; "Bearer undefined" used to get in);
 - browser: subprotocols `wezdeck.v1, token.<secret>` (browsers cannot set
   WebSocket headers); stored per device in `localStorage` from a
-  `#pair=<token>` link (the fragment never reaches the server).
+  `#pair=<token>&invite=<one-time>` link (the fragment never reaches the server).
+
+One-time approval invite (2026-11-27): `install-remote-relay.sh --pair` mints a
+single-use `invite` (SHA-256 stored in `remote-devices.json` `invites[]`, valid
+24 h) alongside the shared client token. Already-approved devices keep working
+and can re-pair with the same link (consuming the invite so strangers cannot
+reuse it); once a pairing link is bound (or the host already has devices and a
+link carries no invite), new unknown devices calling `device.register` are
+refused (`device_register_denied` with `reason=pairing_already_bound |
+invite_already_used | invite_expired | invite_invalid`) and never enter
+`pending`. Running `--pair` again issues a fresh invite for the next new device.
+
+Host socket failover & relay observability (2026-11-27): `HostRelay` tracks each
+host socket with a short `hid`, marks superseded sockets `replaced` before
+closing (`4000`), routes client frames to the newest `OPEN` non-replaced host
+socket, and catches `host.send()` failures (`host_send_error`) instead of
+blackholing frames onto a stale/closing index-0 socket after a TCP reset.
+`/relay/health` reports `hosts`, `hosts_total`, `host_id`, `clients`, and
+`clients_total`; Cloudflare Worker logs record `host_connected`, `host_closed`,
+`host_send_error`, `client_connected`, `client_closed`, `client_send_error`, and
+`presence_changed`. The host relay also logs `send_error` / `ping_error` if
+writing to the DO socket fails.
 
 Rotation (`rm` the env file, rerun install + `--push-secrets`) evicts open
 browser sockets: each carries a SHA-256 tag of its token, checked by the DO on

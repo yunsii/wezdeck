@@ -28,8 +28,21 @@ export interface RelayEnv {
   CF_ANALYTICS_TOKEN?: string
 }
 
-type Attachment =
-  { role: 'host' } | { role: 'client'; cid: string; tag: string }
+type HostAttachment = {
+  role: 'host'
+  hid?: string
+  connectedAt?: number
+  replaced?: boolean
+}
+
+type ClientAttachment = {
+  role: 'client'
+  cid: string
+  tag: string
+  connectedAt?: number
+}
+
+type Attachment = HostAttachment | ClientAttachment
 
 type BufferedRpc = {
   cid: string
@@ -42,6 +55,20 @@ const OFFLINE_GRACE_KEY = 'host_offline_grace_until'
 export const HOST_OFFLINE_GRACE_MS = 3_000
 const MAX_BUFFERED_RPC = 32
 const BUFFER_TTL_MS = 5_000
+const WS_OPEN = 1
+
+function isOpenSocket(ws: WebSocket): boolean {
+  // Cloudflare Workers WebSocket uses readyState === 1 (OPEN).
+  return ws.readyState === WS_OPEN
+}
+
+function readAttachment(ws: WebSocket): Attachment | null {
+  try {
+    return ws.deserializeAttachment() as Attachment | null
+  } catch {
+    return null
+  }
+}
 
 export class HostRelay extends DurableObject<RelayEnv> {
   private bufferedRpc: Array<BufferedRpc> = []
@@ -53,6 +80,85 @@ export class HostRelay extends DurableObject<RelayEnv> {
     )
   }
 
+  /**
+   * Open, non-replaced host sockets ordered newest-first.
+   * Picking `.at(0)` without filtering allowed a half-open / CLOSING old host
+   * socket (e.g. after a TCP reset + fast reconnect) to sit at index 0 and
+   * swallow every client frame while the newer socket stayed idle on ping/pong.
+   */
+  private openHosts(): Array<WebSocket> {
+    const all = this.ctx.getWebSockets('host')
+    const live: Array<{ ws: WebSocket; at: number; idx: number }> = []
+    for (let i = 0; i < all.length; i++) {
+      const ws = all[i]
+      if (!isOpenSocket(ws)) continue
+      const meta = readAttachment(ws)
+      if (meta?.role === 'host' && meta.replaced) continue
+      const at = meta?.role === 'host' ? (meta.connectedAt ?? 0) : 0
+      live.push({ ws, at, idx: i })
+    }
+    live.sort((a, b) => b.at - a.at || b.idx - a.idx)
+    return live.map((item) => item.ws)
+  }
+
+  private openClients(): Array<WebSocket> {
+    return this.ctx.getWebSockets('client').filter(isOpenSocket)
+  }
+
+  private sendToHost(frame: Record<string, unknown>, context: string): boolean {
+    const payload = JSON.stringify(frame)
+    for (const host of this.openHosts()) {
+      try {
+        host.send(payload)
+        return true
+      } catch (err) {
+        const meta = readAttachment(host)
+        const hid = meta?.role === 'host' ? (meta.hid ?? 'unknown') : 'unknown'
+        if (meta?.role === 'host') {
+          try {
+            host.serializeAttachment({ ...meta, replaced: true })
+          } catch {
+            // ignore attachment failure on dead socket
+          }
+        }
+        try {
+          host.close(1011, 'host send failed')
+        } catch {
+          // already closing/closed
+        }
+        logRelayEvent('host_send_error', {
+          hid,
+          context,
+          t: String(frame.t ?? ''),
+          cid: typeof frame.cid === 'string' ? frame.cid : '',
+          err: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+    return false
+  }
+
+  private sendToClient(
+    ws: WebSocket,
+    frame: Record<string, unknown>,
+    cid: string,
+    context: string,
+  ): boolean {
+    if (!isOpenSocket(ws)) return false
+    try {
+      ws.send(JSON.stringify(frame))
+      return true
+    } catch (err) {
+      logRelayEvent('client_send_error', {
+        cid,
+        context,
+        t: String(frame.t ?? ''),
+        err: err instanceof Error ? err.message : String(err),
+      })
+      return false
+    }
+  }
+
   async fetch(request: Request): Promise<Response> {
     const role = request.headers.get('x-relay-role')
     if (request.headers.get('upgrade') !== 'websocket') {
@@ -62,15 +168,42 @@ export class HostRelay extends DurableObject<RelayEnv> {
     const pair = new WebSocketPair()
     const [client, server] = Object.values(pair)
     if (role === 'host') {
-      for (const old of this.ctx.getWebSockets('host')) {
-        old.close(4000, 'replaced by a newer host connection')
+      const existing = this.ctx.getWebSockets('host')
+      let replacedCount = 0
+      for (const old of existing) {
+        const oldMeta = readAttachment(old)
+        if (oldMeta?.role === 'host' && !oldMeta.replaced) {
+          replacedCount++
+          try {
+            old.serializeAttachment({ ...oldMeta, replaced: true })
+          } catch {
+            // ignore on already-closed socket
+          }
+        }
+        try {
+          old.close(4000, 'replaced by a newer host connection')
+        } catch {
+          // already closing/closed
+        }
       }
+      const hid = crypto.randomUUID().slice(0, 8)
       this.ctx.acceptWebSocket(server, ['host'])
-      server.serializeAttachment({ role: 'host' } satisfies Attachment)
+      server.serializeAttachment({
+        role: 'host',
+        hid,
+        connectedAt: Date.now(),
+      } satisfies HostAttachment)
       await this.ctx.storage.deleteAlarm()
       await this.ctx.storage.delete(OFFLINE_GRACE_KEY)
       await this.setPresence(true)
       this.flushBufferedToHost(server)
+      logRelayEvent('host_connected', {
+        hid,
+        replaced_count: replacedCount,
+        hosts: this.openHosts().length,
+        hosts_total: this.ctx.getWebSockets('host').length,
+        clients: this.openClients().length,
+      })
     } else {
       const cid = crypto.randomUUID()
       const tag = request.headers.get('x-relay-token-tag') ?? ''
@@ -79,8 +212,17 @@ export class HostRelay extends DurableObject<RelayEnv> {
         role: 'client',
         cid,
         tag,
-      } satisfies Attachment)
-      server.send(JSON.stringify({ t: 'host', ...(await this.presence()) }))
+        connectedAt: Date.now(),
+      } satisfies ClientAttachment)
+      const p = await this.presence()
+      this.sendToClient(server, { t: 'host', ...p }, cid, 'initial_presence')
+      logRelayEvent('client_connected', {
+        cid,
+        host_online: p.online,
+        hosts: p.hosts,
+        hosts_total: p.hosts_total,
+        clients: p.clients,
+      })
     }
     const headers = new Headers()
     const protocol = request.headers.get('x-relay-protocol')
@@ -90,7 +232,7 @@ export class HostRelay extends DurableObject<RelayEnv> {
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
     if (typeof message !== 'string') return
-    const meta = ws.deserializeAttachment() as Attachment | null
+    const meta = readAttachment(ws)
     let frame: Record<string, unknown>
     try {
       frame = JSON.parse(message) as Record<string, unknown>
@@ -100,54 +242,73 @@ export class HostRelay extends DurableObject<RelayEnv> {
     if (meta?.role === 'host') {
       if (frame.t === 'hello') return
       const cid = typeof frame.cid === 'string' ? frame.cid : ''
-      const target = this.ctx.getWebSockets(cid).at(0)
+      const target = this.ctx.getWebSockets(cid).find(isOpenSocket)
       if (!target) return
       delete frame.cid
-      target.send(JSON.stringify(frame))
+      this.sendToClient(target, frame, cid, 'host_frame')
       return
     }
     if (meta?.role !== 'client') return
     if (meta.tag !== (await this.clientTag())) {
-      ws.close(4401, 'pairing token rotated')
-      this.ctx
-        .getWebSockets('host')
-        .at(0)
-        ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
+      try {
+        ws.close(4401, 'pairing token rotated')
+      } catch {
+        // already closing/closed
+      }
+      this.sendToHost({ t: 'bye', cid: meta.cid }, 'client_rotated')
       return
     }
     if (!['rpc', 'sig', 'ping'].includes(String(frame.t))) return
-    const host = this.ctx.getWebSockets('host').at(0)
-    if (!host) {
-      const graceUntil =
-        (await this.ctx.storage.get<number>(OFFLINE_GRACE_KEY)) ?? 0
-      if (
-        frame.t === 'rpc' &&
-        graceUntil > Date.now() &&
-        this.bufferedRpc.length < MAX_BUFFERED_RPC
-      ) {
-        this.bufferedRpc.push({ cid: meta.cid, frame, at: Date.now() })
-        return
-      }
-      if (frame.t === 'rpc' || frame.t === 'ping') {
-        ws.send(
-          JSON.stringify({
-            t: frame.t === 'rpc' ? 'res' : 'pong',
-            id: frame.id,
-            ok: false,
-            error: 'host offline',
-          }),
-        )
-      }
+    if (this.sendToHost({ ...frame, cid: meta.cid }, 'client_frame')) {
       return
     }
-    host.send(JSON.stringify({ ...frame, cid: meta.cid }))
+    const graceUntil =
+      (await this.ctx.storage.get<number>(OFFLINE_GRACE_KEY)) ?? 0
+    if (
+      frame.t === 'rpc' &&
+      graceUntil > Date.now() &&
+      this.bufferedRpc.length < MAX_BUFFERED_RPC
+    ) {
+      this.bufferedRpc.push({ cid: meta.cid, frame, at: Date.now() })
+      return
+    }
+    if (frame.t === 'rpc' || frame.t === 'ping') {
+      this.sendToClient(
+        ws,
+        {
+          t: frame.t === 'rpc' ? 'res' : 'pong',
+          id: frame.id,
+          ok: false,
+          error: 'host offline',
+        },
+        meta.cid,
+        'host_offline_reply',
+      )
+    }
   }
 
   async webSocketClose(ws: WebSocket, code: number) {
-    const meta = ws.deserializeAttachment() as Attachment | null
+    const meta = readAttachment(ws)
     if (meta?.role === 'host') {
+      // Mark closed host as replaced so openHosts() never picks it if still
+      // present in getWebSockets('host') during shutdown.
+      if (!meta.replaced) {
+        try {
+          ws.serializeAttachment({ ...meta, replaced: true })
+        } catch {
+          // ignore on closed socket
+        }
+      }
+      const remaining = this.openHosts().length
+      logRelayEvent('host_closed', {
+        hid: meta.hid ?? 'unknown',
+        code,
+        replaced: Boolean(meta.replaced),
+        remaining_hosts: remaining,
+        hosts_total: this.ctx.getWebSockets('host').length,
+      })
       // A replaced host socket closes after the new one registered.
-      if (code === 4000 || this.ctx.getWebSockets('host').length > 0) return
+      if (code === 4000 || meta.replaced || remaining > 0) return
       // Hold off offline broadcast briefly so a relay restart (~300-600 ms)
       // completes silently without flashing offline or failing clicks.
       const until = Date.now() + HOST_OFFLINE_GRACE_MS
@@ -156,10 +317,12 @@ export class HostRelay extends DurableObject<RelayEnv> {
       return
     }
     if (meta?.role === 'client') {
-      this.ctx
-        .getWebSockets('host')
-        .at(0)
-        ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
+      this.sendToHost({ t: 'bye', cid: meta.cid }, 'client_closed')
+      logRelayEvent('client_closed', {
+        cid: meta.cid,
+        code,
+        clients: this.openClients().length,
+      })
     }
   }
 
@@ -169,7 +332,7 @@ export class HostRelay extends DurableObject<RelayEnv> {
 
   async alarm() {
     await this.ctx.storage.delete(OFFLINE_GRACE_KEY)
-    const host = this.ctx.getWebSockets('host').at(0)
+    const host = this.openHosts().at(0)
     if (host) {
       this.flushBufferedToHost(host)
       return
@@ -186,9 +349,18 @@ export class HostRelay extends DurableObject<RelayEnv> {
     let flushed = 0
     for (const item of queued) {
       if (now - item.at > BUFFER_TTL_MS) continue
-      if (this.ctx.getWebSockets(item.cid).length === 0) continue
-      host.send(JSON.stringify({ ...item.frame, cid: item.cid }))
-      flushed++
+      if (!this.ctx.getWebSockets(item.cid).some(isOpenSocket)) continue
+      try {
+        host.send(JSON.stringify({ ...item.frame, cid: item.cid }))
+        flushed++
+      } catch (err) {
+        logRelayEvent('host_send_error', {
+          context: 'flush_buffered',
+          t: String(item.frame.t ?? ''),
+          cid: item.cid,
+          err: err instanceof Error ? err.message : String(err),
+        })
+      }
     }
     if (flushed > 0) {
       logRelayEvent('host_reconnect_flushed', { flushed })
@@ -200,15 +372,18 @@ export class HostRelay extends DurableObject<RelayEnv> {
     const queued = this.bufferedRpc
     this.bufferedRpc = []
     for (const item of queued) {
-      const target = this.ctx.getWebSockets(item.cid).at(0)
+      const target = this.ctx.getWebSockets(item.cid).find(isOpenSocket)
       if (!target) continue
-      target.send(
-        JSON.stringify({
+      this.sendToClient(
+        target,
+        {
           t: 'res',
           id: item.frame.id,
           ok: false,
           error: 'host offline',
-        }),
+        },
+        item.cid,
+        'buffered_offline',
       )
     }
   }
@@ -223,16 +398,17 @@ export class HostRelay extends DurableObject<RelayEnv> {
   private async evictRotatedClients() {
     const current = await this.clientTag()
     for (const ws of this.ctx.getWebSockets('client')) {
-      const meta = ws.deserializeAttachment() as Attachment | null
+      const meta = readAttachment(ws)
       if (meta?.role === 'client' && meta.tag !== current) {
-        ws.close(4401, 'pairing token rotated')
+        try {
+          ws.close(4401, 'pairing token rotated')
+        } catch {
+          // already closing/closed
+        }
         // the host drops this cid's WebRTC peer too: a DataChannel opened
         // with the old token would otherwise keep reading after rotation
         // (and a client that never acks the close fires no webSocketClose)
-        this.ctx
-          .getWebSockets('host')
-          .at(0)
-          ?.send(JSON.stringify({ t: 'bye', cid: meta.cid }))
+        this.sendToHost({ t: 'bye', cid: meta.cid }, 'client_evicted')
         logRelayEvent('client_evicted', { cid: meta.cid })
       }
     }
@@ -242,19 +418,37 @@ export class HostRelay extends DurableObject<RelayEnv> {
     const stored = await this.ctx.storage.get<{ since: string }>(PRESENCE_KEY)
     const graceUntil =
       (await this.ctx.storage.get<number>(OFFLINE_GRACE_KEY)) ?? 0
-    const hostUp =
-      this.ctx.getWebSockets('host').length > 0 || graceUntil > Date.now()
+    const openHosts = this.openHosts()
+    const active = openHosts.at(0)
+    const activeMeta = active ? readAttachment(active) : null
+    const openClients = this.openClients()
+    const hostUp = openHosts.length > 0 || graceUntil > Date.now()
     return {
       online: hostUp,
       since: stored?.since ?? null,
-      clients: this.ctx.getWebSockets('client').length,
+      clients: openClients.length,
+      clients_total: this.ctx.getWebSockets('client').length,
+      hosts: openHosts.length,
+      hosts_total: this.ctx.getWebSockets('host').length,
+      host_id: activeMeta?.role === 'host' ? (activeMeta.hid ?? null) : null,
     }
   }
 
   private async setPresence(online: boolean) {
     const since = new Date().toISOString()
     await this.ctx.storage.put(PRESENCE_KEY, { since })
-    const frame = JSON.stringify({ t: 'host', online, since })
-    for (const ws of this.ctx.getWebSockets('client')) ws.send(frame)
+    const frame = { t: 'host', online, since }
+    const clients = this.openClients()
+    for (const ws of clients) {
+      const meta = readAttachment(ws)
+      const cid = meta?.role === 'client' ? meta.cid : ''
+      this.sendToClient(ws, frame, cid, 'presence_broadcast')
+    }
+    logRelayEvent('presence_changed', {
+      online,
+      hosts: this.openHosts().length,
+      hosts_total: this.ctx.getWebSockets('host').length,
+      clients: clients.length,
+    })
   }
 }

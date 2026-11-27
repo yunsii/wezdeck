@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestListDevicesOmitsKeysAndOrdersPendingFirst(t *testing.T) {
@@ -92,5 +94,102 @@ func TestRelayDoesNotChangeDevices(t *testing.T) {
 		if signedActions[action] {
 			t.Fatalf("%s must not be a relay write", action)
 		}
+	}
+}
+
+func TestPairingInviteGateBlocksBoundLinks(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "remote-devices.json")
+	t.Setenv("WEZDECK_REMOTE_DEVICES", path)
+	t.Setenv("WEZDECK_RELAY_OPEN_READS", "")
+
+	phone := newTestDevice(t)
+	tablet := newTestDevice(t)
+	stranger := newTestDevice(t)
+	regArgs := func(d testDevice, invite string) json.RawMessage {
+		m := map[string]any{"public_key": d.pub, "name": "test"}
+		if invite != "" {
+			m["invite"] = invite
+		}
+		b, _ := json.Marshal(m)
+		return b
+	}
+
+	// 1. Empty store allows the first device to bootstrap.
+	out, err := registerDeviceOutcome(regArgs(phone, ""))
+	if err != nil || out.State != "pending" {
+		t.Fatalf("initial bootstrap failed: out=%+v err=%v", out, err)
+	}
+	if _, err := setDeviceState("device.approve", json.RawMessage(`{"id":"`+phone.id+`"}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	// 2. Once bound, a bare #pair link without an invite cannot submit a new approval.
+	out, err = registerDeviceOutcome(regArgs(stranger, ""))
+	if !errors.Is(err, errPairingAlreadyBound) || out.DeniedReason != "pairing_already_bound" {
+		t.Fatalf("expected pairing_already_bound, got out=%+v err=%v", out, err)
+	}
+	if s := loadDevices(); len(s.Pending) != 0 {
+		t.Fatalf("rejected stranger entered pending: %+v", s.Pending)
+	}
+
+	// 3. A fresh single-use invite allows one new device (tablet) and binds to it.
+	rawInvite := "fresh-one-time-invite-123456"
+	s := loadDevices()
+	s.Invites = append(s.Invites, pairingInvite{
+		Hash:      inviteHash(rawInvite),
+		CreatedAt: time.Now().Format(time.RFC3339),
+		ExpiresAt: time.Now().Add(time.Hour).Format(time.RFC3339),
+	})
+	if err := saveDevices(s); err != nil {
+		t.Fatal(err)
+	}
+	out, err = registerDeviceOutcome(regArgs(tablet, rawInvite))
+	if err != nil || out.State != "pending" || !out.InviteBound {
+		t.Fatalf("tablet register with valid invite failed: out=%+v err=%v", out, err)
+	}
+
+	// 4. Reusing that already-bound invite on a second device is rejected.
+	out, err = registerDeviceOutcome(regArgs(stranger, rawInvite))
+	if !errors.Is(err, errPairingAlreadyBound) || out.DeniedReason != "invite_already_used" {
+		t.Fatalf("expected invite_already_used, got out=%+v err=%v", out, err)
+	}
+
+	// 5. Same pending device can still refresh status cleanly.
+	out, err = registerDeviceOutcome(regArgs(tablet, rawInvite))
+	if err != nil || out.State != "pending" {
+		t.Fatalf("pending refresh failed: out=%+v err=%v", out, err)
+	}
+
+	// 6. Expired invite is rejected.
+	expiredInvite := "expired-one-time-invite-1234"
+	s = loadDevices()
+	s.Invites = append(s.Invites, pairingInvite{
+		Hash:      inviteHash(expiredInvite),
+		CreatedAt: time.Now().Add(-2 * time.Hour).Format(time.RFC3339),
+		ExpiresAt: time.Now().Add(-time.Minute).Format(time.RFC3339),
+	})
+	_ = saveDevices(s)
+	out, err = registerDeviceOutcome(regArgs(stranger, expiredInvite))
+	if !errors.Is(err, errPairingInviteInvalid) || out.DeniedReason != "invite_expired" {
+		t.Fatalf("expected invite_expired, got out=%+v err=%v", out, err)
+	}
+
+	// 7. An already-approved device re-pairing with a fresh invite succeeds AND
+	//    consumes that invite so a stranger cannot later abuse the shared link.
+	repairInvite := "repair-approved-invite-12345"
+	s = loadDevices()
+	s.Invites = append(s.Invites, pairingInvite{
+		Hash:      inviteHash(repairInvite),
+		CreatedAt: time.Now().Format(time.RFC3339),
+		ExpiresAt: time.Now().Add(time.Hour).Format(time.RFC3339),
+	})
+	_ = saveDevices(s)
+	out, err = registerDeviceOutcome(regArgs(phone, repairInvite))
+	if err != nil || out.State != "approved" || !out.InviteBound {
+		t.Fatalf("approved re-pair should succeed and bind invite: out=%+v err=%v", out, err)
+	}
+	out, err = registerDeviceOutcome(regArgs(stranger, repairInvite))
+	if !errors.Is(err, errPairingAlreadyBound) || out.DeniedReason != "invite_already_used" {
+		t.Fatalf("stranger must not reuse invite consumed by approved device: out=%+v err=%v", out, err)
 	}
 }
