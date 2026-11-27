@@ -195,7 +195,7 @@ function TicketKey({
                 {hasDraft ? (
                   <span
                     data-testid="ticket-draft"
-                    className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 text-meta font-semibold text-brand-waiting"
+                    className="inline-flex shrink-0 items-center rounded bg-brand-waiting/15 px-1.5 py-0.5 text-meta leading-none font-semibold text-brand-waiting"
                   >
                     {t`Draft`}
                   </span>

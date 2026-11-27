@@ -21,13 +21,13 @@ export function SplitColumn({
     <aside
       aria-label={label}
       className={cn(
-        'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 w-full flex-col [--split-pad:var(--page-x)]',
+        'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 w-full flex-col will-change-transform [--split-pad:var(--page-x)]',
         className,
       )}
     >
       <div
         data-testid="split-head"
-        className="grid shrink-0 gap-3 overflow-hidden border-b border-brand-edge px-[var(--split-pad)] py-2.5"
+        className="grid shrink-0 gap-3 overflow-hidden px-[var(--split-pad)] py-2.5 shadow-[inset_0_-1px_0_var(--brand-edge)]"
       >
         {head}
       </div>
