@@ -2845,7 +2845,7 @@ msgstr "Open image"
 msgid "open in a pane"
 msgstr "open in a pane"
 
-#: src/features/session-focus.tsx:115
+#: src/features/session-focus.tsx:121
 msgid "Open in terminal"
 msgstr "Open in terminal"
 
@@ -3695,8 +3695,8 @@ msgstr "Runs, cache hit and cost"
 msgid "Runtime"
 msgstr "Runtime"
 
-#: src/features/session-focus.tsx:64
-#: src/features/session-focus.tsx:67
+#: src/features/session-focus.tsx:70
+#: src/features/session-focus.tsx:73
 #: src/features/session-info-actions.tsx:95
 #: src/features/session-info-actions.tsx:98
 msgid "Runtime action failed"
@@ -3718,7 +3718,7 @@ msgstr "Runtime reported reason:"
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "Same as Ctrl+X in the Alt+/ picker"
 
-#: src/features/session-focus.tsx:110
+#: src/features/session-focus.tsx:116
 #: src/features/session-info-actions.tsx:169
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "Same as Enter in the Alt+/ picker (key: o)"
@@ -4267,7 +4267,7 @@ msgstr "Switch to {to}"
 msgid "Switched to {toAgent}"
 msgstr "Switched to {toAgent}"
 
-#: src/features/session-focus.tsx:65
+#: src/features/session-focus.tsx:71
 msgid "Switched WezTerm to this session"
 msgstr "Switched WezTerm to this session"
 
@@ -4503,7 +4503,7 @@ msgstr "This repo is not in ticket targets yet — you can still file a ticket t
 msgid "This session"
 msgstr "This session"
 
-#: src/features/session-focus.tsx:43
+#: src/features/session-focus.tsx:50
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 

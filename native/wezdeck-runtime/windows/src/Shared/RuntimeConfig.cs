@@ -22,6 +22,7 @@ internal sealed class RuntimeConfig
     public required DiagnosticConfig Diagnostics { get; init; }
     public string? ClipboardOutputDir { get; init; }
     public string? ClipboardWslDistro { get; init; }
+    public bool UseTerminalClient { get; init; }
     public int ClipboardImageReadRetryCount { get; init; }
     public int ClipboardImageReadRetryDelayMs { get; init; }
     public int ClipboardCleanupMaxAgeHours { get; init; }
@@ -63,6 +64,7 @@ internal sealed class RuntimeConfig
             Diagnostics = parsed.Diagnostics,
             ClipboardOutputDir = ResolveClipboardOutputDir(parsed.ClipboardOutputDir),
             ClipboardWslDistro = parsed.ClipboardWslDistro,
+            UseTerminalClient = parsed.UseTerminalClient,
             ClipboardImageReadRetryCount = parsed.ClipboardImageReadRetryCount,
             ClipboardImageReadRetryDelayMs = parsed.ClipboardImageReadRetryDelayMs,
             ClipboardCleanupMaxAgeHours = parsed.ClipboardCleanupMaxAgeHours,

@@ -240,7 +240,7 @@ internal sealed partial class RuntimeWebServer : IDisposable
                     "rime.stats", "ime.state", "chrome.state", "sessions.read", "sessions.focus", "diagnostics.logs",
                     "vscode.windows", "vscode.focus_or_open",
                     "workspaces.read", "worktree.status", "wakatime.read", "wsl.status", "events", "collab.read", "remote.read", "remote.write", "browser.slot", "clients.read", "web.events",
-                },
+                }.Concat(config.UseTerminalClient ? new[] { "sessions.terminal_client" } : Array.Empty<string>()),
                 ["observed_at"] = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             },
             "/api/v1/rime/stats" => ReadRimeStats(),

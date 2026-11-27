@@ -52,6 +52,7 @@ Options:
   --live                Publish directly to the live bootstrap + runtime (old
                         behaviour). Use when you intentionally want the running
                         WezTerm to pick up changes on reload.
+  --skip-tmux-reload    Skip reloading the current tmux server after sync.
   --list-targets        Print candidate user home directories and exit.
   --target-home PATH    Sync directly to PATH and cache it in .sync-target.
   -h, --help            Show this help text.
@@ -118,6 +119,12 @@ wait_for_flow() {
 
 maybe_reload_tmux() {
   local repo_root="${1:?missing repo root}"
+  if (( SKIP_TMUX_RELOAD )); then
+    runtime_log_info sync "skipped tmux reload after sync" "reason=explicit_skip"
+    sync_trace "step=tmux-reload status=skipped reason=explicit_skip"
+    printf 'Skipped tmux reload by request\n'
+    return 0
+  fi
   local reload_script="$repo_root/scripts/dev/reload-tmux.sh"
   sync_trace "step=tmux-reload status=checking reload_script=$reload_script"
 
@@ -154,6 +161,7 @@ maybe_reload_tmux() {
 }
 
 LIST_TARGETS=0
+SKIP_TMUX_RELOAD=0
 TARGET_HOME_OVERRIDE=""
 # Default: stage canary only so a bad config cannot reload into the live GUI.
 # Pass --live to publish straight to ~/.wezterm.lua + ~/.wezterm-x.
@@ -177,6 +185,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --canary|--stage-canary)
       SYNC_PUBLISH_MODE=canary
+      shift
+      ;;
+    --skip-tmux-reload)
+      SKIP_TMUX_RELOAD=1
       shift
       ;;
     -h|--help)

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -20,6 +21,22 @@ internal sealed class SessionRequestHandler
         var recent = RequestPayloadReader.GetOptionalBool(payload, "recent");
         var archivedTs = RequestPayloadReader.GetOptionalPositiveLong(payload, "archived_ts");
         var entry = ReadSessionEntry(sessionId, recent, archivedTs);
+        if (config.UseTerminalClient)
+        {
+            OpenTerminalClient(entry);
+            logger.Info("attention", "web terminal client dispatched", new Dictionary<string, string?>
+            {
+                ["trace_id"] = traceId,
+                ["session_id"] = sessionId,
+            });
+            return new RequestOutcome(
+                Domain: "sessions",
+                Action: "focus",
+                Status: "dispatched",
+                DecisionPath: "terminal_client",
+                ResultType: "session_ref",
+                Result: new { session_id = sessionId, recent });
+        }
         var jumpPayload = BuildJumpPayload(sessionId, entry, recent, archivedTs, traceId);
         WriteAttentionJumpEvent(jumpPayload);
 
@@ -39,6 +56,56 @@ internal sealed class SessionRequestHandler
             DecisionPath: recent ? "attention_event_recent" : "attention_event_live",
             ResultType: "session_ref",
             Result: new { session_id = sessionId, recent });
+    }
+
+    private void OpenTerminalClient(JsonElement entry)
+    {
+        var root = File.ReadAllText(Path.Combine(config.RuntimeDir, "repo-root.txt")).Trim().TrimEnd('/');
+        var pane = GetString(entry, "tmux_pane");
+        var socket = GetString(entry, "tmux_socket");
+        if (!root.StartsWith('/') || pane.Length < 2 || pane[0] != '%' ||
+            pane.AsSpan(1).ContainsAnyExceptInRange('0', '9') ||
+            (socket.Length != 0 && !socket.StartsWith('/')))
+        {
+            throw new InvalidOperationException("terminal client target is unavailable");
+        }
+        var start = new ProcessStartInfo("wsl.exe")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+        };
+        if (!string.IsNullOrWhiteSpace(config.ClipboardWslDistro))
+        {
+            start.ArgumentList.Add("--distribution");
+            start.ArgumentList.Add(config.ClipboardWslDistro);
+        }
+        foreach (var arg in new[] { "--exec", root + "/scripts/runtime/cli/wezdeck-terminal", "--describe-launch", pane, socket })
+        {
+            start.ArgumentList.Add(arg);
+        }
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("terminal launcher did not start");
+        var output = process.StandardOutput.ReadToEndAsync();
+        if (!output.Wait(4000) || !process.WaitForExit(500))
+        {
+            try { process.Kill(entireProcessTree: true); }
+            catch (InvalidOperationException) when (process.HasExited) { }
+            throw new InvalidOperationException("terminal launcher did not respond");
+        }
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException("terminal launcher could not open the tmux pane");
+        }
+        using var launch = JsonDocument.Parse(output.Result);
+        var terminalStart = new ProcessStartInfo(launch.RootElement.GetProperty("exe").GetString()!)
+        {
+            UseShellExecute = false,
+        };
+        foreach (var arg in launch.RootElement.GetProperty("args").EnumerateArray())
+        {
+            terminalStart.ArgumentList.Add(arg.GetString()!);
+        }
+        using var terminal = Process.Start(terminalStart) ?? throw new InvalidOperationException("terminal did not start");
     }
 
     private JsonElement ReadSessionEntry(string sessionId, bool recent, long? archivedTs)

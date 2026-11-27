@@ -2845,7 +2845,7 @@ msgstr "查看图片"
 msgid "open in a pane"
 msgstr "已在窗格中打开"
 
-#: src/features/session-focus.tsx:115
+#: src/features/session-focus.tsx:121
 msgid "Open in terminal"
 msgstr "在终端中打开"
 
@@ -3695,8 +3695,8 @@ msgstr "运行、缓存命中与花费"
 msgid "Runtime"
 msgstr "运行时"
 
-#: src/features/session-focus.tsx:64
-#: src/features/session-focus.tsx:67
+#: src/features/session-focus.tsx:70
+#: src/features/session-focus.tsx:73
 #: src/features/session-info-actions.tsx:95
 #: src/features/session-info-actions.tsx:98
 msgid "Runtime action failed"
@@ -3718,7 +3718,7 @@ msgstr "Runtime 报告的原因："
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 
-#: src/features/session-focus.tsx:110
+#: src/features/session-focus.tsx:116
 #: src/features/session-info-actions.tsx:169
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
@@ -4267,7 +4267,7 @@ msgstr "切换到 {to}"
 msgid "Switched to {toAgent}"
 msgstr "已切换到 {toAgent}"
 
-#: src/features/session-focus.tsx:65
+#: src/features/session-focus.tsx:71
 msgid "Switched WezTerm to this session"
 msgstr "已把 WezTerm 切到这个会话"
 
@@ -4503,7 +4503,7 @@ msgstr "当前仓库尚未加入工单目标列表，仍可在下方选择已配
 msgid "This session"
 msgstr "当前会话"
 
-#: src/features/session-focus.tsx:43
+#: src/features/session-focus.tsx:50
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
 

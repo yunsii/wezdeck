@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Open an existing tmux target in an independent WezTerm GUI.
+set -euo pipefail
+
+describe_launch=0
+if [[ "${1:-}" == --describe-launch ]]; then
+  describe_launch=1
+  shift
+fi
+if (( $# < 1 || $# > 2 )) || [[ -z "$1" ]]; then
+  printf 'Usage: wezdeck-terminal TMUX_TARGET [TMUX_SOCKET]\n' >&2
+  exit 2
+fi
+
+runtime_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$runtime_dir/runtime-log-lib.sh"
+source "$runtime_dir/windows-runtime-paths-lib.sh"
+
+tmux_bin="$(command -v tmux)"
+tmux_args=(-N)
+if [[ -n "${2:-}" ]]; then
+  tmux_args+=(-S "$2")
+elif [[ -n "${TMUX:-}" ]]; then
+  # Keep the current server when called from a pane on a custom socket.
+  current_socket="${TMUX%,*}"
+  tmux_args+=(-S "${current_socket%,*}")
+fi
+# Resolve the target on the same server the new client will use.
+target="$("$tmux_bin" "${tmux_args[@]}" display-message -p -t "$1" '#{session_id}:#{window_id}.#{pane_id}')"
+if [[ ! "$target" =~ ^\$[0-9]+:@[0-9]+\.%[0-9]+$ ]]; then
+  printf 'tmux target unavailable: %s\n' "$1" >&2
+  exit 1
+fi
+
+config="$runtime_dir/../../wezterm-x/terminal-client.lua"
+child=(env -u TMUX -u TMUX_PANE)
+if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+  windows_runtime_detect_paths 2>/dev/null || true
+  wezterm_bin="${WEZDECK_WEZTERM_EXE:-$(command -v wezterm-gui.exe || true)}"
+  if [[ -z "$wezterm_bin" ]]; then
+    for candidate in /mnt/[a-z]/"Program Files/WezTerm/wezterm-gui.exe" \
+      "${WINDOWS_USERPROFILE_WSL:-}/scoop/apps/wezterm/current/wezterm-gui.exe" \
+      "${WINDOWS_LOCALAPPDATA_WSL:-}/Programs/WezTerm/wezterm-gui.exe" \
+      "${WINDOWS_LOCALAPPDATA_WSL:-}/Microsoft/WinGet/Packages"/*/WezTerm*/wezterm-gui.exe; do
+      [[ -f "$candidate" ]] || continue
+      wezterm_bin="$candidate"
+      break
+    done
+  fi
+  wsl_bin="$(command -v wsl.exe || printf '%s' /mnt/c/Windows/System32/wsl.exe)"
+  wsl_bin="$(wslpath -w "$wsl_bin")"
+  child=("$wsl_bin" --distribution "$WSL_DISTRO_NAME" --exec "${child[@]}")
+  config="$(wslpath -w "$config")"
+else
+  wezterm_bin="${WEZDECK_WEZTERM_EXE:-$(command -v wezterm || true)}"
+fi
+
+if [[ -z "$wezterm_bin" ]]; then
+  printf 'WezTerm GUI not found. Set WEZDECK_WEZTERM_EXE to its executable path.\n' >&2
+  exit 1
+fi
+
+if [[ ! -x "$wezterm_bin" ]]; then
+  printf 'WezTerm GUI is not executable: %s\n' "$wezterm_bin" >&2
+  exit 1
+fi
+args=(--config-file "$config" start --always-new-process --no-auto-connect
+  -- "${child[@]}" "$tmux_bin" "${tmux_args[@]}" attach-session -t "$target")
+if (( describe_launch )); then
+  jq -cn --arg exe "$(wslpath -w "$wezterm_bin")" '{exe: $exe, args: $ARGS.positional}' --args -- "${args[@]}"
+else
+  runtime_log_info wezdeck_runtime "launching tmux terminal client" "target=$target" || true
+  exec "$wezterm_bin" "${args[@]}"
+fi

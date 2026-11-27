@@ -17,7 +17,7 @@ import { useConsoleMode } from './console-mode'
 import { jumpPending } from './console-jump-keys'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
-import { postRuntimeAction } from '#/lib/runtime-client'
+import { postRuntimeAction, probeRuntime } from '#/lib/runtime-client'
 
 /** Detail.focus (the local Runtime's sessions/focus payload, relay sessionFocus) plus the relay's detached mark */
 export type FocusTarget = {
@@ -36,23 +36,29 @@ export function useFocusInTerminal(focus: FocusTarget | undefined) {
   const available = mode === 'local' && Boolean(focus?.session_id)
   const run = async () => {
     if (!available || !focus || busy) return
-    if (focus.detached) {
-      trace('session-focus', { id: focus.session_id, detached: true })
-      const name = focus.tmux_session ?? ''
-      toast(
-        t`This session's tmux session (${name}) is not shown in any WezTerm tab, so there is nowhere to switch to`,
-      )
-      return
-    }
     setBusy(true)
     const started = performance.now()
     try {
+      if (focus.detached) {
+        const runtime = await probeRuntime()
+        if (
+          !runtime?.health.capabilities.includes('sessions.terminal_client')
+        ) {
+          trace('session-focus', { id: focus.session_id, detached: true })
+          const name = focus.tmux_session ?? ''
+          toast(
+            t`This session's tmux session (${name}) is not shown in any WezTerm tab, so there is nowhere to switch to`,
+          )
+          return
+        }
+      }
       const { session_id, recent, archived_ts } = focus
-      const response = await postRuntimeAction('sessions', 'focus', {
-        session_id,
-        recent,
-        archived_ts,
-      })
+      const response = await postRuntimeAction(
+        'sessions',
+        'focus',
+        { session_id, recent, archived_ts },
+        6000,
+      )
       trace('session-focus', {
         id: focus.session_id,
         recent: Boolean(focus.recent),

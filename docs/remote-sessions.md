@@ -271,6 +271,14 @@ computer. Over the remote link it is not offered. Trail: client trace
 `session-focus`, then
 `web session focus dispatched` and `jump dispatched` (`activated`) share the
 Runtime's `http-…` trace id.
+
+Enable the minimal terminal client by creating
+`%LOCALAPPDATA%\wezterm-runtime\state\helper\terminal-client.enabled` before
+syncing with `--skip-tmux-reload`. Local Runtime then advertises
+`sessions.terminal_client`. The Web shortcut can open an existing pane whose
+session has no attached clients. Removing the marker and syncing restores
+the workspace jump. Closing the client leaves persistent tmux panes running.
+
 Each write leaves `event=write via=local device=local` in `relay.log` (the
 bridge process appends there; `relayLogf`). The web's `hostRead` /
 `hostWrite` try the Runtime first and fall back to the remote link

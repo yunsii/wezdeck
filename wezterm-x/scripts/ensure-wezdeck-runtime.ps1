@@ -327,6 +327,7 @@ function Write-ManagerConfig {
     browserAgentStatusPath = Join-Path $ManagerPaths.Root 'state\browser-agent\status.json'
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
+    useTerminalClient = (Test-Path -LiteralPath (Join-Path $ManagerPaths.Root 'state\helper\terminal-client.enabled') -PathType Leaf)
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
     clipboardImageReadRetryDelayMs = $ClipboardImageReadRetryDelayMs
     clipboardCleanupMaxAgeHours = $ClipboardCleanupMaxAgeHours

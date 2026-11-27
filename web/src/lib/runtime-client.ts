@@ -272,6 +272,7 @@ export async function postRuntimeAction(
   domain: string,
   action: string,
   payload: Record<string, unknown>,
+  timeoutMs?: number,
 ): Promise<RuntimeActionResponse> {
   const { baseUrl } = await requireRuntime()
   return requestJson(
@@ -283,6 +284,7 @@ export async function postRuntimeAction(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
     },
+    timeoutMs,
   )
 }
 
