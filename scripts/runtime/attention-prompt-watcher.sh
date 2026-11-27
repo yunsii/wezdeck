@@ -101,7 +101,9 @@ if ! flock -n 9 2>/dev/null; then
 fi
 
 POLL_INTERVAL_S="${WEZTERM_ATTENTION_WATCHER_POLL_S:-1}"
-MAX_DURATION_S="${WEZTERM_ATTENTION_WATCHER_MAX_S:-1800}"
+# 0 = persistent while status=waiting and pane is alive (attention entries no
+# longer expire on a 30-min TTL); positive value caps lifetime for tests.
+MAX_DURATION_S="${WEZTERM_ATTENTION_WATCHER_MAX_S:-0}"
 # Number of consecutive missing-anchor polls required before flipping
 # waiting → running. A single miss is too aggressive — TUI partial
 # redraws (Claude refreshing the Bash preview, user navigating options,
@@ -133,7 +135,12 @@ CONSECUTIVE_MISS_THRESHOLD="${WEZTERM_ATTENTION_WATCHER_MISS_THRESHOLD:-2}"
 #   `Waiting for approval`       — status while plan review is open.
 #   Keep this alongside Ask anchors so Ctrl+C / quit clears waiting after
 #   the dialog leaves (without it, approval_required stuck until Stop/TTL).
-PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again|Waiting on answers for|Enter:submit|Tab:next answer|Shift\+x:dismiss|Waiting for approval)'
+#
+# Agy permission prompt (detected via screen probe in attention-jump --prune):
+#   `tab Amend` / `ctrl\+g edit/expand command` — Agy prompt footer chrome.
+#   `Yes, run command` / `Yes, allow tool call` / `Yes, allow access` /
+#   `Yes, accept this change` — Agy confirmation menu options.
+PROMPT_ANCHOR='(Esc to cancel|Tab to amend|Yes, and don.t ask again|Waiting on answers for|Enter:submit|Tab:next answer|Shift\+x:dismiss|Waiting for approval|tab Amend|ctrl\+g edit/expand command|Yes, run command|Yes, allow tool call|Yes, allow access|Yes, accept this change)'
 
 # True when Grok's updates.jsonl newest turn/ask signal is a cancelled
 # turn_completed (Ctrl+C mid-turn abort). A later Ask / tool_call / user
@@ -224,7 +231,7 @@ while :; do
   sleep "$POLL_INTERVAL_S"
 
   now_ts="$(date +%s 2>/dev/null || printf '0')"
-  if (( now_ts - start_ts >= MAX_DURATION_S )); then
+  if (( MAX_DURATION_S > 0 && now_ts - start_ts >= MAX_DURATION_S )); then
     runtime_log_info attention "watcher exit timeout" \
       "session_id=$session_id" "tmux_pane=$tmux_pane" \
       "elapsed_s=$((now_ts - start_ts))" 2>/dev/null || true

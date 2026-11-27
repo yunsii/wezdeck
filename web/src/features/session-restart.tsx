@@ -116,36 +116,57 @@ export function RestartActions({
         type="button"
         disabled={disabled}
         data-restart="new"
+        aria-keyshortcuts="Control+N Meta+N"
         title={t`Start /new in the current agent (Ctrl+N)`}
         onClick={() => setAsking('new')}
         className={action}
       >
         <SquarePlus size={14} aria-hidden />
         {t`New conversation (/new)`}
+        <kbd
+          aria-hidden
+          className="ml-auto hidden shrink-0 font-mono text-meta text-brand-label md:inline"
+        >
+          Ctrl/⌘+N
+        </kbd>
       </Button>
       <Button
         variant="plain"
         type="button"
         disabled={disabled}
         data-restart="fresh"
+        aria-keyshortcuts="Control+Shift+N Meta+Shift+N"
         title={t`A blank agent process and conversation (Ctrl+Shift+n)`}
         onClick={() => setAsking('fresh')}
         className={action}
       >
         <SquarePlus size={14} aria-hidden />
         {t`New agent process`}
+        <kbd
+          aria-hidden
+          className="ml-auto hidden shrink-0 font-mono text-meta text-brand-label md:inline"
+        >
+          Ctrl/⌘+Shift+N
+        </kbd>
       </Button>
       <Button
         variant="plain"
         type="button"
         disabled={disabled}
         data-restart="resume"
-        title={t`Respawn the pane; the agent resumes this conversation (F5)`}
+        aria-keyshortcuts="Alt+F5"
+        title={t`Restart the agent in this pane (Alt+F5 on web, F5 at the desk)`}
         onClick={() => setAsking('resume')}
         className={action}
       >
         <RotateCcw size={14} aria-hidden />
         {t`Restart session`}
+        <kbd
+          aria-hidden
+          className="ml-auto hidden shrink-0 font-mono text-meta text-brand-label md:inline"
+        >
+          Alt+F5
+        </kbd>
       </Button>
     </div>
   )

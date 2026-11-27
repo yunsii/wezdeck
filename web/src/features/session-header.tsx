@@ -175,9 +175,8 @@ export function SessionHeader({
   }, [onBack])
   const nav = useSessionNav(id)
   const sessions = useSessions()
-  const profile = sessions.data?.sessions.find(
-    (row) => row.id === id,
-  )?.agent_profile
+  const listRow = sessions.data?.sessions.find((row) => row.id === id)
+  const profile = listRow?.agent_profile
   useSessionKeys(nav.jump, focusSearchOrList)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -200,14 +199,19 @@ export function SessionHeader({
       root.style.removeProperty('--toast-top')
     }
   }, [])
-  const title = data ? data.title || t`Untitled session` : ''
+  const agent = data?.agent ?? listRow?.agent
+  const title = data
+    ? data.title || t`Untitled session`
+    : listRow
+      ? listRow.title || listRow.name || t`Untitled session`
+      : ''
   return (
     // opaque: at 95 % a dark user bubble scrolling under it greyed the
     // header (and an image's loading pulse flickered through)
     <header
       ref={head}
       data-testid="session-header"
-      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:-ml-2.5 md:mr-0 md:mt-0"
+      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:static md:mx-0 md:mt-0 md:shrink-0 md:px-[var(--page-x)]"
     >
       <div className="flex min-w-0 items-center gap-1">
         {/* the list sits beside the conversation on a wide screen */}
@@ -229,8 +233,8 @@ export function SessionHeader({
             title={t`Session info`}
             className="flex min-w-0 items-center gap-2 text-left text-title leading-tight font-semibold"
           >
-            {data ? (
-              <AgentAvatar agent={data.agent} profile={profile} size={28} />
+            {agent ? (
+              <AgentAvatar agent={agent} profile={profile} size={28} />
             ) : null}
             <span
               className={cn(

@@ -2,6 +2,7 @@
 // room/base URL helpers shared by remote-link.ts.
 
 const TOKEN_KEY = 'wezdeck.remote.token'
+const INVITE_KEY = 'wezdeck.remote.invite'
 
 export const NOT_PAIRED = 'this device is not paired'
 
@@ -15,6 +16,8 @@ function storage() {
 
 /** Token from a pairing link opened in this page; wins over (possibly stale or unwritable) storage. */
 let pairedToken = ''
+/** Single-use approval invite from `#pair=…&invite=…`; consumed by the host on first device.register. */
+let pairedInvite = ''
 
 export function readPairedToken() {
   if (pairedToken) return pairedToken
@@ -25,18 +28,42 @@ export function readPairedToken() {
   }
 }
 
+export function readPairingInvite() {
+  if (pairedInvite) return pairedInvite
+  try {
+    return storage()?.getItem(INVITE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function clearPairingInvite() {
+  pairedInvite = ''
+  try {
+    storage()?.removeItem(INVITE_KEY)
+  } catch {
+    // ignore storage errors
+  }
+}
+
 /**
- * Adopt a `#pair=` token; true when a new one was taken. Links come from anyone:
- * replacing a token this device holds needs the person's OK, or one tapped
- * link silently swaps the pairing (unauthorized until re-paired).
+ * Adopt a `#pair=` token (and optional `&invite=` single-use approval code);
+ * true when a new pairing token was taken. Links come from anyone: replacing a
+ * different token this device holds needs the person's OK, or one tapped link
+ * silently swaps the pairing (unauthorized until re-paired).
  */
 export function adoptPairingHash(): boolean {
   if (typeof location === 'undefined') return false
   const match = /[#&]pair=([^&]+)/.exec(location.hash)
   if (!match) return false
-  // tokens are [A-Za-z0-9] (install-remote-relay.sh): anything else, or a
+  const inviteMatch = /[#&]invite=([^&]+)/.exec(location.hash)
+  // tokens are [A-Za-z0-9_-] (install-remote-relay.sh): anything else, or a
   // %-escape that would make decodeURIComponent throw, is not a pairing link
   const token = /^[A-Za-z0-9_-]{16,128}$/.test(match[1]) ? match[1] : ''
+  const invite =
+    inviteMatch && /^[A-Za-z0-9_-]{16,128}$/.test(inviteMatch[1])
+      ? inviteMatch[1]
+      : ''
   let current = ''
   try {
     current = storage()?.getItem(TOKEN_KEY) ?? ''
@@ -59,6 +86,16 @@ export function adoptPairingHash(): boolean {
     } catch {
       // Storage blocked (private mode / in-app browser): the token from the
       // link still applies to this page via pairedToken.
+    }
+    if (invite) {
+      pairedInvite = invite
+      try {
+        storage()?.setItem(INVITE_KEY, invite)
+      } catch {
+        // Storage blocked: pairedInvite keeps it for this page.
+      }
+    } else if (token !== current) {
+      clearPairingInvite()
     }
   }
   // keep the router's entry state (__TSR_index / key): null here made the

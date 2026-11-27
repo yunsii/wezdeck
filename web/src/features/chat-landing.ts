@@ -5,7 +5,7 @@
 // and leaves only its tail on screen. Land at the start of the latest message
 // in that case — leaving room for StickyPrompt when unpinned — while later
 // visits (`idle`) and live/waiting sessions land directly at the bottom.
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { BAR } from './chat-sticky'
@@ -147,6 +147,7 @@ export function useHoldBottomOnResize({
   holdUntil,
   holding,
   bottomOf,
+  wide = false,
 }: {
   end: React.RefObject<HTMLDivElement | null>
   pinnedRef: React.RefObject<boolean>
@@ -155,6 +156,7 @@ export function useHoldBottomOnResize({
   holdUntil: React.RefObject<number>
   holding: React.RefObject<boolean>
   bottomOf: (el: HTMLElement) => number
+  wide?: boolean
 }) {
   useEffect(() => {
     const el = end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
@@ -179,37 +181,107 @@ export function useHoldBottomOnResize({
       if (event.target instanceof HTMLTextAreaElement) hold(1_000, event.type)
     }
     const onViewport = () => hold(500, 'viewport')
-    el.addEventListener('focusin', onFocus)
-    el.addEventListener('focusout', onFocus)
+    // On wide screens the composer form sits outside the message scroller;
+    // attach focusin/focusout to session-detail so composer focus still holds.
+    const focusScope =
+      el.closest<HTMLElement>('[data-testid=session-detail]') ?? el
+    focusScope.addEventListener('focusin', onFocus)
+    focusScope.addEventListener('focusout', onFocus)
     window.visualViewport?.addEventListener('resize', onViewport)
     window.addEventListener('resize', onViewport)
     return () => {
-      el.removeEventListener('focusin', onFocus)
-      el.removeEventListener('focusout', onFocus)
+      focusScope.removeEventListener('focusin', onFocus)
+      focusScope.removeEventListener('focusout', onFocus)
       window.visualViewport?.removeEventListener('resize', onViewport)
       window.removeEventListener('resize', onViewport)
     }
-  }, [end, pinnedRef, landed, touching, holdUntil, holding, bottomOf])
+  }, [end, pinnedRef, landed, touching, holdUntil, holding, bottomOf, wide])
 }
 
 /**
- * Loading earlier messages grows the page above the reader: remember the
- * distance from the bottom before, restore it once the older ones render.
+ * Loading earlier messages grows the page above the reader: capture the first
+ * visible `[data-msg]` right before the prepended slice commits (not before
+ * the network request starts, while the reader may still be scrolling), then
+ * restore its viewport offset synchronously before paint. Falls back to
+ * distance-from-bottom if the anchored node is gone.
  */
 export function useKeepPlace(
   end: React.RefObject<HTMLDivElement | null>,
   start: number,
 ) {
-  const fromBottom = useRef<number | null>(null)
+  const anchor = useRef<{
+    msg?: string
+    top?: number
+    fromBottom: number
+  } | null>(null)
   useLayoutEffect(() => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    if (!scroller || fromBottom.current === null) return
-    scroller.scrollTop = scroller.scrollHeight - fromBottom.current
-    fromBottom.current = null
+    const scroller = end.current?.closest<HTMLElement>('.overflow-y-auto')
+    const saved = anchor.current
+    if (!scroller || !saved) return
+    anchor.current = null
+    const correct = () => {
+      const node = saved.msg
+        ? scroller.querySelector<HTMLElement>(`[data-msg="${saved.msg}"]`)
+        : null
+      if (node && saved.top !== undefined) {
+        const drift = node.getBoundingClientRect().top - saved.top
+        if (Math.abs(drift) >= 0.5) scroller.scrollTop += drift
+      } else {
+        scroller.scrollTop = scroller.scrollHeight - saved.fromBottom
+      }
+    }
+    // First pass moves the viewport back to the anchored message before paint;
+    // a short multi-frame rAF settle absorbs Chromium's async
+    // content-visibility:auto unskipping of the newly adjacent prepended items
+    // above the anchor (which settles 1-2 frames after scrollTop changes).
+    // Any user scroll input cancels the settle immediately.
+    correct()
+    let framesLeft = 6
+    let frame = 0
+    const cancel = () => {
+      framesLeft = 0
+      cancelAnimationFrame(frame)
+    }
+    const tick = () => {
+      if (framesLeft <= 0) return
+      framesLeft -= 1
+      correct()
+      if (framesLeft > 0) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    scroller.addEventListener('wheel', cancel, { passive: true, once: true })
+    scroller.addEventListener('touchstart', cancel, {
+      passive: true,
+      once: true,
+    })
+    scroller.addEventListener('pointerdown', cancel, {
+      passive: true,
+      once: true,
+    })
+    return () => {
+      cancel()
+      scroller.removeEventListener('wheel', cancel)
+      scroller.removeEventListener('touchstart', cancel)
+      scroller.removeEventListener('pointerdown', cancel)
+    }
   }, [start, end])
-  return () => {
-    const scroller = end.current?.closest('.overflow-y-auto')
-    if (scroller)
-      fromBottom.current = scroller.scrollHeight - scroller.scrollTop
-  }
+  return useCallback(() => {
+    const scroller = end.current?.closest<HTMLElement>('.overflow-y-auto')
+    if (!scroller) return
+    const sr = scroller.getBoundingClientRect()
+    const nodes = scroller.querySelectorAll<HTMLElement>('[data-msg]')
+    let pick: HTMLElement | null = null
+    for (const node of nodes) {
+      if (node.getBoundingClientRect().bottom > sr.top + 4) {
+        pick = node
+        break
+      }
+    }
+    if (!pick && nodes.length > 0) pick = nodes.item(0)
+    anchor.current = {
+      msg: pick?.dataset.msg,
+      top: pick ? pick.getBoundingClientRect().top : undefined,
+      fromBottom: scroller.scrollHeight - scroller.scrollTop,
+    }
+  }, [end])
 }

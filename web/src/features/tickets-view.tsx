@@ -32,31 +32,23 @@ import { CopyKey, useCopyTicketReference } from './copy-reference'
 import { Reading } from './inspector'
 import { nextInCycle } from './session-order'
 import { prefetchTicket } from './ticket-autosync'
+import { useTicketExpandedMap } from './ticket-collapse'
 import { TicketKeys } from './ticket-keys'
+import {
+  TICKET_FILTERS,
+  buildTicketGroups,
+  countTicketFilters,
+  filterTicketGroups,
+  flattenVisibleGroupIds,
+  splitQuietGroups,
+} from './ticket-list-groups'
+import type { TicketFilter, TicketGroup } from './ticket-list-groups'
 import { SearchBox } from './ticket-search'
+
+export type { TicketFilter } from './ticket-list-groups'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
-
-/** Segments on the tickets page; `inbox` is the old 待处理 route's fixed filter. */
-export type TicketFilter = 'all' | 'active' | 'mine' | 'ended' | 'inbox'
-
-const ENDED = new Set(['shipped', 'closed', 'failed', 'rejected'])
-
-const FILTERS: Record<TicketFilter, (t: CollabTicket) => boolean> = {
-  all: () => true,
-  active: (t) =>
-    t.running.length > 0 ||
-    (!ENDED.has(t.status ?? '') && t.status !== 'waiting_initiator'),
-  mine: (t) => t.status === 'waiting_initiator',
-  ended: (t) => t.running.length === 0 && ENDED.has(t.status ?? ''),
-  inbox: (t) => t.status === 'waiting_initiator' || t.status === 'failed',
-}
-
-/** newest activity first */
-const byUpdated = (a: CollabTicket, b: CollabTicket) =>
-  Date.parse(b.updated_at ?? '') - Date.parse(a.updated_at ?? '')
-
 const QUIET_DAYS = 7
 
 /**
@@ -178,49 +170,48 @@ function Freshness({
 }
 
 function StatusSegments({
-  tickets,
+  groups,
   value,
   onChange,
 }: {
-  tickets: Array<CollabTicket>
+  groups: Array<TicketGroup>
   value: TicketFilter
   onChange: (value: TicketFilter) => void
 }) {
   const { t } = useLingui()
-  const count = (filter: TicketFilter) => tickets.filter(FILTERS[filter]).length
-  const everything = count('all')
-  const active = count('active')
-  const mine = count('mine')
-  const ended = count('ended')
+  const counts = countTicketFilters(groups)
   return (
     <Segmented
       label={t`Status`}
       value={value}
       onChange={onChange}
       className="md:max-w-md"
-      // four segments beside two buttons on a phone (as 会话's filter):
-      // without it the row outgrew a 360 px screen
       dense
       options={[
         {
           value: 'all',
           label: t({ message: 'All', context: 'filter' }),
-          count: everything,
+          count: counts.all,
         },
         {
           value: 'active',
           label: t({ message: 'In progress', context: 'filter' }),
-          count: active,
+          count: counts.active,
         },
         {
           value: 'mine',
           label: t({ message: 'Waiting on you', context: 'filter' }),
-          count: mine,
+          count: counts.mine,
+        },
+        {
+          value: 'research',
+          label: t({ message: 'Research', context: 'filter' }),
+          count: counts.research,
         },
         {
           value: 'ended',
           label: t({ message: 'Ended', context: 'filter' }),
-          count: ended,
+          count: counts.ended,
         },
       ]}
     />
@@ -264,29 +255,15 @@ export function TicketsView({
   const [chosen, setChosen] = useStoredChoice<TicketFilter>(
     `wezdeck-ticket-filter-${base}`,
     'active',
-    (value) => value in FILTERS && value !== 'inbox',
+    (value) => TICKET_FILTERS.has(value as TicketFilter) && value !== 'inbox',
   )
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
   const needle = query.trim().toLowerCase()
+  const expandedMap = useTicketExpandedMap()
   const all: Array<CollabTicket> = list.data?.ok ? list.data.tickets : []
-  const tickets = all
-    .filter(FILTERS[filter])
-    .sort(byUpdated)
-    .filter(
-      (ticket) =>
-        !needle ||
-        [
-          ticket.id,
-          ticket.title,
-          ticket.from,
-          ticket.to,
-          ...ticket.repos,
-          ticket.handler?.repo,
-        ]
-          .filter(Boolean)
-          .some((field) => String(field).toLowerCase().includes(needle)),
-    )
+  const allGroups = buildTicketGroups(all)
+  const matchedGroups = filterTicketGroups(allGroups, filter, query)
   const unavailable =
     list.data && !list.data.ok ? list.data.error?.message : undefined
   const emptyText = list.isPending
@@ -310,25 +287,30 @@ export function TicketsView({
   const searchInTop = typeof topSlot === 'function'
   const top = searchInTop ? topSlot(searchBox) : topSlot
   const keys = fixedFilter ? null : (
-    <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
+    <StatusSegments groups={allGroups} value={chosen} onChange={setChosen} />
   )
 
   const { recent, older } =
     (filter === 'active' || filter === 'all') && !needle
-      ? splitQuiet(tickets)
-      : { recent: tickets, older: [] }
+      ? splitQuietGroups(matchedGroups)
+      : { recent: matchedGroups, older: [] }
 
   // no ticket in the URL (wide): the one last opened under this filter, else
   // the one last opened at all if it still exists (switching to 全部), else
   // the top of the list (lib/last-opened.ts pickLast)
   const lastKey = `wezdeck-last-ticket-${base}`
+  const visibleIds = flattenVisibleGroupIds(
+    [...recent, ...older],
+    expandedMap,
+    id,
+  )
   const pick =
     id || !all.length
       ? {}
       : pickLast(
           lastKey,
           filter,
-          tickets.map((ticket) => ticket.id),
+          visibleIds,
           all.map((ticket) => ticket.id),
         )
   const toAll = wide && Boolean(pick.all) && !fixedFilter && chosen !== 'all'
@@ -346,11 +328,16 @@ export function TicketsView({
     // a split like 会话 (session-split.tsx): the list sticky on the left, the
     // ticket beside it in the page scroll, j / k move through the list
     const current =
-      id ?? held.current ?? recent.at(0)?.id ?? older.at(0)?.id ?? ''
+      id ?? held.current ?? recent.at(0)?.root.id ?? older.at(0)?.root.id ?? ''
+    const navIds = flattenVisibleGroupIds(
+      [...recent, ...older],
+      expandedMap,
+      current,
+    )
     return (
       <div className="grid h-[100cqh] grid-cols-[minmax(300px,360px)_minmax(0,1fr)] items-stretch overflow-hidden">
         <TicketListKeys
-          ids={[...recent, ...older].map((ticket) => ticket.id)}
+          ids={navIds}
           current={current}
           onGo={(next) => open(next, true)}
         />
@@ -369,7 +356,7 @@ export function TicketsView({
           }
         >
           <TicketKeys
-            tickets={recent}
+            groups={recent}
             older={older}
             empty={emptyText}
             base={base}
@@ -415,12 +402,7 @@ export function TicketsView({
       {list.isError ? (
         <div className="border-b border-brand-edge">{freshness}</div>
       ) : null}
-      <TicketKeys
-        tickets={recent}
-        older={older}
-        empty={emptyText}
-        base={base}
-      />
+      <TicketKeys groups={recent} older={older} empty={emptyText} base={base} />
     </div>
   )
 }

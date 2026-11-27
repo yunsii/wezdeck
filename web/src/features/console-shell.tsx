@@ -422,9 +422,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {/* bottom: mobile tab bar (<768px) or slim 32px diagnostics strip (≥768px) */}
-      <div className="vt-band hidden h-8 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
-        {mode === 'local' ? <StatusBand /> : null}
-      </div>
+      {mode === 'local' ? (
+        <div className="vt-band hidden h-8 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
+          <StatusBand />
+        </div>
+      ) : null}
       <nav
         aria-label={t`Sections`}
         className={cn(

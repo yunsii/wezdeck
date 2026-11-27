@@ -39,6 +39,7 @@ export function ThreadPagingBar({
   start,
   pagingIn,
   atCompaction,
+  autoFailed = false,
   onLoadEarlier,
 }: {
   total: number
@@ -46,17 +47,22 @@ export function ThreadPagingBar({
   start: number
   pagingIn: boolean
   atCompaction: boolean
+  autoFailed?: boolean
   onLoadEarlier: () => void
 }) {
   const { t } = useLingui()
   if (total <= 0) return null
   return (
-    <div className="flex items-center justify-between gap-2 px-1 text-meta text-brand-label">
+    <div
+      data-testid="thread-paging-bar"
+      className="flex items-center justify-between gap-2 px-1 text-meta text-brand-label"
+    >
       <span>{t`${total} messages, showing ${shown}`}</span>
       {start > 0 ? (
         <Button
           variant="plain"
           type="button"
+          data-testid="load-earlier"
           disabled={pagingIn}
           onClick={onLoadEarlier}
           className="min-h-9 rounded-full bg-brand-surface px-3 text-brand-text"
@@ -65,7 +71,9 @@ export function ThreadPagingBar({
             ? t`Loading…`
             : atCompaction
               ? t`Show history before compaction`
-              : t`Load earlier`}
+              : autoFailed
+                ? t`Retry loading earlier`
+                : t`Load earlier`}
         </Button>
       ) : null}
     </div>

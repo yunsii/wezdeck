@@ -76,10 +76,26 @@ func (d *deviceRecord) seen(info *deviceInfo, now time.Time) bool {
 	return false
 }
 
-type deviceStore struct {
-	Approved []deviceRecord `json:"approved"`
-	Pending  []deviceRecord `json:"pending"`
+type pairingInvite struct {
+	Hash      string `json:"hash"` // sha256 hex of the one-time invite secret
+	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at,omitempty"`
+	UsedBy    string `json:"used_by,omitempty"`
+	UsedAt    string `json:"used_at,omitempty"`
 }
+
+type deviceStore struct {
+	Approved []deviceRecord  `json:"approved"`
+	Pending  []deviceRecord  `json:"pending"`
+	Invites  []pairingInvite `json:"invites,omitempty"`
+}
+
+const maxStoredInvites = 20
+
+var (
+	errPairingAlreadyBound = errors.New("pairing link already bound: run install-remote-relay.sh --pair on the host for a new link")
+	errPairingInviteInvalid = errors.New("pairing link invalid or expired: run install-remote-relay.sh --pair on the host for a new link")
+)
 
 var deviceMu sync.Mutex
 
@@ -164,22 +180,129 @@ func parsePublicKey(b64 string) (*ecdsa.PublicKey, []byte, error) {
 	return &ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, raw, nil
 }
 
+func inviteHash(raw string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(raw)))
+	return hex.EncodeToString(sum[:])
+}
+
+func pruneInvites(invites []pairingInvite) []pairingInvite {
+	if len(invites) <= maxStoredInvites {
+		return invites
+	}
+	// Drop oldest used invites first, then oldest overall, so an active
+	// unused invite stays valid within the cap.
+	out := make([]pairingInvite, 0, len(invites))
+	drop := len(invites) - maxStoredInvites
+	for _, inv := range invites {
+		if drop > 0 && inv.UsedBy != "" {
+			drop--
+			continue
+		}
+		out = append(out, inv)
+	}
+	if len(out) > maxStoredInvites {
+		out = out[len(out)-maxStoredInvites:]
+	}
+	return out
+}
+
+// markInviteUsed binds an unused invite to devID if present (idempotent for
+// the same device). Used both when a new device requests approval and when an
+// already-approved device opens a fresh --pair link so strangers cannot reuse
+// that link to submit an approval request.
+func markInviteUsed(s *deviceStore, rawInvite, devID string, now time.Time) bool {
+	if strings.TrimSpace(rawInvite) == "" {
+		return false
+	}
+	h := inviteHash(rawInvite)
+	for i := range s.Invites {
+		if s.Invites[i].Hash == h && s.Invites[i].UsedBy == "" {
+			s.Invites[i].UsedBy = devID
+			s.Invites[i].UsedAt = now.Format(time.RFC3339)
+			s.Invites = pruneInvites(s.Invites)
+			return true
+		}
+	}
+	return false
+}
+
+// consumePairingInvite gates new (unknown) device approval requests so an
+// already-bound pairing link can never be reused to enqueue pending devices.
+func consumePairingInvite(s *deviceStore, rawInvite, devID string, now time.Time) (bound bool, reason string, err error) {
+	rawInvite = strings.TrimSpace(rawInvite)
+	if rawInvite != "" {
+		h := inviteHash(rawInvite)
+		for i := range s.Invites {
+			if s.Invites[i].Hash != h {
+				continue
+			}
+			if s.Invites[i].UsedBy != "" && s.Invites[i].UsedBy != devID {
+				return false, "invite_already_used", errPairingAlreadyBound
+			}
+			if s.Invites[i].UsedBy == "" && s.Invites[i].ExpiresAt != "" {
+				if exp, perr := time.Parse(time.RFC3339, s.Invites[i].ExpiresAt); perr == nil && now.After(exp) {
+					return false, "invite_expired", errPairingInviteInvalid
+				}
+			}
+			if s.Invites[i].UsedBy == "" {
+				s.Invites[i].UsedBy = devID
+				s.Invites[i].UsedAt = now.Format(time.RFC3339)
+				s.Invites = pruneInvites(s.Invites)
+				return true, "", nil
+			}
+			return false, "", nil
+		}
+		return false, "invite_invalid", errPairingInviteInvalid
+	}
+	// Bare #pair=<token> without an invite: allowed on throwaway test relays
+	// (openReads) and for the very first device on an empty host store; once
+	// any device or invite has been bound, new approval requests require a
+	// fresh single-use --pair invite.
+	if openReads() {
+		return false, "", nil
+	}
+	if len(s.Approved) > 0 || len(s.Pending) > 0 || len(s.Invites) > 0 {
+		return false, "pairing_already_bound", errPairingAlreadyBound
+	}
+	return false, "", nil
+}
+
+type registerOutcome struct {
+	Result        map[string]any
+	DeviceID      string
+	State         string
+	DeniedReason  string
+	InviteBound   bool
+	ApprovedCount int
+	PendingCount  int
+}
+
 // registerDevice records a pending key; approval happens on the host
-// (install-remote-relay.sh --approve).
+// (install-remote-relay.sh --approve). New devices need an unused one-time
+// invite once the pairing token has already been bound.
 func registerDevice(args json.RawMessage) (any, error) {
+	out, err := registerDeviceOutcome(args)
+	if err != nil {
+		return nil, err
+	}
+	return out.Result, nil
+}
+
+func registerDeviceOutcome(args json.RawMessage) (registerOutcome, error) {
 	var a struct {
 		PublicKey string      `json:"public_key"`
 		Name      string      `json:"name"`
 		Info      *deviceInfo `json:"info"`
+		Invite    string      `json:"invite"`
 	}
 	if json.Unmarshal(args, &a) != nil {
-		return nil, errors.New("invalid payload")
+		return registerOutcome{DeniedReason: "invalid_payload"}, errors.New("invalid payload")
 	}
 	info := a.Info.clean()
 	now := time.Now()
 	_, raw, err := parsePublicKey(a.PublicKey)
 	if err != nil {
-		return nil, err
+		return registerOutcome{DeniedReason: "invalid_public_key"}, err
 	}
 	id := deviceID(raw)
 	deviceMu.Lock()
@@ -188,19 +311,38 @@ func registerDevice(args json.RawMessage) (any, error) {
 	s := loadDevices()
 	for i := range s.Approved {
 		if s.Approved[i].ID == id {
-			if s.Approved[i].seen(info, now) {
+			changed := s.Approved[i].seen(info, now)
+			inviteBound := markInviteUsed(&s, a.Invite, id, now)
+			if changed || inviteBound {
 				_ = saveDevices(s)
 			}
-			return map[string]any{"v": 1, "ok": true, "id": id, "state": "approved"}, nil
+			res := map[string]any{"v": 1, "ok": true, "id": id, "state": "approved"}
+			return registerOutcome{
+				Result: res, DeviceID: id, State: "approved", InviteBound: inviteBound,
+				ApprovedCount: len(s.Approved), PendingCount: len(s.Pending),
+			}, nil
 		}
 	}
 	for i := range s.Pending {
 		if s.Pending[i].ID == id {
-			if s.Pending[i].seen(info, now) {
+			changed := s.Pending[i].seen(info, now)
+			inviteBound := markInviteUsed(&s, a.Invite, id, now)
+			if changed || inviteBound {
 				_ = saveDevices(s)
 			}
-			return map[string]any{"v": 1, "ok": true, "id": id, "state": "pending"}, nil
+			res := map[string]any{"v": 1, "ok": true, "id": id, "state": "pending"}
+			return registerOutcome{
+				Result: res, DeviceID: id, State: "pending", InviteBound: inviteBound,
+				ApprovedCount: len(s.Approved), PendingCount: len(s.Pending),
+			}, nil
 		}
+	}
+	inviteBound, reason, gateErr := consumePairingInvite(&s, a.Invite, id, now)
+	if gateErr != nil {
+		return registerOutcome{
+			DeviceID: id, DeniedReason: reason,
+			ApprovedCount: len(s.Approved), PendingCount: len(s.Pending),
+		}, gateErr
 	}
 	if len(s.Pending) >= 5 {
 		s.Pending = s.Pending[1:]
@@ -208,9 +350,13 @@ func registerDevice(args json.RawMessage) (any, error) {
 	s.Pending = append(s.Pending, deviceRecord{ID: id, Name: clip(printable(a.Name), 40), PublicKey: a.PublicKey,
 		At: now.Format(time.RFC3339), Info: info, SeenAt: now.Format(time.RFC3339)})
 	if err := saveDevices(s); err != nil {
-		return nil, err
+		return registerOutcome{DeviceID: id, DeniedReason: "save_failed"}, err
 	}
-	return map[string]any{"v": 1, "ok": true, "id": id, "state": "pending"}, nil
+	res := map[string]any{"v": 1, "ok": true, "id": id, "state": "pending"}
+	return registerOutcome{
+		Result: res, DeviceID: id, State: "pending", InviteBound: inviteBound,
+		ApprovedCount: len(s.Approved), PendingCount: len(s.Pending),
+	}, nil
 }
 
 var (

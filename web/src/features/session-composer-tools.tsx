@@ -49,7 +49,7 @@ export function ComposerTools({
         }}
         className="absolute bottom-1.5 left-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-muted"
       >
-        <Plus size={21} aria-hidden />
+        <Plus size={19} aria-hidden />
       </Button>
       <Sheet
         open={open}

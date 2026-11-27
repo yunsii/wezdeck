@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { dropIn } from '#/lib/motion'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { typedText } from './chat-attachments'
 import type { Message } from './chat-thread'
 import { Button } from '#/components/ui/button'
@@ -45,6 +46,7 @@ export function StickyPrompt({
   const { t } = useLingui()
   const [owner, setOwner] = useState<number | null>(null)
   const box = useRef<HTMLDivElement>(null)
+  const wide = useIsWidePhoneFirst()
   const followingRef = useRef(following)
   followingRef.current = following
   const scroller = () =>
@@ -81,9 +83,8 @@ export function StickyPrompt({
       el.removeEventListener('scroll', onScroll)
       cancelAnimationFrame(frame)
     }
-    // re-measure when the thread changes or pin state flips (e.g. landing
-    // unpinned at the start of a long latest reply before any user scroll)
-  }, [end, messages.length, start, following])
+    // re-measure when the thread changes, pin state flips, or wide scroller swaps
+  }, [end, messages.length, start, following, wide])
 
   const message =
     owner === null || following ? undefined : messages[owner - start]
@@ -110,7 +111,7 @@ export function StickyPrompt({
       ref={box}
       // the thread's visible top under the header: chat-scroll aligns to it
       data-chat-top
-      className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
+      className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0 md:top-0"
     >
       {/* in from above, out with a fade (lib/motion.ts): it used to pop;
           the leaving bar keeps its last text while it fades */}

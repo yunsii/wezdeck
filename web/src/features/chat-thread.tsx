@@ -34,6 +34,7 @@ import {
   TaskEventRow,
   ThoughtRow,
 } from './chat-command'
+import { ArtifactCard } from './host-file-context'
 
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
@@ -200,7 +201,15 @@ function useProgressiveFloor(items: Array<Item>, start: number) {
       ? start + items[items.length - FIRST_ITEMS].index
       : -Infinity
   const [floor, setFloor] = useState<number | null>(null)
-  const current = floor ?? first
+  const prevStart = useRef(start)
+  const prepended = start < prevStart.current
+  // Prepended history (start decreased) must render immediately so scroll
+  // anchor restoration measures the real height of the newly loaded messages.
+  if (prepended && floor !== -Infinity) {
+    setFloor(-Infinity)
+  }
+  prevStart.current = start
+  const current = prepended ? -Infinity : (floor ?? first)
   useEffect(() => {
     if (current === -Infinity) return
     const step = () =>
@@ -357,6 +366,14 @@ export function ChatThread({
       if (item.message.kind === 'thought')
         return (
           <ThoughtRow
+            key={`m${at}`}
+            message={item.message}
+            onShown={stream ? () => advance(at + 1) : undefined}
+          />
+        )
+      if (item.message.kind === 'artifact')
+        return (
+          <ArtifactCard
             key={`m${at}`}
             message={item.message}
             onShown={stream ? () => advance(at + 1) : undefined}

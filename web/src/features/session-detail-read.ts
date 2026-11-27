@@ -1,4 +1,6 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
+import { useCallback, useRef, useState } from 'react'
 import { hostRead } from '#/lib/runtime-client'
 import { mergeReply, pollArgs } from '#/lib/session-cache'
 import { traceSessionSync } from '#/lib/session-sync-trace'
@@ -16,4 +18,45 @@ export async function readDetail(client: QueryClient, id: string) {
   const have = client.getQueryData<Detail>(key)
   traceSessionSync(have, reply, id)
   return mergeReply(have, reply)
+}
+
+export function useSessionDetail(
+  id: string,
+  busyOf: (data: Detail) => boolean,
+) {
+  const client = useQueryClient()
+  const key = detailKey(id)
+  const detail = useQuery({
+    queryKey: key,
+    enabled: typeof window !== 'undefined',
+    refetchInterval: (query) =>
+      query.state.data && busyOf(query.state.data) ? 1_000 : 2_500,
+    queryFn: () => readDetail(client, id),
+  })
+  const pagingRef = useRef(false)
+  const [pagingIn, setPagingIn] = useState(false)
+  const loadEarlier = useCallback(
+    async (count: number, onBeforeMerge?: () => void) => {
+      const have = client.getQueryData<Detail>(key)
+      if (!have || pagingRef.current) return false
+      pagingRef.current = true
+      setPagingIn(true)
+      try {
+        const reply = (await hostRead('session', {
+          id,
+          before: have.start ?? 0,
+          messages_rev: have.messages_rev ?? 0,
+          limit: count,
+        })) as Detail
+        onBeforeMerge?.()
+        client.setQueryData<Detail>(key, (now) => mergeReply(now, reply))
+        return true
+      } finally {
+        pagingRef.current = false
+        setPagingIn(false)
+      }
+    },
+    [client, id, key],
+  )
+  return { detail, data: detail.data, pagingIn, loadEarlier }
 }

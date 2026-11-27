@@ -4,6 +4,7 @@
 // this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
+import { Link } from '@tanstack/react-router'
 import { restoreDraft, useDraft } from '#/lib/use-draft'
 import { Check, Copy, SendHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -233,7 +234,23 @@ export function ComposerBox({
   useSpaceToFocus()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing) return
+      if (event.defaultPrevented || event.isComposing || event.repeat) return
+      if (
+        event.key === 'F5' &&
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey
+      ) {
+        if (
+          keysDisabled ||
+          document.querySelector('[role=dialog], [role=alertdialog]')
+        )
+          return
+        event.preventDefault()
+        void onRun('session.restart', { fresh: false })
+        return
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       if (event.code !== 'KeyN') return
       event.preventDefault()
@@ -242,7 +259,7 @@ export function ComposerBox({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onNewConversation, onRun])
+  }, [keysDisabled, onNewConversation, onRun])
   return (
     <>
       {commands ? (
@@ -351,7 +368,7 @@ export function ComposerBox({
           enterKeyHint={touchOnly ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent py-2 pl-14 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent py-2 pl-11 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         <Button
           variant="solid"
@@ -360,6 +377,8 @@ export function ComposerBox({
           size="round"
           type="submit"
           aria-label={t`Send`}
+          aria-keyshortcuts="Control+Enter Meta+Enter"
+          title={`${t`Send`} · Ctrl/⌘+Enter`}
           disabled={!canSend}
           className="absolute right-1.5 top-1/2 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full disabled:opacity-30"
         >
@@ -371,6 +390,67 @@ export function ComposerBox({
           />
         </Button>
       </div>
+    </>
+  )
+}
+
+export function SessionComposerNotice({
+  stale,
+  staleAt,
+  staleMessage,
+  retryIn,
+  error,
+  blocked,
+  readOnly,
+  approved,
+  locale,
+}: {
+  stale: boolean
+  staleAt: string
+  staleMessage?: string
+  retryIn: number
+  error: string
+  blocked: string
+  readOnly: boolean
+  approved: boolean
+  locale: 'en' | 'zh'
+}) {
+  const { t } = useLingui()
+  return (
+    <>
+      {stale ? (
+        <p
+          role="status"
+          data-testid="session-stale"
+          className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
+        >
+          {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+          {staleMessage ?? t`this device is offline`}
+        </p>
+      ) : null}
+      {retryIn && !readOnly ? (
+        <p role="status" className="text-meta text-brand-muted">
+          {t`Someone just used the desk; sending in ${retryIn}s…`}
+        </p>
+      ) : error ? (
+        <ErrorLine message={error} />
+      ) : blocked && !readOnly ? (
+        <p className="text-meta text-brand-muted">
+          {blocked}{' '}
+          {!approved ? (
+            <Link
+              to="/{-$locale}/console/me/$page"
+              params={{
+                locale: locale === 'en' ? undefined : locale,
+                page: 'writing',
+              }}
+              className="text-brand-running"
+            >
+              {t`Open settings`}
+            </Link>
+          ) : null}
+        </p>
+      ) : null}
     </>
   )
 }

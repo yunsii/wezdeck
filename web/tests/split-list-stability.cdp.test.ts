@@ -1,6 +1,6 @@
 // covers: web/src/features/session-chat-row.tsx web/src/features/session-chat-group.tsx web/src/features/session-row-swipe.tsx
 // covers: web/src/features/session-list.tsx web/src/features/session-list-trace.ts web/src/features/session-split.tsx web/src/components/deck/split-column.tsx
-// covers: web/src/features/repo-links.tsx web/src/styles/motion.css
+// covers: web/src/features/repo-links.tsx web/src/styles/motion.css web/src/styles/deck.css
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -76,6 +76,56 @@ async function countPixelDiff(page: Page, a: Buffer, b: Buffer) {
       )
     },
     [a.toString('base64'), b.toString('base64')],
+  )
+}
+
+async function countWatchFlashes(
+  page: Page,
+  frames: Array<string>,
+  box: { x: number; y: number; width: number; height: number },
+) {
+  return page.evaluate(
+    async ([encoded, rect]) => {
+      const decode = async (b64: string) => {
+        const res = await fetch(`data:image/png;base64,${b64}`)
+        const bmp = await createImageBitmap(await res.blob())
+        const canvas = document.createElement('canvas')
+        canvas.width = bmp.width
+        canvas.height = bmp.height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(bmp, 0, 0)
+        return {
+          w: bmp.width,
+          h: bmp.height,
+          d: ctx.getImageData(0, 0, bmp.width, bmp.height).data,
+        }
+      }
+      const imgs = []
+      for (const f of encoded) imgs.push(await decode(f))
+      const sx = Math.max(0, Math.floor(rect.x))
+      const sy = Math.max(0, Math.floor(rect.y))
+      const ex = Math.min(imgs[0].w, Math.ceil(rect.x + rect.width))
+      const ey = Math.min(imgs[0].h, Math.ceil(rect.y + rect.height))
+      let changedFrames = 0
+      for (let k = 1; k < imgs.length; k++) {
+        let changed = 0
+        const a = imgs[k - 1]
+        const b = imgs[k]
+        for (let y = sy; y < ey; y++) {
+          for (let x = sx; x < ex; x++) {
+            const i = (y * a.w + x) * 4
+            const diff =
+              Math.abs(a.d[i] - b.d[i]) +
+              Math.abs(a.d[i + 1] - b.d[i + 1]) +
+              Math.abs(a.d[i + 2] - b.d[i + 2])
+            if (diff > 3) changed++
+          }
+        }
+        if (changed > 0) changedFrames++
+      }
+      return changedFrames
+    },
+    [frames, box] as const,
   )
 }
 
@@ -169,12 +219,13 @@ function stabilityStack() {
         tmux_socket: socket,
         tmux_session: s.id,
         tmux_pane: tmux('display-message', '-p', '-t', s.id, '#{pane_id}'),
-        status: 'idle',
+        status: s.id === 'st-g1' ? 'running' : 'idle',
         agent_name: 'claude',
         tmux_window_name: s.id,
         session_title: s.title || undefined,
         last_user_prompt: s.prompt,
         ts: now - 3600_000 * (idx + 2),
+        turn_started: s.id === 'st-g1' ? now - 30_000 : undefined,
       }
     })
     writeFileSync(attention, JSON.stringify({ entries }))
@@ -186,6 +237,33 @@ function stabilityStack() {
     tmux('kill-server')
   })
   return ctx
+}
+
+type LayerInfo = { layerId: string; drawsContent: boolean }
+
+async function collectActiveAnimReasons(
+  cdp: Awaited<ReturnType<Browser['newContext']>> extends infer C
+    ? C extends { newCDPSession: (p: Page) => Promise<infer S> }
+      ? S
+      : never
+    : never,
+  layers: Array<LayerInfo>,
+) {
+  const bad: Array<string> = []
+  for (const layer of layers) {
+    if (!layer.drawsContent) continue
+    const res = await cdp
+      .send('LayerTree.compositingReasons', { layerId: layer.layerId })
+      .catch(() => ({ compositingReasonIds: [] as Array<string> }))
+    for (const reason of res.compositingReasonIds) {
+      if (
+        reason === 'ActiveOpacityAnimation' ||
+        reason === 'ActiveTransformAnimation'
+      )
+        bad.push(reason)
+    }
+  }
+  return bad
 }
 
 describe.runIf(attention)('Wide split: list stability', () => {
@@ -319,6 +397,18 @@ describe.runIf(attention)('Wide split: list stability', () => {
     const state = await page.evaluate(() => {
       const vtPage = document.querySelector<HTMLElement>('.vt-page')!
       const pane = document.querySelector<HTMLElement>('.vt-split-pane')!
+      const threadScroll = document.querySelector<HTMLElement>(
+        '[data-testid=session-thread-scroll]',
+      )!
+      const detail = document.querySelector<HTMLElement>(
+        '[data-testid=session-detail]',
+      )!
+      const header = document.querySelector<HTMLElement>(
+        '[data-testid=session-header]',
+      )!
+      const form = document
+        .querySelector('#session-composer')
+        ?.closest<HTMLElement>('form')
       const list = document.querySelector<HTMLElement>('.vt-split-list')!
       const swipeRow = document.querySelector<HTMLElement>(
         '.vt-split-list [data-swipe] > div',
@@ -327,10 +417,15 @@ describe.runIf(attention)('Wide split: list stability', () => {
         pageScrollTop: vtPage.scrollTop,
         pageRoom: vtPage.scrollHeight - vtPage.clientHeight,
         pageVtName: getComputedStyle(vtPage).viewTransitionName,
-        paneScrollTop: pane.scrollTop,
-        paneRoom: pane.scrollHeight - pane.clientHeight,
+        paneScrollTop: threadScroll.scrollTop,
+        paneRoom: threadScroll.scrollHeight - threadScroll.clientHeight,
+        detailHeight: Math.round(detail.getBoundingClientRect().height),
+        headerPosition: getComputedStyle(header).position,
+        formPosition: form ? getComputedStyle(form).position : 'none',
         listPosition: getComputedStyle(list).position,
         listWillChange: getComputedStyle(list).willChange,
+        listContain: getComputedStyle(list).contain,
+        paneContain: getComputedStyle(pane).contain,
         idleSwipeTransform: swipeRow
           ? getComputedStyle(swipeRow).transform
           : 'none',
@@ -344,11 +439,69 @@ describe.runIf(attention)('Wide split: list stability', () => {
     expect(state.pageVtName).toBe('none')
     expect(state.paneRoom).toBeGreaterThan(200)
     expect(state.paneScrollTop).toBeGreaterThan(200)
+    expect(state.detailHeight).toBeLessThanOrEqual(866)
+    expect(state.headerPosition).not.toBe('sticky')
+    expect(state.formPosition).not.toBe('sticky')
     expect(state.listPosition).not.toBe('sticky')
     expect(state.listWillChange).toBe('auto')
+    expect(state.listContain).toBe('strict')
+    expect(state.paneContain).toBe('strict')
     expect(state.idleSwipeTransform).toBe('none')
     expect(state.idleSwipeButtons).toBe(0)
 
     await context.close()
   }, 45_000)
+
+  it('switching sessions never flashes uninvolved rows mid-transition (per-frame screencast)', async () => {
+    const context = await stack.browser.newContext({
+      viewport: { width: 1292, height: 866 },
+      deviceScaleFactor: 2.625,
+      colorScheme: 'dark',
+    })
+    const page = await context.newPage()
+    const cdp = await context.newCDPSession(page)
+    await page.goto(
+      `${base}/zh/console/sessions/st-short?remote=1#pair=${token}`,
+    )
+    await page.locator('[data-session=st-watch]').waitFor({ timeout: 20_000 })
+    await page.waitForTimeout(500)
+
+    const watchBox = await page.locator('[data-session=st-watch]').boundingBox()
+    expect(watchBox).toBeTruthy()
+
+    const frames: Array<string> = []
+    cdp.on('Page.screencastFrame', async (ev) => {
+      frames.push(ev.data)
+      await cdp
+        .send('Page.screencastFrameAck', { sessionId: ev.sessionId })
+        .catch(() => undefined)
+    })
+    await cdp.send('Page.startScreencast', { format: 'png', everyNthFrame: 1 })
+
+    for (const target of ['st-tall', 'st-draft', 'st-short']) {
+      await page.locator(`[data-session=${target}]`).click()
+      await page.waitForTimeout(350)
+    }
+    await cdp.send('Page.stopScreencast')
+    expect(frames.length).toBeGreaterThan(10)
+
+    expect(await countWatchFlashes(page, frames, watchBox!)).toBe(0)
+
+    // LayerTree invariant: idle <-> running switches must spawn zero GPU opacity/transform layers.
+    await cdp.send('LayerTree.enable')
+    let layers: Array<LayerInfo> = []
+    cdp.on('LayerTree.layerTreeDidChange', (ev) => {
+      if (ev.layers) layers = ev.layers
+    })
+    await page.locator('[data-session=st-g3]').click()
+    await page.waitForTimeout(250)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+    await page.locator('[data-session=st-g1]').click()
+    await page.waitForTimeout(45)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+    await page.waitForTimeout(250)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+
+    await context.close()
+  }, 60_000)
 })

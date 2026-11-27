@@ -18,6 +18,7 @@ import {
 } from 'react'
 
 import { trace } from '#/lib/client-trace'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { CATCH_UP_EVENT } from './chat-catchup'
 import {
   NEAR_BOTTOM,
@@ -185,6 +186,7 @@ function useStopAtUnread(
   end: React.RefObject<HTMLDivElement | null>,
   pinnedRef: React.RefObject<boolean>,
   pin: (value: boolean) => void,
+  wide: boolean,
 ) {
   useEffect(() => {
     const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
@@ -205,7 +207,7 @@ function useStopAtUnread(
     }
     el.addEventListener(CATCH_UP_EVENT, onCatchUp)
     return () => el.removeEventListener(CATCH_UP_EVENT, onCatchUp)
-  }, [end, pinnedRef, pin])
+  }, [end, pinnedRef, pin, wide])
 }
 
 /** a streaming reply easing its height (chat-grow.tsx) */
@@ -272,6 +274,7 @@ function useFollowGrowth({
   holding,
   userInteracted,
   applyLanding,
+  wide,
 }: {
   end: React.RefObject<HTMLDivElement | null>
   pinnedRef: React.RefObject<boolean>
@@ -281,6 +284,7 @@ function useFollowGrowth({
   holding: React.RefObject<boolean>
   userInteracted: React.RefObject<boolean>
   applyLanding: (el: HTMLElement) => void
+  wide: boolean
 }) {
   useEffect(() => {
     const el = end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
@@ -339,6 +343,7 @@ function useFollowGrowth({
     holding,
     userInteracted,
     applyLanding,
+    wide,
   ])
 }
 
@@ -348,6 +353,7 @@ export function useChatScroll(
   preferLatestTop = false,
   syncing = false,
 ) {
+  const wide = useIsWidePhoneFirst()
   const [pinned, setPinned] = useState(true)
   const pinnedRef = useRef(true)
   const landed = useRef(false)
@@ -361,9 +367,6 @@ export function useChatScroll(
   const holding = useRef(false)
   const [unread, setUnread] = useState(0)
   const seen = useRef(count)
-
-  const scroller = () =>
-    end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
   const pin = useCallback((value: boolean) => {
     if (pinnedRef.current !== value) trace('chat-pin', { pinned: value })
     pinnedRef.current = value
@@ -407,11 +410,11 @@ export function useChatScroll(
     [end],
   )
 
-  useStopAtUnread(end, pinnedRef, pin)
+  useStopAtUnread(end, pinnedRef, pin, wide)
 
   // reader intent: only real input may unpin
   useEffect(() => {
-    const el = scroller()
+    const el = end.current?.closest<HTMLElement>('.overflow-y-auto') ?? null
     if (!el) return
     const intent = () => {
       userInteracted.current = true
@@ -510,7 +513,7 @@ export function useChatScroll(
       el.removeEventListener('scroll', onScroll)
       window.removeEventListener('keydown', onKey)
     }
-  }, [pin, end])
+  }, [pin, end, wide])
 
   const landing = useLandBeforePaint(
     end,
@@ -566,6 +569,7 @@ export function useChatScroll(
     holding,
     userInteracted,
     applyLanding,
+    wide,
   })
   const bottomOf = useCallback(
     (el: HTMLElement) => endTop(el, end.current),
@@ -579,6 +583,7 @@ export function useChatScroll(
     holdUntil,
     holding,
     bottomOf,
+    wide,
   })
 
   const jump = useCallback(() => {

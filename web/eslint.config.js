@@ -44,7 +44,11 @@ export default [
   },
   {
     // Worker code type-checks against workers-types (tsconfig.worker.json).
-    files: ['src/server.ts', 'src/relay/**/*.ts'],
+    files: [
+      'src/server.ts',
+      'src/relay/**/*.ts',
+      'tests/host-relay.unit.test.ts',
+    ],
     languageOptions: {
       parserOptions: { project: './tsconfig.worker.json' },
     },

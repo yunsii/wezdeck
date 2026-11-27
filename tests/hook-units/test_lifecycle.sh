@@ -298,29 +298,34 @@ assert_eq "second waiting keeps original ts" "$existing_ts" "$(field_for "$sandb
 rm -rf "$sandbox"
 
 echo
-echo "▸ TTL prune"
+echo "▸ persistent state (no TTL expiration)"
 
-# Case 11 — entries older than ttl are archived to recent[].
+# Case 11 — aged entries (>30 min / >24 h) persist across prune; no-op prune
+# must not rewrite the file or bump rev.
 sandbox="$(mktemp -d)"
-old_ts=$(( $(date +%s%3N) - 1000000 ))      # > 30 min in the past
+old_ts=$(( $(date +%s%3N) - 90000000 ))     # > 24 h in the past
 fresh_ts=$(( $(date +%s%3N) - 60000 ))      # 1 min ago
 seed_state "$sandbox" '{
   "version":1,
   "entries":{
-    "sid-stale":{"session_id":"sid-stale","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%5","status":"running","reason":"old","ts":'"$old_ts"'},
-    "sid-fresh":{"session_id":"sid-fresh","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%6","status":"running","reason":"new","ts":'"$fresh_ts"'}
+    "sid-old-running":{"session_id":"sid-old-running","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%5","status":"running","reason":"old","ts":'"$old_ts"'},
+    "sid-old-done":{"session_id":"sid-old-done","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%6","status":"done","reason":"finished","ts":'"$old_ts"'},
+    "sid-fresh":{"session_id":"sid-fresh","wezterm_pane_id":"1","tmux_socket":"'"$socket"'","tmux_session":"'"$session"'","tmux_window":"@1","tmux_pane":"%7","status":"running","reason":"new","ts":'"$fresh_ts"'}
   },
   "recent":[]
 }'
-run_in_sandbox_lib "$sandbox" attention_state_prune 600000
-assert_eq "stale entry pruned" "" "$(field_for "$sandbox" "sid-stale" "status")"
+rev_before_prune="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+alive_all='{"'"$socket"'": ["%5", "%6", "%7"]}'
+run_in_sandbox_lib "$sandbox" attention_state_prune "$alive_all"
+assert_eq "24h running entry persists" "running" "$(field_for "$sandbox" "sid-old-running" "status")"
+assert_eq "24h done entry persists" "done" "$(field_for "$sandbox" "sid-old-done" "status")"
 assert_eq "fresh entry kept" "running" "$(field_for "$sandbox" "sid-fresh" "status")"
-assert_eq "stale archived to recent" "1" "$(recent_count_for_sid "$sandbox" "sid-stale")"
-rev_after_prune="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
-# Second prune has nothing left to drop: it must not rewrite the file.
-run_in_sandbox_lib "$sandbox" attention_state_prune 600000
-assert_eq "no-op prune does not bump rev" "$rev_after_prune" \
+assert_eq "aged entries not archived to recent" "0" "$(recent_count_for_sid "$sandbox" "sid-old-running")"
+assert_eq "no-op prune does not bump rev" "$rev_before_prune" \
   "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+# Legacy 2-arg call (`<ttl_ms> <alive_json>`) must also keep aged alive panes.
+run_in_sandbox_lib "$sandbox" attention_state_prune 600000 "$alive_all"
+assert_eq "legacy 2-arg prune still persists aged alive entry" "running" "$(field_for "$sandbox" "sid-old-running" "status")"
 rm -rf "$sandbox"
 
 echo
@@ -339,10 +344,14 @@ seed_state "$sandbox" '{
   "recent":[]
 }'
 alive='{"'"$socket"'": ["%5"]}'
-run_in_sandbox_lib "$sandbox" attention_state_prune 1800000 "$alive"
+run_in_sandbox_lib "$sandbox" attention_state_prune "$alive"
 assert_eq "alive pane kept" "running" "$(field_for "$sandbox" "sid-alive" "status")"
 assert_eq "dead pane archived from entries[]" "" "$(field_for "$sandbox" "sid-dead" "status")"
 assert_eq "dead pane lands in recent[]" "1" "$(recent_count_for_sid "$sandbox" "sid-dead")"
+rev_after_dead="$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+run_in_sandbox_lib "$sandbox" attention_state_prune "$alive"
+assert_eq "repeat reachability prune is no-op" "$rev_after_dead" \
+  "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
 rm -rf "$sandbox"
 
 # Case 13 — socket NOT in alive map (e.g. tmux server unreachable):
@@ -358,13 +367,11 @@ seed_state "$sandbox" '{
   "recent":[]
 }'
 alive='{"'"$socket"'": ["%5"]}'    # other-socket NOT in map
-run_in_sandbox_lib "$sandbox" attention_state_prune 1800000 "$alive"
+run_in_sandbox_lib "$sandbox" attention_state_prune "$alive"
 assert_eq "unknown-socket entry kept (no false-positive archive)" "running" "$(field_for "$sandbox" "sid-unknown" "status")"
 rm -rf "$sandbox"
 
-# Case 14 — empty alive map ({}) skips the reachability sweep entirely
-# (back-compat: emit-agent-status.sh's hot-path call must not archive
-# anything based on reachability, only TTL).
+# Case 14 — empty alive map ({}) skips the reachability sweep entirely.
 sandbox="$(mktemp -d)"
 fresh_ts=$(( $(date +%s%3N) - 60000 ))
 seed_state "$sandbox" '{
@@ -374,7 +381,7 @@ seed_state "$sandbox" '{
   },
   "recent":[]
 }'
-run_in_sandbox_lib "$sandbox" attention_state_prune 1800000 '{}'
+run_in_sandbox_lib "$sandbox" attention_state_prune '{}'
 assert_eq "empty alive map: no reachability sweep" "running" "$(field_for "$sandbox" "sid-keep" "status")"
 rm -rf "$sandbox"
 
@@ -390,7 +397,7 @@ seed_state "$sandbox" '{
   "recent":[]
 }'
 alive='{"'"$socket"'": ["%5"]}'
-run_in_sandbox_lib "$sandbox" attention_state_prune 1800000 "$alive"
+run_in_sandbox_lib "$sandbox" attention_state_prune "$alive"
 assert_eq "no-tmux entry kept by reachability sweep" "running" "$(field_for "$sandbox" "sid-no-tmux" "status")"
 rm -rf "$sandbox"
 

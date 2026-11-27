@@ -104,8 +104,46 @@ case "$MODE" in
     ;;
   pair)
     load_tokens
-    url="$ORIGIN/console/collab#pair=$WEZDECK_RELAY_CLIENT_TOKEN"
-    printf 'Open on the phone / tablet (stores the token in that browser):\n%s\n\n' "$url"
+    invite="$(python3 - <<'PY'
+import datetime, fcntl, hashlib, json, os, secrets
+path = os.path.expanduser(os.environ.get("WEZDECK_REMOTE_DEVICES", "~/.config/wezdeck/remote-devices.json"))
+os.makedirs(os.path.dirname(path), exist_ok=True)
+lock = open(path + ".lock", "a")
+fcntl.flock(lock, fcntl.LOCK_EX)
+try:
+    store = json.load(open(path))
+except FileNotFoundError:
+    store = {"approved": [], "pending": []}
+raw = secrets.token_urlsafe(18)
+now = datetime.datetime.now(datetime.timezone.utc).astimezone()
+expires = now + datetime.timedelta(hours=24)
+invites = list(store.get("invites") or [])
+invites.append({
+    "hash": hashlib.sha256(raw.encode()).hexdigest(),
+    "created_at": now.isoformat(timespec="seconds"),
+    "expires_at": expires.isoformat(timespec="seconds"),
+})
+if len(invites) > 20:
+    kept, drop = [], len(invites) - 20
+    for inv in invites:
+        if drop > 0 and inv.get("used_by"):
+            drop -= 1
+            continue
+        kept.append(inv)
+    invites = kept[-20:]
+store["invites"] = invites
+store.setdefault("approved", [])
+store.setdefault("pending", [])
+tmp = path + ".tmp"
+with open(tmp, "w") as f:
+    json.dump(store, f, indent=2)
+os.chmod(tmp, 0o600)
+os.replace(tmp, path)
+print(raw)
+PY
+)"
+    url="$ORIGIN/console/collab#pair=$WEZDECK_RELAY_CLIENT_TOKEN&invite=$invite"
+    printf 'Open on the phone / tablet (stores the token; single-use approval invite valid 24h):\n%s\n\n' "$url"
     # @paulmillr/qr (web devDependency, zero deps, no npx round trip): its
     # "ascii" output is half blocks with light modules as blocks, so it scans
     # as-is on a dark terminal (~45 cols).
@@ -118,7 +156,7 @@ case "$MODE" in
     # Device keys live in ~/.config/wezdeck/remote-devices.json (written by
     # `wezdeck-wsl relay` when a phone taps 启用写入; see remote_session.go).
     DEVICE_ID="${DEVICE_ID:-}" MODE="$MODE" python3 - <<'PY'
-import fcntl, json, os, sys, unicodedata
+import datetime, fcntl, json, os, sys, unicodedata
 path = os.path.expanduser(os.environ.get("WEZDECK_REMOTE_DEVICES", "~/.config/wezdeck/remote-devices.json"))
 os.makedirs(os.path.dirname(path), exist_ok=True)
 # same lock as the relay (remote_session.go lockDevices): no lost update
@@ -147,6 +185,21 @@ def show():
             print(f"{state:9} {safe(d['id'])}  {safe(what):36} added {safe(d.get('at', ''))[:16]}  seen {safe(seen)[:16]}")
     if not (store.get("pending") or store.get("approved")):
         print("no devices yet: on the phone open 我的 › 设备授权 › 申请授权")
+    now = datetime.datetime.now(datetime.timezone.utc)
+    open_invites = 0
+    for inv in store.get("invites") or []:
+        if inv.get("used_by"):
+            continue
+        exp = inv.get("expires_at")
+        if exp:
+            try:
+                if datetime.datetime.fromisoformat(exp).astimezone(datetime.timezone.utc) < now:
+                    continue
+            except ValueError:
+                pass
+        open_invites += 1
+    if open_invites:
+        print(f"invites   {open_invites} unused pairing invite(s) active")
 if mode == "devices":
     show(); sys.exit(0)
 if not wanted:

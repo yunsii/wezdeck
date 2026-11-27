@@ -159,45 +159,92 @@ if pending:
 PY
 }
 
+# Read the HostRelay client token, preferring the on-disk env file over
+# inherited shell variables so long-lived agent shells never probe with a
+# pre-rotation token. Strips optional `export `, quotes, and CR.
+release_read_relay_token() {
+  local env_file="${WEZDECK_REMOTE_ENV:-$HOME/.config/shell-env.d/wezdeck-remote.env}"
+  local raw=''
+  if [[ -f "$env_file" ]]; then
+    raw="$(sed -nE 's/^[[:space:]]*(export[[:space:]]+)?WEZDECK_RELAY_CLIENT_TOKEN=//p' "$env_file" | tail -1)"
+    raw="${raw%$'\r'}"
+    raw="${raw#"${raw%%[![:space:]]*}"}"
+    raw="${raw%"${raw##*[![:space:]]}"}"
+    if [[ "$raw" == \"*\" && "$raw" == *\" ]]; then
+      raw="${raw:1:${#raw}-2}"
+    elif [[ "$raw" == \'*\' && "$raw" == *\' ]]; then
+      raw="${raw:1:${#raw}-2}"
+    fi
+  fi
+  if [[ -z "$raw" ]]; then
+    raw="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
+  fi
+  printf '%s' "$raw"
+}
+
 # Post-deploy live canary: confirms the public Cloudflare site actually serves
 # the new buildId, HTML shell, entry JS bundle, and HostRelay /relay/health gate.
+# Bounded retries absorb Cloudflare edge/asset propagation delays (5-15 s) while
+# exiting immediately on first healthy response so fast deploys add no overhead.
 release_live_canary() {
-  local site="$1" want="$2" i served html script relay_code relay_token
-  for ((i = 1; i <= 5; i++)); do
+  local site="$1" want="$2" i served html script asset_code relay_code relay_token
+  local build_attempts="${WEZDECK_CANARY_BUILD_ATTEMPTS:-20}"
+  local asset_attempts="${WEZDECK_CANARY_ASSET_ATTEMPTS:-6}"
+  local relay_attempts="${WEZDECK_CANARY_RELAY_ATTEMPTS:-5}"
+  local sleep_s="${WEZDECK_CANARY_SLEEP_S:-1}"
+
+  served=''
+  for ((i = 1; i <= build_attempts; i++)); do
     served="$(curl -fsS -m 8 -H 'cache-control: no-cache' "$site/build.json?t=$(date +%s%N)" 2>/dev/null |
-      sed -n 's/.*"buildId":"\([^"]*\)".*/\1/p')"
+      sed -nE 's/.*"buildId"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p')"
     [[ "$served" == "$want" ]] && break
-    sleep 1
+    ((i < build_attempts)) && sleep "$sleep_s"
   done
   if [[ "$served" != "$want" ]]; then
-    echo "canary: $site/build.json returned '${served:-empty}', expected '$want'" >&2
+    echo "canary: $site/build.json returned '${served:-empty}', expected '$want' after ${build_attempts} attempt(s)" >&2
     return 1
   fi
-  html="$(curl -fsS --compressed -m 10 -H 'cache-control: no-cache' "$site/zh/console/sessions" 2>/dev/null | tr -d '\0')" || {
-    echo "canary: GET $site/zh/console/sessions failed" >&2
-    return 1
-  }
-  script="$(grep -ao '/assets/[^"]*\.js' <<<"$html" | head -1)"
-  if [[ -z "$script" ]] || ! curl -fsS -m 10 -o /dev/null "$site$script"; then
-    echo "canary: entry JS '${script:-missing}' unreachable on $site" >&2
+
+  script=''
+  asset_code='000'
+  for ((i = 1; i <= asset_attempts; i++)); do
+    html="$(curl -fsS --compressed -m 10 -H 'cache-control: no-cache' "$site/zh/console/sessions?t=$(date +%s%N)" 2>/dev/null | tr -d '\0')" || html=''
+    script="$(grep -ao '/assets/[^"]*\.js' <<<"$html" | head -1)"
+    if [[ -n "$script" ]]; then
+      asset_code="$(curl -sS -m 10 -o /dev/null -w '%{http_code}' -H 'cache-control: no-cache' "$site$script" 2>/dev/null || echo 000)"
+      [[ "$asset_code" == 200 ]] && break
+    else
+      asset_code='no-script'
+    fi
+    ((i < asset_attempts)) && sleep "$sleep_s"
+  done
+  if [[ -z "$script" || "$asset_code" != 200 ]]; then
+    echo "canary: entry JS '${script:-missing}' returned HTTP $asset_code on $site after ${asset_attempts} attempt(s)" >&2
     return 1
   fi
+
   # /relay/health is authenticated before DO lookup: 200 with a valid client
   # token, 401 without one (never 404/5xx).
-  relay_token="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
-  if [[ -z "$relay_token" && -f "$HOME/.config/shell-env.d/wezdeck-remote.env" ]]; then
-    relay_token="$(sed -n 's/^WEZDECK_RELAY_CLIENT_TOKEN=//p' "$HOME/.config/shell-env.d/wezdeck-remote.env" | tail -1)"
-  fi
+  relay_token="$(release_read_relay_token)"
+  relay_code='000'
+  for ((i = 1; i <= relay_attempts; i++)); do
+    if [[ -n "$relay_token" ]]; then
+      relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$site/relay/health" 2>/dev/null || echo 000)"
+      [[ "$relay_code" == 200 ]] && break
+    else
+      relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$site/relay/health" 2>/dev/null || echo 000)"
+      [[ "$relay_code" == 401 || "$relay_code" == 200 ]] && break
+    fi
+    ((i < relay_attempts)) && sleep "$sleep_s"
+  done
   if [[ -n "$relay_token" ]]; then
-    relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$site/relay/health" 2>/dev/null || echo 000)"
     if [[ "$relay_code" != 200 ]]; then
-      echo "canary: $site/relay/health returned HTTP $relay_code (expected 200)" >&2
+      echo "canary: $site/relay/health returned HTTP $relay_code (expected 200) after ${relay_attempts} attempt(s)" >&2
       return 1
     fi
   else
-    relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$site/relay/health" 2>/dev/null || echo 000)"
     if [[ "$relay_code" != 401 && "$relay_code" != 200 ]]; then
-      echo "canary: $site/relay/health returned HTTP $relay_code (expected 401/200)" >&2
+      echo "canary: $site/relay/health returned HTTP $relay_code (expected 401/200) after ${relay_attempts} attempt(s)" >&2
       return 1
     fi
   fi

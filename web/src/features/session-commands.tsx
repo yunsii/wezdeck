@@ -297,6 +297,10 @@ export function CommandPanel({
               key={command.label}
               type="button"
               disabled={disabled}
+              title={command.label === '/new' ? 'Ctrl/⌘+N' : undefined}
+              aria-keyshortcuts={
+                command.label === '/new' ? 'Control+N Meta+N' : undefined
+              }
               onClick={() => {
                 command.run()
                 onClose()

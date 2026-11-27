@@ -96,9 +96,12 @@ function viewport() {
   }
 }
 
-/** The active content scroller (wide split pane or main console column). */
+/** The active content scroller (session thread, wide split pane, or shell). */
 function scroller() {
   const el =
+    document.querySelector<HTMLElement>(
+      '[data-testid=session-thread-scroll].overflow-y-auto',
+    ) ??
     document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
     document.getElementById('console-main')?.parentElement
   if (!el) return null
@@ -128,6 +131,11 @@ export function listScroller() {
     },
     rows: aside.querySelectorAll('[data-session], [data-ticket], [data-me]')
       .length,
+    vpKind: vp
+      ? vp.hasAttribute('data-overlayscrollbars-viewport')
+        ? 'os'
+        : 'native'
+      : null,
     vp: vp
       ? {
           top: Math.round(vp.scrollTop),

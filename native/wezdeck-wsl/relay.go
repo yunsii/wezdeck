@@ -268,9 +268,12 @@ func (r *relay) session(parent context.Context, url, token string) error {
 				}
 				wctx, wcancel := context.WithTimeout(ctx, 10*time.Second)
 				r.wmu.Lock()
-				_ = conn.Write(wctx, websocket.MessageText, []byte("ping"))
+				werr := conn.Write(wctx, websocket.MessageText, []byte("ping"))
 				r.wmu.Unlock()
 				wcancel()
+				if werr != nil && ctx.Err() == nil {
+					r.logf("ping_error", "err=%q", errText(werr))
+				}
 			}
 		}
 	}()
@@ -323,8 +326,11 @@ func (r *relay) send(f relayFrame) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r.wmu.Lock()
-	defer r.wmu.Unlock()
-	_ = conn.Write(ctx, websocket.MessageText, body)
+	err := conn.Write(ctx, websocket.MessageText, body)
+	r.wmu.Unlock()
+	if err != nil {
+		r.logf("send_error", "t=%s cid=%s action=%q err=%q", f.T, f.Cid, f.Action, errText(err))
+	}
 }
 
 // readRPC answers the read-only session actions. The relay serves them to
@@ -371,6 +377,12 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = sessionSkills(args)
 	case "session.image":
 		result, err = sessionImage(args)
+	case "session.file":
+		result, err = sessionFile(args)
+	case "collab.run.chat":
+		result, err = collabRunChat(args)
+	case "collab.diff":
+		result, err = collabDiff(args)
 	default:
 		return nil, false, nil
 	}
@@ -385,11 +397,15 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	switch f.Action {
 	case "device.register":
-		result, err := registerDevice(f.Args)
-		if m, ok := result.(map[string]any); ok {
-			r.logf("device_register", "via=%s cid=%s device=%v state=%v", via, f.Cid, m["id"], m["state"])
+		out, err := registerDeviceOutcome(f.Args)
+		if err != nil {
+			r.logf("device_register_denied", "via=%s cid=%s device=%s reason=%s approved=%d pending=%d err=%q",
+				via, f.Cid, out.DeviceID, out.DeniedReason, out.ApprovedCount, out.PendingCount, errText(err))
+			return nil, err
 		}
-		return result, err
+		r.logf("device_register", "via=%s cid=%s device=%s state=%s invite_bound=%t",
+			via, f.Cid, out.DeviceID, out.State, out.InviteBound)
+		return out.Result, nil
 	case "device.hello":
 		return r.deviceHello(f.Args, f.Cid, via)
 	case "diag.submit":

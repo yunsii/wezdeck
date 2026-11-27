@@ -446,6 +446,17 @@ import sys; sys.path.insert(0,'$here/lib'); import fanout as c
 assert c.scopes_overlap(['src/**'],['src/a/**']) and not c.scopes_overlap(['src/a/**'],['src/b/**'])
 assert c.scopes_overlap([],['x/**']) and not c.scopes_overlap(['src/ab/**'],['src/a/**'])"
 
+# regression: fanout run / run --phase auto after challenge reply must skip research and run implement
+P7="$(c plan --from src --title "resume-after-reply" --contract "$tmp/contract.md" | jq -r .id)"
+R7="$(c add --parent "$P7" --to rx --title R7 --scope 'src/r7/**' | jq -r .id)"
+"$run" reply --id "$R7" --decision "proceed with option 1" --status waiting_target >/dev/null
+r7="$(env -u TICKET_COLLAB_RUN_CMD HOST_AGENT_INVOKE_MOCK=1 timeout 60 "$run" fanout run --parent "$P7" --mock)"
+check "auto phase after reply skips research and runs implement directly" bash -c "
+  jq -e '.result==\"done_unmerged\" or .result==\"done\"' <<<'$r7' >/dev/null &&
+  grep -q '^status: shipped' '$TICKETS_ROOT/_data/$R7/ticket.md' &&
+  grep -q '^phase: implement_done' '$TICKETS_ROOT/_data/$R7/ticket.md' &&
+  jq -e -s 'map(.kind) | index(\"implement_done\")!=null and index(\"research_done\")==null' '$TICKETS_ROOT/_data/$R7/events.jsonl' >/dev/null"
+
 echo "---"
 printf 'pass=%d fail=%d\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

@@ -172,19 +172,10 @@ html:active-view-transition .toast-layer {
     }
   }
 }
-/* A conversation switched to in a wide split fades in as a whole — opacity
-   only, so it is at its bottom from the first frame and nothing in it moves
-   (no view transition: a snapshot of the old pane flashed). It used to cut
-   over at once, the turn line sliding in on its own (2026-11-25). */
-@keyframes pane-enter {
-  /* not from 0: its first painted frame was a blank pane, a blink */
-  from {
-    opacity: 0.4;
-  }
-}
-.pane-enter {
-  animation: pane-enter 120ms var(--ease-enter);
-}
+/* Wide-split conversation switches swap directly at opacity 1 (like tickets):
+   fading the whole detail pane from opacity 0.4 → 1 over 120 ms dipped the
+   static header/composer chrome on every click and promoted/demoted a full-pane
+   GPU layer on HiDPI displays, reading as a blink (2026-11-27). */
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(page),

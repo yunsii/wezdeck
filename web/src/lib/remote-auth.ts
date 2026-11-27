@@ -34,13 +34,37 @@ export const OPEN_ACTIONS = new Set([
  * the language comes from <html lang>.
  */
 export function describeError(error: string) {
-  if (!error.startsWith('device not approved')) return error || 'remote error'
   const zh =
     typeof document !== 'undefined' &&
     document.documentElement.lang.startsWith('zh')
-  return zh
-    ? '这台设备还没获批，暂时看不到电脑上的内容：到 我的 › 设备授权 提交申请，在电脑上批准它。'
-    : 'This device is not approved yet, so the host shows it nothing: request access in Settings › Device access and approve it on the host.'
+  if (error.startsWith('device not approved')) {
+    return zh
+      ? '这台设备还没获批，暂时看不到电脑上的内容：到 我的 › 设备授权 提交申请，在电脑上批准它。'
+      : 'This device is not approved yet, so the host shows it nothing: request access in Settings › Device access and approve it on the host.'
+  }
+  if (error.startsWith('pairing link already bound')) {
+    return zh
+      ? '这个配对链接已经绑定过设备，不能再发起新的审批申请。请在电脑上重新运行 scripts/dev/install-remote-relay.sh --pair 获取新链接。'
+      : 'This pairing link is already bound and cannot request approval for another device. Run scripts/dev/install-remote-relay.sh --pair on the host for a new link.'
+  }
+  if (error.startsWith('pairing link invalid or expired')) {
+    return zh
+      ? '这个配对链接的授权邀请无效或已过期。请在电脑上重新运行 scripts/dev/install-remote-relay.sh --pair 获取新链接。'
+      : 'This pairing invite is invalid or expired. Run scripts/dev/install-remote-relay.sh --pair on the host for a new link.'
+  }
+  return error || 'remote error'
+}
+
+export function isPairingGateError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  return (
+    error.message.startsWith('pairing link already bound') ||
+    error.message.startsWith('pairing link invalid or expired') ||
+    error.message.startsWith('这个配对链接已经绑定过设备') ||
+    error.message.startsWith('这个配对链接的授权邀请无效或已过期') ||
+    error.message.startsWith('This pairing link is already bound') ||
+    error.message.startsWith('This pairing invite is invalid or expired')
+  )
 }
 
 /** the host refused a read: this connection is not bound to an approved device */

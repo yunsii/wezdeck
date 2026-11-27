@@ -40,6 +40,7 @@ import { requestNewSession } from './session-new'
 import { worktreeKey } from './session-order'
 import { useStatusText } from './session-status-text'
 import { SessionTitleHistorySection } from './session-title-history'
+import { SessionDocumentsSection } from './host-file-context'
 
 export { metaValue }
 export type { MetaGroup } from './session-info-meta'
@@ -327,6 +328,11 @@ export function SessionInfo({
               </FieldList>
             </section>
           ) : null}
+
+          <SessionDocumentsSection
+            messages={data.messages}
+            onSelect={onClose}
+          />
 
           <SessionTitleHistorySection history={data.title_history} />
 
