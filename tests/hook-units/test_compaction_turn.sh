@@ -31,6 +31,7 @@ new_sandbox() {
     > "$dir/wezterm-runtime/state/agent-attention/live-panes.json"
   cat > "$dir/bin/tmux" <<'TMUX_EOF'
 #!/usr/bin/env bash
+[[ "${1:-}" != "-S" ]] || shift 2
 case "${1:-}" in
   display-message)
     fmt=""; want=0
@@ -44,6 +45,7 @@ case "${1:-}" in
     out="${out//#\{window_id\}/@1}"
     out="${out//#\{pane_id\}/%7}"
     out="${out//#\{pane_current_path\}/${HOME}}"
+    out="${out//#\{@wezdeck_interrupted_turn\}/${TEST_INTERRUPTED_TURN:-}}"
     printf '%s\n' "$out"
     ;;
   *) exit 0 ;;
@@ -87,6 +89,12 @@ check "a prompt starts the turn" "$([[ -n "$first" ]] && echo set)" "set"
 sleep 0.05
 hook "$sb" running UserPromptSubmit
 check "a queued prompt mid-turn keeps it" "$(entry "$sb" '.turn_started')" "$first"
+TEST_INTERRUPTED_TURN="s1/$first" hook "$sb" running UserPromptSubmit
+after_interrupt="$(entry "$sb" '.turn_started')"
+check "a prompt after a confirmed interrupt starts a new turn" \
+  "$([[ "$after_interrupt" -gt "$first" ]] && echo new)" "new"
+TEST_INTERRUPTED_TURN="s1/$first" hook "$sb" running UserPromptSubmit
+check "a stale interrupt does not reset an active turn" "$(entry "$sb" '.turn_started')" "$after_interrupt"
 hook "$sb" done Stop
 check "done drops it" "$(entry "$sb" '.turn_started // "none"')" "none"
 sleep 0.05

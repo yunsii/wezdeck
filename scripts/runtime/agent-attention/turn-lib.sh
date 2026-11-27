@@ -12,16 +12,17 @@
 #   compact_from    status before the compaction (where `compacted` returns)
 
 # jq, appended to the upsert's entry object:
-#   + turn_fields($prev; $st; $rk; $ts)
+#   + turn_fields($prev; $st; $rk; $ts; $sid; $interrupt)
 # A compaction keeps when it started and where it came from while it lasts.
 # turn_started is kept through running / waiting of the same turn (queued
 # prompts, permission prompts); a turn after done, after a background-only
-# stretch or with no entry starts now; done drops it.
+# stretch or with no entry starts now; done drops it. A user prompt after a
+# confirmed interrupt starts a new turn even when the Stop hook was missed.
 # turn_on_running($ts): the waiting / done → running flip
 # (transition_to_running): a waiting turn goes on, a done one starts again.
 # shellcheck disable=SC2034 # read by attention-state-lib.sh
 __ATTENTION_TURN_DEF='
-def turn_fields($prev; $st; $rk; $ts):
+def turn_fields($prev; $st; $rk; $ts; $sid; $interrupt):
   (if ($st == "running") and ($rk == "compacting")
    then (if ($prev.running_kind // "") == "compacting"
          then {running_kind: "compacting",
@@ -37,11 +38,21 @@ def turn_fields($prev; $st; $rk; $ts):
             (if (($prev.status // "") == "running" or ($prev.status // "") == "waiting")
                 and (($prev.running_kind // "") != "background")
                 and ($prev.turn_started != null)
+                and ($interrupt != ($sid + "/" + ($prev.turn_started | tostring)))
              then $prev.turn_started else $ts end)}
      else {} end);
 def turn_on_running($ts):
   .turn_started = (if .status == "waiting" then (.turn_started // $ts) else $ts end);
 '
+
+# emit.sh: only a submitted prompt can supersede a confirmed interruption.
+attention_prompt_interrupt_marker() {
+  if [[ "$status" == "running" && "$raw_event" == "UserPromptSubmit" &&
+        -n "$tmux_socket" && -n "$tmux_pane" ]]; then
+    tmux -S "$tmux_socket" display-message -p -t "$tmux_pane" \
+      -F '#{@wezdeck_interrupted_turn}' 2>/dev/null || true
+  fi
+}
 
 # emit.sh: Claude PreCompact → `compacting`, SessionStart source=compact →
 # `compacted`. compacting = running with running_kind=compacting (the upsert
