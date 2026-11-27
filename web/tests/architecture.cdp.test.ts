@@ -108,4 +108,71 @@ describe('Architecture page', () => {
     ).toBeGreaterThan(0)
     await context.close()
   })
+
+  it('mobile 320px/375px: header brand never overlaps right actions, sticky chapter bar stays below header', async () => {
+    for (const width of [320, 375]) {
+      const context = await browser.newContext({
+        viewport: { width, height: 800 },
+        locale: 'zh-CN',
+      })
+      const page = await context.newPage()
+      for (const path of ['/', '/zh', '/architecture', '/zh/architecture']) {
+        await open(page, `${base}${path}`, '[data-testid=public-brand]')
+        const box = await page.evaluate(() => {
+          const brand = document
+            .querySelector('[data-testid=public-brand]')!
+            .getBoundingClientRect()
+          const actions = document
+            .querySelector('[data-testid=public-header-actions]')!
+            .getBoundingClientRect()
+          return {
+            brandRight: Math.round(brand.right),
+            actionsLeft: Math.round(actions.left),
+            actionsRight: Math.round(actions.right),
+            vw: document.documentElement.clientWidth,
+            sw: document.documentElement.scrollWidth,
+          }
+        })
+        expect(box.brandRight, `${width} ${path}`).toBeLessThanOrEqual(
+          box.actionsLeft,
+        )
+        expect(box.actionsRight, `${width} ${path}`).toBeLessThanOrEqual(
+          box.vw + 1,
+        )
+        expect(box.sw, `${width} ${path}`).toBeLessThanOrEqual(box.vw + 1)
+      }
+      // Opened from inside the console (with ‹ Back button): still no overlap,
+      // and scrolled sticky TOC stays cleanly below the fixed 56px header.
+      await open(page, `${base}/zh/console/me`, '[data-me=architecture]')
+      await page.locator('[data-me=architecture]').click()
+      await page.waitForURL(/\/zh\/architecture/)
+      await page.locator('[data-testid=architecture-toc-mobile]').waitFor()
+      await page.evaluate(() => window.scrollTo(0, 400))
+      const scrolled = await page.evaluate(() => {
+        const header = document.querySelector('header')!.getBoundingClientRect()
+        const brand = document
+          .querySelector('[data-testid=public-brand]')!
+          .getBoundingClientRect()
+        const actions = document
+          .querySelector('[data-testid=public-header-actions]')!
+          .getBoundingClientRect()
+        const toc = document
+          .querySelector('[data-testid=architecture-toc-mobile]')!
+          .getBoundingClientRect()
+        return {
+          brandRight: Math.round(brand.right),
+          actionsLeft: Math.round(actions.left),
+          headerBottom: Math.round(header.bottom),
+          tocTop: Math.round(toc.top),
+        }
+      })
+      expect(scrolled.brandRight, `${width} back`).toBeLessThanOrEqual(
+        scrolled.actionsLeft,
+      )
+      expect(scrolled.tocTop, `${width} toc`).toBeGreaterThanOrEqual(
+        scrolled.headerBottom - 1,
+      )
+      await context.close()
+    }
+  })
 })

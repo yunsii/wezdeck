@@ -590,7 +590,7 @@ msgstr "可用状态与备注"
 #: src/components/ui/sheet.tsx:85
 #: src/features/console-collab.tsx:89
 #: src/features/console-me.tsx:448
-#: src/features/public-header.tsx:49
+#: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:443
 #: src/features/ticket-header.tsx:39
 msgid "Back"
@@ -1003,6 +1003,10 @@ msgstr "连接"
 #: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "连接失败"
+
+#: src/features/public-header.tsx:115
+msgid "Console"
+msgstr "控制台"
 
 #: src/features/me-devices.tsx:53
 msgid "Console ({origin})"
@@ -1693,7 +1697,7 @@ msgstr "主机上线于"
 #: src/features/console-me.tsx:356
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
-#: src/features/public-header.tsx:79
+#: src/features/public-header.tsx:87
 msgid "How it fits together"
 msgstr "架构解析"
 
@@ -2561,7 +2565,7 @@ msgstr "去设置"
 
 #: src/features/landing-page.tsx:62
 #: src/features/landing-page.tsx:160
-#: src/features/public-header.tsx:100
+#: src/features/public-header.tsx:116
 msgid "Open the console"
 msgstr "打开控制台"
 
@@ -2638,7 +2642,7 @@ msgstr "输出速率"
 #~ msgid "Output tokens"
 #~ msgstr "输出 token"
 
-#: src/features/public-header.tsx:71
+#: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:316
 #: src/features/ticket-info.tsx:215
 msgid "Overview"
@@ -3516,7 +3520,7 @@ msgstr "跳到发起的调用"
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
 
-#: src/features/public-header.tsx:62
+#: src/features/public-header.tsx:70
 msgid "Site navigation"
 msgstr "全站导航"
 
@@ -3566,7 +3570,7 @@ msgstr "Sonnet 档"
 
 #: src/features/console-collab-run.tsx:173
 #: src/features/console-diagnostics.tsx:350
-#: src/features/public-header.tsx:88
+#: src/features/public-header.tsx:96
 msgid "Source"
 msgstr "来源"
 
