@@ -167,6 +167,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sheet open), `Ctrl/⌘+N` starts `/new` in the current agent and
    `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane; `c` opens
    the full 新会话 flow for creating or reusing a worktree,
+   and the composer 快捷 panel exposes both same-pane actions on touch
+   screens: 新对话 (`/new`, current agent process) and 新进程 (fresh process).
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
    `?` or the sidebar's 键盘快捷键 entry with the terminal's key for the same
