@@ -769,6 +769,29 @@ func TestPendingGrokElicitationParsesUnansweredAsk(t *testing.T) {
 	}
 }
 
+func TestGrokElicitationTracksTerminalQuestion(t *testing.T) {
+	dir := t.TempDir()
+	chat := filepath.Join(dir, "chat_history.jsonl")
+	updates := `{"params":{"update":{"sessionUpdate":"tool_call","toolCallId":"ask-1","title":"ask_user_question","rawInput":{"questions":[{"question":"First?"},{"question":"Second?"},{"question":"Third?"}]}}}}`
+	if err := os.WriteFile(filepath.Join(dir, "updates.jsonl"), []byte(updates), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, tt := range []struct {
+		screen string
+		want   int
+	}{
+		{"  ┃  [2/3] ↑/↓ navigate · ←/→ question · y copy    Enter:next", 2},
+		{"  ┃  [2/3] ↑/↓ navigate · ←/→ question\n  ┃  [3/3] ↑/↓ navigate · ←/→ question", 3},
+		{"  ┃  [2/4] ↑/↓ navigate · ←/→ question", 0},
+		{"  ┃  [4/3] ↑/↓ navigate · ←/→ question", 0},
+	} {
+		ask := (grokAdapter{}).PendingAsk(chat, tt.screen)
+		if ask == nil || ask.CurrentStep != tt.want {
+			t.Errorf("screen %q: ask=%+v, want step %d", tt.screen, ask, tt.want)
+		}
+	}
+}
+
 func TestPendingGrokElicitationClearsOnTurnCompleted(t *testing.T) {
 	dir := t.TempDir()
 	chat := filepath.Join(dir, "chat_history.jsonl")

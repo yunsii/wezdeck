@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -46,8 +48,7 @@ type elicitQuestion struct {
 type elicitation struct {
 	ToolCallID string           `json:"tool_call_id,omitempty"`
 	Questions  []elicitQuestion `json:"questions"`
-	// CurrentStep: 1-based active question index read from the TUI pane (Agy
-	// "Question X/Y:"), so multi-question cards stay synced with the terminal.
+	// CurrentStep is the 1-based question index shown in the terminal.
 	CurrentStep int `json:"current_step,omitempty"`
 	// Review: every question is answered and the TUI waits on its "Submit
 	// answers" page (Claude, read from the pane) — Enter sends them
@@ -351,7 +352,24 @@ func (t *transcript) feedGrok(raw []byte) {
 // Grok's askReader / planReader parts (agent_adapter.go): questions and the
 // plan file live beside chat_history.jsonl; disk is the truth, since an
 // unanswered Ask may outlive a flaky waiting flag.
-func (grokAdapter) PendingAsk(path, _ string) *elicitation { return pendingGrokElicitation(path) }
+var grokAskPager = regexp.MustCompile(`(?m)^\s*┃[ \t]+\[([0-9]+)/([0-9]+)\][ \t]+↑/↓ navigate · ←/→ question`)
+
+func (grokAdapter) PendingAsk(path, screen string) *elicitation {
+	ask := pendingGrokElicitation(path)
+	if ask == nil || len(ask.Questions) < 2 {
+		return ask
+	}
+	matches := grokAskPager.FindAllStringSubmatch(screen, -1)
+	if len(matches) > 0 {
+		pager := matches[len(matches)-1]
+		step, _ := strconv.Atoi(pager[1])
+		total, _ := strconv.Atoi(pager[2])
+		if total == len(ask.Questions) && step > 0 && step <= total {
+			ask.CurrentStep = step
+		}
+	}
+	return ask
+}
 func (grokAdapter) PendingPlan(path string) map[string]any {
 	// Match the Grok TUI: only surface plan.md when exit_plan_mode opened
 	// review (awaiting approval). plan mode Active while the agent is still

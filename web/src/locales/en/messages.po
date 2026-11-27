@@ -465,7 +465,7 @@ msgid "Always allow"
 msgstr "Always allow"
 
 #: src/features/session-ask-claude.tsx:207
-#: src/features/session-elicitation.tsx:209
+#: src/features/session-elicitation.tsx:210
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
 
@@ -1327,7 +1327,7 @@ msgstr "Creation mode"
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
-#: src/features/session-elicitation.tsx:202
+#: src/features/session-elicitation.tsx:203
 #: src/features/session-elicitation.tsx:297
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
@@ -1599,7 +1599,7 @@ msgid "Endpoint"
 msgstr "Endpoint"
 
 #: src/features/session-ask-claude.tsx:173
-#: src/features/session-elicitation.tsx:173
+#: src/features/session-elicitation.tsx:174
 #: src/features/session-elicitation.tsx:295
 msgid "Enter"
 msgstr "Enter"
@@ -1616,7 +1616,7 @@ msgstr "Error"
 msgid "Errors"
 msgstr "Errors"
 
-#: src/features/session-elicitation.tsx:188
+#: src/features/session-elicitation.tsx:189
 #: src/features/session-elicitation.tsx:296
 msgid "Esc"
 msgstr "Esc"
@@ -2373,7 +2373,7 @@ msgstr "More files changed than listed here."
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 
-#: src/features/session-elicitation.tsx:212
+#: src/features/session-elicitation.tsx:213
 msgid "Multiple choice: tap to toggle options, then press Enter."
 msgstr "Multiple choice: tap to toggle options, then press Enter."
 
@@ -4127,7 +4127,7 @@ msgid "submitted"
 msgstr "submitted"
 
 #: src/features/session-ask-claude.tsx:206
-#: src/features/session-elicitation.tsx:208
+#: src/features/session-elicitation.tsx:209
 msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
@@ -4195,12 +4195,12 @@ msgstr "Take over in tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "Tap a row to copy its value; long-press or right-click for more."
 
-#: src/features/session-elicitation.tsx:215
+#: src/features/session-elicitation.tsx:216
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
 #: src/features/session-ask-claude.tsx:203
-#: src/features/session-elicitation.tsx:214
+#: src/features/session-elicitation.tsx:215
 msgid "Tap an option to send its number into the agent pane."
 msgstr "Tap an option to send its number into the agent pane."
 
@@ -4222,7 +4222,7 @@ msgstr "Task prompt ({promptCount})"
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/features/session-elicitation.tsx:221
+#: src/features/session-elicitation.tsx:222
 #: src/features/session-info-actions.tsx:168
 #: src/features/session-permission.tsx:442
 msgid "Terminal"
@@ -4254,12 +4254,12 @@ msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
 #: src/features/session-ask-claude.tsx:77
-#: src/features/session-elicitation.tsx:122
+#: src/features/session-elicitation.tsx:123
 msgid "The agent is asking you"
 msgstr "The agent is asking you"
 
 #. placeholder {0}: step + 1
-#: src/features/session-elicitation.tsx:121
+#: src/features/session-elicitation.tsx:122
 msgid "The agent is asking you (question {0} of {total})"
 msgstr "The agent is asking you (question {0} of {total})"
 
