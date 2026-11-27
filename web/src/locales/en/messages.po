@@ -164,7 +164,7 @@ msgstr "{staleCount} subagents silent for a while"
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · Links"
 
-#: src/features/me-autotitle.tsx:214
+#: src/features/me-autotitle.tsx:215
 msgid "{taskCount} tasks"
 msgstr "{taskCount} tasks"
 
@@ -176,7 +176,7 @@ msgstr "{tools} tool calls"
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
-#: src/features/me-autotitle.tsx:172
+#: src/features/me-autotitle.tsx:171
 #: src/features/ticket-runs.tsx:88
 msgid "{turns} turns"
 msgstr "{turns} turns"
@@ -222,7 +222,7 @@ msgstr "↓ {tokens} tokens"
 #~ msgid "+ New direction"
 #~ msgstr "+ New direction"
 
-#: src/features/me-autotitle.tsx:214
+#: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 task"
 
@@ -314,7 +314,7 @@ msgstr "Account limits"
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "Action sent; waiting for the agent to continue…"
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:169
 msgid "Active"
 msgstr "Active"
 
@@ -366,8 +366,8 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:315
-#: src/features/session-list.tsx:382
+#: src/features/session-list.tsx:318
+#: src/features/session-list.tsx:385
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -422,7 +422,7 @@ msgstr "All tags"
 msgid "All tiers"
 msgstr "All tiers"
 
-#: src/features/me-host.tsx:138
+#: src/features/me-host.tsx:144
 msgid "All time"
 msgstr "All time"
 
@@ -526,11 +526,11 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-autotitle.tsx:319
+#: src/features/me-autotitle.tsx:316
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "Approve this device in Device access to manage auto titles."
 
-#: src/features/host-quick-controls.tsx:124
+#: src/features/host-quick-controls.tsx:82
 #: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "Approve this device in Device access to use host controls."
@@ -545,7 +545,7 @@ msgstr "Approved"
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:169
 msgid "Archived"
 msgstr "Archived"
 
@@ -561,15 +561,15 @@ msgstr "assumptions challenged"
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
-#: src/features/me-autotitle.tsx:166
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:337
 #: src/features/session-statusbar.tsx:96
 #: src/features/session-title-history.tsx:89
 msgid "Auto"
 msgstr "Auto"
 
-#: src/features/me-autotitle.tsx:119
-#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:164
 msgid "Auto · {eff}"
 msgstr "Auto · {eff}"
 
@@ -577,7 +577,7 @@ msgstr "Auto · {eff}"
 msgid "Auto · {provider}"
 msgstr "Auto · {provider}"
 
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:337
 msgid "Auto ({autoChain})"
 msgstr "Auto ({autoChain})"
 
@@ -613,7 +613,7 @@ msgstr "Auto-approves edits; auto mode off"
 msgid "Auto-title agent CLI"
 msgstr "Auto-title agent CLI"
 
-#: src/features/me-autotitle.tsx:307
+#: src/features/me-autotitle.tsx:304
 msgid "Auto-title settings saved"
 msgstr "Auto-title settings saved"
 
@@ -779,7 +779,7 @@ msgstr "Cancelling…"
 msgid "Capabilities"
 msgstr "Capabilities"
 
-#: src/features/me-host.tsx:160
+#: src/features/me-host.tsx:166
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
@@ -805,7 +805,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "Changes"
 
-#: src/features/host-quick-controls.tsx:111
+#: src/features/host-quick-controls.tsx:117
 msgid "Changing One Client…"
 msgstr "Changing One Client…"
 
@@ -877,8 +877,8 @@ msgstr "Clear input"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:106
-#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:107
+#: src/features/session-list.tsx:308
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "Clear search"
@@ -1033,7 +1033,7 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
 
-#: src/features/host-quick-controls.tsx:114
+#: src/features/host-quick-controls.tsx:120
 msgid "Connect One Client"
 msgstr "Connect One Client"
 
@@ -1238,7 +1238,7 @@ msgstr "Could not create it: {reason}"
 msgid "Could not read agent profiles."
 msgstr "Could not read agent profiles."
 
-#: src/features/me-autotitle.tsx:327
+#: src/features/me-autotitle.tsx:324
 msgid "Could not read auto-title status."
 msgstr "Could not read auto-title status."
 
@@ -1266,7 +1266,7 @@ msgstr "Create ticket"
 msgid "Create workspace"
 msgstr "Create workspace"
 
-#: src/features/session-list.tsx:136
+#: src/features/session-list.tsx:137
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
@@ -1420,7 +1420,7 @@ msgstr "Disable this agent"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/features/host-quick-controls.tsx:113
+#: src/features/host-quick-controls.tsx:119
 msgid "Disconnect One Client"
 msgstr "Disconnect One Client"
 
@@ -1440,7 +1440,7 @@ msgstr "Dispatched"
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:127
-#: src/features/session-list.tsx:56
+#: src/features/session-list.tsx:57
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "Done"
@@ -1510,7 +1510,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
 
-#: src/features/me-host.tsx:123
+#: src/features/me-host.tsx:128
 msgid "Endpoint"
 msgstr "Endpoint"
 
@@ -1868,8 +1868,8 @@ msgstr "Initiator"
 msgid "Input cleared"
 msgstr "Input cleared"
 
-#: src/features/me-host.tsx:128
-#: src/features/me-host.tsx:129
+#: src/features/me-host.tsx:133
+#: src/features/me-host.tsx:135
 msgid "Input method"
 msgstr "Input method"
 
@@ -1881,7 +1881,7 @@ msgstr "Install WezDeck"
 msgid "Installed"
 msgstr "Installed"
 
-#: src/features/me-host.tsx:122
+#: src/features/me-host.tsx:127
 msgid "Instance"
 msgstr "Instance"
 
@@ -1935,6 +1935,8 @@ msgid "Keep planning"
 msgstr "Keep planning"
 
 #: src/features/console-keys.tsx:207
+#: src/features/console-keys.tsx:266
+#: src/features/console-keys.tsx:267
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -1971,7 +1973,7 @@ msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-status-band.tsx:87
-#: src/features/me-host.tsx:125
+#: src/features/me-host.tsx:130
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -1980,11 +1982,11 @@ msgid "Last turn"
 msgstr "Last turn"
 
 #: src/features/chat-controls.tsx:31
-#: src/features/me-host.tsx:139
+#: src/features/me-host.tsx:145
 msgid "Latest"
 msgstr "Latest"
 
-#: src/features/host-quick-controls.tsx:97
+#: src/features/host-quick-controls.tsx:103
 msgid "Latest OPPO connection"
 msgstr "Latest OPPO connection"
 
@@ -2063,7 +2065,7 @@ msgstr "Loading original…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:174
-#: src/features/me-autotitle.tsx:334
+#: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
@@ -2129,7 +2131,7 @@ msgstr "Managed override"
 msgid "Manual"
 msgstr "Manual"
 
-#: src/features/me-autotitle.tsx:162
+#: src/features/me-autotitle.tsx:161
 msgid "Manual /rename"
 msgstr "Manual /rename"
 
@@ -2237,12 +2239,12 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/me-autotitle.tsx:167
+#: src/features/me-autotitle.tsx:166
 #: src/features/session-title-history.tsx:86
 msgid "Native"
 msgstr "Native"
 
-#: src/features/session-list.tsx:55
+#: src/features/session-list.tsx:56
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -2302,7 +2304,7 @@ msgstr "New line"
 #~ msgstr "New round"
 
 #: src/features/session-chat-group.tsx:211
-#: src/features/session-list.tsx:153
+#: src/features/session-list.tsx:154
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new.tsx:193
@@ -2385,7 +2387,7 @@ msgstr "Next session waiting on you"
 msgid "no"
 msgstr "no"
 
-#: src/features/host-quick-controls.tsx:92
+#: src/features/host-quick-controls.tsx:98
 msgid "No active session"
 msgstr "No active session"
 
@@ -2401,7 +2403,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:310
+#: src/features/session-list.tsx:313
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2426,7 +2428,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:58
+#: src/features/session-list.tsx:59
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2446,7 +2448,7 @@ msgstr "No links match that search."
 msgid "No links resolved for this repository."
 msgstr "No links resolved for this repository."
 
-#: src/features/me-autotitle.tsx:348
+#: src/features/me-autotitle.tsx:345
 msgid "No local CLI available"
 msgstr "No local CLI available"
 
@@ -2474,11 +2476,11 @@ msgstr "No recent result"
 #~ msgid "No session"
 #~ msgstr "No session"
 
-#: src/features/me-autotitle.tsx:148
+#: src/features/me-autotitle.tsx:147
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
-#: src/features/session-list.tsx:297
+#: src/features/session-list.tsx:300
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2528,7 +2530,7 @@ msgstr "Not delivered: the agent went idle without it"
 msgid "not done"
 msgstr "not done"
 
-#: src/features/me-host.tsx:149
+#: src/features/me-host.tsx:155
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
@@ -2588,7 +2590,7 @@ msgid "now {label}"
 msgstr "now {label}"
 
 #: src/features/console-me.tsx:268
-#: src/features/me-autotitle.tsx:116
+#: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
 msgid "Off"
 msgstr "Off"
@@ -2605,7 +2607,7 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:117
 #: src/features/me-autotitle.tsx:369
 msgid "On"
 msgstr "On"
@@ -2705,7 +2707,7 @@ msgstr "Opening…"
 #~ msgid "opens one more"
 #~ msgstr "opens one more"
 
-#: src/features/host-quick-controls.tsx:87
+#: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
 
@@ -2864,7 +2866,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/me-host.tsx:155
+#: src/features/me-host.tsx:161
 msgid "Process"
 msgstr "Process"
 
@@ -2926,7 +2928,7 @@ msgstr "Queued"
 msgid "Queued messages"
 msgstr "Queued messages"
 
-#: src/features/host-quick-controls.tsx:82
+#: src/features/host-quick-controls.tsx:88
 msgid "Quick controls"
 msgstr "Quick controls"
 
@@ -2957,7 +2959,7 @@ msgstr "read {reads} files"
 #: src/features/console-shared.tsx:211
 #: src/features/console-status-band.tsx:51
 #: src/features/me-host.tsx:60
-#: src/features/me-host.tsx:151
+#: src/features/me-host.tsx:157
 msgid "Ready"
 msgstr "Ready"
 
@@ -2987,19 +2989,19 @@ msgstr "Refresh active sessions now"
 msgid "Refresh links"
 msgstr "Refresh links"
 
-#: src/features/me-autotitle.tsx:298
+#: src/features/me-autotitle.tsx:295
 msgid "Refreshing session titles in the background…"
 msgstr "Refreshing session titles in the background…"
 
-#: src/features/me-autotitle.tsx:250
+#: src/features/me-autotitle.tsx:253
 msgid "Regenerate"
 msgstr "Regenerate"
 
-#: src/features/me-autotitle.tsx:244
+#: src/features/me-autotitle.tsx:246
 msgid "Regenerate title now"
 msgstr "Regenerate title now"
 
-#: src/features/me-autotitle.tsx:297
+#: src/features/me-autotitle.tsx:294
 msgid "Regenerating title for this session…"
 msgstr "Regenerating title for this session…"
 
@@ -3257,7 +3259,7 @@ msgstr "Resume a conversation"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:551
-#: src/features/me-host.tsx:109
+#: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
 msgid "Retry"
@@ -3381,7 +3383,7 @@ msgstr "Runs"
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
-#: src/features/me-autotitle.tsx:356
+#: src/features/me-autotitle.tsx:357
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 
@@ -3392,7 +3394,7 @@ msgstr "Runs in the host relay using a local agent CLI to keep active session ti
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
-#: src/features/me-host.tsx:121
+#: src/features/me-host.tsx:126
 msgid "Runtime"
 msgstr "Runtime"
 
@@ -3500,8 +3502,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:96
 #: src/features/session-list.tsx:97
+#: src/features/session-list.tsx:98
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3571,7 +3573,7 @@ msgstr "Session"
 msgid "Session actions"
 msgstr "Session actions"
 
-#: src/features/host-quick-controls.tsx:90
+#: src/features/host-quick-controls.tsx:96
 msgid "Session active"
 msgstr "Session active"
 
@@ -3628,22 +3630,22 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:216
-#: src/features/session-list.tsx:276
-#: src/features/session-list.tsx:397
+#: src/features/session-list.tsx:279
+#: src/features/session-list.tsx:400
 #: src/features/session-new-job.tsx:399
 #: src/features/session-new.tsx:433
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:287
+#: src/features/session-list.tsx:290
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:478
 #: src/features/console-me.tsx:482
-#: src/features/console-me.tsx:506
+#: src/features/console-me.tsx:486
+#: src/features/console-me.tsx:510
 #: src/features/console-shell.tsx:108
 msgid "Settings"
 msgstr "Settings"
@@ -3656,8 +3658,6 @@ msgstr "Shared"
 msgid "shipped"
 msgstr "shipped"
 
-#: src/features/console-keys.tsx:266
-#: src/features/console-keys.tsx:267
 #: src/features/console-keys.tsx:272
 msgid "Shortcuts"
 msgstr "Shortcuts"
@@ -3732,7 +3732,7 @@ msgstr "slot {slot}"
 msgid "Snapshot"
 msgstr "Snapshot"
 
-#: src/features/me-host.tsx:154
+#: src/features/me-host.tsx:160
 msgid "Socket"
 msgstr "Socket"
 
@@ -3862,7 +3862,7 @@ msgid "State"
 msgstr "State"
 
 #: src/features/console-collab.tsx:222
-#: src/features/me-host.tsx:147
+#: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:110
@@ -4232,7 +4232,7 @@ msgstr "Title"
 msgid "Title source"
 msgstr "Title source"
 
-#: src/features/me-autotitle.tsx:305
+#: src/features/me-autotitle.tsx:302
 msgid "Title unlocked; auto-titling will resume."
 msgstr "Title unlocked; auto-titling will resume."
 
@@ -4273,7 +4273,7 @@ msgid "To-dos of this repo"
 msgstr "To-dos of this repo"
 
 #: src/features/console-activity.tsx:169
-#: src/features/me-host.tsx:131
+#: src/features/me-host.tsx:137
 msgid "Today"
 msgstr "Today"
 
@@ -4281,7 +4281,7 @@ msgstr "Today"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 
-#: src/features/me-host.tsx:135
+#: src/features/me-host.tsx:141
 msgid "Today events"
 msgstr "Today events"
 
@@ -4390,11 +4390,11 @@ msgstr "Undo"
 msgid "Unknown"
 msgstr "Unknown"
 
-#: src/features/me-autotitle.tsx:236
+#: src/features/me-autotitle.tsx:238
 msgid "Unlock"
 msgstr "Unlock"
 
-#: src/features/me-autotitle.tsx:230
+#: src/features/me-autotitle.tsx:231
 msgid "Unlock to resume auto-titling"
 msgstr "Unlock to resume auto-titling"
 
@@ -4431,7 +4431,7 @@ msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-status-band.tsx:93
-#: src/features/me-host.tsx:124
+#: src/features/me-host.tsx:129
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -4554,7 +4554,7 @@ msgstr "waiting on you"
 
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:126
-#: src/features/session-list.tsx:54
+#: src/features/session-list.tsx:55
 #: src/features/tickets-view.tsx:404
 #: src/features/tickets-view.tsx:549
 msgid "Waiting on you"
@@ -4728,7 +4728,7 @@ msgstr "working"
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:125
-#: src/features/session-list.tsx:57
+#: src/features/session-list.tsx:58
 msgid "Working"
 msgstr "Working"
 
@@ -4772,7 +4772,7 @@ msgid "Worktrees"
 msgstr "Worktrees"
 
 #: src/features/me-host.tsx:41
-#: src/features/me-host.tsx:145
+#: src/features/me-host.tsx:151
 msgid "WSL bridge"
 msgstr "WSL bridge"
 
@@ -4781,7 +4781,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:170
-#: src/features/session-list.tsx:69
+#: src/features/session-list.tsx:70
 msgid "Yesterday"
 msgstr "Yesterday"
 

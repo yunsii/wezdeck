@@ -13,6 +13,9 @@
 //   {do:"wait", ms:800}                    ≤ 10 s
 //   {do:"layout"}  what overflows the viewport: offending elements with
 //                  their box, font size and text; root font size, text zoom
+//   {do:"sample-list", ms?:1500, selector?:...}
+//                  sample every list row rect and split-list scrollTop across
+//                  rAF frames to catch live flicker/jitter without mutations
 // Each step records its result and the frames of the next `sample` ms
 // (default 700).
 import type { AnyRouter } from '@tanstack/react-router'
@@ -26,6 +29,7 @@ import {
 
 import {
   diagnosticsSnapshot,
+  listScroller,
   sampleFrames,
   shellMetrics,
   trace,
@@ -168,6 +172,118 @@ function layoutReport(): Record<string, unknown> {
   }
 }
 
+/**
+ * On-demand live row geometry probe (`{"do":"sample-list","ms":2000}`):
+ * samples every matching list row's rect + split-list scrollTop across rAF
+ * frames to catch flickering / subpixel jitter on a real tablet or phone.
+ */
+function sampleListGeometry(step: Step): Promise<Record<string, unknown>> {
+  const selector =
+    step.selector ||
+    '.vt-split-list [data-session], [data-testid=session-chats] [data-session]'
+  const duration = Math.min(Math.max(step.ms ?? 1500, 200), 5000)
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame === 'undefined') {
+      resolve({ skipped: 'no rAF' })
+      return
+    }
+    const start = performance.now()
+    let frames = 0
+    let shiftedFrames = 0
+    let maxDy = 0
+    let maxDh = 0
+    let maxDx = 0
+    let scrollJumps = 0
+    let prevScrollTop: number | null = null
+    const prevRects = new Map<string, { x: number; y: number; h: number }>()
+    const shifts: Array<Record<string, unknown>> = []
+    const round2 = (n: number) => Math.round(n * 100) / 100
+
+    const tick = (now: number) => {
+      frames++
+      const ls = listScroller()
+      const scrollTop = ls?.vp?.top ?? null
+      if (
+        prevScrollTop !== null &&
+        scrollTop !== null &&
+        scrollTop !== prevScrollTop
+      ) {
+        scrollJumps++
+      }
+      prevScrollTop = scrollTop
+
+      let els: Array<HTMLElement> = []
+      try {
+        els = [...document.querySelectorAll<HTMLElement>(selector)]
+      } catch {
+        resolve({ skipped: 'bad selector' })
+        return
+      }
+      let frameShifted = false
+      let subpixelRows = 0
+      for (const el of els) {
+        const id =
+          el.dataset.session ??
+          el.dataset.ticket ??
+          el.dataset.me ??
+          el.dataset.testid ??
+          ''
+        if (!id) continue
+        const r = el.getBoundingClientRect()
+        if (
+          Math.abs(r.y - Math.round(r.y)) > 0.01 ||
+          Math.abs(r.height - Math.round(r.height)) > 0.01
+        ) {
+          subpixelRows++
+        }
+        const prev = prevRects.get(id)
+        if (prev) {
+          const dx = Math.abs(r.x - prev.x)
+          const dy = Math.abs(r.y - prev.y)
+          const dh = Math.abs(r.height - prev.h)
+          if (dx > 0.1 || dy > 0.1 || dh > 0.1) {
+            frameShifted = true
+            maxDx = Math.max(maxDx, dx)
+            maxDy = Math.max(maxDy, dy)
+            maxDh = Math.max(maxDh, dh)
+            if (shifts.length < 15) {
+              shifts.push({
+                frame: frames,
+                t: Math.round(now - start),
+                id,
+                dx: round2(r.x - prev.x),
+                dy: round2(r.y - prev.y),
+                dh: round2(r.height - prev.h),
+                scrollTop,
+              })
+            }
+          }
+        }
+        prevRects.set(id, { x: r.x, y: r.y, h: r.height })
+      }
+      if (frameShifted) shiftedFrames++
+      if (now - start < duration) {
+        requestAnimationFrame(tick)
+      } else {
+        resolve({
+          ms: Math.round(now - start),
+          frames,
+          rows: els.length,
+          shiftedFrames,
+          maxDx: round2(maxDx),
+          maxDy: round2(maxDy),
+          maxDh: round2(maxDh),
+          scrollJumps,
+          subpixelRows,
+          listScroller: ls,
+          shifts,
+        })
+      }
+    }
+    requestAnimationFrame(tick)
+  })
+}
+
 async function runStep(
   router: AnyRouter,
   step: Step,
@@ -210,6 +326,8 @@ async function runStep(
       return layoutReport()
     case 'query':
       return query(step)
+    case 'sample-list':
+      return sampleListGeometry(step)
     case 'reload':
       // done after the snapshot is sent (answer): reloading here would
       // lose the answer

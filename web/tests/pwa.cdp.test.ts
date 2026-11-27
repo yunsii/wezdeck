@@ -1,7 +1,8 @@
 // covers: web/src/features/pwa-boot.tsx web/src/features/me-app.tsx web/src/features/console-shell.tsx
-// covers: web/src/features/console-status-band.tsx
+// covers: web/src/features/console-status-band.tsx web/src/features/console-keys.tsx
 // covers: web/src/features/remote-badge.tsx web/src/features/landing-page.tsx web/src/features/public-header.tsx
 // covers: web/src/features/console-me.tsx web/src/features/me-entry-row.tsx
+// covers: web/src/features/me-host.tsx web/src/features/host-quick-controls.tsx web/src/features/me-autotitle.tsx
 // covers: web/src/features/inspector.tsx web/public/*
 import { chromium, devices } from '@playwright/test'
 import type { Browser, BrowserContext, Page } from '@playwright/test'
@@ -28,6 +29,211 @@ async function open(page: Page, url: string, ready: string) {
       await page.waitForTimeout(1_000)
     }
   }
+}
+
+async function assertDesktopRailFits(browser: Browser) {
+  for (const { locale, path } of [
+    { locale: 'zh-CN', path: '/zh/console/collab' },
+    { locale: 'en-US', path: '/console/collab' },
+  ]) {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 600 },
+      locale,
+    })
+    const page = await context.newPage()
+    await open(
+      page,
+      `${base}${path}?remote=1#pair=${token}`,
+      '[data-testid=keys-entry]',
+    )
+    await page.evaluate(() => document.fonts.ready)
+    const metrics = await page.evaluate(() => {
+      const aside = document.querySelector('aside.vt-sidebar')!
+      const nav = aside.querySelector('nav')!
+      const asideRect = aside.getBoundingClientRect()
+      const navRect = nav.getBoundingClientRect()
+      const controls = [
+        ...aside.querySelectorAll<HTMLElement>('nav a, nav button'),
+      ].map((el) => {
+        const rect = el.getBoundingClientRect()
+        const label = el.querySelector<HTMLElement>('span.truncate')
+        const labelRect = label?.getBoundingClientRect()
+        return {
+          text: el.textContent.trim(),
+          left: rect.left,
+          right: rect.right,
+          bottom: rect.bottom,
+          width: rect.width,
+          labelRight: labelRect?.right ?? rect.right,
+          labelScrollWidth: label?.scrollWidth ?? 0,
+          labelClientWidth: label?.clientWidth ?? 0,
+        }
+      })
+      return {
+        navLeft: navRect.left,
+        navRight: navRect.right,
+        asideBottom: asideRect.bottom,
+        controls,
+      }
+    })
+    expect(metrics.controls.length).toBeGreaterThanOrEqual(4)
+    const primaryWidth = metrics.controls[0].width
+    for (const control of metrics.controls) {
+      expect(control.left, control.text).toBeGreaterThanOrEqual(
+        metrics.navLeft - 0.5,
+      )
+      expect(control.right, control.text).toBeLessThanOrEqual(
+        metrics.navRight + 0.5,
+      )
+      expect(control.bottom, control.text).toBeLessThanOrEqual(
+        metrics.asideBottom + 1,
+      )
+      expect(
+        Math.abs(control.width - primaryWidth),
+        control.text,
+      ).toBeLessThanOrEqual(1)
+      expect(control.labelRight, control.text).toBeLessThanOrEqual(
+        control.right + 0.5,
+      )
+      expect(control.labelScrollWidth, control.text).toBeLessThanOrEqual(
+        control.labelClientWidth + 1,
+      )
+    }
+    // Boundary: even an overlong label must stay clamped inside nav (grid-cols-1)
+    // and never widen sibling footer items past the rail edge.
+    const clamped = await page.evaluate(() => {
+      const aside = document.querySelector('aside.vt-sidebar')!
+      const navRight = aside.querySelector('nav')!.getBoundingClientRect().right
+      const keysBtn = aside.querySelector<HTMLElement>(
+        '[data-testid=keys-entry]',
+      )!
+      const label = keysBtn.querySelector<HTMLElement>('span.truncate')!
+      const prev = label.textContent
+      label.textContent = '键盘快捷键超出边界测试'
+      const keysRight = keysBtn.getBoundingClientRect().right
+      const footerMaxRight = Math.max(
+        ...[...keysBtn.parentElement!.children].map(
+          (el) => el.getBoundingClientRect().right,
+        ),
+      )
+      label.textContent = prev
+      return { navRight, keysRight, footerMaxRight }
+    })
+    expect(clamped.keysRight).toBeLessThanOrEqual(clamped.navRight + 0.5)
+    expect(clamped.footerMaxRight).toBeLessThanOrEqual(clamped.navRight + 0.5)
+    await context.close()
+  }
+}
+
+async function assertMeSectionLayouts(browser: Browser) {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    locale: 'zh-CN',
+  })
+  const cors = { 'access-control-allow-origin': '*' }
+  await context.route('http://127.0.0.1:35791/**', async (route) => {
+    const url = new URL(route.request().url())
+    const json = (body: unknown) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: cors,
+        body: JSON.stringify(body),
+      })
+    if (url.pathname === '/api/v1/health')
+      return json({
+        api_version: '1',
+        instance_id: 'test-runtime',
+        ready: true,
+        uptime_ms: 120_000,
+        capabilities: ['remote.read', 'wsl.status'],
+        observed_at: new Date().toISOString(),
+      })
+    if (url.pathname === '/api/v1/wsl/status')
+      return json({ available: true, socket: '/tmp/test.sock', pid: 42 })
+    if (url.pathname === '/api/v1/remote/host.warp.status')
+      return json({ state: 'connected' })
+    if (url.pathname === '/api/v1/remote/host.oppo.status')
+      return json({ active: false, last_result: 'connected' })
+    if (url.pathname === '/api/v1/remote/session.autotitle.status')
+      return json({
+        enabled: true,
+        provider: '',
+        effective_provider: 'grok',
+        effective_model: 'grok-fast',
+        interval_s: 60,
+        providers: [
+          { id: 'grok', available: true, model: 'grok-fast' },
+          { id: 'claude', available: true, model: 'claude-haiku' },
+        ],
+        entries: [
+          {
+            session_id: 'long-title-session',
+            agent: 'claude',
+            title:
+              '一个非常非常长用来验证单列网格不会把右侧操作按钮挤出卡片容器边界的会话标题示例文字',
+            source: 'auto',
+            provider: 'grok',
+            updated_at: Date.now(),
+            user_turns: 4,
+            active: true,
+            history: [
+              {
+                at: Date.now(),
+                title: '初始任务标题',
+                source: 'auto',
+                provider: 'grok',
+                user_turns: 1,
+              },
+            ],
+          },
+        ],
+      })
+    return route.abort()
+  })
+  const page = await context.newPage()
+  for (const { path, ready } of [
+    {
+      path: '/zh/console/me/host',
+      ready: '[data-me-page=host] h2.section-heading',
+    },
+    {
+      path: '/zh/console/me/autotitle',
+      ready: '[data-testid=autotitle-page] h2.section-heading',
+    },
+  ]) {
+    await open(page, `${base}${path}`, ready)
+    const report = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-testid=me-pane]')!
+      const deckBg = getComputedStyle(
+        document.querySelector<HTMLElement>('.vt-page')!,
+      ).backgroundColor
+      const paneRect = pane.getBoundingClientRect()
+      const headings = [
+        ...pane.querySelectorAll<HTMLElement>('h2.section-heading'),
+      ].map((el) => ({
+        text: el.textContent.trim(),
+        bg: getComputedStyle(el).backgroundColor,
+        right: el.getBoundingClientRect().right,
+      }))
+      const buttons = [
+        ...pane.querySelectorAll<HTMLElement>('[data-me-page] li button'),
+      ].map((el) => ({
+        text: el.textContent.trim(),
+        right: el.getBoundingClientRect().right,
+      }))
+      return { deckBg, paneRight: paneRect.right, headings, buttons }
+    })
+    expect(report.headings.length).toBeGreaterThanOrEqual(2)
+    for (const h of report.headings) {
+      expect(h.bg, h.text).toBe(report.deckBg)
+      expect(h.right, h.text).toBeLessThanOrEqual(report.paneRight + 0.5)
+    }
+    for (const btn of report.buttons) {
+      expect(btn.right, btn.text).toBeLessThanOrEqual(report.paneRight + 0.5)
+    }
+  }
+  await context.close()
 }
 
 describe('PWA shell on phone and desktop', () => {
@@ -149,6 +355,18 @@ describe('PWA shell on phone and desktop', () => {
     ).toBe(true)
     await context.close()
   })
+
+  it(
+    'desktop: rail items stay inside narrow sidebar without clipping or horizontal overflow',
+    () => assertDesktopRailFits(browser),
+    60_000,
+  )
+
+  it(
+    'desktop: host and autotitle section headings blend with deck and keep rows in bounds',
+    () => assertMeSectionLayouts(browser),
+    60_000,
+  )
 
   it('desktop: j / k move the selection and the URL follows', async () => {
     const context = await browser.newContext({

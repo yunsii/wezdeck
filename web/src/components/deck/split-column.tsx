@@ -3,8 +3,13 @@
 // under it scrolls. OverlayScrollbars paint over the content edge (no classic
 // gutter), so hover-show never shifts card width; left/right use the same
 // --split-pad.
+import { useEffect, useRef } from 'react'
+
 import { OverlayScroll } from '#/components/deck/overlay-scroll'
+import { trace } from '#/lib/client-trace'
 import { cn } from '#/lib/utils'
+
+const USER_SCROLL_WINDOW_MS = 600
 
 export function SplitColumn({
   label,
@@ -17,8 +22,66 @@ export function SplitColumn({
   className?: string
   children: React.ReactNode
 }) {
+  const asideRef = useRef<HTMLElement>(null)
+
+  // Observe unexpected scrollTop jumps inside the split list (not driven by
+  // recent wheel / touch / pointer input) so list flicker leaves a trace.
+  useEffect(() => {
+    const aside = asideRef.current
+    if (!aside) return
+    let lastUserInput = 0
+    let lastTop = -1
+    let lastHeight = -1
+    let lastTraceAt = 0
+    const markUser = () => {
+      lastUserInput = performance.now()
+    }
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+      const top = Math.round(target.scrollTop)
+      const height = target.scrollHeight
+      const now = performance.now()
+      const user = now - lastUserInput < USER_SCROLL_WINDOW_MS
+      if (
+        lastTop >= 0 &&
+        !user &&
+        Math.abs(top - lastTop) >= 4 &&
+        now - lastTraceAt >= 200
+      ) {
+        lastTraceAt = now
+        trace('split-list-scroll', {
+          label,
+          from: lastTop,
+          to: top,
+          height,
+          prevHeight: lastHeight,
+        })
+      }
+      lastTop = top
+      lastHeight = height
+    }
+    aside.addEventListener('wheel', markUser, { passive: true, capture: true })
+    aside.addEventListener('touchstart', markUser, {
+      passive: true,
+      capture: true,
+    })
+    aside.addEventListener('pointerdown', markUser, {
+      passive: true,
+      capture: true,
+    })
+    aside.addEventListener('scroll', onScroll, { passive: true, capture: true })
+    return () => {
+      aside.removeEventListener('wheel', markUser, { capture: true })
+      aside.removeEventListener('touchstart', markUser, { capture: true })
+      aside.removeEventListener('pointerdown', markUser, { capture: true })
+      aside.removeEventListener('scroll', onScroll, { capture: true })
+    }
+  }, [label])
+
   return (
     <aside
+      ref={asideRef}
       aria-label={label}
       className={cn(
         'vt-split-list sticky top-0 flex h-[100cqh] min-h-0 w-full flex-col will-change-transform [--split-pad:var(--page-x)]',

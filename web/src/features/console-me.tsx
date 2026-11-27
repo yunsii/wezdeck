@@ -428,7 +428,7 @@ function MeSubPage({ page }: { page: MePage }) {
     <div
       // 交互调试 lays out a list beside its detail: give it the room
       className={cn(
-        'grid content-start gap-3',
+        'grid min-w-0 grid-cols-1 content-start gap-3',
         page === 'interactions' || page === 'agents'
           ? 'max-w-none'
           : 'max-w-2xl',
@@ -452,11 +452,15 @@ function MeSubPage({ page }: { page: MePage }) {
           {titles[page]}
         </h1>
       </div>
-      {/* 交互调试 brings its own cards (the real components): no card around them */}
-      {page === 'interactions' || page === 'agents' ? (
+      {/* Sectioned pages (交互调试, Agents, 本机, 自动标题) bring their own
+          surface cards on bg-brand-deck — no redundant outer surface card */}
+      {page === 'interactions' ||
+      page === 'agents' ||
+      page === 'host' ||
+      page === 'autotitle' ? (
         body
       ) : (
-        <section className="grid min-w-0 gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">
+        <section className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl bg-brand-surface p-4 md:rounded-none md:bg-transparent md:p-0">
           {body}
         </section>
       )}
@@ -491,7 +495,7 @@ export function ConsoleMePage() {
             'vt-split-pane min-h-[100cqh] min-w-0 border-l border-brand-edge',
             known === 'interactions' || known === 'agents'
               ? 'py-[var(--page-x)] pr-[var(--page-x)]'
-              : 'p-[var(--page-x)]',
+              : 'p-[var(--page-x)] md:px-6 md:py-5',
           )}
         >
           <MeSubPage page={known ?? 'connection'} />

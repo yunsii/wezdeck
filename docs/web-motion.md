@@ -55,14 +55,29 @@ The split list itself must stay pixel-still across switches (2026-11-27):
 selection never changes row height (±4 px before), and `SessionSubRow` computes
 its `compact` mode from the raw saved draft rather than `visibleDraft` so an
 empty idle sub-row with a draft never collapses its second line (±13.5 px
-before). List rows use integer multiple-of-8 heights (`min-h-16` 64 px /
-`min-h-14` 56 px, `h-8` 32 px repo headings, `56 px` inset-shadow split head)
-so `.list-row` transitions never snap across half-pixel `61.5 px` boundaries,
-and `.vt-split-list` carries `will-change: transform` so switching between a
-short and a tall conversation never promotes/demotes the sticky rail's
-compositor layer (which previously flipped every uninvolved row's text between
-grayscale and subpixel LCD antialiasing at 1.25x–2.625x DPR). Covered by
-`split-list-stability.cdp.test.ts`.
+before). List rows and wide-shell chrome use integer multiple-of-8 dimensions (`72 px`
+left rail, `32 px` bottom status bar, `min-h-16` 64 px / `min-h-14` 56 px rows,
+`h-8` 32 px repo headings, `56 px` inset-shadow split head) so neither `.vt-split-list`
+nor `.list-row` transitions land on half-pixel boundaries at 1.25x or 2.625x DPR
+(e.g. a `68 px` rail sits at `178.5` physical px on a 2.625x tablet and caused
+5,752 changed pixels across switches). `.vt-split-list` also carries
+`will-change: transform` so switching between a short and a tall conversation
+never promotes/demotes the sticky rail's compositor layer (which previously
+flipped every uninvolved row's text between grayscale and subpixel LCD
+antialiasing at 1.25x–2.625x DPR). Covered by `split-list-stability.cdp.test.ts`.
+
+Live-device list-flicker observability (2026-11-27): `client-trace.ts` records
+`layout-shift` (`PerformanceObserver` CLS ≥ 0.001, ignoring recent input, noting
+whether a shifted source is inside `.vt-split-list`) and includes `listScroller`
+(rect, row count, viewport scroll offset/height) in every diagnostics snapshot;
+`split-column.tsx` emits `split-list-scroll` on unprompted `scrollTop` jumps
+(≥ 4 px with no user scroll/touch/pointer in the previous 600 ms);
+`session-list-trace.ts` emits `session-list-diff` on row order/membership/status
+churn or rapid render bursts (≥ 6 renders/s); and `host-diag.ts` supports the
+read-only `sample-list` step (`wezdeck-wsl diag --steps '[{"do":"sample-list","ms":2000}]'`)
+to sample every row's `getBoundingClientRect()` and `.vt-split-list` `scrollTop`
+across `requestAnimationFrame` frames and report `shiftedFrames`, `maxDx`/`maxDy`/`maxDh`,
+`scrollJumps`, and `subpixelRows`.
 
 Rendering cost of a switch (2026-11-24, CPU profile of a real conversation,
 symbolized against a source-mapped build): one ~76 ms long task — React

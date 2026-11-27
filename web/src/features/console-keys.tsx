@@ -263,9 +263,9 @@ export function KeysEntry() {
         type="button"
         onClick={show}
         data-testid="keys-entry"
-        title={`${t`Shortcuts`} (?)`}
-        aria-label={t`Shortcuts`}
-        className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-center text-brand-muted transition-colors outline-none hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
+        title={`${t`Keyboard shortcuts`} (?)`}
+        aria-label={t`Keyboard shortcuts`}
+        className="flex min-h-11 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 text-center text-brand-muted transition-colors outline-none hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
       >
         <Keyboard size={18} aria-hidden />
         <span className="max-w-full truncate text-meta leading-tight">

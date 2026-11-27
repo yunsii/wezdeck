@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   History,
-  Lock,
   RefreshCw,
   Unlock,
 } from 'lucide-react'
@@ -150,7 +149,7 @@ function AutoTitleEntryList({
     )
   }
   return (
-    <ul className="min-w-0 overflow-hidden rounded-xl border border-brand-edge bg-brand-surface">
+    <ul className="min-w-0 divide-y divide-brand-edge overflow-hidden rounded-xl bg-brand-surface">
       {entries.map((item) => {
         const eff = providerLabel(item.provider)
         const turns = item.user_turns
@@ -174,26 +173,28 @@ function AutoTitleEntryList({
         return (
           <li
             key={item.session_id}
-            className="grid min-w-0 border-b border-brand-edge px-3 py-2.5 last:border-b-0"
+            className="grid min-w-0 grid-cols-1 px-3.5 py-3"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <AgentAvatar agent={item.agent} size={32} />
-              <div className="min-w-0 flex-1">
+              <span className="shrink-0">
+                <AgentAvatar agent={item.agent} size={32} />
+              </span>
+              <div className="grid min-w-0 flex-1 grid-cols-1 gap-0.5">
                 {item.active ? (
                   <Link
                     to="/{-$locale}/console/sessions/$id"
                     params={{ locale: localeParam, id: item.session_id }}
-                    className="block truncate text-body font-medium hover:underline"
+                    className="block truncate text-body leading-snug font-medium hover:underline"
                   >
                     {item.title}
                   </Link>
                 ) : (
-                  <p className="truncate text-body font-medium text-brand-muted">
+                  <p className="truncate text-body leading-snug font-medium text-brand-muted">
                     {item.title}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <p className="truncate text-meta text-brand-label">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="min-w-0 truncate text-meta text-brand-label tabular-nums">
                     {metaParts.join(' · ')}
                   </p>
                   {history.length > 0 ? (
@@ -208,7 +209,7 @@ function AutoTitleEntryList({
                           [item.session_id]: !prev[item.session_id],
                         }))
                       }
-                      className="inline-flex items-center gap-1 text-meta text-brand-muted hover:text-brand-text"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-meta text-brand-muted transition-colors hover:text-brand-text"
                     >
                       <History size={11} aria-hidden />
                       {taskCount === 1 ? t`1 task` : t`${taskCount} tasks`}
@@ -228,6 +229,7 @@ function AutoTitleEntryList({
                   type="button"
                   disabled={!reachable || busy}
                   title={t`Unlock to resume auto-titling`}
+                  className="shrink-0"
                   onClick={() =>
                     onAction({ op: 'unlock', session_id: item.session_id })
                   }
@@ -242,6 +244,7 @@ function AutoTitleEntryList({
                   type="button"
                   disabled={!reachable || busy}
                   title={t`Regenerate title now`}
+                  className="shrink-0"
                   onClick={() =>
                     onAction({ op: 'refresh', session_id: item.session_id })
                   }
@@ -249,16 +252,10 @@ function AutoTitleEntryList({
                   <RefreshCw size={14} aria-hidden />
                   {t`Regenerate`}
                 </Button>
-              ) : (
-                <Lock
-                  size={14}
-                  aria-hidden
-                  className="mr-2 shrink-0 text-brand-label opacity-0"
-                />
-              )}
+              ) : null}
             </div>
             {isHistoryOpen && history.length > 0 ? (
-              <div className="mt-2 border-t border-brand-edge/60 pl-11">
+              <div className="mt-2.5 border-t border-brand-edge/60 pt-1 pl-11">
                 <TitleHistoryTimeline
                   history={history}
                   defaultLimit={10}
@@ -351,13 +348,16 @@ export function AutoTitlePage() {
     data.interval_s <= 30 ? '20' : data.interval_s <= 90 ? '60' : '180'
 
   return (
-    <div className="grid min-w-0 gap-4" data-testid="autotitle-page">
-      <p className="text-caption text-brand-muted">
-        {t`Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten.`}
-      </p>
+    <div
+      className="grid min-w-0 grid-cols-1 gap-5"
+      data-testid="autotitle-page"
+    >
+      <div className="grid min-w-0 grid-cols-1 gap-4 rounded-xl bg-brand-surface p-4">
+        <p className="text-caption text-brand-muted">
+          {t`Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten.`}
+        </p>
 
-      <div className="grid min-w-0 gap-3">
-        <div className="grid min-w-0 gap-1.5">
+        <div className="grid min-w-0 grid-cols-1 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Background auto-titling`}</span>
           <Segmented
             label={t`Background auto-titling`}
@@ -372,7 +372,7 @@ export function AutoTitlePage() {
           />
         </div>
 
-        <div className="grid min-w-0 gap-1.5">
+        <div className="grid min-w-0 grid-cols-1 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Agent CLI used to generate titles`}</span>
           <Select
             aria-label={t`Auto-title agent CLI`}
@@ -402,7 +402,7 @@ export function AutoTitlePage() {
           />
         </div>
 
-        <div className="grid min-w-0 gap-1.5">
+        <div className="grid min-w-0 grid-cols-1 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Scan interval`}</span>
           <Segmented
             label={t`Scan interval`}
@@ -419,8 +419,8 @@ export function AutoTitlePage() {
         </div>
       </div>
 
-      <section className="grid min-w-0 gap-1">
-        <SectionHeading as="h2" className="bg-brand-key">
+      <section className="grid min-w-0 grid-cols-1 gap-1.5">
+        <SectionHeading as="h2" className="bg-brand-deck">
           {t`Current runner`}
         </SectionHeading>
         <FieldList>
@@ -444,8 +444,8 @@ export function AutoTitlePage() {
         </div>
       </section>
 
-      <section className="grid min-w-0 gap-1.5">
-        <SectionHeading as="h2" className="bg-brand-key">
+      <section className="grid min-w-0 grid-cols-1 gap-1.5">
+        <SectionHeading as="h2" className="bg-brand-deck">
           {t`Session titles`}
         </SectionHeading>
         <AutoTitleEntryList

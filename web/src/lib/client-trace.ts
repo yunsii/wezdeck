@@ -108,6 +108,64 @@ function scroller() {
   }
 }
 
+/** Wide split-list scroller (OverlayScrollbars viewport or overflow fallback) + rect. */
+export function listScroller() {
+  const aside = document.querySelector<HTMLElement>('.vt-split-list')
+  if (!aside) return null
+  const vp = aside.querySelector<HTMLElement>(
+    '[data-overlayscrollbars-viewport], .overflow-y-auto',
+  )
+  const r = aside.getBoundingClientRect()
+  const round2 = (n: number) => Math.round(n * 100) / 100
+  return {
+    rect: {
+      x: round2(r.x),
+      y: round2(r.y),
+      w: round2(r.width),
+      h: round2(r.height),
+    },
+    rows: aside.querySelectorAll('[data-session], [data-ticket], [data-me]')
+      .length,
+    vp: vp
+      ? {
+          top: Math.round(vp.scrollTop),
+          height: vp.scrollHeight,
+          client: vp.clientHeight,
+          gap: Math.round(vp.scrollHeight - vp.scrollTop - vp.clientHeight),
+        }
+      : null,
+  }
+}
+
+type LayoutShiftSourceLike = {
+  node?: Node | null
+  previousRect?: DOMRectReadOnly
+  currentRect?: DOMRectReadOnly
+}
+
+type LayoutShiftEntryLike = PerformanceEntry & {
+  value: number
+  hadRecentInput: boolean
+  sources?: Array<LayoutShiftSourceLike>
+}
+
+function describeNode(node: Node | null | undefined): Record<string, unknown> {
+  if (!(node instanceof HTMLElement)) return { node: 'other' }
+  const row = node.closest<HTMLElement>(
+    '[data-session], [data-ticket], [data-me], [data-testid]',
+  )
+  return {
+    tag: node.tagName.toLowerCase(),
+    id:
+      row?.dataset.session ??
+      row?.dataset.ticket ??
+      row?.dataset.me ??
+      row?.dataset.testid ??
+      node.id,
+    inSplitList: Boolean(node.closest('.vt-split-list')),
+  }
+}
+
 const describe = (target: EventTarget | null) =>
   target instanceof HTMLElement
     ? `${target.tagName.toLowerCase()}${target.id ? `#${target.id}` : ''}`
@@ -174,6 +232,37 @@ export function installClientTrace() {
     }).observe({ type: 'longtask', buffered: false })
   } catch {
     // not supported (Firefox, Safari): frame sampling still covers jank
+  }
+  try {
+    let lastShiftAt = 0
+    new PerformanceObserver((list) => {
+      for (const raw of list.getEntries()) {
+        const entry = raw as LayoutShiftEntryLike
+        if (entry.hadRecentInput || entry.value < 0.001) continue
+        const now = performance.now()
+        if (now - lastShiftAt < 250) continue
+        lastShiftAt = now
+        const sources = (entry.sources ?? []).slice(0, 3).map((src) => ({
+          ...describeNode(src.node),
+          dy:
+            src.previousRect && src.currentRect
+              ? Math.round((src.currentRect.y - src.previousRect.y) * 10) / 10
+              : 0,
+          dh:
+            src.previousRect && src.currentRect
+              ? Math.round(
+                  (src.currentRect.height - src.previousRect.height) * 10,
+                ) / 10
+              : 0,
+        }))
+        trace('layout-shift', {
+          value: Math.round(entry.value * 10_000) / 10_000,
+          sources,
+        })
+      }
+    }).observe({ type: 'layout-shift', buffered: false })
+  } catch {
+    // not supported in Firefox / Safari
   }
   // how this page came to be (the "one empty entry before the app" question):
   // the URL it loaded with (no hash: it can carry the pairing token), how
@@ -368,6 +457,7 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
       ?.content,
     safeArea: safeArea(),
     scroller: scroller(),
+    listScroller: listScroller(),
     renderedChat: renderedChat(),
     colorScheme: matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'

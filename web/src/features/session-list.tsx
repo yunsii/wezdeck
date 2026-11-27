@@ -44,6 +44,7 @@ import {
   formatChatWeekday,
 } from './chat-time'
 import { useStickyMembers } from './session-stable'
+import { useSessionListTrace } from './session-list-trace'
 import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { readDraft, sessionDraftKey, useDraftRevision } from '#/lib/use-draft'
@@ -250,6 +251,8 @@ export function SessionList({
       })
       .filter((repo) => repo.chats.length > 0)
   }, [groups, query, keptUnread, previewLabels])
+
+  useSessionListTrace(painted, selected)
 
   const visibleCreating = useMemo(() => {
     const q = query.trim().toLowerCase()
