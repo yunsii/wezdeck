@@ -23,7 +23,6 @@ import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
 import { settle } from './chat-thread'
 import { HostFileProvider } from './host-file-sheet'
-import { SessionInputUnavailable } from './session-detail-notices'
 import { ComposerBox, useComposer } from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
 import { hasPromptPanel } from './session-elicitation'
@@ -502,10 +501,10 @@ export function SessionDetail({ id }: { id: string }) {
             blocked={blocked}
             deviceState={device.state}
             locale={locale}
+            recovering={sending}
+            onRecover={() => void run('session.restart', { recover: true })}
           />
-          {readOnly ? (
-            <SessionInputUnavailable />
-          ) : (
+          {!readOnly ? (
             <ComposerBox
               composer={composer}
               blocked={sending || Boolean(blocked)}
@@ -529,7 +528,7 @@ export function SessionDetail({ id }: { id: string }) {
               }
               session={data}
             />
-          )}
+          ) : null}
           <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
           {!readOnly && resume.element}
           {sentHistory.sheet}

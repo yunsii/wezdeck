@@ -401,11 +401,9 @@ case "$agent" in
       if [[ -n "${TMUX_PANE:-}" ]]; then
         agent_session_pin_pane "$TMUX_PANE" "$codex_session_id" codex "$PWD"
       fi
-      exec bash "$script_dir/codex-resume-takeover.sh" \
-        "$codex_bin" "${codex_profile_args[@]}" resume "$codex_session_id"
+      exec "$codex_bin" "${codex_profile_args[@]}" resume "$codex_session_id"
     fi
-    exec bash "$script_dir/codex-resume-takeover.sh" \
-      "$codex_bin" "${codex_profile_args[@]}" resume --last
+    exec "$codex_bin" "${codex_profile_args[@]}" resume --last
     ;;
   grok)
     # Grok Build: `--continue` resumes the most recent session for cwd

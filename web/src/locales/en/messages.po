@@ -45,7 +45,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/console-sessions.tsx:313
+#: src/features/console-sessions.tsx:312
 #: src/features/message-composer.tsx:134
 #: src/features/message-composer.tsx:164
 msgid "{count} images"
@@ -800,8 +800,8 @@ msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
 #: src/features/session-composer.tsx:268
-#: src/features/session-detail-notices.tsx:18
-#: src/features/session-detail-parts.tsx:68
+#: src/features/session-detail-notices.tsx:19
+#: src/features/session-detail-parts.tsx:73
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -979,6 +979,10 @@ msgstr "Closing…"
 #: src/features/console-usage.tsx:174
 msgid "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
 msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
+
+#: src/features/session-detail-notices.tsx:37
+msgid "Codex is no longer running in this terminal."
+msgstr "Codex is no longer running in this terminal."
 
 #: src/features/tickets-view.tsx:253
 msgid "Collab data unavailable: {unavailable}"
@@ -2209,7 +2213,7 @@ msgstr "Load earlier"
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
 
-#: src/features/console-sessions.tsx:275
+#: src/features/console-sessions.tsx:274
 msgid "Loaded back into input"
 msgstr "Loaded back into input"
 
@@ -2887,8 +2891,8 @@ msgid "Open session"
 msgstr "Open session"
 
 #: src/features/session-composer.tsx:290
-#: src/features/session-detail-notices.tsx:55
-#: src/features/session-detail-parts.tsx:96
+#: src/features/session-detail-notices.tsx:71
+#: src/features/session-detail-parts.tsx:111
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -3534,6 +3538,14 @@ msgstr "Resume / fresh hit"
 msgid "Resume a conversation"
 msgstr "Resume a conversation"
 
+#: src/features/session-detail-notices.tsx:42
+msgid "Resume this conversation"
+msgstr "Resume this conversation"
+
+#: src/features/session-detail-notices.tsx:42
+msgid "Resuming conversation…"
+msgstr "Resuming conversation…"
+
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
@@ -4080,7 +4092,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
 #: src/features/session-composer.tsx:274
-#: src/features/session-detail-parts.tsx:80
+#: src/features/session-detail-parts.tsx:95
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4355,7 +4367,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:162
+#: src/features/console-sessions.tsx:161
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4458,7 +4470,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/session-detail-notices.tsx:28
+#: src/features/session-detail-notices.tsx:38
 msgid "This conversation is read-only."
 msgstr "This conversation is read-only."
 
@@ -4466,7 +4478,7 @@ msgstr "This conversation is read-only."
 msgid "This device"
 msgstr "This device"
 
-#: src/features/console-sessions.tsx:158
+#: src/features/console-sessions.tsx:157
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4477,8 +4489,8 @@ msgid "This device is not paired. On the host run scripts/dev/install-remote-rel
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
 #: src/features/session-composer.tsx:269
-#: src/features/session-detail-notices.tsx:19
-#: src/features/session-detail-parts.tsx:69
+#: src/features/session-detail-notices.tsx:20
+#: src/features/session-detail-parts.tsx:74
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4729,12 +4741,12 @@ msgstr "Trust this worktree and continue"
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
-#: src/features/session-detail-parts.tsx:75
+#: src/features/session-detail-parts.tsx:90
 #: src/features/session-send.ts:405
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
-#: src/features/console-sessions.tsx:232
+#: src/features/console-sessions.tsx:231
 msgid "Turn message into ticket"
 msgstr "Turn message into ticket"
 

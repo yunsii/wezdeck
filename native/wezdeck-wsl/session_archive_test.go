@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -122,6 +123,7 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	doc, err := json.Marshal(map[string]any{"entries": map[string]any{id: map[string]string{
 		"session_id": id, "status": "waiting", "waiting_kind": "permission_prompt",
 		"agent_name": "codex", "tmux_pane": pane, "tmux_socket": socket,
+		"tmux_session": run("display-message", "-p", "-t", pane, "#{session_name}"),
 	}}})
 	if err != nil {
 		t.Fatal(err)
@@ -157,6 +159,33 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	if _, err := guardSession(id); err == nil {
 		t.Fatal("unavailable Codex must reject writes")
 	}
-	run("respawn-pane", "-k", "-t", pane, "exec "+codex)
+	run("respawn-pane", "-k", "-t", pane, "exec bash --noprofile --norc -i")
+	recoverArgs := json.RawMessage(`{"id":"codex-tracked","recover":true}`)
+	if _, err := restartSession(recoverArgs); err == nil {
+		t.Fatal("an unpinned shell must not be replaced")
+	}
+	run("set-option", "-p", "-t", pane, "@wezterm_agent_session_id", id)
+	result, err := sessionDetail(json.RawMessage(`{"id":"codex-tracked"}`))
+	if err != nil || result.(map[string]any)["can_recover"] != true {
+		t.Fatalf("pinned shell should offer recovery: %v %v", result, err)
+	}
+	t.Setenv("WEZDECK_REPO", dir)
+	runtimeDir := filepath.Join(dir, "scripts", "runtime")
+	if err := os.MkdirAll(runtimeDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(runtimeDir, "primary-pane-wrapper.sh"), []byte("exec \"$@\"\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	launcher := fmt.Sprintf("[[ \"$WEZDECK_RESUME_SESSION_ID\" == %q && \"$1\" == codex ]] || exit 1\nexec %q\n", id, codex)
+	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := restartSession(recoverArgs); err != nil {
+		t.Fatal(err)
+	}
 	check(false)
+	if _, err := restartSession(recoverArgs); err == nil {
+		t.Fatal("recovery must not replace a running Codex")
+	}
 }

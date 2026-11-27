@@ -1,5 +1,6 @@
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
+import { Button } from '#/components/ui/button'
 
 export function SessionStaleNotice({
   staleAt,
@@ -21,12 +22,27 @@ export function SessionStaleNotice({
   )
 }
 
-export function SessionInputUnavailable() {
+export function SessionInputUnavailable({
+  onRecover,
+  recovering,
+}: {
+  onRecover?: () => void
+  recovering: boolean
+}) {
   const { t } = useLingui()
   return (
-    <p role="status" className="text-meta text-brand-label">
-      {t`This conversation is read-only.`}
-    </p>
+    <div className="flex flex-wrap items-center gap-2">
+      <p role="status" className="text-meta text-brand-label">
+        {onRecover
+          ? t`Codex is no longer running in this terminal.`
+          : t`This conversation is read-only.`}
+      </p>
+      {onRecover ? (
+        <Button type="button" disabled={recovering} onClick={onRecover}>
+          {recovering ? t`Resuming conversation…` : t`Resume this conversation`}
+        </Button>
+      ) : null}
+    </div>
   )
 }
 

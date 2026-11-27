@@ -45,7 +45,7 @@ msgstr "{bg} 个后台任务在跑"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} 提议拆出一张单"
 
-#: src/features/console-sessions.tsx:313
+#: src/features/console-sessions.tsx:312
 #: src/features/message-composer.tsx:134
 #: src/features/message-composer.tsx:164
 msgid "{count} images"
@@ -800,8 +800,8 @@ msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
 #: src/features/session-composer.tsx:268
-#: src/features/session-detail-notices.tsx:18
-#: src/features/session-detail-parts.tsx:68
+#: src/features/session-detail-notices.tsx:19
+#: src/features/session-detail-parts.tsx:73
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -979,6 +979,10 @@ msgstr "关闭中…"
 #: src/features/console-usage.tsx:174
 msgid "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
 msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒数。中转固定按 128 MB 计，运行 1 秒记 0.128 GB-秒；每天免费 {freeGbs} GB-秒，约 {freeTime}。今天已用 {usedGbs} GB-秒。"
+
+#: src/features/session-detail-notices.tsx:37
+msgid "Codex is no longer running in this terminal."
+msgstr "此终端中的 Codex 已退出。"
 
 #: src/features/tickets-view.tsx:253
 msgid "Collab data unavailable: {unavailable}"
@@ -2209,7 +2213,7 @@ msgstr "加载更早"
 msgid "Load earlier ({start} more)"
 msgstr "加载更早（还有 {start} 条）"
 
-#: src/features/console-sessions.tsx:275
+#: src/features/console-sessions.tsx:274
 msgid "Loaded back into input"
 msgstr "已回填到输入框"
 
@@ -2887,8 +2891,8 @@ msgid "Open session"
 msgstr "打开会话"
 
 #: src/features/session-composer.tsx:290
-#: src/features/session-detail-notices.tsx:55
-#: src/features/session-detail-parts.tsx:96
+#: src/features/session-detail-notices.tsx:71
+#: src/features/session-detail-parts.tsx:111
 msgid "Open settings"
 msgstr "去设置"
 
@@ -3534,6 +3538,14 @@ msgstr "续接 / 新开命中"
 msgid "Resume a conversation"
 msgstr "恢复会话"
 
+#: src/features/session-detail-notices.tsx:42
+msgid "Resume this conversation"
+msgstr "恢复此会话"
+
+#: src/features/session-detail-notices.tsx:42
+msgid "Resuming conversation…"
+msgstr "正在恢复会话…"
+
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
@@ -4080,7 +4092,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
 #: src/features/session-composer.tsx:274
-#: src/features/session-detail-parts.tsx:80
+#: src/features/session-detail-parts.tsx:95
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -4355,7 +4367,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:162
+#: src/features/console-sessions.tsx:161
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -4458,7 +4470,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/session-detail-notices.tsx:28
+#: src/features/session-detail-notices.tsx:38
 msgid "This conversation is read-only."
 msgstr "此会话仅供查看。"
 
@@ -4466,7 +4478,7 @@ msgstr "此会话仅供查看。"
 msgid "This device"
 msgstr "当前设备"
 
-#: src/features/console-sessions.tsx:158
+#: src/features/console-sessions.tsx:157
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4477,8 +4489,8 @@ msgid "This device is not paired. On the host run scripts/dev/install-remote-rel
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
 #: src/features/session-composer.tsx:269
-#: src/features/session-detail-notices.tsx:19
-#: src/features/session-detail-parts.tsx:69
+#: src/features/session-detail-notices.tsx:20
+#: src/features/session-detail-parts.tsx:74
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -4729,12 +4741,12 @@ msgstr "信任此工作树并继续"
 msgid "Turn {turns}"
 msgstr "第 {turns} 轮"
 
-#: src/features/session-detail-parts.tsx:75
+#: src/features/session-detail-parts.tsx:90
 #: src/features/session-send.ts:405
 msgid "Turn interrupted"
 msgstr "已中断"
 
-#: src/features/console-sessions.tsx:232
+#: src/features/console-sessions.tsx:231
 msgid "Turn message into ticket"
 msgstr "将消息转为工单"
 

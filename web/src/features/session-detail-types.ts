@@ -53,6 +53,7 @@ export type Detail = StatusFields & {
   interrupted?: boolean
   messages_rev?: number
   read_only?: boolean
+  can_recover?: boolean
   id: string
   name?: string
   title?: string

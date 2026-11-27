@@ -165,7 +165,11 @@ tmux socket / session / pane, status `running|waiting|done` and
 For a tracked Codex conversation, detail polls check the pane command with the
 same predicate as message writes. When Codex exits, `session` returns
 `read_only: true` with the transcript and clears the displayed live prompt.
-The session list also clears the stale live status.
+The session list also clears the stale live status. A tracked Codex session
+with its transcript and original pinned shell exposes `can_recover`. An
+approved device can call `session.restart {id, recover:true}` to resume the
+same conversation in that pane. The relay verifies the target again before
+launch and records the outcome as `session_recover`.
 The Web composer returns when the pane runs Codex again. The browser records
 the transition in the `session-sync` trace.
 

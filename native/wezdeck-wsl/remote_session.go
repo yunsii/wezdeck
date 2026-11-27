@@ -603,6 +603,9 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 	out["reference"] = sessionReferenceWithCwd(e, path, agent, cwd)
 	if readOnly {
 		out["read_only"] = true
+		if p := paneSnap[e.TmuxSocket+"|"+e.TmuxPane]; agent == "codex" && canRecoverCodex(e, p) {
+			out["can_recover"] = true
+		}
 	} else {
 		out["focus"] = sessionFocusWithAttached(a.ID, e, paneAttached, paneAlive)
 	}

@@ -10,6 +10,7 @@ import { StickyPrompt } from './chat-sticky'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
 import { ErrorLine } from './session-composer'
+import { SessionInputUnavailable } from './session-detail-notices'
 import type { Detail } from './session-detail-types'
 import { PromptPanels } from './session-elicitation'
 import type { PromptResolveFn } from './session-elicitation'
@@ -44,6 +45,8 @@ export function SessionComposerNotices({
   blocked,
   deviceState,
   locale,
+  recovering,
+  onRecover,
 }: {
   stale: boolean
   staleAt: string
@@ -55,6 +58,8 @@ export function SessionComposerNotices({
   blocked: string
   deviceState: string
   locale: 'en' | 'zh'
+  recovering: boolean
+  onRecover: () => void
 }) {
   const { t } = useLingui()
   return (
@@ -70,6 +75,16 @@ export function SessionComposerNotices({
         </p>
       ) : null}
       <SessionSubagents agents={data?.subagents} />
+      {readOnly ? (
+        <SessionInputUnavailable
+          recovering={recovering}
+          onRecover={
+            data?.can_recover && deviceState === 'approved'
+              ? onRecover
+              : undefined
+          }
+        />
+      ) : null}
       {data?.interrupted ? (
         <p role="status" className="text-meta text-brand-muted">
           {t`Turn interrupted`}

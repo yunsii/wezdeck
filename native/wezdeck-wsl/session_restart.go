@@ -26,11 +26,18 @@ import (
 
 func restartSession(args json.RawMessage) (any, error) {
 	var a struct {
-		ID    string `json:"id"`
-		Fresh bool   `json:"fresh"`
+		ID      string `json:"id"`
+		Fresh   bool   `json:"fresh"`
+		Recover bool   `json:"recover"`
 	}
 	if json.Unmarshal(args, &a) != nil {
 		return nil, errors.New("session.restart: bad arguments")
+	}
+	if a.Recover {
+		if a.Fresh {
+			return nil, errors.New("session.restart: recovery requires the original conversation")
+		}
+		return recoverCodexSession(a.ID)
 	}
 	e, err := guardSession(a.ID)
 	if err != nil {
