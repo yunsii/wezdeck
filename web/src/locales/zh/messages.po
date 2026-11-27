@@ -737,7 +737,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/console-sessions.tsx:481
+#: src/features/console-sessions.tsx:506
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 
@@ -745,7 +745,7 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/session-delete.tsx:137
+#: src/features/session-delete.tsx:143
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
@@ -1334,13 +1334,13 @@ msgstr "默认模式：未开启 Auto 模式"
 msgid "Degraded"
 msgstr "受限"
 
-#: src/features/session-delete.tsx:127
+#: src/features/session-delete.tsx:133
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
 #: src/features/session-chat-group.tsx:281
 #: src/features/session-chat-row.tsx:201
-#: src/features/session-delete.tsx:103
+#: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:391
 msgid "Delete session"
 msgstr "删除会话"
@@ -1619,11 +1619,11 @@ msgstr "聚焦会话搜索或返回列表"
 #~ msgid "Follow-ups of this repo"
 #~ msgstr "这个仓库的待跟进事项"
 
-#: src/features/session-delete.tsx:126
+#: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 msgstr "强制删除「{title}」及其工作树？未提交的改动和本地文件将丢失。分支和会话记录会保留。"
 
-#: src/features/session-delete.tsx:102
+#: src/features/session-delete.tsx:108
 #: src/features/session-info.tsx:410
 msgid "Force delete session and worktree"
 msgstr "强制删除会话和工作树"
@@ -2639,13 +2639,13 @@ msgstr "打开仓库外链"
 msgid "Open repository links (key: l)"
 msgstr "打开仓库外链（快捷键：l）"
 
-#: src/features/session-delete.tsx:49
-#: src/features/session-delete.tsx:71
+#: src/features/session-delete.tsx:54
+#: src/features/session-delete.tsx:76
 #: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/console-sessions.tsx:504
+#: src/features/console-sessions.tsx:529
 msgid "Open settings"
 msgstr "去设置"
 
@@ -2788,7 +2788,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:188
+#: src/features/session-split.tsx:195
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -3553,27 +3553,27 @@ msgstr "会话操作"
 msgid "Session active"
 msgstr "远控会话进行中"
 
-#: src/features/session-delete.tsx:67
+#: src/features/session-delete.tsx:72
 msgid "Session deleted"
 msgstr "会话已删除"
 
-#: src/features/session-delete.tsx:61
+#: src/features/session-delete.tsx:66
 msgid "Session deleted and worktree removed"
 msgstr "会话已删除，工作树已移除"
 
-#: src/features/session-delete.tsx:63
+#: src/features/session-delete.tsx:68
 msgid "Session deleted. Another process is using the worktree."
 msgstr "会话已删除，仍有进程正在使用此工作树。"
 
-#: src/features/session-delete.tsx:64
+#: src/features/session-delete.tsx:69
 msgid "Session deleted. The worktree could not be removed."
 msgstr "会话已删除，工作树移除失败。"
 
-#: src/features/session-delete.tsx:65
+#: src/features/session-delete.tsx:70
 msgid "Session deleted. The worktree has changes outside the default branch."
 msgstr "会话已删除，工作树还有未合入默认分支的提交。"
 
-#: src/features/session-delete.tsx:62
+#: src/features/session-delete.tsx:67
 msgid "Session deleted. The worktree has local changes."
 msgstr "会话已删除，工作树还有本地改动。"
 
@@ -3722,7 +3722,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/console-sessions.tsx:488
+#: src/features/console-sessions.tsx:513
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -3992,7 +3992,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:285
+#: src/features/console-sessions.tsx:295
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -4086,7 +4086,7 @@ msgstr "本机（本地运行时）"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
-#: src/features/console-sessions.tsx:281
+#: src/features/console-sessions.tsx:291
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4096,7 +4096,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:507
 msgid "this device is offline"
 msgstr "这台设备当前离线"
 
@@ -4128,7 +4128,7 @@ msgstr "本仓库"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
 
-#: src/features/session-delete.tsx:47
+#: src/features/session-delete.tsx:52
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "工作树还有本地改动，请进入会话检查后再删除。"
 
@@ -4551,7 +4551,7 @@ msgstr "警告"
 msgid "Warnings"
 msgstr "警告"
 
-#: src/features/console-sessions.tsx:273
+#: src/features/console-sessions.tsx:283
 msgid "Web sending is unavailable for this session."
 msgstr "此会话暂时无法从网页发送消息。"
 

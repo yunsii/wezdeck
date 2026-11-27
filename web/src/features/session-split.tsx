@@ -17,6 +17,8 @@ import { idInUrl, pickLast, rememberOpened } from '#/lib/last-opened'
 import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { SessionDetail, prefetchSession } from './console-sessions'
+import { detailKey } from './session-detail-read'
+import { LAST_SESSION_KEY, isSessionMissing } from './session-delete-state'
 import { SessionList } from './session-list'
 import { NewSessionGuidedView } from './session-new'
 import { NewSessionJobView } from './session-new-job'
@@ -77,31 +79,36 @@ function useListKeys(current: string) {
   }, [])
 }
 
-const LAST_KEY = 'wezdeck-last-session'
-
 /**
  * No session in the URL: the one last opened if it still exists, else the
  * top chat's focus session (lib/last-opened.ts). Status filters are gone.
  */
 function usePickDefault(id: string | undefined) {
   const nav = useSessionNav(id ?? '')
+  const client = useQueryClient()
   const navigate = useNavigate()
   const { locale } = useLocale()
-  const listed = nav.ordered
+  // Never re-pick a session whose detail query just reported "session not
+  // found": a stale sessions list cache must not bounce back into
+  // useLeaveMissingSession in an infinite loop.
+  const alive = (sessionId: string) =>
+    !isSessionMissing(
+      sessionId,
+      client.getQueryState(detailKey(sessionId))?.error,
+    )
+  const listed = nav.ordered.filter((row) => alive(row.id))
+  const allAlive = nav.rows.filter((row) => alive(row.id))
   const pick = id
     ? {}
     : pickLast(
-        LAST_KEY,
+        LAST_SESSION_KEY,
         'all',
         listed.map((row) => row.id),
-        nav.rows.map((row) => row.id),
+        allAlive.map((row) => row.id),
       )
   const chosen = useRef('')
   if (id) chosen.current = ''
-  const target = id
-    ? ''
-    : chosen.current ||
-      (pick.id ?? listed.at(0)?.id ?? nav.ordered.at(0)?.id ?? '')
+  const target = id ? '' : chosen.current || (pick.id ?? listed.at(0)?.id ?? '')
   useEffect(() => {
     if (!target) return
     chosen.current = target
@@ -197,7 +204,7 @@ export function ConsoleSessionsPage() {
   const { id } = useParams({ strict: false })
   const wide = useIsWidePhoneFirst()
   useEffect(() => {
-    if (id && !isVirtualSessionId(id)) rememberOpened(LAST_KEY, id)
+    if (id && !isVirtualSessionId(id)) rememberOpened(LAST_SESSION_KEY, id)
   }, [id])
   return <SessionsLayout id={id} wide={wide} />
 }

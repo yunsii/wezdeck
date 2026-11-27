@@ -737,7 +737,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:481
+#: src/features/console-sessions.tsx:506
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -745,7 +745,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
-#: src/features/session-delete.tsx:137
+#: src/features/session-delete.tsx:143
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
@@ -1334,13 +1334,13 @@ msgstr "Default mode: auto mode is off"
 msgid "Degraded"
 msgstr "Degraded"
 
-#: src/features/session-delete.tsx:127
+#: src/features/session-delete.tsx:133
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
 #: src/features/session-chat-group.tsx:281
 #: src/features/session-chat-row.tsx:201
-#: src/features/session-delete.tsx:103
+#: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:391
 msgid "Delete session"
 msgstr "Delete session"
@@ -1619,11 +1619,11 @@ msgstr "Focus session search or return to list"
 #~ msgid "Follow-ups of this repo"
 #~ msgstr "Follow-ups of this repo"
 
-#: src/features/session-delete.tsx:126
+#: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 msgstr "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 
-#: src/features/session-delete.tsx:102
+#: src/features/session-delete.tsx:108
 #: src/features/session-info.tsx:410
 msgid "Force delete session and worktree"
 msgstr "Force delete session and worktree"
@@ -2639,13 +2639,13 @@ msgstr "Open repository links"
 msgid "Open repository links (key: l)"
 msgstr "Open repository links (key: l)"
 
-#: src/features/session-delete.tsx:49
-#: src/features/session-delete.tsx:71
+#: src/features/session-delete.tsx:54
+#: src/features/session-delete.tsx:76
 #: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/console-sessions.tsx:504
+#: src/features/console-sessions.tsx:529
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2788,7 +2788,7 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
-#: src/features/session-split.tsx:188
+#: src/features/session-split.tsx:195
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
 
@@ -3553,27 +3553,27 @@ msgstr "Session actions"
 msgid "Session active"
 msgstr "Session active"
 
-#: src/features/session-delete.tsx:67
+#: src/features/session-delete.tsx:72
 msgid "Session deleted"
 msgstr "Session deleted"
 
-#: src/features/session-delete.tsx:61
+#: src/features/session-delete.tsx:66
 msgid "Session deleted and worktree removed"
 msgstr "Session deleted and worktree removed"
 
-#: src/features/session-delete.tsx:63
+#: src/features/session-delete.tsx:68
 msgid "Session deleted. Another process is using the worktree."
 msgstr "Session deleted. Another process is using the worktree."
 
-#: src/features/session-delete.tsx:64
+#: src/features/session-delete.tsx:69
 msgid "Session deleted. The worktree could not be removed."
 msgstr "Session deleted. The worktree could not be removed."
 
-#: src/features/session-delete.tsx:65
+#: src/features/session-delete.tsx:70
 msgid "Session deleted. The worktree has changes outside the default branch."
 msgstr "Session deleted. The worktree has changes outside the default branch."
 
-#: src/features/session-delete.tsx:62
+#: src/features/session-delete.tsx:67
 msgid "Session deleted. The worktree has local changes."
 msgstr "Session deleted. The worktree has local changes."
 
@@ -3722,7 +3722,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:488
+#: src/features/console-sessions.tsx:513
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3992,7 +3992,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:285
+#: src/features/console-sessions.tsx:295
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4086,7 +4086,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/console-sessions.tsx:281
+#: src/features/console-sessions.tsx:291
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4096,7 +4096,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:482
+#: src/features/console-sessions.tsx:507
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4128,7 +4128,7 @@ msgstr "This repo"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 
-#: src/features/session-delete.tsx:47
+#: src/features/session-delete.tsx:52
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "This worktree has local changes. Review them in the session before deleting."
 
@@ -4551,7 +4551,7 @@ msgstr "Warning"
 msgid "Warnings"
 msgstr "Warnings"
 
-#: src/features/console-sessions.tsx:273
+#: src/features/console-sessions.tsx:283
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 

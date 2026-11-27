@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { pickLast, rememberOpened } from '#/lib/last-opened'
+import { forgetOpened, pickLast, rememberOpened } from '#/lib/last-opened'
 
 // a Map-backed localStorage (the unit tests run in Node)
 beforeEach(() => {
@@ -36,5 +36,12 @@ describe('pickLast (which item a split opens with no id in the URL)', () => {
     rememberOpened('s', 'x', 'running')
     expect(pickLast('s', 'running', ['a'], all)).toEqual({})
     expect(pickLast('fresh', 'all', all, all)).toEqual({})
+  })
+  it('forgetOpened removes only the forgotten id so a split does not bounce back', () => {
+    rememberOpened('s', 'a', 'all')
+    forgetOpened('s', 'b')
+    expect(pickLast('s', 'all', all, all)).toEqual({ id: 'a' })
+    forgetOpened('s', 'a')
+    expect(pickLast('s', 'all', all, all)).toEqual({})
   })
 })
