@@ -46,7 +46,7 @@ function pwaBuildInfo(): Plugin {
     writeBundle(options) {
       if (this.environment.name !== 'client' || !options.dir) return
       const assets = readdirSync(join(options.dir, 'assets'))
-        .filter((name) => /\.(js|css)$/.test(name))
+        .filter((name) => /\.(js|css|png|svg|webp)$/.test(name))
         .map((name) => `/assets/${name}`)
       // fail the build rather than ship an update check that never settles
       const baked = assets.some((url) =>

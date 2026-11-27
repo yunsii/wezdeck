@@ -190,11 +190,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 
 - `public/manifest.webmanifest`: standalone, theme colors per scheme, icons
   192 / 512 / maskable generated from `brand-icon.svg`.
-- `public/sw.js` (hand-written, registered as `/sw.js?v=<build>` in
-  production only): navigations network-first with the cached console shell
-  as offline fallback; hashed `/assets/*` cache-first across the current and
-  previous build; `/relay/*`, `/api/*`, non-GET and `no-store` bypass. Pages
-  are SSR (TanStack Start), so the fallback is a cached `/console` document.
+- `public/sw.js` (`/sw.js?v=<build>`, prod only): navigations network-first
+  (cached `/console` SSR shell fallback); hashed `/assets/*` (incl. bundled
+  agent avatars) cache-first + `Cache-Control: immutable` via `public/_headers`;
+  `/relay/*`, `/api/*`, non-GET and `no-store` bypass.
 - Update: compare build id on `visibilitychange` (≤ every 10 min) → toast
   "有新版本 · 刷新"; one reload on chunk preload error.
 - Query cache persisted to IndexedDB (7 d, buster = contract hash): collab

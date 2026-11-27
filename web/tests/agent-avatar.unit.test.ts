@@ -39,10 +39,13 @@ describe('AgentAvatar', () => {
     const unknown = renderToStaticMarkup(
       createElement(AgentAvatar, { profile: 'unknown' }),
     )
-    expect(agy).toContain('/icons/agents/agy.png')
+    expect(agy).toMatch(
+      /src="([^"]*agy[^"]*\.png|data:image\/png;base64,[^"]+)"/,
+    )
+    expect(agy).toContain('decoding="sync"')
     expect(agy).not.toContain('agent-avatar-fallback')
     expect(unknown).toContain('data-testid="agent-avatar-fallback"')
-    expect(unknown).not.toContain('/icons/agents/agent.png')
+    expect(unknown).not.toContain('agent.png')
   })
 
   it('puts status top-left and backend badge bottom-right', () => {

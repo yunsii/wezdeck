@@ -1,0 +1,4 @@
+# Content-hashed Vite build assets (JS, CSS, fonts, icons): safe to cache
+# forever in browser MemoryCache and HTTP cache without revalidation.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
