@@ -174,7 +174,7 @@ export function SessionElicitation({
           >
             <PromptActionLabel
               loading={pending?.action === 'submit'}
-              spinnerClassName="border-white/35 border-t-white"
+              tone="solid"
             >
               {t`Enter`}
             </PromptActionLabel>
@@ -385,7 +385,7 @@ export function SessionPlanReview({
         >
           <PromptActionLabel
             loading={pending?.action === 'approve'}
-            spinnerClassName="border-white/35 border-t-white"
+            tone="solid"
           >
             {t`Approve plan`}
           </PromptActionLabel>

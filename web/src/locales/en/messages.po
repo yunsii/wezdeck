@@ -272,7 +272,7 @@ msgstr "Accept edits"
 msgid "Account limits"
 msgstr "Account limits"
 
-#: src/features/prompt-action-state.tsx:135
+#: src/features/prompt-action-state.tsx:142
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "Action sent; waiting for the agent to continue…"
 
@@ -360,7 +360,7 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:316
+#: src/features/session-permission.tsx:313
 msgid "Allow"
 msgstr "Allow"
 
@@ -444,7 +444,7 @@ msgstr "Approve sends a, request changes sends s (then type notes below), quit s
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:316
+#: src/features/session-permission.tsx:313
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -638,7 +638,7 @@ msgstr "Cancel"
 msgid "Cancel (Esc)"
 msgstr "Cancel (Esc)"
 
-#: src/features/prompt-action-state.tsx:142
+#: src/features/prompt-action-state.tsx:149
 msgid "Cancelling…"
 msgstr "Cancelling…"
 
@@ -1158,7 +1158,7 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
-#: src/features/session-permission.tsx:335
+#: src/features/session-permission.tsx:332
 msgid "Deny"
 msgstr "Deny"
 
@@ -1674,7 +1674,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:335
+#: src/features/session-permission.tsx:332
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -3073,7 +3073,7 @@ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
-#: src/features/prompt-action-state.tsx:143
+#: src/features/prompt-action-state.tsx:150
 msgid "Sending action…"
 msgstr "Sending action…"
 
@@ -3444,7 +3444,7 @@ msgstr "Technical details"
 
 #: src/features/session-elicitation.tsx:234
 #: src/features/session-info-actions.tsx:168
-#: src/features/session-permission.tsx:342
+#: src/features/session-permission.tsx:339
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3806,7 +3806,7 @@ msgstr "Updated {time}"
 msgid "Updated to the new version"
 msgstr "Updated to the new version"
 
-#: src/features/prompt-action-state.tsx:140
+#: src/features/prompt-action-state.tsx:147
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 

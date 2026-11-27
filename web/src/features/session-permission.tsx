@@ -309,10 +309,7 @@ export function PermissionCard({
             pending?.action === 'allow' && 'ring-2 ring-brand-running/50',
           )}
         >
-          <PromptActionLabel
-            loading={pending?.action === 'allow'}
-            spinnerClassName="border-white/35 border-t-white"
-          >
+          <PromptActionLabel loading={pending?.action === 'allow'} tone="solid">
             {call.plan ? t`Approve the plan` : t`Allow`}
           </PromptActionLabel>
         </Button>
