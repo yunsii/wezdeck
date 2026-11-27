@@ -259,8 +259,9 @@ var allowedKeys = map[string]bool{
 
 func keyToSession(args json.RawMessage) (any, error) {
 	var a struct {
-		ID  string `json:"id"`
-		Key string `json:"key"`
+		ID        string `json:"id"`
+		Key       string `json:"key"`
+		Interrupt bool   `json:"interrupt"`
 	}
 	if json.Unmarshal(args, &a) != nil || !allowedKeys[a.Key] {
 		return nil, errors.New("key not allowed")
@@ -269,7 +270,14 @@ func keyToSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, a.Key).CombinedOutput(); err != nil {
+	if a.Key == "C-c" && a.Interrupt {
+		return interruptSession(e)
+	}
+	return sendSessionKey(e, a.Key)
+}
+
+func sendSessionKey(e attentionEntry, key string) (any, error) {
+	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, key).CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
 	}
 	return map[string]any{"v": 1, "ok": true}, nil

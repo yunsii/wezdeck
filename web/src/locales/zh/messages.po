@@ -954,7 +954,7 @@ msgstr "命令"
 msgid "Command output"
 msgstr "命令输出"
 
-#: src/features/session-send.ts:332
+#: src/features/session-send.ts:346
 msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
@@ -1947,6 +1947,10 @@ msgstr "打断"
 msgid "Interrupt"
 msgstr "中断"
 
+#: src/features/session-send.ts:260
+msgid "Interrupt sent, but the agent has not confirmed it."
+msgstr "已发送中断请求，Agent 尚未确认。"
+
 #: src/features/session-info.tsx:280
 msgid "is queued"
 msgstr "排队等这一轮结束"
@@ -2764,7 +2768,7 @@ msgstr "打开会话"
 
 #: src/features/session-composer.tsx:256
 #: src/features/session-detail-notices.tsx:55
-#: src/features/session-detail-parts.tsx:90
+#: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
 msgstr "去设置"
 
@@ -3913,7 +3917,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
 #: src/features/session-composer.tsx:240
-#: src/features/session-detail-parts.tsx:74
+#: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -4503,6 +4507,11 @@ msgstr "信任此工作树并继续"
 #: src/features/session-title-history.tsx:94
 msgid "Turn {turns}"
 msgstr "第 {turns} 轮"
+
+#: src/features/session-detail-parts.tsx:74
+#: src/features/session-send.ts:257
+msgid "Turn interrupted"
+msgstr "已中断"
 
 #: src/features/session-worktree-detail.tsx:139
 msgid "Turn on write access in Settings to edit"

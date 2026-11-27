@@ -69,6 +69,11 @@ export function SessionComposerNotices({
         </p>
       ) : null}
       <SessionSubagents agents={data?.subagents} />
+      {data?.interrupted ? (
+        <p role="status" className="text-meta text-brand-muted">
+          {t`Turn interrupted`}
+        </p>
+      ) : null}
       {retryIn && !readOnly ? (
         <p role="status" className="text-meta text-brand-muted">
           {t`Someone just used the desk; sending in ${retryIn}s…`}

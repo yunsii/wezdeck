@@ -212,17 +212,22 @@ func paneDescendantArgs(socket, pane string, match func(string) bool) []string {
 // (claude) after agent-session-resolve normalizes; the window/role keep the
 // variant (claude_kimi) the web avatar badge needs.
 func paneState(e attentionEntry) (id, cwd, cmd string, index int, profile string, alive bool) {
+	id, cwd, cmd, index, profile, _, alive = paneStateWithInterrupt(e)
+	return
+}
+
+func paneStateWithInterrupt(e attentionEntry) (id, cwd, cmd string, index int, profile, interrupt string, alive bool) {
 	if e.TmuxPane == "" {
-		return "", "", "", 0, "", false
+		return "", "", "", 0, "", "", false
 	}
 	out, err := tmuxCmd(e.TmuxSocket, "display-message", "-p", "-t", e.TmuxPane,
-		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}").Output()
+		"#{pane_id}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}").Output()
 	if err != nil {
-		return "", "", "", 0, "", false
+		return "", "", "", 0, "", "", false
 	}
-	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 7)
+	parts := strings.SplitN(strings.TrimRight(string(out), "\r\n"), "\t", 8)
 	if len(parts) < 4 || parts[0] != e.TmuxPane {
-		return "", "", "", 0, "", false
+		return "", "", "", 0, "", "", false
 	}
 	index, _ = strconv.Atoi(parts[3])
 	paneProfile, windowProfile, paneRole := "", "", ""
@@ -235,8 +240,11 @@ func paneState(e attentionEntry) (id, cwd, cmd string, index int, profile string
 	if len(parts) > 6 {
 		paneRole = parts[6]
 	}
+	if len(parts) > 7 {
+		interrupt = parts[7]
+	}
 	profile = pickManagedAgentProfile(paneProfile, windowProfile, paneRole)
-	return parts[0], parts[1], parts[2], index, profile, true
+	return parts[0], parts[1], parts[2], index, profile, interrupt, true
 }
 
 func normalizeAgentProfile(raw string) string {
