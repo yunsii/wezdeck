@@ -16,6 +16,7 @@ import {
 
 import { SentAttachments, endsWithNote } from './chat-attachments'
 import { PendingBubbles } from './chat-pending'
+import type { Pending } from './chat-pending'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -36,6 +37,8 @@ import {
 } from './chat-command'
 import { ArtifactCard } from './host-file-context'
 
+export type { Pending }
+
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
   role: 'user' | 'assistant' | 'tool' | 'system'
@@ -55,30 +58,6 @@ export type Message = {
   kind?: string
   /** refs to images embedded in the transcript (session.image) */
   images?: Array<string>
-}
-
-export type Pending = {
-  text: string
-  /** ms when sent; also the key */
-  at: number
-  browserSentAt?: number
-  note?: string
-  /** uploaded names sent with it: the bubble shows them as the message will */
-  attachments?: Array<string>
-  /** absolute transcript index where the transcript ended when it was sent */
-  after?: number
-  /** host outbox record id when backed by host sent-messages.json */
-  sentId?: string
-  /** client_op UUID used to deduplicate local optimistic bubbles against host outbox */
-  clientOp?: string
-  /** host paste error when state === 'failed' */
-  error?: string
-  /**
-   * sending: the host has not taken it yet; queued: in the pane, not yet in
-   * the transcript; lost: derived by settle() or host outbox — the agent went
-   * idle and the transcript never showed it (未送达); failed: host paste error
-   */
-  state?: 'sending' | 'queued' | 'lost' | 'failed'
 }
 
 /**

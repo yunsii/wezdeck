@@ -20,6 +20,7 @@ import {
   promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
+import type { PromptResolveFn } from './session-elicitation'
 
 export type PermissionOption = {
   label: string
@@ -177,6 +178,8 @@ function PermissionActions({
   pending,
   run,
   onKey,
+  promptKey,
+  onResolve,
 }: {
   isPlan: boolean
   allowKeys: Array<string>
@@ -185,8 +188,43 @@ function PermissionActions({
   pending: ReturnType<typeof usePromptAction>['pending']
   run: ReturnType<typeof usePromptAction>['run']
   onKey: (key: string) => Promise<unknown> | void
+  promptKey: string
+  onResolve?: PromptResolveFn
 }) {
   const { t } = useLingui()
+  const triggerAllow = () => {
+    if (onResolve) {
+      void onResolve({
+        kind: 'prompt-submit',
+        promptKey,
+        execute: () => sendPermissionKeys(allowKeys, onKey),
+      })
+      return
+    }
+    void run('allow', () => sendPermissionKeys(allowKeys, onKey))
+  }
+  const triggerDeny = () => {
+    if (onResolve) {
+      void onResolve({
+        kind: 'prompt-cancel',
+        promptKey,
+        execute: async () => (await onKey(PERMISSION_KEYS.deny)) !== false,
+      })
+      return
+    }
+    void run('deny', () => onKey(PERMISSION_KEYS.deny), { kind: 'cancel' })
+  }
+  const triggerAlways = (actionId: string, keys: Array<string>) => {
+    if (onResolve) {
+      void onResolve({
+        kind: 'prompt-submit',
+        promptKey,
+        execute: () => sendPermissionKeys(keys, onKey),
+      })
+      return
+    }
+    void run(actionId, () => sendPermissionKeys(keys, onKey))
+  }
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
@@ -194,9 +232,7 @@ function PermissionActions({
           variant="solid"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void run('allow', () => sendPermissionKeys(allowKeys, onKey))
-          }
+          onClick={triggerAllow}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             promptButtonClass(pending, 'allow', 'solid'),
@@ -208,11 +244,7 @@ function PermissionActions({
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void run('deny', () => onKey(PERMISSION_KEYS.deny), {
-              kind: 'cancel',
-            })
-          }
+          onClick={triggerDeny}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             promptButtonClass(pending, 'deny'),
@@ -233,9 +265,7 @@ function PermissionActions({
                 type="button"
                 data-testid="permission-always"
                 disabled={disabled || Boolean(pending)}
-                onClick={() =>
-                  void run(actionId, () => sendPermissionKeys(opt.keys, onKey))
-                }
+                onClick={() => triggerAlways(actionId, opt.keys)}
                 className={cn(
                   'grid min-h-11 gap-0.5 px-3 py-2 text-left disabled:opacity-40',
                   promptButtonClass(pending, actionId),
@@ -264,12 +294,16 @@ export function PermissionCard({
   screen,
   disabled,
   onKey,
+  promptKey: hostPromptKey,
+  onResolve,
 }: {
   agent?: string
   call: PendingCall
   screen?: string
   disabled: boolean
   onKey: (key: string) => Promise<unknown> | void
+  promptKey?: string
+  onResolve?: PromptResolveFn
 }) {
   const { t } = useLingui()
   const [expanded, setExpanded] = useState(false)
@@ -283,7 +317,9 @@ export function PermissionCard({
     allowOpt && allowOpt.keys.length > 0
       ? allowOpt.keys
       : [isAgy ? 'Enter' : PERMISSION_KEYS.allow]
-  const promptKey = `${agent ?? ''}:${call.tool}:${call.text}:${call.summary ?? ''}:${call.body ?? ''}`
+  const promptKey =
+    hostPromptKey ??
+    `${agent ?? ''}:${call.tool}:${call.text}:${call.summary ?? ''}:${call.body ?? ''}`
   const { pending, run } = usePromptAction(promptKey)
   const fallbackTarget = call.text.startsWith(`${call.tool} `)
     ? call.text.slice(call.tool.length + 1)
@@ -435,6 +471,8 @@ export function PermissionCard({
         pending={pending}
         run={run}
         onKey={onKey}
+        promptKey={promptKey}
+        onResolve={onResolve}
       />
       <PromptActionStatus pending={pending} idle={idleHint} />
       {screen ? (

@@ -1,13 +1,13 @@
-// Grok / Agy Ask (ask_user_question / ask_question), Grok plan review, and the
-// generic permission key strip. All interactive cards share usePromptAction +
-// PromptActionStatus (prompt-action-state.tsx) so every user tap transitions
-// cleanly from sending → waiting for the agent until the host poll settles.
+// Grok / Agy Ask (ask_user_question / ask_question) and PromptPanels routing.
+// Inside SessionDetail (onResolve provided), every interaction transitions
+// optimistically at 0ms while queuing TUI key sequences serially; standalone
+// demos (/console/me/interactions) keep usePromptAction's loading → waiting flow.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { createSerialQueue, promptFingerprint } from '#/lib/optimistic-state'
 import { cn } from '#/lib/utils'
-import { ChatMarkdown } from './chat-markdown'
 import {
   PromptActionStatus,
   promptButtonClass,
@@ -16,6 +16,15 @@ import {
 import { AskCard } from './session-ask-claude'
 import type { Detail } from './console-sessions'
 import { PermissionCard } from './session-permission'
+import { SessionPermissionKeys, SessionPlanReview } from './session-plan-keys'
+
+export { SessionPermissionKeys, SessionPlanReview }
+
+export type PromptResolveFn = (opts: {
+  kind: 'prompt-submit' | 'prompt-cancel'
+  promptKey: string
+  execute: () => Promise<boolean>
+}) => Promise<boolean>
 
 export type ElicitOption = { label: string; description?: string }
 export type ElicitQuestion = {
@@ -33,22 +42,25 @@ export type Elicitation = {
   review?: boolean
 }
 
-export function SessionElicitation({
+const elicitQueue = createSerialQueue()
+
+function useElicitationState({
   agent,
   elicitation,
-  screen,
-  disabled,
   sendKey,
+  promptKey,
+  onResolve,
 }: {
   agent?: string
   elicitation: Elicitation
-  screen?: string
-  disabled: boolean
   sendKey: (key: string) => Promise<unknown>
+  promptKey?: string
+  onResolve?: PromptResolveFn
 }) {
-  const { t } = useLingui()
   const questions = elicitation.questions
   const askId = elicitation.tool_call_id ?? ''
+  const optimistic = Boolean(onResolve)
+  const queueKey = `elicit:${promptKey ?? askId}`
   const digitConfirms =
     agent === 'agy' || (agent === 'grok' && questions.length > 1)
   const [progress, setProgress] = useState({ id: askId, step: 0 })
@@ -60,12 +72,14 @@ export function SessionElicitation({
     elicitation.current_step && elicitation.current_step >= 1
       ? Math.min(elicitation.current_step - 1, questions.length - 1)
       : undefined
+  const localStep =
+    progress.id === askId ? Math.min(progress.step, questions.length - 1) : 0
   const step =
     hostStep !== undefined
-      ? hostStep
-      : progress.id === askId
-        ? Math.min(progress.step, questions.length - 1)
-        : 0
+      ? optimistic
+        ? Math.max(hostStep, localStep)
+        : hostStep
+      : localStep
   const current = questions[step]
   const selections = selected.id === askId ? selected.byStep : {}
   const picked = selections[step] ?? []
@@ -75,9 +89,51 @@ export function SessionElicitation({
 
   const pick = async (optionIndex: number) => {
     const toggle = Boolean(current.multi_select)
-    // When the host reports the live pane step, hold the card in waiting state
-    // until the next poll confirms the pane advanced (prevents double-taps from
-    // leaking into the next question).
+    if (optimistic && onResolve) {
+      if (toggle) {
+        const prevPicked = picked
+        const nextPicked = prevPicked.includes(optionIndex)
+          ? prevPicked.filter((index) => index !== optionIndex)
+          : [...prevPicked, optionIndex]
+        setSelected({
+          id: askId,
+          byStep: { ...selections, [step]: nextPicked },
+        })
+        const res = await elicitQueue.enqueue(queueKey, () =>
+          pickElicitationOption(optionIndex, sendKey, true, digitConfirms),
+        )
+        if (!res.ok && !res.aborted) {
+          setSelected((cur) => ({
+            id: askId,
+            byStep: {
+              ...(cur.id === askId ? cur.byStep : {}),
+              [step]: prevPicked,
+            },
+          }))
+        }
+        return
+      }
+      if (!last) {
+        const prevStep = step
+        setProgress({ id: askId, step: step + 1 })
+        const res = await elicitQueue.enqueue(queueKey, () =>
+          pickElicitationOption(optionIndex, sendKey, false, digitConfirms),
+        )
+        if (!res.ok && !res.aborted) setProgress({ id: askId, step: prevStep })
+        return
+      }
+      await onResolve({
+        kind: 'prompt-submit',
+        promptKey: promptKey ?? askId,
+        execute: async () =>
+          (
+            await elicitQueue.enqueue(queueKey, () =>
+              pickElicitationOption(optionIndex, sendKey, false, digitConfirms),
+            )
+          ).ok,
+      })
+      return
+    }
     const stayWaiting = !toggle && (last || hostStep !== undefined)
     const ok = await run(
       `opt-${optionIndex}`,
@@ -89,10 +145,7 @@ export function SessionElicitation({
       const next = picked.includes(optionIndex)
         ? picked.filter((index) => index !== optionIndex)
         : [...picked, optionIndex]
-      setSelected({
-        id: askId,
-        byStep: { ...selections, [step]: next },
-      })
+      setSelected({ id: askId, byStep: { ...selections, [step]: next } })
       return
     }
     if (!last && hostStep === undefined)
@@ -100,12 +153,99 @@ export function SessionElicitation({
   }
 
   const submit = async () => {
+    if (optimistic && onResolve) {
+      if (!last) {
+        const prevStep = step
+        setProgress({ id: askId, step: step + 1 })
+        const res = await elicitQueue.enqueue(
+          queueKey,
+          async () => (await sendKey('Enter')) !== false,
+        )
+        if (!res.ok && !res.aborted) setProgress({ id: askId, step: prevStep })
+        return
+      }
+      await onResolve({
+        kind: 'prompt-submit',
+        promptKey: promptKey ?? askId,
+        execute: async () =>
+          (
+            await elicitQueue.enqueue(
+              queueKey,
+              async () => (await sendKey('Enter')) !== false,
+            )
+          ).ok,
+      })
+      return
+    }
     const ok = await run('submit', () => sendKey('Enter'), {
       stayWaiting: last || hostStep !== undefined,
     })
     if (ok && !last && hostStep === undefined)
       setProgress({ id: askId, step: step + 1 })
   }
+
+  const cancel = (action: 'escape' | 'ctrl-c', key: 'Escape' | 'C-c') => {
+    if (optimistic && onResolve) {
+      elicitQueue.abort(queueKey)
+      void onResolve({
+        kind: 'prompt-cancel',
+        promptKey: promptKey ?? askId,
+        execute: async () => (await sendKey(key)) !== false,
+      })
+      return
+    }
+    void run(action, () => sendKey(key), { kind: 'cancel' })
+  }
+
+  return {
+    step,
+    total,
+    current,
+    picked,
+    digitConfirms,
+    pending,
+    pick,
+    submit,
+    cancel,
+  }
+}
+
+export function SessionElicitation({
+  agent,
+  elicitation,
+  screen,
+  disabled,
+  sendKey,
+  promptKey,
+  onResolve,
+}: {
+  agent?: string
+  elicitation: Elicitation
+  screen?: string
+  disabled: boolean
+  sendKey: (key: string) => Promise<unknown>
+  promptKey?: string
+  onResolve?: PromptResolveFn
+}) {
+  const { t } = useLingui()
+  const {
+    step,
+    total,
+    current,
+    picked,
+    digitConfirms,
+    pending,
+    pick,
+    submit,
+    cancel,
+  } = useElicitationState({
+    agent,
+    elicitation,
+    sendKey,
+    promptKey,
+    onResolve,
+  })
+  const number = step + 1
 
   return (
     <div
@@ -119,7 +259,7 @@ export function SessionElicitation({
     >
       <p className="text-body font-medium">
         {total > 1
-          ? t`The agent is asking you (question ${step + 1} of ${total})`
+          ? t`The agent is asking you (question ${number} of ${total})`
           : t`The agent is asking you`}
       </p>
       <div className="grid gap-2">
@@ -178,9 +318,7 @@ export function SessionElicitation({
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void run('escape', () => sendKey('Escape'), { kind: 'cancel' })
-          }
+          onClick={() => cancel('escape', 'Escape')}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             promptButtonClass(pending, 'escape'),
@@ -192,9 +330,7 @@ export function SessionElicitation({
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void run('ctrl-c', () => sendKey('C-c'), { kind: 'cancel' })
-          }
+          onClick={() => cancel('ctrl-c', 'C-c')}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             promptButtonClass(pending, 'ctrl-c'),
@@ -260,154 +396,6 @@ export async function pickElicitationOption(
   return put('Enter')
 }
 
-/** Permission-prompt strip (Claude-style 1/2/3/Enter) when Ask payload is absent. */
-export function SessionPermissionKeys({
-  screen,
-  disabled,
-  onKey,
-}: {
-  screen?: string
-  disabled: boolean
-  onKey: (key: string) => Promise<unknown> | void
-}) {
-  const { t } = useLingui()
-  // Keyed on screen so if the terminal moves to a follow-up screen the keys unlock.
-  const { pending, run } = usePromptAction(screen ?? 'keys')
-  return (
-    <div
-      data-write
-      data-testid="session-permission-keys"
-      aria-busy={Boolean(pending)}
-      className={cn(
-        'grid gap-2 rounded-2xl bg-brand-surface p-3',
-        pending && 'pointer-events-none',
-      )}
-    >
-      <p className="text-body font-medium">{t`The agent asks:`}</p>
-      <pre className="max-h-64 overflow-auto overscroll-contain font-mono text-meta leading-snug text-brand-muted">
-        {screen ?? ''}
-      </pre>
-      <div className="flex flex-wrap gap-2">
-        {[
-          ['1', '1'],
-          ['2', '2'],
-          ['3', '3'],
-          ['Enter', t`Enter`],
-          ['Escape', t`Esc`],
-          ['C-c', t`Ctrl+C`],
-        ].map(([key, label]) => (
-          <Button
-            variant="key"
-            key={key}
-            type="button"
-            disabled={disabled || Boolean(pending)}
-            onClick={() =>
-              void run(key, () => onKey(key), {
-                kind: key === 'Escape' || key === 'C-c' ? 'cancel' : 'submit',
-              })
-            }
-            className={cn(
-              'flex min-h-11 min-w-11 items-center justify-center px-3 text-body disabled:opacity-40',
-              promptButtonClass(pending, key),
-            )}
-          >
-            {label}
-          </Button>
-        ))}
-      </div>
-      <PromptActionStatus pending={pending} />
-    </div>
-  )
-}
-
-/** Grok plan review: a=approve, s=request changes, q=quit (TUI plan approval bar). */
-export function SessionPlanReview({
-  excerpt,
-  awaitingApproval,
-  disabled,
-  onKey,
-}: {
-  excerpt?: string
-  awaitingApproval?: boolean
-  disabled: boolean
-  onKey: (key: string) => Promise<unknown> | void
-}) {
-  const { t } = useLingui()
-  const { pending, run } = usePromptAction(excerpt ?? 'plan')
-  // Only while the TUI is on the plan-approval bar — not while plan.md is
-  // still being written under plan mode Active.
-  if (!awaitingApproval) return null
-  return (
-    <div
-      className={cn(
-        'grid gap-3 rounded-2xl border border-brand-running/40 bg-brand-running/10 p-3',
-        pending && 'pointer-events-none',
-      )}
-      data-testid="session-plan-review"
-      data-write
-      aria-busy={Boolean(pending)}
-    >
-      <p className="text-body font-medium">{t`Plan ready for review`}</p>
-      {excerpt ? (
-        <div className="max-h-96 overflow-y-auto rounded-xl bg-brand-deck px-3 py-2">
-          <ChatMarkdown text={excerpt} />
-        </div>
-      ) : (
-        <p className="text-caption text-brand-muted">{t`No plan written yet`}</p>
-      )}
-      <div className="grid gap-2">
-        <Button
-          variant="solid"
-          type="button"
-          disabled={disabled || Boolean(pending)}
-          onClick={() => void run('approve', () => onKey('a'))}
-          className={cn(
-            'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
-            promptButtonClass(pending, 'approve', 'solid'),
-          )}
-        >
-          {t`Approve plan`}
-        </Button>
-        <Button
-          variant="key"
-          type="button"
-          disabled={disabled || Boolean(pending)}
-          onClick={() => void run('changes', () => onKey('s'))}
-          className={cn(
-            'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
-            promptButtonClass(pending, 'changes'),
-          )}
-        >
-          {t`Request changes`}
-        </Button>
-        <Button
-          variant="key"
-          type="button"
-          disabled={disabled || Boolean(pending)}
-          onClick={() => void run('quit', () => onKey('q'), { kind: 'cancel' })}
-          className={cn(
-            'flex min-h-11 items-center justify-center px-3 text-body text-brand-muted disabled:opacity-40',
-            promptButtonClass(pending, 'quit'),
-          )}
-        >
-          {t`Quit plan`}
-        </Button>
-      </div>
-      <PromptActionStatus
-        pending={pending}
-        idle={t`Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI.`}
-      />
-    </div>
-  )
-}
-
-/**
- * What the agent waits on — an Ask, a plan to review, a permission prompt —
- * as keys. While a key is on its way the panel keeps its look and only stops
- * taking taps: dimming it per key (disabled) flashed the whole panel, several
- * times for an Ask answer sent as a run of keys. Dimmed means this device
- * cannot write.
- */
 /** True when PromptPanels renders an interactive confirmation / question / plan card. */
 export function hasPromptPanel(data?: Detail): boolean {
   if (!data) return false
@@ -427,19 +415,19 @@ export function PromptPanels({
   sending,
   canWrite,
   onKey,
+  onResolve,
 }: {
   data?: Detail
   sending: boolean
   canWrite: boolean
   onKey: (key: string) => Promise<unknown>
+  onResolve?: PromptResolveFn
 }) {
-  // Host gates elicitation / plan.awaiting_approval on attention waiting;
-  // also hide here so a stale poll cache after Ctrl+C cannot keep the card.
   const waiting = data?.status === 'waiting' || Boolean(data?.waiting_kind)
   const elicitation = waiting ? data?.elicitation : undefined
   const asking = Boolean(elicitation && elicitation.questions.length > 0)
-  // Plan card only when the TUI is on the approval bar (not while writing).
   const planReview = waiting && Boolean(data?.plan?.awaiting_approval)
+  const fingerprint = promptFingerprint(data)
   return (
     <div
       aria-busy={sending}
@@ -452,6 +440,8 @@ export function PromptPanels({
           screen={data.screen}
           disabled={!canWrite}
           sendKey={onKey}
+          promptKey={fingerprint}
+          onResolve={onResolve}
         />
       ) : null}
       {!asking && planReview ? (
@@ -460,6 +450,8 @@ export function PromptPanels({
           awaitingApproval
           disabled={!canWrite}
           onKey={onKey}
+          promptKey={fingerprint}
+          onResolve={onResolve}
         />
       ) : null}
       {data?.permission && !asking && !planReview ? (
@@ -469,12 +461,16 @@ export function PromptPanels({
           screen={data.screen}
           disabled={!canWrite}
           onKey={onKey}
+          promptKey={fingerprint}
+          onResolve={onResolve}
         />
       ) : data?.waiting_kind && !asking && !planReview ? (
         <SessionPermissionKeys
           screen={data.screen}
           disabled={!canWrite}
           onKey={onKey}
+          promptKey={fingerprint}
+          onResolve={onResolve}
         />
       ) : null}
     </div>

@@ -70,7 +70,10 @@ export function turnState({
 }): TurnState | null {
   if (busy) return { kind: 'working', activity }
   if (status === 'waiting') return null
-  const sent = left.at(0)?.at
+  const activePending = left.find(
+    (item) => item.state !== 'lost' && item.state !== 'failed',
+  )
+  const sent = activePending?.at
   if (sent !== undefined) return { kind: 'working', activity: { since: sent } }
   let lastUser = -1
   for (let i = messages.length - 1; i >= 0; i -= 1)

@@ -3,108 +3,34 @@
 // countdown when the host asks to wait for the desk to go quiet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
+import {
+  acceptSessionOptimistic,
+  applySessionOptimistic,
+  createSerialQueue,
+  onOptimisticTimeout,
+  promptFingerprint,
+  rollbackSessionOptimistic,
+  transferSessionOptimistic,
+} from '#/lib/optimistic-state'
 import { hostWrite } from '#/lib/runtime-client'
 import { trace } from '#/lib/client-trace'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
-import type { SentRecord } from './sent-history'
+import type { Detail } from './session-detail-types'
 import { useNavigateToSession } from './session-follow'
+import {
+  commandOf,
+  mergeOutboxPending as mergeOutboxPendingRaw,
+  withDeskRetry,
+} from './session-send-helpers'
+import type { SentRecord } from './sent-history'
 
 export { useFollowReplacement } from './session-follow'
-
-/**
- * Merge local optimistic bubbles (sending / just-sent) with host-persisted
- * unsettled outbox records returned on `session` polls. Deduplicates by
- * `client_op` (host wins once recorded), so pending and unconfirmed bubbles
- * survive page reloads and cross-device switches without flickering.
- */
-export function mergeOutboxPending(
-  local: Array<Pending>,
-  hostOutbox?: Array<SentRecord>,
-): Array<Pending> {
-  if (!hostOutbox?.length) return local
-  const localTimes = new Map(
-    local
-      .filter((item) => item.clientOp)
-      .map((item) => [item.clientOp, item.at]),
-  )
-  const hostOps = new Set<string>()
-  const hostItems: Array<Pending> = hostOutbox.map((rec) => {
-    if (rec.client_op) hostOps.add(rec.client_op)
-    const state: Pending['state'] =
-      rec.status === 'failed'
-        ? 'failed'
-        : rec.status === 'unconfirmed'
-          ? 'lost'
-          : 'queued'
-    return {
-      text: rec.text,
-      attachments: rec.attachments ?? [],
-      at: rec.created_at,
-      browserSentAt: rec.client_op ? localTimes.get(rec.client_op) : undefined,
-      after: rec.transcript_end_at_send,
-      sentId: rec.id,
-      clientOp: rec.client_op,
-      error: rec.error,
-      state,
-    }
-  })
-  const extras = local.filter((item) => {
-    if (item.clientOp && hostOps.has(item.clientOp)) return false
-    // Fallback dedup when a host record lacks client_op (e.g. session_new)
-    if (
-      !item.clientOp &&
-      hostItems.some(
-        (h) =>
-          h.text.trim() === item.text.trim() &&
-          Math.abs(h.at - item.at) < 5_000,
-      )
-    ) {
-      return false
-    }
-    return true
-  })
-  return [...hostItems, ...extras].sort((a, b) => a.at - b.at)
-}
-
-/**
- * The host refuses a write right after input at the desk and says when to
- * try again ("… retry in 7s"): count down and resend instead of failing.
- */
-export async function withDeskRetry<T>(
-  attempt: () => Promise<T>,
-  onWait: (seconds: number) => void,
-  tries = 3,
-  sleep = (ms: number) => new Promise((done) => setTimeout(done, ms)),
-): Promise<T> {
-  for (let round = 0; ; round++) {
-    try {
-      return await attempt()
-    } catch (error) {
-      const wait =
-        /^(?:someone typed at the desk \d+s ago; )?retry in (\d+)s$/.exec(
-          (error as Error).message,
-        )
-      if (!wait || round >= tries) throw error
-      for (let left = Number(wait[1]); left > 0; left--) {
-        onWait(left)
-        await sleep(1_000)
-      }
-      onWait(0)
-    }
-  }
-}
-
-/**
- * "/new" for a slash command ("/new", "/compact focus on x"), else "" — a
- * path ("/home/me/x.png …") is a message
- */
-export const commandOf = (text: string) =>
-  /^\/[a-z][\w:-]*(?=\s|$)/i.exec(text.trim())?.[0] ?? ''
+export { commandOf, withDeskRetry }
 
 type WriteState = { sending: boolean; error: string; retryIn: number }
 const IDLE: WriteState = { sending: false, error: '', retryIn: 0 }
@@ -118,8 +44,30 @@ const NONE: Array<Pending> = []
  * the web console after switching away and back (2026-11-24).
  */
 const pendingStore = new Map<string, Array<Pending>>()
+const dismissedOutboxIds = new Set<string>()
+let dismissedVersion = 0
 const pendingListeners = new Set<() => void>()
 const PENDING_KEEP_MS = 6 * 60 * 60_000
+const sendQueue = createSerialQueue()
+
+function useDismissedVersion() {
+  return useSyncExternalStore(
+    (listener) => {
+      pendingListeners.add(listener)
+      return () => pendingListeners.delete(listener)
+    },
+    () => dismissedVersion,
+    () => 0,
+  )
+}
+
+/** Merge local pending bubbles with host outbox, hiding optimistically dismissed records. */
+export function mergeOutboxPending(
+  local: Array<Pending>,
+  hostOutbox?: Array<SentRecord>,
+): Array<Pending> {
+  return mergeOutboxPendingRaw(local, hostOutbox, dismissedOutboxIds)
+}
 
 function updatePending(
   target: string,
@@ -163,6 +111,7 @@ export function seedQueuedPending(
 
 export function transferPending(from: string, to: string) {
   if (!from || !to || from === to) return
+  transferSessionOptimistic(from, to)
   const items = pendingStore.get(from)
   if (!items?.length) return
   pendingStore.delete(from)
@@ -188,21 +137,210 @@ function usePending(id: string) {
   )
 }
 
+type WriteRunner = (
+  target: string,
+  job: () => Promise<void>,
+  opts?: { lockComposer?: boolean },
+) => Promise<boolean>
+
+function followSessionReply(
+  follow: (from: string, to: string) => void,
+  target: string,
+  reply: unknown,
+) {
+  if (
+    reply &&
+    typeof reply === 'object' &&
+    'session_id' in reply &&
+    typeof reply.session_id === 'string' &&
+    reply.session_id !== target
+  ) {
+    follow(target, reply.session_id)
+  }
+}
+
+function buildBaseline(
+  snapshot: Detail | undefined,
+  transcriptEnd: number,
+  promptKey?: string,
+) {
+  return {
+    status: snapshot?.status,
+    ts: snapshot?.ts,
+    waitingKind: snapshot?.waiting_kind,
+    promptKey: promptKey ?? promptFingerprint(snapshot),
+    transcriptEnd,
+  }
+}
+
+function createSendMessage({
+  target,
+  message,
+  baseline,
+  client,
+  patch,
+  write,
+  follow,
+  commandSentToast,
+  submitFailedMessage,
+}: {
+  target: string
+  message: Outgoing
+  baseline: ReturnType<typeof buildBaseline>
+  client: ReturnType<typeof useQueryClient>
+  patch: (target: string, next: Partial<WriteState>) => void
+  write: WriteRunner
+  follow: (from: string, to: string) => void
+  commandSentToast: (command: string) => void
+  submitFailedMessage: (opId: string) => string
+}): Promise<boolean> {
+  const op_id = crypto.randomUUID()
+  const command = commandOf(message.text)
+  const at = Date.now()
+  const updateItem = (patchItem: Partial<Pending> | null) =>
+    updatePending(target, (list) =>
+      patchItem
+        ? list.map((item) =>
+            item.at === at && item.clientOp === op_id
+              ? { ...item, ...patchItem }
+              : item,
+          )
+        : list.filter((item) => !(item.at === at && item.clientOp === op_id)),
+    )
+  if (!command) {
+    updatePending(target, (list) => [
+      ...list,
+      {
+        text: message.text,
+        note: message.note,
+        attachments: message.attachments,
+        localPreviews: message.localPreviews,
+        clientOp: op_id,
+        at,
+        after: baseline.transcriptEnd,
+        state: 'sending',
+      },
+    ])
+    applySessionOptimistic({
+      id: target,
+      opId: op_id,
+      kind: 'send',
+      createdAt: at,
+      promptText: message.text || message.note,
+      baseline,
+    })
+  }
+  const execute = async () => {
+    trace('web-write', {
+      id: target,
+      op_id,
+      action: 'send',
+      stage: 'requested',
+    })
+    try {
+      let attachments = message.attachments
+      if (message.materialize) {
+        attachments = await message.materialize((label) =>
+          updateItem({ uploading: label }),
+        )
+        updateItem({
+          attachments,
+          uploading: undefined,
+          localPreviews: undefined,
+        })
+      }
+      const reply = await withDeskRetry(
+        () =>
+          hostWrite('send', {
+            id: target,
+            text: message.text,
+            attachments,
+            client_op: op_id,
+          }),
+        (seconds) => patch(target, { retryIn: seconds }),
+      )
+      if (command === '/new') followSessionReply(follow, target, reply)
+    } catch (error) {
+      if (!command) {
+        updateItem(null)
+        rollbackSessionOptimistic(target, op_id, (error as Error).message)
+      }
+      void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
+      const partial = (error as Error).message.startsWith(
+        'tmux submit failed after paste: ',
+      )
+      trace('web-write', {
+        id: target,
+        op_id,
+        action: 'send',
+        stage: partial ? 'submit-failed' : 'failed',
+      })
+      if (partial) throw new Error(submitFailedMessage(op_id))
+      throw error
+    }
+    trace('web-write', {
+      id: target,
+      op_id,
+      action: 'send',
+      stage: 'host-accepted',
+    })
+    void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
+    void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+    if (command) {
+      commandSentToast(command)
+    } else {
+      updateItem({ state: 'queued', uploading: undefined })
+      acceptSessionOptimistic(target, op_id)
+    }
+  }
+  if (command) return write(target, execute, { lockComposer: true })
+  return sendQueue
+    .enqueue(`send:${target}`, () =>
+      write(target, execute, { lockComposer: false }),
+    )
+    .then((res) => (res.ok ? res.value : false))
+}
+
+function usePromptTimeoutNotice(id: string) {
+  const { t } = useLingui()
+  useEffect(
+    () =>
+      onOptimisticTimeout((event) => {
+        if (
+          event.scope === 'session' &&
+          event.id === id &&
+          (event.kind === 'prompt-submit' || event.kind === 'prompt-cancel')
+        ) {
+          toast.warning(
+            t`The host did not confirm the action; please check and retry.`,
+          )
+        }
+      }),
+    [id, t],
+  )
+}
+
 /**
  * Per session, not per page: queued bubbles (above, page-wide), the sending
  * state, an error or a countdown are keyed by the session id the write was
  * for, so none shows under another session and a late reply never lands
  * elsewhere.
  */
-export function useSessionWrites(id: string, transcriptEnd = 0) {
+export function useSessionWrites(
+  id: string,
+  transcriptEnd = 0,
+  snapshot?: Detail,
+) {
   const { t } = useLingui()
   const follow = useNavigateToSession()
-  // where the transcript ended when a message was sent: only user lines
-  // after it can be that message (an earlier identical "继续" is not)
   const endRef = useRef(transcriptEnd)
   endRef.current = transcriptEnd
+  const snapshotRef = useRef(snapshot)
+  snapshotRef.current = snapshot
   const client = useQueryClient()
   const pendingRaw = usePending(id)
+  useDismissedVersion()
+  usePromptTimeoutNotice(id)
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
   const state = stateBy[id] ?? IDLE
   const patch = (target: string, next: Partial<WriteState>) =>
@@ -211,31 +349,21 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       [target]: { ...(all[target] ?? IDLE), ...next },
     }))
 
-  const write = async (target: string, job: () => Promise<void>) => {
-    patch(target, { sending: true, error: '' })
+  const write: WriteRunner = async (target, job, opts) => {
+    const lock = opts?.lockComposer ?? true
+    patch(target, lock ? { sending: true, error: '' } : { error: '' })
     try {
       await job()
-      // the poll would catch up anyway; don't hold the composer on it
       void client.invalidateQueries({ queryKey: ['remote', 'session', target] })
       return true
     } catch (e) {
       patch(target, { error: (e as Error).message })
       return false
     } finally {
-      patch(target, { sending: false, retryIn: 0 })
+      patch(target, lock ? { sending: false, retryIn: 0 } : { retryIn: 0 })
     }
   }
-  const followReply = (target: string, reply: unknown) => {
-    if (
-      reply &&
-      typeof reply === 'object' &&
-      'session_id' in reply &&
-      typeof reply.session_id === 'string' &&
-      reply.session_id !== target
-    ) {
-      follow(target, reply.session_id)
-    }
-  }
+
   /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c), or
    * session.restart (重启会话 / 新开会话) */
   const run = (
@@ -244,128 +372,125 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
   ) => {
     const target = id
     const op_id = crypto.randomUUID()
-    return write(target, async () => {
-      trace('web-write', { id: target, op_id, action, stage: 'requested' })
-      try {
-        const reply = await hostWrite(action, {
-          id: target,
-          ...args,
-          client_op: op_id,
-        })
-        if (action === 'session.restart' && args.fresh === true)
-          followReply(target, reply)
-        void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-        if (
-          action === 'key' &&
-          args.interrupt === true &&
-          reply &&
-          typeof reply === 'object' &&
-          'interrupted' in reply &&
-          typeof reply.interrupted === 'boolean'
-        ) {
-          if (reply.interrupted) toast(t`Turn interrupted`)
-          else
-            throw new Error(
-              t`Interrupt sent, but the agent has not confirmed it.`,
-            )
+    const isInterrupt = action === 'key' && args.interrupt === true
+    if (isInterrupt) {
+      applySessionOptimistic({
+        id: target,
+        opId: op_id,
+        kind: 'interrupt',
+        baseline: buildBaseline(snapshotRef.current, endRef.current),
+      })
+    }
+    return write(
+      target,
+      async () => {
+        trace('web-write', { id: target, op_id, action, stage: 'requested' })
+        try {
+          const reply = await hostWrite(action, {
+            id: target,
+            ...args,
+            client_op: op_id,
+          })
+          if (action === 'session.restart' && args.fresh === true)
+            followSessionReply(follow, target, reply)
+          if (
+            isInterrupt &&
+            reply &&
+            typeof reply === 'object' &&
+            'interrupted' in reply &&
+            typeof reply.interrupted === 'boolean'
+          ) {
+            if (reply.interrupted) {
+              acceptSessionOptimistic(target, op_id)
+              toast(t`Turn interrupted`)
+            } else {
+              rollbackSessionOptimistic(target, op_id, 'not-confirmed')
+              throw new Error(
+                t`Interrupt sent, but the agent has not confirmed it.`,
+              )
+            }
+          } else if (isInterrupt) {
+            acceptSessionOptimistic(target, op_id)
+          }
+          void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+          trace('web-write', {
+            id: target,
+            op_id,
+            action,
+            stage: 'host-accepted',
+          })
+        } catch (error) {
+          if (isInterrupt) {
+            rollbackSessionOptimistic(target, op_id, (error as Error).message)
+          }
+          trace('web-write', { id: target, op_id, action, stage: 'failed' })
+          throw error
         }
-        trace('web-write', {
-          id: target,
-          op_id,
-          action,
-          stage: 'host-accepted',
-        })
-      } catch (error) {
-        trace('web-write', { id: target, op_id, action, stage: 'failed' })
-        throw error
-      }
-    })
+      },
+      { lockComposer: action === 'session.restart' },
+    )
   }
-  const send = (message: Outgoing) => {
+
+  /** Optimistically dismiss an interactive prompt card and send its keys in the background. */
+  const resolvePrompt = (opts: {
+    kind: 'prompt-submit' | 'prompt-cancel'
+    promptKey: string
+    execute: () => Promise<boolean>
+  }): Promise<boolean> => {
     const target = id
     const op_id = crypto.randomUUID()
-    // a slash command (/new, /clear, /compact…) is run by the TUI, never
-    // written to the transcript as a message: queued as one it waited for
-    // the agent forever
-    const command = commandOf(message.text)
-    // optimistic: the bubble shows at once (sending), turns queued when the
-    // host took it, and leaves when the transcript shows the message
-    const at = Date.now()
-    const mark = (next?: Pending['state']) =>
-      updatePending(target, (list) =>
-        next
-          ? list.map((item) =>
-              item.at === at ? { ...item, state: next } : item,
-            )
-          : list.filter((item) => item.at !== at),
-      )
-    if (!command)
-      updatePending(target, (list) => [
-        ...list,
-        {
-          text: message.text,
-          note: message.note,
-          attachments: message.attachments,
-          clientOp: op_id,
-          at,
-          after: endRef.current,
-          state: 'sending',
-        },
-      ])
-    return write(target, async () => {
-      trace('web-write', {
-        id: target,
-        op_id,
-        action: 'send',
-        stage: 'requested',
-      })
-      try {
-        const reply = await withDeskRetry(
-          () =>
-            hostWrite('send', {
-              id: target,
-              text: message.text,
-              attachments: message.attachments,
-              client_op: op_id,
-            }),
-          (seconds) => patch(target, { retryIn: seconds }),
-        )
-        if (command === '/new') followReply(target, reply)
-      } catch (error) {
-        // refused: the text goes back to the composer with the error
-        if (!command) mark()
-        void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
-        const partial = (error as Error).message.startsWith(
-          'tmux submit failed after paste: ',
-        )
-        trace('web-write', {
-          id: target,
-          op_id,
-          action: 'send',
-          stage: partial ? 'submit-failed' : 'failed',
-        })
-        if (partial) {
-          throw new Error(
-            t`The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: ${op_id}`,
-          )
-        }
-        throw error
-      }
-      trace('web-write', {
-        id: target,
-        op_id,
-        action: 'send',
-        stage: 'host-accepted',
-      })
-      void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
-      if (command) {
-        void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-        toast(t`Command sent: ${command}`)
-      } else mark('queued')
+    applySessionOptimistic({
+      id: target,
+      opId: op_id,
+      kind: opts.kind,
+      suppressedPromptKey: opts.promptKey,
+      baseline: buildBaseline(
+        snapshotRef.current,
+        endRef.current,
+        opts.promptKey,
+      ),
     })
+    patch(target, { error: '' })
+    return opts
+      .execute()
+      .then((ok) => {
+        if (!ok) {
+          rollbackSessionOptimistic(target, op_id, 'key-failed')
+          return false
+        }
+        acceptSessionOptimistic(target, op_id)
+        void client.invalidateQueries({
+          queryKey: ['remote', 'session', target],
+        })
+        void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+        return true
+      })
+      .catch((error: unknown) => {
+        rollbackSessionOptimistic(target, op_id, (error as Error).message)
+        patch(target, { error: (error as Error).message })
+        return false
+      })
   }
+
+  const send = (message: Outgoing) =>
+    createSendMessage({
+      target: id,
+      message,
+      baseline: buildBaseline(snapshotRef.current, endRef.current),
+      client,
+      patch,
+      write,
+      follow,
+      commandSentToast: (command) => toast(t`Command sent: ${command}`),
+      submitFailedMessage: (op_id) =>
+        t`The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: ${op_id}`,
+    })
   /** drop a bubble (a lost or failed one the user gave up on) */
   const dismiss = (item: Pending) => {
+    if (item.sentId) {
+      dismissedOutboxIds.add(item.sentId)
+      dismissedVersion += 1
+    }
     updatePending(id, (list) =>
       list.filter(
         (one) =>
@@ -402,6 +527,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     pendingRaw,
     send,
     run,
+    resolvePrompt,
     dismiss,
     /**
      * ChatThread's bubble props: the queue, and resend / edit / remove on a

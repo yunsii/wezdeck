@@ -35,18 +35,25 @@ import { mergePayloads, tokenKey } from './composer-tokens'
 export type Outgoing = MessagePayload & {
   /** shown on the queued bubble, e.g. "2 images" */
   note: string
+  /** local object URLs shown on the optimistic bubble while uploading */
+  localPreviews?: Array<string>
+  /** when deferUpload is enabled, resolves uploaded attachment names inside send() */
+  materialize?: (onProgress: (label: string) => void) => Promise<Array<string>>
 }
 
 export function useRichDraft({
   storageKey,
   imageKey,
   onSend,
+  deferUpload = false,
 }: {
   /** localStorage key for text draft */
   storageKey: string
   /** IndexedDB key suffix for image picks */
   imageKey: string
   onSend: (message: Outgoing) => Promise<boolean>
+  /** if true, call onSend immediately with materialize() so bubbles render at 0ms */
+  deferUpload?: boolean
 }) {
   const { t } = useLingui()
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -120,6 +127,27 @@ export function useRichDraft({
     const giveBack = () => {
       restoreDraft(storageKey, typed)
       void restorePicks(imageKey, savedPicks)
+    }
+    const hasLocal = picked.some((img) => img.kind === 'local')
+    if (deferUpload && hasLocal) {
+      const count = picked.length
+      const note = count ? t`${count} images` : ''
+      const localPreviews = picked.flatMap((img) =>
+        img.kind === 'local' ? [img.url] : [],
+      )
+      const ok = await onSend({
+        text: typed.trim(),
+        attachments: [],
+        note,
+        localPreviews,
+        materialize: (onProgress) =>
+          materializeAttachments(picked, (step, total) => {
+            onProgress(t`Uploading ${step}/${total}…`)
+          }),
+      })
+      if (!ok) giveBack()
+      revokeComposerImages(picked)
+      return
     }
     let attachments: Array<string> = []
     try {

@@ -11,7 +11,34 @@ import { trace } from '#/lib/client-trace'
 import { cn } from '#/lib/utils'
 
 import { SentAttachments, withAttachmentNote } from './chat-attachments'
-import type { Pending } from './chat-thread'
+
+export type Pending = {
+  text: string
+  /** ms when sent; also the key */
+  at: number
+  browserSentAt?: number
+  note?: string
+  /** uploaded names sent with it: the bubble shows them as the message will */
+  attachments?: Array<string>
+  /** local object URLs shown inside the optimistic bubble while uploading */
+  localPreviews?: Array<string>
+  /** progress label while local image attachments are uploading */
+  uploading?: string
+  /** absolute transcript index where the transcript ended when it was sent */
+  after?: number
+  /** host outbox record id when backed by host sent-messages.json */
+  sentId?: string
+  /** client_op UUID used to deduplicate local optimistic bubbles against host outbox */
+  clientOp?: string
+  /** host paste error when state === 'failed' */
+  error?: string
+  /**
+   * sending: the host has not taken it yet; queued: in the pane, not yet in
+   * the transcript; lost: derived by settle() or host outbox — the agent went
+   * idle and the transcript never showed it (未送达); failed: host paste error
+   */
+  state?: 'sending' | 'queued' | 'lost' | 'failed'
+}
 
 export function PendingBubbles({
   pending,
@@ -54,7 +81,21 @@ export function PendingBubbles({
               <SentAttachments
                 text={withAttachmentNote(item.text, item.attachments)}
               />
-              {item.note && !item.attachments?.length ? (
+              {item.localPreviews?.length && !item.attachments?.length ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {item.localPreviews.map((url, idx) => (
+                    <img
+                      key={`${idx}-${url}`}
+                      src={url}
+                      alt=""
+                      className="size-16 rounded-lg object-cover opacity-90"
+                    />
+                  ))}
+                </div>
+              ) : null}
+              {item.uploading ? (
+                <p className="mt-1 text-meta opacity-80">{item.uploading}</p>
+              ) : item.note && !item.attachments?.length ? (
                 <span className="opacity-70">
                   {item.text ? ' ' : ''}({item.note})
                 </span>

@@ -15,10 +15,16 @@ import { Button } from '#/components/ui/button'
 import { Skeleton } from '#/components/ui/skeleton'
 import { Textarea } from '#/components/ui/textarea'
 import { collabKey } from '#/lib/collab-query'
+import {
+  acceptTicketOptimistic,
+  applyTicketOptimistic,
+  rollbackTicketOptimistic,
+  useTicketOptimistic,
+} from '#/lib/optimistic-tickets'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import type { CollabTicket } from '#/lib/runtime-contract'
-import { ChatThread } from './chat-thread'
-import type { Message } from './chat-thread'
+import { ChatThread, settle } from './chat-thread'
+import type { Message, Pending } from './chat-thread'
 import { useDeviceState } from './device-state'
 
 type ManagerChatResponse = {
@@ -132,44 +138,51 @@ function ManagerComposer({
 
 const TERMINAL_STATUSES = new Set(['shipped', 'closed', 'rejected'])
 
-export function TicketManagerPanel({
-  ticket,
-  poll,
+function useManagerMutations({
+  ticketId,
+  managerState,
+  setErrorText,
+  setPendingRaw,
+  setDraft,
 }: {
-  ticket: CollabTicket
-  poll: number
+  ticketId: string
+  managerState?: string | null
+  setErrorText: (value: string) => void
+  setPendingRaw: React.Dispatch<React.SetStateAction<Array<Pending>>>
+  setDraft: React.Dispatch<React.SetStateAction<string>>
 }) {
   const { t } = useLingui()
-  const device = useDeviceState()
   const client = useQueryClient()
-  const canWrite = device.state === 'approved'
-  const ms = ticket.manager_session
-  const [limit, setLimit] = useState(80)
-  const [draft, setDraft] = useState('')
-  const [errorText, setErrorText] = useState('')
-
-  const chatQuery = useQuery({
-    queryKey: ['remote', 'collab.manager.chat', ticket.id, limit],
-    enabled: Boolean(ms),
-    refetchInterval: ms?.state === 'live' ? Math.min(poll, 2_000) : false,
-    queryFn: async () =>
-      (await hostRead('collab.manager.chat', {
-        id: ticket.id,
-        limit,
-      })) as ManagerChatResponse,
-  })
-
   const refreshTicket = () => {
     void client.invalidateQueries({
-      queryKey: collabKey('show', { id: ticket.id }),
+      queryKey: collabKey('show', { id: ticketId }),
     })
     void client.invalidateQueries({
-      queryKey: ['remote', 'collab.manager.chat', ticket.id],
+      queryKey: ['remote', 'collab.manager.chat', ticketId],
     })
   }
-
   const startMutation = useMutation({
-    mutationFn: () => hostWrite('ticket.manager.start', { id: ticket.id }),
+    mutationFn: async () => {
+      const opId = crypto.randomUUID()
+      applyTicketOptimistic({
+        id: ticketId,
+        opId,
+        kind: 'manager-start',
+        baseline: { managerState },
+      })
+      try {
+        const res = await hostWrite('ticket.manager.start', { id: ticketId })
+        acceptTicketOptimistic(ticketId, opId)
+        return res
+      } catch (err) {
+        rollbackTicketOptimistic(
+          ticketId,
+          opId,
+          err instanceof Error ? err.message : String(err),
+        )
+        throw err
+      }
+    },
     onSuccess: () => {
       setErrorText('')
       toast(t`Manager session started`)
@@ -179,9 +192,28 @@ export function TicketManagerPanel({
       setErrorText(err instanceof Error ? err.message : String(err))
     },
   })
-
   const parkMutation = useMutation({
-    mutationFn: () => hostWrite('ticket.manager.park', { id: ticket.id }),
+    mutationFn: async () => {
+      const opId = crypto.randomUUID()
+      applyTicketOptimistic({
+        id: ticketId,
+        opId,
+        kind: 'manager-park',
+        baseline: { managerState },
+      })
+      try {
+        const res = await hostWrite('ticket.manager.park', { id: ticketId })
+        acceptTicketOptimistic(ticketId, opId)
+        return res
+      } catch (err) {
+        rollbackTicketOptimistic(
+          ticketId,
+          opId,
+          err instanceof Error ? err.message : String(err),
+        )
+        throw err
+      }
+    },
     onSuccess: () => {
       setErrorText('')
       toast(t`Manager session parked`)
@@ -191,18 +223,87 @@ export function TicketManagerPanel({
       setErrorText(err instanceof Error ? err.message : String(err))
     },
   })
-
   const sendMutation = useMutation({
-    mutationFn: (text: string) =>
-      hostWrite('ticket.manager.send', { id: ticket.id, text }),
-    onSuccess: () => {
-      setDraft('')
+    mutationFn: async (vars: {
+      text: string
+      at: number
+      opId: string
+      after: number
+    }) => {
+      try {
+        const res = await hostWrite('ticket.manager.send', {
+          id: ticketId,
+          text: vars.text,
+          client_op: vars.opId,
+        })
+        acceptTicketOptimistic(ticketId, vars.opId)
+        return res
+      } catch (err) {
+        rollbackTicketOptimistic(
+          ticketId,
+          vars.opId,
+          err instanceof Error ? err.message : String(err),
+        )
+        throw err
+      }
+    },
+    onSuccess: (_res, vars) => {
+      setPendingRaw((list) =>
+        list.map((item) =>
+          item.clientOp === vars.opId ? { ...item, state: 'queued' } : item,
+        ),
+      )
       setErrorText('')
       refreshTicket()
     },
-    onError: (err) => {
+    onError: (err, vars) => {
+      setPendingRaw((list) =>
+        list.filter((item) => item.clientOp !== vars.opId),
+      )
+      setDraft((current) => current || vars.text)
       setErrorText(err instanceof Error ? err.message : String(err))
     },
+  })
+  return { startMutation, parkMutation, sendMutation }
+}
+
+export function TicketManagerPanel({
+  ticket,
+  poll,
+}: {
+  ticket: CollabTicket
+  poll: number
+}) {
+  const { t } = useLingui()
+  const device = useDeviceState()
+  const canWrite = device.state === 'approved'
+  const ms = ticket.manager_session
+  const [limit, setLimit] = useState(80)
+  const [draft, setDraft] = useState('')
+  const [errorText, setErrorText] = useState('')
+  const [pendingRaw, setPendingRaw] = useState<Array<Pending>>([])
+  const overlay = useTicketOptimistic(ticket.id)
+
+  const chatQuery = useQuery({
+    queryKey: ['remote', 'collab.manager.chat', ticket.id, limit],
+    enabled: Boolean(ms),
+    refetchInterval:
+      ms?.state === 'live' || overlay?.kind === 'manager-send'
+        ? Math.min(poll, 2_000)
+        : false,
+    queryFn: async () =>
+      (await hostRead('collab.manager.chat', {
+        id: ticket.id,
+        limit,
+      })) as ManagerChatResponse,
+  })
+
+  const { startMutation, parkMutation, sendMutation } = useManagerMutations({
+    ticketId: ticket.id,
+    managerState: ms?.state,
+    setErrorText,
+    setPendingRaw,
+    setDraft,
   })
 
   const isTerminal = TERMINAL_STATUSES.has(ticket.status ?? '')
@@ -228,10 +329,23 @@ export function TicketManagerPanel({
   }
 
   const data = chatQuery.data
-  const state = data?.state ?? ms.state ?? 'parked'
+  const state =
+    overlay?.kind === 'manager-park'
+      ? 'parked'
+      : overlay?.kind === 'manager-start' || overlay?.kind === 'manager-send'
+        ? 'live'
+        : (data?.state ?? ms.state ?? 'parked')
   const isLive = state === 'live'
-  const isBusy =
+  const messages = data?.messages ?? []
+  const start = data?.start ?? 0
+  const hostBusy =
     isLive && data?.status === 'running' && data.running_kind !== 'background'
+  const activePending = settle(pendingRaw, messages, start, hostBusy)
+  const hasActivePending = activePending.some(
+    (item) => item.state !== 'lost' && item.state !== 'failed',
+  )
+  const isBusy =
+    hostBusy || hasActivePending || overlay?.kind === 'manager-send'
   const tone = isBusy
     ? 'running'
     : data?.status === 'waiting'
@@ -239,13 +353,27 @@ export function TicketManagerPanel({
       : isLive
         ? 'done'
         : 'muted'
-  const messages = data?.messages ?? []
-  const start = data?.start ?? 0
 
   const submitMessage = () => {
     const clean = draft.trim()
-    if (!clean || sendMutation.isPending) return
-    sendMutation.mutate(clean)
+    if (!clean) return
+    const at = Date.now()
+    const opId = crypto.randomUUID()
+    const after = start + messages.length
+    setDraft('')
+    setErrorText('')
+    setPendingRaw((list) => [
+      ...list,
+      { text: clean, at, after, clientOp: opId, state: 'sending' },
+    ])
+    applyTicketOptimistic({
+      id: ticket.id,
+      opId,
+      kind: 'manager-send',
+      createdAt: at,
+      baseline: { managerState: data?.state ?? ms.state },
+    })
+    sendMutation.mutate({ text: clean, at, opId, after })
   }
 
   return (
@@ -322,7 +450,7 @@ export function TicketManagerPanel({
           <Skeleton className="h-4 w-2/3 rounded" />
           <Skeleton className="h-12 w-full rounded-xl" />
         </div>
-      ) : messages.length === 0 ? (
+      ) : messages.length === 0 && activePending.length === 0 ? (
         <p className="px-1 py-3 text-caption text-brand-muted">
           {isLive
             ? t`Manager session is ready — send an instruction below to start orchestrating.`
@@ -335,7 +463,8 @@ export function TicketManagerPanel({
             messages={messages}
             start={start}
             busy={Boolean(isBusy)}
-            status={data?.status ?? state}
+            pending={pendingRaw}
+            status={isBusy ? 'running' : (data?.status ?? state)}
             sessionId={data?.session_id ?? ''}
           />
         </div>
@@ -345,7 +474,7 @@ export function TicketManagerPanel({
         <ManagerComposer
           isLive={isLive}
           draft={draft}
-          pending={sendMutation.isPending}
+          pending={false}
           onChange={setDraft}
           onSubmit={submitMessage}
         />

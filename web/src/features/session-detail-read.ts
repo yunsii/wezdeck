@@ -1,6 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import {
+  applySessionDetailOverlay,
+  reconcileSessionDetail,
+  useSessionOptimistic,
+} from '#/lib/optimistic-state'
 import { hostRead } from '#/lib/runtime-client'
 import { mergeReply, pollArgs } from '#/lib/session-cache'
 import { traceSessionSync } from '#/lib/session-sync-trace'
@@ -17,7 +22,9 @@ export async function readDetail(client: QueryClient, id: string) {
   )) as Detail
   const have = client.getQueryData<Detail>(key)
   traceSessionSync(have, reply, id)
-  return mergeReply(have, reply)
+  const merged = mergeReply(have, reply)
+  reconcileSessionDetail(id, merged)
+  return merged
 }
 
 export function useSessionDetail(
@@ -26,13 +33,23 @@ export function useSessionDetail(
 ) {
   const client = useQueryClient()
   const key = detailKey(id)
+  const overlay = useSessionOptimistic(id)
+  const overlayRef = useRef(overlay)
+  overlayRef.current = overlay
   const detail = useQuery({
     queryKey: key,
     enabled: typeof window !== 'undefined',
-    refetchInterval: (query) =>
-      query.state.data && busyOf(query.state.data) ? 1_000 : 2_500,
+    refetchInterval: (query) => {
+      const activeOverlay = overlayRef.current
+      if (activeOverlay) return 1_000
+      return query.state.data && busyOf(query.state.data) ? 1_000 : 2_500
+    },
     queryFn: () => readDetail(client, id),
   })
+  const data = useMemo(
+    () => applySessionDetailOverlay(detail.data, overlay),
+    [detail.data, overlay],
+  )
   const pagingRef = useRef(false)
   const [pagingIn, setPagingIn] = useState(false)
   const loadEarlier = useCallback(
@@ -58,5 +75,5 @@ export function useSessionDetail(
     },
     [client, id, key],
   )
-  return { detail, data: detail.data, pagingIn, loadEarlier }
+  return { detail, data, rawData: detail.data, pagingIn, loadEarlier }
 }

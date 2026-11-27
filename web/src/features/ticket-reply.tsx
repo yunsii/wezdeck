@@ -5,6 +5,13 @@
 // tappable options; the picks plus any typed note become the reply text, so
 // the host side needs nothing new — `reply` archives the questions with it.
 import { useLingui } from '@lingui/react/macro'
+import { collabKey } from '#/lib/collab-query'
+import {
+  acceptTicketOptimistic,
+  applyTicketOptimistic,
+  rollbackTicketOptimistic,
+  ticketUpdatedOf,
+} from '#/lib/optimistic-tickets'
 import { hostWrite } from '#/lib/runtime-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check } from 'lucide-react'
@@ -12,15 +19,19 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { cn } from '#/lib/utils'
-import type { TicketQuestions } from '#/lib/runtime-contract'
+import type { CollabShow, TicketQuestions } from '#/lib/runtime-contract'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
 import { Disclosure } from '#/components/ui/disclosure'
-import { ticketDraftKey, useDraft } from '#/lib/use-draft'
+import { restoreDraft, ticketDraftKey, useDraft } from '#/lib/use-draft'
 import { ChatMarkdown } from './chat-markdown'
 import { MessagePayloadView } from './chat-attachments'
 import { TicketThread } from './ticket-thread-view'
+
+/** Survives optimistic unmount + rollback remount so question picks are never lost. */
+const rollbackPicksByTicket = new Map<string, Array<Array<number>>>()
+const rollbackErrorByTicket = new Map<string, string>()
 
 export { openQuestion } from '#/lib/ticket-thread'
 
@@ -118,9 +129,17 @@ export function TicketReply({
   // unsent reply survives leaving the page, like the session composer
   const [text, setText] = useDraft(ticketDraftKey(id))
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => {
+    const saved = rollbackErrorByTicket.get(id) ?? ''
+    if (saved) rollbackErrorByTicket.delete(id)
+    return saved
+  })
   const asked = questions?.questions ?? []
-  const [picks, setPicks] = useState<Array<Array<number>>>([])
+  const [picks, setPicks] = useState<Array<Array<number>>>(() => {
+    const saved = rollbackPicksByTicket.get(id)
+    if (saved) rollbackPicksByTicket.delete(id)
+    return saved ?? []
+  })
   const toggle = (qi: number, oi: number) =>
     setPicks((prev) => {
       const next = asked.map((_, i) => prev[i] ?? [])
@@ -137,16 +156,40 @@ export function TicketReply({
   const answer = asked.length ? composeAnswer(asked, picks, text) : text
   const unanswered = asked.filter((_, qi) => !picks[qi]?.length).length
   const send = async (cont: boolean) => {
+    if (busy || !answer.trim()) return
+    const prevText = text
+    const prevPicks = picks
+    const payload = answer
+    const opId = crypto.randomUUID()
+    const cached = client.getQueryData<CollabShow>(collabKey('show', { id }))
     setBusy(true)
     setError('')
+    setText('')
+    setPicks([])
+    applyTicketOptimistic({
+      id,
+      opId,
+      kind: 'reply',
+      continueRun: cont,
+      replyText: payload,
+      baseline: {
+        status: cached?.ticket?.status ?? 'waiting_initiator',
+        updated: ticketUpdatedOf(cached?.ticket),
+      },
+    })
     try {
-      await hostWrite('reply', { id, text: answer, continue: cont })
-      setText('')
-      setPicks([])
+      await hostWrite('reply', { id, text: payload, continue: cont })
+      acceptTicketOptimistic(id, opId)
       toast(cont ? t`Replied, the agent continues` : t`Replied`)
-      await client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
+      void client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
     } catch (e) {
-      setError((e as Error).message)
+      const message = (e as Error).message
+      restoreDraft(ticketDraftKey(id), prevText)
+      if (prevPicks.length) rollbackPicksByTicket.set(id, prevPicks)
+      rollbackErrorByTicket.set(id, message)
+      rollbackTicketOptimistic(id, opId, message)
+      setError(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }

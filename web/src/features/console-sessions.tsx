@@ -285,15 +285,58 @@ function usePendingCallbacks({
   return { editPending, ticketPending }
 }
 
-export function SessionDetail({ id }: { id: string }) {
+function useSentHistoryWiring({
+  id,
+  canSendNow,
+  composer,
+  send,
+  openTicket,
+}: {
+  id: string
+  canSendNow: boolean
+  composer: Composer
+  send: (message: Outgoing) => Promise<boolean>
+  openTicket: (payload: MessagePayload) => void
+}) {
   const { t } = useLingui()
+  return useSentHistoryControl({
+    session: id,
+    writable: canSendNow,
+    onFill: (p) =>
+      composer.text.trim() || composer.images.length
+        ? composer.appendPayload(p)
+        : composer.replacePayload(p),
+    onReplace: composer.replacePayload,
+    onResend: canSendNow
+      ? (p) => {
+          const count = p.attachments.length
+          return send({ ...p, note: count ? t`${count} images` : '' })
+        }
+      : undefined,
+    onCreateTicket: canSendNow ? openTicket : undefined,
+  })
+}
+
+export function SessionDetail({ id }: { id: string }) {
   const { locale } = useLocale()
   const device = useDeviceState()
   const [visibleUsage, setVisibleUsage] = useState('')
-  const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id, isBusy)
-  const writes = useSessionWrites(id, transcriptEnd(detail.data))
-  const { sending, error, setError, retryIn, pendingRaw, send, run, dismiss } =
-    writes
+  const { detail, data, rawData, pagingIn, loadEarlier } = useSessionDetail(
+    id,
+    isBusy,
+  )
+  const writes = useSessionWrites(id, transcriptEnd(rawData), rawData)
+  const {
+    sending,
+    error,
+    setError,
+    retryIn,
+    pendingRaw,
+    send,
+    run,
+    resolvePrompt,
+    dismiss,
+  } = writes
   const mergedPending = mergeOutboxPending(pendingRaw, data?.outbox)
   useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
@@ -305,11 +348,6 @@ export function SessionDetail({ id }: { id: string }) {
   const failedCount = pending.filter((p) => p.state === 'failed').length
   const unsettledCount = unconfirmedCount + failedCount
   const start = data?.start ?? 0
-  // +1 once the detail has loaded: a new session with no messages yet shows
-  // only the pane's screen, and a count of 0 never landed at the bottom.
-  // Include `start` so prepending earlier pages (`start` down, `messages.length`
-  // up by the same amount) keeps the tail count constant and never triggers
-  // fake unread badges or bottom jumps.
   const syncing = detail.isFetching && !detail.isFetchedAfterMount
   const follow = useChatScroll(
     end,
@@ -362,21 +400,12 @@ export function SessionDetail({ id }: { id: string }) {
   })
   const canSendNow = !readOnly && device.state === 'approved' && !blocked
   const sentToTicket = useSentToTicketSheet(id)
-  const sentHistory = useSentHistoryControl({
-    session: id,
-    writable: canSendNow,
-    onFill: (p) =>
-      composer.text.trim() || composer.images.length
-        ? composer.appendPayload(p)
-        : composer.replacePayload(p),
-    onReplace: composer.replacePayload,
-    onResend: canSendNow
-      ? (p) => {
-          const count = p.attachments.length
-          return send({ ...p, note: count ? t`${count} images` : '' })
-        }
-      : undefined,
-    onCreateTicket: canSendNow ? sentToTicket.openWith : undefined,
+  const sentHistory = useSentHistoryWiring({
+    id,
+    canSendNow,
+    composer,
+    send,
+    openTicket: sentToTicket.openWith,
   })
   const { editPending, ticketPending } = usePendingCallbacks({
     readOnly,
@@ -437,6 +466,7 @@ export function SessionDetail({ id }: { id: string }) {
             ticketPending,
           )}
           onRun={run}
+          onResolvePrompt={resolvePrompt}
         />
 
         <form
