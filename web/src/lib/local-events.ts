@@ -32,6 +32,7 @@ const KINDS = new Set([
   'session-autosync',
   'ticket-autosync',
   'session-new-picker',
+  'session-controls',
   'chat-render',
   'error',
   'rejection',

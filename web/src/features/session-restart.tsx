@@ -1,4 +1,4 @@
-// 重启会话 / 新开会话 in the composer's 按键 panel: the desk's F5 and
+// 重启会话 / 新开会话 in the header's 会话操作 Sheet: the desk's F5 and
 // Ctrl+Shift+n for this session's own pane (relay `session.restart`,
 // native/wezdeck-wsl/session_restart.go → scripts/runtime/session-restart.sh).
 // Both ask first, in place — the pair turns into what it will do plus
@@ -36,7 +36,7 @@ export function RestartActions({
   const [asking, setAsking] = useState<'new' | 'resume' | 'fresh' | null>(null)
   if (!agent || !AGENTS.has(agent)) return null
   const action =
-    'flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 text-center text-caption leading-tight whitespace-normal disabled:opacity-40'
+    'flex min-h-11 min-w-0 items-center gap-3 px-2 text-left text-body disabled:opacity-40'
   if (asking) {
     const fresh = asking === 'fresh'
     const run = async () => {
@@ -64,7 +64,7 @@ export function RestartActions({
         }
         data-testid="session-restart-confirm"
         data-restart-asking={asking}
-        className="grid gap-1.5 rounded-xl bg-brand-deck p-2"
+        className="grid gap-2 py-2"
         onKeyDown={(event) => {
           if (event.key !== 'Escape') return
           event.preventDefault()
@@ -79,13 +79,13 @@ export function RestartActions({
               ? t`End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it.`
               : t`Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5).`}
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant="key"
             type="button"
             data-restart-cancel
             onClick={() => setAsking(null)}
-            className={action}
+            className="min-h-11 rounded-lg"
           >
             {t`Cancel`}
           </Button>
@@ -96,7 +96,7 @@ export function RestartActions({
             autoFocus
             disabled={disabled}
             onClick={() => void run()}
-            className={action}
+            className="min-h-11 rounded-lg"
           >
             {asking === 'new' ? t`Start` : fresh ? t`Start fresh` : t`Restart`}
           </Button>
@@ -109,10 +109,10 @@ export function RestartActions({
       role="group"
       aria-label={t`Restart`}
       data-testid="session-restart"
-      className="grid grid-cols-2 gap-1.5"
+      className="grid divide-y divide-brand-edge"
     >
       <Button
-        variant="key"
+        variant="plain"
         type="button"
         disabled={disabled}
         data-restart="new"
@@ -124,7 +124,7 @@ export function RestartActions({
         {t`New conversation (/new)`}
       </Button>
       <Button
-        variant="key"
+        variant="plain"
         type="button"
         disabled={disabled}
         data-restart="fresh"
@@ -136,7 +136,7 @@ export function RestartActions({
         {t`New agent process`}
       </Button>
       <Button
-        variant="key"
+        variant="plain"
         type="button"
         disabled={disabled}
         data-restart="resume"

@@ -1,30 +1,18 @@
-// The session composer: text, plus a one-line toolbar above it (quick keys,
-// screenshots; thumbnails sit in the same row). Diagnostics are no longer a
+// The session composer: text and a plus menu for attachments and commands.
+// Diagnostics are no longer a
 // toggle here: the host pulls them when it needs them (lib/host-diag.ts);
 // this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
 import { restoreDraft, useDraft } from '#/lib/use-draft'
-import {
-  Check,
-  Copy,
-  ImagePlus,
-  Keyboard,
-  ListTodo,
-  SendHorizontal,
-  SquareSlash,
-  Trash2,
-} from 'lucide-react'
+import { Check, Copy, SendHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { toast } from 'sonner'
 import { setDiagnosticsPage, trace } from '#/lib/client-trace'
 import { useIsWide, useMediaQuery } from '#/lib/use-media'
 import { shrinkImage, uploadBlob } from '#/lib/upload'
-import { cn } from '#/lib/utils'
-import { TodoPanel, useTodos } from './session-todos'
 import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { CommandPanel } from './session-commands'
 import {
@@ -42,9 +30,7 @@ import {
 import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
 import { useSkillCompletion } from './composer-complete'
-import { HandoffActions } from './session-handoff'
-import { RestartActions } from './session-restart'
-import { KeyPanel } from './session-key-panel'
+import { ComposerTools } from './session-composer-tools'
 
 export type Outgoing = {
   text: string
@@ -196,129 +182,6 @@ export function useComposer({
 }
 
 export type Composer = ReturnType<typeof useComposer>
-type Panel = 'keys' | 'todos' | 'commands' | null
-
-const tool =
-  'composer-tool inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-caption'
-
-/**
- * One row above the input: 快捷 (always), then 图片 and 诊断 once this phone
- * may write, then the picked thumbnails. What a tool opens — the key pad,
- * the diagnostics note — renders above the row in the same card style.
- */
-function Toolbar({
-  composer,
-  writable,
-  commands,
-  panel,
-  onPanel,
-  skills,
-}: {
-  composer: Composer
-  writable: boolean
-  /** a Claude session: offer the 命令 panel */
-  commands: boolean
-  panel: Panel
-  onPanel: (panel: Panel) => void
-  /** the 能力 chip */
-  skills: React.ReactNode
-}) {
-  const { t } = useLingui()
-  const todos = useTodos(composer.id)
-  const openTodos = (todos.data?.todos ?? []).filter(
-    (todo) => !todo.done,
-  ).length
-  const full = composer.images.length >= MAX_IMAGES
-  const chip = (on: boolean) =>
-    cn(tool, on ? 'composer-tool-active text-brand-text' : 'text-brand-muted')
-  return (
-    <div
-      role="toolbar"
-      aria-label={t`Composer tools`}
-      data-testid="composer-tools"
-      className="composer-toolbar flex min-w-0 max-w-full items-center gap-1 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
-    >
-      <Button
-        variant="plain"
-        type="button"
-        aria-pressed={panel === 'keys'}
-        aria-label={t`Quick keys`}
-        title={t`Send Enter, Esc or Ctrl+C into the agent pane`}
-        onClick={() => onPanel(panel === 'keys' ? null : 'keys')}
-        className={chip(panel === 'keys')}
-      >
-        <Keyboard size={14} aria-hidden />
-        {t`Keys`}
-      </Button>
-      {commands ? (
-        <Button
-          variant="plain"
-          type="button"
-          aria-pressed={panel === 'commands'}
-          aria-label={t`Commands`}
-          title={t`Slash commands for Claude`}
-          onClick={() => onPanel(panel === 'commands' ? null : 'commands')}
-          className={chip(panel === 'commands')}
-        >
-          <SquareSlash size={14} aria-hidden />
-          {t`Commands`}
-        </Button>
-      ) : null}
-      <Button
-        variant="plain"
-        type="button"
-        aria-pressed={panel === 'todos'}
-        aria-label={t`To-dos`}
-        title={t`Follow-ups of this repo`}
-        onClick={() => onPanel(panel === 'todos' ? null : 'todos')}
-        className={chip(panel === 'todos')}
-      >
-        <ListTodo size={14} aria-hidden />
-        {t`To-dos`}
-        {openTodos ? (
-          <span className="text-meta tabular-nums opacity-80">{openTodos}</span>
-        ) : null}
-      </Button>
-      {skills}
-      {writable && !full ? (
-        <label
-          className={cn(
-            chip(false),
-            'cursor-pointer focus-within:ring-2 focus-within:ring-brand-running',
-          )}
-        >
-          <ImagePlus size={14} aria-hidden />
-          {t`Images`}
-          <Input
-            variant="bare"
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={(event) => {
-              composer.pick(event.target.files)
-              event.target.value = ''
-            }}
-          />
-        </label>
-      ) : null}
-      {composer.text || composer.images.length ? (
-        <Button
-          variant="plain"
-          type="button"
-          data-testid="composer-clear"
-          aria-label={t`Clear input`}
-          title={t`Clear input`}
-          onClick={() => composer.clear('toolbar')}
-          className={chip(false)}
-        >
-          <Trash2 size={14} aria-hidden />
-          {t`Clear input`}
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 export function ComposerBox({
   composer,
@@ -349,8 +212,7 @@ export function ComposerBox({
   session?: { agent?: string; skills_rev?: string }
 }) {
   const { t } = useLingui()
-  // one tool panel at a time, above the toolbar
-  const [panel, setPanel] = useState<Panel>(null)
+  const [commandsOpen, setCommandsOpen] = useState(false)
   const complete = useSkillCompletion(composer, session)
   // Touch-only phones have no Shift+Enter so Enter breaks the line; desktops
   // and tablets with a hardware keyboard (with or without a trackpad) use
@@ -383,43 +245,9 @@ export function ComposerBox({
   }, [onNewConversation, onRun])
   return (
     <>
-      {panel === 'keys' ? (
-        <KeyPanel
-          disabled={keysDisabled}
-          onKey={(key) => void onRun('key', { key })}
-          onClose={() => setPanel(null)}
-        >
-          <RestartActions
-            agent={session?.agent}
-            disabled={keysDisabled}
-            onNewConversation={onNewConversation}
-            onRestart={(fresh) => onRun('session.restart', { fresh })}
-            onDone={() => setPanel(null)}
-          />
-          <HandoffActions
-            id={composer.id}
-            agent={session?.agent}
-            disabled={keysDisabled}
-            onDone={() => setPanel(null)}
-          />
-        </KeyPanel>
-      ) : null}
-      {panel === 'todos' ? (
-        <TodoPanel
-          session={composer.id}
-          writable={writable}
-          onUse={(text) => {
-            composer.setText((current) =>
-              current.trim() ? `${current.trimEnd()}\n${text}` : text,
-            )
-            setPanel(null)
-            document.getElementById('session-composer')?.focus()
-          }}
-          onClose={() => setPanel(null)}
-        />
-      ) : null}
-      {panel === 'commands' && commands ? (
+      {commands ? (
         <CommandPanel
+          open={commandsOpen}
           agent={session?.agent}
           disabled={keysDisabled}
           onCommand={commands.send}
@@ -428,19 +256,11 @@ export function ComposerBox({
             composer.setText(text)
             document.getElementById('session-composer')?.focus()
           }}
-          onClose={() => setPanel(null)}
+          onClose={() => setCommandsOpen(false)}
         />
       ) : null}
       {complete.list}
       <PickedImages composer={composer} />
-      <Toolbar
-        composer={composer}
-        writable={writable}
-        commands={Boolean(commands)}
-        panel={panel}
-        onPanel={setPanel}
-        skills={complete.chip}
-      />
       {complete.sheet}
       {composer.progress ? (
         <p role="status" className="px-1 text-meta text-brand-muted">
@@ -451,6 +271,17 @@ export function ComposerBox({
         data-text-field
         className="relative flex min-h-12 items-center rounded-3xl bg-brand-surface p-1"
       >
+        <ComposerTools
+          writable={writable}
+          canPickImage={composer.images.length < MAX_IMAGES}
+          hasCommands={Boolean(commands)}
+          hasSkills={complete.hasSkills}
+          hasDraft={Boolean(composer.text || composer.images.length)}
+          onPickImage={composer.pick}
+          onCommands={() => setCommandsOpen(true)}
+          onSkills={complete.openSkills}
+          onClear={() => composer.clear('menu')}
+        />
         <label htmlFor="session-composer" className="sr-only">
           {t`Message to the agent`}
         </label>
@@ -520,7 +351,7 @@ export function ComposerBox({
           enterKeyHint={touchOnly ? 'enter' : 'send'}
           rows={1}
           placeholder={t`Message`}
-          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent px-3 py-2 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
+          className="w-full max-h-40 min-h-10 min-w-0 resize-none bg-transparent py-2 pl-14 pr-14 text-body outline-none [field-sizing:content] placeholder:text-brand-label"
         />
         <Button
           variant="solid"

@@ -74,7 +74,7 @@ describe.runIf(attention && devicesFile)('Session delete sheet layout', () => {
     await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
 
     await page.goto(`${base}/zh/console/sessions/delete-layout`)
-    await page.getByTestId('session-info-button').click()
+    await page.getByTestId('session-title').click()
     const info = page.getByTestId('session-info')
     await info.waitFor({ timeout: 15_000 })
     // Technical details stay folded by default so the sheet opens clean

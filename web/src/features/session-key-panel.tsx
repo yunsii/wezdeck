@@ -1,9 +1,6 @@
-// The composer's 按键 panel: Enter / Esc / Ctrl+C into the agent pane, and
-// below them whatever the composer adds (重启会话 / 新开会话 / 接力,
-// session-restart.tsx · session-handoff.tsx). Split from session-composer.tsx.
+// Terminal control keys in the session actions sheet.
 import { useLingui } from '@lingui/react/macro'
 import { Button } from '#/components/ui/button'
-import { ComposerPanel } from './composer-panel'
 
 /**
  * The three keys any agent TUI understands. Choices (digits, arrows, Tab)
@@ -30,53 +27,38 @@ export function KeyPanel({
   disabled,
   onKey,
   onClose,
-  children,
 }: {
   disabled: boolean
   onKey: (key: string) => void
   onClose: () => void
-  /** under the keys: 重启会话 / 新开会话 / 接力 */
-  children?: React.ReactNode
 }) {
   const { t } = useLingui()
   const keys = useQuickKeys()
   return (
-    <ComposerPanel
-      title={disabled ? t`Quick keys unavailable` : t`Quick keys`}
-      onClose={onClose}
-      closeLabel={t`Close keys`}
+    <div
+      role="group"
+      aria-label={t`Quick keys`}
+      data-testid="session-quick-keys"
+      className="grid grid-cols-3 gap-1.5"
     >
-      <p className="text-meta text-brand-label">
-        {disabled
-          ? t`Turn on write access in Settings to send these keys`
-          : t`Tap to send into the agent pane`}
-      </p>
-      <div
-        role="group"
-        aria-label={t`Quick keys`}
-        data-testid="session-quick-keys"
-        className="grid grid-cols-3 gap-1.5"
-      >
-        {keys.map(({ key, label, hint }) => (
-          <Button
-            variant="key"
-            key={key}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              onKey(key)
-              onClose()
-            }}
-            className="grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40"
-          >
-            <span className="text-body leading-none font-medium">{label}</span>
-            <span className="text-meta leading-none text-brand-label">
-              {hint}
-            </span>
-          </Button>
-        ))}
-      </div>
-      {children}
-    </ComposerPanel>
+      {keys.map(({ key, label, hint }) => (
+        <Button
+          variant="key"
+          key={key}
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            onKey(key)
+            onClose()
+          }}
+          className="grid h-11 place-content-center gap-0.5 rounded-lg px-1 disabled:opacity-40"
+        >
+          <span className="text-body leading-none font-medium">{label}</span>
+          <span className="text-meta leading-none text-brand-label">
+            {hint}
+          </span>
+        </Button>
+      ))}
+    </div>
   )
 }
