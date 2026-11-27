@@ -10,16 +10,40 @@ import { useEffect, useState } from 'react'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { ContentReveal } from '#/components/ui/content-reveal'
+import { Disclosure } from '#/components/ui/disclosure'
 import { Sheet } from '#/components/ui/sheet'
 import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { hostRead } from '#/lib/runtime-client'
 import type { CollabRunSummary } from '#/lib/runtime-contract'
 import { useDelayedLoading } from '#/lib/use-delayed-loading'
 import { cn } from '#/lib/utils'
+import { ChatMarkdown } from './chat-markdown'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
 import { num, pct, secs, usd } from './console-collab-format'
 import { RunDetail } from './console-collab-run'
+
+/** Split machine-assembled worker prompt(s) at the start of a headless run out
+ * of the conversation stream so they render folded as Markdown instead of a
+ * raw dark user bubble wall. */
+export function splitWorkerPrompt(messages: Array<Message>): {
+  prompts: Array<Message>
+  conversation: Array<Message>
+} {
+  const prompts: Array<Message> = []
+  let idx = 0
+  while (idx < messages.length) {
+    const m = messages[idx]
+    const looksLikeWorkerPrompt =
+      m.role === 'user' &&
+      (/^#\s+(Cross-repo ticket|AGENTS\.md|Ticket)\b/i.test(m.text.trim()) ||
+        (m.text.length > 350 && /^#{1,3}\s/m.test(m.text)))
+    if (!looksLikeWorkerPrompt) break
+    prompts.push(m)
+    idx += 1
+  }
+  return { prompts, conversation: messages.slice(idx) }
+}
 
 type CollabRunChatResponse = {
   v: number
@@ -37,6 +61,32 @@ type CollabRunChatResponse = {
   total: number
   start: number
   span: string
+}
+
+function WorkerPromptDisclosure({ prompts }: { prompts: Array<Message> }) {
+  const { t } = useLingui()
+  if (prompts.length === 0) return null
+  const promptCount = prompts.length
+  return (
+    <Disclosure
+      data-testid="ticket-run-prompt-disclosure"
+      defaultOpen={false}
+      className="overflow-hidden rounded-xl border border-brand-edge bg-brand-surface"
+      triggerClassName="min-h-10 px-3 text-caption font-medium text-brand-muted"
+      title={t`Task prompt (${promptCount})`}
+    >
+      <div className="grid max-h-[60vh] gap-4 overflow-y-auto border-t border-brand-edge px-4 py-3 text-brand-text">
+        {prompts.map((promptMsg, i) => (
+          <ChatMarkdown
+            key={`prompt-${i}`}
+            text={promptMsg.text}
+            variant="document"
+            className="text-caption"
+          />
+        ))}
+      </div>
+    </Disclosure>
+  )
 }
 
 export function TicketRunChat({
@@ -84,14 +134,16 @@ export function TicketRunChat({
       })) as CollabRunChatResponse,
   })
 
-  if (runIds.length === 0) return null
-
-  const data = chat.data
-  const messages = data?.messages ?? []
   const showSkeleton = useDelayedLoading(
     chat.isPending,
     `${ticketId}:${activeRunId}`,
   )
+
+  if (runIds.length === 0) return null
+
+  const data = chat.data
+  const messages = data?.messages ?? []
+  const { prompts, conversation } = splitWorkerPrompt(messages)
   const shownCount = messages.length
   const start = data?.start ?? 0
   const total = data?.total ?? shownCount
@@ -231,15 +283,18 @@ export function TicketRunChat({
               : t`No conversation messages recorded for this run.`}
           </p>
         ) : (
-          <div className="min-w-0">
-            <ChatThread
-              key={`${ticketId}:${activeRunId}`}
-              messages={messages}
-              start={start}
-              busy={Boolean(data?.running || isLive)}
-              status={data?.running || isLive ? 'running' : 'done'}
-              sessionId={data?.session_id ?? ''}
-            />
+          <div className="grid min-w-0 gap-2.5">
+            <WorkerPromptDisclosure prompts={prompts} />
+            {conversation.length > 0 ? (
+              <ChatThread
+                key={`${ticketId}:${activeRunId}`}
+                messages={conversation}
+                start={start + prompts.length}
+                busy={Boolean(data?.running || isLive)}
+                status={data?.running || isLive ? 'running' : 'done'}
+                sessionId={data?.session_id ?? ''}
+              />
+            ) : null}
             {total > shownCount ? (
               <p className="mt-1.5 text-center font-mono text-meta text-brand-label tabular-nums">
                 {t`Showing ${shownCount} of ${total} items`}

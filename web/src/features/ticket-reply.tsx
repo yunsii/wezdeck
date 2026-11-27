@@ -238,6 +238,28 @@ export function TicketReply({
   )
 }
 
+function cleanSectionBody(text: string): string {
+  return text
+    .replace(/^##[^\n]*\n?/, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .trim()
+}
+
+function isPlaceholderSection(body: string): boolean {
+  if (!body) return true
+  if (/^_Empty until initiator replies to a challenge\._$/i.test(body)) {
+    return true
+  }
+  if (/^_Fill when researching \(required before implement\):_/i.test(body)) {
+    const rest = body.replace(/^_[^\n]+_\s*/, '')
+    const nonEmptyBullet = rest
+      .split('\n')
+      .some((line) => /^-\s+[a-z_]+:\s+\S/i.test(line.trim()))
+    return !nonEmptyBullet
+  }
+  return false
+}
+
 export function TicketSections({
   sections,
   waiting = false,
@@ -253,46 +275,48 @@ export function TicketSections({
     Summary: t`Summary`,
     Assumptions: t`Assumptions`,
     Verification: t`Verification`,
+    Implement: t`Implement`,
     Thread: t`Thread`,
     Decision: t`Decision`,
     Solution: t`Solution`,
   }
   const shown = sections.filter(
-    (section) => section.text.replace(/^##.*$/m, '').trim().length > 0,
+    (section) => !isPlaceholderSection(cleanSectionBody(section.text)),
   )
   if (shown.length === 0) return null
   return (
     <div className="overflow-hidden rounded-2xl bg-brand-surface">
-      {shown.map((section) => (
-        <Disclosure
-          key={section.title}
-          // the summary is what you came for: open; the rest one tap away
-          defaultOpen={
-            section.title === 'Summary' ||
-            (waiting && section.title === 'Thread')
-          }
-          className="border-b border-brand-edge last:border-b-0"
-          triggerClassName="min-h-12 px-4 text-body font-medium"
-          title={names[section.title] ?? section.title}
-        >
-          {section.title === 'Thread' ? (
-            <TicketThread
-              text={section.text.replace(/^##.*\n?/m, '')}
-              waiting={waiting}
-            />
-          ) : (
-            <div
-              className="px-4 pb-4 text-brand-text"
-              data-testid="ticket-section-md"
-            >
-              <ChatMarkdown
-                text={section.text.replace(/^##.*\n?/m, '').trim()}
-                className="text-caption"
-              />
-            </div>
-          )}
-        </Disclosure>
-      ))}
+      {shown.map((section) => {
+        const body = cleanSectionBody(section.text)
+        return (
+          <Disclosure
+            key={section.title}
+            // the summary is what you came for: open; the rest one tap away
+            defaultOpen={
+              section.title === 'Summary' ||
+              (waiting && section.title === 'Thread')
+            }
+            className="border-b border-brand-edge last:border-b-0"
+            triggerClassName="min-h-12 px-4 text-body font-medium"
+            title={names[section.title] ?? section.title}
+          >
+            {section.title === 'Thread' ? (
+              <TicketThread text={body} waiting={waiting} />
+            ) : (
+              <div
+                className="px-4 pb-4 text-brand-text"
+                data-testid="ticket-section-md"
+              >
+                <ChatMarkdown
+                  text={body}
+                  variant="document"
+                  className="text-caption"
+                />
+              </div>
+            )}
+          </Disclosure>
+        )
+      })}
     </div>
   )
 }

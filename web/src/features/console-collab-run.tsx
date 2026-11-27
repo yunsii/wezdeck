@@ -204,11 +204,19 @@ export function RunDetail({
             {showPrompt ? t`Hide initial prompt` : t`Show initial prompt`}
           </Button>
           {showPrompt ? (
-            <pre className="max-h-96 overflow-auto border border-brand-border bg-brand-deck p-3 font-mono text-meta whitespace-pre-wrap text-brand-muted">
-              {prompt.data?.ok
-                ? prompt.data.text
-                : (prompt.data?.error?.message ?? t`Loading…`)}
-            </pre>
+            <div className="max-h-96 overflow-auto rounded-xl border border-brand-border bg-brand-deck p-3 text-brand-text">
+              {prompt.data?.ok ? (
+                <ChatMarkdown
+                  text={prompt.data.text}
+                  variant="document"
+                  className="text-caption"
+                />
+              ) : (
+                <p className="font-mono text-meta text-brand-muted">
+                  {prompt.data?.error?.message ?? t`Loading…`}
+                </p>
+              )}
+            </div>
           ) : null}
         </div>
       </Disclosure>

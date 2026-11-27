@@ -4,7 +4,7 @@
 // integration), and compact flat run rows that open RunDetail in a sheet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronRight } from 'lucide-react'
 import { useLayoutEffect } from 'react'
 
 import { BackButton } from '#/components/deck/back-button'
@@ -241,104 +241,114 @@ function ChildrenTable({
           </span>
         ) : null}
       </div>
-      <div className="overflow-x-auto rounded-xl border border-brand-border bg-brand-surface">
-        <table
-          className="w-full text-left font-mono text-meta"
-          aria-label={t`Children`}
-        >
-          <thead className="bg-brand-deck text-brand-label">
-            <tr>
-              {[
-                t`Child`,
-                t`Repo`,
-                t`Status`,
-                t`Depends on`,
-                t`Scope`,
-                t`Cache hit`,
-              ].map((head) => (
-                <th key={head} className="px-2 py-1.5 font-normal">
-                  {head}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {children.map((child) => {
-              const tone = ticketTone(child)
-              const isRunning = child.running.length > 0
-              const gateText =
-                !isRunning && child.gate?.gate
-                  ? gateLabel(child.gate.gate, child.gate.detail)
-                  : ''
-              const note =
-                child.last_milestone?.text ?? child.progress?.message ?? ''
-              const statusText = isRunning
-                ? child.phase
-                  ? `${t`running`} · ${child.phase}`
-                  : t`running`
-                : gateText
-                  ? gateText
-                  : (child.status ?? '—')
-              return (
-                <tr
-                  key={child.id}
-                  tabIndex={0}
-                  onClick={() => onOpen(child.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      onOpen(child.id)
-                    }
-                  }}
-                  className="cursor-pointer border-t border-brand-border outline-none hover:bg-brand-soft/60 focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
-                >
-                  <td className="px-2 py-1.5">
-                    <div className="grid gap-0.5">
-                      <span className="font-sans text-caption text-brand-text">
-                        {child.title || child.id}
-                      </span>
-                      {note ? (
-                        <span
-                          className="max-w-xs truncate font-sans text-meta text-brand-muted"
-                          title={note}
-                        >
-                          {note}
-                        </span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">{child.to ?? '—'}</td>
-                  <td
-                    className={cn(
-                      'px-2 py-1.5',
-                      isRunning && 'text-brand-running',
-                      child.status === 'waiting_initiator' &&
-                        'text-brand-waiting',
-                      child.status === 'failed' && 'text-brand-error',
-                    )}
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      <Led tone={tone} size={9} />
-                      <span>{statusText}</span>
+      <ul
+        aria-label={t`Children`}
+        data-testid="ticket-children-list"
+        className="ticket-list overflow-hidden rounded-xl border border-brand-edge bg-brand-surface"
+      >
+        {children.map((child) => {
+          const tone = ticketTone(child)
+          const isRunning = child.running.length > 0
+          const gateText =
+            !isRunning && child.gate?.gate
+              ? gateLabel(child.gate.gate, child.gate.detail)
+              : ''
+          const note =
+            child.last_milestone?.text ?? child.progress?.message ?? ''
+          const statusText = isRunning
+            ? child.phase
+              ? `${t`running`} · ${child.phase}`
+              : t`running`
+            : gateText
+              ? gateText
+              : (child.status ?? '—')
+          const depsText = child.depends_on
+            .map((dep) => byId.get(dep)?.title ?? dep.slice(-6))
+            .join(', ')
+          const scopes = child.scope.slice(0, 2)
+          const extraScopes = Math.max(0, child.scope.length - scopes.length)
+          const hitText = pct(child.last_run?.cache_hit_rate)
+          return (
+            <li key={child.id}>
+              <Button
+                variant="plain"
+                size="none"
+                type="button"
+                onClick={() => onOpen(child.id)}
+                className="list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-1 px-3 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset"
+              >
+                <span className="pt-1.5">
+                  <Led tone={tone} size={10} />
+                </span>
+                <span className="grid min-w-0 gap-1">
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                    <span className="min-w-0 text-body leading-snug font-medium text-brand-text">
+                      {child.title || child.id}
                     </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {child.depends_on
-                      .map((dep) => byId.get(dep)?.title ?? dep.slice(-6))
-                      .join(', ') || '—'}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {child.scope.join(', ') || '*'}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    {pct(child.last_run?.cache_hit_rate)}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+                    <span
+                      className={cn(
+                        'shrink-0 text-meta font-medium',
+                        isRunning && 'text-brand-running',
+                        child.status === 'waiting_initiator' &&
+                          'text-brand-waiting',
+                        child.status === 'failed' && 'text-brand-error',
+                        child.status === 'shipped' && 'text-brand-done',
+                        !isRunning &&
+                          child.status !== 'waiting_initiator' &&
+                          child.status !== 'failed' &&
+                          child.status !== 'shipped' &&
+                          'text-brand-label',
+                      )}
+                    >
+                      {statusText}
+                    </span>
+                  </span>
+                  <span className="flex min-w-0 flex-wrap items-center gap-1.5 font-mono text-meta text-brand-muted">
+                    {child.to ? (
+                      <span className="rounded-full border border-brand-edge px-2 py-0.5 text-brand-muted">
+                        {child.to}
+                      </span>
+                    ) : null}
+                    {scopes.map((s) => (
+                      <span
+                        key={s}
+                        className="max-w-[14rem] truncate rounded-md bg-brand-deck px-1.5 py-0.5 text-brand-label"
+                        title={s}
+                      >
+                        {s}
+                      </span>
+                    ))}
+                    {extraScopes > 0 ? (
+                      <span className="text-brand-label">+{extraScopes}</span>
+                    ) : null}
+                    {hitText && hitText !== '—' ? (
+                      <span className="text-brand-label tabular-nums">
+                        {t`Cache hit`} {hitText}
+                      </span>
+                    ) : null}
+                  </span>
+                  {depsText ? (
+                    <span className="truncate text-meta text-brand-label">
+                      {t`Depends on`}: {depsText}
+                    </span>
+                  ) : null}
+                  {note ? (
+                    <span
+                      className="line-clamp-2 text-caption text-brand-muted"
+                      title={note}
+                    >
+                      {note}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="pt-1 text-brand-label">
+                  <ChevronRight size={15} aria-hidden />
+                </span>
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
     </section>
   )
 }
