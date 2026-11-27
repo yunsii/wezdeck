@@ -10,7 +10,11 @@ const isSessionList = (path: string) => /\/console\/sessions\/?$/.test(path)
 // viewport resize can scroll the shared page back to the detail's bottom.
 function settleAfterReturn(el: HTMLDivElement, target: number) {
   let active = true
-  let frame = 0
+  let resizeFrame = 0
+  let checkFrame = 0
+  const started = performance.now()
+  const previousAnchor = el.style.overflowAnchor
+  el.style.overflowAnchor = 'none'
   const correct = (reason: string) => {
     if (!active || !isSessionList(window.location.pathname)) return
     const before = el.scrollTop
@@ -25,18 +29,28 @@ function settleAfterReturn(el: HTMLDivElement, target: number) {
       client: el.clientHeight,
     })
   }
+  const onScroll = () => correct('scroll')
+  const checkFrameUntilSettled = () => {
+    correct('frame')
+    if (active && performance.now() - started < 200)
+      checkFrame = requestAnimationFrame(checkFrameUntilSettled)
+  }
   const onResize = () => {
-    cancelAnimationFrame(frame)
-    frame = requestAnimationFrame(() => correct('viewport'))
+    cancelAnimationFrame(resizeFrame)
+    resizeFrame = requestAnimationFrame(() => correct('viewport'))
   }
   const stop = () => {
     if (!active) return
     active = false
-    cancelAnimationFrame(frame)
+    cancelAnimationFrame(resizeFrame)
+    cancelAnimationFrame(checkFrame)
     clearTimeout(timer)
+    el.style.overflowAnchor = previousAnchor
+    el.removeEventListener('scroll', onScroll)
     window.removeEventListener('resize', onResize)
     window.visualViewport?.removeEventListener('resize', onResize)
     window.removeEventListener('pointerdown', stop, true)
+    window.removeEventListener('touchstart', stop, true)
     window.removeEventListener('wheel', stop, true)
     window.removeEventListener('keydown', stop, true)
   }
@@ -44,11 +58,14 @@ function settleAfterReturn(el: HTMLDivElement, target: number) {
     correct('settled')
     stop()
   }, 1_000)
+  el.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onResize)
   window.visualViewport?.addEventListener('resize', onResize)
   window.addEventListener('pointerdown', stop, true)
+  window.addEventListener('touchstart', stop, { capture: true, passive: true })
   window.addEventListener('wheel', stop, { capture: true, passive: true })
   window.addEventListener('keydown', stop, true)
+  checkFrame = requestAnimationFrame(checkFrameUntilSettled)
   return stop
 }
 
