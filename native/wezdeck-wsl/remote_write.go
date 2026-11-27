@@ -72,6 +72,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = setWarp(args)
 	case "worktree.describe":
 		result, err = describeWorktree(args)
+	case "worktree.recycle", "worktree.remove":
+		result, err = manageWorktree(action, args)
 	default:
 		result, err = replyTicket(args)
 	}

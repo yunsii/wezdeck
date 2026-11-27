@@ -23,8 +23,17 @@ cd "$primary"
 git config user.name 'Release test'
 git config user.email 'test@example.invalid'
 git remote add origin "$origin"
-mkdir -p scripts/dev web "$fixture/bin"
+mkdir -p scripts/dev scripts/runtime/worktree web "$fixture/bin"
 cp "$source_repo/scripts/dev/"{wezdeck-release,source-fingerprint}.sh scripts/dev/
+cat > scripts/runtime/worktree/worktree-task <<'STUB'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == recycle ]] || exit 2
+[[ "$(tail -1 "$RELEASE_TRACE")" == end\ * ]] || exit 3
+printf '%s\n' "$*" >>"$RELEASE_TRACE.recycle"
+echo 'recycle ok'
+STUB
+chmod +x scripts/runtime/worktree/worktree-task
 printf '/web/dist/\n' > .gitignore
 touch web/.keep
 git add .
@@ -36,6 +45,7 @@ cat > "$fixture/bin/corepack" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
 case "$*" in
+  'pnpm run -s i18n:check') exit 0 ;;
   'pnpm exec vite build')
     mkdir -p dist/client
     printf '{"buildId":"%s"}\n' "$WEZDECK_BUILD_ID" >dist/client/build.json
@@ -49,6 +59,7 @@ case "$*" in
     [[ "$(git ls-remote origin refs/heads/master | cut -f1)" == "$head" ]]
     printf 'start %s\n' "$head" >>"$RELEASE_TRACE"
     if [[ -n "${RELEASE_DEPLOY_PAUSE:-}" ]]; then sleep "$RELEASE_DEPLOY_PAUSE"; fi
+    [[ -z "${RELEASE_DIRTY_SOURCE:-}" ]] || touch "$RELEASE_DIRTY_SOURCE/changed-during-deploy"
     printf 'end %s\n' "$head" >>"$RELEASE_TRACE"
     ;;
   *) exit 2 ;;
@@ -75,6 +86,7 @@ if land first >"$fixture/rejected.log" 2>&1; then
   exit 1
 fi
 [[ ! -e "$RELEASE_TRACE" ]]
+[[ ! -e "$RELEASE_TRACE.recycle" ]]
 rm "$origin/hooks/pre-receive"
 
 # Once admitted, two worktrees integrate and deploy without overlapping.
@@ -93,6 +105,7 @@ else
 fi
 land second >"$fixture/second.log" 2>&1
 wait "$first_pid"
+[[ "$(wc -l < "$RELEASE_TRACE.recycle")" == 2 ]]
 first="$(git -C "$fixture/first" rev-parse HEAD)"
 second="$(git rev-parse HEAD)"
 [[ "$(cat "$RELEASE_TRACE")" == "$(printf 'start %s\nend %s\nstart %s\nend %s' "$first" "$first" "$second" "$second")" ]]
@@ -104,15 +117,29 @@ external="$fixture/external"
 git clone -q "$origin" "$external"
 git -C "$external" -c user.name=External -c user.email=test@example.invalid commit -qm external --allow-empty
 RELEASE_RACE_REPO="$external" land race >"$fixture/race.log" 2>&1
+[[ "$(wc -l < "$RELEASE_TRACE.recycle")" == 3 ]]
 grep -q 'integrating and rebuilding once' "$fixture/race.log"
 git merge-base --is-ancestor "$(git -C "$external" rev-parse HEAD)" HEAD
 git merge-base --is-ancestor race HEAD
 [[ "$(wc -l < "$RELEASE_TRACE")" == 6 ]]
+# A changed source after deploy is never reset by automatic close-out.
+git worktree add -qb dirty "$fixture/dirty"
+printf '%s\n' dirty >"$fixture/dirty/web/dirty.txt"
+git -C "$fixture/dirty" add web/dirty.txt
+git -C "$fixture/dirty" commit -qm dirty
+if RELEASE_DIRTY_SOURCE="$fixture/dirty" land dirty >"$fixture/dirty.log" 2>&1; then
+  echo 'expected dirty source to skip recycle' >&2
+  exit 1
+else
+  [[ $? == 4 ]]
+fi
+[[ -f "$fixture/dirty/changed-during-deploy" ]]
+[[ "$(wc -l < "$RELEASE_TRACE.recycle")" == 3 ]]
 # Deploy-only cannot ship an unpushed revision.
 git commit -qm unpublished --allow-empty
 if scripts/dev/wezdeck-release.sh --only web --no-test --no-reload >"$fixture/unpublished.log" 2>&1; then
   echo 'expected an unpublished revision to be refused' >&2
   exit 1
 fi
-[[ "$(wc -l < "$RELEASE_TRACE")" == 6 ]]
+[[ "$(wc -l < "$RELEASE_TRACE")" == 8 ]]
 echo 'release integration tests passed'

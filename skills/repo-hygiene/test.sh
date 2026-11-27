@@ -202,7 +202,7 @@ See [docs](docs/ok.md) and [AGENTS.md](AGENTS.md). Tokens: attention.json agent-
 ## Highlights
 
 - Alt+j Alt+k Alt+l Alt+v Alt+b
-- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-recycle
+- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-task recycle
 - wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
 - scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
 - docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
@@ -230,7 +230,7 @@ cat >"$fx/README.zh-CN.md" <<'EOF'
 ## 亮点
 
 - Alt+j Alt+k Alt+l Alt+v Alt+b
-- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-recycle
+- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-task recycle
 - wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
 - scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
 - docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
@@ -281,7 +281,7 @@ cat >"$fx/README.zh-CN.md" <<'EOF'
 ## 亮点
 
 - Alt+j Alt+k Alt+l Alt+v Alt+b
-- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-recycle
+- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-task recycle
 - wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
 - scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
 - docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md
@@ -312,7 +312,7 @@ See [docs](docs/ok.md) [extra](docs/other.md) and [AGENTS.md](AGENTS.md). Tokens
 ## Highlights
 
 - Alt+j Alt+k Alt+l Alt+v Alt+b
-- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-recycle
+- CDP· SystemDisk· WslDisk· Memory· LoadAvg· SessionBridge· hybrid-wsl posix-local worktree-task recycle
 - wezterm-x/commands/manifest.json wezterm-x/local/keybindings.lua
 - scripts/dev/workflow-timeline.sh scripts/dev/habit-report.sh habit-weekly
 - docs/diagnostics.md docs/guest-oom.md docs/host-disk.md docs/logging-conventions.md

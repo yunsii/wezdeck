@@ -130,7 +130,7 @@ Every linked worktree is a **workstation for one direction** (`ux`, `ci`, `i18n`
 | Worktree | Directory | Branch | Round reset | End |
 |---|---|---|---|---|
 | primary | the repo root | default (`master` / `main`) | `worktree-task recycle` | never |
-| workstation | `.worktrees/<repo>/<name>` | `dev/<name>` | `worktree-task recycle` (skill `worktree-recycle`) | `Ctrl+k g r` once the direction is done (clean + delivered) |
+| workstation | `.worktrees/<repo>/<name>` | `dev/<name>` | `worktree-task recycle` | `Ctrl+k g r` once the direction is done (clean + delivered) |
 | ticket | `ticket-*` (agent-collab) | the ticket's | — | `ticket close` + `ticket gc` |
 | OpenClaw | `claw-*` | `claw/…` | — | `claw-worktree.sh reclaim` |
 
@@ -147,9 +147,13 @@ Directions show their name, purpose and slots; the main checkout and ticket /
 OpenClaw trees remain visible under 其他. Each row shows state, branch and path
 with a copy action. Opening a workstation shows its details: an approved
 device can edit that slot's purpose, open an existing session or start another
-session in its group. Primary, ticket and OpenClaw trees stay read-only here;
-recycle and reclaim still use their guarded workstation workflows. Open,
-result, select, describe, navigate and copy leave
+session in its group. Primary, ticket and OpenClaw trees stay read-only here.
+An approved device can recycle an idle, delivered workstation onto the latest
+default branch (restarting its agent), or remove the checkout while keeping
+its branch and conversation history. Both actions ask for confirmation and
+recheck the selected HEAD, clean state and agent activity on the host; a
+checkout still used by a process cannot be removed. Open, result, select,
+describe, recycle, remove, navigate and copy leave
 `worktree-view` diagnostic trace events without recording paths.
 
 ```mermaid
@@ -184,8 +188,8 @@ A workstation branch that lags mainline is **out of policy**, not an acceptable 
 Standing loop after finishing a round on a workstation:
 
 1. **Deliver onto mainline (no PR)** — commit and push so the tip lands on `origin/HEAD` (prefer ff onto primary `master`, or content absorbed after squash). For Web and relay releases, use `scripts/dev/wezdeck-release.sh --land HEAD` from the committed workstation to integrate and publish under one shared lock. Graph hygiene [vcs-36]–[vcs-37] still applies.
-2. **Recycle the workstation immediately** — load **`worktree-recycle`** and reset that worktree onto `origin/HEAD` so its `dev/<name>` **stays in sync** with mainline (same tip). Do not leave the workstation behind “until next time”.
-3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZDECK_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
+2. **Recycle the workstation immediately** — `wezdeck-release.sh --land HEAD` does this after a successful release when its source worktree stayed clean and unchanged. For a standalone round, run **`scripts/runtime/worktree/worktree-task recycle -y`** to reset it onto `origin/HEAD` so its `dev/<name>` **stays in sync** with mainline (same tip). Do not leave `dev/*` behind “until next time”.
+3. **Primary checkout** — keep `~/github/wezterm-config` (or the machine’s `WEZDECK_REPO`) on `master` tracking `origin/master`. After delivery (or when primary lags), run the same **`worktree-task recycle`** on the primary tree to hard-reset the default branch onto `origin/HEAD`; PATH, `agent-tools.env`, and platform skills should resolve against that primary tree.
 
 If mainline moved elsewhere (another session pushed `master`) while a workstation sat idle, **recycle (or ff-reset onto `origin/HEAD`) before starting new work** on that workstation — same invariant.
 
@@ -193,23 +197,18 @@ Do **not** leave user-level skills / `WEZDECK_REPO` pointed at a stale workstati
 
 ### Recycle (primary or workstation round reset)
 
-Agents should load the platform skill **`worktree-recycle`** (`skills/worktree-recycle/SKILL.md`, linked via `scripts/dev/link-platform-skills.sh`) so they run soft preflight + `worktree-task recycle` — not a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
+Agents use **`scripts/runtime/worktree/worktree-task recycle`** directly; its own guards check the target, dirty files, branch, and remote sync. Use `--dry-run` when the effect needs inspection, then `-y` after the user has authorized the reset or as the standing close-out after mainline delivery. Do not use a bare `git reset`. After a delivered round, recycle is the **default** close-out (see [Maintenance loop](#maintenance-loop-wezdeck-standing-policy)), not an optional cleanup.
 
 `worktree-task recycle` is a **fast path**: `git fetch` → dirty check → hard-reset onto `origin/HEAD` → sync `origin/<branch>` to the same tip. The old **delivered / content-absorbed** gate is **off by default** (opt in with `--require-delivered` / `WT_RECYCLE_REQUIRE_DELIVERED=1`; reclaim still uses the full delivery check). A workstation's branch is forced to its slug mapping (`ux` → `dev/ux`, an old `dev-ux` directory → `dev/ux` too; opt out with `--keep-branch-name`). The **primary** checkout is allowed: it resets the default branch (`master` / `main`) onto `origin/HEAD` and ensures upstream matches. Remote sync uses fast-forward or `--force-with-lease` when the remote still holds the pre-reset tip; opt out with `--no-sync-remote` / `WT_RECYCLE_SYNC_REMOTE=0`.
 
 Typical invocation (prefer the skill runner from agents):
 
 ```bash
-# agent path
-"$TOOL_HOME/run.sh" preflight --cwd "$PWD"
-"$TOOL_HOME/run.sh" recycle --cwd "$PWD" -y --task "next: wire recycle hotkey"
-
-# direct CLI (humans / debugging)
-scripts/runtime/worktree/worktree-task recycle -y
 scripts/runtime/worktree/worktree-task recycle --dry-run
+scripts/runtime/worktree/worktree-task recycle -y --task "next: wire recycle hotkey"
 ```
 
-Project init is **skipped by default** — follow-up tasks bootstrap what they need. Opt in with `run.sh recycle --with-init` or `run.sh init` (prints a builtin recipe / suggestions; optional `.worktree-recycle/post-recycle.sh` / `WT_RECYCLE_POST_HOOK` for non-obvious automation only).
+Project init is **not part of recycle** — follow-up tasks bootstrap what they need. The retired skill's optional `--with-init` and post-recycle hook are no longer invoked.
 
 Behavior:
 

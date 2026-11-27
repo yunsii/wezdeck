@@ -69,7 +69,7 @@ need arises
 | Continue after restart | **`<base>-resume`** via `agent-launcher.sh` + access-ledger focus restore | [Architecture · startup](docs/architecture.md#startup-invariants) |
 | In-slot loop | Badges / counter + **`Alt+j/k/l`** (highest-frequency keys in a real day) | [Agent attention](docs/agent-attention.md) |
 | Verify | **`Alt+v`** daily; **`Alt+b`** when you need the debug Chrome (MCP shares CDP) | [Browser debug](docs/browser-debug.md) |
-| Close the round | Mainline delivery (no PR) → **`worktree-recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
+| Close the round | Mainline delivery (no PR) → **`worktree-task recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
 | Review the day / week | Timeline + habit report from the same signals | [Diagnostics · timeline](docs/diagnostics.md#workflow-timeline) · [Habit report](docs/diagnostics.md#habit-report) |
 
 ## 📡 Observability surface

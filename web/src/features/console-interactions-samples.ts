@@ -5,6 +5,58 @@ import type { Elicitation } from './session-elicitation'
 import type { PendingCall } from './session-permission'
 import type { BgTask } from './session-background'
 import type { GitDetail } from './session-git'
+import type { WorkstationDirection } from './session-worktree-manager'
+
+export const STATUS_WORKTREE_PATHS = {
+  primary: '/workspace/wezdeck',
+  agent: '/workspace/.worktrees/wezdeck/dev-agent',
+  probe: '/workspace/.worktrees/wezdeck/task-probe',
+  ready: '/workspace/.worktrees/wezdeck/dev-ready',
+}
+
+export const STATUS_WORKSTATIONS: WorkstationDirection[] = [
+  {
+    name: 'agent',
+    description: 'Agent 工具与注意力',
+    slots: [
+      {
+        path: STATUS_WORKTREE_PATHS.agent,
+        name: 'dev-agent',
+        branch: 'dev/agent',
+        description: 'Agent 工具与注意力',
+        state: 'running',
+        sessions: ['demo-agent'],
+      },
+    ],
+  },
+  {
+    name: 'probe',
+    description: '隔离验证',
+    slots: [
+      {
+        path: STATUS_WORKTREE_PATHS.probe,
+        name: 'task-probe',
+        branch: '',
+        description: '隔离验证',
+        state: 'detached',
+      },
+    ],
+  },
+  {
+    name: 'ready',
+    description: '已交付的空闲工作树',
+    slots: [
+      {
+        path: STATUS_WORKTREE_PATHS.ready,
+        name: 'dev-ready',
+        branch: 'dev/ready',
+        head: 'a'.repeat(40),
+        description: '已交付的空闲工作树',
+        state: 'idle',
+      },
+    ],
+  },
+]
 
 export const ASK_ONE: Elicitation = {
   questions: [

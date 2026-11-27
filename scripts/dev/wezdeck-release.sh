@@ -12,7 +12,8 @@
 #   scripts/dev/wezdeck-release.sh [--land COMMIT | --commit MSGFILE] [--only push|relay|web]... [--force] [--gate | --no-test] [--no-reload]
 #
 # --land COMMIT integrates a committed worktree tip on the primary master.
-# A repository-wide lock covers integration, push and deployment.
+# A repository-wide lock covers integration, push, deployment and the linked
+# source worktree's final recycle after a fully successful release.
 #
 # --commit MSGFILE commits the staged changes first, after fixing what the
 # pre-commit gate only reports: prettier on the staged web files and the
@@ -111,7 +112,8 @@ if [[ -n "$land_commit" ]]; then
   primary="${primary#worktree }"
   [[ -n "$primary" ]] || exit 1
   if [[ "$primary" != "$REPO" ]]; then
-    exec bash "$primary/scripts/dev/wezdeck-release.sh" "${release_args[@]}"
+    exec env WEZDECK_RELEASE_LAND_SOURCE="$REPO" \
+      bash "$primary/scripts/dev/wezdeck-release.sh" "${release_args[@]}"
   fi
 fi
 
@@ -480,6 +482,23 @@ fi
 if [[ $test_mode == parallel ]] && ((rcs[test] != 0)); then
   say '✗' done "release $head shipped in $((SECONDS - T0))s, but tests FAILED — fix next round (log $RUN/test.log)"
   exit 3
+fi
+land_source="${WEZDECK_RELEASE_LAND_SOURCE:-}"
+if [[ -n "$land_commit" && -n "$land_source" && "$land_source" != "$REPO" ]]; then
+  if [[ ! -d "$land_source" ]] ||
+     [[ "$(git -C "$land_source" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" != "$common_dir" ]] ||
+     [[ "$(git -C "$land_source" rev-parse HEAD 2>/dev/null)" != "$land_commit" ]] ||
+     [[ -n "$(git -C "$land_source" status --porcelain --untracked-files=normal 2>/dev/null)" ]]; then
+    say '!' recycle 'source worktree changed or is dirty; release succeeded, recycle skipped'
+    exit 4
+  fi
+  say '▶' recycle 'align the delivered workstation to origin/HEAD'
+  if ! recycle_out="$(scripts/runtime/worktree/worktree-task recycle \
+      --cwd "$land_source" -y --require-delivered --no-clean-files --keep-temp-branches 2>&1)"; then
+    say '✗' recycle "release succeeded, recycle failed: $(tail -1 <<<"$recycle_out")"
+    exit 4
+  fi
+  say '✓' recycle "$(tail -1 <<<"$recycle_out")"
 fi
 say '■' done "release $head in $((SECONDS - T0))s"
 exit 0

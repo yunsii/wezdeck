@@ -140,7 +140,7 @@ func dispatch(req request) response {
 		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
 	case "remote.send", "remote.key", "remote.reply", "remote.attach", "remote.upload",
 		"remote.todo", "remote.clear", "remote.session.new", "remote.session.new.trust", "remote.agent.profile.configure", "remote.agent.profile.model", "remote.agent.profile.settings", "remote.session.restart", "remote.session.delete",
-		"remote.session.handoff", "remote.ticket.new", "remote.worktree.describe", "remote.host.warp.set":
+		"remote.session.handoff", "remote.ticket.new", "remote.worktree.describe", "remote.worktree.recycle", "remote.worktree.remove", "remote.host.warp.set":
 		// a browser on this computer through the local Runtime (remote_write.go)
 		payload := req.Payload
 		if len(payload) == 0 || string(payload) == "null" {
