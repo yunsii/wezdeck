@@ -3,7 +3,6 @@ adversarial-review	skills/adversarial-review	platform	agents,claude	yes
 brainstorm	skills/brainstorm	platform	agents,claude	yes
 agent-collab	skills/agent-collab	platform	agents,claude	yes
 human-run	skills/human-run	platform	agents,claude	yes
-worktree-recycle	skills/worktree-recycle	platform	agents,claude	yes
 yuns-engineer	skills/yuns-engineer	platform	agents,claude	yes
 browser-agent	skills/browser-agent	platform	agents,claude	yes
 habit-weekly	skills/habit-weekly	repo-local	none	no

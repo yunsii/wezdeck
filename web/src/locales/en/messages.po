@@ -62,7 +62,7 @@ msgstr "{count} monitors running"
 #~ msgid "{count} more need you"
 #~ msgstr "{count} more need you"
 
-#: src/features/session-worktree-manager.tsx:129
+#: src/features/session-worktree-manager.tsx:130
 msgid "{count} sessions"
 msgstr "{count} sessions"
 
@@ -95,7 +95,7 @@ msgstr "{hours} h ago"
 msgid "{label} {percent}% used"
 msgstr "{label} {percent}% used"
 
-#: src/features/session-worktree-manager.tsx:389
+#: src/features/session-worktree-manager.tsx:406
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
@@ -612,7 +612,7 @@ msgstr "Availability and note"
 #: src/features/console-collab.tsx:104
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
-#: src/features/session-worktree-manager.tsx:443
+#: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:39
 msgid "Back"
 msgstr "Back"
@@ -681,7 +681,7 @@ msgstr "Blocked by dependency"
 
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:69
-#: src/features/session-worktree-detail.tsx:65
+#: src/features/session-worktree-detail.tsx:70
 msgid "Branch"
 msgstr "Branch"
 
@@ -749,6 +749,7 @@ msgstr "cancel"
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
+#: src/features/session-worktree-lifecycle.tsx:87
 #: src/features/ticket-proposals.tsx:236
 msgid "Cancel"
 msgstr "Cancel"
@@ -994,6 +995,14 @@ msgstr "confirm"
 msgid "Confirm and start"
 msgstr "Confirm and start"
 
+#: src/features/session-worktree-lifecycle.tsx:96
+msgid "Confirm recycle"
+msgstr "Confirm recycle"
+
+#: src/features/session-worktree-lifecycle.tsx:96
+msgid "Confirm removal"
+msgstr "Confirm removal"
+
 #: src/features/me-devices.tsx:210
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
@@ -1134,10 +1143,10 @@ msgstr "Copy error"
 msgid "Copy link"
 msgstr "Copy link"
 
-#: src/features/session-worktree-detail.tsx:76
-#: src/features/session-worktree-detail.tsx:77
-#: src/features/session-worktree-manager.tsx:223
+#: src/features/session-worktree-detail.tsx:81
+#: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
+#: src/features/session-worktree-manager.tsx:225
 msgid "Copy path"
 msgstr "Copy path"
 
@@ -1196,7 +1205,7 @@ msgstr "cost and limits"
 msgid "Could not change the device: {changeError}"
 msgstr "Could not change the device: {changeError}"
 
-#: src/features/session-worktree-manager.tsx:317
+#: src/features/session-worktree-manager.tsx:258
 msgid "Could not copy path"
 msgstr "Could not copy path"
 
@@ -1275,7 +1284,7 @@ msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
 #: src/features/session-title-history.tsx:93
-#: src/features/session-worktree-manager.tsx:184
+#: src/features/session-worktree-manager.tsx:185
 msgid "Current"
 msgstr "Current"
 
@@ -1356,9 +1365,9 @@ msgstr "Depends on"
 msgid "Desk idle for"
 msgstr "Desk idle for"
 
-#: src/features/session-worktree-detail.tsx:67
-#: src/features/session-worktree-manager.tsx:122
-#: src/features/session-worktree-manager.tsx:200
+#: src/features/session-worktree-detail.tsx:72
+#: src/features/session-worktree-manager.tsx:123
+#: src/features/session-worktree-manager.tsx:201
 msgid "Detached"
 msgstr "Detached"
 
@@ -1817,7 +1826,7 @@ msgstr "In progress"
 msgid "In Safari tap Share, then “Add to Home Screen”."
 msgstr "In Safari tap Share, then “Add to Home Screen”."
 
-#: src/features/session-worktree-manager.tsx:123
+#: src/features/session-worktree-manager.tsx:124
 msgid "In use"
 msgstr "In use"
 
@@ -2039,12 +2048,12 @@ msgstr "Loading original…"
 #: src/features/session-header.tsx:241
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
-#: src/features/session-worktree-manager.tsx:365
+#: src/features/session-worktree-manager.tsx:382
 #: src/features/tickets-view.tsx:286
 msgid "Loading…"
 msgstr "Loading…"
 
-#: src/features/session-worktree-manager.tsx:120
+#: src/features/session-worktree-manager.tsx:121
 msgid "Local changes"
 msgstr "Local changes"
 
@@ -2065,7 +2074,7 @@ msgstr "Login"
 msgid "made progress"
 msgstr "made progress"
 
-#: src/features/session-worktree-manager.tsx:187
+#: src/features/session-worktree-manager.tsx:188
 msgid "Main checkout"
 msgstr "Main checkout"
 
@@ -2078,7 +2087,7 @@ msgstr "manage MCP servers"
 msgid "manage tool permission rules"
 msgstr "manage tool permission rules"
 
-#: src/features/session-worktree-manager.tsx:171
+#: src/features/session-worktree-manager.tsx:172
 msgid "Manage worktree"
 msgstr "Manage worktree"
 
@@ -2296,7 +2305,7 @@ msgstr "New session group"
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:376
 #: src/features/session-new.tsx:437
-#: src/features/session-worktree-detail.tsx:167
+#: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "New session in this group"
 
@@ -2403,7 +2412,7 @@ msgstr "No human message yet"
 #~ msgid "No idle sessions."
 #~ msgstr "No idle sessions."
 
-#: src/features/session-worktree-manager.tsx:384
+#: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
 msgstr "No linked worktrees"
 
@@ -2485,7 +2494,7 @@ msgstr "Not configured"
 msgid "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics token (secrets CF_ACCOUNT_ID and CF_ANALYTICS_TOKEN, permission \"Account Analytics: Read\")."
 
-#: src/features/session-worktree-manager.tsx:121
+#: src/features/session-worktree-manager.tsx:122
 msgid "Not delivered"
 msgstr "Not delivered"
 
@@ -2544,7 +2553,7 @@ msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
 #: src/features/session-new-panels.tsx:149
 #: src/features/session-skills.tsx:236
-#: src/features/session-worktree-manager.tsx:384
+#: src/features/session-worktree-manager.tsx:401
 msgid "Nothing matches"
 msgstr "Nothing matches"
 
@@ -2587,6 +2596,11 @@ msgstr "On"
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 
+#: src/features/session-worktree-lifecycle.tsx:108
+#: src/features/session-worktree-lifecycle.tsx:127
+msgid "Only reusable worktrees can be managed here"
+msgstr "Only reusable worktrees can be managed here"
+
 #: src/features/console-diagnostics.tsx:390
 msgid "Only this trace"
 msgstr "Only this trace"
@@ -2627,7 +2641,7 @@ msgstr "Open repository links (key: l)"
 
 #: src/features/session-delete.tsx:49
 #: src/features/session-delete.tsx:71
-#: src/features/session-worktree-detail.tsx:152
+#: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "Open session"
 
@@ -2689,7 +2703,7 @@ msgstr "Origin session"
 msgid "Other"
 msgstr "Other"
 
-#: src/features/session-worktree-manager.tsx:275
+#: src/features/session-worktree-manager.tsx:304
 msgid "Other worktrees"
 msgstr "Other worktrees"
 
@@ -2756,7 +2770,7 @@ msgstr "Part"
 msgid "partly done"
 msgstr "partly done"
 
-#: src/features/session-worktree-detail.tsx:71
+#: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "Path"
 
@@ -2861,7 +2875,7 @@ msgstr "Proposed plan: {n} child ticket(s)"
 msgid "Pull last week's metrics into the weekly report."
 msgstr "Pull last week's metrics into the weekly report."
 
-#: src/features/session-worktree-detail.tsx:106
+#: src/features/session-worktree-detail.tsx:111
 msgid "Purpose"
 msgstr "Purpose"
 
@@ -2932,6 +2946,11 @@ msgstr "Reason"
 #: src/features/session-git.tsx:306
 msgid "Recent commits"
 msgstr "Recent commits"
+
+#: src/features/session-worktree-lifecycle.tsx:64
+#: src/features/session-worktree-lifecycle.tsx:119
+msgid "Recycle worktree"
+msgstr "Recycle worktree"
 
 #: src/features/me-devices.tsx:165
 msgid "Refresh"
@@ -3017,6 +3036,15 @@ msgstr "Remove"
 #: src/features/composer-picked.tsx:62
 msgid "Remove image"
 msgstr "Remove image"
+
+#: src/features/session-worktree-lifecycle.tsx:71
+msgid "Remove this worktree? Its branch and conversation history stay available. A worktree in use cannot be removed."
+msgstr "Remove this worktree? Its branch and conversation history stay available. A worktree in use cannot be removed."
+
+#: src/features/session-worktree-lifecycle.tsx:64
+#: src/features/session-worktree-lifecycle.tsx:134
+msgid "Remove worktree"
+msgstr "Remove worktree"
 
 #: src/features/session-info-actions.tsx:131
 msgid "Rename"
@@ -3147,6 +3175,10 @@ msgstr "research failed"
 msgid "Resend"
 msgstr "Resend"
 
+#: src/features/session-worktree-lifecycle.tsx:70
+msgid "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
+msgstr "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
+
 #: src/features/session-header.tsx:110
 msgid "resets {reset}"
 msgstr "resets {reset}"
@@ -3209,7 +3241,7 @@ msgstr "Resume a conversation"
 msgid "Retry"
 msgstr "Retry"
 
-#: src/features/session-worktree-manager.tsx:117
+#: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
 msgstr "Reusable"
 
@@ -3301,7 +3333,7 @@ msgstr "running"
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
 #: src/features/console-status-band.tsx:38
-#: src/features/session-worktree-manager.tsx:118
+#: src/features/session-worktree-manager.tsx:119
 msgid "Running"
 msgstr "Running"
 
@@ -3377,7 +3409,7 @@ msgstr "Same at the desk"
 #: src/features/me-agent-detail.tsx:172
 #: src/features/me-agent-detail.tsx:231
 #: src/features/session-purpose.tsx:118
-#: src/features/session-worktree-detail.tsx:131
+#: src/features/session-worktree-detail.tsx:136
 msgid "Save"
 msgstr "Save"
 
@@ -3386,7 +3418,7 @@ msgid "Save availability and note"
 msgstr "Save availability and note"
 
 #: src/features/me-agent-detail.tsx:23
-#: src/features/session-worktree-detail.tsx:45
+#: src/features/session-worktree-detail.tsx:50
 msgid "Saved"
 msgstr "Saved"
 
@@ -3455,8 +3487,8 @@ msgstr "Search sessions"
 msgid "Search skills"
 msgstr "Search skills"
 
-#: src/features/session-worktree-manager.tsx:356
-#: src/features/session-worktree-manager.tsx:357
+#: src/features/session-worktree-manager.tsx:373
+#: src/features/session-worktree-manager.tsx:374
 msgid "Search worktrees"
 msgstr "Search worktrees"
 
@@ -3806,7 +3838,7 @@ msgstr "State"
 #: src/features/console-collab.tsx:222
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
-#: src/features/session-worktree-detail.tsx:60
+#: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:104
 #: src/features/tickets-view.tsx:197
 msgid "Status"
@@ -4286,7 +4318,7 @@ msgstr "Trust this worktree and continue"
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
-#: src/features/session-worktree-detail.tsx:134
+#: src/features/session-worktree-detail.tsx:139
 msgid "Turn on write access in Settings to edit"
 msgstr "Turn on write access in Settings to edit"
 
@@ -4437,7 +4469,7 @@ msgstr "Waiting for the host to approve this device. On the host run:"
 msgid "waiting for you"
 msgstr "waiting for you"
 
-#: src/features/session-worktree-manager.tsx:119
+#: src/features/session-worktree-manager.tsx:120
 msgid "Waiting for you"
 msgstr "Waiting for you"
 
@@ -4586,7 +4618,7 @@ msgid "What this session's agent was given, read from its own record. Tap one to
 msgstr "What this session's agent was given, read from its own record. Tap one to put it in the message; type {trigger} in the message to complete."
 
 #: src/features/session-purpose.tsx:90
-#: src/features/session-worktree-detail.tsx:116
+#: src/features/session-worktree-detail.tsx:121
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
@@ -4686,10 +4718,18 @@ msgstr "Worktree"
 #~ msgid "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 #~ msgstr "Worktree {slug}, branch dev/{slug} (a taken name gets -2)"
 
-#: src/features/session-worktree-manager.tsx:404
-#: src/features/session-worktree-manager.tsx:412
-#: src/features/session-worktree-manager.tsx:430
-#: src/features/session-worktree-manager.tsx:451
+#: src/features/session-worktree-lifecycle.tsx:49
+msgid "Worktree recycled"
+msgstr "Worktree recycled"
+
+#: src/features/session-worktree-lifecycle.tsx:49
+msgid "Worktree removed"
+msgstr "Worktree removed"
+
+#: src/features/session-worktree-manager.tsx:421
+#: src/features/session-worktree-manager.tsx:429
+#: src/features/session-worktree-manager.tsx:447
+#: src/features/session-worktree-manager.tsx:468
 msgid "Worktrees"
 msgstr "Worktrees"
 

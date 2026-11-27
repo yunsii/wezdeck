@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import type { WorktreeRow } from './session-worktree-manager'
+import { WorktreeLifecycle } from './session-worktree-lifecycle'
 
 export function WorktreeDetail({
   row,
@@ -17,6 +18,7 @@ export function WorktreeDetail({
   onSave,
   onOpenSession,
   onNewSession,
+  onManage,
 }: {
   row: WorktreeRow
   status: string
@@ -27,6 +29,7 @@ export function WorktreeDetail({
   onSave: (text: string) => Promise<void>
   onOpenSession?: () => void
   onNewSession?: () => void
+  onManage: (action: 'recycle' | 'remove') => Promise<void>
 }) {
   const { t } = useLingui()
   const [draft, setDraft] = useState(row.description ?? '')
@@ -34,6 +37,8 @@ export function WorktreeDetail({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const editable = Boolean(row.branch && row.state)
+  const canManage =
+    editable && writable && row.state === 'idle' && Boolean(row.head)
   const save = async () => {
     const text = draft.trim()
     if (text === saved || saving) return
@@ -168,6 +173,9 @@ export function WorktreeDetail({
             </Button>
           ) : null}
         </div>
+      ) : null}
+      {editable ? (
+        <WorktreeLifecycle eligible={canManage} onManage={onManage} />
       ) : null}
     </div>
   )

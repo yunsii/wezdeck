@@ -33,6 +33,7 @@ type workstationSlot struct {
 	Path        string   `json:"path"`
 	Name        string   `json:"name"` // the directory without an old dev- prefix
 	Branch      string   `json:"branch"`
+	Head        string   `json:"head"`
 	Description string   `json:"description,omitempty"`
 	State       string   `json:"state"` // idle | running | waiting | dirty | undelivered | detached
 	Reason      string   `json:"reason,omitempty"`
@@ -95,14 +96,14 @@ func repoWorkstations(repo string) ([]workstationDirection, error) {
 		return nil, errors.New("workstations: git worktree list failed")
 	}
 	var slots []workstationSlot
-	path, branch := "", ""
+	path, branch, head := "", "", ""
 	flush := func() {
 		base := filepath.Base(path)
 		if path != "" && filepath.Clean(path) != filepath.Clean(repo) &&
 			!strings.HasPrefix(base, "ticket-") && !strings.HasPrefix(base, "claw-") {
-			slots = append(slots, workstationSlot{Path: path, Name: strings.TrimPrefix(base, "dev-"), Branch: branch})
+			slots = append(slots, workstationSlot{Path: path, Name: strings.TrimPrefix(base, "dev-"), Branch: branch, Head: head})
 		}
-		path, branch = "", ""
+		path, branch, head = "", "", ""
 	}
 	sc := bufio.NewScanner(strings.NewReader(string(out) + "\n"))
 	for sc.Scan() {
@@ -112,6 +113,8 @@ func repoWorkstations(repo string) ([]workstationDirection, error) {
 			path = strings.TrimPrefix(line, "worktree ")
 		case strings.HasPrefix(line, "branch refs/heads/"):
 			branch = strings.TrimPrefix(line, "branch refs/heads/")
+		case strings.HasPrefix(line, "HEAD "):
+			head = strings.TrimPrefix(line, "HEAD ")
 		case line == "":
 			flush()
 		}

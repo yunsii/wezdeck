@@ -67,7 +67,7 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 | 重启后续聊 | **`<base>-resume`**（`agent-launcher.sh`）+ access-ledger 焦点恢复 | [Architecture · startup](docs/architecture.md#startup-invariants) |
 | 槽内主循环 | 徽章 / 计数 + **`Alt+j/k/l`**（真实日环最高频键） | [Agent attention](docs/agent-attention.md) |
 | 验证 | 日常 **`Alt+v`**；需要 debug Chrome 时用 **`Alt+b`**（MCP 共用 CDP） | [Browser debug](docs/browser-debug.md) |
-| 收尾本轮 | 主线交付（无 PR）→ **`worktree-recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
+| 收尾本轮 | 主线交付（无 PR）→ **`worktree-task recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
 | 复盘日 / 周 | 同一批信号上的 timeline + habit 报告 | [Diagnostics · timeline](docs/diagnostics.md#workflow-timeline) · [Habit report](docs/diagnostics.md#habit-report) |
 
 ## 📡 可观测面

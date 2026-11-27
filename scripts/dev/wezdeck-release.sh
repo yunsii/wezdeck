@@ -19,6 +19,7 @@
 #                                  [--now] [--no-wait] [--skip-smoke]
 #                                  [--gate | --no-test]
 #                                  [--force-reload | --no-reload]
+# A successful waited --land release recycles its unchanged source workstation.
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -117,7 +118,8 @@ if [[ -n "$land_commit" ]]; then
   primary="${primary#worktree }"
   [[ -n "$primary" ]] || exit 1
   if [[ "$primary" != "$REPO" ]]; then
-    exec bash "$primary/scripts/dev/wezdeck-release.sh" "${release_args[@]}"
+    exec env WEZDECK_RELEASE_LAND_SOURCE="$REPO" \
+      bash "$primary/scripts/dev/wezdeck-release.sh" "${release_args[@]}"
   fi
 fi
 
@@ -145,6 +147,26 @@ check_master_ready() {
     fi
   done
   checkout_clean || { echo 'release: master checkout must be clean before integration' >&2; return 1; }
+}
+
+recycle_landed_source() {
+  local source="${WEZDECK_RELEASE_LAND_SOURCE:-}" recycle_out
+  [[ -n "$land_commit" && -n "$source" && "$source" != "$REPO" ]] || return 0
+  ((wait_deploy)) || return 0
+  if [[ ! -d "$source" ]] ||
+     [[ "$(git -C "$source" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" != "$common_dir" ]] ||
+     [[ "$(git -C "$source" rev-parse HEAD 2>/dev/null)" != "$land_commit" ]] ||
+     [[ -n "$(git -C "$source" status --porcelain --untracked-files=normal 2>/dev/null)" ]]; then
+    say '!' recycle 'source worktree changed or is dirty; release succeeded, recycle skipped'
+    return 4
+  fi
+  say '▶' recycle 'align delivered workstation to origin/HEAD'
+  if ! recycle_out="$(scripts/runtime/worktree/worktree-task recycle \
+      --cwd "$source" -y --require-delivered --no-clean-files --keep-temp-branches 2>&1)"; then
+    say '✗' recycle "release succeeded, recycle failed: $(tail -1 <<<"$recycle_out")"
+    return 4
+  fi
+  say '✓' recycle "$(tail -1 <<<"$recycle_out")"
 }
 
 autofix_staged() {
@@ -470,6 +492,7 @@ if ! flock -n 9; then
   wait_rc=0
   wait_for_coalesced_deploy "$landed_sha" || wait_rc=$?
   if ((wait_rc != 2)); then
+    if ((wait_rc == 0)); then recycle_landed_source || wait_rc=$?; fi
     exit "$wait_rc"
   fi
   # wait_rc == 2: we acquired fd 9 and took over as coordinator.
@@ -640,4 +663,5 @@ run_coordinator_loop
 rc=$?
 flock -u 9
 exec 9>&-
+if ((rc == 0)); then recycle_landed_source || rc=$?; fi
 exit "$rc"

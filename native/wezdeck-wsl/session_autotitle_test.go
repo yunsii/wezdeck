@@ -374,4 +374,3 @@ func TestAutoTitleConfigStatusAndUnlock(t *testing.T) {
 		t.Fatalf("unlocked source = %q, want auto", src)
 	}
 }
-

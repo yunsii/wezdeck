@@ -18,6 +18,7 @@ export function useWorktreeActions({
   selectedGroup,
   sample,
   setSampleDirections,
+  onRemove,
   close,
 }: {
   repoPath: string
@@ -27,6 +28,7 @@ export function useWorktreeActions({
   setSampleDirections: Dispatch<
     SetStateAction<WorkstationDirection[] | undefined>
   >
+  onRemove: (path: string) => void
   close: () => void
 }) {
   const { locale } = useLocale()
@@ -95,5 +97,49 @@ export function useWorktreeActions({
     )
   }
 
-  return { writable, saveDescription, openSession, newSession }
+  const manage = async (action: 'recycle' | 'remove') => {
+    if (!selected || !selected.head || selected.state !== 'idle' || !writable)
+      throw new Error('Worktree is not ready for this action')
+    if (sample) {
+      if (action === 'remove') {
+        setSampleDirections((current) =>
+          current
+            ?.map((direction) => ({
+              ...direction,
+              slots: direction.slots.filter(
+                (slot) => slot.path !== selected.path,
+              ),
+            }))
+            .filter((direction) => direction.slots.length),
+        )
+      } else {
+        setSampleDirections((current) =>
+          current?.map((direction) => ({
+            ...direction,
+            slots: direction.slots.map((slot) =>
+              slot.path === selected.path
+                ? { ...slot, head: 'b'.repeat(40) }
+                : slot,
+            ),
+          })),
+        )
+      }
+    } else {
+      await hostWrite(`worktree.${action}`, {
+        worktree: selected.path,
+        expected_head: selected.head,
+        confirm: true,
+      })
+      await Promise.all([
+        client.invalidateQueries({
+          queryKey: ['remote', 'workstations', repoPath],
+        }),
+        client.invalidateQueries({ queryKey: ['remote', 'sessions'] }),
+      ])
+    }
+    trace('worktree-view', { action })
+    if (action === 'remove') onRemove(selected.path)
+  }
+
+  return { writable, saveDescription, openSession, newSession, manage }
 }
