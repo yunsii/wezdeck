@@ -1,7 +1,7 @@
 // A Claude / Agy / Codex / Grok permission prompt as a card (host
 // permission.go / agent_agy_state.go): the call the agent is blocked on —
-// complete summary, risk flags, and full scrollable command / diff / write /
-// structured args — from the transcript, not the screen. Clicking Allow / Deny
+// complete summary, risk flags, and command / diff / write / structured args
+// from the transcript, not the screen. Clicking Allow / Deny
 // locks the card, shows immediate sending → waiting feedback
 // (prompt-action-state.tsx), and clears once the host poll settles.
 import { useLingui } from '@lingui/react/macro'
@@ -231,7 +231,7 @@ export function PermissionCard({
           </div>
           <div
             data-testid="permission-body"
-            className="max-h-[45dvh] overflow-y-auto overscroll-contain rounded-xl bg-brand-deck px-3 py-2"
+            className="max-h-[45dvh] overflow-hidden rounded-xl bg-brand-deck px-3 py-2"
           >
             <ChatMarkdown text={call.body ?? ''} />
           </div>
@@ -286,7 +286,8 @@ export function PermissionCard({
               testId="permission-body"
               text={call.body}
               file={call.file}
-              className="max-h-[45dvh] overscroll-contain"
+              scrollable={false}
+              className="max-h-[45dvh]"
             />
           ) : null}
           {call.truncated ? (
