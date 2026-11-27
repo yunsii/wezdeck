@@ -346,7 +346,7 @@ msgstr "Added data-testid attributes and verified all 14 unit tests pass."
 msgid "after"
 msgstr "after"
 
-#: src/features/session-permission.tsx:173
+#: src/features/session-permission.tsx:303
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
@@ -426,17 +426,21 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:311
+#: src/features/session-permission.tsx:205
 msgid "Allow"
 msgstr "Allow"
 
-#: src/features/session-permission.tsx:172
+#: src/features/session-permission.tsx:302
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
 #: src/features/remote-badge.tsx:146
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
+
+#: src/features/session-permission.tsx:301
+msgid "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
+msgstr "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
 
 #: src/features/ticket-proposals.tsx:335
 msgid "already done"
@@ -445,6 +449,10 @@ msgstr "already done"
 #: src/features/me-app.tsx:64
 msgid "Already the latest"
 msgstr "Already the latest"
+
+#: src/features/session-permission.tsx:245
+msgid "Always allow"
+msgstr "Always allow"
 
 #: src/features/session-elicitation.tsx:210
 #~ msgid "Answer sent; waiting for Grok to continue…"
@@ -455,7 +463,7 @@ msgstr "Already the latest"
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
 
-#: src/features/session-permission.tsx:198
+#: src/features/session-permission.tsx:328
 msgid "Antigravity asks to run this"
 msgstr "Antigravity asks to run this"
 
@@ -510,11 +518,11 @@ msgstr "Approve plan"
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/session-permission.tsx:170
+#: src/features/session-permission.tsx:298
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:311
+#: src/features/session-permission.tsx:205
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -637,7 +645,7 @@ msgstr "Backend"
 msgid "background"
 msgstr "background"
 
-#: src/features/session-permission.tsx:51
+#: src/features/session-permission.tsx:82
 msgid "Background"
 msgstr "Background"
 
@@ -713,7 +721,7 @@ msgstr "By target repo"
 msgid "By trigger"
 msgstr "By trigger"
 
-#: src/features/session-permission.tsx:47
+#: src/features/session-permission.tsx:78
 msgid "Bypass sandbox"
 msgstr "Bypass sandbox"
 
@@ -833,7 +841,7 @@ msgstr "Children"
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/session-permission.tsx:199
+#: src/features/session-permission.tsx:329
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
@@ -845,7 +853,7 @@ msgstr "Claude commands"
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
-#: src/features/session-permission.tsx:196
+#: src/features/session-permission.tsx:326
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
@@ -1092,7 +1100,7 @@ msgstr "context usage"
 
 #: src/features/session-composer.tsx:81
 #: src/features/session-info-actions.tsx:115
-#: src/features/session-permission.tsx:180
+#: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:174
 msgid "Copied"
 msgstr "Copied"
@@ -1120,9 +1128,9 @@ msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:81
-#: src/features/session-permission.tsx:106
-#: src/features/session-permission.tsx:217
-#: src/features/session-permission.tsx:258
+#: src/features/session-permission.tsx:137
+#: src/features/session-permission.tsx:347
+#: src/features/session-permission.tsx:388
 msgid "Copy"
 msgstr "Copy"
 
@@ -1213,7 +1221,7 @@ msgstr "Could not copy path"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
-#: src/features/session-permission.tsx:181
+#: src/features/session-permission.tsx:311
 msgid "Could not copy to clipboard"
 msgstr "Could not copy to clipboard"
 
@@ -1300,7 +1308,7 @@ msgstr "Current runner"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/session-permission.tsx:49
+#: src/features/session-permission.tsx:80
 msgid "Daemon"
 msgstr "Daemon"
 
@@ -1349,7 +1357,7 @@ msgstr "Delete session"
 msgid "Deliver first message"
 msgstr "Deliver first message"
 
-#: src/features/session-permission.tsx:327
+#: src/features/session-permission.tsx:221
 msgid "Deny"
 msgstr "Deny"
 
@@ -1648,8 +1656,8 @@ msgstr "Full access"
 msgid "Full access: auto-approves all actions"
 msgstr "Full access: auto-approves all actions"
 
-#: src/features/session-permission.tsx:227
-#: src/features/session-permission.tsx:268
+#: src/features/session-permission.tsx:357
+#: src/features/session-permission.tsx:398
 msgid "Full view"
 msgstr "Full view"
 
@@ -1908,7 +1916,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:327
+#: src/features/session-permission.tsx:221
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -3971,7 +3979,7 @@ msgstr "Technical details"
 
 #: src/features/session-elicitation.tsx:221
 #: src/features/session-info-actions.tsx:168
-#: src/features/session-permission.tsx:333
+#: src/features/session-permission.tsx:442
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -4300,8 +4308,8 @@ msgstr "Transcript"
 msgid "Trigger"
 msgstr "Trigger"
 
-#: src/features/session-permission.tsx:133
-#: src/features/session-permission.tsx:295
+#: src/features/session-permission.tsx:164
+#: src/features/session-permission.tsx:425
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "Truncated at 64 KB — check the terminal for the full payload."
 

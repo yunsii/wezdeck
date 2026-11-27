@@ -132,51 +132,86 @@ func parseAgyAskQuestions(id string, input json.RawMessage) *elicitation {
 	return out
 }
 
-// agyStripMenuPrefix removes box borders, selection arrows, and optional menu
-// numbering ("1. ", "2. ") from a single terminal line so option labels only
-// match actual menu rows, never assistant prose that quotes those strings.
-func agyStripMenuPrefix(line string) (text string, numbered bool) {
+// agyParseMenuLine strips box borders, detects a selection cursor (> / ❯ / ▸ / ›),
+// and strips optional numbering ("1. ", "2. ") from a single terminal line so
+// option labels only match actual menu rows, never assistant prose.
+func agyParseMenuLine(line string) (text string, selected bool, numbered bool) {
 	s := strings.TrimSpace(line)
 	for {
-		trimmed := strings.TrimLeft(s, "│┃|>❯▸›●•*- ")
+		trimmed := strings.TrimLeft(s, "│┃| ")
 		if trimmed == s {
 			break
 		}
 		s = trimmed
 	}
-	if len(s) >= 3 && s[0] >= '1' && s[0] <= '9' && s[1] == '.' && s[2] == ' ' {
-		return strings.TrimSpace(s[3:]), true
+	for {
+		trimmed := strings.TrimLeft(s, ">❯▸›●•*-")
+		if trimmed == s {
+			break
+		}
+		selected = true
+		s = strings.TrimSpace(trimmed)
 	}
-	return s, false
+	if len(s) >= 3 && s[0] >= '1' && s[0] <= '9' && s[1] == '.' && s[2] == ' ' {
+		return strings.TrimSpace(s[3:]), selected, true
+	}
+	return s, selected, false
 }
 
-// agyPermissionPromptVisible reports whether the tail of an Agy pane currently
-// displays a tool/command permission confirmation dialog (distinct from the
-// first-open workspace trust dialog and from ordinary assistant prose).
-func agyPermissionPromptVisible(screen string) bool {
+func agyMenuKeys(targetIdx, selectedIdx int) []string {
+	var keys []string
+	for i := selectedIdx; i < targetIdx; i++ {
+		keys = append(keys, "Down")
+	}
+	for i := targetIdx; i < selectedIdx; i++ {
+		keys = append(keys, "Up")
+	}
+	return append(keys, "Enter")
+}
+
+// agyPermissionOptions parses the live confirmation menu from the tail of an
+// Agy pane, returning ordered options with the exact key sequence relative to
+// the currently highlighted row. Returns nil when no permission menu is visible
+// (e.g. workspace trust dialog or assistant prose quoting option labels).
+func agyPermissionOptions(screen string) []permissionOption {
 	tail := agyScreenTail(screen, 18)
 	if tail == "" || agyTrustPrompt(tail) {
-		return false
+		return nil
 	}
+	type rawOpt struct {
+		label    string
+		kind     string
+		selected bool
+		alwaysNo bool
+	}
+	var rawOpts []rawOpt
 	var hasYes, hasNo, hasHeader bool
 	for _, raw := range strings.Split(tail, "\n") {
-		line, numbered := agyStripMenuPrefix(raw)
+		line, selected, numbered := agyParseMenuLine(raw)
 		if line == "" {
 			continue
 		}
 		switch {
+		case strings.HasPrefix(line, "Yes, and always allow"),
+			strings.HasPrefix(line, "Yes, always allow"),
+			strings.HasPrefix(line, "Always allow"):
+			hasYes = true
+			rawOpts = append(rawOpts, rawOpt{label: line, kind: "always", selected: selected})
 		case strings.HasPrefix(line, "Yes, run command"),
 			strings.HasPrefix(line, "Yes, accept this change"),
 			strings.HasPrefix(line, "Yes, allow access"),
 			strings.HasPrefix(line, "Yes, allow creation"),
 			strings.HasPrefix(line, "Yes, allow tool call"),
-			strings.HasPrefix(line, "Yes, and always allow"),
 			numbered && line == "Yes":
 			hasYes = true
+			rawOpts = append(rawOpts, rawOpt{label: line, kind: "allow", selected: selected})
+		case strings.HasPrefix(line, "No, and always deny"):
+			hasNo = true
+			rawOpts = append(rawOpts, rawOpt{label: line, kind: "deny", selected: selected, alwaysNo: true})
 		case strings.HasPrefix(line, "No, deny"),
-			strings.HasPrefix(line, "No, and always deny"),
 			numbered && line == "No":
 			hasNo = true
+			rawOpts = append(rawOpts, rawOpt{label: line, kind: "deny", selected: selected})
 		case line == "Run this command?",
 			line == "Allow access to this URL?",
 			line == "Allow calling this tool?",
@@ -184,7 +219,36 @@ func agyPermissionPromptVisible(screen string) bool {
 			hasHeader = true
 		}
 	}
-	return hasYes && (hasNo || hasHeader)
+	if !hasYes || (!hasNo && !hasHeader) || len(rawOpts) == 0 {
+		return nil
+	}
+	selectedIdx := 0
+	for i, opt := range rawOpts {
+		if opt.selected {
+			selectedIdx = i
+			break
+		}
+	}
+	out := make([]permissionOption, 0, len(rawOpts))
+	for i, opt := range rawOpts {
+		keys := agyMenuKeys(i, selectedIdx)
+		if opt.kind == "deny" && !opt.alwaysNo {
+			keys = []string{"Escape"}
+		}
+		out = append(out, permissionOption{
+			Label: opt.label,
+			Kind:  opt.kind,
+			Keys:  keys,
+		})
+	}
+	return out
+}
+
+// agyPermissionPromptVisible reports whether the tail of an Agy pane currently
+// displays a tool/command permission confirmation dialog (distinct from the
+// first-open workspace trust dialog and from ordinary assistant prose).
+func agyPermissionPromptVisible(screen string) bool {
+	return len(agyPermissionOptions(screen)) > 0
 }
 
 func agyScreenTail(screen string, maxLines int) string {
@@ -212,10 +276,13 @@ func applyAgyScreenPermission(out map[string]any, pending *pendingCall, screen s
 	if status != "running" && status != "waiting" {
 		return false
 	}
-	if !agyPermissionPromptVisible(screen) {
+	opts := agyPermissionOptions(screen)
+	if len(opts) == 0 {
 		return false
 	}
-	out["permission"] = pending
+	copyCall := *pending
+	copyCall.Options = opts
+	out["permission"] = &copyCall
 	out["status"] = "waiting"
 	out["waiting_kind"] = "permission_prompt"
 	return true
