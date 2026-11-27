@@ -126,9 +126,7 @@ export function AgentAvatar({
           onError={() => setFailedSrc(src)}
           className={cn(
             'size-full rounded-full',
-            family === 'agy'
-              ? 'bg-brand-soft p-[9%] object-contain'
-              : 'object-cover',
+            family === 'agy' ? 'bg-brand-soft object-contain' : 'object-cover',
           )}
         />
       ) : (
