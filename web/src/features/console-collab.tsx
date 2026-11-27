@@ -4,11 +4,13 @@
 // integration), and compact flat run rows that open RunDetail in a sheet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
 import { useLayoutEffect } from 'react'
 
 import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
+import { Button } from '#/components/ui/button'
 import { collabKey, useCollab } from '#/lib/collab-query'
 import type { CollabShow, CollabTicket } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
@@ -20,6 +22,7 @@ import { TicketHeader } from './ticket-header'
 import { TicketPipeline, useGateLabel } from './ticket-pipeline'
 import { TicketProposals } from './ticket-proposals'
 import { TicketReply, TicketSections, openQuestion } from './ticket-reply'
+import { TicketRunChat } from './ticket-run-chat'
 import { TicketRuns } from './ticket-runs'
 import { TicketTimeline } from './ticket-timeline'
 import { TicketsView } from './tickets-view'
@@ -134,7 +137,22 @@ export function TicketReading({
       className="grid content-start"
     >
       <TicketHeader data={data} onBack={onBack} />
-      <div className="grid max-w-4xl content-start gap-4 pt-3 pb-4">
+      <div className="grid max-w-4xl min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 pt-3 pb-4">
+        {ticket.parent ? (
+          <div>
+            <Button
+              variant="ghost"
+              size="none"
+              type="button"
+              data-testid="ticket-parent-back"
+              onClick={() => onOpen(ticket.parent!)}
+              className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 text-caption text-brand-muted hover:text-brand-text"
+            >
+              <ArrowLeft size={14} aria-hidden />
+              <span>{t`Back to parent ticket`}</span>
+            </Button>
+          </div>
+        ) : null}
         <TicketPipeline data={data} />
         <TicketProposals
           id={ticket.id}
@@ -159,6 +177,14 @@ export function TicketReading({
         ) : null}
         {data.collab?.integration ? (
           <IntegrationSummary integration={data.collab.integration} />
+        ) : null}
+        {data.runs.length > 0 || ticket.running.length > 0 ? (
+          <TicketRunChat
+            ticketId={ticket.id}
+            runs={data.runs}
+            liveRunIds={ticket.running}
+            poll={livePoll}
+          />
         ) : null}
         <TicketRuns runs={data.runs} poll={livePoll} />
         <TicketTimeline

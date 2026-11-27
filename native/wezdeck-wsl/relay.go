@@ -379,6 +379,10 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = sessionImage(args)
 	case "session.file":
 		result, err = sessionFile(args)
+	case "collab.run.chat":
+		result, err = collabRunChat(args)
+	case "collab.diff":
+		result, err = collabDiff(args)
 	default:
 		return nil, false, nil
 	}
