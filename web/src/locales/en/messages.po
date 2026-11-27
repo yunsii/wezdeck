@@ -735,7 +735,7 @@ msgid "Clear search"
 msgstr "Clear search"
 
 #: src/features/session-chat-group.tsx:127
-#: src/features/session-chat-row.tsx:71
+#: src/features/session-chat-row.tsx:70
 #: src/features/session-clear.tsx:114
 msgid "Clearing…"
 msgstr "Clearing…"
@@ -1004,8 +1004,8 @@ msgstr "Copy raw line"
 #: src/features/me-agents.tsx:140
 #: src/features/session-chat-group.tsx:118
 #: src/features/session-chat-group.tsx:235
-#: src/features/session-chat-row.tsx:62
-#: src/features/session-chat-row.tsx:191
+#: src/features/session-chat-row.tsx:61
+#: src/features/session-chat-row.tsx:179
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"
@@ -1146,7 +1146,7 @@ msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may 
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
 #: src/features/session-chat-group.tsx:264
-#: src/features/session-chat-row.tsx:212
+#: src/features/session-chat-row.tsx:200
 #: src/features/session-delete.tsx:103
 #: src/features/session-info.tsx:332
 msgid "Delete session"
@@ -1233,7 +1233,7 @@ msgstr "done {when}"
 
 #: src/features/session-chat-group.tsx:209
 #: src/features/session-chat-group.tsx:373
-#: src/features/session-chat-row.tsx:143
+#: src/features/session-chat-row.tsx:131
 msgid "Draft"
 msgstr "Draft"
 
@@ -1844,8 +1844,8 @@ msgstr "Mark done"
 
 #: src/features/session-chat-group.tsx:126
 #: src/features/session-chat-group.tsx:275
-#: src/features/session-chat-row.tsx:70
-#: src/features/session-chat-row.tsx:223
+#: src/features/session-chat-row.tsx:69
+#: src/features/session-chat-row.tsx:211
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 msgid "Mark read"
@@ -1997,7 +1997,7 @@ msgstr "New session group"
 
 #: src/features/session-chat-group.tsx:258
 #: src/features/session-chat-group.tsx:443
-#: src/features/session-chat-row.tsx:206
+#: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:325
 #: src/features/session-new.tsx:459
 msgid "New session in this group"
