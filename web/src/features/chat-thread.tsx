@@ -4,6 +4,7 @@
 // word by word, each word blurring in; nothing animates under
 // prefers-reduced-motion.
 import { useLingui } from '@lingui/react/macro'
+import type { CSSProperties } from 'react'
 import {
   memo,
   startTransition,
@@ -26,6 +27,7 @@ import { ChatMarkdown } from './chat-markdown'
 import { useStream } from './chat-stream'
 import { SmoothGrow } from './chat-grow'
 import { catchUp, useCatchUpSignal } from './chat-catchup'
+import { computeInitialFloor, estimateItemHeight } from './chat-height'
 import { nextBaseline } from './chat-landing'
 import { SessionIdContext, TranscriptImages } from './chat-images'
 import { ToolGroup, canBackground } from './chat-tools'
@@ -167,26 +169,20 @@ export function group(messages: Array<Message>) {
   return out
 }
 
-/** items rendered at once when a conversation opens; the rest follow */
-const FIRST_ITEMS = 6
-/** items added per idle slice after that */
+/** items added per idle slice after the initial viewport-sized mount */
 const ITEM_CHUNK = 16
 
 /**
- * The first item index to render. A conversation opens with its newest
- * FIRST_ITEMS (it lands at its bottom, so that is the screen), then the
- * earlier ones are added ITEM_CHUNK at a time when the browser is idle, as a
- * transition (never blocking input); the browser's scroll anchoring keeps
- * the view still as they land above. Rendering and parsing the markdown of
- * a whole page at once held the main thread ~80 ms on every switch. Once
+ * The first item index to render. A conversation opens with enough newest
+ * items to fill ~2 mobile viewports (height-adaptive: short one-liners and
+ * collapsed tool rows pull more items so the screen never flashes half-empty,
+ * while long Markdown replies stop early to keep first-frame mount fast), then
+ * earlier items backfill ITEM_CHUNK at a time during idle frames. Once
  * everything is in, it stays -Infinity: 加载更早 and new messages render as
  * before.
  */
 function useProgressiveFloor(items: Array<Item>, start: number) {
-  const first =
-    items.length > FIRST_ITEMS
-      ? start + items[items.length - FIRST_ITEMS].index
-      : -Infinity
+  const first = computeInitialFloor(items, start)
   const [floor, setFloor] = useState<number | null>(null)
   const prevStart = useRef(start)
   const prepended = start < prevStart.current
@@ -415,6 +411,11 @@ export function ChatThread({
               data-msg={at}
               data-role={item.kind === 'tools' ? 'tool' : item.message.role}
               className="chat-item"
+              style={
+                {
+                  '--chat-item-est': `${estimateItemHeight(item)}px`,
+                } as CSSProperties
+              }
             >
               {renderItem(item, position, at)}
             </div>
