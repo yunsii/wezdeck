@@ -296,11 +296,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:283
-#: src/features/session-new-panels.tsx:290
-#: src/features/session-new-panels.tsx:315
-#: src/features/session-new.tsx:458
-#: src/features/session-new.tsx:502
+#: src/features/session-new-panels.tsx:260
+#: src/features/session-new-panels.tsx:267
+#: src/features/session-new-panels.tsx:292
+#: src/features/session-new-panels.tsx:322
 msgid "Agent"
 msgstr "Agent"
 
@@ -308,8 +307,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:206
-#: src/features/session-list.tsx:267
+#: src/features/session-list.tsx:311
+#: src/features/session-list.tsx:378
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -732,8 +731,8 @@ msgstr "Clear input"
 #~ msgstr "Clear input (Esc Esc)"
 
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:99
-#: src/features/session-list.tsx:196
+#: src/features/session-list.tsx:105
+#: src/features/session-list.tsx:301
 msgid "Clear search"
 msgstr "Clear search"
 
@@ -1076,13 +1075,21 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new-panels.tsx:360
+#: src/features/session-new.tsx:270
 msgid "Create session"
 msgstr "Create session"
 
 #: src/features/ticket-new.tsx:222
 msgid "Create ticket"
 msgstr "Create ticket"
+
+#: src/features/session-new-job.tsx:165
+msgid "Create workspace"
+msgstr "Create workspace"
+
+#: src/features/session-list.tsx:135
+msgid "Creating sessions"
+msgstr "Creating sessions"
 
 #: src/features/session-new-panels.tsx:151
 msgid "Creating the session group…"
@@ -1095,6 +1102,10 @@ msgstr "Creating the session group…"
 #: src/features/ticket-new.tsx:222
 msgid "Creating…"
 msgstr "Creating…"
+
+#: src/features/session-new-job.tsx:445
+msgid "Creation did not finish. Retry or edit your message above."
+msgstr "Creation did not finish. Retry or edit your message above."
 
 #: src/features/collab-top-bar.tsx:35
 msgid "Cross-repo collab"
@@ -1158,6 +1169,10 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
+#: src/features/session-new-job.tsx:176
+msgid "Deliver first message"
+msgstr "Deliver first message"
+
 #: src/features/session-permission.tsx:327
 msgid "Deny"
 msgstr "Deny"
@@ -1206,7 +1221,7 @@ msgstr "Disable this agent"
 #: src/features/me-agent-detail.tsx:336
 #: src/features/me-agents.tsx:68
 #: src/features/me-agents.tsx:120
-#: src/features/session-new-panels.tsx:65
+#: src/features/session-new-panels.tsx:66
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -1225,7 +1240,7 @@ msgstr "Disconnecting…"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/session-chat-group.tsx:105
-#: src/features/session-list.tsx:50
+#: src/features/session-list.tsx:56
 msgid "Done"
 msgstr "Done"
 
@@ -1254,6 +1269,10 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 #: src/features/ticket-thread-view.tsx:59
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
+
+#: src/features/session-new-job.tsx:225
+msgid "Edit and resend"
+msgstr "Edit and resend"
 
 #: src/features/session-chat-group.tsx:242
 #: src/features/session-chat-group.tsx:428
@@ -1454,7 +1473,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:269
+#: src/features/session-new-panels.tsx:245
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -1512,7 +1531,7 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/session-new-panels.tsx:69
+#: src/features/session-new-panels.tsx:70
 msgid "host default"
 msgstr "host default"
 
@@ -1949,7 +1968,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-list.tsx:49
+#: src/features/session-list.tsx:55
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -2001,8 +2020,11 @@ msgstr "New line"
 #~ msgstr "New round"
 
 #: src/features/session-chat-group.tsx:183
-#: src/features/session-new.tsx:289
-#: src/features/session-new.tsx:461
+#: src/features/session-list.tsx:152
+#: src/features/session-new-job.tsx:386
+#: src/features/session-new-job.tsx:386
+#: src/features/session-new.tsx:193
+#: src/features/session-new.tsx:437
 msgid "New session"
 msgstr "New session"
 
@@ -2010,11 +2032,11 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:285
+#: src/features/session-new.tsx:189
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:389
+#: src/features/session-new.tsx:359
 msgid "New session group"
 msgstr "New session group"
 
@@ -2022,7 +2044,7 @@ msgstr "New session group"
 #: src/features/session-chat-group.tsx:443
 #: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:372
-#: src/features/session-new.tsx:460
+#: src/features/session-new.tsx:437
 msgid "New session in this group"
 msgstr "New session in this group"
 
@@ -2096,7 +2118,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:201
+#: src/features/session-list.tsx:306
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2121,7 +2143,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:52
+#: src/features/session-list.tsx:58
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2165,7 +2187,7 @@ msgstr "No recent result"
 msgid "No session"
 msgstr "No session"
 
-#: src/features/session-list.tsx:188
+#: src/features/session-list.tsx:293
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2195,7 +2217,7 @@ msgstr "No upstream branch: nothing to compare with."
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
 #: src/features/me-agents.tsx:127
-#: src/features/session-new-panels.tsx:67
+#: src/features/session-new-panels.tsx:68
 msgid "Not configured"
 msgstr "Not configured"
 
@@ -2256,7 +2278,7 @@ msgstr "Nothing is created until you confirm."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-new-panels.tsx:126
+#: src/features/session-new-panels.tsx:127
 #: src/features/session-skills.tsx:236
 msgid "Nothing matches"
 msgstr "Nothing matches"
@@ -2347,6 +2369,10 @@ msgstr "Open the console"
 #: src/features/me-app.tsx:45
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "Open this page in the system browser first, then install it from there."
+
+#: src/features/session-new-job.tsx:162
+msgid "Open window in session group"
+msgstr "Open window in session group"
 
 #: src/features/ticket-reply.tsx:277
 msgid "Opened in tmux: {windowName} ({tmuxSession})"
@@ -2462,7 +2488,7 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
-#: src/features/session-split.tsx:170
+#: src/features/session-split.tsx:188
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
 
@@ -2498,6 +2524,10 @@ msgstr "Plan review"
 #: src/features/session-skills.tsx:48
 msgid "Plugin"
 msgstr "Plugin"
+
+#: src/features/session-new-job.tsx:164
+msgid "Prepare workstation"
+msgstr "Prepare workstation"
 
 #: src/features/composer-picked.tsx:38
 msgid "Preview {label}"
@@ -2731,17 +2761,16 @@ msgstr "Repo filter"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:64
-#: src/features/session-new-panels.tsx:217
-#: src/features/session-new-panels.tsx:224
-#: src/features/session-new-panels.tsx:244
-#: src/features/session-new.tsx:456
-#: src/features/session-new.tsx:502
+#: src/features/session-new-panels.tsx:203
+#: src/features/session-new-panels.tsx:210
+#: src/features/session-new-panels.tsx:230
+#: src/features/session-new-panels.tsx:322
 msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:323
 #: src/features/me-agents.tsx:60
-#: src/features/session-new-panels.tsx:60
+#: src/features/session-new-panels.tsx:61
 msgid "Repository default"
 msgstr "Repository default"
 
@@ -2839,6 +2868,7 @@ msgstr "Resumes this ticket's agent conversation in a window of the target repo'
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:462
 #: src/features/me-host.tsx:109
+#: src/features/session-new-job.tsx:215
 msgid "Retry"
 msgstr "Retry"
 
@@ -3014,8 +3044,8 @@ msgstr "Saving…"
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-new-panels.tsx:99
 #: src/features/session-new-panels.tsx:100
+#: src/features/session-new-panels.tsx:101
 msgid "Search"
 msgstr "Search"
 
@@ -3035,8 +3065,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:89
-#: src/features/session-list.tsx:90
+#: src/features/session-list.tsx:95
+#: src/features/session-list.tsx:96
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3068,6 +3098,10 @@ msgstr "Send Ctrl+B: the running command keeps going in the background and the a
 #: src/features/session-composer.tsx:241
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
+
+#: src/features/session-new.tsx:462
+msgid "Send the first message below to create the workspace and start the agent."
+msgstr "Send the first message below to create the workspace and start the agent."
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -3145,13 +3179,15 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:196
-#: src/features/session-list.tsx:167
-#: src/features/session-list.tsx:282
+#: src/features/session-list.tsx:272
+#: src/features/session-list.tsx:393
+#: src/features/session-new-job.tsx:399
+#: src/features/session-new.tsx:433
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:178
+#: src/features/session-list.tsx:283
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -3286,6 +3322,10 @@ msgstr "Start a blank agent process in this pane"
 #: src/features/session-skills.tsx:74
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
+
+#: src/features/session-new-job.tsx:171
+msgid "Start agent"
+msgstr "Start agent"
 
 #: src/features/session-restart.tsx:89
 msgid "Start fresh"
@@ -3507,7 +3547,9 @@ msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
-#: src/features/session-new.tsx:182
+#: src/features/session-new-job.tsx:146
+#: src/features/session-new-job.tsx:323
+#: src/features/session-new-job.tsx:337
 msgid "The previous session request expired. Start a new one."
 msgstr "The previous session request expired. Start a new one."
 
@@ -3745,7 +3787,7 @@ msgstr "Trigger"
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "Truncated at 64 KB — check the terminal for the full payload."
 
-#: src/features/session-new-panels.tsx:344
+#: src/features/session-new-job.tsx:192
 msgid "Trust this worktree and continue"
 msgstr "Trust this worktree and continue"
 
@@ -3901,7 +3943,7 @@ msgid "waiting on you"
 msgstr "waiting on you"
 
 #: src/features/session-chat-group.tsx:104
-#: src/features/session-list.tsx:48
+#: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:524
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3966,7 +4008,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new-panels.tsx:257
+#: src/features/session-new.tsx:246
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -3974,7 +4016,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new-panels.tsx:264
+#: src/features/session-new.tsx:260
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -4053,7 +4095,7 @@ msgstr "working"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/session-chat-group.tsx:103
-#: src/features/session-list.tsx:51
+#: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "Working"
 
@@ -4093,13 +4135,17 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:63
+#: src/features/session-list.tsx:69
 msgid "Yesterday"
 msgstr "Yesterday"
 
 #: src/features/ticket-thread-view.tsx:13
 msgid "You (initiator)"
 msgstr "You (initiator)"
+
+#: src/features/session-new-job.tsx:446
+msgid "You can continue chatting here as soon as the session is ready…"
+msgstr "You can continue chatting here as soon as the session is ready…"
 
 #: src/features/ticket-reply.tsx:196
 msgid "Your decision, extra context, or an answer to the challenge"

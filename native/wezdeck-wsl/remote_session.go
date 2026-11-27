@@ -519,7 +519,8 @@ func listSessionsFor(includeArchived bool) (any, error) {
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
 	return map[string]any{
 		"v": 1, "ok": true, "sessions": cards,
-		"redirects": sessionRedirects(recent, entries),
+		"creating_jobs": activeNewSessionJobsFor(cards),
+		"redirects":     sessionRedirects(recent, entries),
 	}, nil
 }
 

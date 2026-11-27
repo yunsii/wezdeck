@@ -213,13 +213,13 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
 
     await shortcutsSheet(page)
 
-    // Ctrl+N from inside the composer opens 新会话
+    // Ctrl+N from inside the composer enters 新会话, Esc returns
     await box.click()
     await page.keyboard.press('Control+KeyN')
-    const newSheet = page.getByTestId('new-session-sheet')
-    await newSheet.waitFor({ timeout: 2_000 })
+    const newView = page.getByTestId('new-session-view')
+    await newView.waitFor({ timeout: 2_000 })
     await page.keyboard.press('Escape')
-    await newSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+    await newView.waitFor({ state: 'hidden', timeout: 2_000 })
 
     // Alt+/ focuses the session list search box on wide screens
     await page.evaluate(() => (document.activeElement as HTMLElement).blur())

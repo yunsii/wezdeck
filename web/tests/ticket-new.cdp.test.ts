@@ -77,7 +77,7 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
     await page.keyboard.press('g')
     await page.keyboard.press('c')
     await page.waitForURL(/\/console\/collab$/)
-    expect(await page.getByTestId('new-session-sheet').count()).toBe(0)
+    expect(await page.getByTestId('new-session-view').count()).toBe(0)
 
     await page.getByTestId('new-ticket').click()
     const sheet = page.getByTestId('new-ticket-sheet')

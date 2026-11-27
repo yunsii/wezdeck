@@ -73,12 +73,15 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    suppresses scroll anchoring during return; touch ends the correction.
    Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
-   filter (`c` on a keyboard) is 新会话 — message first; location bar for
-   repo/direction (idle reuses; "+ New direction" deeper); on phones, repository
-   and agent fields open searchable lists within the same sheet, with a back
-   button and preserved form draft; wide screens keep anchored selects. Open,
-   back and pick emit `session-new-picker` events without search text or paths. The sheet
-   follows the job and opens the session once the agent has the message; managed worktrees are pre-trusted (with `session.new.trust` only as fallback), and 我的 › Agents shows every managed model. 工单 has the
+   filter (`c` / `Ctrl+N` on a keyboard) enters `/console/sessions/new` directly
+   (no blocking modal): repository and agent sit in a flat setup card above the
+   composer (searchable picker sheet on phones; anchored selects when wide);
+   sending starts the async job and replaces the URL with `/console/sessions/job-<id>`
+   at once, showing the first message, live steps, optional trust confirmation,
+   and retry/edit recovery before replacing into the real session id (while
+   `creating_jobs` keeps in-flight creations reachable from the list). Managed
+   worktrees are pre-trusted (`session.new.trust` fallback), and 我的 › Agents
+   lists every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The
    agent's own name (`agent_name`, usually Claude's derived peer address

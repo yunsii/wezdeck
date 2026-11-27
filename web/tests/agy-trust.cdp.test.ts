@@ -1,4 +1,6 @@
 // covers: web/src/features/session-new.tsx
+// covers: web/src/features/session-new-job.tsx
+// covers: web/src/features/session-new-route.ts
 // covers: web/src/features/session-new-panels.tsx
 // covers: native/wezdeck-wsl/session_new.go
 import { chromium } from '@playwright/test'
@@ -17,7 +19,7 @@ describe('Agy worktree trust in new session', () => {
   })
 
   it.each([390, 1440])(
-    'restores the new-session form after an unknown job at width %i',
+    'guides creation in-session, confirms trust, and recovers after an unknown job at width %i',
     async (width) => {
       const context = await browser.newContext({
         viewport: { width, height: 844 },
@@ -26,7 +28,7 @@ describe('Agy worktree trust in new session', () => {
       const writes: Array<{ action: string; body: Record<string, unknown> }> =
         []
       let stage = 'waiting_trust'
-      await context.route('http://127.0.0.1:35791/**', async (route) => {
+      await context.route('**/api/v1/**', async (route) => {
         const url = new URL(route.request().url())
         const reply = (body: unknown) =>
           route.fulfill({
@@ -49,8 +51,6 @@ describe('Agy worktree trust in new session', () => {
             ok: true,
             repos: [{ root: '/tmp/agy-test-repo', label: 'agy-test-repo' }],
           })
-        if (url.pathname === '/api/v1/remote/workstations')
-          return reply({ v: 1, ok: true, directions: [] })
         if (url.pathname === '/api/v1/remote/agent.profiles')
           return reply({
             v: 1,
@@ -68,7 +68,27 @@ describe('Agy worktree trust in new session', () => {
             ],
           })
         if (url.pathname === '/api/v1/remote/sessions')
-          return reply({ v: 1, ok: true, sessions: [] })
+          return reply({
+            v: 1,
+            ok: true,
+            sessions: [],
+            creating_jobs:
+              stage === 'unknown'
+                ? []
+                : [
+                    {
+                      job: 'agy-job',
+                      stage,
+                      mode: 'new',
+                      repo: '/tmp/agy-test-repo',
+                      repo_label: 'agy-test-repo',
+                      agent_profile: 'agy',
+                      prompt: 'Read the README',
+                      worktree: '/tmp/agy-test-repo/.worktrees/agy',
+                      branch: 'dev/agy',
+                    },
+                  ],
+          })
         if (url.pathname === '/api/v1/remote/session.new.job') {
           if (stage === 'unknown')
             return reply({
@@ -82,6 +102,10 @@ describe('Agy worktree trust in new session', () => {
               job: 'agy-job',
               stage,
               mode: 'new',
+              repo: '/tmp/agy-test-repo',
+              repo_label: 'agy-test-repo',
+              agent_profile: 'agy',
+              prompt: 'Read the README',
               worktree: '/tmp/agy-test-repo/.worktrees/agy',
               branch: 'dev/agy',
             },
@@ -114,39 +138,44 @@ describe('Agy worktree trust in new session', () => {
         }
       }
       await page.getByTestId('new-session').click()
-      const sheet = page.getByTestId('new-session-sheet')
-      await sheet.getByTestId('new-session-place').click()
-      await sheet.locator('[data-direction="+new"]').click()
-      await sheet.getByPlaceholder('例如 ux、ci、i18n').fill('agy')
-      await sheet.getByTestId('new-session-direction-done').click()
-      await sheet.getByPlaceholder('要它做什么？').fill('Read the README')
-      await sheet.getByRole('combobox', { name: '智能体' }).click()
-      expect(
-        await page
-          .getByRole('option', { name: 'Claude (已停用)' })
-          .getAttribute('aria-disabled'),
-      ).toBe('true')
+      await page.waitForURL('**/console/sessions/new', { timeout: 10_000 })
+      const view = page.getByTestId('new-session-view')
+      await view.getByPlaceholder('要它做什么？').fill('Read the README')
+      await view.getByRole('combobox', { name: '智能体' }).click()
+      const disabledClaude = page.getByRole('option', {
+        name: 'Claude (已停用)',
+      })
+      await disabledClaude.waitFor({ timeout: 5_000 })
+      const isDisabled =
+        (await disabledClaude.getAttribute('aria-disabled')) === 'true' ||
+        (await disabledClaude.isDisabled())
+      expect(isDisabled).toBe(true)
       await page.getByRole('option', { name: 'Antigravity' }).click()
-      await sheet.getByRole('button', { name: '创建会话' }).click()
+      await view.getByRole('button', { name: '创建会话' }).click()
+      await page.waitForURL('**/console/sessions/job-agy-job', {
+        timeout: 10_000,
+      })
+
+      const jobView = page.getByTestId('new-session-job-view')
       await expect
         .poll(() =>
-          sheet.getByTestId('new-session-stage').getAttribute('data-stage'),
+          jobView.getByTestId('new-session-stage').getAttribute('data-stage'),
         )
         .toBe('waiting_trust')
-      if (process.env.WEZDECK_VISUAL_SHOTS)
-        await page.screenshot({ path: `/tmp/wezdeck-agy-trust-${width}.png` })
+      expect(
+        await jobView.getByTestId('new-session-first-prompt').textContent(),
+      ).toBe('Read the README')
       expect(writes).toEqual([
         {
           action: 'session.new',
           body: expect.objectContaining({ agent_profile: 'agy' }),
         },
       ])
-      await sheet.getByRole('button', { name: '关闭' }).click()
-      await page.getByTestId('new-session').click()
+
       await expect
-        .poll(() => sheet.getByTestId('agy-trust-worktree').isVisible())
+        .poll(() => jobView.getByTestId('agy-trust-worktree').isVisible())
         .toBe(true)
-      await sheet.getByTestId('agy-trust-worktree').click()
+      await jobView.getByTestId('agy-trust-worktree').click()
       await expect.poll(() => writes.length).toBe(2)
       expect(writes[1]).toEqual({
         action: 'session.new.trust',
@@ -154,26 +183,19 @@ describe('Agy worktree trust in new session', () => {
       })
 
       stage = 'unknown'
-      await sheet.getByRole('button', { name: '关闭' }).click()
-      await page.getByTestId('new-session').click()
+      await page.reload()
       await expect
-        .poll(() => sheet.getByTestId('new-session-place').isEnabled(), {
+        .poll(() => jobView.getByRole('alert').textContent(), {
           timeout: 15_000,
         })
-        .toBe(true)
-      await expect
-        .poll(() => sheet.getByRole('alert').textContent())
-        .toContain('上次新建会话请求已失效')
-      expect(
-        await page.evaluate(() =>
-          sessionStorage.getItem('wezdeck.pending-new-session-job'),
-        ),
-      ).toBeNull()
-      await sheet.getByTestId('new-session-place').click()
-      await expect
-        .poll(() => sheet.getByTestId('new-session-place').count())
-        .toBe(0)
+        .toContain('上一个会话请求已过期')
+      await jobView.getByTestId('new-session-edit').click()
+      await page.waitForURL('**/console/sessions/new', { timeout: 10_000 })
+      expect(await view.getByPlaceholder('要它做什么？').inputValue()).toBe(
+        'Read the README',
+      )
       await context.close()
     },
+    60_000,
   )
 })

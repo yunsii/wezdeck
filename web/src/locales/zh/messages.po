@@ -296,11 +296,10 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:283
-#: src/features/session-new-panels.tsx:290
-#: src/features/session-new-panels.tsx:315
-#: src/features/session-new.tsx:458
-#: src/features/session-new.tsx:502
+#: src/features/session-new-panels.tsx:260
+#: src/features/session-new-panels.tsx:267
+#: src/features/session-new-panels.tsx:292
+#: src/features/session-new-panels.tsx:322
 msgid "Agent"
 msgstr "智能体"
 
@@ -308,8 +307,8 @@ msgstr "智能体"
 msgid "Agent name"
 msgstr "Agent 名"
 
-#: src/features/session-list.tsx:206
-#: src/features/session-list.tsx:267
+#: src/features/session-list.tsx:311
+#: src/features/session-list.tsx:378
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -732,8 +731,8 @@ msgstr "清空输入"
 #~ msgstr "清空输入（Esc Esc）"
 
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:99
-#: src/features/session-list.tsx:196
+#: src/features/session-list.tsx:105
+#: src/features/session-list.tsx:301
 msgid "Clear search"
 msgstr "清除搜索"
 
@@ -1076,13 +1075,21 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new-panels.tsx:360
+#: src/features/session-new.tsx:270
 msgid "Create session"
 msgstr "创建会话"
 
 #: src/features/ticket-new.tsx:222
 msgid "Create ticket"
 msgstr "创建工单"
+
+#: src/features/session-new-job.tsx:165
+msgid "Create workspace"
+msgstr "创建工作区"
+
+#: src/features/session-list.tsx:135
+msgid "Creating sessions"
+msgstr "创建中的会话"
 
 #: src/features/session-new-panels.tsx:151
 msgid "Creating the session group…"
@@ -1095,6 +1102,10 @@ msgstr "正在创建会话组…"
 #: src/features/ticket-new.tsx:222
 msgid "Creating…"
 msgstr "创建中…"
+
+#: src/features/session-new-job.tsx:445
+msgid "Creation did not finish. Retry or edit your message above."
+msgstr "创建未完成，可在上方重试或修改消息后重发。"
 
 #: src/features/collab-top-bar.tsx:35
 msgid "Cross-repo collab"
@@ -1158,6 +1169,10 @@ msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工�
 msgid "Delete session"
 msgstr "删除会话"
 
+#: src/features/session-new-job.tsx:176
+msgid "Deliver first message"
+msgstr "发送首条消息"
+
 #: src/features/session-permission.tsx:327
 msgid "Deny"
 msgstr "拒绝"
@@ -1206,7 +1221,7 @@ msgstr "停用此 Agent"
 #: src/features/me-agent-detail.tsx:336
 #: src/features/me-agents.tsx:68
 #: src/features/me-agents.tsx:120
-#: src/features/session-new-panels.tsx:65
+#: src/features/session-new-panels.tsx:66
 msgid "Disabled"
 msgstr "已停用"
 
@@ -1225,7 +1240,7 @@ msgstr "正在断开…"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/session-chat-group.tsx:105
-#: src/features/session-list.tsx:50
+#: src/features/session-list.tsx:56
 msgid "Done"
 msgstr "已完成"
 
@@ -1254,6 +1269,10 @@ msgstr "这个项目里更早的会话。选中后窗格会切换过去，本页
 #: src/features/ticket-thread-view.tsx:59
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
+
+#: src/features/session-new-job.tsx:225
+msgid "Edit and resend"
+msgstr "修改重发"
 
 #: src/features/session-chat-group.tsx:242
 #: src/features/session-chat-group.tsx:428
@@ -1454,7 +1473,7 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-new-panels.tsx:269
+#: src/features/session-new-panels.tsx:245
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
@@ -1512,7 +1531,7 @@ msgstr "收起初始消息"
 msgid "hit {hit}%"
 msgstr "命中 {hit}%"
 
-#: src/features/session-new-panels.tsx:69
+#: src/features/session-new-panels.tsx:70
 msgid "host default"
 msgstr "主机默认"
 
@@ -1949,7 +1968,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/session-list.tsx:49
+#: src/features/session-list.tsx:55
 msgid "Needs a decision"
 msgstr "需要确认"
 
@@ -2001,8 +2020,11 @@ msgstr "换行"
 #~ msgstr "新一轮"
 
 #: src/features/session-chat-group.tsx:183
-#: src/features/session-new.tsx:289
-#: src/features/session-new.tsx:461
+#: src/features/session-list.tsx:152
+#: src/features/session-new-job.tsx:386
+#: src/features/session-new-job.tsx:386
+#: src/features/session-new.tsx:193
+#: src/features/session-new.tsx:437
 msgid "New session"
 msgstr "新会话"
 
@@ -2010,11 +2032,11 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:285
+#: src/features/session-new.tsx:189
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:389
+#: src/features/session-new.tsx:359
 msgid "New session group"
 msgstr "新会话组"
 
@@ -2022,7 +2044,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:443
 #: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:372
-#: src/features/session-new.tsx:460
+#: src/features/session-new.tsx:437
 msgid "New session in this group"
 msgstr "在此组新建会话"
 
@@ -2096,7 +2118,7 @@ msgstr "还没有动态"
 #~ msgid "No agent is working right now."
 #~ msgstr "没有正在干活的 agent。"
 
-#: src/features/session-list.tsx:201
+#: src/features/session-list.tsx:306
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -2121,7 +2143,7 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:52
+#: src/features/session-list.tsx:58
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -2165,7 +2187,7 @@ msgstr "暂无最近的连接结果"
 msgid "No session"
 msgstr "无会话"
 
-#: src/features/session-list.tsx:188
+#: src/features/session-list.tsx:293
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -2195,7 +2217,7 @@ msgstr "没有上游分支，无法比较。"
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
 #: src/features/me-agents.tsx:127
-#: src/features/session-new-panels.tsx:67
+#: src/features/session-new-panels.tsx:68
 msgid "Not configured"
 msgstr "未配置"
 
@@ -2256,7 +2278,7 @@ msgstr "确认之前不会建任何单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-new-panels.tsx:126
+#: src/features/session-new-panels.tsx:127
 #: src/features/session-skills.tsx:236
 msgid "Nothing matches"
 msgstr "没有匹配项"
@@ -2347,6 +2369,10 @@ msgstr "打开控制台"
 #: src/features/me-app.tsx:45
 msgid "Open this page in the system browser first, then install it from there."
 msgstr "先在系统浏览器里打开本页，再从那里安装。"
+
+#: src/features/session-new-job.tsx:162
+msgid "Open window in session group"
+msgstr "在会话组中打开新窗口"
 
 #: src/features/ticket-reply.tsx:277
 msgid "Opened in tmux: {windowName} ({tmuxSession})"
@@ -2462,7 +2488,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:170
+#: src/features/session-split.tsx:188
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -2498,6 +2524,10 @@ msgstr "计划确认"
 #: src/features/session-skills.tsx:48
 msgid "Plugin"
 msgstr "插件"
+
+#: src/features/session-new-job.tsx:164
+msgid "Prepare workstation"
+msgstr "准备工作站"
 
 #: src/features/composer-picked.tsx:38
 msgid "Preview {label}"
@@ -2731,17 +2761,16 @@ msgstr "仓库筛选"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:64
-#: src/features/session-new-panels.tsx:217
-#: src/features/session-new-panels.tsx:224
-#: src/features/session-new-panels.tsx:244
-#: src/features/session-new.tsx:456
-#: src/features/session-new.tsx:502
+#: src/features/session-new-panels.tsx:203
+#: src/features/session-new-panels.tsx:210
+#: src/features/session-new-panels.tsx:230
+#: src/features/session-new-panels.tsx:322
 msgid "Repository"
 msgstr "仓库"
 
 #: src/features/console-me.tsx:323
 #: src/features/me-agents.tsx:60
-#: src/features/session-new-panels.tsx:60
+#: src/features/session-new-panels.tsx:61
 msgid "Repository default"
 msgstr "按仓库设置"
 
@@ -2839,6 +2868,7 @@ msgstr "在目标仓库的 tmux 会话里开一个窗口，接着这张工单的
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:462
 #: src/features/me-host.tsx:109
+#: src/features/session-new-job.tsx:215
 msgid "Retry"
 msgstr "重试"
 
@@ -3014,8 +3044,8 @@ msgstr "保存中…"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-new-panels.tsx:99
 #: src/features/session-new-panels.tsx:100
+#: src/features/session-new-panels.tsx:101
 msgid "Search"
 msgstr "搜索"
 
@@ -3035,8 +3065,8 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:89
-#: src/features/session-list.tsx:90
+#: src/features/session-list.tsx:95
+#: src/features/session-list.tsx:96
 msgid "Search sessions"
 msgstr "搜索会话"
 
@@ -3068,6 +3098,10 @@ msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接�
 #: src/features/session-composer.tsx:241
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
+
+#: src/features/session-new.tsx:462
+msgid "Send the first message below to create the workspace and start the agent."
+msgstr "在下方发送第一条消息即可创建工作区并启动 Agent。"
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -3145,13 +3179,15 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:196
-#: src/features/session-list.tsx:167
-#: src/features/session-list.tsx:282
+#: src/features/session-list.tsx:272
+#: src/features/session-list.tsx:393
+#: src/features/session-new-job.tsx:399
+#: src/features/session-new.tsx:433
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:178
+#: src/features/session-list.tsx:283
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -3286,6 +3322,10 @@ msgstr "在当前窗格启动空白 agent 进程"
 #: src/features/session-skills.tsx:74
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
+
+#: src/features/session-new-job.tsx:171
+msgid "Start agent"
+msgstr "启动 Agent"
 
 #: src/features/session-restart.tsx:89
 msgid "Start fresh"
@@ -3507,7 +3547,9 @@ msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
-#: src/features/session-new.tsx:182
+#: src/features/session-new-job.tsx:146
+#: src/features/session-new-job.tsx:323
+#: src/features/session-new-job.tsx:337
 msgid "The previous session request expired. Start a new one."
 msgstr "上一个会话请求已过期，请重新开始。"
 
@@ -3745,7 +3787,7 @@ msgstr "触发来源"
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "内容超过 64 KB 已截断，完整内容请在终端查看。"
 
-#: src/features/session-new-panels.tsx:344
+#: src/features/session-new-job.tsx:192
 msgid "Trust this worktree and continue"
 msgstr "信任此工作树并继续"
 
@@ -3901,7 +3943,7 @@ msgid "waiting on you"
 msgstr "等你回复"
 
 #: src/features/session-chat-group.tsx:104
-#: src/features/session-list.tsx:48
+#: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:524
 msgid "Waiting on you"
 msgstr "等你处理"
@@ -3966,7 +4008,7 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
-#: src/features/session-new-panels.tsx:257
+#: src/features/session-new.tsx:246
 msgid "What do you want to solve?"
 msgstr "你想解决什么问题？"
 
@@ -3974,7 +4016,7 @@ msgstr "你想解决什么问题？"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new-panels.tsx:264
+#: src/features/session-new.tsx:260
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -4053,7 +4095,7 @@ msgstr "运行中"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/session-chat-group.tsx:103
-#: src/features/session-list.tsx:51
+#: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "运行中"
 
@@ -4093,13 +4135,17 @@ msgid "yes"
 msgstr "是"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:63
+#: src/features/session-list.tsx:69
 msgid "Yesterday"
 msgstr "昨天"
 
 #: src/features/ticket-thread-view.tsx:13
 msgid "You (initiator)"
 msgstr "你（发起方）"
+
+#: src/features/session-new-job.tsx:446
+msgid "You can continue chatting here as soon as the session is ready…"
+msgstr "会话就绪后即可在此继续对话…"
 
 #: src/features/ticket-reply.tsx:196
 msgid "Your decision, extra context, or an answer to the challenge"

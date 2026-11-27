@@ -1,40 +1,58 @@
-// The host allocates the checkout and starts the agent as an observable job.
+// Guided in-session creation (/console/sessions/new): clicking + / pressing c
+// or Ctrl+N enters the session view immediately without a blocking modal.
+// Picking repo + agent and sending the first message starts the async host job
+// and replaces the URL with /console/sessions/job-<id> right away.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
-import { toast } from 'sonner'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { Plus, SendHorizontal } from 'lucide-react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
+import { BackButton } from '#/components/deck/back-button'
+import { Button } from '#/components/ui/button'
+import { Textarea } from '#/components/ui/textarea'
+import { trace } from '#/lib/client-trace'
+import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
-import { recordVisit } from '#/lib/session-visits'
-import { useSessions } from './console-sessions'
-import { worktreeKey } from './session-order'
-import { jumpPending } from './console-jump-keys'
-import { useDeviceState } from './device-state'
-import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
-import { Button } from '#/components/ui/button'
-import { Sheet } from '#/components/ui/sheet'
+import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
+import { jumpPending } from './console-jump-keys'
+import { useSessions } from './console-sessions'
+import { useDeviceState } from './device-state'
 import {
-  ComposeLayer,
-  NewSessionPicker,
+  NewSessionPickerSheet,
+  NewSessionSetupCard,
   useAgentSelection,
   useNewSessionAgentOptions,
   useNewSessionPicker,
-  useStageText,
 } from './session-new-panels'
+import {
+  NEW_SESSION_ID,
+  isNewSessionId,
+  jobSessionId,
+  rememberJobSeed,
+  setNewSessionDraft,
+  useNewSessionDraft,
+} from './session-new-route'
+import type { NewSessionPreset } from './session-new-route'
+import { worktreeKey } from './session-order'
+
+export type { NewSessionPreset }
 
 type Repo = { root: string; label: string; visited?: number }
-
-export type NewSessionPreset = { repo: string; anchor: string; group: string }
 
 type NewSessionRequest = { round: number; preset?: NewSessionPreset }
 let newSessionReq: NewSessionRequest = { round: 0 }
 const newSessionListeners = new Set<() => void>()
 
-/** open the 新会话 sheet; optional preset locks the place bar to that chat */
+/** Navigate into the guided 新会话 view; optional preset locks the group. */
 export function requestNewSession(preset?: NewSessionPreset) {
   newSessionReq = { round: newSessionReq.round + 1, preset }
   for (const listener of newSessionListeners) listener()
@@ -69,19 +87,6 @@ export function suggestGroupName(prompt: string): string {
     : characters.slice(0, 31).join('') + '…'
 }
 
-type Job = {
-  job: string
-  stage:
-    'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
-  /** new direction, one more parallel slot, or an idle slot reused */
-  mode?: 'new' | 'parallel' | 'reuse' | 'group'
-  worktree?: string
-  branch?: string
-  session_id?: string
-  error?: string
-  warning?: string
-}
-
 const preferenceKeys = {
   repo: 'wezdeck.new-session.repo',
   agent: 'wezdeck.new-session.agent',
@@ -104,148 +109,47 @@ function rememberSessionChoices(repo: string | undefined, agent: string) {
   }
 }
 
-const pendingJobKey = 'wezdeck.pending-new-session-job'
-
-function isUnknownJob(error: unknown) {
-  return (
-    error instanceof Error &&
-    error.message.includes('session.new.job: unknown job')
-  )
-}
-
-function useAutoOpenNewSession({
-  current,
-  jobId,
-  sessions,
-  before,
-  onClose,
-}: {
-  current?: Job
-  jobId: string
-  sessions?: Array<{ id: string; worktree?: string; cwd: string }>
-  before: Set<string>
-  onClose: () => void
-}) {
-  const { locale } = useLocale()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const opened = useRef('')
-  useEffect(() => {
-    if (current?.stage === 'failed') sessionStorage.removeItem(pendingJobKey)
-  }, [current?.stage])
-  const listed =
-    current?.stage === 'done' && current.worktree
-      ? sessions?.find(
-          (row) => row.worktree === current.worktree && !before.has(row.id),
-        )
-      : undefined
-  const targetId =
-    current?.stage === 'done' ? current.session_id || listed?.id : undefined
-  // A poll must not reopen a completed job after the user switches away.
-  useEffect(() => {
-    if (!targetId || opened.current === jobId) return
-    opened.current = jobId
-    sessionStorage.removeItem(pendingJobKey)
-    const visitPath = listed?.worktree || listed?.cwd || current?.worktree
-    if (visitPath) recordVisit(visitPath)
-    if (current?.warning) toast.warning(current.warning)
-    void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-    onClose()
-    void navigate({
-      to: '/{-$locale}/console/sessions/$id',
-      params: { locale: locale === 'en' ? undefined : locale, id: targetId },
-    })
-  }, [
-    targetId,
-    listed,
-    current?.worktree,
-    current?.warning,
-    jobId,
-    navigate,
-    locale,
-    onClose,
-    queryClient,
-  ])
-}
-
-function usePendingJobRecovery(
-  jobId: string,
-  jobError: unknown,
-  setJobId: (id: string) => void,
-  setError: (message: string) => void,
-) {
-  const { t } = useLingui()
-  useEffect(() => {
-    if (!jobId || !isUnknownJob(jobError)) return
-    sessionStorage.removeItem(pendingJobKey)
-    setJobId('')
-    setError(t`The previous session request expired. Start a new one.`)
-  }, [jobId, jobError, setJobId, setError, t])
-}
-
-function readPendingJob(): { job: string; before: string[] } | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const value: unknown = JSON.parse(
-      sessionStorage.getItem(pendingJobKey) || 'null',
-    )
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'job' in value &&
-      typeof value.job === 'string' &&
-      'before' in value &&
-      Array.isArray(value.before) &&
-      value.before.every((id) => typeof id === 'string')
-    )
-      return { job: value.job, before: value.before }
-  } catch {
-    sessionStorage.removeItem(pendingJobKey)
-  }
-  return null
-}
-
-function useAgyTrust(jobId: string, setError: (message: string) => void) {
-  const [trusting, setTrusting] = useState(false)
-  const trust = async () => {
-    setTrusting(true)
-    setError('')
-    try {
-      await hostWrite('session.new.trust', { job: jobId, confirm: true })
-    } catch (error) {
-      setError((error as Error).message)
-    } finally {
-      setTrusting(false)
-    }
-  }
-  return { trust, trusting }
-}
+const desktopEnterSends = () =>
+  typeof window !== 'undefined' &&
+  !window.matchMedia('(pointer: coarse)').matches
 
 export function NewSessionButton() {
   const { t } = useLingui()
+  const { locale } = useLocale()
+  const localeParam = locale === 'en' ? undefined : locale
   const device = useDeviceState()
+  const navigate = useNavigate()
+  const { id: currentId } = useParams({ strict: false })
   const req = useNewSessionRequest()
-  const [open, setOpen] = useState(false)
-  // a fresh form per opening (key), while the sheet stays mounted on close
-  // so it can play its exit
-  const [round, setRound] = useState(0)
-  const [preset, setPreset] = useState<NewSessionPreset | undefined>()
-  const show = (next?: NewSessionPreset) => {
-    setPreset(next)
-    setRound((n) => n + 1)
-    setOpen(true)
-  }
-  // The group menu opens the form once per request.
+
+  const openNew = useCallback(
+    (preset?: NewSessionPreset) => {
+      setNewSessionDraft({ preset })
+      trace('session-new', {
+        action: 'enter',
+        mode: preset?.anchor ? 'group' : 'new',
+      })
+      void navigate({
+        to: '/{-$locale}/console/sessions/$id',
+        params: { locale: localeParam, id: NEW_SESSION_ID },
+        replace: isNewSessionId(currentId),
+      })
+    },
+    [navigate, localeParam, currentId],
+  )
+
   const seenReq = useRef(0)
   useEffect(() => {
     if (req.round === 0 || req.round === seenReq.current) return
     seenReq.current = req.round
-    show(req.preset)
-  }, [req])
+    openNew(req.preset)
+  }, [req, openNew])
+
   // `c` on the list: Ctrl+k g at the desk. Ctrl/⌘+N too, even from the
   // composer — where the browser lets the page have it (an installed app
   // window); a plain tab may keep it for a new window, `c` still works.
   useEffect(() => {
+    if (device.state !== 'approved') return
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (
@@ -256,7 +160,7 @@ export function NewSessionButton() {
       ) {
         if (/\/console\/sessions\/[^/]+$/.test(window.location.pathname)) return
         event.preventDefault()
-        show()
+        openNew()
         return
       }
       if (
@@ -269,50 +173,129 @@ export function NewSessionButton() {
       )
         return
       event.preventDefault()
-      show()
+      openNew()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [device.state, openNew])
+
   if (device.state !== 'approved') return null
   return (
-    <>
-      <Button
-        variant="solid"
-        type="button"
-        onClick={() => show()}
-        data-testid="new-session"
-        title={t`New session (c)`}
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
-      >
-        <Plus size={18} aria-hidden />
-        <span className="sr-only md:not-sr-only">{t`New session`}</span>
-      </Button>
-      {round > 0 ? (
-        <NewSessionSheet
-          key={round}
-          open={open}
-          preset={preset}
-          onClose={() => setOpen(false)}
-        />
-      ) : null}
-    </>
+    <Button
+      variant="solid"
+      type="button"
+      onClick={() => openNew()}
+      data-testid="new-session"
+      title={t`New session (c)`}
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
+    >
+      <Plus size={18} aria-hidden />
+      <span className="sr-only md:not-sr-only">{t`New session`}</span>
+    </Button>
   )
 }
 
-function NewSessionSheet({
-  open,
-  onClose,
-  preset,
+function useEscapeToBack(blocked: boolean, back: () => void) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || blocked) return
+      if (document.querySelector('[role="dialog"]')) return
+      const target = event.target as HTMLElement | null
+      if (
+        target instanceof HTMLTextAreaElement &&
+        target.value.trim().length > 0
+      ) {
+        target.blur()
+        return
+      }
+      event.preventDefault()
+      back()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [blocked, back])
+}
+
+function NewSessionComposer({
+  prompt,
+  onPrompt,
+  sending,
+  ready,
+  onSubmit,
 }: {
-  open: boolean
-  onClose: () => void
-  preset?: NewSessionPreset
+  prompt: string
+  onPrompt: (next: string) => void
+  sending: boolean
+  ready: boolean
+  onSubmit: () => void
 }) {
   const { t } = useLingui()
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSubmit()
+      }}
+      className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-2 border-t border-brand-edge bg-brand-deck px-2.5 pt-2.5 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
+    >
+      <Textarea
+        value={prompt}
+        disabled={sending}
+        rows={3}
+        autoFocus
+        aria-label={t`What do you want to solve?`}
+        onChange={(event) => onPrompt(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return
+          if (
+            event.key === 'Enter' &&
+            (event.metaKey ||
+              event.ctrlKey ||
+              (!event.shiftKey && desktopEnterSends()))
+          ) {
+            event.preventDefault()
+            onSubmit()
+          }
+        }}
+        placeholder={t`What should it work on?`}
+      />
+      <div className="flex justify-end">
+        <Button
+          variant="solid"
+          type="submit"
+          disabled={!ready || sending}
+          className="min-h-11 gap-1.5 px-4 text-body disabled:opacity-40"
+        >
+          <SendHorizontal size={16} aria-hidden />
+          {t`Create session`}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+export function NewSessionGuidedView() {
+  const seed = useNewSessionDraft()
+  return <NewSessionGuidedForm key={seed.round} seed={seed} />
+}
+
+function NewSessionGuidedForm({
+  seed,
+}: {
+  seed: ReturnType<typeof useNewSessionDraft>
+}) {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const localeParam = locale === 'en' ? undefined : locale
   const mobile = !useIsWidePhoneFirst()
-  const stageText = useStageText()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const back = useGoBack({
+    to: '/{-$locale}/console/sessions',
+    params: { locale: localeParam },
+  })
   const { picker, openPicker, backToForm } = useNewSessionPicker()
+  const preset = seed.preset
   const anchor = preset?.anchor
   const repos = useQuery({
     queryKey: ['remote', 'repos'],
@@ -330,34 +313,21 @@ function NewSessionSheet({
     setPicked: setAgentProfile,
   } = useAgentSelection(
     agentProfiles.data?.profiles ?? [],
-    lastAgent ?? preferredAgent,
+    seed.agent ?? lastAgent ?? preferredAgent,
   )
   const [repo, setRepo] = useState(
-    () => readPreference(preferenceKeys.repo) ?? '',
+    () => seed.repo ?? readPreference(preferenceKeys.repo) ?? '',
   )
+  const [prompt, setPrompt] = useState(() => seed.prompt ?? '')
+  const [groupName, setGroupName] = useState<string | null>(
+    () => seed.groupName ?? null,
+  )
+  const [error, setError] = useState(() => seed.notice ?? '')
   const submitting = useRef(false)
   const [sending, setSending] = useState(false)
-  const [pending] = useState(readPendingJob)
-  const before = useRef<Set<string>>(new Set(pending?.before ?? []))
-  const [prompt, setPrompt] = useState('')
-  const [groupName, setGroupName] = useState<string | null>(null)
-  const [error, setError] = useState('')
-  const [jobId, setJobId] = useState(pending?.job ?? '')
-  const { trust, trusting } = useAgyTrust(jobId, setError)
-  const job = useQuery({
-    queryKey: ['remote', 'session.new.job', jobId],
-    enabled: Boolean(jobId),
-    retry: (count, failure) => !isUnknownJob(failure) && count < 2,
-    refetchInterval: (query) =>
-      query.state.data &&
-      ['done', 'failed'].includes(query.state.data.job.stage)
-        ? false
-        : 1_000,
-    queryFn: async () =>
-      (await hostRead('session.new.job', { job: jobId })) as {
-        job: Job
-      },
-  })
+
+  useEscapeToBack(Boolean(picker), back)
+
   const repositories = repos.data?.repos ?? []
   const agentOptions = useNewSessionAgentOptions(
     agentProfiles.data?.profiles ?? [],
@@ -388,16 +358,6 @@ function NewSessionSheet({
     suggestGroupName(source?.worktree_description ?? '') ||
     t`New session group`
   const resolvedGroupName = groupName ?? suggestedName
-  const current = job.data?.job
-  usePendingJobRecovery(jobId, job.error, setJobId, setError)
-  useAutoOpenNewSession({
-    current,
-    jobId,
-    sessions: sessions.data?.sessions,
-    before: before.current,
-    onClose,
-  })
-  const busy = sending || (Boolean(jobId) && current?.stage !== 'failed')
   const ready =
     Boolean(
       (anchor || chosen) &&
@@ -405,20 +365,20 @@ function NewSessionSheet({
       (!nameGroup || resolvedGroupName.trim()),
     ) &&
     (!agentProfiles.data || availableProfiles.length > 0)
+
   const submit = async () => {
-    if (submitting.current || busy || !ready) return
+    if (submitting.current || sending || !ready) return
     submitting.current = true
     setSending(true)
     setError('')
     try {
+      const trimmed = prompt.trim()
       const reused = anchor
-        ? sessions.data?.sessions.find((row) => row.id === anchor)?.worktree
+        ? sessionRows.find((row) => row.id === anchor)?.worktree
         : undefined
-      before.current = new Set(
-        (sessions.data?.sessions ?? [])
-          .filter((row) => reused && row.worktree === reused)
-          .map((row) => row.id),
-      )
+      const before = sessionRows
+        .filter((row) => reused && row.worktree === reused)
+        .map((row) => row.id)
       const res = (await hostWrite('session.new', {
         ...(anchor
           ? {
@@ -426,15 +386,31 @@ function NewSessionSheet({
               group_name: nameGroup ? resolvedGroupName.trim() : undefined,
             }
           : { repo: chosen, new_group: true }),
-        prompt: prompt.trim(),
+        prompt: trimmed,
         agent_profile: selectedAgent || undefined,
       })) as { job: string }
       rememberSessionChoices(anchor ? undefined : chosen, selectedAgent)
-      sessionStorage.setItem(
-        pendingJobKey,
-        JSON.stringify({ job: res.job, before: [...before.current] }),
-      )
-      setJobId(res.job)
+      rememberJobSeed(res.job, {
+        repo: chosen,
+        repoLabel,
+        agentProfile: selectedAgent,
+        prompt: trimmed,
+        groupName: nameGroup ? resolvedGroupName.trim() : preset?.group,
+        anchor,
+        preset,
+        before,
+      })
+      trace('session-new', {
+        action: 'submit',
+        job: res.job,
+        mode: anchor ? 'group' : 'new',
+      })
+      void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+      void navigate({
+        to: '/{-$locale}/console/sessions/$id',
+        params: { locale: localeParam, id: jobSessionId(res.job) },
+        replace: true,
+      })
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -442,77 +418,75 @@ function NewSessionSheet({
       setSending(false)
     }
   }
+
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          if (picker) backToForm()
-          else onClose()
-        }
-      }}
-      title={
-        picker === 'repo'
-          ? t`Repository`
-          : picker === 'agent'
-            ? t`Agent`
-            : anchor
-              ? t`New session in this group`
-              : t`New session`
-      }
-      onBack={picker ? () => backToForm() : undefined}
-      testId="new-session-sheet"
-      write
+    <div
+      data-testid="new-session-view"
+      className="flex min-h-full w-full flex-1 flex-col"
     >
-      <div
-        hidden={Boolean(picker)}
-        className={
-          picker ? 'hidden' : 'grid grid-cols-[minmax(0,1fr)] gap-3 px-4'
-        }
+      <header
+        data-testid="new-session-header"
+        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 pt-1 pb-2 md:-ml-2.5 md:mr-0 md:mt-0"
       >
-        <ComposeLayer
-          busy={busy}
-          repoLabel={repoLabel}
+        <BackButton
+          onClick={back}
+          label={t({ message: 'Sessions', context: 'nav' })}
+          className="-ml-2 md:hidden"
+        />
+        <h1 className="min-w-0 flex-1 truncate text-title leading-tight font-semibold">
+          {anchor ? t`New session in this group` : t`New session`}
+        </h1>
+      </header>
+
+      <div className="flex flex-1 flex-col gap-3 py-4">
+        <NewSessionSetupCard
+          mobile={mobile}
+          sending={sending}
+          picker={picker}
+          onOpenPicker={openPicker}
           repositories={repositories}
           repo={chosen}
+          repoLabel={repoLabel}
           onRepo={setRepo}
           group={preset?.group}
-          groupName={nameGroup ? resolvedGroupName : undefined}
+          nameGroup={nameGroup}
+          resolvedGroupName={resolvedGroupName}
           onGroupName={setGroupName}
-          prompt={prompt}
-          setPrompt={setPrompt}
-          current={current}
-          stageText={stageText}
-          error={error}
-          ready={ready}
-          onSubmit={() => void submit()}
-          onTrust={() => void trust()}
-          trusting={trusting}
-          agentProfiles={agentProfiles.data?.profiles ?? []}
+          showAgents={Boolean(agentProfiles.data?.profiles.length)}
           agentOptions={agentOptions}
           agentProfile={selectedAgent}
           onAgentProfile={setAgentProfile}
-          mobile={mobile}
-          onOpenPicker={openPicker}
         />
+
+        <p className="px-1 text-caption text-brand-label">
+          {t`Send the first message below to create the workspace and start the agent.`}
+        </p>
+
+        {error ? (
+          <p role="alert" className="px-1 text-caption text-brand-error">
+            {error}
+          </p>
+        ) : null}
       </div>
-      {picker ? (
-        <NewSessionPicker
-          key={picker}
-          title={picker === 'repo' ? t`Repository` : t`Agent`}
-          options={
-            picker === 'repo'
-              ? repositories.map(({ root, label }) => ({ value: root, label }))
-              : agentOptions
-          }
-          value={picker === 'repo' ? chosen : selectedAgent}
-          onPick={(value) => {
-            if (picker === 'repo') setRepo(value)
-            else setAgentProfile(value)
-            backToForm('pick')
-          }}
-        />
-      ) : null}
-    </Sheet>
+
+      <NewSessionComposer
+        prompt={prompt}
+        onPrompt={setPrompt}
+        sending={sending}
+        ready={ready}
+        onSubmit={() => void submit()}
+      />
+
+      <NewSessionPickerSheet
+        picker={picker}
+        repositories={repositories}
+        repo={chosen}
+        agentOptions={agentOptions}
+        agentProfile={selectedAgent}
+        onPickRepo={setRepo}
+        onPickAgent={setAgentProfile}
+        onBack={backToForm}
+      />
+    </div>
   )
 }

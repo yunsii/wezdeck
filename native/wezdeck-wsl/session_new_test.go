@@ -280,4 +280,32 @@ func TestNewSessionWithGroupNameAllocatesWorktree(t *testing.T) {
 	if err != nil || strings.TrimSpace(string(got)) != "手机端体验" {
 		t.Fatalf("group name was not saved: %q, %v", got, err)
 	}
+	if job.Prompt != "修复列表布局" || job.RepoLabel == "" || job.GroupName != "手机端体验" || job.CreatedAt == 0 {
+		t.Fatalf("job missing guided metadata: %+v", job)
+	}
+}
+
+func TestActiveNewSessionJobsExcludesListedDoneJobs(t *testing.T) {
+	newJobsMu.Lock()
+	saved := newJobs
+	newJobs = map[string]*newSessionJob{
+		"creating-1": {ID: "creating-1", Stage: "starting", Repo: "/tmp/r", RepoLabel: "r", Prompt: "p1", CreatedAt: 200, at: time.Now()},
+		"failed-1":   {ID: "failed-1", Stage: "failed", Repo: "/tmp/r", RepoLabel: "r", Prompt: "p2", Error: "boom", CreatedAt: 150, at: time.Now()},
+		"done-seen":  {ID: "done-seen", Stage: "done", SessionID: "s-1", CreatedAt: 100, at: time.Now()},
+		"done-wt":    {ID: "done-wt", Stage: "done", Worktree: "/tmp/r/.worktrees/wt1", CreatedAt: 90, at: time.Now()},
+		"done-fresh": {ID: "done-fresh", Stage: "done", Worktree: "/tmp/r/.worktrees/wt2", CreatedAt: 180, at: time.Now()},
+	}
+	newJobsMu.Unlock()
+	t.Cleanup(func() {
+		newJobsMu.Lock()
+		newJobs = saved
+		newJobsMu.Unlock()
+	})
+	got := activeNewSessionJobsFor([]sessionCard{
+		{ID: "s-1", Worktree: "/tmp/r/.worktrees/s1"},
+		{ID: "s-2", Worktree: "/tmp/r/.worktrees/wt1"},
+	})
+	if len(got) != 3 || got[0].ID != "creating-1" || got[1].ID != "done-fresh" || got[2].ID != "failed-1" {
+		t.Fatalf("unexpected active jobs: %+v", got)
+	}
 }

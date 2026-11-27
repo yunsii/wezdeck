@@ -95,14 +95,20 @@ func listRepos() (any, error) {
 }
 
 type newSessionJob struct {
-	ID        string `json:"job"`
-	Stage     string `json:"stage"` // creating | starting | waiting_trust | sending | done | failed
-	Repo      string `json:"repo"`
-	Worktree  string `json:"worktree,omitempty"`
-	Branch    string `json:"branch,omitempty"`
-	SessionID string `json:"session_id,omitempty"`
-	Error     string `json:"error,omitempty"`
-	Warning   string `json:"warning,omitempty"`
+	ID           string `json:"job"`
+	Stage        string `json:"stage"` // creating | starting | waiting_trust | sending | done | failed
+	Repo         string `json:"repo"`
+	RepoLabel    string `json:"repo_label,omitempty"`
+	AgentProfile string `json:"agent_profile,omitempty"`
+	Prompt       string `json:"prompt,omitempty"`
+	GroupName    string `json:"group_name,omitempty"`
+	AnchorID     string `json:"anchor_session_id,omitempty"`
+	CreatedAt    int64  `json:"created_at,omitempty"`
+	Worktree     string `json:"worktree,omitempty"`
+	Branch       string `json:"branch,omitempty"`
+	SessionID    string `json:"session_id,omitempty"`
+	Error        string `json:"error,omitempty"`
+	Warning      string `json:"warning,omitempty"`
 	// Mode: new (a new direction), parallel (one more slot of a direction
 	// whose slots are all busy) or reuse (an idle slot starts a new round)
 	Mode     string `json:"mode,omitempty"`
@@ -111,6 +117,69 @@ type newSessionJob struct {
 	socket   string
 	pane     string
 	trusting bool
+}
+
+func repoLabelFor(repo string) string {
+	if repo == "" {
+		return ""
+	}
+	label, _, _ := gitRepoMeta(repo)
+	if label == "" {
+		label = filepath.Base(repo)
+	}
+	if alias := parseRepoAliases(repoAliasSpec())[label]; alias != "" {
+		return alias
+	}
+	return label
+}
+
+// activeNewSessionJobsFor returns creating/waiting/recent-failed jobs so the web
+// session list can show in-flight sessions across switches and reloads.
+func activeNewSessionJobsFor(cards []sessionCard) []newSessionJob {
+	listed := make(map[string]bool, len(cards))
+	listedWorktrees := make(map[string]bool, len(cards))
+	for _, c := range cards {
+		listed[c.ID] = true
+		if c.Worktree != "" {
+			listedWorktrees[c.Worktree] = true
+		}
+	}
+	newJobsMu.Lock()
+	defer newJobsMu.Unlock()
+	out := make([]newSessionJob, 0)
+	for _, j := range newJobs {
+		if j == nil {
+			continue
+		}
+		switch j.Stage {
+		case "done":
+			if j.SessionID != "" && listed[j.SessionID] {
+				continue
+			}
+			if j.SessionID == "" && j.Worktree != "" && listedWorktrees[j.Worktree] {
+				continue
+			}
+			if time.Since(j.at) > 30*time.Second {
+				continue
+			}
+		case "failed":
+			if time.Since(j.at) > 10*time.Minute {
+				continue
+			}
+		default:
+			if time.Since(j.at) > time.Hour {
+				continue
+			}
+		}
+		out = append(out, *j)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].CreatedAt != out[j].CreatedAt {
+			return out[i].CreatedAt > out[j].CreatedAt
+		}
+		return out[i].ID < out[j].ID
+	})
+	return out
 }
 
 var (
@@ -279,7 +348,20 @@ func startNewSession(args json.RawMessage) (any, error) {
 			return nil, err
 		}
 	}
-	job := &newSessionJob{ID: newDiagID(), Stage: "creating", Repo: a.Repo, Mode: mode, Worktree: reuse, at: time.Now()}
+	now := time.Now()
+	job := &newSessionJob{
+		ID:           newDiagID(),
+		Stage:        "creating",
+		Repo:         a.Repo,
+		RepoLabel:    repoLabelFor(a.Repo),
+		AgentProfile: a.Agent,
+		Prompt:       a.Prompt,
+		GroupName:    groupName,
+		CreatedAt:    now.UnixMilli(),
+		Mode:         mode,
+		Worktree:     reuse,
+		at:           now,
+	}
 	newJobsMu.Lock()
 	if reuse != "" {
 		if reusing[reuse] != "" { // taken between the check and here

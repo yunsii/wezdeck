@@ -7,13 +7,16 @@
 // /sessions/$id. Order: unread first within a repo, then activity time —
 // frozen while you work (session-stable).
 import { useLingui } from '@lingui/react/macro'
+import { Link } from '@tanstack/react-router'
 import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { Led } from '#/components/deck/led'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
+import { cn } from '#/lib/utils'
 import { ChatGroupRow } from './session-chat-group'
 import { ChatRow } from './session-chat-row'
 import { useLocale } from '#/lib/locale-context'
@@ -24,6 +27,9 @@ import type { RepoLinksTarget } from './repo-links'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
 import { NewSessionButton } from './session-new'
+import { useStageText } from './session-new-panels'
+import { isVirtualSessionId, jobSessionId } from './session-new-route'
+import type { NewSessionJob } from './session-new-route'
 import {
   buildChatGroups,
   chatMatchesQuery,
@@ -107,6 +113,88 @@ function ChatSearch({
   )
 }
 
+function CreatingSessionsList({
+  jobs,
+  selected,
+  replace,
+  timeOf,
+}: {
+  jobs: Array<NewSessionJob>
+  selected?: string
+  replace: boolean
+  timeOf: (ms?: number) => string
+}) {
+  const { t } = useLingui()
+  const { locale } = useLocale()
+  const localeParam = locale === 'en' ? undefined : locale
+  const stageText = useStageText()
+  if (jobs.length === 0) return null
+  return (
+    <section
+      data-testid="creating-sessions"
+      aria-label={t`Creating sessions`}
+      className="border-b border-brand-edge bg-brand-surface"
+    >
+      <ul className="chat-list">
+        {jobs.map((job) => {
+          const virtualId = jobSessionId(job.job)
+          const active = selected === virtualId
+          const tone =
+            job.stage === 'failed'
+              ? 'error'
+              : job.stage === 'waiting_trust'
+                ? 'waiting'
+                : 'running'
+          const title =
+            job.group_name ||
+            job.repo_label ||
+            job.repo?.split('/').pop() ||
+            t`New session`
+          const status = stageText({
+            stage: job.stage,
+            branch: job.branch,
+            error: job.error,
+            mode: job.mode,
+          })
+          return (
+            <li key={job.job} data-creating-job={job.job}>
+              <Link
+                to="/{-$locale}/console/sessions/$id"
+                params={{ locale: localeParam, id: virtualId }}
+                replace={replace}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'list-row flex min-h-15 items-center gap-3 px-3 py-2',
+                  active && 'row-selected',
+                )}
+              >
+                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-deck">
+                  <Led tone={tone} size={10} />
+                </span>
+                <span className="grid min-w-0 flex-1 gap-0.5">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-body font-semibold text-brand-text">
+                      {title}
+                    </span>
+                    {job.created_at ? (
+                      <span className="shrink-0 text-meta text-brand-label tabular-nums">
+                        {timeOf(job.created_at)}
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="truncate text-caption text-brand-muted">
+                    {job.prompt ? `${status} · ${job.prompt}` : status}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 export function SessionList({
   selected,
   split = false,
@@ -114,6 +202,7 @@ export function SessionList({
   const { t } = useLingui()
   const sessions = useSessions()
   const rows = sessions.data?.sessions ?? []
+  const creatingJobs = sessions.data?.creating_jobs ?? []
   useDraftRevision()
   const rowsWithDrafts = rows.map((row) => ({
     ...row,
@@ -158,8 +247,24 @@ export function SessionList({
       .filter((repo) => repo.chats.length > 0)
   }, [groups, query, keptUnread, previewLabels])
 
-  const replaceSession = wide && rows.some((row) => row.id === selected)
-  const empty = painted.every((repo) => repo.chats.length === 0)
+  const visibleCreating = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return creatingJobs
+    return creatingJobs.filter((job) =>
+      [job.group_name, job.repo_label, job.branch, job.prompt]
+        .filter(Boolean)
+        .join('\n')
+        .toLowerCase()
+        .includes(q),
+    )
+  }, [creatingJobs, query])
+
+  const replaceSession =
+    wide &&
+    (rows.some((row) => row.id === selected) || isVirtualSessionId(selected))
+  const empty =
+    painted.every((repo) => repo.chats.length === 0) &&
+    visibleCreating.length === 0
   const searching = query.trim().length > 0
 
   const title = (
@@ -207,6 +312,12 @@ export function SessionList({
           className="grid grid-cols-[minmax(0,1fr)] bg-brand-surface"
           data-testid="session-chats"
         >
+          <CreatingSessionsList
+            jobs={visibleCreating}
+            selected={selected}
+            replace={replaceSession}
+            timeOf={timeOf}
+          />
           {painted.map((repo) => (
             <section
               key={repo.key}
