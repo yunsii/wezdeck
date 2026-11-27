@@ -274,7 +274,8 @@ Runtime's `http-…` trace id.
 
 Enable the minimal terminal client by creating
 `%LOCALAPPDATA%\wezterm-runtime\state\helper\terminal-client.enabled` before
-syncing with `--skip-tmux-reload`. Local Runtime then advertises
+syncing with `--skip-tmux-reload`. This also runs the GUI probe in a local
+process without attaching tmux. Local Runtime then advertises
 `sessions.terminal_client`. The Web shortcut can open an existing pane whose
 session has no attached clients. Removing the marker and syncing restores
 the workspace jump. Closing the client leaves persistent tmux panes running.

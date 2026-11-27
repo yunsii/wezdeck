@@ -205,6 +205,9 @@ launch_canary_background() {
   local gui_win cmdline
   gui_win="$(to_win_path "$gui")"
   cmdline="\"$gui_win\" --config-file \"$cfg_win\" start --always-new-process --class wezdeck-canary --workspace default --no-auto-connect"
+  if [[ "${WEZDECK_CANARY_SKIP_TMUX:-0}" == 1 ]]; then
+    cmdline+=' --domain local -- powershell.exe -NoProfile -NonInteractive -Command "Start-Sleep -Seconds 60"'
+  fi
   windows_run_powershell_command_utf8 "\$env:WEZTERM_RUNTIME_STATE_DIR = $(windows_powershell_quote "$state_dir_win"); \$null = (New-Object -ComObject WScript.Shell).Run($(windows_powershell_quote "$cmdline"), 7, \$false)" \
     >/dev/null 2>&1
 }
@@ -250,6 +253,15 @@ launch_canary_process() {
     printf '  mode  : foreground\n'
   fi
 
+  local probe_args=()
+  if [[ "${WEZDECK_CANARY_SKIP_TMUX:-0}" == 1 ]]; then
+    if [[ "$wez" == *.exe ]]; then
+      probe_args=(--domain local -- powershell.exe -NoProfile -NonInteractive -Command 'Start-Sleep -Seconds 60')
+    else
+      probe_args=(--domain local -- sleep 60)
+    fi
+  fi
+
   # --always-new-process: do not merge into the live GUI
   # --class: separate windowing class from the main instance
   # --workspace default + --no-auto-connect: light smoke, no managed cold-open
@@ -259,7 +271,7 @@ launch_canary_process() {
       --always-new-process \
       --class wezdeck-canary \
       --workspace default \
-      --no-auto-connect \
+      --no-auto-connect "${probe_args[@]}" \
       >/dev/null 2>&1 &
   else
     WEZTERM_RUNTIME_STATE_DIR="$CANARY_ROOT" \
@@ -267,7 +279,7 @@ launch_canary_process() {
       --always-new-process \
       --class wezdeck-canary \
       --workspace default \
-      --no-auto-connect \
+      --no-auto-connect "${probe_args[@]}" \
       >/dev/null 2>&1 &
   fi
   CANARY_LAUNCH_PID=$!

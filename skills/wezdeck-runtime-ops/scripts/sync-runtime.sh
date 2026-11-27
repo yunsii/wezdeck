@@ -598,7 +598,7 @@ if [[ "$SYNC_PUBLISH_MODE" == "canary" ]]; then
     printf '  next: scripts/dev/wezterm-canary.sh --auto\n'
   else
     printf '[sync] auto-probing canary (launch → healthy.stamp → promote) …\n'
-    if bash "$REPO_ROOT/scripts/dev/wezterm-canary.sh" --auto; then
+    if WEZDECK_CANARY_SKIP_TMUX="$SKIP_TMUX_RELOAD" bash "$REPO_ROOT/scripts/dev/wezterm-canary.sh" --auto; then
       printf '[sync] canary auto-promote OK — live updated (last-good backed up)\n'
       # Canary teardown may stop the helper that was ensured before the
       # probe. Re-ensure the live helper after promotion so status consumers
