@@ -61,7 +61,7 @@ async function checkDesktopShortcuts(page: Page) {
     'Ctrl/⌘+Shift+N',
   )
   expect(await page.locator('[data-restart=resume] kbd').innerText()).toBe(
-    'Alt+F5',
+    'Alt+R',
   )
   expect(
     await page.locator('button[aria-label="发送"]').getAttribute('title'),
@@ -77,7 +77,7 @@ async function checkWebRestartKey(
   await sheet.getByRole('button', { name: '关闭' }).click()
   await sheet.waitFor({ state: 'hidden' })
   const url = page.url()
-  await page.keyboard.press('Alt+F5')
+  await page.keyboard.press('Alt+R')
   await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
   expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
   expect(page.url()).toBe(url)

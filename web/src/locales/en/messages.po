@@ -3387,8 +3387,12 @@ msgid "Restart the agent and resume this conversation"
 msgstr "Restart the agent and resume this conversation"
 
 #: src/features/session-restart.tsx:158
-msgid "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
-msgstr "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
+#~ msgid "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
+#~ msgstr "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
+
+#: src/features/session-restart.tsx:158
+msgid "Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)"
+msgstr "Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)"
 
 #: src/features/session-restart.tsx:80
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."

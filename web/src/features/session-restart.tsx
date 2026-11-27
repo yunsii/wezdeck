@@ -154,8 +154,8 @@ export function RestartActions({
         type="button"
         disabled={disabled}
         data-restart="resume"
-        aria-keyshortcuts="Alt+F5"
-        title={t`Restart the agent in this pane (Alt+F5 on web, F5 at the desk)`}
+        aria-keyshortcuts="Alt+R Alt+F5"
+        title={t`Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)`}
         onClick={() => setAsking('resume')}
         className={action}
       >
@@ -165,7 +165,7 @@ export function RestartActions({
           aria-hidden
           className="ml-auto hidden shrink-0 font-mono text-meta text-brand-label md:inline"
         >
-          Alt+F5
+          Alt+R
         </kbd>
       </Button>
     </div>

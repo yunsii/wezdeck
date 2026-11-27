@@ -236,11 +236,13 @@ export function ComposerBox({
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || event.repeat) return
       if (
-        event.key === 'F5' &&
         event.altKey &&
         !event.ctrlKey &&
         !event.metaKey &&
-        !event.shiftKey
+        !event.shiftKey &&
+        (event.key === 'F5' ||
+          event.code === 'KeyR' ||
+          event.key.toLowerCase() === 'r')
       ) {
         if (
           keysDisabled ||
