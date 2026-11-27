@@ -80,6 +80,11 @@ describe.runIf(attention && devicesFile)('Session delete sheet layout', () => {
     await page.getByTestId('session-info-button').click()
     const info = page.getByTestId('session-info')
     await info.waitFor({ timeout: 15_000 })
+    // Technical details stay folded by default so the sheet opens clean
+    const techTrigger = info
+      .getByTestId('session-tech-details')
+      .getByRole('button')
+    expect(await techTrigger.getAttribute('aria-expanded')).toBe('false')
     await info.getByRole('button', { name: '删除会话' }).click()
     const sheet = page.getByTestId('session-delete-confirm')
     await sheet.waitFor({ timeout: 15_000 })

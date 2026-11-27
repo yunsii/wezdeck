@@ -1,42 +1,43 @@
-// 会话信息: everything the host knows about a session (the `meta` groups from
-// remote_meta.go, plus usage, account limits and the agent's capabilities),
-// in a bottom sheet opened from the header's ⓘ. Tap a row to copy its value;
-// 复制引用 copies the agent-ready block (remote_reference.go). Esc, the
-// backdrop or × closes it. Portalled to <body>: the header's backdrop blur
-// would otherwise become the containing block of a fixed sheet.
+// 会话信息: Telegram-profile style 3-tier sheet opened from the header's ⓘ.
+//   1. Quick action icon bar (copy reference, rename, repo links, local host
+//      terminal / VS Code) + mark-read bar when unread;
+//   2. First-screen overview (status/mode, model, directory) & usage summary;
+//   3. Group management (new sibling, destructive red delete) + collapsible
+//      Technical details keeping every host meta / capability row tap-to-copy.
 import { useLingui } from '@lingui/react/macro'
-import { Check, Code2, Copy, ExternalLink, Pencil } from 'lucide-react'
+import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { useSessions } from './console-sessions'
-import { useStatusText } from './session-status-text'
-import type { Detail } from './console-sessions'
-import { GitStatusButton } from './session-git'
-import { useDeleteSession } from './session-delete'
-import { useSessionDeleteReview } from './session-delete-state'
-import { requestNewSession } from './session-new'
-import { useDeviceState } from './device-state'
-import { ClearButton } from './session-clear'
-import { FocusInTerminal, useFocusKey } from './session-focus'
-import { RepoLinksSheet, useRepoLinksKey } from './repo-links'
-import type { RepoLinksTarget } from './repo-links'
-import { trace } from '#/lib/client-trace'
-import { worktreeKey } from './session-order'
 import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
-import { Sheet } from '#/components/ui/sheet'
-import { SectionHeading } from '#/components/ui/section-heading'
+import { Disclosure } from '#/components/ui/disclosure'
 import { Field, FieldList } from '#/components/ui/field'
-import { copyText } from '#/lib/clipboard'
-import { postRuntimeAction } from '#/lib/runtime-client'
-import { formatTokenRate, formatTtft } from '#/lib/turn-progress'
-import { toast } from 'sonner'
-import { useConsoleMode } from './console-mode'
+import { SectionHeading } from '#/components/ui/section-heading'
+import { Sheet } from '#/components/ui/sheet'
+import type { Detail } from './console-sessions'
+import { useSessions } from './console-sessions'
+import { useDeviceState } from './device-state'
+import { RepoLinksSheet, useRepoLinksKey } from './repo-links'
+import type { RepoLinksTarget } from './repo-links'
+import { ClearButton } from './session-clear'
+import { useDeleteSession } from './session-delete'
+import { useSessionDeleteReview } from './session-delete-state'
+import { useFocusKey } from './session-focus'
+import { GitStatusButton } from './session-git'
+import { SessionInfoQuickActions } from './session-info-actions'
+import {
+  buildOverviewRows,
+  buildTechnicalGroups,
+  buildUsageSummaryRows,
+  formatMetaValue,
+  metaValue,
+} from './session-info-meta'
+import { requestNewSession } from './session-new'
+import { worktreeKey } from './session-order'
+import { useStatusText } from './session-status-text'
 
-export type MetaGroup = {
-  name: string
-  rows: Array<{ key: string; value: string }>
-}
+export { metaValue }
+export type { MetaGroup } from './session-info-meta'
 
 function useLabels() {
   const { t } = useLingui()
@@ -83,9 +84,10 @@ function useLabels() {
     desk_idle: t`Desk idle for`,
     background_tasks: t`Background tasks`,
     context: t`Context`,
-    output: t`Output tokens`,
+    output: t`Output`,
     output_rate: t`Output rate`,
     cache_hit: t`Cache hit`,
+    limits: t`Limits`,
     five_hour: t`5-hour limit`,
     seven_day: t`7-day limit`,
     ask_options: t`Tappable Ask options`,
@@ -95,98 +97,64 @@ function useLabels() {
     mid_turn_input: t`A message sent mid-turn`,
     names_sessions: t`Names sessions`,
   }
-  const yes = t`yes`
-  const no = t`no`
-  return { groups, keys, yes, no }
+  return { groups, keys, yes: t`yes`, no: t`no` }
 }
 
-const TIME_KEYS = new Set([
-  'modified',
-  'first_turn',
-  'last_turn',
-  'status_updated',
-])
-
-function format(key: string, value: string) {
-  if (TIME_KEYS.has(key)) {
-    const date = new Date(value)
-    if (!Number.isNaN(date.getTime())) return date.toLocaleString()
-  }
-  if (key === 'bytes') {
-    const n = Number(value)
-    if (n >= 1024 ** 2) return `${(n / 1024 ** 2).toFixed(1)} MB`
-    if (n >= 1024) return `${Math.round(n / 1024)} KB`
-  }
-  return value
-}
-
-/** usage / account / capabilities, which travel outside `meta`, as rows */
-function extraGroups(
-  data: Detail,
-  yes: string,
-  no: string,
-  steer: string,
-  queue: string,
-  compacted: string,
-) {
-  const groups: Array<MetaGroup> = []
-  const u = data.usage
-  const usage: MetaGroup = { name: 'usage', rows: [] }
-  if (u?.context_limit)
-    usage.rows.push({
-      key: 'context',
-      value: u.context_pending
-        ? compacted
-        : `${u.context.toLocaleString()} / ${u.context_limit.toLocaleString()} (${Math.round((u.context / u.context_limit) * 100)}%)`,
-    })
-  if (u?.output)
-    usage.rows.push({ key: 'output', value: u.output.toLocaleString() })
-  const r = data.token_rate
-  if (r && r.tok_per_s > 0) {
-    const parts = [
-      r.decode_tok_per_s ? `decode ${formatTokenRate(r.decode_tok_per_s)}` : '',
-      r.ttft_ms ? `TTFT ${formatTtft(r.ttft_ms)}` : '',
-      r.source,
-    ].filter(Boolean)
-    usage.rows.push({
-      key: 'output_rate',
-      value: `${formatTokenRate(r.tok_per_s)} (${parts.join(' · ')})`,
-    })
-  }
-  if (u && u.input + u.cache_read)
-    usage.rows.push({
-      key: 'cache_hit',
-      value: `${Math.round((u.cache_read / (u.input + u.cache_read)) * 100)}%`,
-    })
-  const a = data.account
-  if (a?.five_hour)
-    usage.rows.push({
-      key: 'five_hour',
-      value: `${a.five_hour.used_percentage}%`,
-    })
-  if (a?.seven_day)
-    usage.rows.push({
-      key: 'seven_day',
-      value: `${a.seven_day.used_percentage}%`,
-    })
-  if (usage.rows.length) groups.push(usage)
-  const c = data.capabilities
-  if (c)
-    groups.push({
-      name: 'capabilities',
-      rows: [
-        { key: 'ask_options', value: c.ask_options ? yes : no },
-        { key: 'plan_review', value: c.plan_review ? yes : no },
-        { key: 'usage_source', value: c.usage },
-        { key: 'account_limits', value: c.account_limits ? yes : no },
-        {
-          key: 'mid_turn_input',
-          value: c.mid_turn_input === 'steer' ? steer : queue,
-        },
-        { key: 'names_sessions', value: c.title ? yes : no },
-      ],
-    })
-  return groups
+function TechnicalDetailsSection({
+  groups,
+  groupLabels,
+  keys,
+  humanStatus,
+}: {
+  groups: ReturnType<typeof buildTechnicalGroups>
+  groupLabels: Record<string, string>
+  keys: Record<string, string>
+  humanStatus: string
+}) {
+  const { t } = useLingui()
+  if (!groups.length) return null
+  return (
+    <Disclosure
+      data-testid="session-tech-details"
+      title={
+        <span className="grid gap-0.5 text-left">
+          <span className="text-caption font-medium text-brand-text">
+            {t`Technical details`}
+          </span>
+          <span className="text-meta font-normal text-brand-label">
+            {t`Session ID, tmux, transcript file and capabilities`}
+          </span>
+        </span>
+      }
+      triggerClassName="rounded-xl bg-brand-surface px-3 py-2.5 transition-colors hover:bg-brand-soft"
+      panelClassName="grid gap-3 pt-2"
+    >
+      <p className="px-1 text-meta text-brand-label">
+        {t`Tap a row to copy its value; long-press or right-click for more.`}
+      </p>
+      {groups.map((group) => (
+        <section key={group.name} className="grid gap-1">
+          <SectionHeading className="bg-brand-deck">
+            {groupLabels[group.name] ?? group.name}
+          </SectionHeading>
+          <FieldList>
+            {group.rows.map((row) => (
+              <Field
+                key={row.key}
+                label={keys[row.key] ?? row.key}
+                value={
+                  row.key === 'status'
+                    ? humanStatus
+                    : formatMetaValue(row.key, row.value)
+                }
+                mono
+              />
+            ))}
+          </FieldList>
+        </section>
+      ))}
+    </Disclosure>
+  )
 }
 
 export function SessionInfo({
@@ -203,8 +171,6 @@ export function SessionInfo({
   onRename?: (title: string) => void
   renameDisabled?: boolean
 }) {
-  // t must come straight from useLingui() here: a t handed out of another
-  // hook is not a macro any more and renders empty strings
   const { t } = useLingui()
   const { groups: groupLabels, keys, yes, no } = useLabels()
   const statusText = useStatusText()
@@ -213,32 +179,32 @@ export function SessionInfo({
   const { ask: deleteSession, confirmation } = useDeleteSession()
   const device = useDeviceState()
   const reviewRequired = useSessionDeleteReview(data.id)
-  const [copiedRef, setCopiedRef] = useState(false)
   const [linksOpen, setLinksOpen] = useState(false)
+  const cwd = metaValue(data, 'cwd')
   const linksTarget = sessionLinksTarget(data, card)
   useFocusKey(data.focus)
   useRepoLinksKey(Boolean(linksTarget), () => setLinksOpen(true))
-  // stays mounted while closed: the sheet plays its exit before it unmounts
   if (typeof document === 'undefined') return null
-  const loaded = {
-    key: 'loaded',
-    value: `${data.messages?.length ?? 0} / ${data.total ?? data.messages?.length ?? 0}`,
-  }
-  const groups = [
-    ...(data.meta ?? []).map((group) =>
-      group.name === 'transcript'
-        ? { ...group, rows: [...group.rows, loaded] }
-        : group,
-    ),
-    ...extraGroups(
-      data,
-      yes,
-      no,
-      t`joins the current turn`,
-      t`is queued`,
-      t`Just compacted; updates after the next reply`,
-    ),
-  ]
+
+  const humanStatus = statusText(
+    data.status,
+    data.waiting_kind,
+    data.running_kind,
+    data.background?.length ?? 0,
+    data.restart_pending,
+  )
+  const overviewRows = buildOverviewRows(data, humanStatus)
+  const usageRows = buildUsageSummaryRows(data, {
+    compacted: t`Just compacted; updates after the next reply`,
+    cache: t`Cache`,
+  })
+  const technicalGroups = buildTechnicalGroups(data, {
+    yes,
+    no,
+    steer: t`joins the current turn`,
+    queue: t`is queued`,
+  })
+
   return (
     <>
       <Sheet
@@ -249,9 +215,7 @@ export function SessionInfo({
         title={t`Session info`}
         testId="session-info"
       >
-        <div className="grid gap-3 px-3">
-          {/* the header's tags, whole: no line limit here, a truncated one
-            opens in place */}
+        <div className="grid gap-3 px-3 pb-2">
           {data.agent || data.branch || data.git ? (
             <TagLine testId="info-tags" className="px-1">
               {data.agent && data.agent !== 'agent' ? (
@@ -263,76 +227,111 @@ export function SessionInfo({
               ) : null}
             </TagLine>
           ) : null}
-          {data.reference ? (
-            <Button
-              variant="solid"
-              type="button"
-              onClick={() => {
-                void copyText(data.reference ?? '').then(() => {
-                  setCopiedRef(true)
-                  setTimeout(() => setCopiedRef(false), 1_500)
-                })
-              }}
-              className="flex min-h-11 items-center justify-center gap-2 px-3 text-body font-medium"
-            >
-              {copiedRef ? (
-                <Check size={16} aria-hidden />
-              ) : (
-                <Copy size={16} aria-hidden />
-              )}
-              {copiedRef ? t`Copied` : t`Copy session reference for an agent`}
-            </Button>
-          ) : null}
+
+          <SessionInfoQuickActions
+            data={data}
+            cwd={cwd}
+            linksTarget={linksTarget}
+            onRename={onRename}
+            renameDisabled={renameDisabled}
+            onOpenLinks={() => {
+              onClose()
+              setLinksOpen(true)
+            }}
+          />
+
           <ClearButton
             id={data.id}
             status={data.status}
             waitingKind={data.waiting_kind}
           />
-          {onRename ? (
-            <Button
-              variant="plain"
-              type="button"
-              data-write
-              disabled={renameDisabled}
-              onClick={() => {
-                const title = data.title || ''
-                const next = window.prompt(t`New session title`, title)?.trim()
-                if (next && next !== title) onRename(next)
-              }}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
-            >
-              <Pencil size={15} aria-hidden />
-              {t`Rename via /rename in the agent pane`}
-            </Button>
+
+          {overviewRows.length ? (
+            <section className="grid gap-1">
+              <SectionHeading className="bg-brand-deck">
+                {t`Overview`}
+              </SectionHeading>
+              <FieldList>
+                {overviewRows.map((row) => (
+                  <Field
+                    key={row.key}
+                    label={keys[row.key] ?? row.key}
+                    value={row.value}
+                    mono={row.key === 'cwd'}
+                  />
+                ))}
+              </FieldList>
+            </section>
           ) : null}
+
+          {usageRows.length ? (
+            <section className="grid gap-1">
+              <SectionHeading className="bg-brand-deck">
+                {groupLabels.usage}
+              </SectionHeading>
+              <FieldList>
+                {usageRows.map((row) => (
+                  <Field
+                    key={row.key}
+                    label={keys[row.key] ?? row.key}
+                    value={row.value}
+                    mono
+                  />
+                ))}
+              </FieldList>
+            </section>
+          ) : null}
+
           {card?.tmux_pane && device.state === 'approved' ? (
-            <>
-              <Button
-                type="button"
-                variant="key"
-                onClick={() => {
-                  onClose()
-                  requestNewSession({
-                    repo: card.repo_root || card.cwd,
-                    anchor: card.id,
-                    group:
-                      card.worktree_description ||
-                      worktreeKey(card).split('/').at(-1) ||
-                      card.cwd,
-                  })
-                }}
-              >
-                {t`New session in this group`}
-              </Button>
-              <Button
-                type="button"
-                variant="key"
-                onClick={() => deleteSession(card, true)}
-              >
-                {t`Delete session`}
-              </Button>
+            <section className="grid gap-2">
+              <div className="divide-y divide-brand-edge overflow-hidden rounded-xl bg-brand-surface">
+                <Button
+                  type="button"
+                  variant="plain"
+                  size="none"
+                  onClick={() => {
+                    onClose()
+                    requestNewSession({
+                      repo: card.repo_root || card.cwd,
+                      anchor: card.id,
+                      group:
+                        card.worktree_description ||
+                        worktreeKey(card).split('/').at(-1) ||
+                        card.cwd,
+                    })
+                  }}
+                  className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left text-body font-medium text-brand-text transition-colors hover:bg-brand-soft active:bg-brand-soft"
+                >
+                  <Plus
+                    size={16}
+                    aria-hidden
+                    className="shrink-0 text-brand-muted"
+                  />
+                  <span className="flex-1">{t`New session in this group`}</span>
+                  <ChevronRight
+                    size={16}
+                    aria-hidden
+                    className="shrink-0 text-brand-label"
+                  />
+                </Button>
+                <Button
+                  type="button"
+                  variant="plain"
+                  size="none"
+                  onClick={() => deleteSession(card, true)}
+                  className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left text-body font-medium text-brand-error transition-colors hover:bg-brand-error/10 active:bg-brand-error/10"
+                >
+                  <Trash2 size={16} aria-hidden className="shrink-0" />
+                  <span className="flex-1">{t`Delete session`}</span>
+                  <ChevronRight
+                    size={16}
+                    aria-hidden
+                    className="shrink-0 opacity-60"
+                  />
+                </Button>
+              </div>
               {reviewRequired ? (
-                <div className="grid gap-2 rounded-xl bg-brand-deck p-3">
+                <div className="grid gap-2 rounded-xl bg-brand-surface p-3">
                   <p role="status" className="text-caption text-brand-muted">
                     {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}
                   </p>
@@ -346,50 +345,16 @@ export function SessionInfo({
                   </Button>
                 </div>
               ) : null}
-            </>
+            </section>
           ) : null}
           {confirmation}
-          <FocusInTerminal focus={data.focus} />
-          <OpenInVsCode cwd={metaValue(data, 'cwd')} />
-          <SessionRepoLinksAction
-            target={linksTarget}
-            onOpen={() => {
-              onClose()
-              setLinksOpen(true)
-            }}
+
+          <TechnicalDetailsSection
+            groups={technicalGroups}
+            groupLabels={groupLabels}
+            keys={keys}
+            humanStatus={humanStatus}
           />
-          <p className="px-1 text-meta text-brand-label">
-            {t`Tap a row to copy its value; long-press or right-click for more.`}
-          </p>
-          {groups.map((group) => (
-            <section key={group.name} className="grid gap-1">
-              <SectionHeading className="bg-brand-deck">
-                {groupLabels[group.name] ?? group.name}
-              </SectionHeading>
-              <FieldList>
-                {group.rows.map((row) => (
-                  <Field
-                    key={row.key}
-                    label={keys[row.key] ?? row.key}
-                    // the state in words, as on the list (it showed the raw
-                    // `done`); the kinds below stay raw for debugging
-                    value={
-                      row.key === 'status'
-                        ? statusText(
-                            row.value,
-                            data.waiting_kind,
-                            data.running_kind,
-                            data.background?.length ?? 0,
-                            data.restart_pending,
-                          )
-                        : format(row.key, row.value)
-                    }
-                    mono
-                  />
-                ))}
-              </FieldList>
-            </section>
-          ))}
         </div>
       </Sheet>
       <RepoLinksSheet
@@ -399,12 +364,6 @@ export function SessionInfo({
       />
     </>
   )
-}
-
-export function metaValue(data: Detail, key: string) {
-  for (const group of data.meta ?? [])
-    for (const row of group.rows) if (row.key === key) return row.value
-  return ''
 }
 
 function sessionLinksTarget(
@@ -421,72 +380,4 @@ function sessionLinksTarget(
     repo: repoRoot || undefined,
     cwd: cwd || undefined,
   }
-}
-
-function SessionRepoLinksAction({
-  target,
-  onOpen,
-}: {
-  target: RepoLinksTarget | null
-  onOpen: () => void
-}) {
-  const { t } = useLingui()
-  if (!target) return null
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      data-testid="session-repo-links-button"
-      aria-haspopup="dialog"
-      title={t`Open repository links (key: l)`}
-      onClick={() => {
-        trace('repo-links', { open: true, via: 'info', repo: target.label })
-        onOpen()
-      }}
-      className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium"
-    >
-      <ExternalLink size={15} aria-hidden />
-      {t`Repository links`}
-    </Button>
-  )
-}
-
-/**
- * 在 VS Code 中打开 — what was left worth keeping of the old 开发 page. Only
- * on this computer: it asks the local Runtime to focus the window for the
- * session's directory, or open one.
- */
-function OpenInVsCode({ cwd }: { cwd: string }) {
-  const { t } = useLingui()
-  const mode = useConsoleMode()
-  const [busy, setBusy] = useState(false)
-  if (mode !== 'local' || !cwd) return null
-  const open = async () => {
-    setBusy(true)
-    try {
-      const response = await postRuntimeAction('vscode', 'focus_or_open', {
-        requested_dir: cwd,
-        distro: 'Ubuntu',
-      })
-      if (!response.ok)
-        throw new Error(response.error?.message || t`Runtime action failed`)
-      toast(t`VS Code window focused`)
-    } catch (error) {
-      toast(error instanceof Error ? error.message : t`Runtime action failed`)
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      disabled={busy}
-      onClick={() => void open()}
-      className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge px-3 text-body font-medium disabled:opacity-40"
-    >
-      <Code2 size={15} aria-hidden />
-      {t`Open in VS Code`}
-    </Button>
-  )
 }

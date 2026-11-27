@@ -382,12 +382,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   resolved location, so on back its title does not switch before the page
   (it used to end up in the leaving page's snapshot). Toasts sit in a
   `toast-layer` that never moves; toasts are the deck's ink card (`.deck-toast`, sonner unstyled, under the session bar via `--toast-top`; 交互调试 › 消息提示).
-- 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
-  header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
-  host-built `reference` block for another agent: id, transcript path, cwd,
-  tmux pane), then the host's `meta` groups — 会话, 运行位置, 会话记录, 状态 —
-  plus 用量 and 能力 (the adapter's `capabilities`); tap any row to copy its
-  value; Esc, the backdrop or × closes it.
+- 会话信息 (`session-info.tsx`), a 3-tier Telegram-profile bottom sheet portalled to `<body>` (the
+  header's backdrop blur would otherwise trap a fixed sheet): compact quick-action icon tiles (复制引用, 重命名, 仓库外链, local 终端 / VS Code) + 标为已读 when unread; first-screen 概览 (status · mode, model, cwd) & 用量 (context, output · rate · cache, 5h/7d limits); group management (在此组新建会话 + red-isolated 删除会话); and a default-collapsed 技术详情 `Disclosure` keeping all host `meta` groups, rate breakdown and `capabilities` tap-to-copy. Esc, the backdrop or × closes it.
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new
