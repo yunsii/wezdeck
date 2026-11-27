@@ -183,6 +183,17 @@ function FileViewerSheet({
   })
 
   const data = fileQuery.data
+  // Delay the loading skeleton slightly so fast local/LAN file reads (<120 ms)
+  // paint the document straight away without flashing a placeholder frame.
+  const [showSkeleton, setShowSkeleton] = useState(false)
+  useEffect(() => {
+    if (!fileQuery.isPending) {
+      setShowSkeleton(false)
+      return
+    }
+    const timer = setTimeout(() => setShowSkeleton(true), 120)
+    return () => clearTimeout(timer)
+  }, [fileQuery.isPending, current?.path, current?.lineStart, current?.lineEnd])
   useEffect(() => {
     if (!data) return
     trace('host-file-open', {
@@ -274,7 +285,9 @@ function FileViewerSheet({
         ) : null}
 
         {fileQuery.isPending ? (
-          <FileLoadingSkeleton />
+          showSkeleton ? (
+            <FileLoadingSkeleton />
+          ) : null
         ) : fileQuery.isError ? (
           <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
             <div

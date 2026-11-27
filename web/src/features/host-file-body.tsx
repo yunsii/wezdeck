@@ -61,7 +61,7 @@ export function FileLoadingSkeleton() {
           <Skeleton className="h-4 w-10/12 rounded" />
           <Skeleton className="h-4 w-3/4 rounded" />
         </div>
-        <div className="mt-auto grid gap-2.5 pt-2">
+        <div className="grid gap-2.5 pt-2">
           <Skeleton className="h-4 w-full rounded" />
           <Skeleton className="h-4 w-5/6 rounded" />
         </div>

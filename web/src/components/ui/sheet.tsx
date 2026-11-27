@@ -74,11 +74,11 @@ export function Sheet({
               // the header holds still; only the body below it scrolls, so the
               // scrollbar starts under the title and never runs into a corner
               'flex w-full flex-col overflow-hidden bg-brand-deck text-brand-text outline-none',
-              // Fullscreen reader opens directly at opacity 1 (no full-viewport
-              // ActiveOpacityAnimation GPU layer that flashes the title bar when
-              // the layer demotes on transitionend).
+              // Fullscreen reader opens directly at opacity 1 and follows the
+              // fixed inset-0 viewport (`h-full`, not `100dvh`) with no hidden
+              // backdrop or opacity transition that churns GPU layers.
               fullscreen
-                ? 'h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0'
+                ? 'h-full max-h-full max-w-none rounded-none border-0'
                 : cn(
                     'max-h-[88dvh] rounded-t-[20px] border-t border-brand-edge shadow-[0_-10px_40px_rgba(0,0,0,0.28)] md:max-w-xl',
                     // motion tokens (styles/motion.css): in slower and decelerating, out
@@ -99,7 +99,7 @@ export function Sheet({
               className={cn(
                 'shrink-0',
                 fullscreen
-                  ? 'border-b border-brand-edge bg-brand-surface px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2.5 md:px-5'
+                  ? 'flex min-h-16 flex-col justify-center border-b border-brand-edge bg-brand-surface px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 md:px-5'
                   : 'px-4 pt-2 pb-2 md:pt-4',
               )}
             >

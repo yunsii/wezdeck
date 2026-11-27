@@ -15,20 +15,6 @@
   animation: led-breathe 2.4s ease-in-out infinite;
 }
 
-/* Paint-only skeleton pulse via background-color (never Tailwind animate-pulse
-   which animates CSS `opacity` and spawns one ActiveOpacityAnimation GPU layer
-   per skeleton bar inside modals/lists, triggering Overlap flicker on headers). */
-@keyframes skeleton-breathe {
-  50% {
-    background-color: color-mix(in srgb, var(--brand-text) 10%, transparent);
-  }
-}
-
-.skeleton-breathe {
-  background-color: var(--brand-soft);
-  animation: skeleton-breathe 2s ease-in-out infinite;
-}
-
 /* Chat: what just arrived slides in. */
 @keyframes chat-in {
   from {
@@ -91,7 +77,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .led-running circle,
-  .skeleton-breathe,
   .chat-in {
     animation: none;
   }

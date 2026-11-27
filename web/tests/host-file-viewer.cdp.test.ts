@@ -207,6 +207,7 @@ describe.runIf(attention && devicesFile)(
 
       const metrics = await page.evaluate(() => {
         const s = document.querySelector('[data-testid="host-file-sheet"]')!
+        const scroller = s.querySelector<HTMLElement>('.overflow-y-auto')!
         const mWrap = s.querySelector('[data-testid="mermaid-svg"]')!
         const svg = mWrap.querySelector('svg')!
         const h1 = s.querySelector('article h1')
@@ -214,6 +215,7 @@ describe.runIf(attention && devicesFile)(
         const h3 = s.querySelector('article h3')
         return {
           sheetOverflow: s.scrollWidth - s.clientWidth,
+          scrollerTop: scroller.getBoundingClientRect().top,
           svgWidth: svg.getBoundingClientRect().width,
           wrapWidth: mWrap.getBoundingClientRect().width,
           h1Size: h1 ? parseFloat(getComputedStyle(h1).fontSize) : 0,
@@ -222,6 +224,8 @@ describe.runIf(attention && devicesFile)(
         }
       })
       expect(metrics.sheetOverflow).toBeLessThanOrEqual(1)
+      expect(Number.isInteger(metrics.scrollerTop)).toBe(true)
+      expect(metrics.scrollerTop).toBeGreaterThanOrEqual(64)
       expect(metrics.svgWidth).toBeGreaterThan(100)
       expect(metrics.svgWidth).toBeLessThanOrEqual(metrics.wrapWidth + 1)
       expect(metrics.h1Size).toBeGreaterThan(metrics.h2Size)

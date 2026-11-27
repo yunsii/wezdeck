@@ -38,8 +38,8 @@ On fractional-DPR displays (`1.25×` / `2.625×`, Chrome 152 / Android tablet Vu
 Enforced rules:
 - **Ambient status indicators** (`.led-running`): animate paint-only SVG `fill-opacity` on `.led-running circle`, never CSS `opacity` on the `<svg>` or stacked `animate-[pulse]`.
 - **Split-list row states** (`.list-row` / `::before`): use paint-only `background-color` transitions, never `opacity` transitions on pseudo-elements.
-- **Loading skeletons** (`components/ui/skeleton.tsx`): use paint-only `.skeleton-breathe` (`background-color` keyframes), never Tailwind `animate-pulse` (`opacity`).
-- **Headers & fullscreen readers** (`host-file-sheet.tsx`, `sheet.tsx`): never mount `animate-spin` (`ActiveTransformAnimation`) inside a persistent title bar, and open opaque `fullscreen` sheets directly at `opacity: 1` (no hidden `Drawer.Backdrop` or full-viewport `transition-opacity`).
+- **Loading skeletons** (`components/ui/skeleton.tsx`, `session-skeleton.tsx`): stay static (`bg-brand-soft`, 0 fps repaint) and gate modal skeletons behind a 120 ms delay (`host-file-sheet.tsx`) without `mt-auto` bottom-pinned bars — animating `opacity` (`animate-pulse`) spawns per-bar GPU layers, and even animating `background-color` re-rasterizes the full HiDPI scroller layer (7M+ physical px) every vsync, flickering bottom tiles on tablet GPUs.
+- **Headers & fullscreen readers** (`host-file-sheet.tsx`, `sheet.tsx`): never mount `animate-spin` (`ActiveTransformAnimation`) inside a persistent title bar; open opaque `fullscreen` sheets directly at `opacity: 1` sized to `h-full` with an integer `min-h-16` (64 px) header (no hidden `Drawer.Backdrop`, no full-viewport `transition-opacity`, no fractional scroller top).
 - **Automated guard**: `split-list-stability.cdp.test.ts` queries CDP `LayerTree.compositingReasons` across `idle ↔ running` switches and fails if any `ActiveOpacityAnimation` or `ActiveTransformAnimation` layer appears.
 
 ## Split switches

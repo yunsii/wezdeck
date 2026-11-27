@@ -1171,11 +1171,11 @@ msgstr "已复制"
 msgid "Copied {label}"
 msgstr "已复制 {label}"
 
-#: src/features/host-file-sheet.tsx:211
+#: src/features/host-file-sheet.tsx:222
 msgid "Copied document"
 msgstr "已复制文档"
 
-#: src/features/host-file-sheet.tsx:211
+#: src/features/host-file-sheet.tsx:222
 msgid "Copied path"
 msgstr "已复制路径"
 
@@ -1528,7 +1528,7 @@ msgstr "已派发"
 
 #: src/features/host-file-context.tsx:93
 #: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:201
+#: src/features/host-file-sheet.tsx:212
 msgid "Document"
 msgstr "文档"
 
@@ -3520,7 +3520,7 @@ msgstr "恢复会话"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:549
-#: src/features/host-file-sheet.tsx:297
+#: src/features/host-file-sheet.tsx:310
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3846,7 +3846,7 @@ msgstr "正在发送接续 brief…"
 msgid "Sending…"
 msgstr "发送中…"
 
-#: src/features/host-file-sheet.tsx:270
+#: src/features/host-file-sheet.tsx:281
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "敏感令牌已在离开宿主机前自动脱敏。"
 
@@ -3990,7 +3990,7 @@ msgstr "跳到发起的调用"
 msgid "Showing {shownCount} of {total} items"
 msgstr "已显示 {shownCount} / {total} 条"
 
-#: src/features/host-file-sheet.tsx:266
+#: src/features/host-file-sheet.tsx:277
 msgid "Showing the first 256 KB of this file."
 msgstr "文件较大，仅显示前 256 KB。"
 
