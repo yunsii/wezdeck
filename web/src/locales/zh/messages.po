@@ -360,7 +360,7 @@ msgstr "全部档位"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/session-permission.tsx:314
+#: src/features/session-permission.tsx:315
 msgid "Allow"
 msgstr "允许"
 
@@ -444,7 +444,7 @@ msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。选择继续规划后，可以在下面输入框里说明要改什么。"
 
-#: src/features/session-permission.tsx:314
+#: src/features/session-permission.tsx:315
 msgid "Approve the plan"
 msgstr "批准计划"
 
@@ -1151,7 +1151,7 @@ msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工�
 msgid "Delete session"
 msgstr "删除会话"
 
-#: src/features/session-permission.tsx:332
+#: src/features/session-permission.tsx:333
 msgid "Deny"
 msgstr "拒绝"
 
@@ -1663,7 +1663,7 @@ msgstr "刚刚"
 msgid "just restarted"
 msgstr "刚重启"
 
-#: src/features/session-permission.tsx:332
+#: src/features/session-permission.tsx:333
 msgid "Keep planning"
 msgstr "继续规划"
 
@@ -3388,7 +3388,7 @@ msgid "Technical details"
 msgstr "技术细节"
 
 #: src/features/session-elicitation.tsx:230
-#: src/features/session-permission.tsx:338
+#: src/features/session-permission.tsx:339
 msgid "Terminal"
 msgstr "终端画面"
 
@@ -3685,7 +3685,7 @@ msgid "Trigger"
 msgstr "触发来源"
 
 #: src/features/session-permission.tsx:133
-#: src/features/session-permission.tsx:294
+#: src/features/session-permission.tsx:295
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "内容超过 64 KB 已截断，完整内容请在终端查看。"
 

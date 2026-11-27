@@ -360,7 +360,7 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:314
+#: src/features/session-permission.tsx:315
 msgid "Allow"
 msgstr "Allow"
 
@@ -444,7 +444,7 @@ msgstr "Approve sends a, request changes sends s (then type notes below), quit s
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:314
+#: src/features/session-permission.tsx:315
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -1151,7 +1151,7 @@ msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may
 msgid "Delete session"
 msgstr "Delete session"
 
-#: src/features/session-permission.tsx:332
+#: src/features/session-permission.tsx:333
 msgid "Deny"
 msgstr "Deny"
 
@@ -1663,7 +1663,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:332
+#: src/features/session-permission.tsx:333
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -3388,7 +3388,7 @@ msgid "Technical details"
 msgstr "Technical details"
 
 #: src/features/session-elicitation.tsx:230
-#: src/features/session-permission.tsx:338
+#: src/features/session-permission.tsx:339
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -3685,7 +3685,7 @@ msgid "Trigger"
 msgstr "Trigger"
 
 #: src/features/session-permission.tsx:133
-#: src/features/session-permission.tsx:294
+#: src/features/session-permission.tsx:295
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "Truncated at 64 KB — check the terminal for the full payload."
 

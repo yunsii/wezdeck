@@ -468,8 +468,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   closes once a key is sent (diagnostics are pulled by the host, see
   remote-sessions.md "Diagnostics on demand"). Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
-  permission prompts get their own tap targets on the page
-  (`session-elicitation.tsx`, the confirmation strip). The composer is
+  permission prompts get tap targets; inline bodies clip so swipes scroll
+  the thread; full text opens in a Sheet (`session-permission.tsx`). The composer is
   set off from the thread by a
   full-width hairline and an upward shadow, and the chat page uses 10 px
   side gutters (other pages 16 px). Reading back, the user's message that

@@ -8,7 +8,7 @@
 // covers: web/src/features/chat-tools.tsx
 // covers: web/src/features/chat-scroll.ts
 // covers: web/src/features/session-subagents.tsx
-import { chromium } from '@playwright/test'
+import { chromium, devices } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -219,6 +219,63 @@ describe('Interaction debugging page', () => {
       .poll(() => page.getByTestId('interaction-detail').count())
       .toBe(0)
     expect(await page.locator('[data-me-page=interactions]').count()).toBe(1)
+    await context.close()
+  })
+
+  it('phone: dragging inside a long permission preview scrolls the page', async () => {
+    const context = await browser.newContext({
+      ...devices['Pixel 7'],
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/me/interactions#agy-permission`)
+    const body = page.getByTestId('permission-body')
+    await body.waitFor({ timeout: 20_000 })
+    await page.evaluate(() => {
+      const preview = document.querySelector<HTMLElement>(
+        '[data-testid=permission-body]',
+      )!
+      preview.style.maxHeight = '240px'
+      const filler = document.createElement('div')
+      filler.style.height = '900px'
+      preview.append(filler)
+      const tail = document.createElement('div')
+      tail.style.height = '1200px'
+      tail.style.flexShrink = '0'
+      document.getElementById('console-main')!.append(tail)
+    })
+    await body.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    const positions = () =>
+      page.evaluate(() => ({
+        page: document.querySelector<HTMLElement>('.vt-page')!.scrollTop,
+        body: document.querySelector<HTMLElement>(
+          '[data-testid=permission-body]',
+        )!.scrollTop,
+      }))
+    const before = await positions()
+    const box = await body.boundingBox()
+    if (!box) throw new Error('permission body has no box')
+    const x = box.x + box.width / 2
+    const y = box.y + box.height / 2
+    const cdp = await context.newCDPSession(page)
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y }],
+    })
+    for (let step = 1; step <= 12; step++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x, y: y - step * 15 }],
+      })
+    }
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    })
+    await page.waitForTimeout(250)
+    const after = await positions()
+    expect(after.page - before.page).toBeGreaterThan(50)
+    expect(after.body).toBe(before.body)
     await context.close()
   })
 

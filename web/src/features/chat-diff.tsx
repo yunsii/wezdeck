@@ -102,11 +102,13 @@ export function ToolBody({
   file,
   className,
   testId,
+  scrollable = true,
 }: {
   text: string
   file?: string
   className?: string
   testId?: string
+  scrollable?: boolean
 }) {
   const { rows, code } = parseBody(text)
   // a Write body is the file itself: colour it too
@@ -119,7 +121,8 @@ export function ToolBody({
     <pre
       data-testid={testId}
       className={cn(
-        'max-h-80 max-w-full min-w-0 overflow-auto rounded-lg bg-brand-deck py-1.5 font-mono text-meta leading-snug',
+        'max-h-80 max-w-full min-w-0 rounded-lg bg-brand-deck py-1.5 font-mono text-meta leading-snug',
+        scrollable ? 'overflow-auto' : 'overflow-hidden',
         className,
       )}
       data-lang={lang ?? undefined}
