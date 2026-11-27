@@ -216,7 +216,7 @@ msgstr "7 天额度"
 msgid "A big change to follow up later…"
 msgstr "记下要后续跟进的大改动…"
 
-#: src/features/session-restart.tsx:192
+#: src/features/session-restart.tsx:119
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 
@@ -224,7 +224,7 @@ msgstr "全新的 agent 进程和对话（Ctrl+Shift+n）"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 
-#: src/features/session-restart.tsx:120
+#: src/features/session-restart.tsx:47
 msgid "A fresh conversation is starting"
 msgstr "正在新开会话"
 
@@ -299,8 +299,8 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 #: src/features/session-new-panels.tsx:283
 #: src/features/session-new-panels.tsx:290
 #: src/features/session-new-panels.tsx:315
-#: src/features/session-new.tsx:457
-#: src/features/session-new.tsx:501
+#: src/features/session-new.tsx:458
+#: src/features/session-new.tsx:502
 msgid "Agent"
 msgstr "智能体"
 
@@ -469,7 +469,7 @@ msgstr "假设"
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/console-keys.tsx:181
+#: src/features/console-keys.tsx:189
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
@@ -629,8 +629,7 @@ msgstr "取消"
 #: src/features/session-delete.tsx:137
 #: src/features/session-handoff.tsx:274
 #: src/features/session-purpose.tsx:115
-#: src/features/session-restart.tsx:68
-#: src/features/session-restart.tsx:151
+#: src/features/session-restart.tsx:78
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "取消"
@@ -721,9 +720,9 @@ msgstr "Claude 想退出计划模式，按这个计划开始执行"
 #~ msgid "Clear"
 #~ msgstr ""
 
-#: src/features/session-composer.tsx:312
-#: src/features/session-composer.tsx:313
-#: src/features/session-composer.tsx:318
+#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:306
+#: src/features/session-composer.tsx:311
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -769,7 +768,7 @@ msgstr "关闭命令"
 msgid "Close keys"
 msgstr "收起按键"
 
-#: src/features/console-keys.tsx:105
+#: src/features/console-keys.tsx:113
 msgid "Close the viewer"
 msgstr "关闭图片查看"
 
@@ -818,8 +817,8 @@ msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
 #: src/features/session-commands.tsx:284
-#: src/features/session-composer.tsx:260
-#: src/features/session-composer.tsx:266
+#: src/features/session-composer.tsx:253
+#: src/features/session-composer.tsx:259
 msgid "Commands"
 msgstr "命令"
 
@@ -844,11 +843,11 @@ msgstr "正在压缩上下文"
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
-#: src/features/console-keys.tsx:82
+#: src/features/console-keys.tsx:90
 msgid "Composer"
 msgstr "输入框"
 
-#: src/features/session-composer.tsx:236
+#: src/features/session-composer.tsx:232
 msgid "Composer tools"
 msgstr "输入工具"
 
@@ -1024,7 +1023,7 @@ msgstr "复制会话引用（给 agent 用）"
 msgid "Copy the open session's reference"
 msgstr "复制当前会话的引用"
 
-#: src/features/console-keys.tsx:97
+#: src/features/console-keys.tsx:105
 msgid "Copy the open ticket's reference"
 msgstr "复制当前工单的引用"
 
@@ -1282,7 +1281,7 @@ msgstr "本机，已启用"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "本机已启用：写入直接走本地 Runtime，不需要生成设备密钥，也不需要批准。手机、平板和其他电脑需要各自单独启用。"
 
-#: src/features/session-restart.tsx:140
+#: src/features/session-restart.tsx:67
 msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 msgstr "结束当前 agent 进程，在同一窗格新开一个全新会话（等同终端 Ctrl+Shift+n）。当前对话不会删除，可在「恢复会话」里找回。"
 
@@ -1408,7 +1407,7 @@ msgstr "第一轮"
 msgid "Focus session search or return to list"
 msgstr "聚焦会话搜索或返回列表"
 
-#: src/features/session-composer.tsx:274
+#: src/features/session-composer.tsx:267
 msgid "Follow-ups of this repo"
 msgstr "这个仓库的待跟进事项"
 
@@ -1576,11 +1575,11 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/console-keys.tsx:102
+#: src/features/console-keys.tsx:110
 msgid "Image viewer"
 msgstr "图片查看"
 
-#: src/features/session-composer.tsx:293
+#: src/features/session-composer.tsx:286
 msgid "Images"
 msgstr "图片"
 
@@ -1679,11 +1678,11 @@ msgstr "刚重启"
 msgid "Keep planning"
 msgstr "继续规划"
 
-#: src/features/console-keys.tsx:199
+#: src/features/console-keys.tsx:207
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
-#: src/features/session-composer.tsx:253
+#: src/features/session-composer.tsx:246
 msgid "Keys"
 msgstr "快捷"
 
@@ -1749,7 +1748,7 @@ msgstr "留空以保留当前密钥"
 msgid "letter"
 msgstr "字母"
 
-#: src/features/console-keys.tsx:205
+#: src/features/console-keys.tsx:213
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
@@ -1886,11 +1885,11 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:487
+#: src/features/session-composer.tsx:495
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:434
+#: src/features/session-composer.tsx:442
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -1968,17 +1967,17 @@ msgstr "需要确认"
 #~ msgid "Needs you"
 #~ msgstr "等你"
 
-#: src/features/session-restart.tsx:127
-#: src/features/session-restart.tsx:197
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:124
 msgid "New conversation"
 msgstr "新开会话"
 
 #: src/features/session-restart.tsx:37
 #: src/features/session-restart.tsx:46
 #: src/features/session-restart.tsx:53
-msgctxt "quick same-pane"
-msgid "New conversation"
-msgstr "新对话"
+#~ msgctxt "quick same-pane"
+#~ msgid "New conversation"
+#~ msgstr "新对话"
 
 #: src/features/session-new-direction.tsx:183
 #~ msgid "new direction"
@@ -1989,7 +1988,7 @@ msgstr "新对话"
 #~ msgid "New direction"
 #~ msgstr "新方向"
 
-#: src/features/console-keys.tsx:86
+#: src/features/console-keys.tsx:94
 msgid "New line"
 msgstr "换行"
 
@@ -2002,20 +2001,20 @@ msgstr "换行"
 #~ msgstr "新一轮"
 
 #: src/features/session-chat-group.tsx:183
-#: src/features/session-new.tsx:288
-#: src/features/session-new.tsx:460
+#: src/features/session-new.tsx:289
+#: src/features/session-new.tsx:461
 msgid "New session"
 msgstr "新会话"
 
-#: src/features/console-keys.tsx:76
+#: src/features/console-keys.tsx:84
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:284
+#: src/features/session-new.tsx:285
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:388
+#: src/features/session-new.tsx:389
 msgid "New session group"
 msgstr "新会话组"
 
@@ -2023,7 +2022,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:443
 #: src/features/session-chat-row.tsx:194
 #: src/features/session-info.tsx:372
-#: src/features/session-new.tsx:459
+#: src/features/session-new.tsx:460
 msgid "New session in this group"
 msgstr "在此组新建会话"
 
@@ -2031,7 +2030,7 @@ msgstr "在此组新建会话"
 msgid "New session title"
 msgstr "新的会话标题"
 
-#: src/features/console-keys.tsx:98
+#: src/features/console-keys.tsx:106
 #: src/features/ticket-new.tsx:66
 #: src/features/ticket-new.tsx:161
 msgid "New ticket"
@@ -2061,7 +2060,7 @@ msgstr "下一个 / 上一个运行中的会话"
 msgid "Next / previous session in the list"
 msgstr "列表里的下一个 / 上一个会话"
 
-#: src/features/console-keys.tsx:96
+#: src/features/console-keys.tsx:104
 msgid "Next / previous ticket"
 msgstr "下一张 / 上一张工单"
 
@@ -2504,7 +2503,7 @@ msgstr "插件"
 msgid "Preview {label}"
 msgstr "预览{label}"
 
-#: src/features/console-keys.tsx:104
+#: src/features/console-keys.tsx:112
 msgid "Previous / next image"
 msgstr "上一张 / 下一张图片"
 
@@ -2548,7 +2547,7 @@ msgstr "填进消息"
 msgid "Put into the message for this agent"
 msgstr "填进消息，交给这个 agent"
 
-#: src/features/console-keys.tsx:84
+#: src/features/console-keys.tsx:92
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
@@ -2560,7 +2559,7 @@ msgstr "排队中的消息"
 msgid "Quick controls"
 msgstr "快捷控制"
 
-#: src/features/session-composer.tsx:247
+#: src/features/session-composer.tsx:240
 #: src/features/session-key-panel.tsx:45
 #: src/features/session-key-panel.tsx:56
 msgid "Quick keys"
@@ -2735,8 +2734,8 @@ msgstr "仓库筛选"
 #: src/features/session-new-panels.tsx:217
 #: src/features/session-new-panels.tsx:224
 #: src/features/session-new-panels.tsx:244
-#: src/features/session-new.tsx:455
-#: src/features/session-new.tsx:501
+#: src/features/session-new.tsx:456
+#: src/features/session-new.tsx:502
 msgid "Repository"
 msgstr "仓库"
 
@@ -2795,21 +2794,21 @@ msgstr "重置时间 {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
-#: src/features/session-restart.tsx:180
+#: src/features/session-restart.tsx:107
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "原地重启窗格，agent 恢复当前对话（F5）"
 
-#: src/features/session-restart.tsx:162
-#: src/features/session-restart.tsx:171
+#: src/features/session-restart.tsx:89
+#: src/features/session-restart.tsx:98
 msgid "Restart"
 msgstr "重启"
 
-#: src/features/session-restart.tsx:127
-#: src/features/session-restart.tsx:185
+#: src/features/session-restart.tsx:54
+#: src/features/session-restart.tsx:112
 msgid "Restart session"
 msgstr "重启会话"
 
-#: src/features/session-restart.tsx:141
+#: src/features/session-restart.tsx:68
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对话（等同终端 F5）。"
 
@@ -2979,7 +2978,7 @@ msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 
-#: src/features/console-keys.tsx:176
+#: src/features/console-keys.tsx:184
 msgid "Same at the desk"
 msgstr "终端同键"
 
@@ -3053,12 +3052,12 @@ msgstr "栏目"
 msgid "seen"
 msgstr "最近活动"
 
-#: src/features/console-keys.tsx:85
-#: src/features/session-composer.tsx:496
+#: src/features/console-keys.tsx:93
+#: src/features/session-composer.tsx:504
 msgid "Send"
 msgstr "发送"
 
-#: src/features/console-keys.tsx:89
+#: src/features/console-keys.tsx:97
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "发送（触屏上回车是换行，这个键也能发送）"
 
@@ -3066,7 +3065,7 @@ msgstr "发送（触屏上回车是换行，这个键也能发送）"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "发送 Ctrl+B：正在跑的命令转到后台继续执行，Agent 接着往下做"
 
-#: src/features/session-composer.tsx:248
+#: src/features/session-composer.tsx:241
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 
@@ -3169,7 +3168,7 @@ msgstr "共享"
 msgid "shipped"
 msgstr "已交付"
 
-#: src/features/console-keys.tsx:260
+#: src/features/console-keys.tsx:268
 msgid "Shortcuts"
 msgstr "键盘快捷键"
 
@@ -3213,7 +3212,7 @@ msgstr "这个 agent 加载的能力"
 msgid "Skip to content"
 msgstr "跳到内容"
 
-#: src/features/session-composer.tsx:261
+#: src/features/session-composer.tsx:254
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
@@ -3256,16 +3255,24 @@ msgid "Staged"
 msgstr "已暂存"
 
 #: src/features/session-restart.tsx:83
-msgid "Start"
-msgstr "开始"
+#~ msgid "Start"
+#~ msgstr "开始"
+
+#: src/features/console-keys.tsx:76
+msgid "Start /new in the current agent"
+msgstr "在当前 agent 中执行 /new"
+
+#: src/features/console-keys.tsx:80
+msgid "Start a blank agent process in this pane"
+msgstr "在当前窗格启动空白 agent 进程"
 
 #: src/features/session-restart.tsx:36
-msgid "Start a blank conversation in this pane"
-msgstr "在当前窗格开始空白对话"
+#~ msgid "Start a blank conversation in this pane"
+#~ msgstr "在当前窗格开始空白对话"
 
 #: src/features/session-restart.tsx:59
-msgid "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
-msgstr "在当前窗格开始空白对话，并保留当前工作树。当前对话仍可在恢复会话中找回。"
+#~ msgid "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
+#~ msgstr "在当前窗格开始空白对话，并保留当前工作树。当前对话仍可在恢复会话中找回。"
 
 #: src/features/session-restart.tsx:33
 #~ msgid "Start a blank conversation?"
@@ -3280,7 +3287,7 @@ msgstr "在当前窗格开始空白对话，并保留当前工作树。当前对
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
-#: src/features/session-restart.tsx:162
+#: src/features/session-restart.tsx:89
 msgid "Start fresh"
 msgstr "新开"
 
@@ -3495,7 +3502,7 @@ msgstr "本地运行时刚重启过（断开约 {gone} 秒）"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "本地运行时几分钟前刚启动（运行时同步会重启它）"
 
-#: src/features/session-restart.tsx:121
+#: src/features/session-restart.tsx:48
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
@@ -3606,7 +3613,7 @@ msgstr "工单编号"
 msgid "Ticket activity"
 msgstr "工单动态"
 
-#: src/features/console-keys.tsx:94
+#: src/features/console-keys.tsx:102
 msgid "Ticket pages"
 msgstr "工单"
 
@@ -3665,8 +3672,8 @@ msgstr "目标仓库"
 msgid "To follow up"
 msgstr "待跟进"
 
-#: src/features/session-composer.tsx:273
-#: src/features/session-composer.tsx:279
+#: src/features/session-composer.tsx:266
+#: src/features/session-composer.tsx:272
 msgid "To-dos"
 msgstr "待办"
 
