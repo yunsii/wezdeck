@@ -24,7 +24,10 @@ import {
   NEAR_BOTTOM,
   measureLanding,
   useHoldBottomOnResize,
+  useLatchedPreferLatestTop,
+  useSettleOnCountChange,
 } from './chat-landing'
+import type { LandingTarget } from './chat-landing'
 import { BAR } from './chat-sticky'
 
 export { useKeepPlace } from './chat-landing'
@@ -350,7 +353,7 @@ function useFollowGrowth({
 export function useChatScroll(
   end: React.RefObject<HTMLDivElement | null>,
   count: number,
-  preferLatestTop = false,
+  landingTarget: boolean | LandingTarget = false,
   syncing = false,
 ) {
   const wide = useIsWidePhoneFirst()
@@ -358,15 +361,13 @@ export function useChatScroll(
   const pinnedRef = useRef(true)
   const landed = useRef(false)
   const userInteracted = useRef(false)
-  const preferRef = useRef(preferLatestTop)
-  preferRef.current = preferLatestTop
+  const preferRef = useLatchedPreferLatestTop(landingTarget)
   const lastLandMode = useRef<string | null>(null)
   const userUntil = useRef(0)
   const touching = useRef(false)
   const holdUntil = useRef(0)
   const holding = useRef(false)
   const [unread, setUnread] = useState(0)
-  const seen = useRef(count)
   const pin = useCallback((value: boolean) => {
     if (pinnedRef.current !== value) trace('chat-pin', { pinned: value })
     pinnedRef.current = value
@@ -524,41 +525,18 @@ export function useChatScroll(
     applyLanding,
   )
 
-  // first landing settles late layout (images, fonts), and new messages
-  useEffect(() => {
-    if (!count) return
-    const added = count - seen.current
-    seen.current = count
-    if (!landed.current || syncing) {
-      const go = () => {
-        if (touching.current || userInteracted.current) return
-        const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
-        if (el) applyLanding(el)
-        if (!syncing) landed.current = true
-      }
-      const frame = requestAnimationFrame(() => requestAnimationFrame(go))
-      const timer = setTimeout(go, 150)
-      return () => {
-        cancelAnimationFrame(frame)
-        clearTimeout(timer)
-      }
-    }
-    if (!pinnedRef.current) {
-      if (added > 0) setUnread((n) => n + added)
-      return
-    }
-    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-    const go = () => {
-      if (touching.current) return
-      toBottom(smooth)
-    }
-    const frame = requestAnimationFrame(() => requestAnimationFrame(go))
-    const timer = setTimeout(go, 150)
-    return () => {
-      cancelAnimationFrame(frame)
-      clearTimeout(timer)
-    }
-  }, [count, end, syncing, applyLanding, toBottom])
+  useSettleOnCountChange({
+    end,
+    count,
+    syncing,
+    landed,
+    pinnedRef,
+    touching,
+    userInteracted,
+    applyLanding,
+    toBottom,
+    setUnread,
+  })
 
   useFollowGrowth({
     end,

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  landingPolicy,
   nextBaseline,
   resolveLanding,
+  resolveLandingPreference,
   shouldLandLatestTop,
 } from '#/features/chat-landing'
 import { hasPromptPanel } from '#/features/session-elicitation'
@@ -46,6 +48,67 @@ describe('shouldLandLatestTop (newly done and running sessions)', () => {
         status: 'running',
         pendingCount: 0,
         hasPrompt: true,
+      }),
+    ).toBe(false)
+  })
+})
+
+describe('resolveLandingPreference (auto seen-ack done→idle never snaps to bottom)', () => {
+  it('keeps latest-top latched when done flips to idle during the landing window', () => {
+    const initial = landingPolicy({
+      status: 'done',
+      pendingCount: 0,
+      hasPrompt: false,
+    })
+    const onOpen = resolveLandingPreference({
+      wasLatched: false,
+      preferLatestTop: initial.preferLatestTop,
+      forceBottom: Boolean(initial.forceBottom),
+    })
+    expect(onOpen).toBe(true)
+    // 1.5s later useSeenAck flips status done → idle (preferLatestTop becomes false)
+    const afterAckPolicy = landingPolicy({
+      status: 'idle',
+      pendingCount: 0,
+      hasPrompt: false,
+    })
+    const afterSeenAck = resolveLandingPreference({
+      wasLatched: onOpen,
+      preferLatestTop: afterAckPolicy.preferLatestTop,
+      forceBottom: Boolean(afterAckPolicy.forceBottom),
+    })
+    expect(afterSeenAck).toBe(true)
+    // Queuing a new reply forces bottom and releases the latch
+    const afterSendPolicy = landingPolicy({
+      status: 'idle',
+      pendingCount: 1,
+      hasPrompt: false,
+    })
+    expect(
+      resolveLandingPreference({
+        wasLatched: afterSeenAck,
+        preferLatestTop: afterSendPolicy.preferLatestTop,
+        forceBottom: Boolean(afterSendPolicy.forceBottom),
+      }),
+    ).toBe(false)
+  })
+
+  it('releases the latch when a new message is queued or a prompt card appears', () => {
+    expect(
+      resolveLandingPreference({
+        wasLatched: true,
+        preferLatestTop: false,
+        forceBottom: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('keeps idle reopens landing directly at the bottom', () => {
+    expect(
+      resolveLandingPreference({
+        wasLatched: false,
+        preferLatestTop: false,
+        forceBottom: false,
       }),
     ).toBe(false)
   })

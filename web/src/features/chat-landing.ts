@@ -39,6 +39,135 @@ export function shouldLandLatestTop({
   )
 }
 
+export type LandingTarget = {
+  preferLatestTop: boolean
+  forceBottom?: boolean
+}
+
+export function landingPolicy({
+  status,
+  pendingCount,
+  hasPrompt,
+}: {
+  status?: string
+  pendingCount: number
+  hasPrompt: boolean
+}): LandingTarget {
+  return {
+    preferLatestTop: shouldLandLatestTop({ status, pendingCount, hasPrompt }),
+    forceBottom: pendingCount > 0 || hasPrompt,
+  }
+}
+
+export function useLatchedPreferLatestTop(target: boolean | LandingTarget) {
+  const preferLatestTop =
+    typeof target === 'boolean' ? target : target.preferLatestTop
+  const forceBottom =
+    typeof target === 'boolean' ? false : Boolean(target.forceBottom)
+  const preferRef = useRef(preferLatestTop && !forceBottom)
+  preferRef.current = resolveLandingPreference({
+    wasLatched: preferRef.current,
+    preferLatestTop,
+    forceBottom,
+  })
+  return preferRef
+}
+
+export function useSettleOnCountChange(params: {
+  end: React.RefObject<HTMLDivElement | null>
+  count: number
+  syncing: boolean
+  landed: React.RefObject<boolean>
+  pinnedRef: React.RefObject<boolean>
+  touching: React.RefObject<boolean>
+  userInteracted: React.RefObject<boolean>
+  applyLanding: (el: HTMLElement) => void
+  toBottom: (smooth: boolean) => void
+  setUnread: React.Dispatch<React.SetStateAction<number>>
+}) {
+  const {
+    end,
+    count,
+    syncing,
+    landed,
+    pinnedRef,
+    touching,
+    userInteracted,
+    applyLanding,
+    toBottom,
+    setUnread,
+  } = params
+  const seen = useRef(count)
+  // first landing settles late layout (images, fonts), and new messages
+  useEffect(() => {
+    if (!count) return
+    const added = count - seen.current
+    seen.current = count
+    if (!landed.current || syncing) {
+      const go = () => {
+        if (touching.current || userInteracted.current) return
+        const el = end.current?.closest<HTMLElement>('.overflow-y-auto')
+        if (el) applyLanding(el)
+        if (!syncing) landed.current = true
+      }
+      const frame = requestAnimationFrame(() => requestAnimationFrame(go))
+      const timer = setTimeout(go, 150)
+      return () => {
+        cancelAnimationFrame(frame)
+        clearTimeout(timer)
+      }
+    }
+    if (!pinnedRef.current) {
+      if (added > 0) setUnread((n) => n + added)
+      return
+    }
+    const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
+    const go = () => {
+      if (touching.current) return
+      toBottom(smooth)
+    }
+    const frame = requestAnimationFrame(() => requestAnimationFrame(go))
+    const timer = setTimeout(go, 150)
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(timer)
+    }
+  }, [
+    count,
+    end,
+    syncing,
+    landed,
+    pinnedRef,
+    touching,
+    userInteracted,
+    applyLanding,
+    toBottom,
+    setUnread,
+  ])
+}
+
+/**
+ * Latch the latest-top landing preference for one mounted session visit:
+ * once opened on a newly `done` (or `running`) session, a background
+ * `done → idle` flip from `useSeenAck` (~1.5 s after open) must not revert
+ * the landing target to `bottom` while layout is still settling. Sending a
+ * new message or receiving an interactive prompt card (`forceBottom`) does
+ * release the latch so the bottom comes into view.
+ */
+export function resolveLandingPreference({
+  wasLatched,
+  preferLatestTop,
+  forceBottom,
+}: {
+  wasLatched: boolean
+  preferLatestTop: boolean
+  forceBottom: boolean
+}): boolean {
+  if (forceBottom) return false
+  if (preferLatestTop) return true
+  return wasLatched
+}
+
 /**
  * Reveal baseline for ChatThread: while the first post-mount fetch is still
  * catching up from a persisted IndexedDB snapshot (`syncing` or the render

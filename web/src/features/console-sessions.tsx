@@ -18,7 +18,7 @@ import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { JumpLatest } from './chat-controls'
-import { shouldLandLatestTop } from './chat-landing'
+import { landingPolicy } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
 import { settle } from './chat-thread'
@@ -351,7 +351,7 @@ export function SessionDetail({ id }: { id: string }) {
   const follow = useChatScroll(
     end,
     (data ? 1 : 0) + start + messages.length + pending.length + (busy ? 1 : 0),
-    shouldLandLatestTop({
+    landingPolicy({
       status: data?.status,
       pendingCount: pending.length,
       hasPrompt: hasPromptPanel(data),
