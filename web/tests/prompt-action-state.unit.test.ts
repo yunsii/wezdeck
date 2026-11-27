@@ -19,7 +19,11 @@ describe('PromptActionLabel', () => {
       createElement(PromptActionLabel, { loading: false, children: 'Allow' }),
     )
     const loading = renderToStaticMarkup(
-      createElement(PromptActionLabel, { loading: true, children: 'Allow' }),
+      createElement(PromptActionLabel, {
+        loading: true,
+        tone: 'solid',
+        children: 'Allow',
+      }),
     )
     expect(idle).toContain('inline-grid')
     expect(idle).toContain('Allow')
@@ -27,6 +31,8 @@ describe('PromptActionLabel', () => {
     expect(loading).toContain('opacity-0')
     expect(loading).toContain('Allow')
     expect(loading).toContain('animate-spin')
+    expect(loading).toContain('border-t-brand-deck')
+    expect(loading).not.toContain('border-white')
   })
 })
 

@@ -110,7 +110,7 @@ export function ClaudeAsk({
           >
             <PromptActionLabel
               loading={pending?.action === 'submit'}
-              spinnerClassName="border-white/35 border-t-white"
+              tone="solid"
             >
               {t`Submit answers`}
             </PromptActionLabel>

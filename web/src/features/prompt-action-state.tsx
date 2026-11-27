@@ -83,10 +83,13 @@ export function PromptActionSpinner({ className }: { className?: string }) {
  */
 export function PromptActionLabel({
   loading,
+  tone = 'default',
   spinnerClassName,
   children,
 }: {
   loading: boolean
+  /** `solid` matches Button variant="solid" (inverted bg-brand-text / text-brand-deck in both themes). */
+  tone?: 'default' | 'solid'
   spinnerClassName?: string
   children: ReactNode
 }) {
@@ -102,7 +105,11 @@ export function PromptActionLabel({
       </span>
       {loading ? (
         <PromptActionSpinner
-          className={cn('col-start-1 row-start-1', spinnerClassName)}
+          className={cn(
+            'col-start-1 row-start-1',
+            tone === 'solid' && 'border-brand-deck/30 border-t-brand-deck',
+            spinnerClassName,
+          )}
         />
       ) : null}
     </span>
