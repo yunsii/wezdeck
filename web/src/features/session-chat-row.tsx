@@ -10,6 +10,7 @@ import { CheckCheck, Hash, Plus } from 'lucide-react'
 
 import { useLocale } from '#/lib/locale-context'
 import { recordVisit } from '#/lib/session-visits'
+import { visibleDraft } from '#/lib/use-draft'
 import { cn } from '#/lib/utils'
 import { AgentAvatar, agentLabel } from './agent-avatar'
 import { prefetchSession } from './console-sessions'
@@ -95,7 +96,7 @@ export function ChatRow({
             onPointerDown={warm}
             onFocus={warm}
             className={cn(
-              'list-row flex min-h-15 items-center gap-3 px-3 py-2',
+              'list-row flex min-h-16 items-center gap-3 px-3 py-2',
               selected && 'row-selected',
             )}
           >
@@ -121,12 +122,12 @@ export function ChatRow({
                   {timeLabel}
                 </span>
               </span>
-              <span className="flex min-w-0 items-center justify-between gap-2 text-caption">
+              <span className="flex min-w-0 items-center justify-between gap-2 text-caption leading-5">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  {!selected && row.draft?.trim() ? (
+                  {visibleDraft(row.id, selectedId, row.draft ?? '') ? (
                     <span
                       data-testid="chat-draft"
-                      className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+                      className="inline-flex shrink-0 items-center rounded bg-brand-waiting/15 px-1.5 py-0.5 text-meta leading-none font-semibold text-brand-waiting"
                     >
                       {t`Draft`}
                     </span>

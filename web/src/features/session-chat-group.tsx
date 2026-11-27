@@ -21,6 +21,7 @@ import {
 import { Button } from '#/components/ui/button'
 import { useLocale } from '#/lib/locale-context'
 import { recordVisit } from '#/lib/session-visits'
+import { visibleDraft } from '#/lib/use-draft'
 import { cn } from '#/lib/utils'
 import { AgentAvatar, agentLabel } from './agent-avatar'
 import {
@@ -51,6 +52,18 @@ const statusToneClass = (tone: ChatTone) =>
     tone === 'running' && 'text-brand-running',
     tone === 'idle' && 'text-brand-muted',
   )
+
+function DraftPill() {
+  const { t } = useLingui()
+  return (
+    <span
+      data-testid="chat-draft"
+      className="inline-flex shrink-0 items-center rounded bg-brand-waiting/15 px-1.5 py-0.5 text-meta leading-none font-semibold text-brand-waiting"
+    >
+      {t`Draft`}
+    </span>
+  )
+}
 
 function UnreadBadge({ tone, n }: { tone: string; n: number }) {
   return (
@@ -93,9 +106,20 @@ function SessionSubRow({
   const tone = chatTone(session)
   const title = session.title?.trim()
   const prompt = humanPrompt(session.last_prompt).trim()
-  const draft = selected ? '' : (session.draft?.trim() ?? '')
+  const rawDraft = session.draft?.trim() ?? ''
+  const draft = visibleDraft(
+    session.id,
+    selected ? session.id : undefined,
+    rawDraft,
+  )
+  // Keep compact independent of `selected`: toggling selection on an empty
+  // idle row with a draft must not collapse its second line and jump rows below.
   const compact =
-    tone === 'idle' && !title && !prompt && !draft && !session.restart_pending
+    tone === 'idle' &&
+    !title &&
+    !prompt &&
+    !rawDraft &&
+    !session.restart_pending
   const statusLabel = session.restart_pending
     ? t`Restarting…`
     : {
@@ -156,7 +180,7 @@ function SessionSubRow({
             onFocus={warm}
             className={cn(
               'list-row flex items-center gap-3 pr-3 pl-7 py-2',
-              compact ? 'min-h-11' : 'min-h-14',
+              compact ? 'min-h-14' : 'min-h-16',
               selected && 'row-selected',
             )}
           >
@@ -189,26 +213,19 @@ function SessionSubRow({
                   </span>
                 )}
               </span>
-              {draft || prompt || statusLabel ? (
+              {rawDraft || prompt || statusLabel ? (
                 <span
                   data-testid="session-preview"
                   data-tone={tone}
-                  className="flex min-w-0 items-center justify-between gap-2 text-caption text-brand-muted"
+                  className="flex min-h-5 min-w-0 items-center justify-between gap-2 text-caption leading-5 text-brand-muted"
                 >
-                  <span className="flex min-w-0 items-baseline gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
                     {statusLabel ? (
                       <span className={cn('shrink-0', statusToneClass(tone))}>
                         {statusLabel}
                       </span>
                     ) : null}
-                    {draft ? (
-                      <span
-                        data-testid="chat-draft"
-                        className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
-                      >
-                        {t`Draft`}
-                      </span>
-                    ) : null}
+                    {draft ? <DraftPill /> : null}
                     {prompt ? <span className="truncate">{prompt}</span> : null}
                   </span>
                   {needsAttention(session) ? (
@@ -312,8 +329,8 @@ export function ChatGroupRow({
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
     ? 'waiting'
     : 'done'
-  const hasDraft = chat.sessions.some(
-    (session) => session.id !== selectedId && Boolean(session.draft?.trim()),
+  const hasDraft = chat.sessions.some((session) =>
+    Boolean(visibleDraft(session.id, selectedId, session.draft ?? '')),
   )
   const header = collapsed ? (
     <Button
@@ -326,7 +343,7 @@ export function ChatGroupRow({
       title={t`Expand sessions`}
       aria-label={groupLabel}
       onClick={toggle}
-      className="list-row flex min-h-15 w-full min-w-0 select-none items-center gap-3 px-3 py-2 text-left"
+      className="list-row flex min-h-16 w-full min-w-0 select-none items-center gap-3 px-3 py-2 text-left"
     >
       <AgentAvatar
         agent={chat.focus.agent}
@@ -363,16 +380,9 @@ export function ChatGroupRow({
             {timeOf(chat.focus.ts || chat.activity)}
           </span>
         </span>
-        <span className="flex min-w-0 items-center justify-between gap-2 text-caption">
+        <span className="flex min-w-0 items-center justify-between gap-2 text-caption leading-5">
           <span className="flex min-w-0 items-center gap-1.5">
-            {hasDraft ? (
-              <span
-                data-testid="chat-draft"
-                className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
-              >
-                {t`Draft`}
-              </span>
-            ) : null}
+            {hasDraft ? <DraftPill /> : null}
             <span
               data-testid="chat-preview"
               data-tone={focusTone}
@@ -396,7 +406,7 @@ export function ChatGroupRow({
       title={t`Collapse sessions`}
       aria-label={groupLabel}
       onClick={toggle}
-      className="flex min-h-8 w-full min-w-0 select-none items-center gap-1.5 px-3 py-1.5 text-left text-caption text-brand-muted transition-colors hover:bg-brand-soft"
+      className="flex min-h-8 w-full min-w-0 select-none items-center gap-1.5 px-3 py-1.5 text-left text-caption leading-5 text-brand-muted transition-colors hover:bg-brand-soft"
     >
       <ChevronDown
         size={14}
