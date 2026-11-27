@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from '#/components/ui/popover'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
-import { Skeleton } from '#/components/ui/skeleton'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { Tooltip } from '#/components/ui/tooltip'
 import type { ImeState } from '#/lib/runtime-contract'
 import type { ThemeMode } from '#/lib/theme-provider'
@@ -153,10 +153,10 @@ export function MetricPanel({
         {info ? <InfoTip text={info} /> : null}
       </div>
       {loading ? (
-        <>
+        <SkeletonGroup>
           <Skeleton className="h-7 w-24" />
           <Skeleton className="mt-2 h-4 w-36" />
-        </>
+        </SkeletonGroup>
       ) : (
         <>
           <p className="text-display font-semibold tracking-tight tabular-nums">
@@ -188,7 +188,9 @@ export function MiniMetric({
         {label} {info ? <InfoTip text={info} /> : null}
       </p>
       {loading ? (
-        <Skeleton className="mt-2 h-4 w-20" />
+        <SkeletonGroup className="mt-2">
+          <Skeleton className="h-4 w-20" />
+        </SkeletonGroup>
       ) : (
         <p className="mt-1 font-mono text-body font-medium text-brand-text tabular-nums">
           {value}
@@ -266,7 +268,9 @@ export function StatusRow({
         {label} {info ? <InfoTip text={info} /> : null}
       </p>
       {loading ? (
-        <Skeleton className="mt-2 h-4 w-32" />
+        <SkeletonGroup className="mt-2">
+          <Skeleton className="h-4 w-32" />
+        </SkeletonGroup>
       ) : (
         <p className="mt-1 truncate font-mono text-body text-brand-text">
           {value}
@@ -299,13 +303,17 @@ export function SignalLine({
           {label} {info ? <InfoTip text={info} /> : null}
         </p>
         {loading ? (
-          <Skeleton className="mt-2 h-3 w-48" />
+          <SkeletonGroup className="mt-2">
+            <Skeleton className="h-3 w-48" />
+          </SkeletonGroup>
         ) : (
           <p className="mt-1 truncate text-meta text-brand-label">{detail}</p>
         )}
       </div>
       {loading ? (
-        <Skeleton className="h-4 w-16" />
+        <SkeletonGroup>
+          <Skeleton className="h-4 w-16" />
+        </SkeletonGroup>
       ) : (
         <span
           className={`inline-flex shrink-0 items-center gap-1.5 text-meta font-semibold ${healthy ? 'text-brand-done' : 'text-brand-muted'}`}

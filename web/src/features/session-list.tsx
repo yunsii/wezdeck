@@ -47,6 +47,7 @@ import { useStickyMembers } from './session-stable'
 import { useSessionListTrace } from './session-list-trace'
 import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
+import { useReplyPreviews } from './session-reply-preview'
 import { readDraft, sessionDraftKey, useDraftRevision } from '#/lib/use-draft'
 
 function useChatPreviewLabels() {
@@ -204,12 +205,13 @@ export function SessionList({
   const { t } = useLingui()
   const sessions = useSessions()
   const rows = sessions.data?.sessions ?? []
+  const rowsWithReplies = useReplyPreviews(rows)
   const creatingJobs = sessions.data?.creating_jobs ?? []
   useDraftRevision()
   // Keep the raw trimmed draft on each row so sub-rows can preserve their
   // compact/two-line height when selected; each row hides its Draft pill on
   // the active item via visibleDraft().
-  const rowsWithDrafts = rows.map((row) => ({
+  const rowsWithDrafts = rowsWithReplies.map((row) => ({
     ...row,
     draft: readDraft(sessionDraftKey(row.id)).trim(),
   }))

@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
-import { Skeleton } from '#/components/ui/skeleton'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { hostRead } from '#/lib/runtime-client'
 import type { CollabRunSummary } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
@@ -195,11 +195,13 @@ export function TicketRunChat({
       {chat.isPending ? (
         <div
           data-testid="ticket-run-chat-loading"
-          className="grid gap-2.5 rounded-xl border border-brand-edge bg-brand-surface p-4"
+          className="rounded-xl border border-brand-edge bg-brand-surface p-4"
         >
-          <Skeleton className="h-4 w-2/3 rounded" />
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <Skeleton className="h-4 w-1/2 rounded" />
+          <SkeletonGroup className="grid gap-2.5">
+            <Skeleton className="h-4 w-2/3 rounded" />
+            <Skeleton className="h-16 w-full rounded-xl" />
+            <Skeleton className="h-4 w-1/2 rounded" />
+          </SkeletonGroup>
         </div>
       ) : chat.isError ? (
         <p

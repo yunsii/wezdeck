@@ -39,6 +39,7 @@ export function chatPreview(
     | 'waiting_kind'
     | 'ts'
     | 'last_prompt'
+    | 'last_reply'
     | 'restart_pending'
   >,
   labels: {
@@ -58,14 +59,15 @@ export function chatPreview(
       ? `${labels.waiting} · ${prompt}`
       : `${labels.waiting} · ${labels.needsConfirm}`
   }
+  const finishedText = focus.last_reply || prompt
   if (tone === 'done')
-    return prompt
-      ? `${labels.done ?? ''} · ${prompt}`.trim()
+    return finishedText
+      ? `${labels.done ?? ''} · ${finishedText}`.trim()
       : (labels.done ?? '')
   if (tone === 'running') {
     return prompt ? `${labels.working} · ${prompt}` : labels.working
   }
-  return prompt || labels.empty
+  return finishedText || labels.empty
 }
 
 /** Local filter for the list search box. Every session of a multi-session
@@ -89,6 +91,7 @@ export function chatMatchesQuery(
       row.agent_profile,
       row.name,
       row.last_prompt,
+      row.last_reply,
       row.draft,
     ]),
   ]

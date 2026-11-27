@@ -98,7 +98,7 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/ticket-diff.tsx:294
+#: src/features/ticket-diff.tsx:296
 msgid "{fileCount} files"
 msgstr "{fileCount} files"
 
@@ -408,8 +408,8 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:318
-#: src/features/session-list.tsx:385
+#: src/features/session-list.tsx:320
+#: src/features/session-list.tsx:387
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -727,7 +727,7 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:195
+#: src/features/ticket-diff.tsx:197
 msgid "Binary file changed"
 msgstr "Binary file changed"
 
@@ -938,13 +938,13 @@ msgstr "Clear input"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:107
-#: src/features/session-list.tsx:308
+#: src/features/session-list.tsx:108
+#: src/features/session-list.tsx:310
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "Clear search"
 
-#: src/features/session-chat-group.tsx:155
+#: src/features/session-chat-group.tsx:157
 #: src/features/session-chat-row.tsx:71
 #: src/features/session-clear.tsx:114
 msgid "Clearing…"
@@ -1011,7 +1011,7 @@ msgstr "Collab tickets"
 msgid "Collapse child tickets"
 msgstr "Collapse child tickets"
 
-#: src/features/session-chat-group.tsx:410
+#: src/features/session-chat-group.tsx:412
 msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
@@ -1037,7 +1037,7 @@ msgstr "Commands"
 msgid "Commands and skills"
 msgstr "Commands and skills"
 
-#: src/features/ticket-diff.tsx:175
+#: src/features/ticket-diff.tsx:177
 msgid "Comment"
 msgstr "Comment"
 
@@ -1272,8 +1272,8 @@ msgstr "Copy raw line"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:83
 #: src/features/me-agents.tsx:84
-#: src/features/session-chat-group.tsx:146
-#: src/features/session-chat-group.tsx:256
+#: src/features/session-chat-group.tsx:148
+#: src/features/session-chat-group.tsx:258
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
@@ -1365,7 +1365,7 @@ msgstr "Create ticket"
 msgid "Create workspace"
 msgstr "Create workspace"
 
-#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:138
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
@@ -1408,7 +1408,7 @@ msgstr "Current API key"
 msgid "Current runner"
 msgstr "Current runner"
 
-#: src/features/console-shared.tsx:349
+#: src/features/console-shared.tsx:357
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
@@ -1418,7 +1418,7 @@ msgstr "Daemon"
 
 #: src/features/console-me.tsx:157
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:386
+#: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "Dark"
 
@@ -1442,7 +1442,7 @@ msgstr "Default agent for new sessions in this browser"
 msgid "Default mode: auto mode is off"
 msgstr "Default mode: auto mode is off"
 
-#: src/features/console-shared.tsx:212
+#: src/features/console-shared.tsx:214
 msgid "Degraded"
 msgstr "Degraded"
 
@@ -1450,7 +1450,7 @@ msgstr "Degraded"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
-#: src/features/session-chat-group.tsx:285
+#: src/features/session-chat-group.tsx:287
 #: src/features/session-chat-row.tsx:206
 #: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:397
@@ -1506,7 +1506,7 @@ msgstr "Diagram preview unavailable"
 msgid "Diff"
 msgstr "Diff"
 
-#: src/features/ticket-diff.tsx:263
+#: src/features/ticket-diff.tsx:265
 msgid "Diff review feedback:"
 msgstr "Diff review feedback:"
 
@@ -1572,8 +1572,8 @@ msgstr "Documents"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
-#: src/features/session-chat-group.tsx:127
-#: src/features/session-list.tsx:57
+#: src/features/session-chat-group.tsx:129
+#: src/features/session-list.tsx:58
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "Done"
@@ -1612,8 +1612,8 @@ msgstr "Edit"
 msgid "Edit and resend"
 msgstr "Edit and resend"
 
-#: src/features/session-chat-group.tsx:264
-#: src/features/session-chat-group.tsx:443
+#: src/features/session-chat-group.tsx:266
+#: src/features/session-chat-group.tsx:445
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "Edit group name"
@@ -1718,7 +1718,7 @@ msgstr "Exit"
 msgid "Expand child tickets"
 msgstr "Expand child tickets"
 
-#: src/features/session-chat-group.tsx:347
+#: src/features/session-chat-group.tsx:349
 msgid "Expand sessions"
 msgstr "Expand sessions"
 
@@ -1985,7 +1985,7 @@ msgstr "Image viewer"
 msgid "Images"
 msgstr "Images"
 
-#: src/features/console-shared.tsx:347
+#: src/features/console-shared.tsx:355
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
@@ -2129,12 +2129,12 @@ msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
 #: src/features/console-me.tsx:130
 #: src/features/console-me.tsx:132
-#: src/features/console-shared.tsx:404
-#: src/features/console-shared.tsx:406
+#: src/features/console-shared.tsx:412
+#: src/features/console-shared.tsx:414
 msgid "Language"
 msgstr "Language"
 
-#: src/features/ticket-diff.tsx:374
+#: src/features/ticket-diff.tsx:376
 msgid "Large diff was capped for mobile viewing."
 msgstr "Large diff was capped for mobile viewing."
 
@@ -2196,7 +2196,7 @@ msgstr "Level with upstream."
 
 #: src/features/console-me.tsx:156
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "Light"
 
@@ -2238,7 +2238,7 @@ msgstr "Loaded back into input"
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
-#: src/features/ticket-diff.tsx:85
+#: src/features/ticket-diff.tsx:80
 msgid "Loading diff…"
 msgstr "Loading diff…"
 
@@ -2251,16 +2251,16 @@ msgstr "Loading original…"
 #: src/features/console-collab-run.tsx:210
 #: src/features/console-collab.tsx:118
 #: src/features/console-diagnostics.tsx:110
-#: src/features/console-shared.tsx:210
+#: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:106
-#: src/features/host-file-body.tsx:49
+#: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:245
-#: src/features/session-skeleton.tsx:18
+#: src/features/session-skeleton.tsx:20
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
 #: src/features/tickets-view.tsx:270
@@ -2354,8 +2354,8 @@ msgstr "Manual /rename"
 msgid "Mark done"
 msgstr "Mark done"
 
-#: src/features/session-chat-group.tsx:154
-#: src/features/session-chat-group.tsx:296
+#: src/features/session-chat-group.tsx:156
+#: src/features/session-chat-group.tsx:298
 #: src/features/session-chat-row.tsx:70
 #: src/features/session-chat-row.tsx:217
 #: src/features/session-clear.tsx:113
@@ -2468,7 +2468,7 @@ msgstr "Names sessions"
 msgid "Native"
 msgstr "Native"
 
-#: src/features/session-list.tsx:56
+#: src/features/session-list.tsx:57
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -2486,7 +2486,7 @@ msgstr "Needs a decision"
 #~ msgid "Needs you"
 #~ msgstr "Needs you"
 
-#: src/features/ticket-diff.tsx:309
+#: src/features/ticket-diff.tsx:311
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "Net diff"
@@ -2537,8 +2537,8 @@ msgstr "New line"
 #~ msgstr "New round"
 
 #: src/features/sent-history.tsx:167
-#: src/features/session-chat-group.tsx:211
-#: src/features/session-list.tsx:154
+#: src/features/session-chat-group.tsx:213
+#: src/features/session-list.tsx:155
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new.tsx:193
@@ -2558,8 +2558,8 @@ msgstr "New session (c)"
 msgid "New session group"
 msgstr "New session group"
 
-#: src/features/session-chat-group.tsx:274
-#: src/features/session-chat-group.tsx:458
+#: src/features/session-chat-group.tsx:276
+#: src/features/session-chat-group.tsx:460
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:382
 #: src/features/session-new.tsx:437
@@ -2625,7 +2625,7 @@ msgstr "no"
 msgid "No active session"
 msgstr "No active session"
 
-#: src/features/ticket-diff.tsx:364
+#: src/features/ticket-diff.tsx:366
 msgid "No active worktree diff is available for this ticket."
 msgstr "No active worktree diff is available for this ticket."
 
@@ -2641,7 +2641,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:313
+#: src/features/session-list.tsx:315
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2650,7 +2650,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
 
-#: src/features/ticket-run-chat.tsx:217
+#: src/features/ticket-run-chat.tsx:219
 msgid "No conversation messages recorded for this run."
 msgstr "No conversation messages recorded for this run."
 
@@ -2662,7 +2662,7 @@ msgstr "No device has asked for access yet."
 msgid "No earlier conversations in this project"
 msgstr "No earlier conversations in this project"
 
-#: src/features/console-shared.tsx:356
+#: src/features/console-shared.tsx:364
 msgid "No foreground window was available when Runtime sampled the IME."
 msgstr "No foreground window was available when Runtime sampled the IME."
 
@@ -2670,7 +2670,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:59
+#: src/features/session-list.tsx:60
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2726,11 +2726,11 @@ msgstr "No sent messages recorded yet."
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
-#: src/features/session-list.tsx:300
+#: src/features/session-list.tsx:302
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
-#: src/features/ticket-diff.tsx:206
+#: src/features/ticket-diff.tsx:208
 msgid "No text diff available"
 msgstr "No text diff available"
 
@@ -2814,7 +2814,7 @@ msgid "Not set"
 msgstr "Not set"
 
 #: src/features/me-agent-detail.tsx:278
-#: src/features/ticket-diff.tsx:175
+#: src/features/ticket-diff.tsx:177
 msgid "Note"
 msgstr "Note"
 
@@ -2875,7 +2875,7 @@ msgstr "Off"
 msgid "Off (client classifier)"
 msgstr "Off (client classifier)"
 
-#: src/features/console-shared.tsx:213
+#: src/features/console-shared.tsx:215
 msgid "Offline"
 msgstr "Offline"
 
@@ -3288,7 +3288,7 @@ msgstr "read {reads} files"
 msgid "Read document"
 msgstr "Read document"
 
-#: src/features/console-shared.tsx:211
+#: src/features/console-shared.tsx:213
 #: src/features/console-status-band.tsx:40
 #: src/features/me-host.tsx:60
 #: src/features/me-host.tsx:157
@@ -3319,8 +3319,8 @@ msgstr "Recycle worktree"
 #: src/features/host-file-sheet.tsx:77
 #: src/features/host-file-sheet.tsx:78
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:332
-#: src/features/ticket-diff.tsx:333
+#: src/features/ticket-diff.tsx:334
+#: src/features/ticket-diff.tsx:335
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -3604,7 +3604,7 @@ msgstr "Restart this session's pane on the computer; the agent resumes this conv
 msgid "restarting"
 msgstr "restarting"
 
-#: src/features/session-chat-group.tsx:122
+#: src/features/session-chat-group.tsx:124
 msgid "Restarting…"
 msgstr "Restarting…"
 
@@ -3667,11 +3667,11 @@ msgstr "Review"
 #~ msgid "Review note for {repoName}/{0}…"
 #~ msgstr "Review note for {repoName}/{0}…"
 
-#: src/features/ticket-diff.tsx:186
+#: src/features/ticket-diff.tsx:188
 msgid "Review note for {repoName}/{filePath}…"
 msgstr "Review note for {repoName}/{filePath}…"
 
-#: src/features/ticket-diff.tsx:275
+#: src/features/ticket-diff.tsx:277
 msgid "Review notes sent"
 msgstr "Review notes sent"
 
@@ -3704,7 +3704,7 @@ msgid "run"
 msgstr "run"
 
 #: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:240
+#: src/features/ticket-run-chat.tsx:242
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3813,7 +3813,7 @@ msgstr "Runtime API"
 msgid "Runtime diagnostics are unavailable while Runtime is offline."
 msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 
-#: src/features/console-shared.tsx:360
+#: src/features/console-shared.tsx:368
 msgid "Runtime reported reason:"
 msgstr "Runtime reported reason:"
 
@@ -3903,8 +3903,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:97
 #: src/features/session-list.tsx:98
+#: src/features/session-list.tsx:99
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3952,7 +3952,7 @@ msgstr "Send failed"
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
-#: src/features/ticket-diff.tsx:325
+#: src/features/ticket-diff.tsx:327
 msgid "Send review ({noteCount})"
 msgstr "Send review ({noteCount})"
 
@@ -4068,15 +4068,15 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:220
-#: src/features/session-list.tsx:279
-#: src/features/session-list.tsx:400
+#: src/features/session-list.tsx:281
+#: src/features/session-list.tsx:402
 #: src/features/session-new-job.tsx:399
 #: src/features/session-new.tsx:433
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:290
+#: src/features/session-list.tsx:292
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -4134,7 +4134,7 @@ msgstr "Show the call"
 #~ msgid "Showing {0} of {total} items"
 #~ msgstr "Showing {0} of {total} items"
 
-#: src/features/ticket-run-chat.tsx:231
+#: src/features/ticket-run-chat.tsx:233
 msgid "Showing {shownCount} of {total} items"
 msgstr "Showing {shownCount} of {total} items"
 
@@ -4417,7 +4417,7 @@ msgstr "Synced"
 
 #: src/features/console-me.tsx:155
 #: src/features/console-me.tsx:206
-#: src/features/console-shared.tsx:384
+#: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "System"
 
@@ -4518,7 +4518,7 @@ msgstr "The behaviour, error or data you actually observed"
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
-#: src/features/console-shared.tsx:352
+#: src/features/console-shared.tsx:360
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
@@ -4546,8 +4546,8 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 
 #: src/features/console-me.tsx:149
 #: src/features/console-me.tsx:151
-#: src/features/console-shared.tsx:377
-#: src/features/console-shared.tsx:379
+#: src/features/console-shared.tsx:385
+#: src/features/console-shared.tsx:387
 msgid "Theme"
 msgstr "Theme"
 
@@ -5017,7 +5017,7 @@ msgstr "Waiting for the host"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
 
-#: src/features/ticket-run-chat.tsx:216
+#: src/features/ticket-run-chat.tsx:218
 msgid "Waiting for worker output…"
 msgstr "Waiting for worker output…"
 
@@ -5071,8 +5071,8 @@ msgid "waiting on you"
 msgstr "waiting on you"
 
 #: src/features/landing-page.tsx:215
-#: src/features/session-chat-group.tsx:126
-#: src/features/session-list.tsx:55
+#: src/features/session-chat-group.tsx:128
+#: src/features/session-list.tsx:56
 #: src/features/tickets-view.tsx:391
 #: src/features/tickets-view.tsx:531
 msgid "Waiting on you"
@@ -5249,8 +5249,8 @@ msgstr "working"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
-#: src/features/session-chat-group.tsx:125
-#: src/features/session-list.tsx:58
+#: src/features/session-chat-group.tsx:127
+#: src/features/session-list.tsx:59
 msgid "Working"
 msgstr "Working"
 
@@ -5259,7 +5259,7 @@ msgstr "Working"
 #~ msgid "Working"
 #~ msgstr "Working"
 
-#: src/features/ticket-diff.tsx:408
+#: src/features/ticket-diff.tsx:410
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
 
@@ -5307,7 +5307,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:170
-#: src/features/session-list.tsx:70
+#: src/features/session-list.tsx:71
 msgid "Yesterday"
 msgstr "Yesterday"
 

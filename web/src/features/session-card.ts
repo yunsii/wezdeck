@@ -16,6 +16,8 @@ export type SessionCard = {
   status: string
   waiting_kind?: string
   last_prompt: string
+  /** Client-only preview from the current detail cache. */
+  last_reply?: string
   draft?: string
   ts: number
   /** Source of the displayed timestamp. */
