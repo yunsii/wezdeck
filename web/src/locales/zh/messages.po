@@ -152,7 +152,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · 外链"
 
-#: src/features/me-autotitle.tsx:198
+#: src/features/me-autotitle.tsx:212
 msgid "{taskCount} tasks"
 msgstr "{taskCount} 项任务"
 
@@ -164,7 +164,7 @@ msgstr "{tools} 次工具调用"
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/me-autotitle.tsx:156
+#: src/features/me-autotitle.tsx:170
 #: src/features/ticket-runs.tsx:88
 msgid "{turns} turns"
 msgstr "{turns} 轮"
@@ -206,7 +206,7 @@ msgstr "↓ {tokens} tokens"
 #~ msgid "+ New direction"
 #~ msgstr "+ 新方向"
 
-#: src/features/me-autotitle.tsx:198
+#: src/features/me-autotitle.tsx:212
 msgid "1 task"
 msgstr "1 项任务"
 
@@ -298,11 +298,11 @@ msgstr "账号额度"
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "操作已发送，等待 Agent 继续……"
 
-#: src/features/me-autotitle.tsx:154
+#: src/features/me-autotitle.tsx:168
 msgid "Active"
 msgstr "活跃"
 
-#: src/features/me-autotitle.tsx:403
+#: src/features/me-autotitle.tsx:417
 msgid "Active CLI"
 msgstr "当前生效 CLI"
 
@@ -333,7 +333,7 @@ msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不�
 msgid "Agent"
 msgstr "智能体"
 
-#: src/features/me-autotitle.tsx:354
+#: src/features/me-autotitle.tsx:368
 msgid "Agent CLI used to generate titles"
 msgstr "用于生成标题的本地智能体 CLI"
 
@@ -481,7 +481,7 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 msgid "Approve the plan"
 msgstr "批准计划"
 
-#: src/features/me-autotitle.tsx:303
+#: src/features/me-autotitle.tsx:317
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 
@@ -498,7 +498,7 @@ msgstr "已批准"
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
 
-#: src/features/me-autotitle.tsx:154
+#: src/features/me-autotitle.tsx:168
 msgid "Archived"
 msgstr "已归档"
 
@@ -514,14 +514,14 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/me-autotitle.tsx:150
+#: src/features/me-autotitle.tsx:164
 #: src/features/session-statusbar.tsx:96
 #: src/features/session-title-history.tsx:89
 msgid "Auto"
 msgstr "Auto"
 
-#: src/features/me-autotitle.tsx:103
-#: src/features/me-autotitle.tsx:149
+#: src/features/me-autotitle.tsx:117
+#: src/features/me-autotitle.tsx:163
 msgid "Auto · {eff}"
 msgstr "自动 · {eff}"
 
@@ -529,7 +529,7 @@ msgstr "自动 · {eff}"
 msgid "Auto · {provider}"
 msgstr "自动 · {provider}"
 
-#: src/features/me-autotitle.tsx:366
+#: src/features/me-autotitle.tsx:380
 msgid "Auto (Grok → Claude → Codex)"
 msgstr "自动（Grok → Claude → Codex）"
 
@@ -557,11 +557,11 @@ msgstr "自动标题"
 msgid "Auto-approves edits; auto mode off"
 msgstr "自动批准编辑（未开启 Auto 模式）"
 
-#: src/features/me-autotitle.tsx:356
+#: src/features/me-autotitle.tsx:370
 msgid "Auto-title agent CLI"
 msgstr "自动标题智能体 CLI"
 
-#: src/features/me-autotitle.tsx:291
+#: src/features/me-autotitle.tsx:305
 msgid "Auto-title settings saved"
 msgstr "自动标题配置已保存"
 
@@ -601,8 +601,8 @@ msgstr "后台"
 msgid "Background"
 msgstr "后台运行"
 
-#: src/features/me-autotitle.tsx:339
-#: src/features/me-autotitle.tsx:341
+#: src/features/me-autotitle.tsx:353
+#: src/features/me-autotitle.tsx:355
 msgid "Background auto-titling"
 msgstr "后台自动更新标题"
 
@@ -1157,7 +1157,7 @@ msgstr "创建失败：{reason}"
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
-#: src/features/me-autotitle.tsx:311
+#: src/features/me-autotitle.tsx:325
 msgid "Could not read auto-title status."
 msgstr "无法读取自动标题状态。"
 
@@ -1224,7 +1224,7 @@ msgstr "当前"
 msgid "Current API key"
 msgstr "当前 API 密钥"
 
-#: src/features/me-autotitle.tsx:400
+#: src/features/me-autotitle.tsx:414
 msgid "Current runner"
 msgstr "当前运行状态"
 
@@ -1942,7 +1942,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:85
-#: src/features/me-autotitle.tsx:318
+#: src/features/me-autotitle.tsx:332
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
@@ -2008,7 +2008,7 @@ msgstr "受管模型覆盖"
 msgid "Manual"
 msgstr "手动"
 
-#: src/features/me-autotitle.tsx:146
+#: src/features/me-autotitle.tsx:160
 msgid "Manual /rename"
 msgstr "手动 /rename"
 
@@ -2105,7 +2105,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/me-autotitle.tsx:151
+#: src/features/me-autotitle.tsx:165
 #: src/features/session-title-history.tsx:86
 msgid "Native"
 msgstr "原生"
@@ -2217,7 +2217,7 @@ msgstr "新工单（n）"
 msgid "New to-do"
 msgstr "新待办"
 
-#: src/features/pwa-boot.tsx:42
+#: src/features/pwa-boot.tsx:48
 msgid "New version available"
 msgstr "有新版本"
 
@@ -2314,7 +2314,7 @@ msgstr "没有匹配的外链。"
 msgid "No links resolved for this repository."
 msgstr "这个仓库没有解析出外链。"
 
-#: src/features/me-autotitle.tsx:326
+#: src/features/me-autotitle.tsx:340
 msgid "No local CLI available"
 msgstr "无可用本地 CLI"
 
@@ -2342,7 +2342,7 @@ msgstr "暂无最近的连接结果"
 #~ msgid "No session"
 #~ msgstr "无会话"
 
-#: src/features/me-autotitle.tsx:132
+#: src/features/me-autotitle.tsx:146
 msgid "No session titles recorded yet."
 msgstr "暂无已记录的会话标题。"
 
@@ -2456,8 +2456,8 @@ msgid "now {label}"
 msgstr "状态：{label}"
 
 #: src/features/console-me.tsx:266
-#: src/features/me-autotitle.tsx:100
-#: src/features/me-autotitle.tsx:348
+#: src/features/me-autotitle.tsx:114
+#: src/features/me-autotitle.tsx:362
 msgid "Off"
 msgstr "未启用"
 
@@ -2473,8 +2473,8 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/me-autotitle.tsx:102
-#: src/features/me-autotitle.tsx:347
+#: src/features/me-autotitle.tsx:116
+#: src/features/me-autotitle.tsx:361
 msgid "On"
 msgstr "开启"
 
@@ -2820,7 +2820,7 @@ msgstr "最近提交"
 msgid "Refresh"
 msgstr "刷新"
 
-#: src/features/me-autotitle.tsx:418
+#: src/features/me-autotitle.tsx:432
 msgid "Refresh active sessions now"
 msgstr "立即刷新活跃会话"
 
@@ -2829,19 +2829,19 @@ msgstr "立即刷新活跃会话"
 msgid "Refresh links"
 msgstr "刷新外链"
 
-#: src/features/me-autotitle.tsx:282
+#: src/features/me-autotitle.tsx:296
 msgid "Refreshing session titles in the background…"
 msgstr "正在后台刷新活跃会话标题……"
 
-#: src/features/me-autotitle.tsx:234
+#: src/features/me-autotitle.tsx:248
 msgid "Regenerate"
 msgstr "重算"
 
-#: src/features/me-autotitle.tsx:228
+#: src/features/me-autotitle.tsx:242
 msgid "Regenerate title now"
 msgstr "立即重新生成标题"
 
-#: src/features/me-autotitle.tsx:281
+#: src/features/me-autotitle.tsx:295
 msgid "Regenerating title for this session…"
 msgstr "正在重新生成该会话标题……"
 
@@ -2869,7 +2869,7 @@ msgstr "中转时长"
 msgid "Relay requests (Durable Object)"
 msgstr "中转请求（Durable Object）"
 
-#: src/features/pwa-boot.tsx:45
+#: src/features/pwa-boot.tsx:53
 msgid "Reload"
 msgstr "刷新"
 
@@ -3187,7 +3187,7 @@ msgstr "运行次数"
 msgid "Runs and cost"
 msgstr "运行与花费"
 
-#: src/features/me-autotitle.tsx:334
+#: src/features/me-autotitle.tsx:348
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标题始终贴合当前任务；手动 /rename 的标题不会被覆盖。"
 
@@ -3264,8 +3264,8 @@ msgstr "保存时写入 api.kimi.ai/coding/、ANTHROPIC_API_KEY、全部 Claude 
 msgid "Saving…"
 msgstr "保存中…"
 
-#: src/features/me-autotitle.tsx:382
-#: src/features/me-autotitle.tsx:384
+#: src/features/me-autotitle.tsx:396
+#: src/features/me-autotitle.tsx:398
 msgid "Scan interval"
 msgstr "扫描周期"
 
@@ -3406,7 +3406,7 @@ msgstr "会话信息"
 msgid "Session pages"
 msgstr "会话"
 
-#: src/features/me-autotitle.tsx:425
+#: src/features/me-autotitle.tsx:439
 msgid "Session titles"
 msgstr "会话标题列表"
 
@@ -3982,7 +3982,7 @@ msgstr "标题"
 msgid "Title source"
 msgstr "标题来源"
 
-#: src/features/me-autotitle.tsx:289
+#: src/features/me-autotitle.tsx:303
 msgid "Title unlocked; auto-titling will resume."
 msgstr "已解除锁定，后续将恢复自动更新标题。"
 
@@ -4062,7 +4062,7 @@ msgstr "Trace"
 msgid "Trace ID or text"
 msgstr "Trace ID 或文本"
 
-#: src/features/me-autotitle.tsx:405
+#: src/features/me-autotitle.tsx:419
 msgid "Tracked titles"
 msgstr "已记录标题数"
 
@@ -4116,7 +4116,7 @@ msgstr "TURN 中继"
 msgid "Turns"
 msgstr "轮数"
 
-#: src/features/me-autotitle.tsx:374
+#: src/features/me-autotitle.tsx:388
 #: src/features/me-host.tsx:90
 msgid "Unavailable"
 msgstr "不可用"
@@ -4137,11 +4137,11 @@ msgstr "撤销"
 msgid "Unknown"
 msgstr "未知"
 
-#: src/features/me-autotitle.tsx:220
+#: src/features/me-autotitle.tsx:234
 msgid "Unlock"
 msgstr "解锁"
 
-#: src/features/me-autotitle.tsx:214
+#: src/features/me-autotitle.tsx:228
 msgid "Unlock to resume auto-titling"
 msgstr "解除锁定并恢复自动更新"
 
@@ -4160,7 +4160,7 @@ msgstr "未跟踪"
 msgid "Updated {time}"
 msgstr "更新于 {time}"
 
-#: src/features/pwa-boot.tsx:34
+#: src/features/pwa-boot.tsx:40
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
 

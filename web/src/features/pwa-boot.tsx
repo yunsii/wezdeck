@@ -3,8 +3,14 @@ import { useEffect } from 'react'
 import { CircleAlert } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 
-import { buildId, registerServiceWorker, useUpdateAvailable } from '#/lib/pwa'
-import { UPDATED_KEY, UPDATED_REASON_KEY } from '#/lib/host-diag'
+import {
+  UPDATED_KEY,
+  UPDATED_REASON_KEY,
+  buildId,
+  registerServiceWorker,
+  reloadToUpdate,
+  useUpdateAvailable,
+} from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
 
 /** top only (a string sets every side): the session bar's bottom, else the
@@ -42,7 +48,11 @@ export function PwaBoot() {
     toast(t`New version available`, {
       id: 'new-version',
       duration: Infinity,
-      action: { label: t`Reload`, onClick: () => location.reload() },
+      description: update.reason || undefined,
+      action: {
+        label: t`Reload`,
+        onClick: () => reloadToUpdate(update.reason),
+      },
     })
   }, [update, t])
   return (

@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Unlock,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { Segmented } from '#/components/deck/segmented'
@@ -20,9 +20,10 @@ import { Field, FieldList } from '#/components/ui/field'
 import { SectionHeading } from '#/components/ui/section-heading'
 import { Select } from '#/components/ui/select'
 import { useLocale } from '#/lib/locale-context'
+import { remoteLink } from '#/lib/remote-link'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { AgentAvatar } from './agent-avatar'
-import { useConsoleMode, useRemoteState } from './console-mode'
+import { useConsoleMode } from './console-mode'
 import type { TitleHistoryItem } from './console-sessions'
 import { useDeviceState } from './device-state'
 import { TitleHistoryTimeline } from './session-title-history'
@@ -67,27 +68,40 @@ function providerLabel(id?: string) {
   return PROVIDER_LABELS[id] ?? id
 }
 
+const AUTOTITLE_QUERY_KEY = ['remote', 'session.autotitle.status'] as const
+
+function useRemoteOnline() {
+  return useSyncExternalStore(
+    remoteLink.subscribe,
+    () => {
+      const m = remoteLink.snapshot().mode
+      return m === 'websocket' || m === 'webrtc'
+    },
+    () => false,
+  )
+}
+
 function useAutoTitleReachable() {
   const mode = useConsoleMode()
-  const remote = useRemoteState()
+  const remoteOnline = useRemoteOnline()
   const device = useDeviceState()
   const authorized = mode === 'local' || device.state === 'approved'
   const reachable =
     mode === 'local' ||
-    (mode === 'remote' &&
-      (remote.mode === 'websocket' || remote.mode === 'webrtc') &&
-      device.state === 'approved')
+    (mode === 'remote' && remoteOnline && device.state === 'approved')
   return { mode, device, authorized, reachable }
 }
 
 export function useAutoTitleStatus(pollMs = 15_000) {
-  const { mode, device, reachable } = useAutoTitleReachable()
+  const { reachable } = useAutoTitleReachable()
   return useQuery({
-    queryKey: ['session.autotitle.status', mode, device.id],
+    queryKey: AUTOTITLE_QUERY_KEY,
     queryFn: async () =>
       (await hostRead('session.autotitle.status')) as AutoTitleStatus,
     enabled: reachable,
+    staleTime: 8_000,
     refetchInterval: pollMs,
+    placeholderData: (prev) => prev,
     retry: false,
   })
 }
@@ -262,9 +276,9 @@ export function AutoTitlePage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
-  const { mode, device, authorized, reachable } = useAutoTitleReachable()
+  const { authorized, reachable } = useAutoTitleReachable()
   const queryClient = useQueryClient()
-  const queryKey = ['session.autotitle.status', mode, device.id]
+  const queryKey = AUTOTITLE_QUERY_KEY
   const status = useAutoTitleStatus(10_000)
 
   const mutate = useMutation({
@@ -305,7 +319,7 @@ export function AutoTitlePage() {
     )
   }
 
-  if (status.isError) {
+  if (status.isError && !status.data) {
     return (
       <p role="alert" className="text-caption text-brand-error">
         {t`Could not read auto-title status.`}
