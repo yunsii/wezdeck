@@ -6,37 +6,30 @@
 // row resolves the focus session (session-chats) and navigates to
 // /sessions/$id. Order: unread first within a repo, then activity time —
 // frozen while you work (session-stable).
-import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
-import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, Hash, Plus, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { AgentAvatar, agentLabel } from './agent-avatar'
+import { RemoteBadge } from './remote-badge'
 import { ChatGroupRow } from './session-chat-group'
+import { ChatRow } from './session-chat-row'
 import { useLocale } from '#/lib/locale-context'
-import { recordVisit } from '#/lib/session-visits'
 import { useIsWide } from '#/lib/use-media'
-import { cn } from '#/lib/utils'
 import { NOT_PAIRED } from '#/lib/remote-link'
 import { RepoLinksSheet, RepoSectionHeader } from './repo-links'
 import type { RepoLinksTarget } from './repo-links'
 import { OpenTodos } from './session-todos'
 import { SessionListSkeleton } from './session-skeleton'
-import { clearable, useClearSession } from './session-clear'
-import { useDeleteSession } from './session-delete'
-import { useDeviceState } from './device-state'
-import { NewSessionButton, requestNewSession } from './session-new'
+import { NewSessionButton } from './session-new'
 import {
   buildChatGroups,
   chatMatchesQuery,
   chatPreview,
-  chatTone,
   flattenChats,
 } from './session-chats'
 import type { SessionChat } from './session-chats'
@@ -47,14 +40,9 @@ import {
   formatChatWeekday,
 } from './chat-time'
 import { useStickyMembers } from './session-stable'
-import { useCopySessionReference } from './copy-reference'
-import { SwipeActions } from './session-row-swipe'
-import { prefetchSession, useSessions } from './console-sessions'
+import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { readDraft, sessionDraftKey, useDraftRevision } from '#/lib/use-draft'
-
-const menuItemClass =
-  'flex cursor-default items-center gap-2 rounded-lg px-3 py-2 outline-none data-[highlighted]:bg-brand-soft'
 
 function useChatPreviewLabels() {
   const { t } = useLingui()
@@ -78,202 +66,6 @@ function useChatTimeLabel() {
     if (bucket === 'weekday') return formatChatWeekday(ms, locale)
     return formatChatDate(ms, locale)
   }
-}
-
-function ChatRow({
-  chat,
-  selectedId,
-  replace,
-  preview,
-  timeLabel,
-}: {
-  chat: SessionChat
-  selectedId?: string
-  replace: boolean
-  preview: string
-  timeLabel: string
-}) {
-  const { t } = useLingui()
-  const { locale } = useLocale()
-  const localeParam = locale === 'en' ? undefined : locale
-  const device = useDeviceState()
-  const copyReference = useCopySessionReference()
-  const { clear } = useClearSession()
-  const client = useQueryClient()
-  const row = chat.focus
-  const tone = chatTone(row)
-  const warm = () => prefetchSession(client, row.id)
-  const selected = row.id === selectedId
-  const canClear =
-    device.state === 'approved' && clearable(row.status, row.waiting_kind)
-  const { ask: deleteSession, confirmation } = useDeleteSession()
-  const canManage = device.state === 'approved' && Boolean(row.tmux_pane)
-  const copy = () => copyReference(row.id)
-  return (
-    <SwipeActions
-      id={row.id}
-      left={{
-        label: t`Copy reference`,
-        className: 'bg-brand-soft text-brand-text',
-        testId: 'chat-swipe-copy',
-        onAction: copy,
-      }}
-      right={
-        canClear
-          ? {
-              label: t`Mark read`,
-              busyLabel: t`Clearing…`,
-              className: 'bg-brand-done text-white',
-              testId: 'chat-swipe-mark-read',
-              onAction: () => clear(row.id),
-            }
-          : undefined
-      }
-    >
-      <ContextMenu.Root>
-        <ContextMenu.Trigger
-          data-testid="chat-row-menu"
-          className={cn(
-            'group/row relative block w-full select-none outline-none [-webkit-touch-callout:none]',
-            'data-[popup-open]:bg-brand-soft',
-          )}
-        >
-          <Link
-            to="/{-$locale}/console/sessions/$id"
-            params={{ locale: localeParam, id: row.id }}
-            data-session={row.id}
-            data-chat={chat.key}
-            replace={replace}
-            aria-current={selected ? 'page' : undefined}
-            onClick={() => recordVisit(chat.key)}
-            onPointerEnter={warm}
-            onPointerDown={warm}
-            onFocus={warm}
-            className={cn(
-              'list-row flex min-h-14 items-start gap-3 px-4 py-2.5 md:px-[var(--split-pad)]',
-              selected && 'row-selected',
-            )}
-          >
-            <AgentAvatar
-              agent={row.agent}
-              profile={row.agent_profile}
-              size={40}
-              tone={tone}
-              className="mt-0.5"
-            />
-            <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
-              <span className="flex items-baseline justify-between gap-2">
-                <span
-                  data-testid="chat-title"
-                  className={cn(
-                    'min-w-0 truncate text-title',
-                    chat.unread > 0 ? 'font-semibold' : 'font-medium',
-                  )}
-                >
-                  {row.title?.trim() ||
-                    agentLabel(row.agent, row.agent_profile)}
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5">
-                  {chat.unread > 0 ? (
-                    <span
-                      data-testid="chat-unread"
-                      data-tone={tone}
-                      className={cn(
-                        'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-meta font-semibold',
-                        tone === 'done'
-                          ? 'bg-brand-done text-[#0b1a12]'
-                          : 'bg-brand-waiting text-[#1b1406]',
-                      )}
-                    >
-                      {chat.unread}
-                    </span>
-                  ) : null}
-                  <span className="text-meta text-brand-label">
-                    {timeLabel}
-                  </span>
-                </span>
-              </span>
-              <span className="flex min-w-0 items-center gap-1.5 text-caption">
-                {row.draft?.trim() ? (
-                  <span
-                    data-testid="chat-draft"
-                    className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
-                  >
-                    {t`Draft`}
-                  </span>
-                ) : null}
-                <span
-                  data-testid="chat-preview"
-                  data-tone={tone}
-                  className={cn(
-                    'min-w-0 truncate',
-                    tone === 'waiting' && 'text-brand-waiting',
-                    tone === 'done' && 'text-brand-done',
-                    tone === 'running' && 'text-brand-running',
-                    tone === 'idle' && 'text-brand-muted',
-                  )}
-                >
-                  {preview}
-                </span>
-              </span>
-            </span>
-          </Link>
-        </ContextMenu.Trigger>
-        <ContextMenu.Portal>
-          <ContextMenu.Positioner className="z-[60]">
-            <ContextMenu.Popup
-              data-deck
-              data-testid="chat-row-context-menu"
-              className="motion-pop min-w-44 rounded-xl border border-brand-edge bg-brand-surface p-1 text-body text-brand-text shadow-lg outline-none"
-            >
-              <ContextMenu.Item
-                data-testid="chat-row-copy-reference"
-                onClick={() => void copy()}
-                className={menuItemClass}
-              >
-                <Hash size={14} aria-hidden />
-                {t`Copy reference`}
-              </ContextMenu.Item>
-              {canManage ? (
-                <>
-                  <ContextMenu.Item
-                    className={menuItemClass}
-                    onClick={() =>
-                      requestNewSession({
-                        repo: chat.repoKey,
-                        anchor: row.id,
-                        group: chat.purpose || chat.title,
-                      })
-                    }
-                  >
-                    <Plus size={14} aria-hidden />
-                    {t`New session in this group`}
-                  </ContextMenu.Item>
-                  <ContextMenu.Item
-                    className={menuItemClass}
-                    onClick={() => deleteSession(row, selected)}
-                  >
-                    {t`Delete session`}
-                  </ContextMenu.Item>
-                </>
-              ) : null}
-              {canClear ? (
-                <ContextMenu.Item
-                  data-testid="chat-row-mark-read"
-                  onClick={() => void clear(row.id)}
-                  className={menuItemClass}
-                >
-                  <CheckCheck size={14} aria-hidden />
-                  {t`Mark read`}
-                </ContextMenu.Item>
-              ) : null}
-            </ContextMenu.Popup>
-          </ContextMenu.Positioner>
-        </ContextMenu.Portal>
-      </ContextMenu.Root>
-      {confirmation}
-    </SwipeActions>
-  )
 }
 
 function ChatSearch({
@@ -322,6 +114,8 @@ export function SessionList({
   split = false,
 }: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
+  const { locale } = useLocale()
+  const localeParam = locale === 'en' ? undefined : locale
   const sessions = useSessions()
   const rows = sessions.data?.sessions ?? []
   useDraftRevision()
@@ -377,23 +171,12 @@ export function SessionList({
       {t({ message: 'Sessions', context: 'nav' })}
     </h1>
   )
-  const headActions = (
-    <div className="flex min-w-0 items-center gap-2">
-      {split ? null : title}
-      <ChatSearch value={query} onChange={setQuery} />
-      <NewSessionButton />
-    </div>
-  )
   const body = (
     <>
       {sessions.isError ? (
         <p
           role="status"
-          className={cn(
-            'border-l-[3px] border-brand-waiting bg-brand-waiting/10 px-3 py-3 text-caption break-words',
-            split &&
-              'border-b border-b-brand-edge pl-[calc(var(--split-pad)-3px)] pr-[var(--split-pad)]',
-          )}
+          className="border-b border-l-[3px] border-b-brand-edge border-l-brand-waiting bg-brand-waiting/10 px-3 py-2.5 text-caption break-words"
         >
           {sessions.error.message === NOT_PAIRED
             ? t`Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here.`
@@ -404,7 +187,7 @@ export function SessionList({
         sessions.isError ? null : sessions.isPending ? (
           <SessionListSkeleton />
         ) : searching ? (
-          <div className="rounded-xl bg-brand-surface px-4 py-10 text-center">
+          <div className="px-4 py-12 text-center">
             <p className="text-caption text-brand-muted">
               {t`No sessions match that search.`}
             </p>
@@ -418,20 +201,20 @@ export function SessionList({
             </Button>
           </div>
         ) : (
-          <p className="rounded-xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted">
+          <p className="px-4 py-12 text-center text-caption text-brand-muted">
             {t`No agent sessions are running.`}
           </p>
         )
       ) : (
         <div
           aria-label={t`Agent sessions`}
-          className="grid grid-cols-[minmax(0,1fr)] gap-3 md:gap-0"
+          className="grid grid-cols-[minmax(0,1fr)] bg-brand-surface"
           data-testid="session-chats"
         >
           {painted.map((repo) => (
             <section
               key={repo.key}
-              className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
+              className="group/repo-section bg-brand-surface"
               data-repo={repo.label}
             >
               <RepoSectionHeader
@@ -443,18 +226,19 @@ export function SessionList({
                   setLinksOpen(true)
                 }}
               />
-              <ul>
+              <ul className="chat-list">
                 {repo.chats.map((chat) => (
                   <li
                     key={chat.key}
-                    className="border-b border-brand-edge last:border-b-0"
                     data-worktree={chat.title}
+                    data-group={chat.sessions.length > 1 ? '' : undefined}
                   >
                     {chat.sessions.length > 1 ? (
                       <ChatGroupRow
                         chat={chat}
                         selectedId={selected}
                         replace={replaceSession}
+                        preview={previewOf(chat)}
                         timeOf={timeOf}
                       />
                     ) : (
@@ -485,6 +269,7 @@ export function SessionList({
     return (
       <SplitColumn
         label={t`Agent sessions`}
+        className="bg-brand-surface [--split-pad:0.75rem]"
         head={
           <div className="flex min-w-0 items-center gap-2">
             {title}
@@ -497,11 +282,22 @@ export function SessionList({
       </SplitColumn>
     )
   return (
-    <div className="grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-3">
-      {/* No -mx bleed: bled sticky made the search row look inset while the
-          surface cards (skeleton especially) read as full-bleed against a
-          near-white deck. Keep sticky and cards on the same content width. */}
-      <StickyBar className="mx-0 px-0">{headActions}</StickyBar>
+    <div className="flex min-h-full w-full flex-1 flex-col bg-brand-surface">
+      <h1 className="sr-only">{t({ message: 'Sessions', context: 'nav' })}</h1>
+      <StickyBar className="top-0 mx-0 my-0 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <ChatSearch value={query} onChange={setQuery} />
+          <Link
+            to="/{-$locale}/console/me/$page"
+            params={{ locale: localeParam, page: 'connection' }}
+            aria-label={t`Connection details`}
+            className="shrink-0 md:hidden"
+          >
+            <RemoteBadge compact className="bg-brand-deck" />
+          </Link>
+          <NewSessionButton />
+        </div>
+      </StickyBar>
       {body}
     </div>
   )

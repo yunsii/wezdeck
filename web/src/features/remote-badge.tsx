@@ -5,6 +5,7 @@ import { remoteLink } from '#/lib/remote-link'
 import type { RemoteState } from '#/lib/remote-link'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
+import { cn } from '#/lib/utils'
 
 const SERVER_STATE: RemoteState = {
   mode: 'unpaired',
@@ -51,7 +52,13 @@ function useMicGrant() {
 }
 
 /** Connection mode + latency of the remote link; hidden when the page talks to the loopback Runtime. */
-export function RemoteBadge({ compact = false }: { compact?: boolean }) {
+export function RemoteBadge({
+  compact = false,
+  className,
+}: {
+  compact?: boolean
+  className?: string
+}) {
   const { t } = useLingui()
   const state = useSyncExternalStore(
     remoteLink.subscribe,
@@ -113,7 +120,11 @@ export function RemoteBadge({ compact = false }: { compact?: boolean }) {
         data-rpc-webrtc={state.rpcCount.webrtc}
         data-rpc-websocket={state.rpcCount.websocket}
         title={note ? t`WebRTC: ${note}` : undefined}
-        className="key inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-meta whitespace-nowrap"
+        className={cn(
+          'key inline-flex min-h-8 items-center gap-1.5 rounded-full text-meta whitespace-nowrap',
+          compact ? 'px-2.5' : 'px-3',
+          className,
+        )}
       >
         <Led tone={ledTone} size={10} />
         {text}

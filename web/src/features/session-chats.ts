@@ -255,6 +255,24 @@ export function buildChatGroups(
   )
 }
 
+const AUTO_SESSION_SLUG = /^session-[0-9a-f]{6,}$/i
+
+/**
+ * Quiet inline hint for a single-session row when it runs inside a named
+ * workstation (purpose set, or a human-named direction — never primary or
+ * auto-allocated `session-<hex>` slugs).
+ */
+export function workstationHint(
+  chat: Pick<SessionChat, 'title' | 'purpose' | 'editable'>,
+): string {
+  const purpose = chat.purpose.trim()
+  if (purpose) return purpose
+  if (!chat.editable) return ''
+  const title = chat.title.trim()
+  if (!title || AUTO_SESSION_SLUG.test(title)) return ''
+  return title
+}
+
 /** flat chat order as the list paints them (j / k, default pick) */
 export function flattenChats(groups: Array<ChatRepoGroup>): Array<SessionChat> {
   return groups.flatMap((repo) => repo.chats)

@@ -10,39 +10,41 @@ export function SessionListSkeleton() {
   const { t } = useLingui()
   return (
     <div
-      className="grid grid-cols-[minmax(0,1fr)] gap-3 md:gap-0"
+      className="grid grid-cols-[minmax(0,1fr)] bg-brand-surface"
       data-testid="session-chats"
     >
       <div
         role="status"
         aria-label={t`Loading…`}
         data-testid="session-skeleton"
-        className="animate-pulse overflow-hidden rounded-2xl bg-brand-surface motion-reduce:animate-none md:rounded-none"
+        className="animate-pulse bg-brand-surface motion-reduce:animate-none"
       >
-        <div className="border-b border-brand-edge py-2 pr-14 pl-4 md:px-[var(--split-pad)]">
-          <div className={`${bar} h-3 w-24`} />
+        <div className="border-b border-brand-edge bg-brand-deck px-3 py-2">
+          <div className="h-3 w-24 rounded-full bg-brand-edge" />
         </div>
-        {[0.58, 0.42, 0.5].map((width, index) => (
-          <div
-            key={width}
-            className="flex items-start gap-3 border-b border-brand-edge py-2.5 pr-14 pl-4 last:border-b-0 md:px-[var(--split-pad)] md:pr-[calc(var(--split-pad)+2.5rem)]"
-          >
-            <div className="mt-0.5 size-10 shrink-0 rounded-full bg-brand-deck" />
-            <div className="grid min-w-0 flex-1 gap-1.5">
-              <div className="flex items-center justify-between gap-2">
+        <ul className="chat-list">
+          {[0.58, 0.42, 0.5].map((width, index) => (
+            <li
+              key={width}
+              className="flex min-h-15 items-center gap-3 px-3 py-2"
+            >
+              <div className="size-10 shrink-0 rounded-full bg-brand-deck" />
+              <div className="grid min-w-0 flex-1 gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div
+                    className={`${bar} h-4 min-w-0`}
+                    style={{ width: `${width * 100}%` }}
+                  />
+                  <div className={`${bar} h-3 w-10 shrink-0`} />
+                </div>
                 <div
-                  className={`${bar} h-4 min-w-0`}
-                  style={{ width: `${width * 100}%` }}
+                  className={`${bar} h-3 max-w-full`}
+                  style={{ width: `${[0.72, 0.55, 0.64][index] * 100}%` }}
                 />
-                <div className={`${bar} h-3 w-10 shrink-0`} />
               </div>
-              <div
-                className={`${bar} h-3 max-w-full`}
-                style={{ width: `${[0.72, 0.55, 0.64][index] * 100}%` }}
-              />
-            </div>
-          </div>
-        ))}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )

@@ -143,7 +143,7 @@ export function AgentAvatar({
         <span
           data-testid="chat-status-dot"
           data-tone={tone}
-          className="pointer-events-none absolute -top-0.5 -left-0.5 rounded-full bg-brand-deck p-px"
+          className="pointer-events-none absolute -top-0.5 -left-0.5 rounded-full bg-brand-surface p-px"
         >
           <Led
             tone={ledTone}
@@ -164,7 +164,7 @@ export function AgentAvatar({
           height={badgePx}
           draggable={false}
           data-testid="agent-avatar-badge"
-          className="absolute -right-0.5 -bottom-0.5 rounded-full object-cover ring-2 ring-brand-deck"
+          className="absolute -right-0.5 -bottom-0.5 rounded-full object-cover ring-2 ring-brand-surface"
           style={{ width: badgePx, height: badgePx }}
         />
       ) : null}

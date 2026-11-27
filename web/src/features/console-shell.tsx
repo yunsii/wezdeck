@@ -17,22 +17,18 @@ import { useTicketSync } from '#/lib/ticket-sync'
 import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
-import {
-  RuntimeDataProvider,
-  runtimeQuery,
-  useRuntimeData,
-} from './console-data'
-import { StatusPill, formatDuration, formatTime } from './console-shared'
+import { RuntimeDataProvider } from './console-data'
+import { RemoteBand, StatusBand } from './console-status-band'
 import { resetSessionOrder } from './session-stable'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { KeysEntry } from './console-keys'
 import { RemoteBadge } from './remote-badge'
 import { useSessions } from './console-sessions'
+import { useAutoSyncAttentionSessions } from './session-autosync'
 import { unreadChatCount } from './session-chats'
 import { useFollowSessionRedirect } from './session-follow'
 import { installClientTrace } from '#/lib/client-trace'
-import { RECENT_START_MS } from './runtime-restart'
 import { remoteLink } from '#/lib/remote-link'
 import { useSessionListScroll } from './session-list-scroll'
 
@@ -154,6 +150,19 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const health = useTicketSync()
   // what waits on you, on the tab that holds it
   const sessions = useSessions()
+  // ticket / session detail pages bring their own back bar instead of a title
+  const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
+  // 我的 › … pages bring a back bar too, but keep the tab bar (settings tab)
+  const subPage = /\/console\/me\/[^/]+$/.test(location)
+  // a session chat runs closer to the edges (bubbles, like a messenger)
+  const chat = /\/console\/sessions\/[^/]+$/.test(location)
+  // 会话 list uses a Telegram-style full-bleed rail + compact search top bar
+  const sessionsIndex = current === 'sessions' && !detail
+  const activeSessionRaw = location.match(/\/console\/sessions\/([^/]+)$/)?.[1]
+  useAutoSyncAttentionSessions(
+    sessions.data?.sessions,
+    activeSessionRaw ? decodeURIComponent(activeSessionRaw) : undefined,
+  )
   // pane switched (/new, /resume…): follow from the sessions poll even when
   // the detail never mounted — only while the URL is a session detail
   useFollowSessionRedirect()
@@ -190,12 +199,6 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
     installClientTrace()
     return remoteLink.start()
   }, [])
-  // ticket / session detail pages bring their own back bar instead of a title
-  const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
-  // 我的 › … pages bring a back bar too, but keep the tab bar (settings tab)
-  const subPage = /\/console\/me\/[^/]+$/.test(location)
-  // a session chat runs closer to the edges (bubbles, like a messenger)
-  const chat = /\/console\/sessions\/[^/]+$/.test(location)
   return (
     <main
       data-deck
@@ -313,24 +316,16 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           <div
             id="console-main"
             className={cn(
-              'flex min-h-full w-full flex-col pt-[max(env(safe-area-inset-top),0.75rem)] pb-4 md:min-h-full md:p-0',
-              chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]',
+              'flex min-h-full w-full flex-col md:min-h-full md:p-0',
+              sessionsIndex
+                ? 'p-0 [--page-x:0.75rem] md:[--page-x:0.75rem]'
+                : 'pt-[max(env(safe-area-inset-top),0.75rem)] pb-4',
+              !sessionsIndex &&
+                (chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]'),
             )}
           >
-            {detail || subPage ? null : (
-              <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
-                <h1 className="min-w-0 truncate text-display leading-tight font-semibold tracking-tight">
-                  {title ?? t`WezDeck`}
-                </h1>
-                <Link
-                  to="/{-$locale}/console/me/$page"
-                  params={{ locale: localeParam, page: 'connection' }}
-                  aria-label={t`Connection details`}
-                  className="shrink-0"
-                >
-                  <RemoteBadge compact />
-                </Link>
-              </div>
+            {detail || subPage || sessionsIndex ? null : (
+              <MobileSectionHeader title={title} localeParam={localeParam} />
             )}
             <PageBoundary>{children}</PageBoundary>
           </div>
@@ -389,116 +384,36 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   )
 }
 
+function MobileSectionHeader({
+  title,
+  localeParam,
+}: {
+  title?: string
+  localeParam: 'en' | 'zh' | undefined
+}) {
+  const { t } = useLingui()
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
+      <h1 className="min-w-0 truncate text-display leading-tight font-semibold tracking-tight">
+        {title ?? t`WezDeck`}
+      </h1>
+      <Link
+        to="/{-$locale}/console/me/$page"
+        params={{ locale: localeParam, page: 'connection' }}
+        aria-label={t`Connection details`}
+        className="shrink-0"
+      >
+        <RemoteBadge compact />
+      </Link>
+    </div>
+  )
+}
+
 function CountBadge({ value }: { value: number }) {
   return (
     <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-waiting px-1.5 text-meta leading-5 font-semibold text-[#1b1406]">
       {value > 99 ? '99+' : value}
     </span>
-  )
-}
-
-function RemoteBand() {
-  const { t } = useLingui()
-  return (
-    <div className="flex h-full flex-nowrap items-center gap-x-4 overflow-hidden px-4 text-meta whitespace-nowrap">
-      <span className="text-brand-label">{t`Remote access`}</span>
-      <RemoteBadge />
-    </div>
-  )
-}
-
-/**
- * The browser slot, by its backend (docs/browser-debug.md): ego → whether Ego
- * was last seen alive; cdp → the debug Chrome's port when it answers. The
- * other side is off on purpose, so nothing is shown for it.
- */
-function BrowserSlotStatus() {
-  const { t } = useLingui()
-  const runtime = useRuntimeData()
-  const slot = runtimeQuery(runtime.browser).data
-  const chrome = runtime.data?.chrome
-  if (slot?.backend === 'ego')
-    return (
-      <span className="ml-auto font-mono text-brand-label">
-        Ego
-        <span
-          className={slot.ego_alive ? 'text-brand-done' : 'text-brand-label'}
-        >
-          {' '}
-          {slot.ego_alive ? t`Running` : t`Not running`}
-        </span>
-      </span>
-    )
-  if (!chrome?.alive) return null
-  return (
-    <a
-      href={'http://127.0.0.1:' + chrome.port + '/json/version'}
-      target="_blank"
-      rel="noreferrer"
-      className="ml-auto font-mono text-brand-label hover:text-brand-text"
-    >
-      CDP {chrome.port}
-      <span className="text-brand-done"> {t`Ready`}</span>
-    </a>
-  )
-}
-
-function WakatimeStatus() {
-  const { t } = useLingui()
-  const wakatime = runtimeQuery(useRuntimeData().wakatime)
-  if (!wakatime.data?.available) return null
-  return (
-    <span className="font-mono text-brand-label">
-      {t`WakaTime`}
-      {wakatime.data.ai ? (
-        <strong className="ml-2 font-medium text-brand-text">
-          AI {wakatime.data.ai}
-        </strong>
-      ) : null}
-      {wakatime.data.code ? (
-        <strong className="ml-2 font-medium text-brand-text">
-          Code {wakatime.data.code}
-        </strong>
-      ) : null}
-    </span>
-  )
-}
-
-function StatusBand() {
-  const { t } = useLingui()
-  const { data, connected, loading } = useRuntimeData()
-  return (
-    <div className="flex h-full flex-nowrap items-center gap-x-5 overflow-hidden px-4 text-meta whitespace-nowrap">
-      <StatusPill
-        compact
-        status={loading ? 'loading' : connected ? 'ready' : 'offline'}
-      />
-      <span className="text-brand-label">
-        {t`Last sample`}{' '}
-        <strong className="font-mono font-medium text-brand-text">
-          {formatTime(data?.health.observed_at)}
-        </strong>
-      </span>
-      <span className="text-brand-label">
-        {t`Uptime`}{' '}
-        <strong className="font-mono font-medium text-brand-text">
-          {formatDuration(data?.health.uptime_ms)}
-        </strong>
-        {connected &&
-        data?.health.uptime_ms !== undefined &&
-        data.health.uptime_ms < RECENT_START_MS ? (
-          <span
-            data-testid="runtime-recent-start"
-            title={t`The local Runtime started a few minutes ago (a runtime sync restarts it)`}
-            className="ml-1.5 text-brand-waiting"
-          >
-            {t`just restarted`}
-          </span>
-        ) : null}
-      </span>
-      <WakatimeStatus />
-      <BrowserSlotStatus />
-    </div>
   )
 }
 

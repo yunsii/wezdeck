@@ -120,6 +120,59 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     await page.waitForURL('**/console/sessions/grp-grok')
 
     await openList(page)
+    // Telegram-style unified flat rail: full-bleed on mobile (no outer card gutter)
+    // and compact top bar carrying search + connection badge on one row.
+    const listBox = await page.getByTestId('session-chats').boundingBox()
+    const viewport = page.viewportSize()
+    expect(
+      listBox &&
+        viewport &&
+        listBox.x === 0 &&
+        listBox.width === viewport.width,
+    ).toBe(true)
+    await page.getByTestId('chat-search').waitFor()
+    await page.getByTestId('remote-badge-compact').waitFor()
+    // Waiting / done sessions auto-sync into the persisted query cache before clicking in
+    await expect
+      .poll(
+        async () =>
+          await page.evaluate(async () => {
+            const db = await new Promise<IDBDatabase>((resolve, reject) => {
+              const req = indexedDB.open('wezdeck')
+              req.onsuccess = () => resolve(req.result)
+              req.onerror = () => reject(req.error)
+            })
+            if (!db.objectStoreNames.contains('query-cache')) return false
+            const raw = await new Promise<string | undefined>(
+              (resolve, reject) => {
+                const tx = db.transaction('query-cache', 'readonly')
+                const req = tx
+                  .objectStore('query-cache')
+                  .get('wezdeck-query-cache')
+                req.onsuccess = () => resolve(req.result as string | undefined)
+                req.onerror = () => reject(req.error)
+              },
+            )
+            db.close()
+            if (!raw) return false
+            const parsed = JSON.parse(raw) as {
+              clientState?: { queries?: Array<{ queryKey?: Array<unknown> }> }
+            }
+            return Boolean(
+              parsed.clientState?.queries?.some((q) => {
+                const key = q.queryKey
+                return (
+                  Array.isArray(key) &&
+                  key[0] === 'remote' &&
+                  key[1] === 'session' &&
+                  key[2] === 'grp-codex'
+                )
+              }),
+            )
+          }),
+        { timeout: 10_000 },
+      )
+      .toBe(true)
     await toggle.click()
     await expect.poll(() => toggle.getAttribute('aria-expanded')).toBe('false')
     await expect
@@ -131,6 +184,10 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     await expect
       .poll(() => toggle.getByTestId('chat-unread').textContent())
       .toBe('1')
+    // collapsed workstation keeps its focus preview visible like a Telegram group row
+    await expect
+      .poll(() => toggle.getByTestId('chat-preview').textContent())
+      .toContain('prompt grp-codex')
     // the choice survives a reload
     await page.reload()
     await page.locator('[data-session=grp-solo]').waitFor({ timeout: 20_000 })

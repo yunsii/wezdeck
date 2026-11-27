@@ -7,6 +7,7 @@ import {
   chatTone,
   resolveChatFocus,
   unreadChatCount,
+  workstationHint,
 } from '#/features/session-chats'
 import {
   chatTimeBucket,
@@ -404,5 +405,38 @@ describe('unreadChatCount', () => {
       }),
     ]
     expect(unreadChatCount(rows)).toBe(2)
+  })
+})
+
+describe('workstationHint', () => {
+  it('prefers explicit purpose, falls back to named direction, hides auto slugs and primary', () => {
+    expect(
+      workstationHint({
+        title: 'session-b5b3c61bc47586c5',
+        purpose: '移动端优化',
+        editable: true,
+      }),
+    ).toBe('移动端优化')
+    expect(
+      workstationHint({
+        title: 'ux',
+        purpose: '',
+        editable: true,
+      }),
+    ).toBe('ux')
+    expect(
+      workstationHint({
+        title: 'session-b5b3c61bc47586c5',
+        purpose: '',
+        editable: true,
+      }),
+    ).toBe('')
+    expect(
+      workstationHint({
+        title: 'wezdeck',
+        purpose: '',
+        editable: false,
+      }),
+    ).toBe('')
   })
 })
