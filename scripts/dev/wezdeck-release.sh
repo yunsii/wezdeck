@@ -93,6 +93,14 @@ wanted() { ((${#only[@]} == 0)) || [[ " ${only[*]} " == *" $1 "* ]]; }
 
 cd "$REPO" || exit 1
 
+# Validate catalogs even when the caller committed before invoking release.
+# The --commit path can refresh them before commit, but release must still
+# reject an already-committed web build with missing translations.
+if ! (cd web && corepack pnpm run -s i18n:check >/dev/null); then
+  echo "release: i18n catalogs are missing or out of sync" >&2
+  exit 1
+fi
+
 if [[ -n "$land_commit" ]]; then
   if [[ -n "$commit_msg" ]] || ! wanted push; then
     echo 'release: --land requires push and cannot be combined with --commit' >&2

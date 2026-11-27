@@ -216,7 +216,7 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
-#: src/features/session-restart.tsx:119
+#: src/features/session-restart.tsx:179
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 
@@ -224,7 +224,7 @@ msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 
-#: src/features/session-restart.tsx:47
+#: src/features/session-restart.tsx:107
 msgid "A fresh conversation is starting"
 msgstr "A fresh conversation is starting"
 
@@ -625,7 +625,8 @@ msgstr "cancel"
 #: src/features/session-delete.tsx:137
 #: src/features/session-handoff.tsx:274
 #: src/features/session-purpose.tsx:115
-#: src/features/session-restart.tsx:78
+#: src/features/session-restart.tsx:59
+#: src/features/session-restart.tsx:138
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "Cancel"
@@ -716,9 +717,9 @@ msgstr "Claude wants to leave plan mode and start on this plan"
 #~ msgid "Clear"
 #~ msgstr "Clear"
 
-#: src/features/session-composer.tsx:305
-#: src/features/session-composer.tsx:306
-#: src/features/session-composer.tsx:311
+#: src/features/session-composer.tsx:312
+#: src/features/session-composer.tsx:313
+#: src/features/session-composer.tsx:318
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -813,8 +814,8 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:284
-#: src/features/session-composer.tsx:253
-#: src/features/session-composer.tsx:259
+#: src/features/session-composer.tsx:260
+#: src/features/session-composer.tsx:266
 msgid "Commands"
 msgstr "Commands"
 
@@ -843,7 +844,7 @@ msgstr "compacting the context"
 msgid "Composer"
 msgstr "Composer"
 
-#: src/features/session-composer.tsx:232
+#: src/features/session-composer.tsx:236
 msgid "Composer tools"
 msgstr "Composer tools"
 
@@ -1273,7 +1274,7 @@ msgstr "Enabled on this computer"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 
-#: src/features/session-restart.tsx:67
+#: src/features/session-restart.tsx:127
 msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 
@@ -1395,7 +1396,7 @@ msgstr "finished its turn"
 msgid "First turn"
 msgstr "First turn"
 
-#: src/features/session-composer.tsx:267
+#: src/features/session-composer.tsx:274
 msgid "Follow-ups of this repo"
 msgstr "Follow-ups of this repo"
 
@@ -1567,7 +1568,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:293
 msgid "Images"
 msgstr "Images"
 
@@ -1670,7 +1671,7 @@ msgstr "Keep planning"
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
-#: src/features/session-composer.tsx:246
+#: src/features/session-composer.tsx:253
 msgid "Keys"
 msgstr "Keys"
 
@@ -1865,11 +1866,11 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:478
+#: src/features/session-composer.tsx:487
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:425
+#: src/features/session-composer.tsx:434
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -1947,8 +1948,10 @@ msgstr "Needs a decision"
 #~ msgid "Needs you"
 #~ msgstr "Needs you"
 
-#: src/features/session-restart.tsx:54
-#: src/features/session-restart.tsx:124
+#: src/features/session-restart.tsx:68
+#: src/features/session-restart.tsx:74
+#: src/features/session-restart.tsx:114
+#: src/features/session-restart.tsx:184
 msgid "New conversation"
 msgstr "New conversation"
 
@@ -2525,7 +2528,7 @@ msgstr "Queued messages"
 msgid "Quick controls"
 msgstr "Quick controls"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:247
 #: src/features/session-key-panel.tsx:45
 #: src/features/session-key-panel.tsx:56
 msgid "Quick keys"
@@ -2757,21 +2760,21 @@ msgstr "Resets {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
-#: src/features/session-restart.tsx:107
+#: src/features/session-restart.tsx:167
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "Respawn the pane; the agent resumes this conversation (F5)"
 
-#: src/features/session-restart.tsx:89
-#: src/features/session-restart.tsx:98
+#: src/features/session-restart.tsx:149
+#: src/features/session-restart.tsx:158
 msgid "Restart"
 msgstr "Restart"
 
-#: src/features/session-restart.tsx:54
-#: src/features/session-restart.tsx:112
+#: src/features/session-restart.tsx:114
+#: src/features/session-restart.tsx:172
 msgid "Restart session"
 msgstr "Restart session"
 
-#: src/features/session-restart.tsx:68
+#: src/features/session-restart.tsx:128
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 
@@ -3015,7 +3018,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:85
-#: src/features/session-composer.tsx:487
+#: src/features/session-composer.tsx:496
 msgid "Send"
 msgstr "Send"
 
@@ -3027,7 +3030,7 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/session-composer.tsx:241
+#: src/features/session-composer.tsx:248
 msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
 
@@ -3168,7 +3171,7 @@ msgstr "Skills this agent was given"
 msgid "Skip to content"
 msgstr "Skip to content"
 
-#: src/features/session-composer.tsx:254
+#: src/features/session-composer.tsx:261
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
@@ -3210,6 +3213,18 @@ msgctxt "git"
 msgid "Staged"
 msgstr "Staged"
 
+#: src/features/session-restart.tsx:49
+msgid "Start"
+msgstr "Start"
+
+#: src/features/session-restart.tsx:67
+msgid "Start a blank conversation in this pane"
+msgstr "Start a blank conversation in this pane"
+
+#: src/features/session-restart.tsx:33
+msgid "Start a blank conversation?"
+msgstr "Start a blank conversation?"
+
 #: src/features/session-commands.tsx:214
 #: src/features/session-commands.tsx:251
 #: src/features/session-skills.tsx:60
@@ -3219,7 +3234,7 @@ msgstr "Staged"
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
-#: src/features/session-restart.tsx:89
+#: src/features/session-restart.tsx:149
 msgid "Start fresh"
 msgstr "Start fresh"
 
@@ -3427,7 +3442,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-restart.tsx:48
+#: src/features/session-restart.tsx:108
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
@@ -3597,8 +3612,8 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-composer.tsx:266
-#: src/features/session-composer.tsx:272
+#: src/features/session-composer.tsx:273
+#: src/features/session-composer.tsx:279
 msgid "To-dos"
 msgstr "To-dos"
 
