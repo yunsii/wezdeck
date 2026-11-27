@@ -70,4 +70,17 @@ describe('AgentAvatar', () => {
     expect(idle).not.toContain('chat-status-dot')
     expect(idle).toContain('agent-avatar-badge')
   })
+
+  it('scales corner badges down cleanly for compact form selectors', () => {
+    const compact = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'claude_kimi', size: 24 }),
+    )
+    const list = renderToStaticMarkup(
+      createElement(AgentAvatar, { profile: 'claude_kimi', size: 40 }),
+    )
+    expect(compact).toContain('width:10px;height:10px')
+    expect(compact).toContain('ring-1')
+    expect(list).toContain('width:16px;height:16px')
+    expect(list).toContain('ring-2')
+  })
 })
