@@ -20,20 +20,42 @@
    (which spawns N GPU layers) or background-color keyframes (which re-rasterize
    the entire HiDPI scroller on CPU every vsync). GPU composites one texture's
    alpha uniform at 0 px repaint while `contain: layout paint` isolates it
-   inside its card away from persistent headers. */
+   inside its card away from persistent headers.
+   - `skeleton-enter` / `content-enter`: short opacity-only fade-in (0 travel)
+     so neither skeleton nor resolved document hard-pops onto the canvas.
+   - `skeleton-pulse`: smooth sine-like curve (`cubic-bezier(0.4, 0, 0.6, 1)`)
+     delayed by 150 ms so the enter fade lands cleanly at 1 before breathing
+     gently down to 0.62 and back. */
+@keyframes skeleton-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes skeleton-pulse {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.52;
+    opacity: 0.62;
   }
 }
 
+.skeleton-enter {
+  animation: skeleton-enter var(--motion-short) var(--ease-enter) both;
+}
+
 .skeleton-pulse {
-  animation: skeleton-pulse 1.8s ease-in-out infinite;
+  animation: skeleton-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) 150ms infinite;
   contain: layout paint;
+}
+
+.content-enter {
+  animation: skeleton-enter 160ms var(--ease-enter) both;
 }
 
 /* Chat: what just arrived slides in. */
@@ -98,7 +120,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .led-running circle,
+  .skeleton-enter,
   .skeleton-pulse,
+  .content-enter,
   .chat-in {
     animation: none;
   }
