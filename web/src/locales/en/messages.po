@@ -291,7 +291,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:465
+#: src/features/tickets-view.tsx:477
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -949,7 +949,7 @@ msgstr "Collab metrics"
 
 #: src/features/me-notifications.tsx:137
 #: src/features/ticket-keys.tsx:91
-#: src/features/tickets-view.tsx:347
+#: src/features/tickets-view.tsx:359
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -1327,7 +1327,7 @@ msgid "Creation mode"
 msgstr "Creation mode"
 
 #: src/features/collab-top-bar.tsx:34
-#: src/features/tickets-view.tsx:391
+#: src/features/tickets-view.tsx:403
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -1835,7 +1835,7 @@ msgstr "Handoff brief"
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
-#: src/features/tickets-view.tsx:464
+#: src/features/tickets-view.tsx:476
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1953,7 +1953,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:463
+#: src/features/tickets-view.tsx:475
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -2159,7 +2159,7 @@ msgid "list available commands"
 msgstr "list available commands"
 
 #: src/features/console-collab-run.tsx:58
-#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:264
 msgid "live"
 msgstr "live"
 
@@ -2167,7 +2167,7 @@ msgstr "live"
 msgid "Load earlier"
 msgstr "Load earlier"
 
-#: src/features/ticket-manager-panel.tsx:305
+#: src/features/ticket-manager-panel.tsx:315
 #: src/features/ticket-run-chat.tsx:190
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
@@ -2259,24 +2259,24 @@ msgstr "Managed in host configuration"
 msgid "Managed override"
 msgstr "Managed override"
 
-#: src/features/ticket-manager-panel.tsx:244
-#: src/features/ticket-manager-panel.tsx:251
+#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:261
 msgid "Manager session"
 msgstr "Manager session"
 
-#: src/features/ticket-manager-panel.tsx:319
+#: src/features/ticket-manager-panel.tsx:329
 msgid "Manager session is parked. Sending a message wakes it automatically."
 msgstr "Manager session is parked. Sending a message wakes it automatically."
 
-#: src/features/ticket-manager-panel.tsx:318
+#: src/features/ticket-manager-panel.tsx:328
 msgid "Manager session is ready — send an instruction below to start orchestrating."
 msgstr "Manager session is ready — send an instruction below to start orchestrating."
 
-#: src/features/ticket-manager-panel.tsx:185
+#: src/features/ticket-manager-panel.tsx:187
 msgid "Manager session parked"
 msgstr "Manager session parked"
 
-#: src/features/ticket-manager-panel.tsx:173
+#: src/features/ticket-manager-panel.tsx:175
 msgid "Manager session started"
 msgstr "Manager session started"
 
@@ -2622,7 +2622,7 @@ msgstr "No sessions match that search."
 msgid "No text diff available"
 msgstr "No text diff available"
 
-#: src/features/tickets-view.tsx:375
+#: src/features/tickets-view.tsx:387
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -2710,7 +2710,7 @@ msgstr "Note"
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
-#: src/features/tickets-view.tsx:528
+#: src/features/tickets-view.tsx:540
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -2961,11 +2961,11 @@ msgstr "Pane role"
 msgid "Parallelism"
 msgstr "Parallelism"
 
-#: src/features/ticket-manager-panel.tsx:275
+#: src/features/ticket-manager-panel.tsx:285
 msgid "Park"
 msgstr "Park"
 
-#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:264
 msgid "parked"
 msgstr "parked"
 
@@ -4463,7 +4463,7 @@ msgstr "Ticket waiting on you"
 msgid "Tickets"
 msgstr "Tickets"
 
-#: src/features/tickets-view.tsx:376
+#: src/features/tickets-view.tsx:388
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -4740,7 +4740,7 @@ msgstr "Verify"
 msgid "Version"
 msgstr "Version"
 
-#: src/features/tickets-view.tsx:514
+#: src/features/tickets-view.tsx:526
 msgid "via {handler}"
 msgstr "via {handler}"
 
@@ -4832,8 +4832,8 @@ msgstr "waiting on you"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:56
-#: src/features/tickets-view.tsx:391
-#: src/features/tickets-view.tsx:531
+#: src/features/tickets-view.tsx:403
+#: src/features/tickets-view.tsx:543
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
@@ -4846,7 +4846,7 @@ msgstr "Waiting on you"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/ticket-manager-panel.tsx:288
+#: src/features/ticket-manager-panel.tsx:298
 msgid "Wake"
 msgstr "Wake"
 

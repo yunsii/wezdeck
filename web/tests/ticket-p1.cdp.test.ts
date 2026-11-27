@@ -47,6 +47,7 @@ function createFixture() {
   const parentId = `req-20261127-190001-p${suffix}`
   const childId = `req-20261127-190002-c${suffix}`
   const researchId = `req-20261127-190003-r${suffix}`
+  const shippedId = `req-20261127-190005-s${suffix}`
   const runId = `run-20261127-190004-${suffix}`
 
   // Real temp git worktree with a tracked modification for collab.diff
@@ -182,16 +183,34 @@ function createFixture() {
     'Read-only research ticket',
   )
 
+  writeTicket(
+    dataRoot,
+    shippedId,
+    {
+      id: shippedId,
+      title: `Shipped Ticket ${suffix}`,
+      from: 'wezdeck',
+      to: 'demo-repo',
+      status: 'shipped',
+      created_at: nowIso,
+      updated_at: nowIso,
+    },
+    { repos: ['demo-repo'] },
+    'Already shipped ticket',
+  )
+
   return {
     suffix,
     parentId,
     childId,
     researchId,
+    shippedId,
     cleanup() {
       rmSync(worktree, { recursive: true, force: true })
       rmSync(join(dataRoot, parentId), { recursive: true, force: true })
       rmSync(join(dataRoot, childId), { recursive: true, force: true })
       rmSync(join(dataRoot, researchId), { recursive: true, force: true })
+      rmSync(join(dataRoot, shippedId), { recursive: true, force: true })
     },
   }
 }
@@ -266,8 +285,19 @@ describe.runIf(stack)(
       await groupEl.getByTestId('ticket-group-toggle').click()
       await childLink.waitFor()
 
-      // 2. Switching to "调研" shows the standalone research ticket
-      await page.getByRole('radio', { name: /调研/ }).click()
+      // 2. Switching to "等你" and "调研" stays on the chosen filter even when
+      //    localStorage remembers a shipped ticket from another filter (regression: toAll bounce)
+      await page.evaluate((sid) => {
+        localStorage.setItem('wezdeck-last-ticket-collab', sid)
+      }, fixture.shippedId)
+      const mineTab = page.getByRole('radio', { name: /等你/ })
+      await mineTab.click()
+      await expect.poll(() => mineTab.getAttribute('aria-checked')).toBe('true')
+      const researchTab = page.getByRole('radio', { name: /调研/ })
+      await researchTab.click()
+      await expect
+        .poll(() => researchTab.getAttribute('aria-checked'))
+        .toBe('true')
       await page
         .locator(`[data-ticket="${fixture.researchId}"]`)
         .waitFor({ timeout: 10_000 })
@@ -316,6 +346,16 @@ describe.runIf(stack)(
       await deliveryCard.waitFor({ timeout: 10_000 })
       await deliveryCard.getByTestId('delivery-open-diff').waitFor()
       await deliveryCard.getByTestId('delivery-confirm-button').waitFor()
+
+      // 7. Terminal shipped ticket must NOT offer "Start manager session"
+      await page.goto(
+        `${base}/zh/console/collab/${fixture.shippedId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
+      )
+      await page
+        .getByTestId('ticket-pane')
+        .getByText(`Shipped Ticket ${fixture.suffix}`)
+        .waitFor({ timeout: 15_000 })
+      expect(await page.getByTestId('ticket-manager-upgrade').count()).toBe(0)
 
       await context.close()
     }, 60_000)

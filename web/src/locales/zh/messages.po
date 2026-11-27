@@ -291,7 +291,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:465
+#: src/features/tickets-view.tsx:477
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -949,7 +949,7 @@ msgstr "协作指标"
 
 #: src/features/me-notifications.tsx:137
 #: src/features/ticket-keys.tsx:91
-#: src/features/tickets-view.tsx:347
+#: src/features/tickets-view.tsx:359
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -1327,7 +1327,7 @@ msgid "Creation mode"
 msgstr "建单方式"
 
 #: src/features/collab-top-bar.tsx:34
-#: src/features/tickets-view.tsx:391
+#: src/features/tickets-view.tsx:403
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -1835,7 +1835,7 @@ msgstr "接力 brief"
 msgid "Handoff failed"
 msgstr "接力失败"
 
-#: src/features/tickets-view.tsx:464
+#: src/features/tickets-view.tsx:476
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1953,7 +1953,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:463
+#: src/features/tickets-view.tsx:475
 msgid "Initiator"
 msgstr "发起方"
 
@@ -2159,7 +2159,7 @@ msgid "list available commands"
 msgstr "查看可用命令"
 
 #: src/features/console-collab-run.tsx:58
-#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:264
 msgid "live"
 msgstr "实时"
 
@@ -2167,7 +2167,7 @@ msgstr "实时"
 msgid "Load earlier"
 msgstr "加载更早"
 
-#: src/features/ticket-manager-panel.tsx:305
+#: src/features/ticket-manager-panel.tsx:315
 #: src/features/ticket-run-chat.tsx:190
 msgid "Load earlier ({start} more)"
 msgstr "加载更早（还有 {start} 条）"
@@ -2259,24 +2259,24 @@ msgstr "由主机配置管理"
 msgid "Managed override"
 msgstr "受管模型覆盖"
 
-#: src/features/ticket-manager-panel.tsx:244
-#: src/features/ticket-manager-panel.tsx:251
+#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:261
 msgid "Manager session"
 msgstr "顶层管理会话"
 
-#: src/features/ticket-manager-panel.tsx:319
+#: src/features/ticket-manager-panel.tsx:329
 msgid "Manager session is parked. Sending a message wakes it automatically."
 msgstr "管理会话已休眠省内存；直接发消息将自动唤醒并继续对话。"
 
-#: src/features/ticket-manager-panel.tsx:318
+#: src/features/ticket-manager-panel.tsx:328
 msgid "Manager session is ready — send an instruction below to start orchestrating."
 msgstr "管理会话已就绪，在下方输入指令即可开始编排调度。"
 
-#: src/features/ticket-manager-panel.tsx:185
+#: src/features/ticket-manager-panel.tsx:187
 msgid "Manager session parked"
 msgstr "管理会话已休眠"
 
-#: src/features/ticket-manager-panel.tsx:173
+#: src/features/ticket-manager-panel.tsx:175
 msgid "Manager session started"
 msgstr "管理会话已启动"
 
@@ -2622,7 +2622,7 @@ msgstr "没有匹配的会话。"
 msgid "No text diff available"
 msgstr "无文本差异内容"
 
-#: src/features/tickets-view.tsx:375
+#: src/features/tickets-view.tsx:387
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -2710,7 +2710,7 @@ msgstr "备注"
 msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
-#: src/features/tickets-view.tsx:528
+#: src/features/tickets-view.tsx:540
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -2961,11 +2961,11 @@ msgstr "窗格角色"
 msgid "Parallelism"
 msgstr "实际并行度"
 
-#: src/features/ticket-manager-panel.tsx:275
+#: src/features/ticket-manager-panel.tsx:285
 msgid "Park"
 msgstr "休眠"
 
-#: src/features/ticket-manager-panel.tsx:254
+#: src/features/ticket-manager-panel.tsx:264
 msgid "parked"
 msgstr "已休眠"
 
@@ -4463,7 +4463,7 @@ msgstr "工单等你回复"
 msgid "Tickets"
 msgstr "工单"
 
-#: src/features/tickets-view.tsx:376
+#: src/features/tickets-view.tsx:388
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -4740,7 +4740,7 @@ msgstr "独立验收"
 msgid "Version"
 msgstr "版本"
 
-#: src/features/tickets-view.tsx:514
+#: src/features/tickets-view.tsx:526
 msgid "via {handler}"
 msgstr "经 {handler}"
 
@@ -4832,8 +4832,8 @@ msgstr "等你回复"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:56
-#: src/features/tickets-view.tsx:391
-#: src/features/tickets-view.tsx:531
+#: src/features/tickets-view.tsx:403
+#: src/features/tickets-view.tsx:543
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -4846,7 +4846,7 @@ msgstr "等你"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/ticket-manager-panel.tsx:288
+#: src/features/ticket-manager-panel.tsx:298
 msgid "Wake"
 msgstr "唤醒"
 

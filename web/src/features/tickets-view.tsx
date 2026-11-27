@@ -286,8 +286,15 @@ export function TicketsView({
   const searchBox = <SearchBox value={query} onChange={setQuery} />
   const searchInTop = typeof topSlot === 'function'
   const top = searchInTop ? topSlot(searchBox) : topSlot
+  const userChoseFilter = useRef(false)
+  const held = useRef<string | undefined>(undefined)
+  const chooseFilter = (next: TicketFilter) => {
+    userChoseFilter.current = true
+    held.current = undefined
+    setChosen(next)
+  }
   const keys = fixedFilter ? null : (
-    <StatusSegments groups={allGroups} value={chosen} onChange={setChosen} />
+    <StatusSegments groups={allGroups} value={chosen} onChange={chooseFilter} />
   )
 
   const { recent, older } =
@@ -296,7 +303,8 @@ export function TicketsView({
       : { recent: matchedGroups, older: [] }
 
   // no ticket in the URL (wide): the one last opened under this filter, else
-  // the one last opened at all if it still exists (switching to 全部), else
+  // the one last opened at all if it still exists (switching to 全部 — ONLY on
+  // initial open, never overriding an explicit user click on 等你 / 调研), else
   // the top of the list (lib/last-opened.ts pickLast)
   const lastKey = `wezdeck-last-ticket-${base}`
   const visibleIds = flattenVisibleGroupIds(
@@ -305,7 +313,7 @@ export function TicketsView({
     id,
   )
   const pick =
-    id || !all.length
+    id || !all.length || userChoseFilter.current
       ? {}
       : pickLast(
           lastKey,
@@ -313,10 +321,14 @@ export function TicketsView({
           visibleIds,
           all.map((ticket) => ticket.id),
         )
-  const toAll = wide && Boolean(pick.all) && !fixedFilter && chosen !== 'all'
+  const toAll =
+    wide &&
+    Boolean(pick.all) &&
+    !fixedFilter &&
+    chosen !== 'all' &&
+    !userChoseFilter.current
   // held once picked (until a ticket is in the URL): switching to 全部 must
   // not re-pick 全部's own last
-  const held = useRef<string | undefined>(undefined)
   if (id) held.current = undefined
   else if (pick.id && !held.current) held.current = pick.id
   useEffect(() => {
