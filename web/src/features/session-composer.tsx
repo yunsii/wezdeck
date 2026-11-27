@@ -359,9 +359,6 @@ export function ComposerBox({
       if (event.defaultPrevented || event.isComposing) return
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       if (event.code !== 'KeyN') return
-      const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, [contenteditable="true"]'))
-        return
       event.preventDefault()
       if (event.shiftKey) void onRun('session.restart', { fresh: true })
       else void onNewConversation()
