@@ -700,6 +700,11 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		}
 	} else {
 		path, agent = findTranscript(e.SessionID)
+		if path != "" {
+			if _, _, cmd, _, profile, alive := paneState(e); alive && !paneOwnsSessionAgent(cmd, profile, agent) {
+				path, agent = "", ""
+			}
+		}
 	}
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
 	// clears this state only, not a newer one
@@ -718,10 +723,15 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	}
 	if path == "" {
 		// no transcript yet (a fresh session after /new): the pane's command
-		// still says which agent it is, so the page can offer its commands
-		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
-			agent = strings.TrimSuffix(cmd, ".real")
-			out["agent"] = agent
+		// or managed profile still says which agent it is
+		if _, _, cmd, _, profile, alive := paneState(e); alive {
+			if family := profileFamily(cmd); agentCommands[cmd] {
+				agent = family
+				out["agent"] = agent
+			} else if family := profileFamily(profile); agentCommands[family] {
+				agent = family
+				out["agent"] = agent
+			}
 		}
 		if agent == "agy" {
 			out["mode"] = resolveAgyMode(e, nil)

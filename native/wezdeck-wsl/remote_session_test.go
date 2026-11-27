@@ -354,9 +354,24 @@ func TestCrossAgentTranscriptsDoNotFollowFreshPane(t *testing.T) {
 		t.Fatal(err)
 	}
 	cards := list.(map[string]any)["sessions"].([]sessionCard)
-	if len(cards) != 2 || cards[0].ID != "active-grok" || cards[0].Agent != "agy" ||
-		cards[1].ID != "detached-grok" || cards[1].Agent != "grok" || !cards[1].Detached {
-		t.Fatalf("live Agy pane must override stale Grok attention name, got %+v", cards)
+	// active-grok carries a stale .grok transcript on an Agy pane and recent-grok
+	// is an archived Grok entry on an Agy pane: both cross-agent entries are
+	// filtered out, leaving only the real detached Grok pane.
+	if len(cards) != 1 || cards[0].ID != "detached-grok" || cards[0].Agent != "grok" || !cards[0].Detached {
+		t.Fatalf("cross-agent Grok entries on Agy panes must be filtered out, got %+v", cards)
+	}
+	// A direct detail read on the stale id must also ignore the cross-agent
+	// Grok transcript and report the live Agy pane's identity.
+	detail, err := sessionDetail(json.RawMessage(`{"id":"active-grok"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	detailMap := detail.(map[string]any)
+	if detailMap["agent"] != "agy" {
+		t.Fatalf("cross-agent detail must report live pane agent agy, got %+v", detailMap["agent"])
+	}
+	if msgs, _ := detailMap["messages"].([]chatMessage); len(msgs) != 0 {
+		t.Fatalf("cross-agent detail must not load stale Grok transcript, got %d messages", len(msgs))
 	}
 	write("pending-fresh-agy")
 	list, err = listSessions()
@@ -369,8 +384,8 @@ func TestCrossAgentTranscriptsDoNotFollowFreshPane(t *testing.T) {
 		byID[card.ID] = card
 	}
 	if len(cards) != 2 || byID["pending-fresh-agy"].AgentProfile != "agy" ||
-		byID["pending-fresh-agy"].Agent != "agent" || byID["detached-grok"].Agent != "grok" {
-		t.Fatalf("cleared fresh pane must become an empty Agy card, got %+v", cards)
+		byID["pending-fresh-agy"].Agent != "agy" || byID["detached-grok"].Agent != "grok" {
+		t.Fatalf("cleared fresh pane must become an empty Agy card with live pane agent, got %+v", cards)
 	}
 }
 
