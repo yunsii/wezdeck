@@ -50,6 +50,7 @@ export type TitleHistoryItem = {
 }
 
 export type Detail = StatusFields & {
+  interrupted?: boolean
   messages_rev?: number
   read_only?: boolean
   id: string

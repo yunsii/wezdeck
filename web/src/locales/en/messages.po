@@ -970,7 +970,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:332
+#: src/features/session-send.ts:346
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -2019,6 +2019,10 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
+#: src/features/session-send.ts:260
+msgid "Interrupt sent, but the agent has not confirmed it."
+msgstr "Interrupt sent, but the agent has not confirmed it."
+
 #: src/features/session-info.tsx:280
 msgid "is queued"
 msgstr "is queued"
@@ -2836,7 +2840,7 @@ msgstr "Open session"
 
 #: src/features/session-composer.tsx:256
 #: src/features/session-detail-notices.tsx:55
-#: src/features/session-detail-parts.tsx:90
+#: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -3996,7 +4000,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
 #: src/features/session-composer.tsx:240
-#: src/features/session-detail-parts.tsx:74
+#: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4594,6 +4598,11 @@ msgstr "Trust this worktree and continue"
 #: src/features/session-title-history.tsx:94
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
+
+#: src/features/session-detail-parts.tsx:74
+#: src/features/session-send.ts:257
+msgid "Turn interrupted"
+msgstr "Turn interrupted"
 
 #: src/features/session-worktree-detail.tsx:139
 msgid "Turn on write access in Settings to edit"

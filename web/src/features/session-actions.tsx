@@ -49,7 +49,7 @@ export function SessionActionsSheet({
             disabled={disabled}
             onClick={() => {
               trace('session-controls', { action: 'interrupt' })
-              void onRun('key', { key: 'C-c' })
+              void onRun('key', { key: 'C-c', interrupt: true })
               close()
             }}
             className="flex min-h-11 items-center gap-3 border-b border-brand-edge px-2 text-left text-body text-brand-waiting"
