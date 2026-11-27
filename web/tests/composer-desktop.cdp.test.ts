@@ -401,7 +401,9 @@ async function clearThenLeaveMidUpload(page: Page) {
   // The input keeps its one-line format and the status sits directly below.
   const layout = () =>
     page.evaluate(() => {
-      const field = document.querySelector('[data-text-field="true"]')
+      const field = document
+        .querySelector('#session-composer')
+        ?.closest('[data-text-field="true"]')
       const pill = document.querySelector(
         '[data-testid=session-statusbar] .session-tag',
       )
