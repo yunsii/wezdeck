@@ -308,7 +308,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session title (tapping opens 会话信息; `/rename` lives there), and **ⓘ 会话信息** at the far right — no status/waiting chip in
+  back, agent avatar + session title (tapping opens 会话信息; `/rename` lives there), and **ⓘ 会话信息** at the far right — no status/waiting chip in
   the header, since running, done, and waiting prompts are already visible in
   the thread itself (while the session list and tab badges surface waiting
   sessions before entry). The composer agent row shows context used

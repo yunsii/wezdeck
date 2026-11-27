@@ -127,6 +127,10 @@ describe.runIf(attention)('Session keys on the phone', () => {
     await openList(page)
     await page.locator('[data-session=nav-a]').click()
     await page.waitForURL('**/console/sessions/nav-a')
+    await page
+      .getByTestId('session-title')
+      .getByTestId('agent-avatar')
+      .waitFor()
     await page.getByTestId('session-title').click()
     const sheet = page.getByTestId('session-info')
     await sheet.waitFor()

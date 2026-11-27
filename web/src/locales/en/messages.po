@@ -614,7 +614,7 @@ msgstr "Cache"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:117
+#: src/features/session-header.tsx:119
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -922,7 +922,7 @@ msgstr "Console navigation"
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:114
+#: src/features/session-header.tsx:116
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1772,7 +1772,7 @@ msgstr "Light"
 msgid "Limits"
 msgstr "Limits"
 
-#: src/features/session-header.tsx:118
+#: src/features/session-header.tsx:120
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -1811,7 +1811,7 @@ msgstr "Loading original…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:212
+#: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-statusbar.tsx:301
@@ -2398,7 +2398,7 @@ msgstr "outline a plan before editing"
 msgid "Output"
 msgstr "Output"
 
-#: src/features/session-header.tsx:116
+#: src/features/session-header.tsx:118
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -2783,7 +2783,7 @@ msgstr "research failed"
 msgid "Resend"
 msgstr "Resend"
 
-#: src/features/session-header.tsx:105
+#: src/features/session-header.tsx:107
 msgid "resets {reset}"
 msgstr "resets {reset}"
 
@@ -3129,8 +3129,8 @@ msgstr "Session id"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "Session ID, tmux, transcript file and capabilities"
 
-#: src/features/session-header.tsx:203
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:209
+#: src/features/session-header.tsx:232
 #: src/features/session-info.tsx:287
 msgid "Session info"
 msgstr "Session info"
@@ -3145,7 +3145,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:190
+#: src/features/session-header.tsx:196
 #: src/features/session-list.tsx:167
 #: src/features/session-list.tsx:282
 msgctxt "nav"
@@ -3780,7 +3780,7 @@ msgid "Unknown"
 msgstr "Unknown"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:177
+#: src/features/session-header.tsx:183
 #: src/features/session-info.tsx:215
 msgid "Untitled session"
 msgstr "Untitled session"

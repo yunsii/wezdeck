@@ -11,7 +11,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 
 import { cn } from '#/lib/utils'
+import { AgentAvatar } from './agent-avatar'
 import type { Detail } from './console-sessions'
+import { useSessions } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
 import {
@@ -152,6 +154,10 @@ export function SessionHeader({
     onBack()
   }, [onBack])
   const nav = useSessionNav(id)
+  const sessions = useSessions()
+  const profile = sessions.data?.sessions.find(
+    (row) => row.id === id,
+  )?.agent_profile
   useSessionKeys(nav.jump, focusSearchOrList)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -201,8 +207,11 @@ export function SessionHeader({
             data-testid="session-title"
             data-session-id={data?.id}
             title={t`Session info`}
-            className="flex min-w-0 items-center gap-1 text-left text-title leading-tight font-semibold"
+            className="flex min-w-0 items-center gap-2 text-left text-title leading-tight font-semibold"
           >
+            {data ? (
+              <AgentAvatar agent={data.agent} profile={profile} size={28} />
+            ) : null}
             <span
               className={cn(
                 'truncate',

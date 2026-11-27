@@ -614,7 +614,7 @@ msgstr "缓存"
 msgid "Cache hit"
 msgstr "缓存命中"
 
-#: src/features/session-header.tsx:117
+#: src/features/session-header.tsx:119
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
@@ -922,7 +922,7 @@ msgstr "控制台导航"
 msgid "Context"
 msgstr "上下文"
 
-#: src/features/session-header.tsx:114
+#: src/features/session-header.tsx:116
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
@@ -1772,7 +1772,7 @@ msgstr "浅色"
 msgid "Limits"
 msgstr "额度"
 
-#: src/features/session-header.tsx:118
+#: src/features/session-header.tsx:120
 msgid "limits as of {limitsAt}"
 msgstr "额度更新于{limitsAt}"
 
@@ -1811,7 +1811,7 @@ msgstr "正在加载原图…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:133
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:212
+#: src/features/session-header.tsx:221
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-statusbar.tsx:301
@@ -2398,7 +2398,7 @@ msgstr "修改前先制定计划"
 msgid "Output"
 msgstr "输出"
 
-#: src/features/session-header.tsx:116
+#: src/features/session-header.tsx:118
 msgid "output {outputTokens}"
 msgstr "输出 {outputTokens}"
 
@@ -2783,7 +2783,7 @@ msgstr "调研失败"
 msgid "Resend"
 msgstr "重发"
 
-#: src/features/session-header.tsx:105
+#: src/features/session-header.tsx:107
 msgid "resets {reset}"
 msgstr "{reset}重置"
 
@@ -3129,8 +3129,8 @@ msgstr "会话 ID"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "会话 ID、tmux、记录文件与能力"
 
-#: src/features/session-header.tsx:203
-#: src/features/session-header.tsx:223
+#: src/features/session-header.tsx:209
+#: src/features/session-header.tsx:232
 #: src/features/session-info.tsx:287
 msgid "Session info"
 msgstr "会话信息"
@@ -3145,7 +3145,7 @@ msgstr "会话数"
 
 #: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:84
-#: src/features/session-header.tsx:190
+#: src/features/session-header.tsx:196
 #: src/features/session-list.tsx:167
 #: src/features/session-list.tsx:282
 msgctxt "nav"
@@ -3780,7 +3780,7 @@ msgid "Unknown"
 msgstr "未知"
 
 #: src/features/session-commands.tsx:161
-#: src/features/session-header.tsx:177
+#: src/features/session-header.tsx:183
 #: src/features/session-info.tsx:215
 msgid "Untitled session"
 msgstr "未命名会话"
