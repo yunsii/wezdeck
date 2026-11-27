@@ -4,6 +4,7 @@ package main
 // index, managed agent profile, alive.
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -31,6 +32,7 @@ var (
 	attentionPathMu      sync.Mutex
 	attentionPathCached  string
 	attentionPathChecked time.Time
+	attentionGlobFunc    = filepath.Glob
 )
 
 func resolveDefaultAttentionFile() string {
@@ -43,7 +45,7 @@ func resolveDefaultAttentionFile() string {
 	attentionPathMu.Unlock()
 
 	resolved := ""
-	if matches, _ := filepath.Glob("/mnt/c/Users/*/AppData/Local/wezterm-runtime/state/agent-attention/attention.json"); len(matches) > 0 {
+	if matches, _ := attentionGlobFunc("/mnt/c/Users/*/AppData/Local/wezterm-runtime/state/agent-attention/attention.json"); len(matches) > 0 {
 		resolved = matches[0]
 	} else {
 		home, _ := os.UserHomeDir()
@@ -479,4 +481,52 @@ func windowActivity(e attentionEntry) int64 {
 func paneInfo(e attentionEntry) (cwd string, alive bool) {
 	_, cwd, _, _, _, alive = paneState(e)
 	return cwd, alive
+}
+
+// gitRepoMeta: repo family label + main checkout root + this worktree path.
+// Soft-fails fast so listSessions stays snappy when git is missing or slow.
+func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
+	worktree = cwd
+	if cwd == "" {
+		return "", "", ""
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", cwd, "rev-parse", "--show-toplevel", "--git-common-dir").Output()
+	if err != nil {
+		return filepath.Base(cwd), "", cwd
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 0 || lines[0] == "" {
+		return filepath.Base(cwd), "", cwd
+	}
+	worktree = lines[0]
+	repo = filepath.Base(worktree)
+	if len(lines) < 2 || lines[1] == "" {
+		return repo, worktree, worktree
+	}
+	common := lines[1]
+	if !filepath.IsAbs(common) {
+		common = filepath.Clean(filepath.Join(cwd, common))
+	}
+	repoRoot = mainWorktreeFromGitCommon(common)
+	if repoRoot == "" {
+		repoRoot = worktree
+	} else {
+		repo = filepath.Base(repoRoot)
+	}
+	return repo, repoRoot, worktree
+}
+
+// mainWorktreeFromGitCommon turns git-common-dir into the primary checkout path.
+func mainWorktreeFromGitCommon(common string) string {
+	clean := filepath.Clean(common)
+	const marker = string(filepath.Separator) + ".git" + string(filepath.Separator) + "worktrees" + string(filepath.Separator)
+	if i := strings.Index(clean, marker); i >= 0 {
+		return clean[:i]
+	}
+	if filepath.Base(clean) == ".git" {
+		return filepath.Dir(clean)
+	}
+	return ""
 }

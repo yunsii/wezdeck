@@ -495,9 +495,20 @@ checks the new process's `event=connected` version. A restart with an old
 version is a release failure, even when systemd reports the unit as active.
 
 Logs: `category=relay` rows (`connected` / `disconnected` / `rtc_state` /
-`rtc_answer` / `rpc via=webrtc|websocket ms err`) in
-`journalctl --user -u wezdeck-relay` and `relay.log` beside
-`wsl-bridge.log`; Worker logs via Cloudflare observability.
+`rtc_answer` / `rpc via=webrtc|websocket ms err` / `rpc_slow threshold_ms …` /
+`bridge_rpc` / `bridge_rpc_slow`) in `journalctl --user -u wezdeck-relay` and
+`relay.log` beside `wsl-bridge.log`; Worker logs via Cloudflare observability.
+Every `res` frame also carries `host_ms` so browser diagnostics snapshots
+(`rpcLatency` + `linkEvents` `rpc_slow` >= 1500 ms) separate host execution
+from network RTT. Operator latency & Cloudflare log reports:
+
+```bash
+scripts/dev/relay-latency-report.sh                 # 24h p50/p95/max by action + transport
+scripts/dev/relay-latency-report.sh --slow          # recent rpc_slow / bridge_rpc_slow with phase ms
+scripts/dev/relay-latency-report.sh --days 7 --trend
+scripts/dev/relay-cf-logs.sh --minutes 60 --summary # HostRelay DO event & close-code counts
+scripts/dev/relay-cf-logs.sh --service all --event host_closed
+```
 
 Relay rooms: `/relay/host?room=<name>` and a page opened with `?room=<name>`
 (sticky per tab) share their own Durable Object, so a throwaway test host
