@@ -1143,8 +1143,8 @@ msgstr "Console ({origin})"
 msgid "Console navigation"
 msgstr "Console navigation"
 
-#: src/features/host-file-body.tsx:214
-#: src/features/host-file-body.tsx:242
+#: src/features/host-file-body.tsx:249
+#: src/features/host-file-body.tsx:279
 msgid "Contents"
 msgstr "Contents"
 
@@ -1191,11 +1191,11 @@ msgstr "Copied"
 msgid "Copied {label}"
 msgstr "Copied {label}"
 
-#: src/features/host-file-sheet.tsx:220
+#: src/features/host-file-sheet.tsx:224
 msgid "Copied document"
 msgstr "Copied document"
 
-#: src/features/host-file-sheet.tsx:220
+#: src/features/host-file-sheet.tsx:224
 msgid "Copied path"
 msgstr "Copied path"
 
@@ -1217,7 +1217,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/doc-code-block.tsx:108
-#: src/features/host-file-sheet.tsx:121
+#: src/features/host-file-sheet.tsx:125
 #: src/features/inspector.tsx:87
 #: src/features/sent-history.tsx:228
 #: src/features/session-composer.tsx:54
@@ -1235,8 +1235,8 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/host-file-sheet.tsx:111
 #: src/features/host-file-sheet.tsx:112
+#: src/features/host-file-sheet.tsx:113
 msgid "Copy document"
 msgstr "Copy document"
 
@@ -1253,8 +1253,8 @@ msgstr "Copy failed"
 msgid "Copy link"
 msgstr "Copy link"
 
-#: src/features/host-file-sheet.tsx:95
-#: src/features/host-file-sheet.tsx:96
+#: src/features/host-file-sheet.tsx:93
+#: src/features/host-file-sheet.tsx:94
 #: src/features/session-worktree-detail.tsx:81
 #: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
@@ -1561,7 +1561,7 @@ msgstr "Dispatched"
 
 #: src/features/host-file-context.tsx:93
 #: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:210
+#: src/features/host-file-sheet.tsx:214
 msgid "Document"
 msgstr "Document"
 
@@ -3101,7 +3101,7 @@ msgstr "Part"
 msgid "partly done"
 msgstr "partly done"
 
-#: src/features/host-file-sheet.tsx:105
+#: src/features/host-file-sheet.tsx:106
 #: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "Path"
@@ -3337,7 +3337,7 @@ msgstr "Refresh links"
 msgid "Refreshing session titles in the background…"
 msgstr "Refreshing session titles in the background…"
 
-#: src/features/host-file-sheet.tsx:135
+#: src/features/host-file-sheet.tsx:139
 msgid "Regarding {ref}: "
 msgstr "Regarding {ref}: "
 
@@ -3466,7 +3466,7 @@ msgstr "Replied, the agent continues"
 msgid "replied: {body}"
 msgstr "replied: {body}"
 
-#: src/features/host-file-sheet.tsx:141
+#: src/features/host-file-sheet.tsx:145
 #: src/features/ticket-reply.tsx:222
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
@@ -3627,7 +3627,7 @@ msgstr "Resume a conversation"
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
-#: src/features/host-file-sheet.tsx:308
+#: src/features/host-file-sheet.tsx:312
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3985,7 +3985,7 @@ msgstr "Sending the handoff brief…"
 msgid "Sending…"
 msgstr "Sending…"
 
-#: src/features/host-file-sheet.tsx:279
+#: src/features/host-file-sheet.tsx:283
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
 
@@ -4138,7 +4138,7 @@ msgstr "Show the call"
 msgid "Showing {shownCount} of {total} items"
 msgstr "Showing {shownCount} of {total} items"
 
-#: src/features/host-file-sheet.tsx:275
+#: src/features/host-file-sheet.tsx:279
 msgid "Showing the first 256 KB of this file."
 msgstr "Showing the first 256 KB of this file."
 

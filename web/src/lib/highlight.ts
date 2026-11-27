@@ -1,32 +1,11 @@
-// Syntax colours for code in tool calls (diffs, written files): shiki with
-// its JavaScript regex engine (no WASM), loaded on first use — the core, the
-// two GitHub themes and only the grammar a file needs, each its own chunk.
-// Colours come back as --shiki-light / --shiki-dark per token; styles/code.css
-// picks one by the page theme (.code-token).
-import type { HighlighterCore } from 'shiki/core'
+// Syntax colours for code in tool calls & the host file viewer: Shiki with its
+// JavaScript regex engine (no WASM), running in a dedicated Web Worker in the
+// browser so tokenizing 200+ line files never blocks the main thread during
+// transitions, with an in-memory LRU cache and main-thread fallback for tests.
+import { hasGrammar, highlightLinesCore } from './highlight-core'
+import type { Token } from './highlight-core'
 
-type Loader = () => Promise<unknown>
-
-const GRAMMARS: Partial<Record<string, Loader>> = {
-  typescript: () => import('shiki/langs/typescript.mjs'),
-  tsx: () => import('shiki/langs/tsx.mjs'),
-  javascript: () => import('shiki/langs/javascript.mjs'),
-  jsx: () => import('shiki/langs/jsx.mjs'),
-  go: () => import('shiki/langs/go.mjs'),
-  shellscript: () => import('shiki/langs/shellscript.mjs'),
-  lua: () => import('shiki/langs/lua.mjs'),
-  python: () => import('shiki/langs/python.mjs'),
-  json: () => import('shiki/langs/json.mjs'),
-  css: () => import('shiki/langs/css.mjs'),
-  markdown: () => import('shiki/langs/markdown.mjs'),
-  yaml: () => import('shiki/langs/yaml.mjs'),
-  csharp: () => import('shiki/langs/csharp.mjs'),
-  toml: () => import('shiki/langs/toml.mjs'),
-  html: () => import('shiki/langs/html.mjs'),
-  powershell: () => import('shiki/langs/powershell.mjs'),
-  rust: () => import('shiki/langs/rust.mjs'),
-  sql: () => import('shiki/langs/sql.mjs'),
-}
+export type { Token }
 
 const BY_EXT: Partial<Record<string, string>> = {
   ts: 'typescript',
@@ -64,30 +43,65 @@ export function langOf(file?: string): string | null {
   return (ext && BY_EXT[ext]) || null
 }
 
-let core: Promise<HighlighterCore> | null = null
-const loaded = new Map<string, Promise<void>>()
+const MAX_CACHE = 64
+const tokenCache = new Map<string, Array<Array<Token>>>()
 
-function highlighter() {
-  core ??= (async () => {
-    const [{ createHighlighterCore }, { createJavaScriptRegexEngine }] =
-      await Promise.all([
-        import('shiki/core'),
-        import('shiki/engine/javascript'),
-      ])
-    return createHighlighterCore({
-      themes: [
-        import('shiki/themes/github-light.mjs'),
-        import('shiki/themes/github-dark.mjs'),
-      ],
-      langs: [],
-      engine: createJavaScriptRegexEngine(),
-    })
-  })()
-  return core
+function readCache(key: string): Array<Array<Token>> | undefined {
+  const hit = tokenCache.get(key)
+  if (!hit) return undefined
+  tokenCache.delete(key)
+  tokenCache.set(key, hit)
+  return hit
 }
 
-/** style: the shiki CSS variables (--shiki-light, --shiki-dark, …) */
-export type Token = { content: string; style?: Record<string, string> }
+function writeCache(key: string, value: Array<Array<Token>>) {
+  if (tokenCache.size >= MAX_CACHE) {
+    const oldest = tokenCache.keys().next().value
+    if (oldest !== undefined) tokenCache.delete(oldest)
+  }
+  tokenCache.set(key, value)
+}
+
+type PendingJob = {
+  resolve: (tokens: Array<Array<Token>> | null) => void
+}
+
+let worker: Worker | null = null
+let workerBroken = false
+let nextJobId = 1
+const pendingJobs = new Map<number, PendingJob>()
+
+function ensureWorker(): Worker | null {
+  if (workerBroken || typeof Worker === 'undefined') return null
+  if (worker) return worker
+  try {
+    const w = new Worker(new URL('./highlight.worker.ts', import.meta.url), {
+      type: 'module',
+    })
+    w.addEventListener(
+      'message',
+      (
+        ev: MessageEvent<{ id: number; tokens: Array<Array<Token>> | null }>,
+      ) => {
+        const job = pendingJobs.get(ev.data.id)
+        if (!job) return
+        pendingJobs.delete(ev.data.id)
+        job.resolve(ev.data.tokens)
+      },
+    )
+    w.addEventListener('error', () => {
+      workerBroken = true
+      worker = null
+      for (const [, job] of pendingJobs) job.resolve(null)
+      pendingJobs.clear()
+    })
+    worker = w
+    return w
+  } catch {
+    workerBroken = true
+    return null
+  }
+}
 
 /**
  * Tokens per line for `lines` in `lang`, or null when the language is not
@@ -99,31 +113,23 @@ export async function highlightLines(
   lines: Array<string>,
   lang: string,
 ): Promise<Array<Array<Token>> | null> {
-  const grammar = GRAMMARS[lang]
-  if (!grammar) return null
-  try {
-    const shiki = await highlighter()
-    let ready = loaded.get(lang)
-    if (!ready) {
-      ready = grammar().then((mod) =>
-        shiki.loadLanguage((mod as { default: never }).default),
-      )
-      loaded.set(lang, ready)
-    }
-    await ready
-    const { tokens } = shiki.codeToTokens(lines.join('\n'), {
-      lang,
-      themes: { light: 'github-light', dark: 'github-dark' },
-      defaultColor: false,
+  if (!hasGrammar(lang)) return null
+  const cacheKey = `${lang}\0${lines.join('\n')}`
+  const cached = readCache(cacheKey)
+  if (cached) return cached
+
+  const w = ensureWorker()
+  let result: Array<Array<Token>> | null = null
+  if (w) {
+    const id = nextJobId++
+    result = await new Promise<Array<Array<Token>> | null>((resolve) => {
+      pendingJobs.set(id, { resolve })
+      w.postMessage({ id, lines, lang })
     })
-    return tokens.map((line) =>
-      line.map((token) => ({
-        content: token.content,
-        style: token.htmlStyle,
-      })),
-    )
-  } catch {
-    loaded.delete(lang)
-    return null
   }
+  if (!result) {
+    result = await highlightLinesCore(lines, lang)
+  }
+  if (result) writeCache(cacheKey, result)
+  return result
 }

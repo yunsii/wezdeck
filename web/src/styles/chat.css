@@ -18,44 +18,44 @@
 /* Single-container skeleton pulse (<SkeletonGroup>): animate opacity on ONE
    wrapper around static <Skeleton> bars rather than per-bar animate-pulse
    (which spawns N GPU layers) or background-color keyframes (which re-rasterize
-   the entire HiDPI scroller on CPU every vsync). GPU composites one texture's
-   alpha uniform at 0 px repaint while `contain: layout paint` isolates it
-   inside its card away from persistent headers.
-   - `skeleton-enter` / `content-enter`: short opacity-only fade-in (0 travel)
-     so neither skeleton nor resolved document hard-pops onto the canvas.
-   - `skeleton-pulse`: smooth sine-like curve (`cubic-bezier(0.4, 0, 0.6, 1)`)
-     delayed by 150 ms so the enter fade lands cleanly at 1 before breathing
-     gently down to 0.62 and back. */
-@keyframes skeleton-enter {
+   the entire HiDPI scroller on CPU every vsync). Starting at 0.58 and rising to
+   1 lets the skeleton enter softly on a single GPU layer with 0 delay and no
+   parent/child layer handoff.
+   `content-enter` settles resolved text/code from 0.35 → 1 inside a solid
+   opacity-1 card surface so swapping skeleton → content never dips to dark. */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes content-enter {
   from {
-    opacity: 0;
+    opacity: 0.35;
   }
   to {
     opacity: 1;
   }
 }
 
-@keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.62;
-  }
-}
-
-.skeleton-enter {
-  animation: skeleton-enter var(--motion-short) var(--ease-enter) both;
-}
-
 .skeleton-pulse {
-  animation: skeleton-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) 150ms infinite;
+  animation: skeleton-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   contain: layout paint;
 }
 
 .content-enter {
-  animation: skeleton-enter 160ms var(--ease-enter) both;
+  animation: content-enter 120ms var(--ease-enter) both;
+}
+
+/* Chunked code viewer slices: off-screen lines skip style/layout/paint until
+   scrolled near the viewport, keeping 300+ line highlighted files instant. */
+.code-chunk {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1260px;
 }
 
 /* Chat: what just arrived slides in. */
@@ -120,7 +120,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .led-running circle,
-  .skeleton-enter,
   .skeleton-pulse,
   .content-enter,
   .chat-in {

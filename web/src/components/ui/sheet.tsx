@@ -159,7 +159,7 @@ export function Sheet({
               className={cn(
                 'min-h-0 flex-1 overflow-y-auto overscroll-contain',
                 fullscreen
-                  ? 'pb-[max(env(safe-area-inset-bottom),1.5rem)]'
+                  ? '[scrollbar-gutter:stable] pb-[max(env(safe-area-inset-bottom),1.5rem)]'
                   : 'pb-[max(env(safe-area-inset-bottom),1rem)] md:mb-3',
               )}
             >
