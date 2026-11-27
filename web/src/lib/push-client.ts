@@ -2,6 +2,7 @@
 // Talks to `/relay/push/*` (authenticated by the paired client token) and
 // manages `ServiceWorkerRegistration.pushManager` subscriptions + device prefs.
 import { loadDeviceKey } from './device-key'
+import { remoteLink } from './remote-link'
 import { readPairedToken, relayBase, roomQuery } from './remote-pairing'
 import type { PushPrefs } from '#/relay/web-push'
 import { DEFAULT_PUSH_PREFS } from '#/relay/web-push'
@@ -18,6 +19,21 @@ export type PushStatusResponse = {
   subscribed: boolean
   prefs: PushPrefs
   devices: number
+}
+
+export function isPushServiceError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? '')
+  return /push service error|push service not available|registration failed/i.test(
+    msg,
+  )
+}
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
 }
 
 export function detectPushSupport(): PushSupportState {
@@ -137,17 +153,29 @@ export async function subscribeDevicePush(
   if (!config.enabled || !config.vapid_public_key) {
     throw new Error('Push is not configured on the relay yet')
   }
+  const expectedKey = base64UrlToUint8Array(config.vapid_public_key)
   const reg = await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
+  // Self-heal stale subscriptions whose VAPID key differs from the relay's key.
+  if (sub?.options.applicationServerKey) {
+    const existingKey = new Uint8Array(sub.options.applicationServerKey)
+    if (!bytesEqual(existingKey, expectedKey)) {
+      await sub.unsubscribe().catch(() => undefined)
+      sub = null
+    }
+  }
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: base64UrlToUint8Array(config.vapid_public_key),
+      applicationServerKey: expectedKey,
     })
   }
   const json = sub.toJSON()
   const deviceId = await resolvePushDeviceId()
-  return pushFetch('subscribe', {
+  const result = await pushFetch<{
+    subscribed: boolean
+    prefs: PushPrefs
+  }>('subscribe', {
     method: 'POST',
     body: JSON.stringify({
       device_id: deviceId,
@@ -158,6 +186,8 @@ export async function subscribeDevicePush(
       prefs,
     }),
   })
+  remoteLink.reportFocus()
+  return result
 }
 
 export async function unsubscribeDevicePush(): Promise<void> {

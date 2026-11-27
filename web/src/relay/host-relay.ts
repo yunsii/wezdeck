@@ -254,13 +254,10 @@ export class HostRelay extends DurableObject<RelayEnv> {
         const focusedByDevice = new Map<string, Set<string>>()
         for (const clientWs of this.openClients()) {
           const cm = readAttachment(clientWs)
-          if (cm?.role === 'client' && cm.visible && cm.deviceId && cm.path) {
-            let set = focusedByDevice.get(cm.deviceId)
-            if (!set) {
-              set = new Set<string>()
-              focusedByDevice.set(cm.deviceId, set)
-            }
-            set.add(cm.path)
+          if (cm?.role === 'client' && cm.visible && cm.deviceId) {
+            const set = focusedByDevice.get(cm.deviceId) ?? new Set<string>()
+            set.add(cm.path || '/')
+            focusedByDevice.set(cm.deviceId, set)
           }
         }
         await dispatchPushEmit(

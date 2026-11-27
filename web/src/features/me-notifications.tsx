@@ -4,17 +4,19 @@
 import { useLingui } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bell, BellOff, Send } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { toast } from 'sonner'
 
 import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
 import { trace } from '#/lib/client-trace'
+import { remoteLink } from '#/lib/remote-link'
 import {
   DEFAULT_PUSH_PREFS,
   detectPushSupport,
   fetchPushStatus,
+  isPushServiceError,
   sendTestPush,
   subscribeDevicePush,
   unsubscribeDevicePush,
@@ -26,15 +28,19 @@ const QUERY_KEY = ['push', 'status'] as const
 
 export function useNotificationsSummary(): string {
   const { t } = useLingui()
-  const support = detectPushSupport()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const support = mounted ? detectPushSupport() : 'unpaired'
   const status = useQuery({
     queryKey: QUERY_KEY,
-    enabled: support !== 'unpaired',
+    enabled: mounted && support !== 'unpaired',
     staleTime: 30_000,
     retry: false,
     queryFn: fetchPushStatus,
   })
-  if (support === 'unpaired') return t`Pair first`
+  if (!mounted || support === 'unpaired') return t`Pair first`
   if (status.data?.subscribed) return t`On`
   return t`Off`
 }
@@ -168,8 +174,8 @@ function NotificationPrefsSections({
           </h3>
         </div>
         <PrefRow
-          label={t`Quiet while active at desk`}
-          hint={t`Suppress popup banners while you are actively typing in WezTerm (still updates app badge).`}
+          label={t`Quiet while active on another device`}
+          hint={t`Suppress popups while you are typing in WezTerm or viewing WezDeck in the foreground on any device (still syncs badge).`}
           checked={prefs.quiet_when_desk_active}
           disabled={disabled}
           onChange={(v) => onChange('quiet_when_desk_active', v)}
@@ -179,15 +185,82 @@ function NotificationPrefsSections({
   )
 }
 
+function PushErrorCallout({ errorText }: { errorText: string }) {
+  const { t } = useLingui()
+  if (!errorText) return null
+  if (!isPushServiceError(errorText)) {
+    return (
+      <p role="alert" className="text-meta text-brand-error">
+        {errorText}
+      </p>
+    )
+  }
+  return (
+    <div
+      role="alert"
+      data-testid="push-service-error-guide"
+      className="grid gap-1.5 rounded-xl border border-brand-waiting/40 bg-brand-waiting/10 p-3 text-caption text-brand-text"
+    >
+      <p className="font-medium">
+        {t`Browser push service (FCM/GMS) is unreachable on this device.`}
+      </p>
+      <p className="text-meta text-brand-muted">
+        {t`Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge.`}
+      </p>
+    </div>
+  )
+}
+
+function PushSupportBanner({ support }: { support: string }) {
+  const { t } = useLingui()
+  if (support === 'unpaired') {
+    return (
+      <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
+        {t`Pair this device with your host first to enable remote push notifications.`}
+      </p>
+    )
+  }
+  if (support === 'ios-install-required') {
+    return (
+      <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
+        {t`On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications.`}
+      </p>
+    )
+  }
+  if (support === 'unsupported') {
+    return (
+      <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
+        {t`This browser does not support Web Push notifications.`}
+      </p>
+    )
+  }
+  return (
+    <p className="rounded-xl bg-brand-error/10 px-3 py-2.5 text-caption text-brand-error">
+      {t`Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe.`}
+    </p>
+  )
+}
+
 export function NotificationsPage() {
   const { t } = useLingui()
   const client = useQueryClient()
-  const support = detectPushSupport()
+  const [mounted, setMounted] = useState(false)
+  // Re-evaluate push support once remoteLink adopts a `#pair=` hash or connects.
+  useSyncExternalStore(
+    remoteLink.subscribe,
+    remoteLink.snapshot,
+    remoteLink.snapshot,
+  )
+  useEffect(() => {
+    setMounted(true)
+    remoteLink.start()
+  }, [])
+  const support = mounted ? detectPushSupport() : 'unpaired'
   const [errorText, setErrorText] = useState('')
 
   const statusQuery = useQuery({
     queryKey: QUERY_KEY,
-    enabled: support !== 'unpaired',
+    enabled: mounted && support !== 'unpaired',
     retry: false,
     queryFn: fetchPushStatus,
   })
@@ -281,22 +354,8 @@ export function NotificationsPage() {
           )}
         </div>
 
-        {support === 'unpaired' ? (
-          <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
-            {t`Pair this device with your host first to enable remote push notifications.`}
-          </p>
-        ) : support === 'ios-install-required' ? (
-          <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
-            {t`On iOS 16.4+, tap Share → “Add to Home Screen”, then open WezDeck from the Home Screen to enable push notifications.`}
-          </p>
-        ) : support === 'unsupported' ? (
-          <p className="rounded-xl bg-brand-deck px-3 py-2.5 text-caption text-brand-muted">
-            {t`This browser does not support Web Push notifications.`}
-          </p>
-        ) : support === 'denied' ? (
-          <p className="rounded-xl bg-brand-error/10 px-3 py-2.5 text-caption text-brand-error">
-            {t`Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe.`}
-          </p>
+        {support !== 'ready' ? (
+          <PushSupportBanner support={support} />
         ) : !relayEnabled ? (
           <p className="rounded-xl bg-brand-waiting/10 px-3 py-2.5 text-caption text-brand-text">
             {t`VAPID push keys are not configured on the relay Worker yet.`}
@@ -351,11 +410,7 @@ export function NotificationsPage() {
           </div>
         )}
 
-        {errorText ? (
-          <p role="alert" className="text-meta text-brand-error">
-            {errorText}
-          </p>
-        ) : null}
+        <PushErrorCallout errorText={errorText} />
       </section>
 
       <NotificationPrefsSections

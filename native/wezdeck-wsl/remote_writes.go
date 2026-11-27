@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -259,8 +260,9 @@ var allowedKeys = map[string]bool{
 
 func keyToSession(args json.RawMessage) (any, error) {
 	var a struct {
-		ID  string `json:"id"`
-		Key string `json:"key"`
+		ID        string `json:"id"`
+		Key       string `json:"key"`
+		Interrupt bool   `json:"interrupt"`
 	}
 	if json.Unmarshal(args, &a) != nil || !allowedKeys[a.Key] {
 		return nil, errors.New("key not allowed")
@@ -269,7 +271,14 @@ func keyToSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, a.Key).CombinedOutput(); err != nil {
+	if a.Key == "C-c" && a.Interrupt {
+		return interruptSession(e)
+	}
+	return sendSessionKey(e, a.Key)
+}
+
+func sendSessionKey(e attentionEntry, key string) (any, error) {
+	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, key).CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
 	}
 	return map[string]any{"v": 1, "ok": true}, nil
@@ -278,6 +287,8 @@ func keyToSession(args json.RawMessage) (any, error) {
 var ticketIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]{1,96}$`)
 
 var proposalIDPattern = regexp.MustCompile(`^p[0-9]{1,4}$`)
+var proposalKeyPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,32}$`)
+var allowedProposalBackends = map[string]bool{"claude": true, "codex": true, "grok": true}
 
 type ticketReply struct {
 	ID       string `json:"id"`
@@ -287,8 +298,9 @@ type ticketReply struct {
 	// the user's tap is the confirmation the CLI waits for. Riding on `reply`
 	// keeps the Runtime's write allowlist (C#) unchanged; native/wezdeck-wsl
 	// is the only side that maps it (web/src/features/ticket-proposals.tsx).
-	Proposal string `json:"proposal"`
-	Verdict  string `json:"verdict"` // approve | reject (Text = the reason)
+	Proposal string            `json:"proposal"`
+	Verdict  string            `json:"verdict"`  // approve | reject (Text = the reason)
+	Backends map[string]string `json:"backends"` // optional per-item backend override (key -> claude|codex|grok)
 }
 
 // replyArgv maps a reply write to the ticket CLI argv.
@@ -303,7 +315,19 @@ func replyArgv(a ticketReply) ([]string, error) {
 		switch a.Verdict {
 		case "approve":
 			// the console's button is 确认并开始: approving also starts the scheduler
-			return []string{"fanout", "approve", "--parent", a.ID, "--proposal", a.Proposal, "--run"}, nil
+			argv := []string{"fanout", "approve", "--parent", a.ID, "--proposal", a.Proposal, "--run"}
+			if len(a.Backends) > 0 {
+				var pairs []string
+				for k, v := range a.Backends {
+					if !proposalKeyPattern.MatchString(k) || !allowedProposalBackends[v] {
+						return nil, errors.New("invalid proposal backend override")
+					}
+					pairs = append(pairs, k+"="+v)
+				}
+				sort.Strings(pairs)
+				argv = append(argv, "--backends", strings.Join(pairs, ","))
+			}
+			return argv, nil
 		case "reject":
 			if strings.TrimSpace(a.Text) == "" {
 				return nil, errors.New("rejecting a proposal needs a reason")

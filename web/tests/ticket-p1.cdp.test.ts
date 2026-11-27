@@ -1,7 +1,8 @@
 // covers: web/src/features/ticket-list-groups.ts web/src/features/ticket-keys.tsx
 // covers: web/src/features/tickets-view.tsx web/src/features/ticket-run-chat.tsx
 // covers: web/src/features/ticket-diff.tsx web/src/features/ticket-header.tsx
-// covers: web/src/features/ticket-manager-panel.tsx
+// covers: web/src/features/ticket-manager-panel.tsx web/src/features/ticket-delivery-card.tsx
+// covers: web/src/features/ticket-proposals.tsx
 // covers: native/wezdeck-wsl/collab_chat.go native/wezdeck-wsl/collab_diff.go
 // covers: native/wezdeck-wsl/collab_manager.go
 import { execFileSync } from 'node:child_process'
@@ -46,6 +47,7 @@ function createFixture() {
   const parentId = `req-20261127-190001-p${suffix}`
   const childId = `req-20261127-190002-c${suffix}`
   const researchId = `req-20261127-190003-r${suffix}`
+  const shippedId = `req-20261127-190005-s${suffix}`
   const runId = `run-20261127-190004-${suffix}`
 
   // Real temp git worktree with a tracked modification for collab.diff
@@ -82,6 +84,13 @@ function createFixture() {
     {
       kind: 'parent',
       repos: ['demo-repo'],
+      integration: {
+        'demo-repo': {
+          worktree,
+          branch: 'ticket/p1-integration',
+          merged: [childId],
+        },
+      },
       manager_session: {
         backend: 'claude',
         profile: 'claude-sonnet',
@@ -174,16 +183,34 @@ function createFixture() {
     'Read-only research ticket',
   )
 
+  writeTicket(
+    dataRoot,
+    shippedId,
+    {
+      id: shippedId,
+      title: `Shipped Ticket ${suffix}`,
+      from: 'wezdeck',
+      to: 'demo-repo',
+      status: 'shipped',
+      created_at: nowIso,
+      updated_at: nowIso,
+    },
+    { repos: ['demo-repo'] },
+    'Already shipped ticket',
+  )
+
   return {
     suffix,
     parentId,
     childId,
     researchId,
+    shippedId,
     cleanup() {
       rmSync(worktree, { recursive: true, force: true })
       rmSync(join(dataRoot, parentId), { recursive: true, force: true })
       rmSync(join(dataRoot, childId), { recursive: true, force: true })
       rmSync(join(dataRoot, researchId), { recursive: true, force: true })
+      rmSync(join(dataRoot, shippedId), { recursive: true, force: true })
     },
   }
 }
@@ -258,8 +285,19 @@ describe.runIf(stack)(
       await groupEl.getByTestId('ticket-group-toggle').click()
       await childLink.waitFor()
 
-      // 2. Switching to "调研" shows the standalone research ticket
-      await page.getByRole('radio', { name: /调研/ }).click()
+      // 2. Switching to "等你" and "调研" stays on the chosen filter even when
+      //    localStorage remembers a shipped ticket from another filter (regression: toAll bounce)
+      await page.evaluate((sid) => {
+        localStorage.setItem('wezdeck-last-ticket-collab', sid)
+      }, fixture.shippedId)
+      const mineTab = page.getByRole('radio', { name: /等你/ })
+      await mineTab.click()
+      await expect.poll(() => mineTab.getAttribute('aria-checked')).toBe('true')
+      const researchTab = page.getByRole('radio', { name: /调研/ })
+      await researchTab.click()
+      await expect
+        .poll(() => researchTab.getAttribute('aria-checked'))
+        .toBe('true')
       await page
         .locator(`[data-ticket="${fixture.researchId}"]`)
         .waitFor({ timeout: 10_000 })
@@ -296,7 +334,7 @@ describe.runIf(stack)(
       await sendReviewBtn.waitFor({ timeout: 5_000 })
       expect(await sendReviewBtn.innerText()).toContain('1')
 
-      // 6. Navigate to parent ticket -> parked Manager Session panel renders with Wake + composer
+      // 6. Navigate to parent ticket -> parked Manager Session panel + Ready-to-deliver checklist card render
       await page.goto(
         `${base}/zh/console/collab/${fixture.parentId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
       )
@@ -304,6 +342,20 @@ describe.runIf(stack)(
       await mgrPanel.waitFor({ timeout: 15_000 })
       await mgrPanel.getByTestId('ticket-manager-resume-button').waitFor()
       await mgrPanel.getByTestId('ticket-manager-composer').waitFor()
+      const deliveryCard = page.getByTestId('ticket-delivery-card')
+      await deliveryCard.waitFor({ timeout: 10_000 })
+      await deliveryCard.getByTestId('delivery-open-diff').waitFor()
+      await deliveryCard.getByTestId('delivery-confirm-button').waitFor()
+
+      // 7. Terminal shipped ticket must NOT offer "Start manager session"
+      await page.goto(
+        `${base}/zh/console/collab/${fixture.shippedId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
+      )
+      await page
+        .getByTestId('ticket-pane')
+        .getByText(`Shipped Ticket ${fixture.suffix}`)
+        .waitFor({ timeout: 15_000 })
+      expect(await page.getByTestId('ticket-manager-upgrade').count()).toBe(0)
 
       await context.close()
     }, 60_000)

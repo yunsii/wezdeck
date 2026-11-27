@@ -246,6 +246,20 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         if (action === 'session.restart' && args.fresh === true)
           followReply(target, reply)
         void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+        if (
+          action === 'key' &&
+          args.interrupt === true &&
+          reply &&
+          typeof reply === 'object' &&
+          'interrupted' in reply &&
+          typeof reply.interrupted === 'boolean'
+        ) {
+          if (reply.interrupted) toast(t`Turn interrupted`)
+          else
+            throw new Error(
+              t`Interrupt sent, but the agent has not confirmed it.`,
+            )
+        }
         trace('web-write', {
           id: target,
           op_id,

@@ -1,6 +1,7 @@
-// covers: web/src/relay/web-push.ts
+// covers: web/src/relay/web-push.ts web/src/lib/push-client.ts
 import { describe, expect, it } from 'vitest'
 
+import { isPushServiceError } from '#/lib/push-client'
 import {
   DEFAULT_PUSH_PREFS,
   base64UrlEncode,
@@ -184,5 +185,20 @@ describe('web-push (RFC 8291/8292 + noise suppression)', () => {
         new Set(),
       ).deliver,
     ).toBe(true)
+
+    // Another device in the foreground suppresses popups across all devices
+    expect(evaluatePushDelivery(sub, waitingEvent, new Set(), true)).toEqual({
+      deliver: true,
+      silent: true,
+      reason: 'other_device_foreground_badge_only',
+    })
+
+    // Push service error classifier
+    expect(
+      isPushServiceError(new Error('Registration failed - push service error')),
+    ).toBe(true)
+    expect(
+      isPushServiceError(new Error('Notification permission denied')),
+    ).toBe(false)
   })
 })

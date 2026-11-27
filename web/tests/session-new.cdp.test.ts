@@ -142,6 +142,7 @@ describe.runIf(attention && devicesFile && stack)(
       ).toBe(true)
       await prompt.fill('从手机开的新会话')
       if ((page.viewportSize()?.width ?? 0) < 768) await checkMobilePicker(page)
+      else await checkWideLayoutAndSelect(page)
       expect(await view.getByTestId('new-session-group-name').count()).toBe(0)
       const createButton = view.getByRole('button', { name: '创建会话' })
       await assertIconInline(createButton)
@@ -299,6 +300,63 @@ function initTestRepo(repo: string) {
       },
     },
   )
+}
+
+async function checkWideLayoutAndSelect(page: Page) {
+  const pane = page.getByTestId('session-pane')
+  const view = page.getByTestId('new-session-view')
+  const setup = view.getByTestId('new-session-setup')
+  const composer = view.getByTestId('new-session-composer')
+  const repository = view.getByRole('combobox', { name: '仓库' })
+
+  const paneRect = await pane.boundingBox()
+  const setupRect = await setup.boundingBox()
+  const composerRect = await composer.boundingBox()
+  const repoRect = await repository.boundingBox()
+  if (!paneRect || !setupRect || !composerRect || !repoRect)
+    throw new Error('Expected visible new-session layout boxes')
+
+  // Centered, constrained workbench: setup sits directly above the composer
+  // with symmetric left/right margins inside the right split pane (no void).
+  expect(composerRect.width).toBeLessThanOrEqual(680)
+  expect(composerRect.y - (setupRect.y + setupRect.height)).toBeLessThanOrEqual(
+    48,
+  )
+  const leftGap = composerRect.x - paneRect.x
+  const rightGap =
+    paneRect.x + paneRect.width - (composerRect.x + composerRect.width)
+  expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(4)
+
+  const agent = view.getByRole('combobox', { name: '智能体' })
+  if (await agent.count()) {
+    const agentRect = await agent.boundingBox()
+    if (!agentRect) throw new Error('Expected visible agent combobox')
+    expect(Math.abs(repoRect.y - agentRect.y)).toBeLessThanOrEqual(4)
+    expect(agentRect.x).toBeGreaterThanOrEqual(repoRect.x + repoRect.width)
+  }
+
+  // Opening the Select popup via mouse click must anchor below the trigger
+  // with matching width and left edge (alignItemWithTrigger=false).
+  await repository.click()
+  const listbox = page.getByRole('listbox')
+  await listbox.waitFor({ timeout: 5_000 })
+  const popupRect = await listbox.evaluate((el) => {
+    const popup = el.closest<HTMLElement>('[data-deck]') ?? el
+    const r = popup.getBoundingClientRect()
+    return {
+      x: r.x,
+      y: r.y,
+      width: r.width,
+      height: r.height,
+      hasDeck: popup.hasAttribute('data-deck'),
+    }
+  })
+  expect(popupRect.hasDeck).toBe(true)
+  expect(Math.abs(popupRect.width - repoRect.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(popupRect.x - repoRect.x)).toBeLessThanOrEqual(2)
+  expect(popupRect.y).toBeGreaterThanOrEqual(repoRect.y + repoRect.height)
+  await page.getByRole('option', { name: 'phone-repo' }).click()
+  await listbox.waitFor({ state: 'hidden' })
 }
 
 async function checkMobilePicker(page: Page) {

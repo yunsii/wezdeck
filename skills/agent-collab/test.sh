@@ -659,13 +659,12 @@ done
 [[ $api_ok -eq 1 ]] && ok "api outputs (8 commands + errors) validate against schema/"
 [[ $api_ok -eq 0 ]] && bad "api outputs validate against schema/"
 ref_obs="$("$run" api show --id "$id_obs" | jq -r '.reference')"
-check "api show reference: id, route, dir, run totals + last run + prompt + session, read commands" \
+check "api show reference: concise core metadata (id, route, dir, show command)" \
   bash -c 'r=$1; id=$2; grep -qx "\[wezdeck 工单\] obs ticket" <<<"$(head -1 <<<"$r")" &&
     grep -q "^id: $id · 类型 ticket" <<<"$r" && grep -q "^路由: ai-video-collection → wezdeck · 状态 " <<<"$r" &&
-    grep -q "^目录: .*/_data/$id/（ticket.md · meta.json · events.jsonl · runs/）" <<<"$r" &&
-    grep -q "^运行合计: 2 次 · .*缓存命中 66%" <<<"$r" && grep -q "^最近运行: run-.* · implement.* · 会话 resume/warm_cache · 触发 cli" <<<"$r" &&
-    grep -q "^初始消息: ticket api prompt --sha [0-9a-f]\{64\}" <<<"$r" && grep -q "^会话 worker: claude · " <<<"$r" &&
-    grep -q "^查看: ticket api show --id $id · " <<<"$r"' _ "$ref_obs" "$id_obs"
+    grep -q "^目录: .*/_data/$id/$" <<<"$r" &&
+    grep -qx "查看: ticket api show --id $id" <<<"$(tail -1 <<<"$r")" &&
+    [[ $(wc -l <<<"$r") -le 7 ]]' _ "$ref_obs" "$id_obs"
 met="$("$run" api metrics --window all --ticket "$id_obs")"
 check "metrics: sessions, reuse mix, cache hit, trigger, per-repo hit, per-reuse cost" \
   jq -e '.runs==2 and .sessions==1 and .by_reuse.resume.runs==1 and .reuse_reasons.warm_cache==1 and .cache_hit_rate==0.6566 and .by_trigger.cli==2 and .by_backend.claude.runs==2

@@ -18,22 +18,83 @@
 /* Single-container skeleton pulse (<SkeletonGroup>): animate opacity on ONE
    wrapper around static <Skeleton> bars rather than per-bar animate-pulse
    (which spawns N GPU layers) or background-color keyframes (which re-rasterize
-   the entire HiDPI scroller on CPU every vsync). GPU composites one texture's
-   alpha uniform at 0 px repaint while `contain: layout paint` isolates it
-   inside its card away from persistent headers. */
+   the entire HiDPI scroller on CPU every vsync). Starting at 0.32 and rising to
+   1 over 1.7 s gives a clear, smooth breath on a single GPU layer with 0 delay
+   and no parent/child layer handoff.
+   `content-enter` settles resolved text/code from 0.35 → 1 inside a solid
+   opacity-1 card surface so swapping skeleton → content never dips to dark. */
 @keyframes skeleton-pulse {
   0%,
   100% {
-    opacity: 1;
+    opacity: 0.32;
   }
   50% {
-    opacity: 0.52;
+    opacity: 1;
   }
 }
 
+@keyframes content-enter {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes content-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes content-slide-forward {
+  from {
+    opacity: 0.5;
+    transform: translateX(8px);
+  }
+}
+
+@keyframes content-slide-back {
+  from {
+    opacity: 0.5;
+    transform: translateX(-8px);
+  }
+}
+
+.skeleton-bar {
+  background: color-mix(in srgb, var(--brand-text) 13%, transparent);
+}
+
 .skeleton-pulse {
-  animation: skeleton-pulse 1.8s ease-in-out infinite;
+  animation: skeleton-pulse 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   contain: layout paint;
+}
+
+.content-enter {
+  animation: content-enter 140ms var(--ease-enter) backwards;
+}
+
+.content-exit {
+  animation: content-exit 110ms var(--ease-exit) both;
+}
+
+.content-slide-forward {
+  animation: content-slide-forward 150ms var(--ease-enter) backwards;
+}
+
+.content-slide-back {
+  animation: content-slide-back 150ms var(--ease-enter) backwards;
+}
+
+/* Chunked code viewer slices: off-screen lines skip style/layout/paint until
+   scrolled near the viewport, keeping 300+ line highlighted files instant. */
+.code-chunk {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1260px;
 }
 
 /* Chat: what just arrived slides in. */
@@ -99,6 +160,10 @@
 @media (prefers-reduced-motion: reduce) {
   .led-running circle,
   .skeleton-pulse,
+  .content-enter,
+  .content-exit,
+  .content-slide-forward,
+  .content-slide-back,
   .chat-in {
     animation: none;
   }

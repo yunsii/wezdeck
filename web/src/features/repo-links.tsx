@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Sheet } from '#/components/ui/sheet'
+import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { copyText } from '#/lib/clipboard'
 import { trace } from '#/lib/client-trace'
 import { hostRead } from '#/lib/runtime-client'
@@ -137,6 +138,30 @@ function RepoLinkRow({
   )
 }
 
+function RepoLinksSkeleton() {
+  const { t } = useLingui()
+  return (
+    <div
+      role="status"
+      aria-label={t`Loading…`}
+      data-testid="repo-links-skeleton"
+    >
+      <SkeletonGroup className="grid gap-2">
+        <Skeleton className="h-3 w-20" />
+        {[0, 1, 2, 3].map((row) => (
+          <div
+            key={row}
+            className="grid min-h-12 content-center gap-1.5 rounded-xl bg-brand-surface px-3.5 py-2"
+          >
+            <Skeleton className="h-3 w-2/5" />
+            <Skeleton className="h-2.5 w-3/5" />
+          </div>
+        ))}
+      </SkeletonGroup>
+    </div>
+  )
+}
+
 export function RepoLinksSheet({
   open,
   onOpenChange,
@@ -245,6 +270,7 @@ export function RepoLinksSheet({
       onOpenChange={onOpenChange}
       title={title}
       testId="repo-links-sheet"
+      className="h-[min(30rem,80dvh)]"
     >
       <div data-testid="repo-links-body" className="grid gap-3 px-4">
         <div className="flex items-center gap-2">
@@ -305,9 +331,7 @@ export function RepoLinksSheet({
             {String(error.message)}
           </p>
         ) : !reply ? (
-          <p className="py-6 text-center text-caption text-brand-muted">
-            {t`Loading…`}
-          </p>
+          <RepoLinksSkeleton />
         ) : flatOrdered.length === 0 ? (
           <div className="grid gap-2 py-4 text-center">
             <p className="text-caption text-brand-muted">

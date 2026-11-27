@@ -8,7 +8,7 @@ function Skeleton({ className, ...props }: React.ComponentProps<'span'>) {
       // Static bar — always group bars inside ONE <SkeletonGroup> so the GPU
       // composites a single opacity layer at 0 CPU repaint instead of N layers
       // per bar or full-scroller background-color re-rasterization.
-      className={cn('block rounded bg-brand-soft', className)}
+      className={cn('skeleton-bar block rounded', className)}
       {...props}
     />
   )

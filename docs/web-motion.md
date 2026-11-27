@@ -31,6 +31,15 @@ froze ~140 ms and jumped); travel stays small (≤ 8 px). Verify with
 `grey-step`, `snap`, `row-fill` and the other findings fail the run, `jank`
 (main-thread stalls) is reported as a warning.
 
+Reserve the create button’s final space in session and ticket toolbars from
+the first render. Hide and disable it until write access is confirmed so
+the search field and neighboring controls keep their positions.
+The session detail title row also reserves the avatar and action slots
+while session data loads. Quota alerts can add a row when they are needed.
+The session list skeleton uses the loaded repository heading and row heights.
+The repository links sheet opens at its final viewport-bounded height and
+shows link-shaped placeholders until the response arrives.
+
 ## Compositor layer discipline (Chromium HiDPI)
 
 On fractional-DPR displays (`1.25×` / `2.625×`, Chrome 152 / Android tablet Vulkan + Skia Graphite), Chromium `CompositeAfterPaint` promotes any CSS `opacity` or `transform` animation (`ActiveOpacityAnimation` / `ActiveTransformAnimation`) to a dedicated GPU layer and then overlap-promotes (`Overlap`) adjacent rows, dividers, and scrolling containers into temporary GPU squashing layers. Creating or destroying those layers toggles text between LCD subpixel and grayscale antialiasing and re-snaps fractional coordinates, reading as multi-row or title-bar flicker (2026-11-27).
@@ -38,9 +47,9 @@ On fractional-DPR displays (`1.25×` / `2.625×`, Chrome 152 / Android tablet Vu
 Enforced rules:
 - **Ambient status indicators** (`.led-running`): animate paint-only SVG `fill-opacity` on `.led-running circle`, never CSS `opacity` on the `<svg>` or stacked `animate-[pulse]`.
 - **Split-list row states** (`.list-row` / `::before`): use paint-only `background-color` transitions, never `opacity` transitions on pseudo-elements.
-- **Loading skeletons** (`components/ui/skeleton.tsx`, `session-skeleton.tsx`, `host-file-body.tsx`): keep individual `<Skeleton>` bars static (`bg-brand-soft`) and wrap each skeleton block in ONE `<SkeletonGroup>` (`.skeleton-pulse`: `opacity 1 ↔ 0.52` + `contain: layout paint`) inside a static outer card, with screen-reader-only `aria-label` (no visible `Loading…` text) and a 120 ms modal delay (`host-file-sheet.tsx`) without `mt-auto` bottom-pinned bars — animating per-bar `opacity` spawns N GPU layers, and animating `background-color` re-rasterizes the full HiDPI scroller (7M+ physical px) every vsync; a single contained group composites 1 GPU texture at 0 px repaint without overlapping headers.
-- **Headers & fullscreen readers** (`host-file-sheet.tsx`, `sheet.tsx`): never mount `animate-spin` (`ActiveTransformAnimation`) inside a persistent title bar; open opaque `fullscreen` sheets directly at `opacity: 1` sized to `h-full` with an integer `min-h-16` (64 px) header (no hidden `Drawer.Backdrop`, no full-viewport `transition-opacity`, no fractional scroller top).
-- **Automated guard**: `split-list-stability.cdp.test.ts` queries CDP `LayerTree.compositingReasons` across `idle ↔ running` switches and fails if any `ActiveOpacityAnimation` or `ActiveTransformAnimation` layer appears.
+- **Loading skeletons & file reader handoff** (`components/ui/skeleton.tsx`, `components/ui/content-reveal.tsx`, `host-file-body.tsx`, `host-file-sheet.tsx`, `lib/highlight.ts`): keep individual `<Skeleton>` bars static (`.skeleton-bar`, 13% text tint) and wrap each block in ONE `<SkeletonGroup>` (`.skeleton-pulse`: `0.32 → 1 → 0.32`, `1.7s cubic-bezier(0.4, 0, 0.6, 1)`, 0 delay, `contain: layout paint`) inside a solid `opacity: 1` card matching resolved width/padding, with screen-reader-only `aria-label`. Gate modal skeletons with `useDelayedLoading` (`150 ms` delay, `240 ms` min hold), crossfade exiting skeletons (`110 ms`) against incoming content (`140 ms`, or ±8 px directional glide on nested file stack hops) via `<ContentReveal>`, prefetch host files + Shiki tokens on pointer/focus/touch via `HostFileContext.prefetchFile`, keep header action buttons mounted (`disabled` until data arrives) + `[scrollbar-gutter:stable]` for 0 CLS, and run Shiki syntax highlighting off the main thread in `highlight.worker.ts` with `startTransition` + 60-line `.code-chunk` (`content-visibility: auto`) to eliminate 180–280 ms main-thread stalls.
+- **Headers & sheets** (`host-file-sheet.tsx`, `sheet.tsx`): never mount `animate-spin` (`ActiveTransformAnimation`) inside a persistent title bar; opaque `fullscreen` sheets glide via short pure `translateY` (`200 ms` enter / `130 ms` exit, locked at `opacity: 1`, retaining last stack item across close) sized to `h-full` with an integer `min-h-16` (64 px) header (no hidden `Drawer.Backdrop`, no full-viewport `transition-opacity`, no fractional scroller top). Desktop non-fullscreen dialogs use integer `translate-y-2` + `opacity` (`180 ms` enter / `110 ms` exit) with zero `scale(...)` so HiDPI text never blurs mid-transition.
+- **Automated guards**: `split-list-stability.cdp.test.ts` queries CDP `LayerTree.compositingReasons` across `idle ↔ running` switches and fails if any `ActiveOpacityAnimation` or `ActiveTransformAnimation` layer appears; `host-file-viewer.cdp.test.ts` verifies integer `scrollerTop >= 64`, zero lingering animated GPU layers after sheet settle, `< 0.001` CLS, and no longtask stall across open → nested code hop → back → close. `<ContentReveal>` + `useDelayedLoading` also back `ticket-diff.tsx`, `mermaid-block.tsx`, and `ticket-run-chat.tsx`.
 
 ## Split switches
 

@@ -198,6 +198,7 @@ export async function dispatchPushEmit(
   const entries = await storage.list<StoredPushSub>({ prefix: PUSH_PREFIX })
   if (entries.size === 0) return
 
+  const anyDeviceForeground = focusedByDevice.size > 0
   let sent = 0
   let suppressed = 0
   let pruned = 0
@@ -205,7 +206,12 @@ export async function dispatchPushEmit(
   await Promise.all(
     [...entries.entries()].map(async ([storageKey, sub]) => {
       const focused = focusedByDevice.get(sub.device_id) ?? new Set<string>()
-      const decision = evaluatePushDelivery(sub, event, focused)
+      const decision = evaluatePushDelivery(
+        sub,
+        event,
+        focused,
+        anyDeviceForeground,
+      )
       if (!decision.deliver) {
         suppressed++
         return

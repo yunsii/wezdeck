@@ -1,6 +1,7 @@
-// covers: web/src/features/session-restart.tsx web/src/features/session-key-panel.tsx
+// covers: web/src/features/session-header.tsx web/src/features/session-restart.tsx web/src/features/session-key-panel.tsx
 // covers: web/src/features/session-handoff.tsx
 // covers: native/wezdeck-wsl/session_restart.go native/wezdeck-wsl/session_handoff.go
+// covers: native/wezdeck-wsl/session_interrupt.go web/src/features/session-actions.tsx
 import { execFileSync } from 'node:child_process'
 import {
   mkdtempSync,
@@ -52,6 +53,35 @@ async function checkComposerInset(page: Page) {
   }
 }
 
+async function checkTitleGeometry(browser: Browser, page: Page) {
+  const firstPaint = await browser.newPage({
+    javaScriptEnabled: false,
+    locale: 'zh-CN',
+  })
+  const geometry = (target: Page) =>
+    target.evaluate(() => {
+      const header = document.querySelector('[data-testid=session-header]')!
+      const title = document.querySelector('[data-testid=session-title]')!
+      return {
+        height: header.getBoundingClientRect().height,
+        titleWidth: title.getBoundingClientRect().width,
+      }
+    })
+  try {
+    for (const width of [1280, 390]) {
+      const viewport = { width, height: 800 }
+      await firstPaint.setViewportSize(viewport)
+      await firstPaint.goto(page.url())
+      await page.setViewportSize(viewport)
+      await expect
+        .poll(() => geometry(page))
+        .toEqual(await geometry(firstPaint))
+    }
+  } finally {
+    await firstPaint.close()
+  }
+}
+
 async function checkDesktopShortcuts(page: Page) {
   expect(await page.locator('[data-restart=new] kbd').isVisible()).toBe(true)
   expect(
@@ -81,6 +111,52 @@ async function checkWebRestartKey(
   await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
   expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
   expect(page.url()).toBe(url)
+}
+
+async function checkInterrupt(
+  page: Page,
+  tmux: (...args: Array<string>) => string,
+  session: { tmux_socket: string; status: string; ts: number },
+) {
+  tmux(
+    'new-session',
+    '-d',
+    '-s',
+    'interrupt',
+    'python3',
+    '-u',
+    '-c',
+    'import os, signal, tty\ntty.setcbreak(0)\nsignal.signal(signal.SIGINT, lambda *_: print("⎿  Interrupted · What should Antigravity CLI do instead?"))\nwhile os.read(0, 1): pass',
+  )
+  const interruptEntry = {
+    ...session,
+    session_id: 'interrupt-s1',
+    tmux_session: 'interrupt',
+    tmux_pane: tmux(
+      'display-message',
+      '-p',
+      '-t',
+      'interrupt',
+      '#{pane_id}',
+    ).trim(),
+    agent_name: 'agy',
+    turn_started: Date.now(),
+  }
+  writeFileSync(
+    attention,
+    JSON.stringify({ entries: { 'interrupt-s1': interruptEntry } }),
+  )
+  await page.goto(`${base}/zh/console/sessions/interrupt-s1`)
+  const actions = page.getByTestId('session-actions-button')
+  await actions.click()
+  await page.getByRole('button', { name: '中断', exact: true }).click()
+  const interruption = page.locator('form').getByText('已中断', { exact: true })
+  await interruption.waitFor()
+  await actions.click()
+  await page.getByTestId('session-actions-sheet').waitFor()
+  expect(
+    await page.getByRole('button', { name: '中断', exact: true }).count(),
+  ).toBe(0)
 }
 
 describe.runIf(attention && devicesFile && stack)(
@@ -140,7 +216,7 @@ describe.runIf(attention && devicesFile && stack)(
       tmux('kill-server')
     })
 
-    it('asks first, then restarts the pane or starts fresh and follows', async () => {
+    const approvedPage = async () => {
       const context = await browser.newContext({
         viewport: { width: 1280, height: 800 },
         locale: 'zh-CN',
@@ -161,10 +237,30 @@ describe.runIf(attention && devicesFile && stack)(
       )
       await page.getByRole('button', { name: '重新检查' }).click()
       await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
+      return { context, page }
+    }
+
+    it('confirms an Agy interrupt and clears the working state', async () => {
+      const { context, page } = await approvedPage()
+      try {
+        await checkInterrupt(page, tmux, entry())
+      } finally {
+        await context.close()
+        writeFileSync(
+          attention,
+          JSON.stringify({ entries: { 'restart-s1': entry() } }),
+        )
+      }
+    }, 45_000)
+
+    it('asks first, then restarts the pane or starts fresh and follows', async () => {
+      const { context, page } = await approvedPage()
 
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
       await checkComposerInset(page)
       await page.getByTestId('session-statusbar').waitFor()
+      await checkTitleGeometry(browser, page)
+      await page.setViewportSize({ width: 390, height: 844 })
       const layout = () =>
         page.evaluate(() => {
           const field = document.querySelector('[data-text-field="true"]')

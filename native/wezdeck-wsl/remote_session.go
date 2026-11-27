@@ -390,9 +390,13 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		if e.TmuxPane == "" {
 			continue
 		}
-		_, cwd, cmd, index, profile, alive := paneState(e)
+		_, cwd, cmd, index, profile, interrupt, alive := paneStateWithInterrupt(e)
 		if !alive {
 			continue
+		}
+		if e.interrupted(interrupt) {
+			e.Status = "idle"
+			e.RunningKind = ""
 		}
 		card := sessionCard{ID: id, Name: e.AgentName, Window: e.WindowName, Cwd: cwd, Branch: e.GitBranch,
 			Status: e.Status, WaitingKind: e.WaitingKind, LastPrompt: e.LastUserPrompt, TS: e.TS, Agent: "agent",
@@ -646,6 +650,8 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	entries := liveSessionsFrom(active, recent)
 	e, ok := entries[a.ID]
 	path, agent := "", ""
+	cmd, profile, paneAlive := "", "", false
+	interrupted := false
 	readOnly := false
 	if !ok {
 		if next := replacementForArchived(a.ID, recent, entries); next != "" {
@@ -675,10 +681,15 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		}
 	} else {
 		path, agent = findTranscript(e.SessionID)
-		if path != "" {
-			if _, _, cmd, _, profile, alive := paneState(e); alive && !paneOwnsSessionAgent(cmd, profile, agent) {
-				path, agent = "", ""
-			}
+		var interrupt string
+		_, _, cmd, _, profile, interrupt, paneAlive = paneStateWithInterrupt(e)
+		interrupted = paneAlive && e.interrupted(interrupt)
+		if interrupted {
+			e.Status = "idle"
+			e.RunningKind = ""
+		}
+		if path != "" && paneAlive && !paneOwnsSessionAgent(cmd, profile, agent) {
+			path, agent = "", ""
 		}
 	}
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
@@ -686,6 +697,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	out := map[string]any{"v": 1, "ok": true, "id": a.ID, "status": e.Status, "ts": e.TS, "waiting_kind": e.WaitingKind, "restart_pending": e.RestartPending,
 		"running_kind": e.RunningKind, "background": enrichBackground(backgroundOf(e), nil, e.SessionID), "agent": "agent",
 		"name": e.AgentName, "window": e.WindowName, "branch": e.GitBranch}
+	if interrupted {
+		out["interrupted"] = true
+	}
 	// mid-turn progress from hooks, not the screen: when the turn / the
 	// compaction began (the phone ticks the elapsed time itself)
 	if e.Status == "running" || e.Status == "waiting" {
@@ -699,7 +713,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 	if path == "" {
 		// no transcript yet (a fresh session after /new): the pane's command
 		// or managed profile still says which agent it is
-		if _, _, cmd, _, profile, alive := paneState(e); alive {
+		if paneAlive {
 			if family := paneAgentFamily(e, cmd, profile); family != "" {
 				agent = family
 				out["agent"] = agent

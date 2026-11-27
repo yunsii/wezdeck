@@ -73,13 +73,23 @@ describe.runIf(stack)('Me › Notifications & /relay/push/* endpoints', () => {
     )
     expect(unsubRes.status).toBe(200)
 
-    // 3. Notifications page renders cleanly under 我的 › 通知
+    // 3. Notifications page renders cleanly under 我的 › 通知 without hydration errors
     if (!browser) throw new Error('browser not launched')
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
       locale: 'zh-CN',
+      permissions: ['notifications'],
     })
     const page = await context.newPage()
+    const pageErrors: Array<string> = []
+    page.on('pageerror', (err) => pageErrors.push(err.message))
+    await page.addInitScript(() => {
+      Object.defineProperty(Notification, 'permission', {
+        get: () => 'granted',
+        configurable: true,
+      })
+      Notification.requestPermission = () => Promise.resolve('granted')
+    })
     await page.goto(
       `${base}/zh/console/me/notifications?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
     )
@@ -88,7 +98,8 @@ describe.runIf(stack)('Me › Notifications & /relay/push/* endpoints', () => {
     const text = await panel.innerText()
     expect(text).toContain('等待确认或回复')
     expect(text).toContain('拆单提案待批')
-    expect(text).toContain('电脑前活跃时静默弹窗')
+    expect(text).toContain('任意端活跃时静默弹窗')
+    expect(pageErrors).toEqual([])
     await context.close()
-  })
+  }, 30_000)
 })

@@ -81,6 +81,9 @@ describe.runIf(devicesFile && stack)('New ticket from the phone', () => {
 
     await page.getByTestId('new-ticket').click()
     const sheet = page.getByTestId('new-ticket-sheet')
+    // Default conversational goal box renders first; switch to Structured form for full 5-field check
+    await sheet.getByTestId('ticket-new-goal').waitFor()
+    await sheet.getByRole('radio', { name: '结构化单' }).click()
     // Base UI Select: open the trigger, pick from the popup (portalled to body)
     const pick = async (index: number, key: string) => {
       await sheet.getByRole('combobox').nth(index).click()

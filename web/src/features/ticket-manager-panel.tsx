@@ -130,6 +130,8 @@ function ManagerComposer({
   )
 }
 
+const TERMINAL_STATUSES = new Set(['shipped', 'closed', 'rejected'])
+
 export function TicketManagerPanel({
   ticket,
   poll,
@@ -203,9 +205,17 @@ export function TicketManagerPanel({
     },
   })
 
-  // Child and read-only research tickets don't start their own top-level manager.
+  const isTerminal = TERMINAL_STATUSES.has(ticket.status ?? '')
+
+  // Child, read-only research, and terminal (shipped/closed/rejected) tickets
+  // don't offer upgrading to a new Manager Session.
   if (!ms) {
-    if (!canWrite || ticket.kind === 'child' || ticket.kind === 'research') {
+    if (
+      !canWrite ||
+      isTerminal ||
+      ticket.kind === 'child' ||
+      ticket.kind === 'research'
+    ) {
       return null
     }
     return (
@@ -259,7 +269,7 @@ export function TicketManagerPanel({
             </span>
           ) : null}
         </div>
-        {canWrite ? (
+        {canWrite && (!isTerminal || isLive) ? (
           <div className="flex items-center gap-1.5">
             {isLive ? (
               <Button
@@ -331,7 +341,7 @@ export function TicketManagerPanel({
         </div>
       )}
 
-      {canWrite ? (
+      {canWrite && !isTerminal ? (
         <ManagerComposer
           isLive={isLive}
           draft={draft}

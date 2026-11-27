@@ -126,7 +126,7 @@ describe.runIf(attention && devicesFile)(
       const marker = `SMOKE_OK_${Date.now()}`
       const box = page.getByLabel('发给 Agent 的消息')
       await box.fill(marker)
-      await page.getByRole('button', { name: '发送' }).click()
+      await page.getByRole('button', { name: '发送', exact: true }).click()
       await expect.poll(() => box.inputValue(), { timeout: 2_000 }).toBe('')
       const bubble = page.locator('[data-pending]', { hasText: marker })
       await bubble.waitFor({ timeout: 2_000 })

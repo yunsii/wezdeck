@@ -17,12 +17,14 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
+import { ContentReveal } from '#/components/ui/content-reveal'
 import { Sheet } from '#/components/ui/sheet'
 import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { Textarea } from '#/components/ui/textarea'
 import { trace } from '#/lib/client-trace'
 import { collabKey } from '#/lib/collab-query'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
+import { useDelayedLoading } from '#/lib/use-delayed-loading'
 import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
 import { useDeviceState } from './device-state'
@@ -78,9 +80,9 @@ function DiffLoadingSkeleton() {
       role="status"
       aria-live="polite"
       aria-label={t`Loading diff…`}
-      className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-3 py-5 sm:px-6"
+      className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-6 md:py-6"
     >
-      <div className="flex flex-1 flex-col rounded-2xl border border-brand-edge bg-brand-surface p-5">
+      <div className="rounded-2xl border border-brand-edge bg-brand-surface p-5">
         <SkeletonGroup className="flex flex-col gap-4">
           <div className="border-b border-brand-edge pb-3">
             <Skeleton className="h-5 w-48 rounded" />
@@ -214,6 +216,56 @@ function DiffFileCard({
   )
 }
 
+function DiffSheetActions({
+  canWrite,
+  noteCount,
+  sending,
+  fetching,
+  onSend,
+  onRefresh,
+}: {
+  canWrite: boolean
+  noteCount: number
+  sending: boolean
+  fetching: boolean
+  onSend: () => void
+  onRefresh: () => void
+}) {
+  const { t } = useLingui()
+  return (
+    <div className="flex items-center gap-1">
+      {canWrite && noteCount > 0 ? (
+        <Button
+          variant="solid"
+          size="none"
+          type="button"
+          data-testid="ticket-diff-send-review"
+          disabled={sending}
+          onClick={onSend}
+          className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
+        >
+          <Send size={13} aria-hidden />
+          <span>{t`Send review (${noteCount})`}</span>
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        size="none"
+        type="button"
+        aria-label={t`Refresh`}
+        title={t`Refresh`}
+        disabled={fetching}
+        onClick={onRefresh}
+        className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
+      >
+        {/* Static icon while fetching: animate-spin inside a persistent modal
+            header spawns an ActiveTransformAnimation layer that flickers title text. */}
+        <RefreshCw size={14} aria-hidden />
+      </Button>
+    </div>
+  )
+}
+
 export function TicketDiffSheet({
   ticketId,
   title,
@@ -286,6 +338,7 @@ export function TicketDiffSheet({
   })
 
   const data = diffQuery.data
+  const showSkeleton = useDelayedLoading(diffQuery.isPending, ticketId)
   const fileCount = data?.total_files ?? 0
   const subtitle = (
     <div className="flex min-w-0 items-center gap-2 font-mono text-meta text-brand-muted tabular-nums">
@@ -312,127 +365,110 @@ export function TicketDiffSheet({
       subtitle={subtitle}
       testId="ticket-diff-sheet"
       actions={
-        <div className="flex items-center gap-1">
-          {canWrite && noteCount > 0 ? (
-            <Button
-              variant="solid"
-              size="none"
-              type="button"
-              data-testid="ticket-diff-send-review"
-              disabled={sendReviewMutation.isPending}
-              onClick={() => sendReviewMutation.mutate()}
-              className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2.5 text-meta"
-            >
-              <Send size={13} aria-hidden />
-              <span>{t`Send review (${noteCount})`}</span>
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="none"
-            type="button"
-            aria-label={t`Refresh`}
-            title={t`Refresh`}
-            disabled={diffQuery.isFetching}
-            onClick={() => void diffQuery.refetch()}
-            className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
-          >
-            <RefreshCw
-              size={14}
-              aria-hidden
-              className={cn(diffQuery.isFetching && 'animate-spin')}
-            />
-          </Button>
-        </div>
+        <DiffSheetActions
+          canWrite={canWrite}
+          noteCount={noteCount}
+          sending={sendReviewMutation.isPending}
+          fetching={diffQuery.isFetching}
+          onSend={() => sendReviewMutation.mutate()}
+          onRefresh={() => void diffQuery.refetch()}
+        />
       }
     >
       <div className="flex min-h-full w-full min-w-0 flex-col">
-        {diffQuery.isPending ? (
-          <DiffLoadingSkeleton />
-        ) : diffQuery.isError ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
-            <p
-              role="alert"
-              className="w-full rounded-2xl border border-brand-error/30 bg-brand-error/10 p-5 text-caption text-brand-error"
-            >
-              {diffQuery.error instanceof Error
-                ? diffQuery.error.message
-                : String(diffQuery.error)}
-            </p>
-          </div>
-        ) : !data || data.repos.length === 0 ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
-            <p className="text-center text-caption text-brand-muted">
-              {t`No active worktree diff is available for this ticket.`}
-            </p>
-          </div>
-        ) : (
-          <div className="mx-auto grid w-full max-w-5xl min-w-0 grid-cols-[minmax(0,1fr)] gap-5 px-3 py-4 sm:px-6 md:py-6">
-            {data.truncated ? (
+        <ContentReveal
+          key={ticketId}
+          loading={showSkeleton}
+          pending={diffQuery.isPending}
+          skeleton={<DiffLoadingSkeleton />}
+        >
+          {diffQuery.isError ? (
+            <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
               <p
-                role="status"
-                className="rounded-xl bg-brand-waiting/10 px-3.5 py-2 text-meta text-brand-text"
+                role="alert"
+                className="w-full rounded-2xl border border-brand-error/30 bg-brand-error/10 p-5 text-caption text-brand-error"
               >
-                {t`Large diff was capped for mobile viewing.`}
+                {diffQuery.error instanceof Error
+                  ? diffQuery.error.message
+                  : String(diffQuery.error)}
               </p>
-            ) : null}
-            {data.repos.map((repo) => (
-              <section
-                key={`${repo.repo}-${repo.ticket_id}`}
-                className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5"
-              >
-                <div className="flex flex-wrap items-center gap-2 px-1">
-                  <span className="text-body font-semibold text-brand-text">
-                    {repo.repo}
-                  </span>
-                  {repo.branch ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-brand-edge bg-brand-surface px-2 py-0.5 font-mono text-meta text-brand-muted">
-                      <GitBranch size={12} aria-hidden />
-                      {repo.branch}
+            </div>
+          ) : !data || data.repos.length === 0 ? (
+            <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
+              <p className="text-center text-caption text-brand-muted">
+                {t`No active worktree diff is available for this ticket.`}
+              </p>
+            </div>
+          ) : (
+            <div className="mx-auto grid w-full max-w-5xl min-w-0 grid-cols-[minmax(0,1fr)] gap-5 px-3 py-4 sm:px-6 md:py-6">
+              {data.truncated ? (
+                <p
+                  role="status"
+                  className="rounded-xl bg-brand-waiting/10 px-3.5 py-2 text-meta text-brand-text"
+                >
+                  {t`Large diff was capped for mobile viewing.`}
+                </p>
+              ) : null}
+              {data.repos.map((repo) => (
+                <section
+                  key={`${repo.repo}-${repo.ticket_id}`}
+                  className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2.5"
+                >
+                  <div className="flex flex-wrap items-center gap-2 px-1">
+                    <span className="text-body font-semibold text-brand-text">
+                      {repo.repo}
                     </span>
-                  ) : null}
-                  {repo.base ? (
-                    <span className="font-mono text-meta text-brand-label">
-                      base {repo.base}
+                    {repo.branch ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-brand-edge bg-brand-surface px-2 py-0.5 font-mono text-meta text-brand-muted">
+                        <GitBranch size={12} aria-hidden />
+                        {repo.branch}
+                      </span>
+                    ) : null}
+                    {repo.base ? (
+                      <span className="font-mono text-meta text-brand-label">
+                        base {repo.base}
+                      </span>
+                    ) : null}
+                    <span className="ml-auto flex items-center gap-1.5 font-mono text-meta tabular-nums">
+                      <span className="text-brand-done">+{repo.additions}</span>
+                      <span className="text-brand-error">
+                        -{repo.deletions}
+                      </span>
                     </span>
-                  ) : null}
-                  <span className="ml-auto flex items-center gap-1.5 font-mono text-meta tabular-nums">
-                    <span className="text-brand-done">+{repo.additions}</span>
-                    <span className="text-brand-error">-{repo.deletions}</span>
-                  </span>
-                </div>
-                {repo.note ? (
-                  <p className="rounded-xl border border-brand-edge bg-brand-surface px-3.5 py-2.5 text-caption text-brand-muted">
-                    {repo.note}
-                  </p>
-                ) : repo.files.length === 0 ? (
-                  <p className="rounded-xl border border-brand-edge bg-brand-surface px-3.5 py-2.5 text-caption text-brand-muted">
-                    {t`Working tree matches base commit (no diff).`}
-                  </p>
-                ) : (
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
-                    {repo.files.map((file, idx) => {
-                      const fileKey = `${repo.repo}/${file.path}`
-                      return (
-                        <DiffFileCard
-                          key={file.path}
-                          file={file}
-                          repoName={repo.repo}
-                          defaultOpen={idx < 10}
-                          canAnnotate={canWrite}
-                          note={notes[fileKey] ?? ''}
-                          onNoteChange={(val) =>
-                            setNotes((prev) => ({ ...prev, [fileKey]: val }))
-                          }
-                        />
-                      )
-                    })}
                   </div>
-                )}
-              </section>
-            ))}
-          </div>
-        )}
+                  {repo.note ? (
+                    <p className="rounded-xl border border-brand-edge bg-brand-surface px-3.5 py-2.5 text-caption text-brand-muted">
+                      {repo.note}
+                    </p>
+                  ) : repo.files.length === 0 ? (
+                    <p className="rounded-xl border border-brand-edge bg-brand-surface px-3.5 py-2.5 text-caption text-brand-muted">
+                      {t`Working tree matches base commit (no diff).`}
+                    </p>
+                  ) : (
+                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
+                      {repo.files.map((file, idx) => {
+                        const fileKey = `${repo.repo}/${file.path}`
+                        return (
+                          <DiffFileCard
+                            key={file.path}
+                            file={file}
+                            repoName={repo.repo}
+                            defaultOpen={idx < 10}
+                            canAnnotate={canWrite}
+                            note={notes[fileKey] ?? ''}
+                            onNoteChange={(val) =>
+                              setNotes((prev) => ({ ...prev, [fileKey]: val }))
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </section>
+              ))}
+            </div>
+          )}
+        </ContentReveal>
       </div>
     </Sheet>
   )

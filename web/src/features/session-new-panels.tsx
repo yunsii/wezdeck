@@ -6,6 +6,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
+import { cn } from '#/lib/utils'
 import { trace } from '#/lib/client-trace'
 import { AgentAvatar } from './agent-avatar'
 import type { AgentProfile } from './agent-profiles'
@@ -223,100 +224,32 @@ export function NewSessionSetupCard({
     (option) => option.value === agentProfile,
   )
   return (
-    <section className="grid gap-3 rounded-2xl bg-brand-surface p-4">
-      <div className="grid gap-1 text-caption text-brand-muted">
-        <span>{t`Repository`}</span>
-        {mobile ? (
-          <Button
-            variant="plain"
-            type="button"
-            role="combobox"
-            data-new-session-picker-trigger="repo"
-            aria-label={t`Repository`}
-            aria-haspopup="listbox"
-            aria-expanded={picker === 'repo'}
-            disabled={sending || Boolean(group) || repositories.length < 2}
-            onClick={() => onOpenPicker('repo')}
-            className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <FolderGit2
-                size={20}
-                aria-hidden
-                className="shrink-0 text-brand-label"
-              />
-              <span className="min-w-0 truncate">{repoLabel}</span>
-            </span>
-            <ChevronRight
-              size={16}
-              aria-hidden
-              className="shrink-0 text-brand-label"
-            />
-          </Button>
-        ) : (
-          <Select
-            value={repo}
-            disabled={sending || Boolean(group) || repositories.length < 2}
-            onValueChange={onRepo}
-            size="lg"
-            aria-label={t`Repository`}
-            options={
-              group
-                ? [
-                    {
-                      value: repo,
-                      label: repoLabel,
-                      icon: <FolderGit2 size={20} />,
-                    },
-                  ]
-                : repositories.map(({ root, label }) => ({
-                    value: root,
-                    label,
-                    icon: <FolderGit2 size={20} />,
-                  }))
-            }
-          />
-        )}
-      </div>
-
-      {nameGroup ? (
-        <label className="grid gap-1 text-caption text-brand-muted">
-          {t`Group name`}
-          <Input
-            value={resolvedGroupName}
-            onChange={(event) => onGroupName(event.target.value)}
-            disabled={sending}
-            maxLength={60}
-            data-testid="new-session-group-name"
-          />
-        </label>
-      ) : group ? (
-        <p className="truncate text-caption text-brand-muted">{group}</p>
-      ) : null}
-
-      {showAgents ? (
-        <div className="grid gap-1 text-caption text-brand-muted">
-          <span>{t`Agent`}</span>
+    <section data-testid="new-session-setup" className="grid gap-3">
+      <div
+        className={cn('grid grid-cols-1 gap-3', showAgents && 'sm:grid-cols-2')}
+      >
+        <div className="grid min-w-0 gap-1.5 text-caption text-brand-muted">
+          <span className="px-0.5">{t`Repository`}</span>
           {mobile ? (
             <Button
               variant="plain"
               type="button"
               role="combobox"
-              data-new-session-picker-trigger="agent"
-              aria-label={t`Agent`}
+              data-new-session-picker-trigger="repo"
+              aria-label={t`Repository`}
               aria-haspopup="listbox"
-              aria-expanded={picker === 'agent'}
-              disabled={sending}
-              onClick={() => onOpenPicker('agent')}
-              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
+              aria-expanded={picker === 'repo'}
+              disabled={sending || Boolean(group) || repositories.length < 2}
+              onClick={() => onOpenPicker('repo')}
+              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-surface px-3 text-left text-body text-brand-text disabled:opacity-60"
             >
               <span className="flex min-w-0 items-center gap-2">
-                {selectedAgent?.icon ? (
-                  <span aria-hidden className="inline-flex shrink-0">
-                    {selectedAgent.icon}
-                  </span>
-                ) : null}
-                <span className="min-w-0 truncate">{selectedAgent?.label}</span>
+                <FolderGit2
+                  size={20}
+                  aria-hidden
+                  className="shrink-0 text-brand-label"
+                />
+                <span className="min-w-0 truncate">{repoLabel}</span>
               </span>
               <ChevronRight
                 size={16}
@@ -326,15 +259,94 @@ export function NewSessionSetupCard({
             </Button>
           ) : (
             <Select
-              value={agentProfile}
-              disabled={sending}
-              onValueChange={onAgentProfile}
+              value={repo}
+              disabled={sending || Boolean(group) || repositories.length < 2}
+              onValueChange={onRepo}
               size="lg"
-              aria-label={t`Agent`}
-              options={agentOptions}
+              aria-label={t`Repository`}
+              options={
+                group
+                  ? [
+                      {
+                        value: repo,
+                        label: repoLabel,
+                        icon: (
+                          <FolderGit2 size={20} className="text-brand-label" />
+                        ),
+                      },
+                    ]
+                  : repositories.map(({ root, label }) => ({
+                      value: root,
+                      label,
+                      icon: (
+                        <FolderGit2 size={20} className="text-brand-label" />
+                      ),
+                    }))
+              }
             />
           )}
         </div>
+
+        {showAgents ? (
+          <div className="grid min-w-0 gap-1.5 text-caption text-brand-muted">
+            <span className="px-0.5">{t`Agent`}</span>
+            {mobile ? (
+              <Button
+                variant="plain"
+                type="button"
+                role="combobox"
+                data-new-session-picker-trigger="agent"
+                aria-label={t`Agent`}
+                aria-haspopup="listbox"
+                aria-expanded={picker === 'agent'}
+                disabled={sending}
+                onClick={() => onOpenPicker('agent')}
+                className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-surface px-3 text-left text-body text-brand-text disabled:opacity-60"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {selectedAgent?.icon ? (
+                    <span aria-hidden className="inline-flex shrink-0">
+                      {selectedAgent.icon}
+                    </span>
+                  ) : null}
+                  <span className="min-w-0 truncate">
+                    {selectedAgent?.label}
+                  </span>
+                </span>
+                <ChevronRight
+                  size={16}
+                  aria-hidden
+                  className="shrink-0 text-brand-label"
+                />
+              </Button>
+            ) : (
+              <Select
+                value={agentProfile}
+                disabled={sending}
+                onValueChange={onAgentProfile}
+                size="lg"
+                aria-label={t`Agent`}
+                options={agentOptions}
+              />
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {nameGroup ? (
+        <label className="grid min-w-0 gap-1.5 text-caption text-brand-muted">
+          <span className="px-0.5">{t`Group name`}</span>
+          <Input
+            variant="field"
+            value={resolvedGroupName}
+            onChange={(event) => onGroupName(event.target.value)}
+            disabled={sending}
+            maxLength={60}
+            data-testid="new-session-group-name"
+          />
+        </label>
+      ) : group ? (
+        <p className="truncate px-0.5 text-caption text-brand-muted">{group}</p>
       ) : null}
     </section>
   )

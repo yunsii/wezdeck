@@ -1,9 +1,61 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { marked } from 'marked'
+import type { Token, Tokens } from 'marked'
 import { useEffect, useState } from 'react'
 
 import type { Detail } from './console-sessions'
 import type { SessionCard } from './session-card'
 import { detailKey } from './session-detail-read'
+
+const previewCache = new WeakMap<object, string>()
+
+function inlineText(tokens: Array<Token>): string {
+  return tokens
+    .map((token) => {
+      if (token.type === 'html') return ''
+      if ('tokens' in token && token.tokens?.length)
+        return inlineText(token.tokens)
+      return 'text' in token && typeof token.text === 'string' ? token.text : ''
+    })
+    .join('')
+}
+
+function blockText(tokens: Array<Token>): string {
+  return tokens
+    .map((token) => {
+      if (token.type === 'list')
+        return (token as Tokens.List).items
+          .map((item) => blockText(item.tokens))
+          .join(' ')
+      if (token.type === 'table') {
+        const table = token as Tokens.Table
+        return [
+          ...table.header.map((cell) => inlineText(cell.tokens)),
+          ...table.rows.flatMap((row) =>
+            row.map((cell) => inlineText(cell.tokens)),
+          ),
+        ].join(' ')
+      }
+      if (token.type === 'blockquote')
+        return blockText((token as Tokens.Blockquote).tokens)
+      if (token.type === 'html') return ''
+      if ('tokens' in token && token.tokens?.length)
+        return inlineText(token.tokens)
+      return 'text' in token && typeof token.text === 'string' ? token.text : ''
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
+function messagePreview(message: { text: string }): string {
+  const cached = previewCache.get(message)
+  if (cached !== undefined) return cached
+  const plain = blockText(marked.lexer(message.text))
+    .replace(/\s+/g, ' ')
+    .trim()
+  previewCache.set(message, plain)
+  return plain
+}
 
 /** Only a detail snapshot from the finished turn may supply list text. */
 export function cachedAgentReply(
@@ -18,7 +70,7 @@ export function cachedAgentReply(
     const message = detail.messages?.[index]
     if (message?.role === 'user' && !message.text.trim().startsWith('<')) break
     if (message?.role === 'assistant' && message.kind !== 'thought') {
-      const text = message.text.replace(/\s+/g, ' ').trim()
+      const text = messagePreview(message)
       if (text) return text
     }
   }

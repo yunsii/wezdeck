@@ -69,3 +69,32 @@ func TestCollabManagerChat_ParkedHistoryAndTicketIDDetection(t *testing.T) {
 		t.Fatalf("unexpected parked manager messages: %+v", msgs)
 	}
 }
+
+func TestReplyArgv_ProposalBackends(t *testing.T) {
+	argv, err := replyArgv(ticketReply{
+		ID:       "req-20261127-140001-mgr001",
+		Proposal: "p1",
+		Verdict:  "approve",
+		Backends: map[string]string{"b": "codex", "a": "claude"},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"fanout", "approve", "--parent", "req-20261127-140001-mgr001", "--proposal", "p1", "--run", "--backends", "a=claude,b=codex"}
+	if len(argv) != len(want) {
+		t.Fatalf("argv=%v want=%v", argv, want)
+	}
+	for i := range want {
+		if argv[i] != want[i] {
+			t.Fatalf("argv[%d]=%q want %q", i, argv[i], want[i])
+		}
+	}
+	if _, err := replyArgv(ticketReply{
+		ID:       "req-20261127-140001-mgr001",
+		Proposal: "p1",
+		Verdict:  "approve",
+		Backends: map[string]string{"a": "evil"},
+	}); err == nil {
+		t.Fatal("expected error for unsupported backend override")
+	}
+}

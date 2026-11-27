@@ -8,6 +8,7 @@ import type mermaid from 'mermaid'
 import { useEffect, useId, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
+import { ContentReveal } from '#/components/ui/content-reveal'
 import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { normalizeMermaidSvg } from '#/lib/mermaid-svg'
 import type { NormalizedMermaidSvg } from '#/lib/mermaid-svg'
@@ -166,42 +167,49 @@ export function MermaidBlock({ code }: { code: string }) {
             {code}
           </pre>
         </div>
-      ) : !rendered ? (
-        <SkeletonGroup
-          data-testid="mermaid-loading"
-          className="flex min-h-40 w-full flex-col justify-center gap-2.5 p-4"
-        >
-          <Skeleton className="mx-auto h-5 w-2/5 rounded-lg" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="mx-auto h-4 w-3/5 rounded-lg" />
-        </SkeletonGroup>
       ) : (
-        <div
-          data-testid="mermaid-svg"
-          data-fit-mode={actualSize ? 'actual' : 'fit'}
-          className={cn(
-            'w-full min-w-0 max-w-full p-3 sm:p-4',
-            actualSize
-              ? 'overflow-x-auto'
-              : 'overflow-hidden [&_svg]:block [&_svg]:h-auto [&_svg]:w-full [&_svg]:max-w-full',
-          )}
+        <ContentReveal
+          loading={!rendered}
+          skeleton={
+            <SkeletonGroup
+              data-testid="mermaid-loading"
+              className="flex min-h-40 w-full flex-col justify-center gap-2.5 p-4"
+            >
+              <Skeleton className="mx-auto h-5 w-2/5 rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-xl" />
+              <Skeleton className="mx-auto h-4 w-3/5 rounded-lg" />
+            </SkeletonGroup>
+          }
         >
-          <div
-            className="mx-auto min-w-0"
-            style={
-              actualSize && rendered.viewBoxWidth
-                ? { width: `${rendered.viewBoxWidth}px` }
-                : rendered.viewBoxWidth && rendered.viewBoxWidth < 520
-                  ? {
-                      width: '100%',
-                      maxWidth: `${Math.max(420, Math.round(rendered.viewBoxWidth * 1.25))}px`,
-                    }
-                  : { width: '100%' }
-            }
-            // Rendered by mermaid with securityLevel: 'strict' (sanitized SVG)
-            dangerouslySetInnerHTML={{ __html: rendered.svg }}
-          />
-        </div>
+          {rendered ? (
+            <div
+              data-testid="mermaid-svg"
+              data-fit-mode={actualSize ? 'actual' : 'fit'}
+              className={cn(
+                'w-full min-w-0 max-w-full p-3 sm:p-4',
+                actualSize
+                  ? 'overflow-x-auto'
+                  : 'overflow-hidden [&_svg]:block [&_svg]:h-auto [&_svg]:w-full [&_svg]:max-w-full',
+              )}
+            >
+              <div
+                className="mx-auto min-w-0"
+                style={
+                  actualSize && rendered.viewBoxWidth
+                    ? { width: `${rendered.viewBoxWidth}px` }
+                    : rendered.viewBoxWidth && rendered.viewBoxWidth < 520
+                      ? {
+                          width: '100%',
+                          maxWidth: `${Math.max(420, Math.round(rendered.viewBoxWidth * 1.25))}px`,
+                        }
+                      : { width: '100%' }
+                }
+                // Rendered by mermaid with securityLevel: 'strict' (sanitized SVG)
+                dangerouslySetInnerHTML={{ __html: rendered.svg }}
+              />
+            </div>
+          ) : null}
+        </ContentReveal>
       )}
     </div>
   )

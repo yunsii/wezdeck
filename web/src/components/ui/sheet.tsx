@@ -54,7 +54,7 @@ export function Sheet({
         {!fullscreen ? (
           <Drawer.Backdrop
             data-deck
-            className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-[var(--motion-medium)] ease-[var(--ease-standard)] data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--motion-short)] data-[starting-style]:opacity-0 starting:opacity-0"
+            className="fixed inset-0 z-50 bg-black/45 transition-opacity duration-[180ms] ease-[var(--ease-standard)] data-[ending-style]:opacity-0 data-[ending-style]:duration-[110ms] data-[starting-style]:opacity-0 starting:opacity-0"
           />
         ) : null}
         <Drawer.Viewport
@@ -74,23 +74,23 @@ export function Sheet({
               // the header holds still; only the body below it scrolls, so the
               // scrollbar starts under the title and never runs into a corner
               'flex w-full flex-col overflow-hidden bg-brand-deck text-brand-text outline-none',
-              // Fullscreen reader opens directly at opacity 1 and follows the
-              // fixed inset-0 viewport (`h-full`, not `100dvh`) with no hidden
-              // backdrop or opacity transition that churns GPU layers.
+              // Fullscreen reader stays strictly opaque (opacity 1 — no hidden
+              // backdrop or full-viewport opacity fade that churns title-bar
+              // subpixel AA) and glides in/out via a short pure translateY.
               fullscreen
-                ? 'h-full max-h-full max-w-none rounded-none border-0'
+                ? 'h-full max-h-full max-w-none rounded-none border-0 transition-[translate,transform] duration-[200ms] ease-[var(--ease-enter)] data-[ending-style]:duration-[130ms] data-[ending-style]:ease-[var(--ease-exit)] data-[ending-style]:translate-y-4 data-[starting-style]:translate-y-4 starting:translate-y-4 motion-reduce:transition-none motion-reduce:translate-y-0'
                 : cn(
                     'max-h-[88dvh] rounded-t-[20px] border-t border-brand-edge shadow-[0_-10px_40px_rgba(0,0,0,0.28)] md:max-w-xl',
                     // motion tokens (styles/motion.css): in slower and decelerating, out
                     // faster and accelerating; a finger on it moves it 1:1
-                    '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity,scale] duration-[var(--motion-medium)] ease-[var(--ease-enter)] data-[ending-style]:duration-[var(--motion-short)] data-[ending-style]:ease-[var(--ease-exit)] data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full starting:translate-y-full',
+                    '[transform:translateY(var(--drawer-swipe-movement-y,0px))] transition-[translate,transform,opacity] duration-[var(--motion-medium)] ease-[var(--ease-enter)] data-[ending-style]:duration-[var(--motion-short)] data-[ending-style]:ease-[var(--ease-exit)] data-[swiping]:duration-0 data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full starting:translate-y-full',
                     // @starting-style too: the popup mounts and loses data-starting-style
                     // before its first style resolution, so that alone never animated
                     // reduced motion: it fades, it does not travel
                     'motion-reduce:data-[ending-style]:translate-y-0 motion-reduce:data-[ending-style]:opacity-0 motion-reduce:data-[starting-style]:translate-y-0 motion-reduce:data-[starting-style]:opacity-0 motion-reduce:starting:translate-y-0 motion-reduce:starting:opacity-0',
-                    // a desk-sized window: a centred dialog (fade + scale), not a
-                    // strip stuck to the bottom with a phone's grab handle
-                    'md:max-h-[85dvh] md:rounded-2xl md:border md:data-[ending-style]:translate-y-0 md:data-[ending-style]:scale-[0.96] md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-0 md:data-[starting-style]:scale-[0.96] md:data-[starting-style]:opacity-0 md:starting:translate-y-0 md:starting:scale-[0.96] md:starting:opacity-0',
+                    // desktop dialog: integer vertical glide + opacity (no scale,
+                    // which blurs text mid-transition on fractional-DPR HiDPI screens)
+                    'md:max-h-[85dvh] md:rounded-2xl md:border md:duration-[180ms] md:data-[ending-style]:duration-[110ms] md:data-[ending-style]:translate-y-2 md:data-[ending-style]:opacity-0 md:data-[starting-style]:translate-y-2 md:data-[starting-style]:opacity-0 md:starting:translate-y-2 md:starting:opacity-0',
                   ),
               className,
             )}
@@ -159,7 +159,7 @@ export function Sheet({
               className={cn(
                 'min-h-0 flex-1 overflow-y-auto overscroll-contain',
                 fullscreen
-                  ? 'pb-[max(env(safe-area-inset-bottom),1.5rem)]'
+                  ? '[scrollbar-gutter:stable] pb-[max(env(safe-area-inset-bottom),1.5rem)]'
                   : 'pb-[max(env(safe-area-inset-bottom),1rem)] md:mb-3',
               )}
             >

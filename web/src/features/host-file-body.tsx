@@ -3,7 +3,7 @@
 // document Markdown view with mobile collapsible TOC & sticky desktop TOC rail.
 import { useLingui } from '@lingui/react/macro'
 import { List } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
@@ -24,7 +24,7 @@ function useCodeTokens(content: string, lang: string | null) {
     }
     let live = true
     void highlightLines(content.split('\n'), lang).then((res) => {
-      if (live) setTokens(res)
+      if (live) startTransition(() => setTokens(res))
     })
     return () => {
       live = false
@@ -33,7 +33,7 @@ function useCodeTokens(content: string, lang: string | null) {
   return tokens
 }
 
-export function FileLoadingSkeleton() {
+export function FileLoadingSkeleton({ isCode = false }: { isCode?: boolean }) {
   const { t } = useLingui()
   return (
     <div
@@ -41,9 +41,12 @@ export function FileLoadingSkeleton() {
       role="status"
       aria-live="polite"
       aria-label={t`Loading…`}
-      className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-8"
+      className={cn(
+        'mx-auto w-full min-w-0 px-3 py-4 sm:px-6 md:py-6',
+        isCode ? 'max-w-6xl' : 'max-w-4xl',
+      )}
     >
-      <div className="flex flex-1 flex-col rounded-2xl border border-brand-edge/70 bg-brand-surface p-5 sm:p-8">
+      <div className="rounded-2xl border border-brand-edge/70 bg-brand-surface px-4 py-5 sm:px-7 sm:py-7 md:px-9 md:py-8">
         <SkeletonGroup className="flex flex-col gap-5">
           <div className="border-b border-brand-edge pb-4">
             <Skeleton className="h-7 w-2/3 rounded-lg" />
@@ -70,6 +73,8 @@ export function FileLoadingSkeleton() {
   )
 }
 
+const CODE_CHUNK_LINES = 60
+
 export function CodeFileBody({
   content,
   path,
@@ -84,6 +89,13 @@ export function CodeFileBody({
   lineEnd?: number
 }) {
   const lines = useMemo(() => content.split('\n'), [content])
+  const chunks = useMemo(() => {
+    const out: Array<{ start: number; items: Array<string> }> = []
+    for (let i = 0; i < lines.length; i += CODE_CHUNK_LINES) {
+      out.push({ start: i, items: lines.slice(i, i + CODE_CHUNK_LINES) })
+    }
+    return out
+  }, [lines])
   const lang = langHint || langOf(path)
   const tokens = useCodeTokens(content, lang)
   const targetRef = useRef<HTMLDivElement>(null)
@@ -102,42 +114,68 @@ export function CodeFileBody({
         data-lang={lang ?? undefined}
         className="min-w-0 max-w-full overflow-x-auto rounded-2xl border border-brand-edge bg-brand-surface py-3 font-mono text-meta leading-relaxed"
       >
-        {lines.map((raw, i) => {
-          const no = i + 1
-          const hit = Boolean(lineStart && no >= lineStart && no <= rangeEnd)
-          const lineTokens = tokens?.[i]
-          return (
-            <div
-              key={no}
-              ref={no === lineStart ? targetRef : undefined}
-              data-line={no}
-              data-highlighted={hit ? 'true' : undefined}
-              className={cn('flex min-w-0 px-3', hit && 'bg-brand-running/15')}
-            >
-              <span
-                aria-hidden
-                style={{ width: `${numWidth + 1}ch` }}
-                className={cn(
-                  'shrink-0 pr-3 text-right tabular-nums select-none',
-                  hit
-                    ? 'font-medium text-brand-running'
-                    : 'text-brand-label/70',
-                )}
+        <div>
+          {chunks.map((chunk) => {
+            const firstNo = chunk.start + 1
+            const lastNo = chunk.start + chunk.items.length
+            const keepImmediate =
+              chunk.start === 0 ||
+              Boolean(lineStart && lineStart >= firstNo && lineStart <= lastNo)
+            return (
+              <div
+                key={chunk.start}
+                className={keepImmediate ? undefined : 'code-chunk'}
               >
-                {no}
-              </span>
-              <span className="min-w-0 flex-1 whitespace-pre">
-                {lineTokens
-                  ? lineTokens.map((tok, ti) => (
-                      <span key={ti} className="code-token" style={tok.style}>
-                        {tok.content}
+                {chunk.items.map((raw, offset) => {
+                  const i = chunk.start + offset
+                  const no = i + 1
+                  const hit = Boolean(
+                    lineStart && no >= lineStart && no <= rangeEnd,
+                  )
+                  const lineTokens = tokens?.[i]
+                  return (
+                    <div
+                      key={no}
+                      ref={no === lineStart ? targetRef : undefined}
+                      data-line={no}
+                      data-highlighted={hit ? 'true' : undefined}
+                      className={cn(
+                        'flex min-w-0 px-3',
+                        hit && 'bg-brand-running/15',
+                      )}
+                    >
+                      <span
+                        aria-hidden
+                        style={{ width: `${numWidth + 1}ch` }}
+                        className={cn(
+                          'shrink-0 pr-3 text-right tabular-nums select-none',
+                          hit
+                            ? 'font-medium text-brand-running'
+                            : 'text-brand-label/70',
+                        )}
+                      >
+                        {no}
                       </span>
-                    ))
-                  : raw || ' '}
-              </span>
-            </div>
-          )
-        })}
+                      <span className="min-w-0 flex-1 whitespace-pre">
+                        {lineTokens
+                          ? lineTokens.map((tok, ti) => (
+                              <span
+                                key={ti}
+                                className="code-token"
+                                style={tok.style}
+                              >
+                                {tok.content}
+                              </span>
+                            ))
+                          : raw || ' '}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
       </pre>
     </div>
   )

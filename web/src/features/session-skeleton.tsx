@@ -22,14 +22,14 @@ export function SessionListSkeleton() {
         className="bg-brand-surface"
       >
         <SkeletonGroup>
-          <div className="border-b border-brand-edge bg-brand-deck px-3 py-2">
+          <div className="flex h-8 items-center border-b border-brand-edge bg-brand-deck px-3">
             <div className="h-3 w-24 rounded-full bg-brand-edge" />
           </div>
           <ul className="chat-list">
             {[0.58, 0.42, 0.5].map((width, index) => (
               <li
                 key={width}
-                className="flex min-h-15 items-center gap-3 px-3 py-2"
+                className="flex min-h-16 items-center gap-3 px-3 py-2"
               >
                 <div className="size-10 shrink-0 rounded-full bg-brand-deck" />
                 <div className="grid min-w-0 flex-1 gap-1.5">
