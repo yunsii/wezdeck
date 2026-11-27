@@ -476,9 +476,12 @@ func listSessionsFor(includeArchived bool) (any, error) {
 				card.Status = "waiting"
 				card.WaitingKind = "permission_prompt"
 			}
-		} else if act := windowActivity(e); act > card.TS {
-			card.TS = act
-			card.TimeSource = "window_activity"
+		} else {
+			windowAt := int64(0)
+			if card.TS <= 0 {
+				windowAt = windowActivity(e)
+			}
+			card.TS, card.TimeSource = sessionFallbackTime(card.TS, windowAt)
 		}
 		card.OrderAt = sessionOrderAt(e, card.TS)
 		card.OrderSource = sessionOrderSource(e, card.TimeSource)

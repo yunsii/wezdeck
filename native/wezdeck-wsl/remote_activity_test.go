@@ -109,3 +109,12 @@ func TestSessionOrderChanged(t *testing.T) {
 		t.Fatal("fallback display time changes must be recorded")
 	}
 }
+
+func TestSessionFallbackTimeKeepsKnownAttentionTime(t *testing.T) {
+	if got, source := sessionFallbackTime(100, 900); got != 100 || source != "attention" {
+		t.Fatalf("idle session moved with its tmux window: %d from %s", got, source)
+	}
+	if got, source := sessionFallbackTime(0, 900); got != 900 || source != "window_activity" {
+		t.Fatalf("missing attention time fallback: %d from %s", got, source)
+	}
+}
