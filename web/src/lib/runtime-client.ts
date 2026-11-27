@@ -389,6 +389,7 @@ export type HostReadAction =
   | 'session.new.job'
   | 'session.handoff.job'
   | 'session.image'
+  | 'session.file'
   | 'session.history'
   | 'session.git'
   | 'session.skills'

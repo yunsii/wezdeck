@@ -60,9 +60,27 @@ async function checkDesktopShortcuts(page: Page) {
   expect(await page.locator('[data-restart=fresh] kbd').innerText()).toContain(
     'Ctrl/⌘+Shift+N',
   )
+  expect(await page.locator('[data-restart=resume] kbd').innerText()).toBe(
+    'Alt+F5',
+  )
   expect(
     await page.locator('button[aria-label="发送"]').getAttribute('title'),
   ).toContain('Ctrl/⌘+Enter')
+}
+
+async function checkWebRestartKey(
+  page: Page,
+  calls: () => Array<string>,
+  pane: string,
+) {
+  const sheet = page.getByTestId('session-actions-sheet')
+  await sheet.getByRole('button', { name: '关闭' }).click()
+  await sheet.waitFor({ state: 'hidden' })
+  const url = page.url()
+  await page.keyboard.press('Alt+F5')
+  await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
+  expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
+  expect(page.url()).toBe(url)
 }
 
 describe.runIf(attention && devicesFile && stack)(
@@ -254,11 +272,14 @@ describe.runIf(attention && devicesFile && stack)(
       await page.waitForTimeout(500)
       expect(calls()).toEqual([])
 
+      await checkWebRestartKey(page, calls, pane)
+
       // 重启会话: the pane, its agent, no --fresh
+      await openKeys()
       await page.locator('[data-restart=resume]').click()
       await page.locator('[data-restart-confirm]').click()
-      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
-      expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
+      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(2)
+      expect(calls()[1]).toBe(`--pane ${pane} --agent claude`)
       await page.getByText('窗格正在重启').waitFor({ timeout: 5_000 })
 
       // 空白切换: same target-agent confirmation, no note or brief. The
@@ -305,8 +326,8 @@ describe.runIf(attention && devicesFile && stack)(
       await openKeys()
       await page.locator('[data-restart=fresh]').click()
       await page.locator('[data-restart-confirm]').click()
-      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(2)
-      expect(calls()[1]).toBe(`--pane ${pane} --agent claude --fresh`)
+      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(3)
+      expect(calls()[2]).toBe(`--pane ${pane} --agent claude --fresh`)
       writeFileSync(
         attention,
         JSON.stringify({

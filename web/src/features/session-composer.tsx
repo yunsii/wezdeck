@@ -234,7 +234,23 @@ export function ComposerBox({
   useSpaceToFocus()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing) return
+      if (event.defaultPrevented || event.isComposing || event.repeat) return
+      if (
+        event.key === 'F5' &&
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey
+      ) {
+        if (
+          keysDisabled ||
+          document.querySelector('[role=dialog], [role=alertdialog]')
+        )
+          return
+        event.preventDefault()
+        void onRun('session.restart', { fresh: false })
+        return
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       if (event.code !== 'KeyN') return
       event.preventDefault()
@@ -243,7 +259,7 @@ export function ComposerBox({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onNewConversation, onRun])
+  }, [keysDisabled, onNewConversation, onRun])
   return (
     <>
       {commands ? (

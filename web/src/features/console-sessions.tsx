@@ -25,15 +25,17 @@ import { shouldLandLatestTop } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
 import { ChatThread, settle } from './chat-thread'
+import { HostFileProvider } from './host-file-sheet'
+import {
+  SessionBlockedNotice,
+  SessionInputUnavailable,
+  SessionStaleNotice,
+} from './session-detail-notices'
 import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { EmptySession } from './session-empty'
-import {
-  ComposerBox,
-  SessionComposerNotice,
-  useComposer,
-} from './session-composer'
+import { ComposerBox, ErrorLine, useComposer } from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
 import { PromptPanels, hasPromptPanel } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
@@ -251,15 +253,6 @@ const activityOf = (data?: Detail) => ({
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
 
-function SessionInputUnavailable() {
-  const { t } = useLingui()
-  return (
-    <p role="status" className="text-meta text-brand-label">
-      {t`Web sending is unavailable for this session.`}
-    </p>
-  )
-}
-
 function useComposerBlock(data: Detail | undefined, approved: boolean) {
   const { t } = useLingui()
   return !approved
@@ -322,6 +315,7 @@ const formatStaleAt = (ms: number) =>
     : '—'
 
 export function SessionDetail({ id }: { id: string }) {
+  const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()
   const [visibleUsage, setVisibleUsage] = useState('')
@@ -392,145 +386,158 @@ export function SessionDetail({ id }: { id: string }) {
   })
   const wide = useIsWidePhoneFirst()
   return (
-    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 md:h-full md:min-h-0 md:gap-0 md:overflow-hidden">
-      <SessionHeader
-        id={id}
-        data={data}
-        visibleUsage={visibleUsage}
-        onBack={back}
-        renameDisabled={readOnly || sending || device.state !== 'approved'}
-        canWrite={!readOnly && !sending && device.state === 'approved'}
-        onRun={run}
-        onNewConversation={() =>
-          send({ text: '/new', attachments: [], note: '' })
-        }
-        onTodoUse={!readOnly ? (text) => draftTodo(composer, text) : undefined}
-        onRename={(title) => renameSession(send, title)}
-      />
-
-      <div
-        data-testid="session-thread-scroll"
-        className={cn(
-          'max-md:contents md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain',
-          wide && 'overflow-y-auto',
-        )}
-      >
-        <div
-          className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 md:min-h-full md:px-[var(--page-x)] md:py-3"
-          aria-live="polite"
-        >
-          {detail.isError && !data ? (
-            <p
-              role="status"
-              className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
-            >
-              {String(detail.error.message)}
-            </p>
-          ) : null}
-          {messages.length || pending.length ? (
-            <>
-              <StickyPrompt
-                end={end}
-                messages={messages}
-                start={start}
-                following={follow.pinned}
-              />
-              <ThreadPagingBar
-                total={total}
-                shown={shown}
-                start={start}
-                pagingIn={pagingIn}
-                atCompaction={atCompaction}
-                autoFailed={paging.autoFailed}
-                onLoadEarlier={paging.loadManual}
-              />
-              <ChatThread
-                messages={messages}
-                start={start}
-                busy={busy}
-                activity={busy ? activityOf(data) : undefined}
-                {...writes.pendingProps(
-                  !readOnly && device.state === 'approved' && !blocked,
-                )}
-                status={data?.status}
-                statusTs={data?.ts}
-                onBackground={toBackground(data, device.state, run)}
-                sessionId={id}
-                syncing={syncing}
-              />
-            </>
-          ) : data ? (
-            <EmptySession data={data} />
-          ) : null}
-          <PromptPanels
-            data={data}
-            sending={sending}
-            canWrite={!readOnly && device.state === 'approved'}
-            onKey={(key) => run('key', { key })}
-          />
-          <div ref={end} />
-        </div>
-      </div>
-
-      <form
-        className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:px-[var(--page-x)] md:shadow-none"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (readOnly) return
-          setError('')
-          if (composer.ready) follow.jump()
-          composer.submit().catch((e: unknown) => {
-            setError((e as Error).message)
-          })
-        }}
-      >
-        <JumpLatest
-          pinned={follow.pinned}
-          unread={follow.unread}
-          onJump={follow.jump}
-        />
-        <SessionComposerNotice
-          stale={
-            Boolean(data) &&
-            (failed >= STALE_AFTER || detail.fetchStatus === 'paused')
+    <HostFileProvider
+      sessionId={id}
+      onQuote={!readOnly ? (text) => draftTodo(composer, text) : undefined}
+    >
+      <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 md:h-full md:min-h-0 md:gap-0 md:overflow-hidden">
+        <SessionHeader
+          id={id}
+          data={data}
+          visibleUsage={visibleUsage}
+          onBack={back}
+          renameDisabled={readOnly || sending || device.state !== 'approved'}
+          canWrite={!readOnly && !sending && device.state === 'approved'}
+          onRun={run}
+          onNewConversation={() =>
+            send({ text: '/new', attachments: [], note: '' })
           }
-          staleAt={staleAt}
-          staleMessage={detail.error?.message}
-          retryIn={retryIn}
-          error={error}
-          blocked={blocked}
-          readOnly={readOnly}
-          approved={device.state === 'approved'}
-          locale={locale}
+          onTodoUse={
+            !readOnly ? (text) => draftTodo(composer, text) : undefined
+          }
+          onRename={(title) => renameSession(send, title)}
         />
-        <SessionSubagents agents={data?.subagents} />
-        {readOnly ? (
-          <SessionInputUnavailable />
-        ) : (
-          <ComposerBox
-            composer={composer}
-            blocked={sending || Boolean(blocked)}
-            keysDisabled={sending || device.state !== 'approved'}
-            writable={device.state === 'approved'}
-            onRun={run}
-            onNewConversation={() =>
-              send({ text: '/new', attachments: [], note: '' })
-            }
-            commands={
-              data?.agent === 'claude' || data?.agent === 'agy'
-                ? {
-                    send: (text) =>
-                      void send({ text, attachments: [], note: '' }),
-                    resume: resume.open,
-                  }
-                : undefined
-            }
-            session={data}
+
+        <div
+          data-testid="session-thread-scroll"
+          className={cn(
+            'max-md:contents md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain',
+            wide && 'overflow-y-auto',
+          )}
+        >
+          <div
+            className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 md:min-h-full md:px-[var(--page-x)] md:py-3"
+            aria-live="polite"
+          >
+            {detail.isError && !data ? (
+              <p
+                role="status"
+                className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
+              >
+                {String(detail.error.message)}
+              </p>
+            ) : null}
+            {messages.length || pending.length ? (
+              <>
+                <StickyPrompt
+                  end={end}
+                  messages={messages}
+                  start={start}
+                  following={follow.pinned}
+                />
+                <ThreadPagingBar
+                  total={total}
+                  shown={shown}
+                  start={start}
+                  pagingIn={pagingIn}
+                  atCompaction={atCompaction}
+                  autoFailed={paging.autoFailed}
+                  onLoadEarlier={paging.loadManual}
+                />
+                <ChatThread
+                  messages={messages}
+                  start={start}
+                  busy={busy}
+                  activity={busy ? activityOf(data) : undefined}
+                  {...writes.pendingProps(
+                    !readOnly && device.state === 'approved' && !blocked,
+                  )}
+                  status={data?.status}
+                  statusTs={data?.ts}
+                  onBackground={toBackground(data, device.state, run)}
+                  sessionId={id}
+                  syncing={syncing}
+                />
+              </>
+            ) : data ? (
+              <EmptySession data={data} />
+            ) : null}
+            <PromptPanels
+              data={data}
+              sending={sending}
+              canWrite={!readOnly && device.state === 'approved'}
+              onKey={(key) => run('key', { key })}
+            />
+            <div ref={end} />
+          </div>
+        </div>
+
+        <form
+          className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:px-[var(--page-x)] md:shadow-none"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (readOnly) return
+            setError('')
+            if (composer.ready) follow.jump()
+            composer.submit().catch((e: unknown) => {
+              setError((e as Error).message)
+            })
+          }}
+        >
+          <JumpLatest
+            pinned={follow.pinned}
+            unread={follow.unread}
+            onJump={follow.jump}
           />
-        )}
-        <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
-        {!readOnly && resume.element}
-      </form>
-    </div>
+          {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') &&
+          data ? (
+            <SessionStaleNotice
+              staleAt={staleAt}
+              message={detail.error?.message}
+            />
+          ) : null}
+          <SessionSubagents agents={data?.subagents} />
+          {retryIn && !readOnly ? (
+            <p role="status" className="text-meta text-brand-muted">
+              {t`Someone just used the desk; sending in ${retryIn}s…`}
+            </p>
+          ) : error ? (
+            <ErrorLine message={error} />
+          ) : blocked && !readOnly ? (
+            <SessionBlockedNotice
+              blocked={blocked}
+              approved={device.state === 'approved'}
+              locale={locale}
+            />
+          ) : null}
+          {readOnly ? (
+            <SessionInputUnavailable />
+          ) : (
+            <ComposerBox
+              composer={composer}
+              blocked={sending || Boolean(blocked)}
+              keysDisabled={sending || device.state !== 'approved'}
+              writable={device.state === 'approved'}
+              onRun={run}
+              onNewConversation={() =>
+                send({ text: '/new', attachments: [], note: '' })
+              }
+              commands={
+                data?.agent === 'claude' || data?.agent === 'agy'
+                  ? {
+                      send: (text) =>
+                        void send({ text, attachments: [], note: '' }),
+                      resume: resume.open,
+                    }
+                  : undefined
+              }
+              session={data}
+            />
+          )}
+          <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
+          {!readOnly && resume.element}
+        </form>
+      </div>
+    </HostFileProvider>
   )
 }

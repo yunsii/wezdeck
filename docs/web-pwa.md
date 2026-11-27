@@ -161,8 +161,10 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `g`+letter section jump; on a session page `Space` puts the caret in the composer
    (`composer-keys.ts`; not while typing, on a button / link, or with a
    sheet open), `Ctrl/⌘+N` starts `/new` in the current agent and
-   `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane; `c` opens
-   the full 新会话 flow for creating or reusing a worktree,
+   `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane;
+   `Alt+F5` restarts the current agent and resumes its conversation, while
+   browser `F5` keeps refreshing the page (terminal `F5` restarts the pane).
+   `c` opens the full 新会话 flow for creating or reusing a worktree,
    and the header's 会话操作 Sheet exposes both same-pane actions on touch
    screens: 新对话 (`/new`, current agent process) and 新进程 (fresh process).
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
