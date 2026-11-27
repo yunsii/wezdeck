@@ -4436,10 +4436,6 @@ msgstr "思考"
 msgid "This agent lists no skills yet"
 msgstr "这个 agent 还没有列出能力"
 
-#: src/features/session-detail-notices.tsx:28
-msgid "This archived conversation is read-only."
-msgstr "此会话已归档，仅供查看。"
-
 #: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "当前浏览器"
@@ -4461,6 +4457,10 @@ msgstr "本机（本地运行时）"
 #: src/features/console-me.tsx:78
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
+
+#: src/features/session-detail-notices.tsx:28
+msgid "This conversation is read-only."
+msgstr "此会话仅供查看。"
 
 #: src/features/me-notifications.tsx:336
 msgid "This device"

@@ -240,6 +240,7 @@ export function isSessionDetailOverlaySettled(
   server: Detail,
   now = Date.now(),
 ): 'active' | 'settled' | 'timeout' {
+  if (server.read_only) return 'settled'
   if (
     overlay.phase === 'settling' &&
     overlay.acceptedAt !== undefined &&

@@ -672,12 +672,15 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 		path, agent = findTranscript(e.SessionID)
 		var interrupt string
 		_, _, cmd, _, profile, interrupt, paneAlive = paneStateWithInterrupt(e)
-		interrupted = paneAlive && e.interrupted(interrupt)
-		if interrupted {
+		readOnly = codexPaneUnavailable(e.AgentName, cmd)
+		interrupted = !readOnly && paneAlive && e.interrupted(interrupt)
+		if readOnly {
+			e = e.asReadOnly()
+		} else if interrupted {
 			e.Status = "idle"
 			e.RunningKind = ""
 		}
-		if path != "" && paneAlive && !paneOwnsSessionAgent(cmd, profile, agent) {
+		if !readOnly && path != "" && paneAlive && !paneOwnsSessionAgent(cmd, profile, agent) {
 			path, agent = "", ""
 		}
 	}

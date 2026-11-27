@@ -8,6 +8,14 @@ import (
 // Match the Web list's grace period for a turn that just finished.
 const recentFinishedSession = 3 * time.Minute
 
+func (e attentionEntry) asReadOnly() attentionEntry {
+	e.Status = "idle"
+	e.RunningKind = ""
+	e.WaitingKind = ""
+	e.RestartPending = false
+	return e
+}
+
 func archivedCodexTranscript(r recentEntry) string {
 	if r.LastStatus != "done" || r.ArchivedTS <= 0 || !sessionIDPattern.MatchString(r.SessionID) {
 		return ""

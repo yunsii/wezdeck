@@ -401,6 +401,10 @@ func paneOwnsSessionAgent(cmd, profile, archived string) bool {
 	return current == "" || archived == "" || !agentCommands[archived] || current == archived
 }
 
+func codexPaneUnavailable(agent, cmd string) bool {
+	return strings.EqualFold(agent, "codex") && cmd != "codex"
+}
+
 // attachedTmuxSessions reads all attachment states with one call per socket.
 // A nil map means unknown; callers must not mark those sessions detached.
 func attachedTmuxSessions(socket string) map[string]bool {

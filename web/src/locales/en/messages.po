@@ -4436,10 +4436,6 @@ msgstr "Thinking"
 msgid "This agent lists no skills yet"
 msgstr "This agent lists no skills yet"
 
-#: src/features/session-detail-notices.tsx:28
-msgid "This archived conversation is read-only."
-msgstr "This archived conversation is read-only."
-
 #: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "This browser"
@@ -4461,6 +4457,10 @@ msgstr "This computer (local Runtime)"
 #: src/features/console-me.tsx:78
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
+
+#: src/features/session-detail-notices.tsx:28
+msgid "This conversation is read-only."
+msgstr "This conversation is read-only."
 
 #: src/features/me-notifications.tsx:336
 msgid "This device"

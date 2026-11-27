@@ -3,6 +3,7 @@ import { trace } from './client-trace'
 type Snapshot = {
   total?: number
   status: string
+  read_only?: boolean
   replaced_by?: string
   start?: number
   messages?: Array<unknown>
@@ -17,6 +18,7 @@ export function sessionSyncChanged(
     !before ||
     before.total !== after.total ||
     before.status !== after.status ||
+    Boolean(before.read_only) !== Boolean(after.read_only) ||
     before.replaced_by !== after.replaced_by
   )
 }
@@ -31,6 +33,7 @@ export function traceSessionSync(
     id,
     total: after.total ?? 0,
     status: after.status,
+    readOnly: after.read_only === true,
     start: after.start ?? 0,
     shown: after.messages?.length ?? 0,
   })

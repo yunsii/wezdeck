@@ -292,6 +292,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
 
     await commandsAndResume(page, tmux)
     await followsNewSession(page, tmux, socket, setStatus)
+    await followsCodexPaneAvailability(page, tmux, socket)
     await context.close()
   }, 120_000)
 })
@@ -373,4 +374,41 @@ async function commandsAndResume(
   await page
     .getByTestId('resume-sheet')
     .waitFor({ state: 'detached', timeout: 5_000 })
+}
+
+async function followsCodexPaneAvailability(
+  page: Page,
+  tmux: (...args: Array<string>) => string,
+  socket: string,
+) {
+  const box = page.getByLabel('发给 Agent 的消息')
+  const bin = mkdtempSync(join(tmpdir(), 'wd-codex-'))
+  const codex = join(bin, 'codex')
+  symlinkSync('/bin/cat', codex)
+  const pane = tmux('new-window', '-d', '-P', '-F', '#{pane_id}', codex).trim()
+  const session = 'codex-read-only'
+  writeFileSync(
+    attention,
+    JSON.stringify({
+      entries: {
+        [session]: {
+          session_id: session,
+          tmux_socket: socket,
+          tmux_pane: pane,
+          tmux_session: 'demo',
+          agent_name: 'codex',
+          status: 'running',
+          ts: Date.now(),
+        },
+      },
+    }),
+  )
+  await page.goto(`${base}/zh/console/sessions/${session}`)
+  await box.waitFor()
+  tmux('respawn-pane', '-k', '-t', pane, '/bin/cat')
+  await page.getByText('此会话仅供查看。').waitFor({ timeout: 10_000 })
+  expect(await box.count()).toBe(0)
+  tmux('respawn-pane', '-k', '-t', pane, codex)
+  await box.waitFor({ timeout: 10_000 })
+  expect(await page.getByText('此会话仅供查看。').count()).toBe(0)
 }

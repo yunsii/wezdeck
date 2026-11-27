@@ -36,7 +36,7 @@ func guardSession(id string) (attentionEntry, error) {
 	if !alive {
 		return attentionEntry{}, errors.New("the session's tmux pane is gone")
 	}
-	if strings.EqualFold(e.AgentName, "codex") && cmd != "codex" {
+	if codexPaneUnavailable(e.AgentName, cmd) {
 		relayLogf("codex_pane", "outcome=unavailable id=%s pane=%s", id, e.TmuxPane)
 		return attentionEntry{}, errors.New("the session's Codex pane is unavailable")
 	}

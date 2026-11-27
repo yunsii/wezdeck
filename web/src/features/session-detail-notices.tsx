@@ -25,7 +25,7 @@ export function SessionInputUnavailable() {
   const { t } = useLingui()
   return (
     <p role="status" className="text-meta text-brand-label">
-      {t`This archived conversation is read-only.`}
+      {t`This conversation is read-only.`}
     </p>
   )
 }
