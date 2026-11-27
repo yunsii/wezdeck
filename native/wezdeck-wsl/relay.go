@@ -377,6 +377,8 @@ func readRPC(action string, args json.RawMessage) (any, bool, error) {
 		result, err = sessionSkills(args)
 	case "session.image":
 		result, err = sessionImage(args)
+	case "session.file":
+		result, err = sessionFile(args)
 	default:
 		return nil, false, nil
 	}

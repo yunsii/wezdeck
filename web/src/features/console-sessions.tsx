@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
@@ -23,6 +23,11 @@ import { shouldLandLatestTop } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
 import { ChatThread, settle } from './chat-thread'
+import { HostFileProvider } from './host-file-sheet'
+import {
+  SessionBlockedNotice,
+  SessionInputUnavailable,
+} from './session-detail-notices'
 import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
@@ -245,15 +250,6 @@ const activityOf = (data?: Detail) => ({
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
 
-function SessionInputUnavailable() {
-  const { t } = useLingui()
-  return (
-    <p role="status" className="text-meta text-brand-label">
-      {t`Web sending is unavailable for this session.`}
-    </p>
-  )
-}
-
 function useComposerBlock(data: Detail | undefined, approved: boolean) {
   const { t } = useLingui()
   return !approved
@@ -386,156 +382,154 @@ export function SessionDetail({ id }: { id: string }) {
     }),
   })
   return (
-    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
-      <SessionHeader
-        id={id}
-        data={data}
-        visibleUsage={visibleUsage}
-        onBack={back}
-        renameDisabled={readOnly || sending || device.state !== 'approved'}
-        canWrite={!readOnly && !sending && device.state === 'approved'}
-        onRun={run}
-        onNewConversation={() =>
-          send({ text: '/new', attachments: [], note: '' })
-        }
-        onTodoUse={!readOnly ? (text) => draftTodo(composer, text) : undefined}
-        onRename={(title) => renameSession(send, title)}
-      />
-
-      <div
-        className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"
-        aria-live="polite"
-      >
-        {detail.isError && !data ? (
-          <p
-            role="status"
-            className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
-          >
-            {String(detail.error.message)}
-          </p>
-        ) : null}
-        {messages.length || pending.length ? (
-          <>
-            <StickyPrompt
-              end={end}
-              messages={messages}
-              start={start}
-              following={follow.pinned}
-            />
-            <ThreadPagingBar
-              total={total}
-              shown={shown}
-              start={start}
-              pagingIn={pagingIn}
-              atCompaction={atCompaction}
-              autoFailed={paging.autoFailed}
-              onLoadEarlier={paging.loadManual}
-            />
-            <ChatThread
-              messages={messages}
-              start={start}
-              busy={busy}
-              activity={busy ? activityOf(data) : undefined}
-              {...writes.pendingProps(
-                !readOnly && device.state === 'approved' && !blocked,
-              )}
-              status={data?.status}
-              statusTs={data?.ts}
-              onBackground={toBackground(data, device.state, run)}
-              sessionId={id}
-              syncing={syncing}
-            />
-          </>
-        ) : data ? (
-          <EmptySession data={data} />
-        ) : null}
-        <PromptPanels
+    <HostFileProvider
+      sessionId={id}
+      onQuote={!readOnly ? (text) => draftTodo(composer, text) : undefined}
+    >
+      <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
+        <SessionHeader
+          id={id}
           data={data}
-          sending={sending}
-          canWrite={!readOnly && device.state === 'approved'}
-          onKey={(key) => run('key', { key })}
+          visibleUsage={visibleUsage}
+          onBack={back}
+          renameDisabled={readOnly || sending || device.state !== 'approved'}
+          canWrite={!readOnly && !sending && device.state === 'approved'}
+          onRun={run}
+          onNewConversation={() =>
+            send({ text: '/new', attachments: [], note: '' })
+          }
+          onTodoUse={
+            !readOnly ? (text) => draftTodo(composer, text) : undefined
+          }
+          onRename={(title) => renameSession(send, title)}
         />
-        <div ref={end} />
-      </div>
 
-      <form
-        className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (readOnly) return
-          setError('')
-          if (composer.ready) follow.jump()
-          composer.submit().catch((e: unknown) => {
-            setError((e as Error).message)
-          })
-        }}
-      >
-        <JumpLatest
-          pinned={follow.pinned}
-          unread={follow.unread}
-          onJump={follow.jump}
-        />
-        {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') && data ? (
-          <p
-            role="status"
-            data-testid="session-stale"
-            className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
-          >
-            {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
-            {detail.error?.message ?? t`this device is offline`}
-          </p>
-        ) : null}
-        <SessionSubagents agents={data?.subagents} />
-        {retryIn && !readOnly ? (
-          <p role="status" className="text-meta text-brand-muted">
-            {t`Someone just used the desk; sending in ${retryIn}s…`}
-          </p>
-        ) : error ? (
-          <ErrorLine message={error} />
-        ) : blocked && !readOnly ? (
-          <p className="text-meta text-brand-muted">
-            {blocked}{' '}
-            {device.state !== 'approved' ? (
-              <Link
-                to="/{-$locale}/console/me/$page"
-                params={{
-                  locale: locale === 'en' ? undefined : locale,
-                  page: 'writing',
-                }}
-                className="text-brand-running"
-              >
-                {t`Open settings`}
-              </Link>
-            ) : null}
-          </p>
-        ) : null}
-        {readOnly ? (
-          <SessionInputUnavailable />
-        ) : (
-          <ComposerBox
-            composer={composer}
-            blocked={sending || Boolean(blocked)}
-            keysDisabled={sending || device.state !== 'approved'}
-            writable={device.state === 'approved'}
-            onRun={run}
-            onNewConversation={() =>
-              send({ text: '/new', attachments: [], note: '' })
-            }
-            commands={
-              data?.agent === 'claude' || data?.agent === 'agy'
-                ? {
-                    send: (text) =>
-                      void send({ text, attachments: [], note: '' }),
-                    resume: resume.open,
-                  }
-                : undefined
-            }
-            session={data}
+        <div
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"
+          aria-live="polite"
+        >
+          {detail.isError && !data ? (
+            <p
+              role="status"
+              className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
+            >
+              {String(detail.error.message)}
+            </p>
+          ) : null}
+          {messages.length || pending.length ? (
+            <>
+              <StickyPrompt
+                end={end}
+                messages={messages}
+                start={start}
+                following={follow.pinned}
+              />
+              <ThreadPagingBar
+                total={total}
+                shown={shown}
+                start={start}
+                pagingIn={pagingIn}
+                atCompaction={atCompaction}
+                autoFailed={paging.autoFailed}
+                onLoadEarlier={paging.loadManual}
+              />
+              <ChatThread
+                messages={messages}
+                start={start}
+                busy={busy}
+                activity={busy ? activityOf(data) : undefined}
+                {...writes.pendingProps(
+                  !readOnly && device.state === 'approved' && !blocked,
+                )}
+                status={data?.status}
+                statusTs={data?.ts}
+                onBackground={toBackground(data, device.state, run)}
+                sessionId={id}
+                syncing={syncing}
+              />
+            </>
+          ) : data ? (
+            <EmptySession data={data} />
+          ) : null}
+          <PromptPanels
+            data={data}
+            sending={sending}
+            canWrite={!readOnly && device.state === 'approved'}
+            onKey={(key) => run('key', { key })}
           />
-        )}
-        <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
-        {!readOnly && resume.element}
-      </form>
-    </div>
+          <div ref={end} />
+        </div>
+
+        <form
+          className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (readOnly) return
+            setError('')
+            if (composer.ready) follow.jump()
+            composer.submit().catch((e: unknown) => {
+              setError((e as Error).message)
+            })
+          }}
+        >
+          <JumpLatest
+            pinned={follow.pinned}
+            unread={follow.unread}
+            onJump={follow.jump}
+          />
+          {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') &&
+          data ? (
+            <p
+              role="status"
+              data-testid="session-stale"
+              className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
+            >
+              {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+              {detail.error?.message ?? t`this device is offline`}
+            </p>
+          ) : null}
+          <SessionSubagents agents={data?.subagents} />
+          {retryIn && !readOnly ? (
+            <p role="status" className="text-meta text-brand-muted">
+              {t`Someone just used the desk; sending in ${retryIn}s…`}
+            </p>
+          ) : error ? (
+            <ErrorLine message={error} />
+          ) : blocked && !readOnly ? (
+            <SessionBlockedNotice
+              blocked={blocked}
+              approved={device.state === 'approved'}
+              locale={locale}
+            />
+          ) : null}
+          {readOnly ? (
+            <SessionInputUnavailable />
+          ) : (
+            <ComposerBox
+              composer={composer}
+              blocked={sending || Boolean(blocked)}
+              keysDisabled={sending || device.state !== 'approved'}
+              writable={device.state === 'approved'}
+              onRun={run}
+              onNewConversation={() =>
+                send({ text: '/new', attachments: [], note: '' })
+              }
+              commands={
+                data?.agent === 'claude' || data?.agent === 'agy'
+                  ? {
+                      send: (text) =>
+                        void send({ text, attachments: [], note: '' }),
+                      resume: resume.open,
+                    }
+                  : undefined
+              }
+              session={data}
+            />
+          )}
+          <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
+          {!readOnly && resume.element}
+        </form>
+      </div>
+    </HostFileProvider>
   )
 }

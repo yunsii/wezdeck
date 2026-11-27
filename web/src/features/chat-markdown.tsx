@@ -2,19 +2,25 @@
 // react-markdown replacement that renders half-written Markdown (an open
 // code fence or table mid-stream) correctly, so a reply can stream in. Tables and code scroll sideways inside their own box so a
 // wide block never widens the page; links open outside the app.
+import { isValidElement } from 'react'
 import { Streamdown, defaultRehypePlugins } from 'streamdown'
 import type { Components, StreamdownProps } from 'streamdown'
 
+import { decodeHostFileHash, rehypeHostFileLinks } from '#/lib/host-file-link'
 import { cn } from '#/lib/utils'
+import { HostFileLink } from './host-file-context'
+import { MermaidBlock } from './mermaid-block'
 
 const hardenEntry = defaultRehypePlugins.harden as [
   unknown,
   Record<string, unknown>,
 ]
-// Keep dangerous protocols (file:, javascript:, data:) strictly non-clickable,
-// but render file:// code references cleanly as text instead of "[blocked]".
+// Rewrite valid `file://` links to `#wd-file:...` before sanitize/harden so
+// SessionDetail can open host plans & source files via `session.file`, while
+// keeping dangerous protocols (`javascript:`, `data:`, raw `file:`) blocked.
 const rehypePlugins = [
   defaultRehypePlugins.raw,
+  rehypeHostFileLinks,
   defaultRehypePlugins.sanitize,
   [hardenEntry[0], { ...hardenEntry[1], linkBlockPolicy: 'text-only' }],
 ] as StreamdownProps['rehypePlugins']
@@ -53,16 +59,22 @@ const components: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold">{children}</strong>
   ),
-  a: ({ children, href }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="text-brand-running underline underline-offset-2"
-    >
-      {children}
-    </a>
-  ),
+  a: ({ children, href }) => {
+    const hostFile = decodeHostFileHash(href)
+    if (hostFile) {
+      return <HostFileLink target={hostFile}>{children}</HostFileLink>
+    }
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="text-brand-running underline underline-offset-2"
+      >
+        {children}
+      </a>
+    )
+  },
   blockquote: ({ children }) => (
     <blockquote className="my-1.5 border-l-2 border-brand-edge pl-3 text-brand-muted">
       {children}
@@ -77,11 +89,21 @@ const components: Components = {
         {children}
       </code>
     ),
-  pre: ({ children }) => (
-    <pre className="my-2 overflow-x-auto rounded-xl border border-brand-edge bg-brand-deck p-2.5 font-mono text-meta leading-snug">
-      {children}
-    </pre>
-  ),
+  pre: ({ children }) => {
+    if (isValidElement<{ className?: string; children?: unknown }>(children)) {
+      const className = children.props.className ?? ''
+      if (/\blanguage-mermaid\b/.test(className)) {
+        const raw = children.props.children
+        const code = Array.isArray(raw) ? raw.join('') : String(raw ?? '')
+        return <MermaidBlock code={code} />
+      }
+    }
+    return (
+      <pre className="my-2 overflow-x-auto rounded-xl border border-brand-edge bg-brand-deck p-2.5 font-mono text-meta leading-snug">
+        {children}
+      </pre>
+    )
+  },
   table: ({ children }) => (
     <div className="my-2 overflow-x-auto rounded-xl border border-brand-edge">
       <table className="w-max min-w-full border-collapse text-caption">

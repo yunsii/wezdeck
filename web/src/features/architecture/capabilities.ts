@@ -184,6 +184,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'A transcript image: the original in chunks (the page makes the thumbnail)',
       ),
       c(
+        'session.file',
+        '读取会话作用域内的方案文档、Artifact 或仓库源码（脱敏、限大小，支持行号定位）',
+        'Read a plan doc, artifact, or checkout file within the session scope (redacted, bounded, with line targeting)',
+      ),
+      c(
         'upload.get',
         '已上传图片的原图分块',
         'A chunk of an uploaded image’s original',
