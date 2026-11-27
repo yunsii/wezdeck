@@ -42,6 +42,29 @@
   }
 }
 
+@keyframes content-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes content-slide-forward {
+  from {
+    opacity: 0.5;
+    transform: translateX(8px);
+  }
+}
+
+@keyframes content-slide-back {
+  from {
+    opacity: 0.5;
+    transform: translateX(-8px);
+  }
+}
+
 .skeleton-bar {
   background: color-mix(in srgb, var(--brand-text) 13%, transparent);
 }
@@ -52,7 +75,19 @@
 }
 
 .content-enter {
-  animation: content-enter 120ms var(--ease-enter) both;
+  animation: content-enter 140ms var(--ease-enter) both;
+}
+
+.content-exit {
+  animation: content-exit 110ms var(--ease-exit) both;
+}
+
+.content-slide-forward {
+  animation: content-slide-forward 150ms var(--ease-enter) both;
+}
+
+.content-slide-back {
+  animation: content-slide-back 150ms var(--ease-enter) both;
 }
 
 /* Chunked code viewer slices: off-screen lines skip style/layout/paint until
@@ -126,6 +161,9 @@
   .led-running circle,
   .skeleton-pulse,
   .content-enter,
+  .content-exit,
+  .content-slide-forward,
+  .content-slide-back,
   .chat-in {
     animation: none;
   }

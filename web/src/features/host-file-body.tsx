@@ -114,7 +114,7 @@ export function CodeFileBody({
         data-lang={lang ?? undefined}
         className="min-w-0 max-w-full overflow-x-auto rounded-2xl border border-brand-edge bg-brand-surface py-3 font-mono text-meta leading-relaxed"
       >
-        <div className="content-enter">
+        <div>
           {chunks.map((chunk) => {
             const firstNo = chunk.start + 1
             const lastNo = chunk.start + chunk.items.length
@@ -267,9 +267,7 @@ export function MarkdownFileBody({ content }: { content: string }) {
         )}
       >
         <article className="min-w-0 max-w-full rounded-2xl border border-brand-edge/70 bg-brand-surface px-4 py-5 text-brand-text sm:px-7 sm:py-7 md:px-9 md:py-8">
-          <div className="content-enter">
-            <ChatMarkdown text={content} variant="document" />
-          </div>
+          <ChatMarkdown text={content} variant="document" />
         </article>
 
         {hasToc ? (
