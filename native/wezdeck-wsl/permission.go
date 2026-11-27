@@ -20,15 +20,22 @@ const (
 	permissionSummaryCap = 2000
 )
 
+type permissionOption struct {
+	Label string   `json:"label"`
+	Kind  string   `json:"kind"` // "allow" | "always" | "deny"
+	Keys  []string `json:"keys"` // allowedKeys sequence, e.g. ["Enter"], ["Down", "Enter"], ["Escape"]
+}
+
 type pendingCall struct {
-	Tool      string   `json:"tool"`
-	Text      string   `json:"text"`                // "<tool> <target>" (compat)
-	Summary   string   `json:"summary,omitempty"`   // full human summary / target (wraps in UI)
-	Flags     []string `json:"flags,omitempty"`     // e.g. bypass-sandbox, daemon, background
-	Body      string   `json:"body,omitempty"`      // full command / diff / file / JSON args
-	File      string   `json:"file,omitempty"`
-	Plan      bool     `json:"plan,omitempty"`      // ExitPlanMode: the body is the plan
-	Truncated bool     `json:"truncated,omitempty"` // true only when body exceeded permissionBodyCap
+	Tool      string             `json:"tool"`
+	Text      string             `json:"text"`                // "<tool> <target>" (compat)
+	Summary   string             `json:"summary,omitempty"`   // full human summary / target (wraps in UI)
+	Flags     []string           `json:"flags,omitempty"`     // e.g. bypass-sandbox, daemon, background
+	Body      string             `json:"body,omitempty"`      // full command / diff / file / JSON args
+	File      string             `json:"file,omitempty"`
+	Plan      bool               `json:"plan,omitempty"`      // ExitPlanMode: the body is the plan
+	Truncated bool               `json:"truncated,omitempty"` // true only when body exceeded permissionBodyCap
+	Options   []permissionOption `json:"options,omitempty"`   // parsed TUI menu options (e.g. Agy Always allow)
 }
 
 // planTool: the agent's plan-approving tool (planReader.PlanTool), "" none.

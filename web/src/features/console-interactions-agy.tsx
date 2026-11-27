@@ -36,6 +36,15 @@ const AGY_RUN_COMMAND: PendingCall = {
     'bash /home/yuns/github/wezterm-config/scripts/dev/wezdeck-release.sh --land HEAD',
     'echo "RELEASE_SCRIPT_END_MARKER"',
   ].join('\n'),
+  options: [
+    { label: 'Yes, run command', kind: 'allow', keys: ['Enter'] },
+    {
+      label: 'Yes, and always allow for commands that start with "bash"',
+      kind: 'always',
+      keys: ['Down', 'Enter'],
+    },
+    { label: 'No, deny', kind: 'deny', keys: ['Escape'] },
+  ],
 }
 
 const AGY_PERMISSION_SCREEN =
@@ -159,8 +168,8 @@ export function agySections(
         en: 'Agy has no PermissionRequest hook: surfaced while running with an unanswered tool call in the full transcript and dedicated confirmation menu lines at the pane tail (agent_agy_state.go)',
       },
       keys: {
-        zh: '允许 = Enter（确认默认高亮的 Yes 项）；拒绝 = Esc。持久化白名单规则留在终端选择',
-        en: 'Allow = Enter (confirms the highlighted Yes option); Deny = Esc. Persistent allow rules stay at the terminal',
+        zh: '允许 = Enter（单次放行）；始终允许 = Down + Enter（按终端展示的前缀规则持久放行）；拒绝 = Esc',
+        en: 'Allow = Enter (run once); Always allow = Down + Enter (saves the shown prefix rule); Deny = Esc',
       },
       demo: (
         <PermissionCard

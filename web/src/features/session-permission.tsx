@@ -21,6 +21,12 @@ import {
   usePromptAction,
 } from './prompt-action-state'
 
+export type PermissionOption = {
+  label: string
+  kind: 'allow' | 'always' | 'deny'
+  keys: Array<string>
+}
+
 export type PendingCall = {
   tool: string
   text: string
@@ -30,10 +36,35 @@ export type PendingCall = {
   file?: string
   plan?: boolean
   truncated?: boolean
+  options?: Array<PermissionOption>
 }
 
 /** the keys each answer sends, also listed on the 交互调试 page */
 export const PERMISSION_KEYS = { allow: '1', deny: 'Escape' } as const
+
+/** Extract the rule scope from an Agy "Yes, and always allow ..." label. */
+export function alwaysAllowScope(label: string): string {
+  return label
+    .trim()
+    .replace(/^Yes,\s*(?:and\s+)?always allow\s*/i, '')
+    .replace(/^Always allow\s*/i, '')
+    .trim()
+}
+
+/** Send a multi-key permission sequence (e.g. Down → Enter), stopping on error. */
+export async function sendPermissionKeys(
+  keys: Array<string>,
+  onKey: (key: string) => Promise<unknown> | void,
+  settleMs = 60,
+): Promise<boolean> {
+  for (let i = 0; i < keys.length; i++) {
+    if ((await onKey(keys[i])) === false) return false
+    if (i < keys.length - 1 && settleMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, settleMs))
+    }
+  }
+  return true
+}
 
 function FlagPills({ flags }: { flags?: Array<string> }) {
   const { t } = useLingui()
@@ -138,6 +169,95 @@ function PermissionDetailSheet({
   )
 }
 
+function PermissionActions({
+  isPlan,
+  allowKeys,
+  alwaysOptions,
+  disabled,
+  pending,
+  run,
+  onKey,
+}: {
+  isPlan: boolean
+  allowKeys: Array<string>
+  alwaysOptions: Array<PermissionOption>
+  disabled: boolean
+  pending: ReturnType<typeof usePromptAction>['pending']
+  run: ReturnType<typeof usePromptAction>['run']
+  onKey: (key: string) => Promise<unknown> | void
+}) {
+  const { t } = useLingui()
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="solid"
+          type="button"
+          disabled={disabled || Boolean(pending)}
+          onClick={() =>
+            void run('allow', () => sendPermissionKeys(allowKeys, onKey))
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'allow', 'solid'),
+          )}
+        >
+          {isPlan ? t`Approve the plan` : t`Allow`}
+        </Button>
+        <Button
+          variant="key"
+          type="button"
+          disabled={disabled || Boolean(pending)}
+          onClick={() =>
+            void run('deny', () => onKey(PERMISSION_KEYS.deny), {
+              kind: 'cancel',
+            })
+          }
+          className={cn(
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'deny'),
+          )}
+        >
+          {isPlan ? t`Keep planning` : t`Deny`}
+        </Button>
+      </div>
+      {alwaysOptions.length > 0 ? (
+        <div className="grid gap-1.5">
+          {alwaysOptions.map((opt, idx) => {
+            const scope = alwaysAllowScope(opt.label)
+            const actionId = `always-${idx}`
+            return (
+              <Button
+                key={`${idx}-${opt.label}`}
+                variant="key"
+                type="button"
+                data-testid="permission-always"
+                disabled={disabled || Boolean(pending)}
+                onClick={() =>
+                  void run(actionId, () => sendPermissionKeys(opt.keys, onKey))
+                }
+                className={cn(
+                  'grid min-h-11 gap-0.5 px-3 py-2 text-left disabled:opacity-40',
+                  promptButtonClass(pending, actionId),
+                )}
+              >
+                <span className="text-body font-medium text-brand-text">
+                  {t`Always allow`}
+                </span>
+                {scope ? (
+                  <span className="font-mono text-meta leading-snug break-words text-brand-muted">
+                    {scope}
+                  </span>
+                ) : null}
+              </Button>
+            )
+          })}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 export function PermissionCard({
   agent,
   call,
@@ -154,7 +274,15 @@ export function PermissionCard({
   const { t } = useLingui()
   const [expanded, setExpanded] = useState(false)
   const isAgy = agent === 'agy'
-  const allowKey = isAgy ? 'Enter' : PERMISSION_KEYS.allow
+  const options = call.options ?? []
+  const allowOpt = options.find((opt) => opt.kind === 'allow')
+  const alwaysOptions = call.plan
+    ? []
+    : options.filter((opt) => opt.kind === 'always' && opt.keys.length > 0)
+  const allowKeys =
+    allowOpt && allowOpt.keys.length > 0
+      ? allowOpt.keys
+      : [isAgy ? 'Enter' : PERMISSION_KEYS.allow]
   const promptKey = `${agent ?? ''}:${call.tool}:${call.text}:${call.summary ?? ''}:${call.body ?? ''}`
   const { pending, run } = usePromptAction(promptKey)
   const fallbackTarget = call.text.startsWith(`${call.tool} `)
@@ -169,7 +297,9 @@ export function PermissionCard({
   const idleHint = call.plan
     ? t`Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change.`
     : isAgy
-      ? t`Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal.`
+      ? alwaysOptions.length > 0
+        ? t`Allow runs once; Always allow saves the shown rule; Deny sends Esc.`
+        : t`Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal.`
       : t`After deny, say in the box below what to do instead. "Don't ask again" and other options are at the desk.`
 
   const copyBody = () => {
@@ -297,36 +427,15 @@ export function PermissionCard({
           ) : null}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="solid"
-          type="button"
-          disabled={disabled || Boolean(pending)}
-          onClick={() => void run('allow', () => onKey(allowKey))}
-          className={cn(
-            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            promptButtonClass(pending, 'allow', 'solid'),
-          )}
-        >
-          {call.plan ? t`Approve the plan` : t`Allow`}
-        </Button>
-        <Button
-          variant="key"
-          type="button"
-          disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void run('deny', () => onKey(PERMISSION_KEYS.deny), {
-              kind: 'cancel',
-            })
-          }
-          className={cn(
-            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            promptButtonClass(pending, 'deny'),
-          )}
-        >
-          {call.plan ? t`Keep planning` : t`Deny`}
-        </Button>
-      </div>
+      <PermissionActions
+        isPlan={Boolean(call.plan)}
+        allowKeys={allowKeys}
+        alwaysOptions={alwaysOptions}
+        disabled={disabled}
+        pending={pending}
+        run={run}
+        onKey={onKey}
+      />
       <PromptActionStatus pending={pending} idle={idleHint} />
       {screen ? (
         <Disclosure

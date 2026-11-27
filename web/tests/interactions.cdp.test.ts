@@ -132,7 +132,7 @@ describe('Interaction debugging page', () => {
     expect(await sheet.innerText()).toContain('RELEASE_SCRIPT_END_MARKER')
     await page.keyboard.press('Escape')
     await sheet.waitFor({ state: 'hidden', timeout: 3_000 })
-    await agyDetail.getByRole('button', { name: '允许' }).click()
+    await agyDetail.getByRole('button', { name: '允许', exact: true }).click()
     await expect
       .poll(() =>
         page
@@ -141,6 +141,28 @@ describe('Interaction debugging page', () => {
           .textContent(),
       )
       .toContain('操作已发送，等待 Agent 继续')
+    await expect
+      .poll(() => page.getByTestId('interaction-log').textContent())
+      .toContain('agy-permission → Enter')
+    // Reload agy-permission to test Always allow (Down → Enter)
+    await page.goto(`${base}/zh/console/me/interactions#agy-ask`)
+    await page.goto(`${base}/zh/console/me/interactions#agy-permission`)
+    await expect
+      .poll(() =>
+        page.getByTestId('interaction-detail').getAttribute('data-interaction'),
+      )
+      .toBe('agy-permission')
+    const alwaysBtn = page
+      .getByTestId('interaction-detail')
+      .getByTestId('permission-always')
+    expect(await alwaysBtn.innerText()).toContain('始终允许')
+    expect(await alwaysBtn.innerText()).toContain(
+      'commands that start with "bash"',
+    )
+    await alwaysBtn.click()
+    await expect
+      .poll(() => page.getByTestId('interaction-log').textContent())
+      .toContain('agy-permission → Down')
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('agy-permission → Enter')
