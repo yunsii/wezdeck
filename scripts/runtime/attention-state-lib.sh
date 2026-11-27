@@ -659,7 +659,7 @@ attention_state_upsert() {
   local last_user_prompt="${11:-}"
   local agent_name="${12:-}"
   local tmux_window_name="${13:-}"
-  # Background running substate (avoid a 14th positional): emit sets
+  # Background running substate: emit sets
   # AGENT_ATTENTION_RUNNING_KIND=background and AGENT_ATTENTION_BG_JSON='[…]'
   # before calling upsert. Stored only while status=running.
   # AGENT_ATTENTION_DONE_KIND=bg_finished marks demoted-bg done so Lua
@@ -730,7 +730,7 @@ attention_state_upsert() {
          --argjson bg "$bg_argjson" \
          --arg lup "$last_user_prompt" \
          --arg an "$agent_name" \
-         --arg wn "$tmux_window_name" \
+         --arg wn "$tmux_window_name" --arg interrupt "${14:-}" \
          --argjson ts "$ts" \
          --argjson cap "$ATTENTION_RECENT_CAP" \
          --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
@@ -791,7 +791,7 @@ attention_state_upsert() {
                    + (if ($st == "running") and ($rk == "background")
                       then {running_kind: "background", bg: {tasks: $bg}}
                       else {}
-                      end) + turn_fields($prev; $st; $rk; $ts)
+                      end) + turn_fields($prev; $st; $rk; $ts; $sid; $interrupt)
                    + (if ($st == "done") and ($dk != "")
                       then {done_kind: $dk}
                       else {}
