@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -78,13 +79,78 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if err := pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text); err != nil {
 		return nil, err
 	}
-	if renamed, ok := strings.CutPrefix(strings.TrimSpace(a.Text), "/rename "); ok {
+	trimmed := strings.TrimSpace(a.Text)
+	if renamed, ok := strings.CutPrefix(trimmed, "/rename "); ok {
 		if renamed = strings.TrimSpace(renamed); renamed != "" {
 			lockSessionTitle(a.ID, e.AgentName, renamed)
 		}
 	}
+	reply := map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}
+	if strings.EqualFold(trimmed, "/new") && sessionAgentFamily(e) == "agy" {
+		if pendingID := markAgyNewConversation(e); pendingID != "" {
+			reply["session_id"] = pendingID
+			relayLogf("session_new_conv", "id=%s agent=agy pane=%s pending=%s", a.ID, e.TmuxPane, pendingID)
+		}
+	}
 	_ = tmuxCmd(e.TmuxSocket, "display-message", "-d", "4000", "-t", e.TmuxPane, "网页端发来一条消息").Run()
-	return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}, nil
+	return reply, nil
+}
+
+func newUUIDv4() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return newDiagID()
+	}
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
+
+// markAgyNewConversation unpins typed resume and marks the pane's archived
+// attention row cleared_to a temporary pending-<uuid> id right after `/new`.
+// Agy only allocates a real conversationId and fires SessionStart when the
+// first user prompt is submitted, so without this placeholder the web console
+// stays stuck on the previous conversation until a message is sent.
+func markAgyNewConversation(e attentionEntry) string {
+	if e.TmuxPane == "" {
+		return ""
+	}
+	resolveScript := filepath.Join(repoRoot(), "scripts", "runtime", "agent-session-resolve.sh")
+	stateScript := filepath.Join(repoRoot(), "scripts", "runtime", "attention-state-lib.sh")
+	if _, err := os.Stat(stateScript); err != nil {
+		return ""
+	}
+	pendingID := "pending-" + newUUIDv4()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "bash", "-c", `
+		resolve_lib="$1"; state_lib="$2"; sock="$3"; sess="$4"; pane="$5"; pending="$6"; old_sid="$7"
+		if [[ -f "$resolve_lib" ]]; then
+			source "$resolve_lib" 2>/dev/null || true
+			prev_sid="$(agent_session_resolve_for_pane "$pane" 2>/dev/null || true)"
+			agent_session_unpin_pane "$pane" "" 2>/dev/null || true
+			if [[ -n "$prev_sid" ]]; then
+				tmux set-option -p -t "$pane" -q @wezterm_agent_discarded_session_id "$prev_sid" 2>/dev/null || true
+			fi
+		fi
+		if [[ -z "$sess" && -n "$pane" ]]; then
+			sess="$(tmux display-message -p -t "$pane" '#{session_name}' 2>/dev/null || true)"
+		fi
+		source "$state_lib"
+		attention_state_evict_session "$sock" "$sess" "$pending" "$pane" 2>/dev/null || true
+		attention_mark_cleared "$sock" "$pane" "$pending" "$old_sid" "$sess" 2>/dev/null || true
+	`, "agy-new-conv", resolveScript, stateScript, e.TmuxSocket, e.TmuxSession, e.TmuxPane, pendingID, e.SessionID)
+	cmd.Env = os.Environ()
+	if e.TmuxSocket != "" {
+		cmd.Env = append(cmd.Env, "TMUX="+e.TmuxSocket+",0,0")
+	}
+	if p := os.Getenv("WEZDECK_ATTENTION_FILE"); p != "" {
+		cmd.Env = append(cmd.Env, "WEZDECK_ATTENTION_STATE_PATH="+p, "WEZTERM_ATTENTION_LOCK_FILE="+p+".lock")
+	}
+	if err := cmd.Run(); err != nil {
+		return ""
+	}
+	return pendingID
 }
 
 // pasteToPane pastes text into a pane as one bracketed paste, then Enter —

@@ -3,9 +3,15 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   canFollowSession,
+  isPendingResolution,
   resetSessionFollowState,
   sessionIdFromPath,
 } from '#/features/session-follow'
+import {
+  getPendingForTest,
+  seedQueuedPending,
+  transferPending,
+} from '#/features/session-send'
 
 describe('session follow path', () => {
   it('reads the session id only on a detail URL', () => {
@@ -43,5 +49,26 @@ describe('canFollowSession', () => {
   it('refuses empty or identical ids', () => {
     expect(canFollowSession('', 'b', new Set())).toBe(false)
     expect(canFollowSession('a', 'a', new Set())).toBe(false)
+  })
+})
+
+describe('pending session resolution', () => {
+  it('recognizes pending-* to real session id transitions only', () => {
+    expect(isPendingResolution('pending-123', 'real-456')).toBe(true)
+    expect(isPendingResolution('pending-123', 'pending-456')).toBe(false)
+    expect(isPendingResolution('old-123', 'pending-456')).toBe(false)
+    expect(isPendingResolution('old-123', 'real-456')).toBe(false)
+  })
+
+  it('transfers queued optimistic messages from pending-* to the real id', () => {
+    const from = 'pending-transfer-test'
+    const to = 'real-transfer-test'
+    seedQueuedPending(from, 'first prompt after /new')
+    expect(getPendingForTest(from)).toHaveLength(1)
+    transferPending(from, to)
+    expect(getPendingForTest(from)).toHaveLength(0)
+    expect(getPendingForTest(to)).toHaveLength(1)
+    expect(getPendingForTest(to)[0]?.text).toBe('first prompt after /new')
+    expect(getPendingForTest(to)[0]?.after).toBe(0)
   })
 })

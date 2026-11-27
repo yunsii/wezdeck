@@ -36,12 +36,7 @@ func restartSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, agent := findTranscript(e.SessionID)
-	if agent == "" {
-		if _, _, cmd, _, _, alive := paneState(e); alive && agentCommands[cmd] {
-			agent = strings.TrimSuffix(cmd, ".real")
-		}
-	}
+	agent := sessionAgentFamily(e)
 	cmdPath := os.Getenv("WEZDECK_SESSION_RESTART_CMD")
 	if cmdPath == "" {
 		cmdPath = filepath.Join(repoRoot(), "scripts", "runtime", "session-restart.sh")

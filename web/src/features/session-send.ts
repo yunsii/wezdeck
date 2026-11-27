@@ -101,6 +101,22 @@ export function seedQueuedPending(
   ])
 }
 
+export function transferPending(from: string, to: string) {
+  if (!from || !to || from === to) return
+  const items = pendingStore.get(from)
+  if (!items?.length) return
+  pendingStore.delete(from)
+  const existing = pendingStore.get(to) ?? NONE
+  const moved = items.map((item) => ({ ...item, after: 0 }))
+  pendingStore.set(to, [...existing, ...moved])
+  for (const listener of pendingListeners) listener()
+}
+
+/** Test helper: inspect queued bubbles for one session id. */
+export function getPendingForTest(id: string): ReadonlyArray<Pending> {
+  return pendingStore.get(id) ?? NONE
+}
+
 function usePending(id: string) {
   return useSyncExternalStore(
     (listener) => {
@@ -238,8 +254,10 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         action: 'send',
         stage: 'host-accepted',
       })
-      if (command) toast(t`Command sent: ${command}`)
-      else mark('queued')
+      if (command) {
+        void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+        toast(t`Command sent: ${command}`)
+      } else mark('queued')
     })
   }
   /** drop a bubble (a lost one the user gave up on) */

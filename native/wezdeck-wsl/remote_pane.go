@@ -28,6 +28,138 @@ func paneHasAgentProcess(socket, pane string) bool {
 	return paneHasDescendant(socket, pane, func(comm string) bool { return agentCommands[comm] })
 }
 
+// paneHasLauncherProcess reports whether a pane is still booting a managed
+// agent through primary-pane-wrapper / agent-launcher / agent-resume (before
+// the agent binary execs). Keeps a fresh pending-* card alive during respawn.
+func paneHasLauncherProcess(e attentionEntry) bool {
+	if e.TmuxPane == "" {
+		return false
+	}
+	return paneDescendantArgs(e.TmuxSocket, e.TmuxPane, func(comm string) bool {
+		return comm == "bash" || comm == "sh"
+	}) != nil && paneHasLauncherArg(e.TmuxSocket, e.TmuxPane)
+}
+
+func paneHasLauncherArg(socket, pane string) bool {
+	out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_pid}").Output()
+	if err != nil {
+		return false
+	}
+	root, err := strconv.Atoi(strings.TrimSpace(string(out)))
+	if err != nil || root <= 0 {
+		return false
+	}
+	pids := []int{root}
+	for i := 0; i < len(pids) && i < 64; i++ {
+		pid := pids[i]
+		if raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid)); err == nil {
+			cmd := strings.ReplaceAll(string(raw), "\x00", " ")
+			if strings.Contains(cmd, "agent-launcher.sh") ||
+				strings.Contains(cmd, "agent-resume.sh") ||
+				strings.Contains(cmd, "primary-pane-wrapper.sh") {
+				return true
+			}
+		}
+		children, err := os.ReadFile(fmt.Sprintf("/proc/%d/task/%d/children", pid, pid))
+		if err != nil {
+			continue
+		}
+		for _, child := range strings.Fields(string(children)) {
+			if next, err := strconv.Atoi(child); err == nil && next > 0 {
+				pids = append(pids, next)
+			}
+		}
+	}
+	return false
+}
+
+// isAgentPane: true when the pane still hosts an agent TUI. Grok is started
+// under grok-focus-filter.py, so pane_current_command is often "python3"
+// while grok.real is the child; managed Agy panes often report "bash" while
+// agy runs below it.
+func isAgentPane(cmd string, e attentionEntry) bool {
+	if agentCommands[cmd] {
+		return true
+	}
+	if cmd == "bash" || cmd == "zsh" || cmd == "sh" {
+		return paneHasProcess(e, "agy")
+	}
+	if cmd != "python3" {
+		return false
+	}
+	if strings.EqualFold(e.AgentName, "grok") {
+		return true
+	}
+	if _, agent := findTranscript(e.SessionID); agent == "grok" {
+		return true
+	}
+	return false
+}
+
+// recentPaneMeta collects the newest non-empty tmux/git metadata per pane from
+// recent[] so a newer phantom cleared_to stub keeps TmuxSession/WindowName/Branch.
+func recentPaneMeta(recent []recentEntry) map[string]attentionEntry {
+	meta := map[string]attentionEntry{}
+	for _, r := range recent {
+		key := r.TmuxSocket + "|" + r.TmuxPane
+		if r.TmuxPane == "" || r.TmuxSession == "" {
+			continue
+		}
+		if _, ok := meta[key]; !ok {
+			meta[key] = r.attentionEntry
+		}
+	}
+	return meta
+}
+
+func backfillRecentPaneMeta(e *attentionEntry, meta map[string]attentionEntry, key string) {
+	m, ok := meta[key]
+	if !ok {
+		return
+	}
+	if e.TmuxSession == "" {
+		e.TmuxSession = m.TmuxSession
+	}
+	if e.WindowName == "" {
+		e.WindowName = m.WindowName
+	}
+	if e.GitBranch == "" {
+		e.GitBranch = m.GitBranch
+	}
+}
+
+// paneAgentFamily resolves the live agent family from pane command, managed
+// profile, or wrapped Agy descendant process.
+func paneAgentFamily(e attentionEntry, cmd, profile string) string {
+	if agentCommands[cmd] {
+		return profileFamily(strings.TrimSuffix(cmd, ".real"))
+	}
+	if fam := profileFamily(profile); agentCommands[fam] {
+		return fam
+	}
+	if (cmd == "bash" || cmd == "zsh" || cmd == "sh") && paneHasProcess(e, "agy") {
+		return "agy"
+	}
+	return ""
+}
+
+// sessionAgentFamily identifies a session's agent family from its transcript,
+// live pane process/profile, or attention agent_name fallback.
+func sessionAgentFamily(e attentionEntry) string {
+	if _, agent := findTranscript(e.SessionID); agent != "" {
+		return agent
+	}
+	if _, _, cmd, _, profile, alive := paneState(e); alive {
+		if fam := paneAgentFamily(e, cmd, profile); fam != "" {
+			return fam
+		}
+	}
+	if fam := profileFamily(strings.ToLower(strings.TrimSpace(e.AgentName))); agentCommands[fam] {
+		return fam
+	}
+	return ""
+}
+
 func paneHasDescendant(socket, pane string, match func(string) bool) bool {
 	return paneDescendantArgs(socket, pane, match) != nil
 }

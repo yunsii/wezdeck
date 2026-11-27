@@ -31,7 +31,7 @@ agent_session_id_usable() {
   local sid="${1:-}"
   [[ -n "$sid" ]] || return 1
   case "$sid" in
-    pane:*) return 1 ;;
+    pane:*|pending-*) return 1 ;;
   esac
   return 0
 }
@@ -606,9 +606,10 @@ agent_session_resolve_from_attention() {
     --arg sess "$tmux_session" \
     --arg pane "$tmux_pane" \
     --arg wname "$tmux_window_name" '
+      def usable_id($id):
+        ($id != "" and ($id | startswith("pane:") | not) and ($id | startswith("pending-") | not));
       def usable:
-        (.session_id // "") as $id
-        | ($id != "" and ($id | startswith("pane:") | not));
+        usable_id(.session_id // "");
       def pane_match:
         (.tmux_pane // "") == $pane
         and ($sess == "" or (.tmux_session // "") == $sess)
@@ -629,9 +630,14 @@ agent_session_resolve_from_attention() {
         | map(select(pane_match and window_match and usable))
         | .[0].session_id // empty)
       // ((.recent // [])
-        | map(select(pane_match and window_match and usable))
+        | map(select(pane_match and window_match))
         | sort_by(-(.archived_ts // 0))
-        | .[0].session_id // empty)
+        | .[0] // null
+        | if . == null then empty
+          elif (.cleared_to // "") != "" then
+            (if usable_id(.cleared_to) then .cleared_to else empty end)
+          elif usable then .session_id
+          else empty end)
     ' "$path" 2>/dev/null || true)"
 
   if agent_session_id_usable "$sid"; then

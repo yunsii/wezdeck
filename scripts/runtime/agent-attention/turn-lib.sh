@@ -128,14 +128,15 @@ attention_promote_to_turn() {
 # stub for any phantom id that only existed as someone's cleared_to so
 # a web page still on that URL gets replaced_by.
 attention_mark_cleared() {
-  local socket="$1" pane="$2" new_sid="$3"
+  local socket="$1" pane="$2" new_sid="$3" fallback_from="${4:-}" fallback_session="${5:-}"
   [[ -n "$pane" && -n "$new_sid" ]] || return 0
   (
     flock -x 9
     local cur next now
     cur="$(attention_state_read)"
     now="$(attention_state_now_ms)"
-    next="$(jq -c --arg tsk "$socket" --arg tp "$pane" --arg sid "$new_sid" --argjson now "$now" '
+    next="$(jq -c --arg tsk "$socket" --arg tp "$pane" --arg sid "$new_sid" \
+      --arg from "$fallback_from" --arg tses "$fallback_session" --argjson now "$now" '
       (.recent // []) as $recent
       | ($recent
           | map(select(
@@ -144,6 +145,7 @@ attention_mark_cleared() {
             ) | .cleared_to)
           | unique) as $phantoms
       | ($recent | map(.session_id // "") | unique) as $known
+      | ($recent | any((.tmux_pane // "") == $tp and (.tmux_socket // "") == $tsk)) as $has_pane
       | if (.entries[$sid] | type) == "object" then .entries[$sid] |= del(.restart_pending) else . end
       | .recent = (
           ($recent | map(
@@ -152,6 +154,15 @@ attention_mark_cleared() {
             else . + {cleared_to: $sid}
             end
           ))
+          + (if ($has_pane | not) and $from != "" and $from != $sid then [{
+                session_id: $from,
+                tmux_socket: $tsk,
+                tmux_session: $tses,
+                tmux_pane: $tp,
+                last_status: "idle",
+                archived_ts: $now,
+                cleared_to: $sid
+              }] else [] end)
           + ($phantoms
               | map(select(. as $p | ($known | index($p) | not)))
               | map({

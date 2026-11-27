@@ -153,35 +153,6 @@ func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
 // agentCommands: what an agent TUI pane runs (pane_current_command).
 var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true, "agy": true}
 
-// isAgentPane: true when the pane still hosts an agent TUI. Grok is started
-// under grok-focus-filter.py, so pane_current_command is often "python3"
-// while grok.real is the child — accept that when the session id (or
-// agent_name) is known to be Grok, so archived Grok panes stay on the
-// phone's 会话 list instead of vanishing until the next message.
-func isAgentPane(cmd string, e attentionEntry) bool {
-	if agentCommands[cmd] {
-		return true
-	}
-	if cmd == "bash" || cmd == "zsh" || cmd == "sh" {
-		if strings.EqualFold(e.AgentName, "agy") {
-			return paneHasProcess(e, "agy")
-		}
-		if _, agent := findTranscript(e.SessionID); agent == "agy" {
-			return paneHasProcess(e, "agy")
-		}
-	}
-	if cmd != "python3" {
-		return false
-	}
-	if strings.EqualFold(e.AgentName, "grok") {
-		return true
-	}
-	if _, agent := findTranscript(e.SessionID); agent == "grok" {
-		return true
-	}
-	return false
-}
-
 // liveSessions merges the live entries with archived ones (recent[]) whose
 // pane still runs an agent: an acknowledged or idle-for-30-min session drops
 // out of .entries but is still open and takes input. Archived ones get
@@ -215,6 +186,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 	// running a session this pane's cleared_to replaced).
 	pins := agentSessionPins(sockets)
 	sort.Slice(recent, func(i, j int) bool { return recent[i].ArchivedTS > recent[j].ArchivedTS })
+	paneMeta := recentPaneMeta(recent)
 	for _, r := range recent {
 		key := r.TmuxSocket + "|" + r.TmuxPane
 		if r.SessionID == "" || r.TmuxPane == "" || panes[key] || sessionWasClosed(r.SessionID) {
@@ -222,13 +194,19 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 		}
 		panes[key] = true
 		_, _, cmd, _, profile, alive := paneState(r.attentionEntry)
-		if !alive || !isAgentPane(cmd, r.attentionEntry) {
+		if !alive {
+			continue
+		}
+		isPending := strings.HasPrefix(r.ClearedTo, "pending-")
+		if !isAgentPane(cmd, r.attentionEntry) &&
+			!(isPending && agentCommands[profileFamily(profile)] && paneHasLauncherProcess(r.attentionEntry)) {
 			continue
 		}
 		if cmd != "codex" && archivedCodexTranscript(r) != "" {
 			continue
 		}
 		e := r.attentionEntry
+		backfillRecentPaneMeta(&e, paneMeta, key)
 		e.Status = "idle"
 		e.WaitingKind = ""
 		e.RunningKind = ""
@@ -422,11 +400,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			RunningKind: e.RunningKind, RestartPending: e.RestartPending, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
 			AgentProfile: profile}
-		// The live pane is authoritative after a fresh cross-agent respawn.
-		// Attention entries can still carry the archived agent name briefly.
-		if family := profileFamily(cmd); agentCommands[cmd] {
-			card.Agent = family
-		} else if family := profileFamily(profile); agentCommands[family] {
+		if family := paneAgentFamily(e, cmd, profile); family != "" {
 			card.Agent = family
 		}
 		states, cached := attachments[e.TmuxSocket]
@@ -726,10 +700,7 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		// no transcript yet (a fresh session after /new): the pane's command
 		// or managed profile still says which agent it is
 		if _, _, cmd, _, profile, alive := paneState(e); alive {
-			if family := profileFamily(cmd); agentCommands[cmd] {
-				agent = family
-				out["agent"] = agent
-			} else if family := profileFamily(profile); agentCommands[family] {
+			if family := paneAgentFamily(e, cmd, profile); family != "" {
 				agent = family
 				out["agent"] = agent
 			}
