@@ -9,45 +9,49 @@ import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
-import type { GitStatus } from '#/components/deck/session-tags'
 import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { trace } from '#/lib/client-trace'
 import { forgetOpened } from '#/lib/last-opened'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
-import { cn } from '#/lib/utils'
-import type { TokenRate } from '#/lib/turn-progress'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
-import { JumpLatest, ThreadPagingBar } from './chat-controls'
+import { JumpLatest } from './chat-controls'
 import { shouldLandLatestTop } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
-import { ChatThread, settle } from './chat-thread'
+import { settle } from './chat-thread'
 import { HostFileProvider } from './host-file-sheet'
-import {
-  SessionBlockedNotice,
-  SessionInputUnavailable,
-  SessionStaleNotice,
-} from './session-detail-notices'
-import { SessionSubagents } from './session-subagents'
-import type { Subagent } from './session-subagents'
-import { StickyPrompt } from './chat-sticky'
-import { EmptySession } from './session-empty'
-import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import { SessionInputUnavailable } from './session-detail-notices'
+import { ComposerBox, useComposer } from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
-import { PromptPanels, hasPromptPanel } from './session-elicitation'
-import type { Elicitation } from './session-elicitation'
-import { useFollowReplacement, useSessionWrites } from './session-send'
+import { hasPromptPanel } from './session-elicitation'
+import {
+  mergeOutboxPending,
+  useFollowReplacement,
+  useSessionWrites,
+} from './session-send'
+import { OutboxNotice, useSentHistoryControl } from './sent-history'
+import { toast } from 'sonner'
 import { useResumeSheet } from './session-commands'
 import { SessionStatusBar } from './session-statusbar'
-import type { StatusFields } from './session-statusbar'
 import type { BgTask } from './session-background'
 import type { Message } from './chat-thread'
-import type { PendingCall } from './session-permission'
 import type { SessionCard } from './session-card'
 import { detailKey, readDetail, useSessionDetail } from './session-detail-read'
+import {
+  SessionComposerNotices,
+  SessionThreadBody,
+} from './session-detail-parts'
+import type {
+  AccountLimits,
+  AgentCapabilities,
+  Detail,
+  RateWindow,
+  TitleHistoryItem,
+  Usage,
+} from './session-detail-types'
 import {
   LAST_SESSION_KEY,
   clearSessionMissing,
@@ -83,99 +87,13 @@ export type { BgTask }
 export const isBusy = (row: { status: string; running_kind?: string }) =>
   row.status === 'running' && row.running_kind !== 'background'
 
-export type Usage = {
-  model?: string
-  context: number
-  context_limit: number
-  /** compacted since the last reply: `context` is unknown until the next one */
-  context_pending?: boolean
-  turns: number
-  output: number
-  input: number
-  cache_read: number
-}
-
-export type RateWindow = { used_percentage: number; resets_at?: number }
-
-/** the Claude account's limits as Claude Code last reported them (remote_limits.go) */
-export type AccountLimits = {
-  five_hour?: RateWindow
-  seven_day?: RateWindow
-  at: number
-}
-
-/** What the phone may offer for this agent (host agent_adapter.go agentCaps). */
-export type AgentCapabilities = {
-  ask_options: boolean
-  plan_review: boolean
-  usage: 'transcript' | 'token_count' | 'none'
-  account_limits: boolean
-  mid_turn_input: 'queue' | 'steer'
-  title: boolean
-}
-
-export type TitleHistoryItem = {
-  title: string
-  at: number
-  ended_at?: number
-  user_turns?: number
-  source?: 'auto' | 'manual' | 'native'
-  provider?: string
-}
-
-export type Detail = StatusFields & {
-  messages_rev?: number
-  read_only?: boolean
-  id: string
-  name?: string
-  title?: string
-  /** chronological task titles recorded for this session (session_autotitle.go) */
-  title_history?: Array<TitleHistoryItem>
-  window?: string
-  branch?: string
-  /** working-tree status of the pane's cwd (git_status.go) */
-  git?: GitStatus
-  usage?: Usage
-  account?: AccountLimits
-  /** host-built block an agent can act on (remote_reference.go) */
-  reference?: string
-  capabilities?: AgentCapabilities
-  /** everything the host knows, grouped (remote_meta.go) */
-  meta?: Array<{ name: string; rows: Array<{ key: string; value: string }> }>
-  total?: number
-  start?: number
-  /** Claude subagents (Agent tool, forked skills) and what they are doing */
-  subagents?: Array<Subagent>
-  /** index of the latest context-compaction marker; earlier = pre-compaction history */
-  compacted_at?: number
-  compactions?: number
-  agent?: string
-  /** execution / permission mode (auto | accept-edits | plan | full-access | default …) */
-  mode?: string
-  status: string
-  /** the attention entry's last change (ms): seen-ack clears this state only */
-  ts?: number
-  waiting_kind?: string
-  running_kind?: string
-  background?: Array<BgTask>
-  messages?: Array<Message>
-  screen?: string
-  /** ms: when the running turn began (attention turn_started) */
-  turn_started?: number
-  /** ms: when the running context compaction began */
-  compact_started?: number
-  /** output tokens of the running turn (transcript usage) */
-  turn_output?: number
-  /** host-side token output rate (OTel primary, transcript fallback) */
-  token_rate?: TokenRate
-  elicitation?: Elicitation
-  plan?: { excerpt?: string; awaiting_approval?: boolean }
-  /** a permission prompt: the call it is about (host permission.go) */
-  permission?: PendingCall
-  /** cleared in its pane (/new, /clear): the session that took its place */
-  replaced_by?: string
-  /** the local Runtime's sessions/focus payload (在终端中打开, session-focus.tsx) */
-  focus?: { session_id: string; recent?: boolean; archived_ts?: number }
+export type {
+  AccountLimits,
+  AgentCapabilities,
+  Detail,
+  RateWindow,
+  TitleHistoryItem,
+  Usage,
 }
 
 export function sessionTone(status: string, kind?: string): LedTone {
@@ -206,19 +124,6 @@ export function prefetchSession(client: QueryClient, id: string) {
   })
 }
 /**
- * Claude Code's Ctrl+B (the running foreground command / subagent goes on
- * in the background), offered on the running call's own row when this device writes.
- */
-const toBackground = (
-  data: Detail | undefined,
-  device: string,
-  run: (action: 'key', args: Record<string, unknown>) => Promise<boolean>,
-) =>
-  data?.agent === 'claude' && device === 'approved'
-    ? () => void run('key', { key: 'C-b' })
-    : undefined
-
-/**
  * The chat half of the diagnostics snapshot: scroll state, the loaded window
  * and the newest user messages the page holds — client-trace's renderedChat
  * says which of them it actually drew.
@@ -239,14 +144,6 @@ const chatDiag = (
     .filter((m) => m.role === 'user')
     .slice(-15)
     .map((m) => ({ at: m.at, text: m.text.slice(0, 40) })),
-})
-
-/** the running turn's progress from the host's hooks (chat-turn.tsx) */
-const activityOf = (data?: Detail) => ({
-  since: data?.turn_started,
-  compactSince: data?.compact_started,
-  tokens: data?.turn_output,
-  rate: data?.token_rate?.tok_per_s,
 })
 
 /** absolute index just past the newest message the page has */
@@ -321,13 +218,18 @@ export function SessionDetail({ id }: { id: string }) {
   const [visibleUsage, setVisibleUsage] = useState('')
   const { detail, data, pagingIn, loadEarlier } = useSessionDetail(id, isBusy)
   const writes = useSessionWrites(id, transcriptEnd(detail.data))
-  const { sending, error, setError, retryIn, pendingRaw, send, run } = writes
+  const { sending, error, setError, retryIn, pendingRaw, send, run, dismiss } =
+    writes
+  const mergedPending = mergeOutboxPending(pendingRaw, data?.outbox)
   useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []
   const busy = Boolean(data && isBusy(data))
   const readOnly = data?.read_only === true
-  const pending = settle(pendingRaw, messages, data?.start ?? 0, busy)
+  const pending = settle(mergedPending, messages, data?.start ?? 0, busy)
+  const unconfirmedCount = pending.filter((p) => p.state === 'lost').length
+  const failedCount = pending.filter((p) => p.state === 'failed').length
+  const unsettledCount = unconfirmedCount + failedCount
   const start = data?.start ?? 0
   // +1 once the detail has loaded: a new session with no messages yet shows
   // only the pane's screen, and a count of 0 never landed at the bottom.
@@ -384,6 +286,38 @@ export function SessionDetail({ id }: { id: string }) {
       chat: chatDiag(follow, messages, start, total),
     }),
   })
+  const canSendNow = !readOnly && device.state === 'approved' && !blocked
+  const sentHistory = useSentHistoryControl({
+    session: id,
+    writable: canSendNow,
+    onFill: (p) =>
+      composer.text.trim() || composer.images.length
+        ? composer.appendPayload(p)
+        : composer.replacePayload(p),
+    onReplace: composer.replacePayload,
+    onResend: canSendNow
+      ? (p) => {
+          const count = p.attachments.length
+          return send({ ...p, note: count ? t`${count} images` : '' })
+        }
+      : undefined,
+  })
+  const editPending = !readOnly
+    ? (item: {
+        text: string
+        attachments?: Array<string>
+        at: number
+        sentId?: string
+        clientOp?: string
+      }) => {
+        composer.replacePayload({
+          text: item.text,
+          attachments: item.attachments ?? [],
+        })
+        dismiss(item)
+        toast(t`Loaded back into input`)
+      }
+    : undefined
   const wide = useIsWidePhoneFirst()
   return (
     <HostFileProvider
@@ -408,69 +342,31 @@ export function SessionDetail({ id }: { id: string }) {
           onRename={(title) => renameSession(send, title)}
         />
 
-        <div
-          data-testid="session-thread-scroll"
-          className={cn(
-            'max-md:contents md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain',
-            wide && 'overflow-y-auto',
-          )}
-        >
-          <div
-            className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 md:min-h-full md:px-[var(--page-x)] md:py-3"
-            aria-live="polite"
-          >
-            {detail.isError && !data ? (
-              <p
-                role="status"
-                className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
-              >
-                {String(detail.error.message)}
-              </p>
-            ) : null}
-            {messages.length || pending.length ? (
-              <>
-                <StickyPrompt
-                  end={end}
-                  messages={messages}
-                  start={start}
-                  following={follow.pinned}
-                />
-                <ThreadPagingBar
-                  total={total}
-                  shown={shown}
-                  start={start}
-                  pagingIn={pagingIn}
-                  atCompaction={atCompaction}
-                  autoFailed={paging.autoFailed}
-                  onLoadEarlier={paging.loadManual}
-                />
-                <ChatThread
-                  messages={messages}
-                  start={start}
-                  busy={busy}
-                  activity={busy ? activityOf(data) : undefined}
-                  {...writes.pendingProps(
-                    !readOnly && device.state === 'approved' && !blocked,
-                  )}
-                  status={data?.status}
-                  statusTs={data?.ts}
-                  onBackground={toBackground(data, device.state, run)}
-                  sessionId={id}
-                  syncing={syncing}
-                />
-              </>
-            ) : data ? (
-              <EmptySession data={data} />
-            ) : null}
-            <PromptPanels
-              data={data}
-              sending={sending}
-              canWrite={!readOnly && device.state === 'approved'}
-              onKey={(key) => run('key', { key })}
-            />
-            <div ref={end} />
-          </div>
-        </div>
+        <SessionThreadBody
+          id={id}
+          wide={wide}
+          data={data}
+          detailError={detail.isError ? detail.error : null}
+          messages={messages}
+          pending={pending}
+          mergedPending={mergedPending}
+          start={start}
+          total={total}
+          shown={shown}
+          busy={busy}
+          syncing={syncing}
+          readOnly={readOnly}
+          sending={sending}
+          approved={device.state === 'approved'}
+          end={end}
+          followPinned={follow.pinned}
+          pagingIn={pagingIn}
+          atCompaction={atCompaction}
+          autoFailed={paging.autoFailed}
+          onLoadManual={paging.loadManual}
+          pendingProps={writes.pendingProps(canSendNow, editPending)}
+          onRun={run}
+        />
 
         <form
           className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:px-[var(--page-x)] md:shadow-none"
@@ -479,9 +375,9 @@ export function SessionDetail({ id }: { id: string }) {
             if (readOnly) return
             setError('')
             if (composer.ready) follow.jump()
-            composer.submit().catch((e: unknown) => {
-              setError((e as Error).message)
-            })
+            composer
+              .submit()
+              .catch((e: unknown) => setError((e as Error).message))
           }}
         >
           <JumpLatest
@@ -489,27 +385,23 @@ export function SessionDetail({ id }: { id: string }) {
             unread={follow.unread}
             onJump={follow.jump}
           />
-          {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') &&
-          data ? (
-            <SessionStaleNotice
-              staleAt={staleAt}
-              message={detail.error?.message}
-            />
-          ) : null}
-          <SessionSubagents agents={data?.subagents} />
-          {retryIn && !readOnly ? (
-            <p role="status" className="text-meta text-brand-muted">
-              {t`Someone just used the desk; sending in ${retryIn}s…`}
-            </p>
-          ) : error ? (
-            <ErrorLine message={error} />
-          ) : blocked && !readOnly ? (
-            <SessionBlockedNotice
-              blocked={blocked}
-              approved={device.state === 'approved'}
-              locale={locale}
-            />
-          ) : null}
+          <OutboxNotice
+            unconfirmed={unconfirmedCount}
+            failed={failedCount}
+            onOpen={() => sentHistory.openSheet(true)}
+          />
+          <SessionComposerNotices
+            stale={failed >= STALE_AFTER || detail.fetchStatus === 'paused'}
+            staleAt={staleAt}
+            detailError={detail.error}
+            data={data}
+            retryIn={retryIn}
+            readOnly={readOnly}
+            error={error}
+            blocked={blocked}
+            deviceState={device.state}
+            locale={locale}
+          />
           {readOnly ? (
             <SessionInputUnavailable />
           ) : (
@@ -522,6 +414,9 @@ export function SessionDetail({ id }: { id: string }) {
               onNewConversation={() =>
                 send({ text: '/new', attachments: [], note: '' })
               }
+              onOpenSentHistory={() => sentHistory.openSheet(false)}
+              onRecallLatest={sentHistory.recallLatest}
+              unsettledCount={unsettledCount}
               commands={
                 data?.agent === 'claude' || data?.agent === 'agy'
                   ? {
@@ -536,6 +431,7 @@ export function SessionDetail({ id }: { id: string }) {
           )}
           <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
           {!readOnly && resume.element}
+          {sentHistory.sheet}
         </form>
       </div>
     </HostFileProvider>

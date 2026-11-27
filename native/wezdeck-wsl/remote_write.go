@@ -33,9 +33,11 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 	var err error
 	switch action {
 	case "send":
-		result, err = sendToSession(args)
+		result, err = sendToSessionWithMeta(args, via, device, meta.ClientOp)
 	case "key":
 		result, err = keyToSession(args)
+	case "sent.action":
+		result, err = writeSentAction(args)
 	case "upload":
 		result, err = uploadChunk(args)
 		if done, ok := result.(map[string]any); ok && done["name"] != nil {

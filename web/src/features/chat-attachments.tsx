@@ -93,10 +93,12 @@ export function splitTokens(text: string, labels: Array<string>) {
 function TypedWithTokens({
   text,
   labels,
+  tone = 'ink',
   onOpen,
 }: {
   text: string
   labels: Array<string>
+  tone?: 'ink' | 'surface'
   onOpen: (index: number) => void
 }) {
   return (
@@ -111,7 +113,11 @@ function TypedWithTokens({
             size="none"
             type="button"
             onClick={() => onOpen(index)}
-            className="mx-0.5 inline-flex items-center gap-1 rounded-md bg-brand-deck/20 px-1.5 align-baseline text-meta"
+            className={
+              tone === 'surface'
+                ? 'mx-0.5 inline-flex items-center gap-1 rounded-md bg-brand-soft px-1.5 align-baseline text-meta text-brand-text'
+                : 'mx-0.5 inline-flex items-center gap-1 rounded-md bg-brand-deck/20 px-1.5 align-baseline text-meta'
+            }
           >
             <ImageIcon size={12} aria-hidden />
             {label}
@@ -122,7 +128,14 @@ function TypedWithTokens({
   )
 }
 
-export function SentAttachments({ text }: { text: string }) {
+export function SentAttachments({
+  text,
+  tone = 'ink',
+}: {
+  text: string
+  /** ink: dark user bubble; surface: light cards/sheets (sent history, tickets) */
+  tone?: 'ink' | 'surface'
+}) {
   const { typed, files } = splitAttachments(text)
   const images = files.filter((file) => isUploadedImage(file.name))
   const others = files.filter((file) => !isUploadedImage(file.name))
@@ -130,7 +143,12 @@ export function SentAttachments({ text }: { text: string }) {
   const labels = images.map((file) => file.label)
   return (
     <>
-      <TypedWithTokens text={typed} labels={labels} onOpen={setOpen} />
+      <TypedWithTokens
+        text={typed}
+        labels={labels}
+        tone={tone}
+        onOpen={setOpen}
+      />
       <ImageStrip
         sources={images.map((file) => ({ kind: 'upload', name: file.name }))}
         labels={labels}
@@ -143,7 +161,11 @@ export function SentAttachments({ text }: { text: string }) {
             <span
               key={file.name}
               title={file.name}
-              className="rounded-full bg-brand-deck/15 px-2 py-0.5 text-meta"
+              className={
+                tone === 'surface'
+                  ? 'rounded-full bg-brand-soft px-2 py-0.5 text-meta text-brand-muted'
+                  : 'rounded-full bg-brand-deck/15 px-2 py-0.5 text-meta'
+              }
             >
               {file.label}
             </span>
@@ -151,5 +173,20 @@ export function SentAttachments({ text }: { text: string }) {
         </span>
       ) : null}
     </>
+  )
+}
+
+/** Shared display primitive for any structured MessagePayload (text + uploaded names). */
+export function MessagePayloadView({
+  text,
+  attachments = [],
+  tone = 'surface',
+}: {
+  text: string
+  attachments?: Array<string>
+  tone?: 'ink' | 'surface'
+}) {
+  return (
+    <SentAttachments text={withAttachmentNote(text, attachments)} tone={tone} />
   )
 }

@@ -209,6 +209,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'A chunk of an uploaded image’s original',
       ),
       c('todos', '仓库待办', 'Repository to-dos'),
+      c(
+        'sent.list',
+        '网页端已发送消息记录（含文本与附件、按会话 / 仓库 / 全部与未确认筛选）',
+        'Host-persisted sent message history (text and attachments, scoped by session / repo / all and delivery status)',
+      ),
       c('repos', '可以新开会话的仓库', 'Repositories a session can start in'),
       c(
         'repo.links',
@@ -299,6 +304,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Upload a file in chunks (an image, say) for a message to reference',
       ),
       c('todo', '增改仓库待办', 'Add or change a to-do'),
+      c(
+        'sent.action',
+        '管理已发送记录（忽略 / 手动确认 / 删除）',
+        'Manage a sent message record (dismiss / confirm / delete)',
+      ),
       c(
         'clear',
         '把一条会话标为已读（等同终端 Alt+/ 里的 Ctrl+X）',

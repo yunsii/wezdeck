@@ -166,10 +166,21 @@ func contentMatches(mime string, b []byte) bool {
 
 func pruneUploads(dir string) {
 	entries, _ := os.ReadDir(dir)
+	pinned := outboxPinnedUploads()
+	pruned, kept := 0, 0
 	for _, e := range entries {
 		if info, err := e.Info(); err == nil && time.Since(info.ModTime()) > uploadKeep {
-			_ = os.Remove(filepath.Join(dir, e.Name()))
+			if pinned[e.Name()] {
+				kept++
+				continue
+			}
+			if os.Remove(filepath.Join(dir, e.Name())) == nil {
+				pruned++
+			}
 		}
+	}
+	if pruned > 0 || kept > 0 {
+		relayLogf("upload_prune", "pruned=%d pinned_kept=%d", pruned, kept)
 	}
 }
 

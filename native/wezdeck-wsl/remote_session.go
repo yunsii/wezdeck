@@ -735,8 +735,12 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		out["focus"] = sessionFocus(a.ID, e)
 	}
 	out["meta"] = sessionMeta(e, path, agent, nil)
+	if e.ReplacedFrom != "" {
+		rebindOutboxSession(e.ReplacedFrom, a.ID)
+	}
 	var agyPending *pendingCall
 	var loadedTranscript *transcript
+	var allMsgsForOutbox []chatMessage
 	if path != "" {
 		out["agent"] = agent
 		if title := resolveSessionTitle(a.ID, path, agent); title != "" {
@@ -802,6 +806,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 		if bg := backgroundOf(e); len(bg) > 0 {
 			out["background"] = enrichBackground(bg, t, e.SessionID)
 		}
+		if hasUnsettledOutbox(a.ID) {
+			allMsgsForOutbox = append([]chatMessage(nil), t.messages...)
+		}
 		transcriptsMu.Unlock()
 		if agent == "agy" && mode == "" {
 			mode = resolveAgyMode(e, nil)
@@ -842,6 +849,9 @@ func sessionDetailFor(args json.RawMessage, includeArchived bool) (any, error) {
 				out["account"] = limits
 			}
 		}
+	}
+	if outbox := reconcileSessionOutbox(a.ID, allMsgsForOutbox, e.busy(), time.Now().UnixMilli()); len(outbox) > 0 {
+		out["outbox"] = outbox
 	}
 	if readOnly {
 		return out, nil

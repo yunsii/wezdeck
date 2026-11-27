@@ -19,7 +19,7 @@ internal sealed partial class RuntimeWebServer
 
     private static readonly HashSet<string> RemoteReadActions = new(StringComparer.Ordinal)
     {
-        "sessions", "session", "upload.get", "todos", "repos", "repo.links", "agent.profiles", "workstations", "ticket.targets",
+        "sessions", "session", "upload.get", "todos", "sent.list", "repos", "repo.links", "agent.profiles", "workstations", "ticket.targets",
         "session.new.job", "session.handoff.job", "session.autotitle.status", "session.image", "session.file", "session.history", "session.git",
         "session.skills", "collab.run.chat", "collab.diff", "collab.manager.chat", "devices", "host.warp.status", "host.oppo.status",
         // local only: this browser polling for the host's diagnostics requests
@@ -30,7 +30,7 @@ internal sealed partial class RuntimeWebServer
 
     private static readonly HashSet<string> RemoteWriteActions = new(StringComparer.Ordinal)
     {
-        "send", "key", "reply", "attach", "upload", "todo", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart", "session.delete",
+        "send", "key", "reply", "attach", "upload", "todo", "sent.action", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart", "session.delete",
         "session.handoff", "session.autotitle.update", "ticket.new", "ticket.manager.start", "ticket.manager.park", "ticket.manager.send", "worktree.describe", "worktree.recycle", "worktree.remove", "host.warp.set",
         // local only (serve.go): 批准 / 撤销 from the console on the host
         "device.approve", "device.revoke",

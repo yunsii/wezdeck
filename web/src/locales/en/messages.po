@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:503
+#: src/features/chat-thread.tsx:512
 msgid "· summary"
 msgstr "· summary"
 
@@ -65,7 +65,8 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/session-composer.tsx:147
+#: src/features/console-sessions.tsx:301
+#: src/features/message-composer.tsx:136
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -195,6 +196,14 @@ msgstr "{tools} tool calls"
 #: src/features/chat-controls.tsx:60
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
+
+#: src/features/sent-history.tsx:107
+msgid "{total} sent messages need attention ({failed} failed)"
+msgstr "{total} sent messages need attention ({failed} failed)"
+
+#: src/features/sent-history.tsx:108
+msgid "{total} sent messages not yet confirmed in transcript"
+msgstr "{total} sent messages not yet confirmed in transcript"
 
 #: src/features/me-autotitle.tsx:171
 #: src/features/ticket-runs.tsx:88
@@ -427,6 +436,7 @@ msgid "Align the navigation rail and intro pages with the chat list."
 msgstr "Align the navigation rail and intro pages with the chat list."
 
 #: src/features/console-diagnostics.tsx:159
+#: src/features/sent-history.tsx:365
 msgid "All"
 msgstr "All"
 
@@ -446,6 +456,10 @@ msgstr "All questions answered. The agent waits until you submit."
 #: src/features/collab-metrics.tsx:100
 msgid "All repos"
 msgstr "All repos"
+
+#: src/features/sent-history.tsx:394
+msgid "All sent messages have been confirmed."
+msgstr "All sent messages have been confirmed."
 
 #: src/components/deck/session-tags.tsx:495
 msgid "All tags"
@@ -590,7 +604,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-keys.tsx:194
+#: src/features/console-keys.tsx:199
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
@@ -791,8 +805,9 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:429
+#: src/features/session-composer.tsx:234
 #: src/features/session-detail-notices.tsx:18
+#: src/features/session-detail-parts.tsx:67
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -912,7 +927,7 @@ msgstr "Claude wants to leave plan mode and start on this plan"
 #~ msgid "Clear"
 #~ msgstr "Clear"
 
-#: src/features/session-composer-tools.tsx:121
+#: src/features/session-composer-tools.tsx:161
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -960,7 +975,7 @@ msgstr "Close a sheet, or let go of a focused button"
 #~ msgid "Close keys"
 #~ msgstr "Close keys"
 
-#: src/features/console-keys.tsx:118
+#: src/features/console-keys.tsx:123
 msgid "Close the viewer"
 msgstr "Close the viewer"
 
@@ -1009,12 +1024,12 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:279
+#: src/features/session-send.ts:332
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:290
-#: src/features/session-composer-tools.tsx:91
+#: src/features/session-composer-tools.tsx:108
 msgid "Commands"
 msgstr "Commands"
 
@@ -1043,7 +1058,7 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/console-keys.tsx:95
+#: src/features/console-keys.tsx:99
 msgid "Composer"
 msgstr "Composer"
 
@@ -1142,11 +1157,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:487
+#: src/features/chat-thread.tsx:496
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:488
+#: src/features/chat-thread.tsx:497
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1164,7 +1179,8 @@ msgstr "context usage"
 #~ msgstr "Continue"
 
 #: src/features/doc-code-block.tsx:103
-#: src/features/session-composer.tsx:82
+#: src/features/sent-history.tsx:228
+#: src/features/session-composer.tsx:54
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:186
@@ -1203,7 +1219,8 @@ msgstr "Copied: {shown}"
 #: src/features/doc-code-block.tsx:108
 #: src/features/host-file-sheet.tsx:120
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:82
+#: src/features/sent-history.tsx:228
+#: src/features/session-composer.tsx:54
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1223,9 +1240,13 @@ msgstr "Copy command"
 msgid "Copy document"
 msgstr "Copy document"
 
-#: src/features/session-composer.tsx:74
+#: src/features/session-composer.tsx:46
 msgid "Copy error"
 msgstr "Copy error"
+
+#: src/features/sent-history.tsx:341
+msgid "Copy failed"
+msgstr "Copy failed"
 
 #: src/features/repo-links.tsx:125
 #: src/features/repo-links.tsx:126
@@ -1270,7 +1291,7 @@ msgstr "Copy session reference for an agent"
 msgid "Copy the open session's reference"
 msgstr "Copy the open session's reference"
 
-#: src/features/console-keys.tsx:110
+#: src/features/console-keys.tsx:115
 msgid "Copy the open ticket's reference"
 msgstr "Copy the open ticket's reference"
 
@@ -1530,6 +1551,10 @@ msgstr "Disconnected"
 msgid "Disconnecting…"
 msgstr "Disconnecting…"
 
+#: src/features/sent-history.tsx:241
+msgid "Dismiss"
+msgstr "Dismiss"
+
 #: src/features/ticket-timeline.tsx:112
 msgid "Dispatched"
 msgstr "Dispatched"
@@ -1578,6 +1603,10 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 #: src/features/ticket-thread-view.tsx:60
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
+
+#: src/features/chat-pending.tsx:92
+msgid "Edit"
+msgstr "Edit"
 
 #: src/features/session-new-job.tsx:225
 msgid "Edit and resend"
@@ -1694,6 +1723,7 @@ msgid "Expand sessions"
 msgstr "Expand sessions"
 
 #: src/features/chat-images.tsx:58
+#: src/features/composer-picked.tsx:34
 msgid "Expired"
 msgstr "Expired"
 
@@ -1939,6 +1969,7 @@ msgstr "Idle"
 #~ msgstr "idle · {count} workstations"
 
 #: src/features/chat-images.tsx:58
+#: src/features/composer-picked.tsx:34
 msgid "Image"
 msgstr "Image"
 
@@ -1946,11 +1977,11 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/console-keys.tsx:115
+#: src/features/console-keys.tsx:120
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer-tools.tsx:65
+#: src/features/session-composer-tools.tsx:82
 msgid "Images"
 msgstr "Images"
 
@@ -1996,7 +2027,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/session-composer.tsx:160
+#: src/features/message-composer.tsx:150
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -2074,9 +2105,9 @@ msgstr "just restarted"
 msgid "Keep planning"
 msgstr "Keep planning"
 
-#: src/features/console-keys.tsx:212
-#: src/features/console-keys.tsx:271
-#: src/features/console-keys.tsx:272
+#: src/features/console-keys.tsx:217
+#: src/features/console-keys.tsx:276
+#: src/features/console-keys.tsx:277
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -2150,7 +2181,7 @@ msgstr "Leave blank to keep current key"
 msgid "letter"
 msgstr "letter"
 
-#: src/features/console-keys.tsx:218
+#: src/features/console-keys.tsx:223
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 
@@ -2198,6 +2229,10 @@ msgstr "Load earlier"
 #: src/features/ticket-run-chat.tsx:190
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
+
+#: src/features/console-sessions.tsx:318
+msgid "Loaded back into input"
+msgstr "Loaded back into input"
 
 #: src/features/session-info.tsx:81
 msgid "Loaded on this page"
@@ -2349,13 +2384,13 @@ msgstr "Merge"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:372
+#: src/features/session-composer.tsx:176
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer-tools.tsx:43
-#: src/features/session-composer-tools.tsx:45
-#: src/features/session-composer-tools.tsx:57
+#: src/features/session-composer-tools.tsx:54
+#: src/features/session-composer-tools.tsx:56
+#: src/features/session-composer-tools.tsx:74
 msgid "Message actions"
 msgstr "Message actions"
 
@@ -2363,7 +2398,7 @@ msgstr "Message actions"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
-#: src/features/session-composer.tsx:305
+#: src/features/session-composer.tsx:175
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2489,7 +2524,7 @@ msgstr "New conversation (/new)"
 #~ msgid "New direction"
 #~ msgstr "New direction"
 
-#: src/features/console-keys.tsx:99
+#: src/features/console-keys.tsx:104
 msgid "New line"
 msgstr "New line"
 
@@ -2501,6 +2536,7 @@ msgstr "New line"
 #~ msgid "New round"
 #~ msgstr "New round"
 
+#: src/features/sent-history.tsx:167
 #: src/features/session-chat-group.tsx:213
 #: src/features/session-list.tsx:155
 #: src/features/session-new-job.tsx:386
@@ -2535,7 +2571,7 @@ msgstr "New session in this group"
 msgid "New session title"
 msgstr "New session title"
 
-#: src/features/console-keys.tsx:111
+#: src/features/console-keys.tsx:116
 #: src/features/ticket-new.tsx:72
 #: src/features/ticket-new.tsx:173
 msgid "New ticket"
@@ -2565,7 +2601,7 @@ msgstr "Next / previous running session"
 msgid "Next / previous session in the list"
 msgstr "Next / previous session in the list"
 
-#: src/features/console-keys.tsx:109
+#: src/features/console-keys.tsx:114
 msgid "Next / previous ticket"
 msgstr "Next / previous ticket"
 
@@ -2678,6 +2714,10 @@ msgstr "No plan written yet"
 msgid "No recent result"
 msgstr "No recent result"
 
+#: src/features/sent-history.tsx:395
+msgid "No sent messages recorded yet."
+msgstr "No sent messages recorded yet."
+
 #: src/features/session-statusbar.tsx:338
 #~ msgid "No session"
 #~ msgstr "No session"
@@ -2736,7 +2776,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered"
 msgstr "Not delivered"
 
-#: src/features/chat-pending.tsx:66
+#: src/features/chat-pending.tsx:74
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
@@ -2870,6 +2910,10 @@ msgstr "Only reusable worktrees can be managed here"
 msgid "Only this trace"
 msgstr "Only this trace"
 
+#: src/features/message-composer.tsx:90
+msgid "Only up to {MAX_IMAGES} images fit in one message"
+msgstr "Only up to {MAX_IMAGES} images fit in one message"
+
 #: src/features/ticket-new.tsx:228
 msgid "Open a repo-neutral Manager Session for this ticket"
 msgstr "Open a repo-neutral Manager Session for this ticket"
@@ -2914,8 +2958,9 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:451
+#: src/features/session-composer.tsx:256
 #: src/features/session-detail-notices.tsx:55
+#: src/features/session-detail-parts.tsx:90
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -3121,11 +3166,11 @@ msgstr "Plugin"
 msgid "Prepare workstation"
 msgstr "Prepare workstation"
 
-#: src/features/composer-picked.tsx:38
+#: src/features/composer-picked.tsx:64
 msgid "Preview {label}"
 msgstr "Preview {label}"
 
-#: src/features/console-keys.tsx:117
+#: src/features/console-keys.tsx:122
 msgid "Previous / next image"
 msgstr "Previous / next image"
 
@@ -3178,9 +3223,13 @@ msgstr "Purpose"
 msgid "Push alerts only carry clipped titles and status labels — never prompts, source code, or diffs."
 msgstr "Push alerts only carry clipped titles and status labels — never prompts, source code, or diffs."
 
-#: src/features/composer-picked.tsx:52
+#: src/features/composer-picked.tsx:82
 msgid "Put [{label}] at the caret"
 msgstr "Put [{label}] at the caret"
+
+#: src/features/sent-history.tsx:200
+msgid "Put in input"
+msgstr "Put in input"
 
 #: src/features/session-todos.tsx:137
 msgid "Put into the message"
@@ -3190,7 +3239,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/console-keys.tsx:97
+#: src/features/console-keys.tsx:101
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
@@ -3199,7 +3248,7 @@ msgstr "Put the caret in the composer"
 msgid "Queued"
 msgstr "Queued"
 
-#: src/features/chat-pending.tsx:36
+#: src/features/chat-pending.tsx:33
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -3253,6 +3302,10 @@ msgstr "Ready to deliver"
 #: src/features/session-info.tsx:87
 msgid "Reason"
 msgstr "Reason"
+
+#: src/features/console-keys.tsx:102
+msgid "Recall the last sent message (when empty)"
+msgstr "Recall the last sent message (when empty)"
 
 #: src/features/session-git.tsx:306
 msgid "Recent commits"
@@ -3348,11 +3401,11 @@ msgstr "Remote devices"
 msgid "Remote project"
 msgstr "Remote project"
 
-#: src/features/chat-pending.tsx:83
+#: src/features/chat-pending.tsx:102
 msgid "Remove"
 msgstr "Remove"
 
-#: src/features/composer-picked.tsx:62
+#: src/features/composer-picked.tsx:92
 msgid "Remove image"
 msgstr "Remove image"
 
@@ -3496,7 +3549,8 @@ msgstr "Research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/chat-pending.tsx:73
+#: src/features/chat-pending.tsx:82
+#: src/features/sent-history.tsx:212
 msgid "Resend"
 msgstr "Resend"
 
@@ -3571,6 +3625,7 @@ msgstr "Resume a conversation"
 #~ msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:58
+#: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
 #: src/features/host-file-sheet.tsx:310
 #: src/features/me-host.tsx:114
@@ -3602,6 +3657,10 @@ msgstr "Reuses"
 #: src/features/session-new-direction.tsx:174
 #~ msgid "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
 #~ msgstr "Reuses {slot}: reset onto the latest main branch, a blank agent (the last conversation stays resumable)."
+
+#: src/features/sent-history.tsx:111
+msgid "Review"
+msgstr "Review"
 
 #. placeholder {0}: file.path
 #: src/features/ticket-diff.tsx:185
@@ -3767,7 +3826,7 @@ msgstr "Same as Ctrl+X in the Alt+/ picker"
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "Same as Enter in the Alt+/ picker (key: o)"
 
-#: src/features/console-keys.tsx:189
+#: src/features/console-keys.tsx:194
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
@@ -3819,6 +3878,7 @@ msgid "Scheduler ended"
 msgstr "Scheduler ended"
 
 #: src/features/console-collab.tsx:255
+#: src/features/sent-history.tsx:356
 msgid "Scope"
 msgstr "Scope"
 
@@ -3865,14 +3925,14 @@ msgstr "Sections"
 msgid "seen"
 msgstr "seen"
 
-#: src/features/console-keys.tsx:98
-#: src/features/session-composer.tsx:381
-#: src/features/session-composer.tsx:383
+#: src/features/console-keys.tsx:103
+#: src/features/message-composer.tsx:340
+#: src/features/message-composer.tsx:342
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "Send"
 
-#: src/features/console-keys.tsx:102
+#: src/features/console-keys.tsx:107
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "Send (also on a touch screen, where Enter is a new line)"
 
@@ -3883,6 +3943,14 @@ msgstr "Send Ctrl+B: the running command keeps going in the background and the a
 #: src/features/session-composer.tsx:246
 #~ msgid "Send Enter, Esc or Ctrl+C into the agent pane"
 #~ msgstr "Send Enter, Esc or Ctrl+C into the agent pane"
+
+#: src/features/chat-pending.tsx:73
+msgid "Send failed"
+msgstr "Send failed"
+
+#: src/features/chat-pending.tsx:72
+msgid "Send failed: {errorText}"
+msgstr "Send failed: {errorText}"
 
 #: src/features/ticket-diff.tsx:327
 msgid "Send review ({noteCount})"
@@ -3920,6 +3988,15 @@ msgstr "Sending…"
 #: src/features/host-file-sheet.tsx:281
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
+
+#: src/features/sent-history.tsx:349
+#: src/features/session-composer-tools.tsx:138
+msgid "Sent messages"
+msgstr "Sent messages"
+
+#: src/features/console-keys.tsx:94
+msgid "Sent messages history"
+msgstr "Sent messages history"
 
 #: src/features/console-collab-run.tsx:129
 #: src/features/session-empty.tsx:50
@@ -4019,7 +4096,7 @@ msgstr "Shared"
 msgid "shipped"
 msgstr "shipped"
 
-#: src/features/console-keys.tsx:277
+#: src/features/console-keys.tsx:282
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
@@ -4077,7 +4154,7 @@ msgstr "Site navigation"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/session-composer-tools.tsx:106
+#: src/features/session-composer-tools.tsx:123
 #: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "Skills"
@@ -4118,8 +4195,8 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:502
-#: src/features/session-composer.tsx:435
+#: src/features/session-composer.tsx:240
+#: src/features/session-detail-parts.tsx:74
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4411,7 +4488,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:263
+#: src/features/console-sessions.tsx:160
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4513,7 +4590,7 @@ msgstr "This computer reads and writes sessions and tickets through the local Ru
 msgid "This device"
 msgstr "This device"
 
-#: src/features/console-sessions.tsx:259
+#: src/features/console-sessions.tsx:156
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4523,8 +4600,9 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:430
+#: src/features/session-composer.tsx:235
 #: src/features/session-detail-notices.tsx:19
+#: src/features/session-detail-parts.tsx:68
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4548,9 +4626,14 @@ msgstr "This page hit a rendering error. The rest of the console is still availa
 msgid "This pane switched sessions"
 msgstr "This pane switched sessions"
 
+#: src/features/sent-history.tsx:364
 #: src/features/session-skills.tsx:46
 msgid "This repo"
 msgstr "This repo"
+
+#: src/features/sent-history.tsx:363
+msgid "This session"
+msgstr "This session"
 
 #: src/features/session-focus.tsx:43
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
@@ -4589,7 +4672,7 @@ msgstr "Ticket ID and headless run metrics"
 msgid "Ticket info"
 msgstr "Ticket info"
 
-#: src/features/console-keys.tsx:107
+#: src/features/console-keys.tsx:112
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
@@ -4792,11 +4875,15 @@ msgstr "Unavailable agents ({disabledCount})"
 #~ msgid "uncommitted changes"
 #~ msgstr "uncommitted changes"
 
+#: src/features/sent-history.tsx:379
+msgid "Unconfirmed ({unsettledCount})"
+msgstr "Unconfirmed ({unsettledCount})"
+
 #: src/features/console-me.tsx:170
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-composer.tsx:162
+#: src/features/message-composer.tsx:152
 msgid "Undo"
 msgstr "Undo"
 
@@ -4841,8 +4928,12 @@ msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
 #: src/features/session-composer.tsx:136
-msgid "Uploading {step}/{steps}…"
-msgstr "Uploading {step}/{steps}…"
+#~ msgid "Uploading {step}/{steps}…"
+#~ msgstr "Uploading {step}/{steps}…"
+
+#: src/features/message-composer.tsx:127
+msgid "Uploading {step}/{total}…"
+msgstr "Uploading {step}/{total}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-status-band.tsx:78

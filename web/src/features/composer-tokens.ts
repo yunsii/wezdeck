@@ -7,6 +7,43 @@
 export const imageToken = (n: number) => `[图片${n}]`
 
 /**
+ * Shift every [图片N] placeholder in `text` upward by `offset`, so appending a
+ * payload (a sent record or ticket) onto a composer that already holds images
+ * keeps every token pointing at its own image.
+ */
+export function offsetTokens(text: string, offset: number) {
+  if (!offset || !text) return text
+  return text.replace(/\[图片(\d+)\]/g, (match, digits: string) => {
+    const n = Number(digits)
+    return n > 0 ? imageToken(n + offset) : match
+  })
+}
+
+/**
+ * Append `incoming` text + attachments onto an existing composer state,
+ * shifting `[图片N]` tokens when `existingCount > 0` and respecting `maxImages`.
+ */
+export function mergePayloads(
+  existingText: string,
+  existingCount: number,
+  incomingText: string,
+  incomingAttachments: Array<string> = [],
+  maxImages = 5,
+) {
+  const room = Math.max(0, maxImages - existingCount)
+  const addedAttachments = incomingAttachments.slice(0, room)
+  const droppedCount = Math.max(0, incomingAttachments.length - room)
+  const renumbered = existingCount > 0 && /\[图片\d+\]/.test(incomingText)
+  const shifted = offsetTokens(incomingText.trim(), existingCount)
+  const text = existingText.trim()
+    ? shifted
+      ? `${existingText.trimEnd()}\n${shifted}`
+      : existingText
+    : shifted
+  return { text, addedAttachments, droppedCount, renumbered }
+}
+
+/**
  * Insert the tokens at `pos` (the caret), with a space on either side
  * unless the text already has one there; returns the text and the caret
  * just after them.

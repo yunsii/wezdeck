@@ -11,9 +11,59 @@ import { trace } from '#/lib/client-trace'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
+import type { SentRecord } from './sent-history'
 import { useNavigateToSession } from './session-follow'
 
 export { useFollowReplacement } from './session-follow'
+
+/**
+ * Merge local optimistic bubbles (sending / just-sent) with host-persisted
+ * unsettled outbox records returned on `session` polls. Deduplicates by
+ * `client_op` (host wins once recorded), so pending and unconfirmed bubbles
+ * survive page reloads and cross-device switches without flickering.
+ */
+export function mergeOutboxPending(
+  local: Array<Pending>,
+  hostOutbox?: Array<SentRecord>,
+): Array<Pending> {
+  if (!hostOutbox?.length) return local
+  const hostOps = new Set<string>()
+  const hostItems: Array<Pending> = hostOutbox.map((rec) => {
+    if (rec.client_op) hostOps.add(rec.client_op)
+    const state: Pending['state'] =
+      rec.status === 'failed'
+        ? 'failed'
+        : rec.status === 'unconfirmed'
+          ? 'lost'
+          : 'queued'
+    return {
+      text: rec.text,
+      attachments: rec.attachments ?? [],
+      at: rec.created_at,
+      after: rec.transcript_end_at_send,
+      sentId: rec.id,
+      clientOp: rec.client_op,
+      error: rec.error,
+      state,
+    }
+  })
+  const extras = local.filter((item) => {
+    if (item.clientOp && hostOps.has(item.clientOp)) return false
+    // Fallback dedup when a host record lacks client_op (e.g. session_new)
+    if (
+      !item.clientOp &&
+      hostItems.some(
+        (h) =>
+          h.text.trim() === item.text.trim() &&
+          Math.abs(h.at - item.at) < 5_000,
+      )
+    ) {
+      return false
+    }
+    return true
+  })
+  return [...hostItems, ...extras].sort((a, b) => a.at - b.at)
+}
 
 /**
  * The host refuses a write right after input at the desk and says when to
@@ -233,6 +283,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
           text: message.text,
           note: message.note,
           attachments: message.attachments,
+          clientOp: op_id,
           at,
           after: endRef.current,
           state: 'sending',
@@ -260,6 +311,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       } catch (error) {
         // refused: the text goes back to the composer with the error
         if (!command) mark()
+        void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
         trace('web-write', {
           id: target,
           op_id,
@@ -274,16 +326,34 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         action: 'send',
         stage: 'host-accepted',
       })
+      void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
       if (command) {
         void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
         toast(t`Command sent: ${command}`)
       } else mark('queued')
     })
   }
-  /** drop a bubble (a lost one the user gave up on) */
-  const dismiss = (item: Pending) =>
-    updatePending(id, (list) => list.filter((one) => one.at !== item.at))
-  /** a lost bubble, sent again as a new message (new time, new anchor) */
+  /** drop a bubble (a lost or failed one the user gave up on) */
+  const dismiss = (item: Pending) => {
+    updatePending(id, (list) =>
+      list.filter(
+        (one) =>
+          one.at !== item.at &&
+          (!item.clientOp || one.clientOp !== item.clientOp),
+      ),
+    )
+    if (item.sentId) {
+      void hostWrite('sent.action', { op: 'dismiss', id: item.sentId })
+        .then(() =>
+          Promise.all([
+            client.invalidateQueries({ queryKey: ['remote', 'session', id] }),
+            client.invalidateQueries({ queryKey: ['remote', 'sent'] }),
+          ]),
+        )
+        .catch(() => undefined)
+    }
+  }
+  /** a lost / failed bubble, sent again as a new message (new time, new anchor) */
   const resend = (item: Pending) => {
     dismiss(item)
     return send({
@@ -301,13 +371,15 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     pendingRaw,
     send,
     run,
+    dismiss,
     /**
-     * ChatThread's bubble props: the queue, and resend / remove on a lost
-     * (未送达) one — resend only while this device may write
+     * ChatThread's bubble props: the queue, and resend / edit / remove on a
+     * lost (未送达) or failed one — resend only while this device may write
      */
-    pendingProps: (canWrite: boolean) => ({
+    pendingProps: (canWrite: boolean, onEdit?: (item: Pending) => void) => ({
       pending: pendingRaw,
       onResend: canWrite ? (item: Pending) => void resend(item) : undefined,
+      onEdit,
       onDismiss: dismiss,
     }),
   }

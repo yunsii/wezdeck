@@ -1,7 +1,8 @@
-// Optimistic bubbles at the end of the thread: messages sent from the web
-// console that the transcript does not show yet (queued), and those it never
-// showed once the agent went idle (lost — 未送达, with resend / remove).
-// settle() in chat-thread.tsx decides which is which.
+// Optimistic & host-backed outbox bubbles at the end of the thread: messages
+// sent from the web console that the transcript does not show yet (queued),
+// those it never showed once the agent went idle (lost — 未送达), and host
+// paste errors (failed). Each unsettled bubble can be resent, loaded back into
+// the composer for editing, or dismissed.
 import { useLingui } from '@lingui/react/macro'
 import { useEffect, useRef } from 'react'
 
@@ -12,32 +13,31 @@ import { cn } from '#/lib/utils'
 import { SentAttachments, withAttachmentNote } from './chat-attachments'
 import type { Pending } from './chat-thread'
 
-/**
- * Messages sent from the phone that the agent has not taken yet: at the end
- * of the thread, the user bubble faded, like Claude Code's queued input. Once the
- * transcript shows one, settle() drops it and the normal user bubble takes
- * its place — in whatever order the agent picks them up.
- */
 export function PendingBubbles({
   pending,
   onResend,
+  onEdit,
   onDismiss,
 }: {
   pending: Array<Pending>
   onResend?: (item: Pending) => void
+  onEdit?: (item: Pending) => void
   onDismiss?: (item: Pending) => void
 }) {
   const { t } = useLingui()
   // queued before the conversation opened: shown still, like its messages
-  const atMount = useRef(new Set(pending.map((item) => item.at)))
+  const atMount = useRef(new Set(pending.map((item) => item.sentId ?? item.at)))
   useLostTrace(pending)
   if (pending.length === 0) return null
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
       {pending.map((item) => {
         const lost = item.state === 'lost'
+        const failed = item.state === 'failed'
+        const errorText = item.error
+        const key = item.sentId ?? item.clientOp ?? item.at
         return (
-          <div key={item.at} className="grid min-w-0 gap-1">
+          <div key={key} className="grid min-w-0 gap-1">
             {/* the user bubble itself — same box, same text and image strip
                 as the message it becomes (Bubble), faded like Claude Code's
                 queued input; it turns solid once the agent takes the message */}
@@ -45,8 +45,8 @@ export function PendingBubbles({
               data-pending={item.state ?? 'queued'}
               className={cn(
                 'min-w-0 rounded-xl bg-brand-text px-3.5 py-2.5 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-deck',
-                lost ? 'opacity-80' : 'opacity-55',
-                !atMount.current.has(item.at) && 'chat-in',
+                lost || failed ? 'opacity-80' : 'opacity-55',
+                !atMount.current.has(item.sentId ?? item.at) && 'chat-in',
               )}
             >
               <SentAttachments
@@ -58,12 +58,21 @@ export function PendingBubbles({
                 </span>
               ) : null}
             </div>
-            {lost ? (
+            {lost || failed ? (
               <div
                 role="status"
-                className="flex flex-wrap items-center justify-end gap-x-3 text-meta text-brand-waiting"
+                className={cn(
+                  'flex flex-wrap items-center justify-end gap-x-3 text-meta',
+                  failed ? 'text-brand-error' : 'text-brand-waiting',
+                )}
               >
-                <span>{t`Not delivered: the agent went idle without it`}</span>
+                <span className="min-w-0 break-words">
+                  {failed
+                    ? errorText
+                      ? t`Send failed: ${errorText}`
+                      : t`Send failed`
+                    : t`Not delivered: the agent went idle without it`}
+                </span>
                 {onResend ? (
                   <Button
                     variant="link"
@@ -71,6 +80,16 @@ export function PendingBubbles({
                     onClick={() => onResend(item)}
                   >
                     {t`Resend`}
+                  </Button>
+                ) : null}
+                {onEdit ? (
+                  <Button
+                    variant="link"
+                    size="none"
+                    className="text-brand-text"
+                    onClick={() => onEdit(item)}
+                  >
+                    {t`Edit`}
                   </Button>
                 ) : null}
                 {onDismiss ? (
@@ -99,13 +118,14 @@ export function PendingBubbles({
  * what was typed shows up here too.
  */
 function useLostTrace(pending: Array<Pending>) {
-  const seen = useRef(new Set<number>())
+  const seen = useRef(new Set<string | number>())
   const lost = pending.filter((item) => item.state === 'lost')
-  const key = lost.map((item) => item.at).join(',')
+  const key = lost.map((item) => item.sentId ?? item.at).join(',')
   useEffect(() => {
     for (const item of lost) {
-      if (seen.current.has(item.at)) continue
-      seen.current.add(item.at)
+      const k = item.sentId ?? item.at
+      if (seen.current.has(k)) continue
+      seen.current.add(k)
       trace('send-lost', {
         age_ms: Date.now() - item.at,
         chars: item.text.length,

@@ -451,43 +451,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   draft) keeps a pinned thread at the bottom too. The reveal cursor never
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
-  the page reopened. The composer keeps a single input row: `＋` opens a
-  portalled Sheet for images, commands, skills and clearing the draft;
-  its 40 px touch target stays put while the text starts after 44 px of
-  left inset. On desktop, supported actions show their actual shortcut
-  in a hover hint or a trailing key label (send, `/new`, fresh process);
-  picked thumbnails remain above the input. The header's 待办 counter opens
-  a repository-scoped Sheet with a flat list and a sticky add field. The
-  header's `⋯` opens session actions, with the running interrupt visible
-  and terminal keys / agent switching under expandable rows. These Sheets
-  overlay the thread instead of growing the composer; open events use
-  `session-controls` with a menu type. Terminal keys include `Enter` confirm,
-  `Esc` cancel and `Ctrl+C` interrupt (host `key` RPC; `C-c` stops Grok).
-  Choices (digits,
-  arrows, `Tab`) are deliberately not keys: questions, plans and
-  permission prompts get tap targets; inline bodies clip so swipes scroll
-  the thread; full text opens in a Sheet (`session-permission.tsx`). The composer is
-  set off from the thread by a
-  full-width hairline and an upward shadow, and the chat page uses 10 px
-  side gutters (other pages 16 px). Reading back, the user's message that
-  owns the content at the top of the screen pins there once it has
-  scrolled out — the user bubble itself folded to one line (same fill, ink,
-  radius and size; it was a dark bordered strip that read as another thing)
-  (`chat-sticky.tsx`, zero-height sticky box so it never moves the thread); tapping it glides back to that message,
-  shown in full with a short highlight (`chat-jump-prompt` trace). Unsent
-  composer text is kept per session in `localStorage`
-  (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared the moment send is
-  tapped (back in mid-upload found the sent draft), put back on a failed
-  upload / send, synced across mounted copies (`use-draft.ts` events); ×
-  clears from the `＋` menu with an undo (`composer-clear` trace); Esc blurs the field; errors have a
-  one-tap copy; a "terminal was just used" refusal counts down and resends
-  (`session-send.ts`)
-  ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller
-  bottom (`-mb-4` cancels `#console-main`'s `pb-4`), otherwise it drops by
-  that padding the moment a drag starts. Back from the background the page
-  refetches at once, silently (`useResumeRefetch`; the old 正在拉取 → 已同步
-  line on every return was noise) — the stale note above covers a refetch
-  that keeps failing.
+  the page reopened. The composer keeps a single input row (`message-composer.tsx` + `session-composer.tsx`): `＋` opens a portalled Sheet for images, commands, skills, sent messages (`sent-history.tsx`, `h` on desktop; `↑` in an empty composer recalls the latest) and clearing the draft; its 40 px touch target stays put while text starts after 44 px of left inset. Desktop actions show shortcuts in hover hints or trailing key labels (send, `/new`, fresh process, `h`); picked thumbnails sit above the input and support local picks plus reused host-uploaded images (`ComposerImage`, zero re-upload). The header's 待办 counter opens a repository-scoped Sheet with a flat list and sticky add field; `⋯` opens session actions with the running interrupt visible and terminal keys / agent switching under expandable rows. These Sheets overlay the thread instead of growing the composer (`session-controls` trace). Terminal keys include `Enter` confirm, `Esc` cancel and `Ctrl+C` interrupt (host `key` RPC; `C-c` stops Grok). Choices (digits, arrows, `Tab`) are not keys: questions, plans and permission prompts get tap targets; inline bodies clip so swipes scroll the thread; full text opens in a Sheet (`session-permission.tsx`). The composer is set off by a full-width hairline and upward shadow, and the chat page uses 10 px side gutters (other pages 16 px). Reading back, the user's message that owns the content at the top pins there once scrolled out (`chat-sticky.tsx`, zero-height sticky box); tapping it glides back with a short highlight (`chat-jump-prompt` trace). Unsent composer text stays per session in `localStorage` (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared on send, restored on failed upload / send, synced across copies (`use-draft.ts`); × clears with undo (`composer-clear`); Esc blurs; errors have one-tap copy; desk-activity refusals count down and resend (`session-send.ts`, [`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller bottom (`-mb-4`), and returning from background refetches silently (`useResumeRefetch`).
 
 ### Edges (2026-11-24, flat)
 

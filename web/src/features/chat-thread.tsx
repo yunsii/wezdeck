@@ -66,12 +66,18 @@ export type Pending = {
   attachments?: Array<string>
   /** absolute transcript index where the transcript ended when it was sent */
   after?: number
+  /** host outbox record id when backed by host sent-messages.json */
+  sentId?: string
+  /** client_op UUID used to deduplicate local optimistic bubbles against host outbox */
+  clientOp?: string
+  /** host paste error when state === 'failed' */
+  error?: string
   /**
    * sending: the host has not taken it yet; queued: in the pane, not yet in
-   * the transcript; lost: derived by settle() — the agent went idle and the
-   * transcript never showed it (未送达, offered for resend)
+   * the transcript; lost: derived by settle() or host outbox — the agent went
+   * idle and the transcript never showed it (未送达); failed: host paste error
    */
-  state?: 'sending' | 'queued' | 'lost'
+  state?: 'sending' | 'queued' | 'lost' | 'failed'
 }
 
 /**
@@ -243,12 +249,14 @@ export function ChatThread({
   statusTs,
   onBackground,
   onResend,
+  onEdit,
   onDismiss,
   sessionId = '',
   syncing = false,
 }: {
-  /** a lost (未送达) bubble: send it again / drop it */
+  /** a lost / failed bubble: send it again / edit in composer / drop it */
   onResend?: (item: Pending) => void
+  onEdit?: (item: Pending) => void
   onDismiss?: (item: Pending) => void
   /** Claude, writable: Ctrl+B into the pane (shown while a foreground call runs) */
   onBackground?: () => void
@@ -432,6 +440,7 @@ export function ChatThread({
         <PendingBubbles
           pending={queue.left}
           onResend={onResend}
+          onEdit={onEdit}
           onDismiss={onDismiss}
         />
       </SmoothGrow>
@@ -554,20 +563,45 @@ export function settleMatches(
     .filter(({ message }) => message.role === 'user')
     .map(({ message, at }) => ({ text: message.text.trim(), at }))
   const used = new Set<number>()
-  // the host appends an attachment note after a blank line
-  const matches = (typed: string, text: string) =>
-    typed ? text === typed || endsWithNote(text, typed) : endsWithNote(text, '')
+  // the host appends an attachment note after a blank line; also tolerate a
+  // terminal draft prefix merged with the pasted web message (mirrors host
+  // remote_outbox.go outboxMatchesUserLine).
+  const matches = (
+    typed: string,
+    attachments: Array<string> | undefined,
+    text: string,
+  ) => {
+    if (
+      typed
+        ? text === typed || endsWithNote(text, typed)
+        : endsWithNote(text, '')
+    )
+      return true
+    if (attachments?.length) {
+      if (!attachments.every((name) => text.includes(name))) return false
+      return !typed || text.includes(typed)
+    }
+    return typed.length >= 4 && text.includes(typed)
+  }
   const left: Array<Pending> = []
   for (const item of pending) {
+    if (item.state === 'failed') {
+      left.push(item)
+      continue
+    }
     const typed = item.text.trim()
     const line = users.find(
       (user) =>
         !used.has(user.at) &&
         user.at >= (item.after ?? 0) &&
-        matches(typed, user.text),
+        matches(typed, item.attachments, user.text),
     )
     if (line) {
       used.add(line.at)
+      continue
+    }
+    if (item.state === 'lost') {
+      left.push(item)
       continue
     }
     const waiting = item.state === 'sending' || busy
