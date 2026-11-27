@@ -196,13 +196,13 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     }
 
     // queued bubbles belong to their session: switch away via list and back
-    await page.getByRole('button', { name: '会话' }).click()
+    await page.getByRole('button', { name: '会话', exact: true }).click()
     await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
     await page.locator('[data-session=other-session]').click()
     await page.waitForURL('**/console/sessions/other-session')
     await page.waitForTimeout(500)
     expect(await page.locator('[data-pending]').count()).toBe(0)
-    await page.getByRole('button', { name: '会话' }).click()
+    await page.getByRole('button', { name: '会话', exact: true }).click()
     await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
     await page.locator('[data-session=demo-session]').click()
     await page.waitForURL('**/console/sessions/demo-session')
