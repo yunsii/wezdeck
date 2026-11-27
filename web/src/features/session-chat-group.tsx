@@ -107,7 +107,9 @@ function SessionSubRow({
   const client = useQueryClient()
   const tone = chatTone(session)
   const title = session.title?.trim()
-  const prompt = humanPrompt(session.last_prompt).trim()
+  const prompt =
+    (tone === 'done' || tone === 'idle' ? session.last_reply : '') ||
+    humanPrompt(session.last_prompt).trim()
   const rawDraft = session.draft?.trim() ?? ''
   const draft = visibleDraft(
     session.id,

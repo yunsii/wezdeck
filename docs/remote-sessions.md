@@ -110,9 +110,12 @@ opening a chat and transcript output do not reorder rows. Rows carry known brand
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /
-profile badge (Kimi, gateway, …). Preview line reads like the last message
-(`Waiting on you · …` / `Replying…` / human prompt); focusing a session
-opens its preview. A newly created idle
+profile badge (Kimi, gateway, …). Completed and idle sessions preview the
+latest agent reply from the current detail cache; until it is available they
+show the human prompt. Running and waiting sessions retain the request and
+status prefix. The cache is already warmed on completion and list previews
+subscribe to its updates without fetching transcripts on every list poll;
+focusing a session opens its preview. A newly created idle
 session with no human prompt is never called `Replying…` merely because its
 timestamp falls inside the recent-turn grace period, and it cannot become the
 chat's running focus ahead of a real recent turn; list time is clock-today /
