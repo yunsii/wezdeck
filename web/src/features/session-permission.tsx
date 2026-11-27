@@ -16,7 +16,7 @@ import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
 import { ChatMarkdown } from './chat-markdown'
 import {
-  PromptActionSpinner,
+  PromptActionLabel,
   PromptActionStatus,
   usePromptAction,
 } from './prompt-action-state'
@@ -304,15 +304,17 @@ export function PermissionCard({
           disabled={disabled || Boolean(pending)}
           onClick={() => void run('allow', () => onKey(allowKey))}
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             pending && 'disabled:opacity-100',
             pending?.action === 'allow' && 'ring-2 ring-brand-running/50',
           )}
         >
-          {pending?.action === 'allow' ? (
-            <PromptActionSpinner className="border-white/35 border-t-white" />
-          ) : null}
-          {call.plan ? t`Approve the plan` : t`Allow`}
+          <PromptActionLabel
+            loading={pending?.action === 'allow'}
+            spinnerClassName="border-white/35 border-t-white"
+          >
+            {call.plan ? t`Approve the plan` : t`Allow`}
+          </PromptActionLabel>
         </Button>
         <Button
           variant="key"
@@ -324,13 +326,14 @@ export function PermissionCard({
             })
           }
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             pending && 'disabled:opacity-100',
             pending?.action === 'deny' && 'border-brand-running',
           )}
         >
-          {pending?.action === 'deny' ? <PromptActionSpinner /> : null}
-          {call.plan ? t`Keep planning` : t`Deny`}
+          <PromptActionLabel loading={pending?.action === 'deny'}>
+            {call.plan ? t`Keep planning` : t`Deny`}
+          </PromptActionLabel>
         </Button>
       </div>
       <PromptActionStatus pending={pending} idle={idleHint} />

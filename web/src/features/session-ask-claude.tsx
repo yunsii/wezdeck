@@ -11,7 +11,7 @@ import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import {
-  PromptActionSpinner,
+  PromptActionLabel,
   PromptActionStatus,
   usePromptAction,
 } from './prompt-action-state'
@@ -103,15 +103,17 @@ export function ClaudeAsk({
             onClick={() => void run('submit', () => onKey('Enter'))}
             data-testid="ask-submit"
             className={cn(
-              'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+              'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
               pending && 'disabled:opacity-100',
               pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
             )}
           >
-            {pending?.action === 'submit' ? (
-              <PromptActionSpinner className="border-white/35 border-t-white" />
-            ) : null}
-            {t`Submit answers`}
+            <PromptActionLabel
+              loading={pending?.action === 'submit'}
+              spinnerClassName="border-white/35 border-t-white"
+            >
+              {t`Submit answers`}
+            </PromptActionLabel>
           </Button>
         </div>
       ) : current ? (
@@ -171,13 +173,14 @@ export function ClaudeAsk({
                 })()
               }
               className={cn(
-                'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+                'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
                 pending && 'disabled:opacity-100',
                 pending?.action === 'enter' && 'border-brand-running',
               )}
             >
-              {pending?.action === 'enter' ? <PromptActionSpinner /> : null}
-              {t`Enter`}
+              <PromptActionLabel loading={pending?.action === 'enter'}>
+                {t`Enter`}
+              </PromptActionLabel>
             </Button>
           ) : null}
         </div>
@@ -196,17 +199,23 @@ export function ClaudeAsk({
             })()
           }
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             pending && 'disabled:opacity-100',
             pending?.action === 'cancel' && 'border-brand-running',
           )}
         >
-          {pending?.action === 'cancel' ? <PromptActionSpinner /> : null}
-          {t`Cancel (Esc)`}
+          <PromptActionLabel loading={pending?.action === 'cancel'}>
+            {t`Cancel (Esc)`}
+          </PromptActionLabel>
         </Button>
       </div>
       <PromptActionStatus
         pending={pending}
+        idle={
+          !review && !current?.multi_select
+            ? t`Tap an option to send its number into the agent pane.`
+            : undefined
+        }
         sendingText={t`Submitting your answer…`}
         waitingText={t`Answer sent; waiting for the agent to continue…`}
       />
