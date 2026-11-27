@@ -557,7 +557,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-keys.tsx:189
+#: src/features/console-keys.tsx:194
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
@@ -915,7 +915,7 @@ msgstr "Close a sheet, or let go of a focused button"
 #~ msgid "Close keys"
 #~ msgstr "Close keys"
 
-#: src/features/console-keys.tsx:113
+#: src/features/console-keys.tsx:118
 msgid "Close the viewer"
 msgstr "Close the viewer"
 
@@ -989,7 +989,7 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/console-keys.tsx:90
+#: src/features/console-keys.tsx:95
 msgid "Composer"
 msgstr "Composer"
 
@@ -1206,7 +1206,7 @@ msgstr "Copy session reference for an agent"
 msgid "Copy the open session's reference"
 msgstr "Copy the open session's reference"
 
-#: src/features/console-keys.tsx:105
+#: src/features/console-keys.tsx:110
 msgid "Copy the open ticket's reference"
 msgstr "Copy the open ticket's reference"
 
@@ -1846,7 +1846,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/console-keys.tsx:110
+#: src/features/console-keys.tsx:115
 msgid "Image viewer"
 msgstr "Image viewer"
 
@@ -1966,9 +1966,9 @@ msgstr "just restarted"
 msgid "Keep planning"
 msgstr "Keep planning"
 
-#: src/features/console-keys.tsx:207
-#: src/features/console-keys.tsx:266
-#: src/features/console-keys.tsx:267
+#: src/features/console-keys.tsx:212
+#: src/features/console-keys.tsx:271
+#: src/features/console-keys.tsx:272
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -2038,7 +2038,7 @@ msgstr "Leave blank to keep current key"
 msgid "letter"
 msgstr "letter"
 
-#: src/features/console-keys.tsx:213
+#: src/features/console-keys.tsx:218
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 
@@ -2202,7 +2202,7 @@ msgstr "Merge"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:353
+#: src/features/session-composer.tsx:369
 msgid "Message"
 msgstr "Message"
 
@@ -2212,7 +2212,7 @@ msgstr "Message"
 msgid "Message actions"
 msgstr "Message actions"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:302
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2324,7 +2324,7 @@ msgstr "New conversation (/new)"
 #~ msgid "New direction"
 #~ msgstr "New direction"
 
-#: src/features/console-keys.tsx:94
+#: src/features/console-keys.tsx:99
 msgid "New line"
 msgstr "New line"
 
@@ -2345,7 +2345,7 @@ msgstr "New line"
 msgid "New session"
 msgstr "New session"
 
-#: src/features/console-keys.tsx:84
+#: src/features/console-keys.tsx:89
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
@@ -2370,7 +2370,7 @@ msgstr "New session in this group"
 msgid "New session title"
 msgstr "New session title"
 
-#: src/features/console-keys.tsx:106
+#: src/features/console-keys.tsx:111
 #: src/features/ticket-new.tsx:66
 #: src/features/ticket-new.tsx:161
 msgid "New ticket"
@@ -2400,7 +2400,7 @@ msgstr "Next / previous running session"
 msgid "Next / previous session in the list"
 msgstr "Next / previous session in the list"
 
-#: src/features/console-keys.tsx:104
+#: src/features/console-keys.tsx:109
 msgid "Next / previous ticket"
 msgstr "Next / previous ticket"
 
@@ -2892,7 +2892,7 @@ msgstr "Prepare workstation"
 msgid "Preview {label}"
 msgstr "Preview {label}"
 
-#: src/features/console-keys.tsx:112
+#: src/features/console-keys.tsx:117
 msgid "Previous / next image"
 msgstr "Previous / next image"
 
@@ -2949,7 +2949,7 @@ msgstr "Put into the message"
 msgid "Put into the message for this agent"
 msgstr "Put into the message for this agent"
 
-#: src/features/console-keys.tsx:92
+#: src/features/console-keys.tsx:97
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
@@ -3261,8 +3261,8 @@ msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
 #: src/features/session-restart.tsx:157
-msgid "Respawn the pane; the agent resumes this conversation (F5)"
-msgstr "Respawn the pane; the agent resumes this conversation (F5)"
+#~ msgid "Respawn the pane; the agent resumes this conversation (F5)"
+#~ msgstr "Respawn the pane; the agent resumes this conversation (F5)"
 
 #: src/features/session-restart.tsx:101
 #: src/features/session-restart.tsx:110
@@ -3270,9 +3270,17 @@ msgid "Restart"
 msgstr "Restart"
 
 #: src/features/session-restart.tsx:63
-#: src/features/session-restart.tsx:162
+#: src/features/session-restart.tsx:163
 msgid "Restart session"
 msgstr "Restart session"
+
+#: src/features/console-keys.tsx:84
+msgid "Restart the agent and resume this conversation"
+msgstr "Restart the agent and resume this conversation"
+
+#: src/features/session-restart.tsx:158
+msgid "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
+msgstr "Restart the agent in this pane (Alt+F5 on web, F5 at the desk)"
 
 #: src/features/session-restart.tsx:80
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
@@ -3475,7 +3483,7 @@ msgstr "Same as Ctrl+X in the Alt+/ picker"
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "Same as Enter in the Alt+/ picker (key: o)"
 
-#: src/features/console-keys.tsx:184
+#: src/features/console-keys.tsx:189
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
@@ -3573,13 +3581,13 @@ msgstr "Sections"
 msgid "seen"
 msgstr "seen"
 
-#: src/features/console-keys.tsx:93
-#: src/features/session-composer.tsx:362
-#: src/features/session-composer.tsx:364
+#: src/features/console-keys.tsx:98
+#: src/features/session-composer.tsx:378
+#: src/features/session-composer.tsx:380
 msgid "Send"
 msgstr "Send"
 
-#: src/features/console-keys.tsx:97
+#: src/features/console-keys.tsx:102
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "Send (also on a touch screen, where Enter is a new line)"
 
@@ -3712,7 +3720,7 @@ msgstr "Shared"
 msgid "shipped"
 msgstr "shipped"
 
-#: src/features/console-keys.tsx:272
+#: src/features/console-keys.tsx:277
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
@@ -4246,7 +4254,7 @@ msgstr "Ticket ID and headless run metrics"
 msgid "Ticket info"
 msgstr "Ticket info"
 
-#: src/features/console-keys.tsx:102
+#: src/features/console-keys.tsx:107
 msgid "Ticket pages"
 msgstr "Ticket pages"
 

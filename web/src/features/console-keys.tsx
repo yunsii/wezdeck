@@ -80,6 +80,11 @@ function useKeyGroups(): Array<Group> {
           what: t`Start a blank agent process in this pane`,
         },
         {
+          keys: ['Alt+F5'],
+          what: t`Restart the agent and resume this conversation`,
+          host: 'F5',
+        },
+        {
           keys: ['c'],
           what: t`New session (a worktree and an agent)`,
           host: 'Ctrl+K g d / t',
