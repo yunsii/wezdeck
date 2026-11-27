@@ -31,9 +31,13 @@ describe('Local Runtime restart in the status band', () => {
       instance: 'first',
       uptime: 3_600_000,
     }
+    let failedReads = 0
     await context.route('http://127.0.0.1:35791/**', async (route) => {
       const url = new URL(route.request().url())
-      if (!runtime || url.pathname !== '/api/v1/health') return route.abort()
+      if (!runtime || url.pathname !== '/api/v1/health') {
+        if (!runtime && url.pathname === '/api/v1/health') failedReads += 1
+        return route.abort()
+      }
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -59,13 +63,11 @@ describe('Local Runtime restart in the status band', () => {
       .toBe(true)
     expect(await recent.count()).toBe(0)
 
-    // it goes away: the band stops saying 就绪 (离线), or the page drops to
-    // the remote mode — either way it shows
+    // it goes away: wait for the missed health polls before bringing it back
     runtime = null
-    await page
-      .getByText(/^(离线|远程访问)$/)
-      .first()
-      .waitFor({ timeout: 30_000 })
+    await expect
+      .poll(() => failedReads, { timeout: 30_000 })
+      .toBeGreaterThanOrEqual(3)
 
     // a new one: a toast with how long it was gone, and 刚重启
     runtime = { instance: 'second', uptime: 2_000 }

@@ -138,16 +138,17 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `ticket-autosync.ts` (traced `ticket-autosync`, concurrency ≤ 2) pre-pulls
    `collab show` for `waiting_initiator` and running tickets into the persisted
    IndexedDB cache so opening them is instant. A run opens in a bottom
-   sheet (transcript, prompt). Connection status lives in 我的 › 连接 (desktop
-   keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
+   sheet (transcript, prompt). Connection status lives in 我的 › 连接;
+   `<main data-remote-mode>` exposes the mode to CDP.
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
 5. **Wide screens (≥ 768 px, 2026-11-23; Telegram rail 2026-11-27)**: no mobile layout blown up.
    Left nav is a 72 px Telegram Desktop icon rail (multiple of 8 so 2.625×
    HiDPI lands on integer device pixels; WezDeck mark top, 会话 / 工单
    primary, 诊断(local) / 我的 / `?` Shortcuts bottom; 工单动态 lives in `CollabTopBar`
-   on both phone and desktop, keeping `g a`), while `StatusBand` / `RemoteBand`
-   sits in a slim 32 px bottom strip so splits start flush at the top edge.
+   on both phone and desktop, keeping `g a`), while the local-runtime
+   diagnostics strip sits in a slim 32 px bottom strip so splits start flush at
+   the top edge. Connection status remains in 我的 › 连接.
    会话 and 工单 share the sticky split (`session-split.tsx`, full remaining width,
    no 900 px cap, j / k + y, replace history, no back button). 我的 uses
    `SplitColumn` with flat `.me-list` inset-hairline groups (phone: compact

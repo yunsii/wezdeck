@@ -24,7 +24,7 @@ import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
 import { RuntimeDataProvider } from './console-data'
-import { RemoteBand, StatusBand } from './console-status-band'
+import { StatusBand } from './console-status-band'
 import { resetSessionOrder } from './session-stable'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
@@ -421,13 +421,9 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-      {/* bottom: mobile tab bar (<768px) or slim 32px (multiple of 8 for HiDPI) desktop status bar (≥768px) */}
+      {/* bottom: mobile tab bar (<768px) or slim 32px diagnostics strip (≥768px) */}
       <div className="vt-band hidden h-8 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
-        {mode === 'local' ? (
-          <StatusBand />
-        ) : mode === 'remote' ? (
-          <RemoteBand />
-        ) : null}
+        {mode === 'local' ? <StatusBand /> : null}
       </div>
       <nav
         aria-label={t`Sections`}

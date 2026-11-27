@@ -1926,7 +1926,7 @@ msgstr "Just compacted; updates after the next reply"
 msgid "just now"
 msgstr "just now"
 
-#: src/features/console-status-band.tsx:105
+#: src/features/console-status-band.tsx:90
 msgid "just restarted"
 msgstr "just restarted"
 
@@ -1972,7 +1972,7 @@ msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-status-band.tsx:87
+#: src/features/console-status-band.tsx:72
 #: src/features/me-host.tsx:130
 msgid "Last sample"
 msgstr "Last sample"
@@ -2546,7 +2546,7 @@ msgstr "Not pulled"
 msgid "Not pushed"
 msgstr "Not pushed"
 
-#: src/features/console-status-band.tsx:38
+#: src/features/console-status-band.tsx:27
 msgid "Not running"
 msgstr "Not running"
 
@@ -2957,7 +2957,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-status-band.tsx:51
+#: src/features/console-status-band.tsx:40
 #: src/features/me-host.tsx:60
 #: src/features/me-host.tsx:157
 msgid "Ready"
@@ -3042,8 +3042,8 @@ msgid "Remote"
 msgstr "Remote"
 
 #: src/features/console-status-band.tsx:14
-msgid "Remote access"
-msgstr "Remote access"
+#~ msgid "Remote access"
+#~ msgstr "Remote access"
 
 #: src/features/me-devices.tsx:246
 msgid "Remote devices"
@@ -3258,7 +3258,7 @@ msgstr "Resume a conversation"
 #~ msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:551
+#: src/features/console-shell.tsx:547
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3356,7 +3356,7 @@ msgstr "running"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-status-band.tsx:38
+#: src/features/console-status-band.tsx:27
 #: src/features/session-worktree-manager.tsx:119
 msgid "Running"
 msgstr "Running"
@@ -3516,7 +3516,7 @@ msgstr "Search skills"
 msgid "Search worktrees"
 msgstr "Search worktrees"
 
-#: src/features/console-shell.tsx:433
+#: src/features/console-shell.tsx:429
 msgid "Sections"
 msgstr "Sections"
 
@@ -4056,7 +4056,7 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "The local Runtime restarted (about {gone} s without it)"
 
-#: src/features/console-status-band.tsx:102
+#: src/features/console-status-band.tsx:87
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
@@ -4138,7 +4138,7 @@ msgstr "This is the last session and the worktree has local changes. Inspect Git
 msgid "This list of shortcuts"
 msgstr "This list of shortcuts"
 
-#: src/features/console-shell.tsx:546
+#: src/features/console-shell.tsx:542
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -4430,7 +4430,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-status-band.tsx:93
+#: src/features/console-status-band.tsx:78
 #: src/features/me-host.tsx:129
 msgid "Uptime"
 msgstr "Uptime"
@@ -4565,7 +4565,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/console-status-band.tsx:62
+#: src/features/console-status-band.tsx:51
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -4614,7 +4614,7 @@ msgstr "WebSocket relay"
 #: src/features/console-shell.tsx:344
 #: src/features/console-shell.tsx:346
 #: src/features/console-shell.tsx:347
-#: src/features/console-shell.tsx:496
+#: src/features/console-shell.tsx:492
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
