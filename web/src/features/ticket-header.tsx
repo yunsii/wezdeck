@@ -147,6 +147,7 @@ export function TicketHeader({
       <TicketDiffSheet
         ticketId={ticket.id}
         title={title}
+        hasManager={Boolean(ticket.manager_session)}
         open={diffOpen}
         onClose={() => setDiffOpen(false)}
       />

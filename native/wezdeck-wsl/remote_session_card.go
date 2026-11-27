@@ -34,6 +34,7 @@ type sessionCard struct {
 	Visited             int64    `json:"visited,omitempty"`
 	AgentProfile        string   `json:"agent_profile,omitempty"`
 	Detached            bool     `json:"detached,omitempty"`
+	TicketID            string   `json:"ticket_id,omitempty"`
 }
 
 func sessionOrderAt(e attentionEntry, fallback int64) int64 {

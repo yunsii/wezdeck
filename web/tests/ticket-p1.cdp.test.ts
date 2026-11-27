@@ -1,7 +1,9 @@
 // covers: web/src/features/ticket-list-groups.ts web/src/features/ticket-keys.tsx
 // covers: web/src/features/tickets-view.tsx web/src/features/ticket-run-chat.tsx
 // covers: web/src/features/ticket-diff.tsx web/src/features/ticket-header.tsx
+// covers: web/src/features/ticket-manager-panel.tsx
 // covers: native/wezdeck-wsl/collab_chat.go native/wezdeck-wsl/collab_diff.go
+// covers: native/wezdeck-wsl/collab_manager.go
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -12,9 +14,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 const token = process.env.WEZDECK_REMOTE_TOKEN || 'dev-client-token'
+const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
 const stack = process.env.WEZDECK_TEST_STACK_DIR ?? ''
 const room = process.env.WEZDECK_REMOTE_ROOM ?? ''
 const roomQuery = room ? `&room=${room}` : ''
+const repoRoot = join(import.meta.dirname, '..', '..')
 
 function writeTicket(
   dataRoot: string,
@@ -75,7 +79,17 @@ function createFixture() {
       created_at: nowIso,
       updated_at: nowIso,
     },
-    { kind: 'parent', repos: ['demo-repo'] },
+    {
+      kind: 'parent',
+      repos: ['demo-repo'],
+      manager_session: {
+        backend: 'claude',
+        profile: 'claude-sonnet',
+        state: 'parked',
+        cwd: join(stack, 'tickets', 'workspaces', parentId),
+        updated_at: nowIso,
+      },
+    },
     'Parent orchestration ticket',
   )
 
@@ -196,6 +210,33 @@ describe.runIf(stack)(
       const context = await browser.newContext({ viewport, locale: 'zh-CN' })
       const page = await context.newPage()
 
+      if (devicesFile) {
+        writeFileSync(
+          devicesFile,
+          JSON.stringify({ approved: [], pending: [] }),
+        )
+        await page.goto(
+          `${base}/zh/console/me/writing?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
+        )
+        await page
+          .locator('main[data-remote-mode]')
+          .waitFor({ timeout: 20_000 })
+        await page.getByRole('button', { name: '申请授权' }).click()
+        const command = page.locator('code', { hasText: '--approve' })
+        await command.waitFor({ timeout: 20_000 })
+        const devId = ((await command.textContent()) ?? '')
+          .trim()
+          .split(' ')
+          .at(-1)
+        execFileSync(
+          join(repoRoot, 'scripts/dev/install-remote-relay.sh'),
+          ['--approve', devId ?? ''],
+          { env: { ...process.env, WEZDECK_REMOTE_DEVICES: devicesFile } },
+        )
+        await page.getByRole('button', { name: '重新检查' }).click()
+        await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
+      }
+
       await page.goto(
         `${base}/zh/console/collab?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
       )
@@ -247,6 +288,22 @@ describe.runIf(stack)(
       const fileCard = diffSheet.locator('[data-file="handler.ts"]')
       await fileCard.waitFor({ timeout: 15_000 })
       expect(await fileCard.innerText()).toContain('export const ready = true')
+
+      // 5. Annotate file in Diff drawer -> sticky Send review (1) button appears
+      await fileCard.getByTestId('ticket-diff-annotate').click()
+      await fileCard.locator('textarea').fill('Check null guard here')
+      const sendReviewBtn = diffSheet.getByTestId('ticket-diff-send-review')
+      await sendReviewBtn.waitFor({ timeout: 5_000 })
+      expect(await sendReviewBtn.innerText()).toContain('1')
+
+      // 6. Navigate to parent ticket -> parked Manager Session panel renders with Wake + composer
+      await page.goto(
+        `${base}/zh/console/collab/${fixture.parentId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
+      )
+      const mgrPanel = page.getByTestId('ticket-manager-panel')
+      await mgrPanel.waitFor({ timeout: 15_000 })
+      await mgrPanel.getByTestId('ticket-manager-resume-button').waitFor()
+      await mgrPanel.getByTestId('ticket-manager-composer').waitFor()
 
       await context.close()
     }, 60_000)

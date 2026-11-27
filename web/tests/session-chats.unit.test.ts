@@ -14,6 +14,7 @@ import {
   formatChatDate,
 } from '#/features/chat-time'
 import type { SessionCard } from '#/features/console-sessions'
+import { cachedAgentReply } from '#/features/session-reply-preview'
 
 const card = (over: Partial<SessionCard>): SessionCard => ({
   id: 'x',
@@ -290,6 +291,71 @@ describe('chatTone / chatPreview', () => {
       ),
     ).toBe('Working · sent')
   })
+
+  it('shows the latest agent reply after completion or read acknowledgement', () => {
+    const done = card({
+      status: 'done',
+      last_prompt: 'ship it',
+      last_reply: 'Shipped.',
+    })
+    expect(chatPreview(done, previewLabels)).toBe('Done · Shipped.')
+    expect(chatPreview({ ...done, status: 'idle' }, previewLabels)).toBe(
+      'Shipped.',
+    )
+    expect(chatPreview({ ...done, status: 'running' }, previewLabels)).toBe(
+      'Working · ship it',
+    )
+    expect(
+      chatPreview(
+        { ...done, status: 'waiting', waiting_kind: 'ask' },
+        previewLabels,
+      ),
+    ).toBe('Waiting on you · ship it')
+  })
+})
+
+describe('cachedAgentReply', () => {
+  const row = card({ status: 'done', ts: 200 })
+  const detail = {
+    id: row.id,
+    status: 'done',
+    ts: 200,
+    messages: [
+      { role: 'assistant' as const, text: 'Previous reply' },
+      { role: 'user' as const, text: 'New request' },
+      { role: 'tool' as const, text: 'Tool output' },
+      { role: 'assistant' as const, text: 'Final\nreply' },
+      { role: 'system' as const, text: 'Notification' },
+    ],
+  }
+
+  it('uses the last assistant message in the current turn', () => {
+    expect(cachedAgentReply(row, detail)).toBe('Final reply')
+    expect(cachedAgentReply({ ...row, status: 'idle' }, detail)).toBe(
+      'Final reply',
+    )
+    expect(
+      cachedAgentReply(row, {
+        ...detail,
+        messages: [
+          ...detail.messages,
+          { role: 'user', text: '<task-notification>Background task done' },
+        ],
+      }),
+    ).toBe('Final reply')
+  })
+
+  it('rejects stale or unfinished details and replies from a prior turn', () => {
+    expect(cachedAgentReply(row, { ...detail, ts: 199 })).toBe('')
+    expect(cachedAgentReply(row, { ...detail, status: 'running' })).toBe('')
+    expect(cachedAgentReply({ ...row, status: 'running' }, detail)).toBe('')
+    expect(
+      cachedAgentReply(row, {
+        ...detail,
+        messages: [...detail.messages, { role: 'user', text: 'Later request' }],
+      }),
+    ).toBe('')
+  })
 })
 
 describe('unreadChatCount', () => {
@@ -404,5 +470,30 @@ describe('unreadChatCount', () => {
       }),
     ]
     expect(unreadChatCount(rows)).toBe(2)
+  })
+
+  it('omits ticket manager sessions from both chat groups and unread counts', () => {
+    const rows = [
+      card({
+        id: 'regular',
+        status: 'waiting',
+        waiting_kind: 'ask',
+        worktree: '/r/a/.worktrees/ux',
+      }),
+      card({
+        id: 'mgr-1',
+        status: 'waiting',
+        waiting_kind: 'ask',
+        worktree: '/home/u/.agent/tickets/workspaces/req-1',
+        cwd: '/home/u/.agent/tickets/workspaces/req-1',
+        ticket_id: 'req-1',
+      }),
+    ]
+    const groups = buildChatGroups(rows)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].chats.flatMap((c) => c.sessions.map((s) => s.id))).toEqual(
+      ['regular'],
+    )
+    expect(unreadChatCount(rows)).toBe(1)
   })
 })

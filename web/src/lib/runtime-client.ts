@@ -396,6 +396,7 @@ export type HostReadAction =
   | 'session.autotitle.status'
   | 'collab.run.chat'
   | 'collab.diff'
+  | 'collab.manager.chat'
   /** local Runtime only: the host's diagnostics requests for this page */
   | 'diag.pending'
   /** local Runtime only (serve.go): the relay does not list devices */

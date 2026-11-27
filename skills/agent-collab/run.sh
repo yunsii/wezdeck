@@ -420,11 +420,9 @@ PY
 
   reclaim_json='{"ok":true,"action":"skipped","reason":"keep_worktree"}'
   if ((keep_worktree == 0)); then
-    # Close already committed; reclaim failure must not undo the ticket status.
-    set +e
-    reclaim_json="$(ticket_reclaim_worktree "$id")"
-    set -e
+    set +e; reclaim_json="$(ticket_reclaim_worktree "$id")"; set -e
   fi
+  python3 "$TOOL_ROOT/lib/manager.py" park --id "$id" >/dev/null 2>&1 || true
   CLOSE_JSON="$close_json" RECLAIM_JSON="$reclaim_json" python3 - <<'PY'
 import json, os
 close = json.loads(os.environ["CLOSE_JSON"])
@@ -1428,6 +1426,6 @@ case "$cmd" in
   walkthrough) cmd_walkthrough "$@" ;;
   reindex) cmd_reindex "$@" ;;
   selfcheck) cmd_selfcheck "$@" ;;
-  api|fanout|research|attach) exec python3 "$TOOL_ROOT/lib/$cmd.py" "$@" ;;
+  api|fanout|research|attach|manager) exec python3 "$TOOL_ROOT/lib/$cmd.py" "$@" ;;
   *) usage; ticket_die "unknown command: $cmd" ;;
 esac

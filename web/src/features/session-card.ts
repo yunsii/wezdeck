@@ -16,6 +16,8 @@ export type SessionCard = {
   status: string
   waiting_kind?: string
   last_prompt: string
+  /** Client-only preview from the current detail cache. */
+  last_reply?: string
   draft?: string
   ts: number
   /** Source of the displayed timestamp. */
@@ -50,4 +52,6 @@ export type SessionCard = {
   visited?: number
   /** managed profile on the pane (claude_kimi, …); avatar corner badge */
   agent_profile?: string
+  /** set when this session is a top-level ticket Manager Session (deduped from 会话 list) */
+  ticket_id?: string
 }

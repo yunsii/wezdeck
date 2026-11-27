@@ -1,9 +1,18 @@
 import { z } from 'zod'
 
-import { ticketProposalSchema } from './ticket-proposal-contract'
+import {
+  ticketProposalSchema,
+  ticketQuestionsSchema,
+} from './ticket-proposal-contract'
 
-export { ticketProposalSchema } from './ticket-proposal-contract'
-export type { TicketProposal } from './ticket-proposal-contract'
+export {
+  ticketProposalSchema,
+  ticketQuestionsSchema,
+} from './ticket-proposal-contract'
+export type {
+  TicketProposal,
+  TicketQuestions,
+} from './ticket-proposal-contract'
 
 export const worktreeStatusSchema = z.object({
   available: z.boolean().default(false),
@@ -287,6 +296,21 @@ export const collabTicketSchema = z
     runs: z.number().default(0),
     running: z.array(z.string()).default([]),
     last_run: collabRunSummarySchema.nullable().optional(),
+    manager_session: z
+      .object({
+        backend: nstr,
+        profile: nstr,
+        id: nstr,
+        cwd: nstr,
+        tmux_session: nstr,
+        tmux_window: nstr,
+        tmux_pane: nstr,
+        state: nstr,
+        updated_at: nstr,
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
   })
   .passthrough()
 
@@ -323,30 +347,6 @@ export const collabEventSchema = z
     ts: nstr,
   })
   .passthrough()
-
-/** structured questions a waiting ticket asks (skills/agent-collab questions.json) */
-export const ticketQuestionsSchema = z.object({
-  asked_at: nstr,
-  source: nstr,
-  questions: z
-    .array(
-      z.object({
-        header: z.string().optional(),
-        question: z.string(),
-        multi_select: z.boolean().default(false),
-        options: z
-          .array(
-            z.object({
-              label: z.string(),
-              description: z.string().optional(),
-            }),
-          )
-          .default([]),
-      }),
-    )
-    .default([]),
-})
-export type TicketQuestions = z.infer<typeof ticketQuestionsSchema>
 
 export const collabShowSchema = collabEnvelope({
   ticket: collabTicketSchema.optional(),
