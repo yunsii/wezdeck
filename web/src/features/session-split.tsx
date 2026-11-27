@@ -161,15 +161,15 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
       </div>
       <div
         // Wide screens isolate the split pane with contain-strict so right-pane
-        // scroll never dirties the left list's compositor subtree. Real
-        // conversations scroll inside SessionDetail's middle row (keeping header
-        // + composer/statusbar non-sticky); virtual routes scroll here.
+        // scroll never dirties the left list's compositor subtree. Every active
+        // route (real conversations, 新会话, and job progress) owns its header
+        // and inner scroll area so left/right edges stay symmetric.
         className={cn(
           'vt-split-pane max-md:contents md:h-full md:min-h-0 md:min-w-0 md:border-l md:border-brand-edge md:contain-strict',
-          id && !isVirtualSessionId(id)
+          id
             ? 'md:flex md:flex-col md:overflow-hidden'
             : cn(
-                'md:block md:overflow-x-hidden md:overscroll-contain md:pl-[var(--page-x)]',
+                'md:block md:overflow-x-hidden md:overscroll-contain md:p-4',
                 wide && 'overflow-y-auto',
               ),
           !id && 'max-md:hidden',
@@ -183,12 +183,7 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
           <div
             key={id}
             data-testid="session-detail"
-            className={cn(
-              'max-md:contents md:flex md:min-w-0 md:flex-col',
-              isVirtualSessionId(id)
-                ? 'md:min-h-full'
-                : 'md:h-full md:min-h-0 md:flex-1 md:overflow-hidden',
-            )}
+            className="max-md:contents md:flex md:h-full md:min-h-0 md:min-w-0 md:flex-1 md:flex-col md:overflow-hidden"
           >
             {isNewSessionId(id) ? (
               <NewSessionGuidedView />

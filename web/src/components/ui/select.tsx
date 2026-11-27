@@ -44,7 +44,7 @@ export function Select({
       <BaseSelect.Trigger
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex w-full items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-soft px-2.5 text-left text-brand-text outline-none transition hover:border-brand-running focus:border-brand-running focus:ring-2 focus:ring-brand-running/20',
+          'inline-flex w-full items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-soft px-2.5 text-left text-brand-text outline-none transition hover:border-brand-running focus:border-brand-running focus:ring-2 focus:ring-brand-running/20 data-popup-open:border-brand-running data-popup-open:ring-2 data-popup-open:ring-brand-running/20',
           // lg matches the phone fields beside it: borderless, on the surface
           lg
             ? 'min-h-11 rounded-xl border-transparent bg-brand-surface px-3 text-body'
@@ -72,16 +72,28 @@ export function Select({
         </BaseSelect.Icon>
       </BaseSelect.Trigger>
       <BaseSelect.Portal>
-        {/* above the z-50 bottom sheets a select can sit in */}
+        {/* above the z-50 bottom sheets a select can sit in; disable
+            alignItemWithTrigger so Base UI keeps Floating UI's side/align
+            placement and injects --anchor-width on mouse clicks too */}
         <BaseSelect.Positioner
+          alignItemWithTrigger={false}
           side="bottom"
           align="start"
           sideOffset={6}
-          className="z-[60] w-[var(--anchor-width)] max-w-[calc(100vw-4rem)]"
+          className={cn(
+            'z-[60] max-w-[var(--available-width)]',
+            lg ? 'w-[var(--anchor-width)]' : 'min-w-[var(--anchor-width)]',
+          )}
         >
           {/* enter only (@starting-style): Base UI keeps a closed select popup
               mounted, and an exit transition left it in the DOM, unhidden */}
-          <BaseSelect.Popup className="origin-[var(--transform-origin)] transition-[opacity,scale] duration-[var(--motion-short)] ease-[var(--ease-enter)] starting:scale-[0.96] starting:opacity-0 motion-reduce:starting:scale-100 z-30 max-h-[min(22rem,calc(100dvh-12rem))] min-w-40 overflow-y-auto rounded-xl border border-brand-border bg-brand-deck p-1.5 text-brand-text shadow-[0_14px_32px_rgb(0_0_0/0.28)]">
+          <BaseSelect.Popup
+            data-deck
+            className={cn(
+              'origin-[var(--transform-origin)] transition-[opacity,scale] duration-[var(--motion-short)] ease-[var(--ease-enter)] starting:scale-[0.96] starting:opacity-0 motion-reduce:starting:scale-100 z-30 max-h-[min(22rem,calc(100dvh-12rem))] w-full overflow-y-auto rounded-xl border border-brand-edge bg-brand-surface p-1.5 text-brand-text shadow-[0_14px_32px_rgb(0_0_0/0.28)]',
+              !lg && 'min-w-40',
+            )}
+          >
             <BaseSelect.List>
               {options.map((option) => (
                 <BaseSelect.Item

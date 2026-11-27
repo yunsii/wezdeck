@@ -68,9 +68,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    suppresses scroll anchoring during return; touch ends the correction.
    Icon-prefixed row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
-   filter (`c` / `Ctrl+N` on a keyboard) enters `/console/sessions/new` directly
-   (no blocking modal): repository and agent sit in a flat setup card above the
-   composer (icon-bearing searchable picker sheet on phones; anchored selects when wide);
+   filter (`c` / `Ctrl+N`) enters `/console/sessions/new` (centered `max-w-2xl` workbench: side-by-side repo & agent above a unified prompt box; searchable picker sheet on phones, trigger-width selects when wide);
    sending starts the async job and replaces the URL with `/console/sessions/job-<id>`
    at once, showing the first message, live steps, optional trust confirmation,
    and retry/edit recovery before replacing into the real session id (while
@@ -281,8 +279,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   surface key, `link` quiet text action, `ghost`, `outline`, `plain` for
   rows that lay themselves out; sizes `lg` / `md` touch targets, `round`
   icon), `Input` (`field` mobile form field, `bare` inside a styled box,
-  `default` dense desktop), `Textarea` (`field` / `bare`), `Select`
-  (`size="lg"` on mobile; popup above the z-50 sheets), `Checkbox`,
+  `default` dense desktop), `Textarea` (`field` / `bare`), `Select` (`size="lg"`, `alignItemWithTrigger={false}`, `data-deck` popup at `--anchor-width`, above z-50 sheets), `Checkbox`,
   `Disclosure` (a folding section: title + turning ›, `chevron={false}` for
   a custom row), `Sheet` (the mobile bottom sheet on Base UI Drawer — swipe
   down to dismiss (a short drag springs back; inside scrolled content the

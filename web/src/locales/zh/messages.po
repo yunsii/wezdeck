@@ -392,10 +392,10 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:299
-#: src/features/session-new-panels.tsx:306
-#: src/features/session-new-panels.tsx:333
-#: src/features/session-new-panels.tsx:363
+#: src/features/session-new-panels.tsx:288
+#: src/features/session-new-panels.tsx:295
+#: src/features/session-new-panels.tsx:324
+#: src/features/session-new-panels.tsx:371
 msgid "Agent"
 msgstr "智能体"
 
@@ -423,7 +423,7 @@ msgstr "查看设置与执行模式"
 msgid "Agents"
 msgstr "智能体"
 
-#: src/features/session-new-panels.tsx:177
+#: src/features/session-new-panels.tsx:178
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy 正在等待你信任这个工作树。"
 
@@ -1329,7 +1329,7 @@ msgstr "复制引用失败：{reason}"
 msgid "Could not copy to clipboard"
 msgstr "无法复制到剪贴板"
 
-#: src/features/session-new-panels.tsx:182
+#: src/features/session-new-panels.tsx:183
 msgid "Could not create it: {reason}"
 msgstr "创建失败：{reason}"
 
@@ -1353,7 +1353,7 @@ msgstr "读不到本机来源：{errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
 
-#: src/features/session-new.tsx:275
+#: src/features/session-new.tsx:285
 msgid "Create session"
 msgstr "创建会话"
 
@@ -1369,7 +1369,7 @@ msgstr "创建工作区"
 msgid "Creating sessions"
 msgstr "创建中的会话"
 
-#: src/features/session-new-panels.tsx:173
+#: src/features/session-new-panels.tsx:174
 msgid "Creating the session group…"
 msgstr "正在创建会话组…"
 
@@ -1381,7 +1381,7 @@ msgstr "正在创建会话组…"
 msgid "Creating…"
 msgstr "创建中…"
 
-#: src/features/session-new-job.tsx:445
+#: src/features/session-new-job.tsx:447
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "创建未完成，可在上方重试或修改消息后重发。"
 
@@ -1665,6 +1665,10 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
+#: src/features/session-new.tsx:276
+msgid "Enter to send · Shift+Enter for newline"
+msgstr "Enter 发送 · Shift+Enter 换行"
+
 #: src/features/ticket-timeline.tsx:235
 msgid "Error"
 msgstr "错误"
@@ -1842,7 +1846,7 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-new-panels.tsx:284
+#: src/features/session-new-panels.tsx:334
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
@@ -1912,7 +1916,7 @@ msgstr "收起初始消息"
 msgid "hit {hit}%"
 msgstr "命中 {hit}%"
 
-#: src/features/session-new-panels.tsx:85
+#: src/features/session-new-panels.tsx:86
 msgid "host default"
 msgstr "主机默认"
 
@@ -2542,7 +2546,7 @@ msgstr "换行"
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new.tsx:198
-#: src/features/session-new.tsx:442
+#: src/features/session-new.tsx:453
 msgid "New session"
 msgstr "新会话"
 
@@ -2554,7 +2558,7 @@ msgstr "新会话（新建工作树并启动 agent）"
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:364
+#: src/features/session-new.tsx:375
 msgid "New session group"
 msgstr "新会话组"
 
@@ -2562,7 +2566,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:460
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:382
-#: src/features/session-new.tsx:442
+#: src/features/session-new.tsx:453
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "在此组新建会话"
@@ -2764,7 +2768,7 @@ msgstr "降噪策略"
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
 #: src/features/me-agents.tsx:71
-#: src/features/session-new-panels.tsx:83
+#: src/features/session-new-panels.tsx:84
 msgid "Not configured"
 msgstr "未配置"
 
@@ -2830,7 +2834,7 @@ msgstr "确认之前不会建任何单。"
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
-#: src/features/session-new-panels.tsx:149
+#: src/features/session-new-panels.tsx:150
 #: src/features/session-skills.tsx:236
 #: src/features/session-worktree-manager.tsx:401
 msgid "Nothing matches"
@@ -3124,7 +3128,7 @@ msgstr "阶段"
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
-#: src/features/session-split.tsx:203
+#: src/features/session-split.tsx:198
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 
@@ -3490,16 +3494,16 @@ msgstr "仓库筛选"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:67
-#: src/features/session-new-panels.tsx:228
-#: src/features/session-new-panels.tsx:235
-#: src/features/session-new-panels.tsx:262
-#: src/features/session-new-panels.tsx:363
+#: src/features/session-new-panels.tsx:232
+#: src/features/session-new-panels.tsx:239
+#: src/features/session-new-panels.tsx:266
+#: src/features/session-new-panels.tsx:371
 msgid "Repository"
 msgstr "仓库"
 
 #: src/features/console-me.tsx:215
 #: src/features/me-agents.tsx:152
-#: src/features/session-new-panels.tsx:72
+#: src/features/session-new-panels.tsx:73
 msgid "Repository default"
 msgstr "按仓库设置"
 
@@ -3566,7 +3570,7 @@ msgstr "{reset}重置"
 msgid "Resets {reset}"
 msgstr "重置时间 {reset}"
 
-#: src/features/session-new-panels.tsx:170
+#: src/features/session-new-panels.tsx:171
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
@@ -3882,8 +3886,8 @@ msgstr "调度结束"
 msgid "Scope"
 msgstr "改动范围"
 
-#: src/features/session-new-panels.tsx:115
 #: src/features/session-new-panels.tsx:116
+#: src/features/session-new-panels.tsx:117
 msgid "Search"
 msgstr "搜索"
 
@@ -3961,8 +3965,8 @@ msgid "Send test notification"
 msgstr "发送测试通知"
 
 #: src/features/session-new.tsx:467
-msgid "Send the first message below to create the workspace and start the agent."
-msgstr "在下方发送第一条消息即可创建工作区并启动 Agent。"
+#~ msgid "Send the first message below to create the workspace and start the agent."
+#~ msgstr "在下方发送第一条消息即可创建工作区并启动 Agent。"
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -3972,7 +3976,7 @@ msgstr "在下方发第一条消息。"
 msgid "Sending action…"
 msgstr "正在发送操作……"
 
-#: src/features/session-new-panels.tsx:179
+#: src/features/session-new-panels.tsx:180
 msgid "Sending the first message…"
 msgstr "正在发送第一条消息…"
 
@@ -4071,7 +4075,7 @@ msgstr "会话数"
 #: src/features/session-list.tsx:281
 #: src/features/session-list.tsx:402
 #: src/features/session-new-job.tsx:399
-#: src/features/session-new.tsx:438
+#: src/features/session-new.tsx:449
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
@@ -4305,12 +4309,12 @@ msgstr "开始调研"
 msgid "started working on it"
 msgstr "开始处理"
 
-#: src/features/session-new-panels.tsx:181
+#: src/features/session-new-panels.tsx:182
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "已启动，agent 接手后会自动打开会话…"
 
-#: src/features/session-new-panels.tsx:172
-#: src/features/session-new-panels.tsx:175
+#: src/features/session-new-panels.tsx:173
+#: src/features/session-new-panels.tsx:176
 msgid "Starting the agent…"
 msgstr "正在启动 agent…"
 
@@ -5149,7 +5153,7 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
-#: src/features/session-new.tsx:251
+#: src/features/session-new.tsx:257
 msgid "What do you want to solve?"
 msgstr "你想解决什么问题？"
 
@@ -5157,7 +5161,7 @@ msgstr "你想解决什么问题？"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new.tsx:265
+#: src/features/session-new.tsx:271
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -5315,7 +5319,7 @@ msgstr "昨天"
 msgid "You (initiator)"
 msgstr "你（发起方）"
 
-#: src/features/session-new-job.tsx:446
+#: src/features/session-new-job.tsx:448
 msgid "You can continue chatting here as soon as the session is ready…"
 msgstr "会话就绪后即可在此继续对话…"
 

@@ -392,10 +392,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:299
-#: src/features/session-new-panels.tsx:306
-#: src/features/session-new-panels.tsx:333
-#: src/features/session-new-panels.tsx:363
+#: src/features/session-new-panels.tsx:288
+#: src/features/session-new-panels.tsx:295
+#: src/features/session-new-panels.tsx:324
+#: src/features/session-new-panels.tsx:371
 msgid "Agent"
 msgstr "Agent"
 
@@ -423,7 +423,7 @@ msgstr "agent settings and execution mode"
 msgid "Agents"
 msgstr "Agents"
 
-#: src/features/session-new-panels.tsx:177
+#: src/features/session-new-panels.tsx:178
 msgid "Agy is waiting for this worktree to be trusted."
 msgstr "Agy is waiting for this worktree to be trusted."
 
@@ -1329,7 +1329,7 @@ msgstr "Could not copy the reference: {reason}"
 msgid "Could not copy to clipboard"
 msgstr "Could not copy to clipboard"
 
-#: src/features/session-new-panels.tsx:182
+#: src/features/session-new-panels.tsx:183
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
@@ -1353,7 +1353,7 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
-#: src/features/session-new.tsx:275
+#: src/features/session-new.tsx:285
 msgid "Create session"
 msgstr "Create session"
 
@@ -1369,7 +1369,7 @@ msgstr "Create workspace"
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
-#: src/features/session-new-panels.tsx:173
+#: src/features/session-new-panels.tsx:174
 msgid "Creating the session group…"
 msgstr "Creating the session group…"
 
@@ -1381,7 +1381,7 @@ msgstr "Creating the session group…"
 msgid "Creating…"
 msgstr "Creating…"
 
-#: src/features/session-new-job.tsx:445
+#: src/features/session-new-job.tsx:447
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
 
@@ -1665,6 +1665,10 @@ msgstr "Endpoint"
 msgid "Enter"
 msgstr "Enter"
 
+#: src/features/session-new.tsx:276
+msgid "Enter to send · Shift+Enter for newline"
+msgstr "Enter to send · Shift+Enter for newline"
+
 #: src/features/ticket-timeline.tsx:235
 msgid "Error"
 msgstr "Error"
@@ -1842,7 +1846,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:284
+#: src/features/session-new-panels.tsx:334
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -1912,7 +1916,7 @@ msgstr "Hide initial prompt"
 msgid "hit {hit}%"
 msgstr "hit {hit}%"
 
-#: src/features/session-new-panels.tsx:85
+#: src/features/session-new-panels.tsx:86
 msgid "host default"
 msgstr "host default"
 
@@ -2542,7 +2546,7 @@ msgstr "New line"
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new.tsx:198
-#: src/features/session-new.tsx:442
+#: src/features/session-new.tsx:453
 msgid "New session"
 msgstr "New session"
 
@@ -2554,7 +2558,7 @@ msgstr "New session (a worktree and an agent)"
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:364
+#: src/features/session-new.tsx:375
 msgid "New session group"
 msgstr "New session group"
 
@@ -2562,7 +2566,7 @@ msgstr "New session group"
 #: src/features/session-chat-group.tsx:460
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:382
-#: src/features/session-new.tsx:442
+#: src/features/session-new.tsx:453
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
 msgstr "New session in this group"
@@ -2764,7 +2768,7 @@ msgstr "Noise control"
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
 #: src/features/me-agents.tsx:71
-#: src/features/session-new-panels.tsx:83
+#: src/features/session-new-panels.tsx:84
 msgid "Not configured"
 msgstr "Not configured"
 
@@ -2830,7 +2834,7 @@ msgstr "Nothing is created until you confirm."
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
-#: src/features/session-new-panels.tsx:149
+#: src/features/session-new-panels.tsx:150
 #: src/features/session-skills.tsx:236
 #: src/features/session-worktree-manager.tsx:401
 msgid "Nothing matches"
@@ -3124,7 +3128,7 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
-#: src/features/session-split.tsx:203
+#: src/features/session-split.tsx:198
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
 
@@ -3490,16 +3494,16 @@ msgstr "Repo filter"
 
 #: src/features/repo-links.tsx:48
 #: src/features/session-info.tsx:67
-#: src/features/session-new-panels.tsx:228
-#: src/features/session-new-panels.tsx:235
-#: src/features/session-new-panels.tsx:262
-#: src/features/session-new-panels.tsx:363
+#: src/features/session-new-panels.tsx:232
+#: src/features/session-new-panels.tsx:239
+#: src/features/session-new-panels.tsx:266
+#: src/features/session-new-panels.tsx:371
 msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:215
 #: src/features/me-agents.tsx:152
-#: src/features/session-new-panels.tsx:72
+#: src/features/session-new-panels.tsx:73
 msgid "Repository default"
 msgstr "Repository default"
 
@@ -3566,7 +3570,7 @@ msgstr "resets {reset}"
 msgid "Resets {reset}"
 msgstr "Resets {reset}"
 
-#: src/features/session-new-panels.tsx:170
+#: src/features/session-new-panels.tsx:171
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
@@ -3882,8 +3886,8 @@ msgstr "Scheduler ended"
 msgid "Scope"
 msgstr "Scope"
 
-#: src/features/session-new-panels.tsx:115
 #: src/features/session-new-panels.tsx:116
+#: src/features/session-new-panels.tsx:117
 msgid "Search"
 msgstr "Search"
 
@@ -3961,8 +3965,8 @@ msgid "Send test notification"
 msgstr "Send test notification"
 
 #: src/features/session-new.tsx:467
-msgid "Send the first message below to create the workspace and start the agent."
-msgstr "Send the first message below to create the workspace and start the agent."
+#~ msgid "Send the first message below to create the workspace and start the agent."
+#~ msgstr "Send the first message below to create the workspace and start the agent."
 
 #: src/features/session-empty.tsx:60
 msgid "Send the first message below."
@@ -3972,7 +3976,7 @@ msgstr "Send the first message below."
 msgid "Sending action…"
 msgstr "Sending action…"
 
-#: src/features/session-new-panels.tsx:179
+#: src/features/session-new-panels.tsx:180
 msgid "Sending the first message…"
 msgstr "Sending the first message…"
 
@@ -4071,7 +4075,7 @@ msgstr "Sessions"
 #: src/features/session-list.tsx:281
 #: src/features/session-list.tsx:402
 #: src/features/session-new-job.tsx:399
-#: src/features/session-new.tsx:438
+#: src/features/session-new.tsx:449
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
@@ -4305,12 +4309,12 @@ msgstr "started researching"
 msgid "started working on it"
 msgstr "started working on it"
 
-#: src/features/session-new-panels.tsx:181
+#: src/features/session-new-panels.tsx:182
 msgid "Started. Opening the session when the agent picks it up…"
 msgstr "Started. Opening the session when the agent picks it up…"
 
-#: src/features/session-new-panels.tsx:172
-#: src/features/session-new-panels.tsx:175
+#: src/features/session-new-panels.tsx:173
+#: src/features/session-new-panels.tsx:176
 msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
@@ -5149,7 +5153,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new.tsx:251
+#: src/features/session-new.tsx:257
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -5157,7 +5161,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new.tsx:265
+#: src/features/session-new.tsx:271
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -5315,7 +5319,7 @@ msgstr "Yesterday"
 msgid "You (initiator)"
 msgstr "You (initiator)"
 
-#: src/features/session-new-job.tsx:446
+#: src/features/session-new-job.tsx:448
 msgid "You can continue chatting here as soon as the session is ready…"
 msgstr "You can continue chatting here as soon as the session is ready…"
 

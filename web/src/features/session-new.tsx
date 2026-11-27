@@ -237,43 +237,54 @@ function NewSessionComposer({
   const { t } = useLingui()
   return (
     <form
+      data-testid="new-session-composer"
       onSubmit={(event) => {
         event.preventDefault()
         onSubmit()
       }}
-      className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-2 border-t border-brand-edge bg-brand-deck px-2.5 pt-2.5 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
+      className="grid min-w-0 grid-cols-[minmax(0,1fr)]"
     >
-      <Textarea
-        value={prompt}
-        disabled={sending}
-        rows={3}
-        autoFocus
-        aria-label={t`What do you want to solve?`}
-        onChange={(event) => onPrompt(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.nativeEvent.isComposing) return
-          if (
-            event.key === 'Enter' &&
-            (event.metaKey ||
-              event.ctrlKey ||
-              (!event.shiftKey && desktopEnterSends()))
-          ) {
-            event.preventDefault()
-            onSubmit()
-          }
-        }}
-        placeholder={t`What should it work on?`}
-      />
-      <div className="flex justify-end">
-        <Button
-          variant="solid"
-          type="submit"
-          disabled={!ready || sending}
-          className="inline-flex min-h-11 items-center justify-center gap-1.5 px-4 text-body whitespace-nowrap disabled:opacity-40"
-        >
-          <SendHorizontal size={16} aria-hidden />
-          {t`Create session`}
-        </Button>
+      <div
+        data-text-field
+        className="grid min-w-0 rounded-2xl bg-brand-surface"
+      >
+        <Textarea
+          variant="bare"
+          value={prompt}
+          disabled={sending}
+          rows={4}
+          autoFocus
+          aria-label={t`What do you want to solve?`}
+          onChange={(event) => onPrompt(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return
+            if (
+              event.key === 'Enter' &&
+              (event.metaKey ||
+                event.ctrlKey ||
+                (!event.shiftKey && desktopEnterSends()))
+            ) {
+              event.preventDefault()
+              onSubmit()
+            }
+          }}
+          placeholder={t`What should it work on?`}
+          className="min-h-28 max-h-60 w-full resize-none bg-transparent px-3.5 pt-3 pb-2 text-body text-brand-text outline-none [field-sizing:content] placeholder:text-brand-label disabled:opacity-60"
+        />
+        <div className="flex items-center justify-between gap-3 px-3 pt-1 pb-2.5">
+          <span className="hidden text-meta text-brand-label md:inline">
+            {t`Enter to send · Shift+Enter for newline`}
+          </span>
+          <Button
+            variant="solid"
+            type="submit"
+            disabled={!ready || sending}
+            className="ml-auto inline-flex min-h-10 items-center justify-center gap-1.5 px-4 text-body whitespace-nowrap disabled:opacity-40 md:min-h-9"
+          >
+            <SendHorizontal size={16} aria-hidden />
+            {t`Create session`}
+          </Button>
+        </div>
       </div>
     </form>
   )
@@ -427,11 +438,11 @@ function NewSessionGuidedForm({
   return (
     <div
       data-testid="new-session-view"
-      className="flex min-h-full w-full flex-1 flex-col"
+      className="flex min-h-full w-full flex-1 flex-col md:h-full md:min-h-0"
     >
       <header
         data-testid="new-session-header"
-        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 pt-1 pb-2 md:-ml-2.5 md:mr-0 md:mt-0"
+        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex min-h-13 items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:static md:mx-0 md:mt-0 md:shrink-0 md:px-4"
       >
         <BackButton
           onClick={back}
@@ -443,44 +454,42 @@ function NewSessionGuidedForm({
         </h1>
       </header>
 
-      <div className="flex flex-1 flex-col gap-3 py-4">
-        <NewSessionSetupCard
-          mobile={mobile}
-          sending={sending}
-          picker={picker}
-          onOpenPicker={openPicker}
-          repositories={repositories}
-          repo={chosen}
-          repoLabel={repoLabel}
-          onRepo={setRepo}
-          group={preset?.group}
-          nameGroup={nameGroup}
-          resolvedGroupName={resolvedGroupName}
-          onGroupName={setGroupName}
-          showAgents={Boolean(agentProfiles.data?.profiles.length)}
-          agentOptions={agentOptions}
-          agentProfile={selectedAgent}
-          onAgentProfile={setAgentProfile}
-        />
+      <div className="flex flex-1 flex-col py-4 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:px-6 md:py-10">
+        <div className="mx-auto grid w-full max-w-2xl gap-4 md:my-auto md:pb-12">
+          <NewSessionSetupCard
+            mobile={mobile}
+            sending={sending}
+            picker={picker}
+            onOpenPicker={openPicker}
+            repositories={repositories}
+            repo={chosen}
+            repoLabel={repoLabel}
+            onRepo={setRepo}
+            group={preset?.group}
+            nameGroup={nameGroup}
+            resolvedGroupName={resolvedGroupName}
+            onGroupName={setGroupName}
+            showAgents={Boolean(agentProfiles.data?.profiles.length)}
+            agentOptions={agentOptions}
+            agentProfile={selectedAgent}
+            onAgentProfile={setAgentProfile}
+          />
 
-        <p className="px-1 text-caption text-brand-label">
-          {t`Send the first message below to create the workspace and start the agent.`}
-        </p>
+          <NewSessionComposer
+            prompt={prompt}
+            onPrompt={setPrompt}
+            sending={sending}
+            ready={ready}
+            onSubmit={() => void submit()}
+          />
 
-        {error ? (
-          <p role="alert" className="px-1 text-caption text-brand-error">
-            {error}
-          </p>
-        ) : null}
+          {error ? (
+            <p role="alert" className="px-1 text-caption text-brand-error">
+              {error}
+            </p>
+          ) : null}
+        </div>
       </div>
-
-      <NewSessionComposer
-        prompt={prompt}
-        onPrompt={setPrompt}
-        sending={sending}
-        ready={ready}
-        onSubmit={() => void submit()}
-      />
 
       <NewSessionPickerSheet
         picker={picker}

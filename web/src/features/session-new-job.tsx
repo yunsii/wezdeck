@@ -388,11 +388,11 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
   return (
     <div
       data-testid="new-session-job-view"
-      className="flex min-h-full w-full flex-1 flex-col"
+      className="flex min-h-full w-full flex-1 flex-col md:h-full md:min-h-0"
     >
       <header
         data-testid="new-session-header"
-        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 pt-1 pb-2 md:-ml-2.5 md:mr-0 md:mt-0"
+        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex min-h-13 items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:static md:mx-0 md:mt-0 md:shrink-0 md:px-4"
       >
         <BackButton
           onClick={back}
@@ -411,36 +411,38 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-3 py-4">
-        {prompt ? (
-          <div className="flex justify-end">
-            <div
-              data-testid="new-session-first-prompt"
-              className="max-w-[88%] rounded-2xl bg-brand-text px-3.5 py-2.5 text-body whitespace-pre-wrap break-words text-brand-deck"
-            >
-              {prompt}
+      <div className="flex flex-1 flex-col py-4 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:px-6 md:py-6">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+          {prompt ? (
+            <div className="flex justify-end">
+              <div
+                data-testid="new-session-first-prompt"
+                className="max-w-[88%] rounded-2xl bg-brand-text px-3.5 py-2.5 text-body whitespace-pre-wrap break-words text-brand-deck"
+              >
+                {prompt}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <JobProgressCard
-          current={current}
-          effectiveStage={effectiveStage}
-          unknown={unknown}
-          agentProfile={agentProfile}
-          errorMessage={errorMessage}
-          failed={failed}
-          canRetry={Boolean(prompt.trim() && (repo || anchor))}
-          retrying={retrying}
-          trusting={trusting}
-          onTrust={() => void trust()}
-          onRetry={() => void retry()}
-          onEdit={editAndResend}
-        />
+          <JobProgressCard
+            current={current}
+            effectiveStage={effectiveStage}
+            unknown={unknown}
+            agentProfile={agentProfile}
+            errorMessage={errorMessage}
+            failed={failed}
+            canRetry={Boolean(prompt.trim() && (repo || anchor))}
+            retrying={retrying}
+            trusting={trusting}
+            onTrust={() => void trust()}
+            onRetry={() => void retry()}
+            onEdit={editAndResend}
+          />
+        </div>
       </div>
 
-      <div className="sticky bottom-0 -mx-2.5 -mb-4 border-t border-brand-edge bg-brand-deck px-3 pt-2.5 pb-[max(calc(env(safe-area-inset-bottom)+0.5rem),0.75rem)] md:-ml-2.5 md:mr-0 md:mb-0">
-        <p className="rounded-xl bg-brand-surface px-3 py-2.5 text-caption text-brand-label">
+      <div className="sticky bottom-0 -mx-2.5 -mb-4 border-t border-brand-edge bg-brand-deck px-3 pt-2.5 pb-[max(calc(env(safe-area-inset-bottom)+0.5rem),0.75rem)] md:static md:mx-0 md:mb-0 md:shrink-0 md:px-6 md:py-3">
+        <p className="mx-auto w-full max-w-2xl rounded-xl bg-brand-surface px-3 py-2.5 text-caption text-brand-label">
           {failed
             ? t`Creation did not finish. Retry or edit your message above.`
             : t`You can continue chatting here as soon as the session is ready…`}
