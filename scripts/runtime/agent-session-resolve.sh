@@ -398,6 +398,24 @@ agent_session_discover_latest_grok() {
   done < <(ls -1t "$root" 2>/dev/null || true)
 }
 
+# Codex creates the rollout file as soon as `/new` opens the new thread, but
+# does not reliably emit a SessionStart hook. Discover that id from the
+# cwd-scoped rollout directory so callers can publish the pane redirect.
+agent_session_discover_latest_codex() {
+  local cwd="${1:-}" prev_sid="${2:-}" root="${CODEX_HOME:-$HOME/.codex}/sessions" path="" sid=""
+  [[ -n "$cwd" && -d "$root" ]] || return 0
+  path="$(/usr/bin/find "$root" -type f -name 'rollout-*.jsonl' -printf '%T@ %p\n' 2>/dev/null \
+    | /usr/bin/sort -nr | /usr/bin/head -n 40 | /usr/bin/cut -d' ' -f2- \
+    | while IFS= read -r candidate; do
+        [[ -n "$candidate" ]] || continue
+        /usr/bin/jq -e --arg cwd "$cwd" 'select(.type == "session_meta" and (.payload.cwd // "") == $cwd)' "$candidate" >/dev/null 2>&1 && { printf '%s\n' "$candidate"; break; }
+      done)"
+  [[ -n "$path" ]] || return 0
+  sid="$(/usr/bin/basename "$path" .jsonl | /usr/bin/sed -n 's/^rollout-[0-9T:-]*-\([0-9a-f-]\{36\}\)$/\1/p')"
+  [[ -n "$sid" && "$sid" != "$prev_sid" ]] || return 0
+  agent_session_id_usable "$sid" && printf '%s\n' "$sid"
+}
+
 # Persist on the live pane (survives respawn-pane) + durable file (survives kill-server).
 agent_session_pin_pane() {
   local pane_id="${1:-}" sid="${2:-}" agent="${3:-}" cwd="${4:-}"
