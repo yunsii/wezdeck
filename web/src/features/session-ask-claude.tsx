@@ -11,8 +11,8 @@ import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import {
-  PromptActionLabel,
   PromptActionStatus,
+  promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
 import { SessionElicitation } from './session-elicitation'
@@ -104,16 +104,10 @@ export function ClaudeAsk({
             data-testid="ask-submit"
             className={cn(
               'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
-              pending && 'disabled:opacity-100',
-              pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
+              promptButtonClass(pending, 'submit', 'solid'),
             )}
           >
-            <PromptActionLabel
-              loading={pending?.action === 'submit'}
-              tone="solid"
-            >
-              {t`Submit answers`}
-            </PromptActionLabel>
+            {t`Submit answers`}
           </Button>
         </div>
       ) : current ? (
@@ -142,8 +136,7 @@ export function ClaudeAsk({
               }
               className={cn(
                 'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
-                pending && 'disabled:opacity-100',
-                pending?.action === `opt-${oi}` && 'border-brand-running',
+                promptButtonClass(pending, `opt-${oi}`),
               )}
             >
               <span className="text-body font-medium">
@@ -174,13 +167,10 @@ export function ClaudeAsk({
               }
               className={cn(
                 'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-                pending && 'disabled:opacity-100',
-                pending?.action === 'enter' && 'border-brand-running',
+                promptButtonClass(pending, 'enter'),
               )}
             >
-              <PromptActionLabel loading={pending?.action === 'enter'}>
-                {t`Enter`}
-              </PromptActionLabel>
+              {t`Enter`}
             </Button>
           ) : null}
         </div>
@@ -200,13 +190,10 @@ export function ClaudeAsk({
           }
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'cancel' && 'border-brand-running',
+            promptButtonClass(pending, 'cancel'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'cancel'}>
-            {t`Cancel (Esc)`}
-          </PromptActionLabel>
+          {t`Cancel (Esc)`}
         </Button>
       </div>
       <PromptActionStatus

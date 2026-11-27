@@ -16,8 +16,8 @@ import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
 import { ChatMarkdown } from './chat-markdown'
 import {
-  PromptActionLabel,
   PromptActionStatus,
+  promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
 
@@ -305,13 +305,10 @@ export function PermissionCard({
           onClick={() => void run('allow', () => onKey(allowKey))}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'allow' && 'ring-2 ring-brand-running/50',
+            promptButtonClass(pending, 'allow', 'solid'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'allow'} tone="solid">
-            {call.plan ? t`Approve the plan` : t`Allow`}
-          </PromptActionLabel>
+          {call.plan ? t`Approve the plan` : t`Allow`}
         </Button>
         <Button
           variant="key"
@@ -324,13 +321,10 @@ export function PermissionCard({
           }
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'deny' && 'border-brand-running',
+            promptButtonClass(pending, 'deny'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'deny'}>
-            {call.plan ? t`Keep planning` : t`Deny`}
-          </PromptActionLabel>
+          {call.plan ? t`Keep planning` : t`Deny`}
         </Button>
       </div>
       <PromptActionStatus pending={pending} idle={idleHint} />

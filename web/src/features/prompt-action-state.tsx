@@ -1,12 +1,11 @@
 // Shared immediate loading → waiting feedback for every parsed special
 // interaction card (permission approval, Ask questions, plan review, and the
 // generic key strip). Clicking an action locks the card against double-taps,
-// shows a spinner while the key write is in flight ("sending"), then holds a
-// clear "waiting for the agent to continue…" status until the host poll
-// dismisses or replaces the prompt — or unlocks immediately on write failure.
+// highlights the chosen button (keeping its label readable and its dimensions
+// unchanged), and shows a single spinner in PromptActionStatus below until the
+// host poll dismisses or replaces the prompt — or unlocks on write failure.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { cn } from '#/lib/utils'
@@ -76,44 +75,26 @@ export function PromptActionSpinner({ className }: { className?: string }) {
 }
 
 /**
- * Overlay spinner inside a button without altering its intrinsic width or
- * height: the label stays in flow (opacity-0 while loading, keeping both
- * layout dimensions and accessible name intact), preventing flex-wrap buttons
- * from shifting neighbors or wrapping onto a new row.
+ * Shared pending button styling across all prompt cards: keeps the chosen
+ * action readable and highlighted, softly dims sibling actions during submit /
+ * cancel waits, and avoids flashing siblings on quick multi-select toggles.
+ * No in-button spinner is inserted, so the card shows one single spinner in
+ * PromptActionStatus below and button geometry never shifts.
  */
-export function PromptActionLabel({
-  loading,
-  tone = 'default',
-  spinnerClassName,
-  children,
-}: {
-  loading: boolean
-  /** `solid` matches Button variant="solid" (inverted bg-brand-text / text-brand-deck in both themes). */
-  tone?: 'default' | 'solid'
-  spinnerClassName?: string
-  children: ReactNode
-}) {
-  return (
-    <span className="inline-grid place-items-center">
-      <span
-        className={cn(
-          'col-start-1 row-start-1 inline-flex items-center justify-center',
-          loading && 'opacity-0 select-none',
-        )}
-      >
-        {children}
-      </span>
-      {loading ? (
-        <PromptActionSpinner
-          className={cn(
-            'col-start-1 row-start-1',
-            tone === 'solid' && 'border-brand-deck/30 border-t-brand-deck',
-            spinnerClassName,
-          )}
-        />
-      ) : null}
-    </span>
-  )
+export function promptButtonClass(
+  pending: PromptPending | null,
+  action: string,
+  variant: 'key' | 'solid' = 'key',
+) {
+  if (!pending) return ''
+  if (pending.action === action) {
+    return variant === 'solid'
+      ? 'disabled:opacity-100 ring-2 ring-brand-running/60'
+      : 'disabled:opacity-100 border-brand-running bg-brand-running/10'
+  }
+  return pending.kind === 'toggle'
+    ? 'disabled:opacity-100'
+    : 'disabled:opacity-55'
 }
 
 /**

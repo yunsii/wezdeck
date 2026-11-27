@@ -9,8 +9,8 @@ import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import {
-  PromptActionLabel,
   PromptActionStatus,
+  promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
 import { AskCard } from './session-ask-claude'
@@ -138,9 +138,8 @@ export function SessionElicitation({
                 onClick={() => void pick(oi)}
                 className={cn(
                   'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
-                  pending && 'disabled:opacity-100',
                   isPicked && 'border-brand-running bg-brand-running/10',
-                  pending?.action === `opt-${oi}` && 'border-brand-running',
+                  promptButtonClass(pending, `opt-${oi}`),
                 )}
               >
                 <span className="text-body font-medium">
@@ -168,16 +167,10 @@ export function SessionElicitation({
             onClick={() => void submit()}
             className={cn(
               'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-              pending && 'disabled:opacity-100',
-              pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
+              promptButtonClass(pending, 'submit', 'solid'),
             )}
           >
-            <PromptActionLabel
-              loading={pending?.action === 'submit'}
-              tone="solid"
-            >
-              {t`Enter`}
-            </PromptActionLabel>
+            {t`Enter`}
           </Button>
         ) : null}
         <Button
@@ -189,13 +182,10 @@ export function SessionElicitation({
           }
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'escape' && 'border-brand-running',
+            promptButtonClass(pending, 'escape'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'escape'}>
-            {t`Esc`}
-          </PromptActionLabel>
+          {t`Esc`}
         </Button>
         <Button
           variant="key"
@@ -206,13 +196,10 @@ export function SessionElicitation({
           }
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'ctrl-c' && 'border-brand-running',
+            promptButtonClass(pending, 'ctrl-c'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'ctrl-c'}>
-            {t`Ctrl+C`}
-          </PromptActionLabel>
+          {t`Ctrl+C`}
         </Button>
       </div>
       <PromptActionStatus
@@ -321,13 +308,10 @@ export function SessionPermissionKeys({
             }
             className={cn(
               'flex min-h-11 min-w-11 items-center justify-center px-3 text-body disabled:opacity-40',
-              pending && 'disabled:opacity-100',
-              pending?.action === key && 'border-brand-running',
+              promptButtonClass(pending, key),
             )}
           >
-            <PromptActionLabel loading={pending?.action === key}>
-              {label}
-            </PromptActionLabel>
+            {label}
           </Button>
         ))}
       </div>
@@ -379,16 +363,10 @@ export function SessionPlanReview({
           onClick={() => void run('approve', () => onKey('a'))}
           className={cn(
             'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'approve' && 'ring-2 ring-brand-running/50',
+            promptButtonClass(pending, 'approve', 'solid'),
           )}
         >
-          <PromptActionLabel
-            loading={pending?.action === 'approve'}
-            tone="solid"
-          >
-            {t`Approve plan`}
-          </PromptActionLabel>
+          {t`Approve plan`}
         </Button>
         <Button
           variant="key"
@@ -397,13 +375,10 @@ export function SessionPlanReview({
           onClick={() => void run('changes', () => onKey('s'))}
           className={cn(
             'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'changes' && 'border-brand-running',
+            promptButtonClass(pending, 'changes'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'changes'}>
-            {t`Request changes`}
-          </PromptActionLabel>
+          {t`Request changes`}
         </Button>
         <Button
           variant="key"
@@ -412,13 +387,10 @@ export function SessionPlanReview({
           onClick={() => void run('quit', () => onKey('q'), { kind: 'cancel' })}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body text-brand-muted disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'quit' && 'border-brand-running',
+            promptButtonClass(pending, 'quit'),
           )}
         >
-          <PromptActionLabel loading={pending?.action === 'quit'}>
-            {t`Quit plan`}
-          </PromptActionLabel>
+          {t`Quit plan`}
         </Button>
       </div>
       <PromptActionStatus

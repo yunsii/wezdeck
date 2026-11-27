@@ -3,8 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
-  PromptActionLabel,
   PromptActionStatus,
+  promptButtonClass,
 } from '#/features/prompt-action-state'
 
 vi.mock('@lingui/react/macro', () => ({
@@ -13,26 +13,41 @@ vi.mock('@lingui/react/macro', () => ({
   }),
 }))
 
-describe('PromptActionLabel', () => {
-  it('overlays the spinner in the same grid cell while keeping label width in flow', () => {
-    const idle = renderToStaticMarkup(
-      createElement(PromptActionLabel, { loading: false, children: 'Allow' }),
+describe('promptButtonClass', () => {
+  it('highlights the chosen button and gently dims siblings on submit/cancel waits', () => {
+    expect(promptButtonClass(null, 'allow', 'solid')).toBe('')
+    const pending = {
+      key: 'k',
+      action: 'allow',
+      phase: 'waiting' as const,
+      kind: 'submit' as const,
+    }
+    expect(promptButtonClass(pending, 'allow', 'solid')).toContain(
+      'disabled:opacity-100',
     )
-    const loading = renderToStaticMarkup(
-      createElement(PromptActionLabel, {
-        loading: true,
-        tone: 'solid',
-        children: 'Allow',
-      }),
+    expect(promptButtonClass(pending, 'allow', 'solid')).toContain('ring-2')
+    expect(promptButtonClass(pending, 'deny', 'key')).toBe(
+      'disabled:opacity-55',
     )
-    expect(idle).toContain('inline-grid')
-    expect(idle).toContain('Allow')
-    expect(idle).not.toContain('animate-spin')
-    expect(loading).toContain('opacity-0')
-    expect(loading).toContain('Allow')
-    expect(loading).toContain('animate-spin')
-    expect(loading).toContain('border-t-brand-deck')
-    expect(loading).not.toContain('border-white')
+    expect(
+      promptButtonClass(
+        { ...pending, action: 'deny', kind: 'cancel' },
+        'deny',
+        'key',
+      ),
+    ).toContain('border-brand-running')
+  })
+
+  it('keeps sibling buttons full opacity during quick multi-select toggles', () => {
+    const toggle = {
+      key: 'k',
+      action: 'opt-0',
+      phase: 'sending' as const,
+      kind: 'toggle' as const,
+    }
+    expect(promptButtonClass(toggle, 'opt-1', 'key')).toBe(
+      'disabled:opacity-100',
+    )
   })
 })
 
