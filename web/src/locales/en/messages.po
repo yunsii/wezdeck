@@ -25,8 +25,8 @@ msgstr "(pick any)"
 #~ msgid "{0} tasks"
 #~ msgstr "{0} tasks"
 
-#: src/components/deck/session-tags.tsx:282
-#: src/components/deck/session-tags.tsx:521
+#: src/components/deck/session-tags.tsx:289
+#: src/components/deck/session-tags.tsx:540
 msgid "{ahead} ahead, {behind} behind upstream"
 msgstr "{ahead} ahead, {behind} behind upstream"
 
@@ -50,7 +50,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/session-composer.tsx:146
+#: src/features/session-composer.tsx:147
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -151,8 +151,8 @@ msgstr "{runs} runs"
 msgid "{staged} staged"
 msgstr "{staged} staged"
 
-#: src/components/deck/session-tags.tsx:280
-#: src/components/deck/session-tags.tsx:519
+#: src/components/deck/session-tags.tsx:287
+#: src/components/deck/session-tags.tsx:538
 msgid "{staged} staged, {unstaged} modified, {untracked} untracked"
 msgstr "{staged} staged, {unstaged} modified, {untracked} untracked"
 
@@ -414,7 +414,7 @@ msgstr "All questions answered. The agent waits until you submit."
 msgid "All repos"
 msgstr "All repos"
 
-#: src/components/deck/session-tags.tsx:476
+#: src/components/deck/session-tags.tsx:495
 msgid "All tags"
 msgstr "All tags"
 
@@ -750,7 +750,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/console-sessions.tsx:484
+#: src/features/session-composer.tsx:411
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -1103,7 +1103,7 @@ msgstr "context usage"
 #~ msgid "Continue"
 #~ msgstr "Continue"
 
-#: src/features/session-composer.tsx:81
+#: src/features/session-composer.tsx:82
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:186
@@ -1132,7 +1132,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/inspector.tsx:87
-#: src/features/session-composer.tsx:81
+#: src/features/session-composer.tsx:82
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1147,7 +1147,7 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/session-composer.tsx:73
+#: src/features/session-composer.tsx:74
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1864,7 +1864,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/session-composer.tsx:159
+#: src/features/session-composer.tsx:160
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -2069,7 +2069,7 @@ msgstr "Loading original…"
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:241
+#: src/features/session-header.tsx:245
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
@@ -2169,7 +2169,7 @@ msgstr "Merge"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:353
+#: src/features/session-composer.tsx:354
 msgid "Message"
 msgstr "Message"
 
@@ -2179,7 +2179,7 @@ msgstr "Message"
 msgid "Message actions"
 msgstr "Message actions"
 
-#: src/features/session-composer.tsx:286
+#: src/features/session-composer.tsx:287
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2407,7 +2407,7 @@ msgstr "No activity yet"
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
-#: src/components/deck/session-tags.tsx:302
+#: src/components/deck/session-tags.tsx:309
 msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
@@ -2497,8 +2497,8 @@ msgstr "No tickets match this filter."
 msgid "No uncommitted changes."
 msgstr "No uncommitted changes."
 
-#: src/components/deck/session-tags.tsx:283
-#: src/components/deck/session-tags.tsx:522
+#: src/components/deck/session-tags.tsx:290
+#: src/components/deck/session-tags.tsx:541
 msgid "no upstream"
 msgstr "no upstream"
 
@@ -2669,7 +2669,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/console-sessions.tsx:507
+#: src/features/session-composer.tsx:433
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2812,7 +2812,7 @@ msgstr "Phase"
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
-#: src/features/session-split.tsx:199
+#: src/features/session-split.tsx:203
 msgid "Pick a chat on the left. j / k move through the list."
 msgstr "Pick a chat on the left. j / k move through the list."
 
@@ -3529,8 +3529,8 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:93
-#: src/features/session-composer.tsx:362
-#: src/features/session-composer.tsx:364
+#: src/features/session-composer.tsx:363
+#: src/features/session-composer.tsx:365
 msgid "Send"
 msgstr "Send"
 
@@ -3574,7 +3574,7 @@ msgid "Session"
 msgstr "Session"
 
 #: src/features/session-actions.tsx:40
-#: src/features/session-header.tsx:280
+#: src/features/session-header.tsx:284
 msgid "Session actions"
 msgstr "Session actions"
 
@@ -3614,8 +3614,8 @@ msgstr "Session id"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "Session ID, tmux, transcript file and capabilities"
 
-#: src/features/session-header.tsx:229
-#: src/features/session-header.tsx:293
+#: src/features/session-header.tsx:233
+#: src/features/session-header.tsx:297
 #: src/features/session-info.tsx:289
 msgid "Session info"
 msgstr "Session info"
@@ -3634,7 +3634,7 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:86
 #: src/features/landing-page.tsx:89
-#: src/features/session-header.tsx:216
+#: src/features/session-header.tsx:220
 #: src/features/session-list.tsx:279
 #: src/features/session-list.tsx:400
 #: src/features/session-new-job.tsx:399
@@ -3676,7 +3676,7 @@ msgstr "Shortcuts"
 msgid "Show all {total} tasks"
 msgstr "Show all {total} tasks"
 
-#: src/components/deck/session-tags.tsx:464
+#: src/components/deck/session-tags.tsx:483
 msgid "Show all tags"
 msgstr "Show all tags"
 
@@ -3749,7 +3749,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/console-sessions.tsx:491
+#: src/features/session-composer.tsx:417
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -3949,7 +3949,7 @@ msgstr "Switched WezTerm to this session"
 msgid "Switching agent…"
 msgstr "Switching agent…"
 
-#: src/components/deck/session-tags.tsx:301
+#: src/components/deck/session-tags.tsx:308
 msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
@@ -4023,7 +4023,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:264
+#: src/features/console-sessions.tsx:270
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4117,7 +4117,7 @@ msgstr "This computer (local Runtime)"
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
-#: src/features/console-sessions.tsx:260
+#: src/features/console-sessions.tsx:266
 #: src/features/ticket-proposals.tsx:189
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4127,7 +4127,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/console-sessions.tsx:485
+#: src/features/session-composer.tsx:412
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4261,7 +4261,7 @@ msgstr "To"
 msgid "To follow up"
 msgstr "To follow up"
 
-#: src/features/session-header.tsx:259
+#: src/features/session-header.tsx:263
 msgid "To-dos"
 msgstr "To-dos"
 
@@ -4387,7 +4387,7 @@ msgstr "Unavailable agents ({disabledCount})"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/session-composer.tsx:161
+#: src/features/session-composer.tsx:162
 msgid "Undo"
 msgstr "Undo"
 
@@ -4404,7 +4404,8 @@ msgid "Unlock to resume auto-titling"
 msgstr "Unlock to resume auto-titling"
 
 #: src/features/session-commands.tsx:160
-#: src/features/session-header.tsx:203
+#: src/features/session-header.tsx:204
+#: src/features/session-header.tsx:206
 #: src/features/session-info.tsx:217
 msgid "Untitled session"
 msgstr "Untitled session"
@@ -4430,7 +4431,7 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/session-composer.tsx:135
+#: src/features/session-composer.tsx:136
 msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
@@ -4594,7 +4595,7 @@ msgstr "Warning"
 msgid "Warnings"
 msgstr "Warnings"
 
-#: src/features/console-sessions.tsx:252
+#: src/features/console-sessions.tsx:258
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 

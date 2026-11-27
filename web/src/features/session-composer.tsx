@@ -4,6 +4,7 @@
 // this page only registers its state for that snapshot. Attachments upload first (lib/upload.ts), then the message is
 // sent naming them; the host appends their paths so the agent can open them.
 import { useLingui } from '@lingui/react/macro'
+import { Link } from '@tanstack/react-router'
 import { restoreDraft, useDraft } from '#/lib/use-draft'
 import { Check, Copy, SendHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -373,6 +374,67 @@ export function ComposerBox({
           />
         </Button>
       </div>
+    </>
+  )
+}
+
+export function SessionComposerNotice({
+  stale,
+  staleAt,
+  staleMessage,
+  retryIn,
+  error,
+  blocked,
+  readOnly,
+  approved,
+  locale,
+}: {
+  stale: boolean
+  staleAt: string
+  staleMessage?: string
+  retryIn: number
+  error: string
+  blocked: string
+  readOnly: boolean
+  approved: boolean
+  locale: 'en' | 'zh'
+}) {
+  const { t } = useLingui()
+  return (
+    <>
+      {stale ? (
+        <p
+          role="status"
+          data-testid="session-stale"
+          className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
+        >
+          {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+          {staleMessage ?? t`this device is offline`}
+        </p>
+      ) : null}
+      {retryIn && !readOnly ? (
+        <p role="status" className="text-meta text-brand-muted">
+          {t`Someone just used the desk; sending in ${retryIn}s…`}
+        </p>
+      ) : error ? (
+        <ErrorLine message={error} />
+      ) : blocked && !readOnly ? (
+        <p className="text-meta text-brand-muted">
+          {blocked}{' '}
+          {!approved ? (
+            <Link
+              to="/{-$locale}/console/me/$page"
+              params={{
+                locale: locale === 'en' ? undefined : locale,
+                page: 'writing',
+              }}
+              className="text-brand-running"
+            >
+              {t`Open settings`}
+            </Link>
+          ) : null}
+        </p>
+      ) : null}
     </>
   )
 }

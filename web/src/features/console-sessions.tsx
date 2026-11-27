@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import type { LedTone } from '#/components/deck/led'
@@ -14,6 +14,8 @@ import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { trace } from '#/lib/client-trace'
 import { forgetOpened } from '#/lib/last-opened'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
+import { cn } from '#/lib/utils'
 import type { TokenRate } from '#/lib/turn-progress'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
@@ -27,7 +29,11 @@ import { SessionSubagents } from './session-subagents'
 import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { EmptySession } from './session-empty'
-import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import {
+  ComposerBox,
+  SessionComposerNotice,
+  useComposer,
+} from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
 import { PromptPanels, hasPromptPanel } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
@@ -316,7 +322,6 @@ const formatStaleAt = (ms: number) =>
     : '—'
 
 export function SessionDetail({ id }: { id: string }) {
-  const { t } = useLingui()
   const { locale } = useLocale()
   const device = useDeviceState()
   const [visibleUsage, setVisibleUsage] = useState('')
@@ -385,8 +390,9 @@ export function SessionDetail({ id }: { id: string }) {
       chat: chatDiag(follow, messages, start, total),
     }),
   })
+  const wide = useIsWidePhoneFirst()
   return (
-    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
+    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 md:h-full md:min-h-0 md:gap-0 md:overflow-hidden">
       <SessionHeader
         id={id}
         data={data}
@@ -403,63 +409,71 @@ export function SessionDetail({ id }: { id: string }) {
       />
 
       <div
-        className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"
-        aria-live="polite"
+        data-testid="session-thread-scroll"
+        className={cn(
+          'max-md:contents md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain',
+          wide && 'overflow-y-auto',
+        )}
       >
-        {detail.isError && !data ? (
-          <p
-            role="status"
-            className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
-          >
-            {String(detail.error.message)}
-          </p>
-        ) : null}
-        {messages.length || pending.length ? (
-          <>
-            <StickyPrompt
-              end={end}
-              messages={messages}
-              start={start}
-              following={follow.pinned}
-            />
-            <ThreadPagingBar
-              total={total}
-              shown={shown}
-              start={start}
-              pagingIn={pagingIn}
-              atCompaction={atCompaction}
-              autoFailed={paging.autoFailed}
-              onLoadEarlier={paging.loadManual}
-            />
-            <ChatThread
-              messages={messages}
-              start={start}
-              busy={busy}
-              activity={busy ? activityOf(data) : undefined}
-              {...writes.pendingProps(
-                !readOnly && device.state === 'approved' && !blocked,
-              )}
-              status={data?.status}
-              statusTs={data?.ts}
-              onBackground={toBackground(data, device.state, run)}
-              sessionId={id}
-              syncing={syncing}
-            />
-          </>
-        ) : data ? (
-          <EmptySession data={data} />
-        ) : null}
-        <PromptPanels
-          data={data}
-          sending={sending}
-          canWrite={!readOnly && device.state === 'approved'}
-          onKey={(key) => run('key', { key })}
-        />
-        <div ref={end} />
+        <div
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 md:min-h-full md:px-[var(--page-x)] md:py-3"
+          aria-live="polite"
+        >
+          {detail.isError && !data ? (
+            <p
+              role="status"
+              className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
+            >
+              {String(detail.error.message)}
+            </p>
+          ) : null}
+          {messages.length || pending.length ? (
+            <>
+              <StickyPrompt
+                end={end}
+                messages={messages}
+                start={start}
+                following={follow.pinned}
+              />
+              <ThreadPagingBar
+                total={total}
+                shown={shown}
+                start={start}
+                pagingIn={pagingIn}
+                atCompaction={atCompaction}
+                autoFailed={paging.autoFailed}
+                onLoadEarlier={paging.loadManual}
+              />
+              <ChatThread
+                messages={messages}
+                start={start}
+                busy={busy}
+                activity={busy ? activityOf(data) : undefined}
+                {...writes.pendingProps(
+                  !readOnly && device.state === 'approved' && !blocked,
+                )}
+                status={data?.status}
+                statusTs={data?.ts}
+                onBackground={toBackground(data, device.state, run)}
+                sessionId={id}
+                syncing={syncing}
+              />
+            </>
+          ) : data ? (
+            <EmptySession data={data} />
+          ) : null}
+          <PromptPanels
+            data={data}
+            sending={sending}
+            canWrite={!readOnly && device.state === 'approved'}
+            onKey={(key) => run('key', { key })}
+          />
+          <div ref={end} />
+        </div>
       </div>
 
       <form
-        className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
+        className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:px-[var(--page-x)] md:shadow-none"
         onSubmit={(event) => {
           event.preventDefault()
           if (readOnly) return
@@ -475,40 +489,21 @@ export function SessionDetail({ id }: { id: string }) {
           unread={follow.unread}
           onJump={follow.jump}
         />
-        {(failed >= STALE_AFTER || detail.fetchStatus === 'paused') && data ? (
-          <p
-            role="status"
-            data-testid="session-stale"
-            className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
-          >
-            {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
-            {detail.error?.message ?? t`this device is offline`}
-          </p>
-        ) : null}
+        <SessionComposerNotice
+          stale={
+            Boolean(data) &&
+            (failed >= STALE_AFTER || detail.fetchStatus === 'paused')
+          }
+          staleAt={staleAt}
+          staleMessage={detail.error?.message}
+          retryIn={retryIn}
+          error={error}
+          blocked={blocked}
+          readOnly={readOnly}
+          approved={device.state === 'approved'}
+          locale={locale}
+        />
         <SessionSubagents agents={data?.subagents} />
-        {retryIn && !readOnly ? (
-          <p role="status" className="text-meta text-brand-muted">
-            {t`Someone just used the desk; sending in ${retryIn}s…`}
-          </p>
-        ) : error ? (
-          <ErrorLine message={error} />
-        ) : blocked && !readOnly ? (
-          <p className="text-meta text-brand-muted">
-            {blocked}{' '}
-            {device.state !== 'approved' ? (
-              <Link
-                to="/{-$locale}/console/me/$page"
-                params={{
-                  locale: locale === 'en' ? undefined : locale,
-                  page: 'writing',
-                }}
-                className="text-brand-running"
-              >
-                {t`Open settings`}
-              </Link>
-            ) : null}
-          </p>
-        ) : null}
         {readOnly ? (
           <SessionInputUnavailable />
         ) : (

@@ -69,52 +69,6 @@ describe('session autosync planner', () => {
     expect(targets.every((item) => item.reason === 'cold')).toBe(true)
   })
 
-  it('throttles warm running sessions by interval and caps running count', () => {
-    const now = 100_000
-    const msg = { role: 'assistant' as const, text: 'working' }
-    const sessions = [
-      card({ id: 'run-1', status: 'running', ts: 1_000 }),
-      card({ id: 'run-2', status: 'running', ts: 2_000 }),
-      card({ id: 'run-3', status: 'running', ts: 3_000 }),
-    ]
-    const cache = new Map([
-      [
-        'run-3',
-        { status: 'running', waiting_kind: '', ts: 3_000, messages: [msg] },
-      ],
-      [
-        'run-2',
-        { status: 'running', waiting_kind: '', ts: 2_000, messages: [msg] },
-      ],
-    ])
-    const syncedAt = new Map([
-      ['run-3', now - RUNNING_SYNC_INTERVAL_MS + 1_000], // recently synced → skip
-      ['run-2', now - RUNNING_SYNC_INTERVAL_MS], // due for incremental refresh
-    ])
-
-    const { targets } = pickAutoSyncTargets({
-      sessions,
-      synced: new Map(),
-      syncedAt,
-      inFlight: new Set(),
-      failedAt: new Map(),
-      getCached: (id) => cache.get(id),
-      now,
-      runningLimit: 2,
-    })
-
-    // run-1 is excluded by runningLimit=2 (keeps top 2 newest: run-3, run-2);
-    // run-3 is within the throttle window; run-2 refreshes incrementally.
-    expect(targets).toEqual([
-      {
-        id: 'run-2',
-        sig: syncSignature(sessions[1]),
-        status: 'running',
-        reason: 'running-refresh',
-      },
-    ])
-  })
-
   it('skips the active session, already-synced signatures, in-flight items, and recent failures', () => {
     const doneA = card({ id: 'done-a', status: 'done', ts: 100 })
     const doneB = card({ id: 'done-b', status: 'done', ts: 200 })
@@ -242,5 +196,95 @@ describe('session autosync planner', () => {
       limit: 2,
     })
     expect(targets.map((item) => item.id)).toEqual(['s-4', 's-3'])
+  })
+})
+
+describe('running session autosync throttling', () => {
+  it('throttles warm running sessions by interval and caps running count', () => {
+    const now = 100_000
+    const msg = { role: 'assistant' as const, text: 'working' }
+    const sessions = [
+      card({ id: 'run-1', status: 'running', ts: 1_000 }),
+      card({ id: 'run-2', status: 'running', ts: 2_000 }),
+      card({ id: 'run-3', status: 'running', ts: 3_000 }),
+    ]
+    const cache = new Map([
+      [
+        'run-3',
+        { status: 'running', waiting_kind: '', ts: 3_000, messages: [msg] },
+      ],
+      [
+        'run-2',
+        { status: 'running', waiting_kind: '', ts: 2_000, messages: [msg] },
+      ],
+    ])
+    const syncedAt = new Map([
+      ['run-3', now - RUNNING_SYNC_INTERVAL_MS + 1_000], // recently synced → skip
+      ['run-2', now - RUNNING_SYNC_INTERVAL_MS], // due for incremental refresh
+    ])
+
+    const { targets } = pickAutoSyncTargets({
+      sessions,
+      synced: new Map(),
+      syncedAt,
+      inFlight: new Set(),
+      failedAt: new Map(),
+      getCached: (id) => cache.get(id),
+      now,
+      runningLimit: 2,
+    })
+
+    // run-1 is excluded by runningLimit=2 (keeps top 2 newest: run-3, run-2);
+    // run-3 is within the throttle window; run-2 refreshes incrementally.
+    expect(targets).toEqual([
+      {
+        id: 'run-2',
+        sig: syncSignature(sessions[1]),
+        status: 'running',
+        reason: 'running-refresh',
+      },
+    ])
+  })
+
+  it('keeps warm running sessions throttled when row.ts ticks, but warms status transitions immediately', () => {
+    const now = 200_000
+    const msg = { role: 'assistant' as const, text: 'working' }
+    const ticking = card({ id: 'run-tick', status: 'running', ts: 5_000 })
+    const flipped = card({ id: 'run-flip', status: 'running', ts: 4_000 })
+    const cache = new Map([
+      [
+        'run-tick',
+        // cached.ts lags row.ts because the running session just emitted output
+        { status: 'running', waiting_kind: '', ts: 2_500, messages: [msg] },
+      ],
+      [
+        'run-flip',
+        // cached as idle; just transitioned to running → must warm immediately
+        { status: 'idle', waiting_kind: '', ts: 1_000, messages: [msg] },
+      ],
+    ])
+    const syncedAt = new Map([
+      ['run-tick', now - 2_500],
+      ['run-flip', now - 2_500],
+    ])
+
+    const { targets } = pickAutoSyncTargets({
+      sessions: [ticking, flipped],
+      synced: new Map(),
+      syncedAt,
+      inFlight: new Set(),
+      failedAt: new Map(),
+      getCached: (id) => cache.get(id),
+      now,
+    })
+
+    expect(targets).toEqual([
+      {
+        id: 'run-flip',
+        sig: syncSignature(flipped),
+        status: 'running',
+        reason: 'stale',
+      },
+    ])
   })
 })

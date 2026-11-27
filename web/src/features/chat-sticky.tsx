@@ -111,7 +111,7 @@ export function StickyPrompt({
       ref={box}
       // the thread's visible top under the header: chat-scroll aligns to it
       data-chat-top
-      className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0"
+      className="sticky top-[calc(env(safe-area-inset-top)+var(--session-head,0px))] z-20 -mb-2 h-0 md:top-0"
     >
       {/* in from above, out with a fade (lib/motion.ts): it used to pop;
           the leaving bar keeps its last text while it fades */}

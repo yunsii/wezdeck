@@ -70,9 +70,13 @@ func repoWorktrees(cwd string) []worktreeInfo {
 		return nil
 	}
 	worktreesMu.Lock()
-	if hit, ok := worktreesCache[cwd]; ok && time.Since(hit.at) < worktreesTTL {
-		worktreesMu.Unlock()
-		return hit.list
+	var prev []worktreeInfo
+	if hit, ok := worktreesCache[cwd]; ok {
+		if time.Since(hit.at) < worktreesTTL {
+			worktreesMu.Unlock()
+			return hit.list
+		}
+		prev = hit.list
 	}
 	worktreesMu.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), worktreesTimeout)
@@ -84,6 +88,11 @@ func repoWorktrees(cwd string) []worktreeInfo {
 		if err == nil {
 			list = parseWorktrees(string(out), strings.TrimSpace(string(top)))
 		}
+	}
+	if list == nil && ctx.Err() != nil && len(prev) > 0 {
+		// Transient timeout: keep last good worktree list instead of hiding
+		// the statusbar pill for 30s.
+		list = prev
 	}
 	worktreesMu.Lock()
 	worktreesCache[cwd] = struct {

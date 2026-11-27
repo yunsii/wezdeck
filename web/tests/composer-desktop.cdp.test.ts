@@ -22,6 +22,29 @@ const repo = join(import.meta.dirname, '..', '..')
 const room = process.env.WEZDECK_REMOTE_ROOM ?? ''
 const roomQuery = room ? `&room=${room}` : ''
 
+const fromBottom = (page: Page) =>
+  page.evaluate(() => {
+    const scroller =
+      document.querySelector<HTMLElement>(
+        '[data-testid=session-thread-scroll].overflow-y-auto',
+      ) ??
+      document.querySelector('#session-composer')?.closest('.overflow-y-auto')
+    if (!scroller) return -1
+    return Math.round(
+      scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop,
+    )
+  })
+
+const threadOverflows = (page: Page) =>
+  page.evaluate(() => {
+    const s =
+      document.querySelector<HTMLElement>(
+        '[data-testid=session-thread-scroll].overflow-y-auto',
+      ) ??
+      document.querySelector('#session-composer')?.closest('.overflow-y-auto')
+    return s ? s.scrollHeight > s.clientHeight + 100 : false
+  })
+
 describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-tmux-')), 'sock')
@@ -89,17 +112,6 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
   }
 
-  const fromBottom = (page: Page) =>
-    page.evaluate(() => {
-      const scroller = document
-        .querySelector('#session-composer')
-        ?.closest('.overflow-y-auto')
-      if (!scroller) return -1
-      return Math.round(
-        scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop,
-      )
-    })
-
   it('lands at the bottom, Enter sends, Shift+Enter breaks, paste adds an image', async () => {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
@@ -111,16 +123,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await page.getByText('line 70').waitFor({ timeout: 15_000 })
     // the screen is taller than the window: the page must sit at its end
     await expect
-      .poll(
-        () =>
-          page.evaluate(() => {
-            const s = document
-              .querySelector('#session-composer')
-              ?.closest('.overflow-y-auto')
-            return s ? s.scrollHeight > s.clientHeight + 100 : false
-          }),
-        { timeout: 5_000 },
-      )
+      .poll(() => threadOverflows(page), { timeout: 5_000 })
       .toBe(true)
     await expect
       .poll(() => fromBottom(page), { timeout: 5_000 })

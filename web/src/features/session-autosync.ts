@@ -131,15 +131,27 @@ export function pickAutoSyncTargets({
 
     if (isRun) {
       const lastAt = syncedAt.get(row.id)
-      const current = isCacheCurrent(cached, row)
-      if (current && lastAt !== undefined && now - lastAt < runningIntervalMs) {
+      const warmRunning =
+        Boolean(cached) &&
+        cached?.status === 'running' &&
+        (!row.transcript || (cached.messages?.length ?? 0) > 0)
+      if (
+        warmRunning &&
+        lastAt !== undefined &&
+        now - lastAt < runningIntervalMs
+      ) {
         continue
       }
+      const current = isCacheCurrent(cached, row)
       targets.push({
         id: row.id,
         sig,
         status: row.status,
-        reason: !cached ? 'cold' : current ? 'running-refresh' : 'stale',
+        reason: !cached
+          ? 'cold'
+          : warmRunning || current
+            ? 'running-refresh'
+            : 'stale',
       })
       continue
     }

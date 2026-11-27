@@ -181,13 +181,17 @@ export function useHoldBottomOnResize({
       if (event.target instanceof HTMLTextAreaElement) hold(1_000, event.type)
     }
     const onViewport = () => hold(500, 'viewport')
-    el.addEventListener('focusin', onFocus)
-    el.addEventListener('focusout', onFocus)
+    // On wide screens the composer form sits outside the message scroller;
+    // attach focusin/focusout to session-detail so composer focus still holds.
+    const focusScope =
+      el.closest<HTMLElement>('[data-testid=session-detail]') ?? el
+    focusScope.addEventListener('focusin', onFocus)
+    focusScope.addEventListener('focusout', onFocus)
     window.visualViewport?.addEventListener('resize', onViewport)
     window.addEventListener('resize', onViewport)
     return () => {
-      el.removeEventListener('focusin', onFocus)
-      el.removeEventListener('focusout', onFocus)
+      focusScope.removeEventListener('focusin', onFocus)
+      focusScope.removeEventListener('focusout', onFocus)
       window.visualViewport?.removeEventListener('resize', onViewport)
       window.removeEventListener('resize', onViewport)
     }

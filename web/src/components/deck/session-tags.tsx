@@ -72,7 +72,14 @@ export function SessionTag({
   useLayoutEffect(() => {
     const el = text.current
     if (!measures || !el || typeof ResizeObserver === 'undefined') return
-    const measure = () => setCut(el.scrollWidth > el.clientWidth + 1)
+    // Hysteresis (2 px enter, 0 px exit) prevents <span> <-> <button> flip-flop
+    // when a branch pill sits right on the truncation boundary.
+    const measure = () =>
+      setCut((was) =>
+        was
+          ? el.scrollWidth > el.clientWidth
+          : el.scrollWidth > el.clientWidth + 2,
+      )
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
@@ -340,6 +347,11 @@ export function TagLine({
   // tags does not match the children (then the panel shows them all)
   const [fold, setFold] = useState({ height: 0, hidden: 0, first: 0 })
   const [panel, setPanel] = useState(false)
+  const childCountRef = useRef(0)
+  childCountRef.current = flatChildren(children).length
+  const onVisibleTagsRef = useRef(onVisibleTags)
+  onVisibleTagsRef.current = onVisibleTags
+  const measureRef = useRef<(() => void) | null>(null)
   useLayoutEffect(() => {
     const el = line.current
     if (!maxLines || !el || typeof ResizeObserver === 'undefined') return
@@ -367,11 +379,12 @@ export function TagLine({
       })
       const firstHidden = rows.findIndex((r) => r >= maxLines)
       const shown = tags.filter((_, k) => rows[k] < maxLines)
-      if (onVisibleTags) {
+      const reportVisible = onVisibleTagsRef.current
+      if (reportVisible) {
         tags.forEach((tag, index) => {
           tag.inert = rows[index] >= maxLines
         })
-        onVisibleTags(
+        reportVisible(
           shown
             .map((tag) => tag.dataset.tagId)
             .filter(Boolean)
@@ -390,10 +403,7 @@ export function TagLine({
               hidden: tags.length - firstHidden,
               // tags wrap in order: the folded ones are a tail
               // one laid-out tag per child (else show them all)
-              first:
-                tags.length === flatChildren(children).length
-                  ? firstHidden
-                  : -1,
+              first: tags.length === childCountRef.current ? firstHidden : -1,
             }
       setFold((now) =>
         now.height === next.height &&
@@ -403,6 +413,7 @@ export function TagLine({
           : next,
       )
     }
+    measureRef.current = measure
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
@@ -410,10 +421,15 @@ export function TagLine({
     const added = new MutationObserver(measure)
     added.observe(el, { childList: true })
     return () => {
+      measureRef.current = null
       observer.disconnect()
       added.disconnect()
     }
-  }, [maxLines, children, onVisibleTags])
+  }, [maxLines])
+  // Re-measure synchronously on tag updates without tearing down observers.
+  useLayoutEffect(() => {
+    measureRef.current?.()
+  }, [children])
   useEffect(() => {
     if (!panel) return
     const onKey = (event: KeyboardEvent) => {
@@ -447,6 +463,9 @@ export function TagLine({
           }
           className={cn(
             'relative flex min-w-0 flex-wrap items-center gap-1 text-meta text-brand-label',
+            // Single-line bars cap height even before fold settles so arriving
+            // tags never expand the statusbar to 2 lines for a frame.
+            maxLines === 1 && !folded && 'max-h-6 overflow-hidden',
             // room for +N at the end of the last row shown
             folded && 'pr-10',
             className,
