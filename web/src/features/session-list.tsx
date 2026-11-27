@@ -81,7 +81,7 @@ function ChatSearch({
 }) {
   const { t } = useLingui()
   return (
-    <label className="relative min-w-0 flex-1">
+    <label className="relative min-w-0 flex-1" data-text-field>
       <Search
         size={16}
         aria-hidden
@@ -89,6 +89,7 @@ function ChatSearch({
       />
       <Input
         variant="field"
+        data-search
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -164,7 +165,7 @@ function CreatingSessionsList({
                 replace={replace}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'list-row flex min-h-15 items-center gap-3 px-3 py-2',
+                  'list-row flex min-h-16 items-center gap-3 px-3 py-2',
                   active && 'row-selected',
                 )}
               >
@@ -182,7 +183,7 @@ function CreatingSessionsList({
                       </span>
                     ) : null}
                   </span>
-                  <span className="truncate text-caption text-brand-muted">
+                  <span className="truncate text-caption leading-5 text-brand-muted">
                     {job.prompt ? `${status} · ${job.prompt}` : status}
                   </span>
                 </span>
@@ -204,9 +205,12 @@ export function SessionList({
   const rows = sessions.data?.sessions ?? []
   const creatingJobs = sessions.data?.creating_jobs ?? []
   useDraftRevision()
+  // Keep the raw trimmed draft on each row so sub-rows can preserve their
+  // compact/two-line height when selected; each row hides its Draft pill on
+  // the active item via visibleDraft().
   const rowsWithDrafts = rows.map((row) => ({
     ...row,
-    draft: readDraft(sessionDraftKey(row.id)),
+    draft: readDraft(sessionDraftKey(row.id)).trim(),
   }))
   const groups = buildChatGroups(rowsWithDrafts)
   const previewLabels = useChatPreviewLabels()

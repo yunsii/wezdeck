@@ -132,6 +132,9 @@ P=$("$D" fanout draft --from . --repos <repo>[,<repo2>] --title "…" --goal-fil
 
 The plan agent must check the goal against the target's default branch first (`status_check`, with
 evidence) — a draft without it, or without `summary` / per-child `effect`, is refused before review.
+When the goal involves DB schema or migrations, it also reads the target repo's release and
+migration docs first so multi-release boundaries and manual prod apply gates appear in the split,
+`contract` and `risks`.
 Workers may `fanout propose` one extra sibling inside their own scope (one level, ≤12 children,
 `--effect` required);
 `fanout status` / parent `progress.json` / the web console's ticket page (确认并开始 / 驳回) show

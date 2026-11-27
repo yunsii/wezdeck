@@ -46,6 +46,16 @@ function persist(storageKey: string, value: string, from: string) {
 }
 
 export const sessionDraftKey = (id: string) => `wezdeck.draft.${id}`
+export const ticketDraftKey = (id: string) => `wezdeck.draft.ticket.${id}`
+
+/** Only show a list-row Draft badge after leaving that item's detail view. */
+export function visibleDraft(
+  id: string,
+  activeId: string | undefined,
+  draft: string,
+): string {
+  return id === activeId ? '' : draft.trim()
+}
 
 export function readDraft(storageKey: string) {
   try {

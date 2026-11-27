@@ -32,27 +32,119 @@ func TestIsSubstantivePrompt(t *testing.T) {
 
 func TestParseAutoTitleOutput(t *testing.T) {
 	cases := []struct {
-		raw       string
-		want      string
-		unchanged bool
-		valid     bool
+		raw    string
+		want   string
+		action autoTitleAction
+		valid  bool
 	}{
-		{"消除会话交互卡等待态抖动", "消除会话交互卡等待态抖动", false, true},
-		{"标题：「修复深色模式确认按钮图标」。\n多余解释", "修复深色模式确认按钮图标", false, true},
-		{"```\nTitle: \"Harden runtime HTTP access\"\n```", "Harden runtime HTTP access", false, true},
-		{"UNCHANGED", "", true, true},
-		{"unchanged (still same task)", "", true, true},
-		{"__PROVIDER_UNAVAILABLE__", "", false, false},
-		{"Error: timeout", "", false, false},
-		{"", "", false, false},
-		{"a", "", false, false},
+		{"消除会话交互卡等待态抖动", "消除会话交互卡等待态抖动", autoTitleShift, true},
+		{"SHIFT: 新增无损合并发布队列", "新增无损合并发布队列", autoTitleShift, true},
+		{"REFINE: 优化交互卡等待态零抖动", "优化交互卡等待态零抖动", autoTitleRefine, true},
+		{"refine：修复深色模式图标裁剪", "修复深色模式图标裁剪", autoTitleRefine, true},
+		{"标题：「修复深色模式确认按钮图标」。\n多余解释", "修复深色模式确认按钮图标", autoTitleShift, true},
+		{"```\nTitle: \"Harden runtime HTTP access\"\n```", "Harden runtime HTTP access", autoTitleShift, true},
+		{"UNCHANGED", "", autoTitleUnchanged, true},
+		{"KEEP", "", autoTitleUnchanged, true},
+		{"unchanged (still same task)", "", autoTitleUnchanged, true},
+		{"__PROVIDER_UNAVAILABLE__", "", autoTitleShift, false},
+		{"Error: timeout", "", autoTitleShift, false},
+		{"我先根据会话规则写一条简洁标题，并写入计划文件供确认", "", autoTitleShift, false},
+		{"", "", autoTitleShift, false},
+		{"a", "", autoTitleShift, false},
 	}
 	for _, tc := range cases {
-		got, unch, ok := parseAutoTitleOutput(tc.raw)
-		if got != tc.want || unch != tc.unchanged || ok != tc.valid {
+		got, act, ok := parseAutoTitleOutput(tc.raw)
+		if got != tc.want || act != tc.action || ok != tc.valid {
 			t.Errorf("parseAutoTitleOutput(%q) = (%q, %v, %v), want (%q, %v, %v)",
-				tc.raw, got, unch, ok, tc.want, tc.unchanged, tc.valid)
+				tc.raw, got, act, ok, tc.want, tc.action, tc.valid)
 		}
+	}
+}
+
+func TestAutoTitleHistoryRefineShiftAndCap(t *testing.T) {
+	dir := t.TempDir()
+	storeFile := filepath.Join(dir, "session-titles.json")
+	t.Setenv("WEZDECK_SESSION_TITLES_FILE", storeFile)
+
+	sid := "22222222-3333-4444-5555-666666666666"
+	t0 := time.Unix(1_700_000_000, 0).UnixMilli()
+
+	// 1. First task recorded.
+	if err := saveAutoTitleEntryWithAction(sid, autoTitleEntry{
+		Title: "修复头像图标裁剪与闪烁", Agent: "agy", UpdatedAt: t0, UserTurns: 2, Provider: "grok",
+	}, autoTitleShift); err != nil {
+		t.Fatal(err)
+	}
+
+	// 2. Explicit REFINE updates last entry in place without adding a duplicate row.
+	t1 := t0 + int64(5*time.Minute/time.Millisecond)
+	if err := saveAutoTitleEntryWithAction(sid, autoTitleEntry{
+		Title: "修复 Agy 头像图标与加载闪烁", Agent: "agy", UpdatedAt: t1, UserTurns: 3, Provider: "grok",
+	}, autoTitleRefine); err != nil {
+		t.Fatal(err)
+	}
+	hist := resolveSessionTitleHistory(sid, "", "agy")
+	if len(hist) != 1 || hist[0].Title != "修复 Agy 头像图标与加载闪烁" || hist[0].At != t0 || hist[0].UserTurns != 3 {
+		t.Fatalf("after refine hist = %#v", hist)
+	}
+
+	// 3. Similarity guard: minor rewording even without REFINE prefix updates in place.
+	t2 := t1 + int64(5*time.Minute/time.Millisecond)
+	if err := saveAutoTitleEntryWithAction(sid, autoTitleEntry{
+		Title: "修复 Agy 头像图标及加载闪烁", Agent: "agy", UpdatedAt: t2, UserTurns: 5, Provider: "grok",
+	}, autoTitleShift); err != nil {
+		t.Fatal(err)
+	}
+	hist = resolveSessionTitleHistory(sid, "", "agy")
+	if len(hist) != 1 {
+		t.Fatalf("similar rewording must refine in place, got %d entries: %#v", len(hist), hist)
+	}
+
+	// 4. Genuine new task appends a second entry and stamps ended_at on the previous one.
+	t3 := t2 + int64(6*time.Minute/time.Millisecond)
+	if err := saveAutoTitleEntryWithAction(sid, autoTitleEntry{
+		Title: "新增后台自动标题与管理页面", Agent: "agy", UpdatedAt: t3, UserTurns: 8, Provider: "claude",
+	}, autoTitleShift); err != nil {
+		t.Fatal(err)
+	}
+	hist = resolveSessionTitleHistory(sid, "", "agy")
+	if len(hist) != 2 {
+		t.Fatalf("expected 2 tasks, got %d: %#v", len(hist), hist)
+	}
+	if hist[0].EndedAt != t3 || hist[1].Title != "新增后台自动标题与管理页面" || hist[1].EndedAt != 0 {
+		t.Fatalf("unexpected task transition: %#v", hist)
+	}
+
+	// 5. UNCHANGED preserves existing history intact.
+	t4 := t3 + int64(5*time.Minute/time.Millisecond)
+	if err := saveAutoTitleEntryWithAction(sid, autoTitleEntry{
+		Title: "新增后台自动标题与管理页面", Agent: "agy", UpdatedAt: t4, UserTurns: 9, Provider: "claude",
+	}, autoTitleUnchanged); err != nil {
+		t.Fatal(err)
+	}
+	if got := resolveSessionTitleHistory(sid, "", "agy"); len(got) != 2 {
+		t.Fatalf("UNCHANGED must preserve 2 history items, got %d", len(got))
+	}
+
+	// 6. Manual /rename appends a manual task entry and locks the title.
+	lockSessionTitle(sid, "agy", "手动固定任务名称")
+	hist = resolveSessionTitleHistory(sid, "", "agy")
+	if len(hist) != 3 || hist[2].Source != "manual" || hist[2].Title != "手动固定任务名称" {
+		t.Fatalf("manual rename history = %#v", hist)
+	}
+
+	// 7. History caps at autoTitleMaxHistory (50).
+	var big []autoTitleHistoryItem
+	for i := 0; i < 60; i++ {
+		big = appendTitleHistory(big, autoTitleHistoryItem{
+			Title:     "独立任务模块-" + string(rune('A'+(i%26))) + "-" + string(rune('0'+(i/26))),
+			At:        t0 + int64(i)*int64(10*time.Minute/time.Millisecond),
+			UserTurns: i*3 + 1,
+			Source:    "auto",
+		}, autoTitleShift)
+	}
+	if len(big) != autoTitleMaxHistory {
+		t.Fatalf("history len = %d, want cap %d", len(big), autoTitleMaxHistory)
 	}
 }
 
@@ -245,5 +337,40 @@ func TestAutoTitlerSweepEndToEnd(t *testing.T) {
 	}
 	if calls != 2 {
 		t.Fatalf("calls = %d, want 2", calls)
+	}
+}
+
+func TestAutoTitleConfigStatusAndUnlock(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WEZDECK_SESSION_TITLES_FILE", filepath.Join(dir, "session-titles.json"))
+	t.Setenv("WEZDECK_AUTOTITLE_CONFIG_FILE", filepath.Join(dir, "autotitle-config.json"))
+	t.Setenv("WEZDECK_ATTENTION_FILE", filepath.Join(dir, "attention.json"))
+
+	// Configure enabled=false, provider=claude, interval=60
+	res, err := updateAutoTitle(json.RawMessage(`{"op":"configure","enabled":false,"provider":"claude","interval_s":60}`))
+	if err != nil {
+		t.Fatalf("configure failed: %v", err)
+	}
+	m := res.(map[string]any)
+	if m["enabled"] != false || m["provider"] != "claude" || m["interval_s"] != 60 {
+		t.Fatalf("unexpected status after configure: %#v", m)
+	}
+
+	// Reject unknown provider
+	if _, err := updateAutoTitle(json.RawMessage(`{"op":"configure","provider":"bogus"}`)); err == nil {
+		t.Fatal("expected error for unsupported provider")
+	}
+
+	// Lock & unlock title + source reporting
+	sid := "11111111-2222-3333-4444-555555555555"
+	lockSessionTitle(sid, "agy", "人工固定标题")
+	if src := resolveSessionTitleSource(sid, "", "agy"); src != "manual" {
+		t.Fatalf("locked source = %q, want manual", src)
+	}
+	if _, err := updateAutoTitle(json.RawMessage(`{"op":"unlock","session_id":"` + sid + `"}`)); err != nil {
+		t.Fatalf("unlock failed: %v", err)
+	}
+	if src := resolveSessionTitleSource(sid, "", "agy"); src != "auto" {
+		t.Fatalf("unlocked source = %q, want auto", src)
 	}
 }

@@ -23,23 +23,18 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 
 1. **Manifest scope is the whole site** (`id`/`scope` `/`), `start_url`
    `/console`; installed app opens the console, the landing page stays
-   reachable in-app (the sidebar's WezDeck mark links it). The landing page
-   uses the console's ink theme ([data-deck]): one line on what it is, 打开控制台
-   and the source, a still of the session list with the real status lights,
-   then sessions / tickets / from anywhere. Language and theme there are
-   click menus (never hover); in the console they live only in 我的 › 外观.
-   `/architecture` (架构解析, linked from the landing page and from the
-   console's 我的 list; opened from inside the app it shows the same ‹ back
-   as a pushed page — the installed console has no browser back) is the
-   public explainer: concepts and flows in prose (设备授权 `flows-access.ts`:
-   host tokens and relay join, pairing, device registration, approval,
-   signed hello, per-request checks, revoke), files / endpoints folded. Each
-   diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desktop only)
-   above its step list, which is the keyboard path and the whole diagram on
-   mobile. Data lives in `web/src/features/architecture/` (`overview.ts`,
-   `flows*.ts`, `capabilities.ts`); `tests/architecture.unit.test.ts` reads
-   the Runtime routes / actions, the bridge switch and the relay's
-   `readRPC` / `runWrite` and fails until a new entry point is described.
+   reachable in-app (rail's WezDeck mark links it). Landing and `/architecture`
+   share sticky `PublicHeader` (`public-header.tsx`: logo, nav links, click-only
+   language/theme menus, console CTA; in-console language/theme live in 我的 › 外观).
+   Landing uses `[data-deck]` ink and flat Telegram language: an interactive
+   IM session preview (`AgentAvatar` + `.chat-list`) and flat feature slices.
+   `/architecture` (linked from landing and 我的; shows `‹` back from in-app)
+   adds a wide sticky left TOC (compact horizontal chapter rail when narrow),
+   flat surface sections, and a searchable `Capabilities` filter; prose covers
+   concepts and flows (设备授权 `flows-access.ts`), files / endpoints folded.
+   Diagrams are React Flow (`@xyflow/react`, lazy, desktop only) above their
+   step list (keyboard path + mobile view). Data in `web/src/features/architecture/`;
+   `tests/architecture.unit.test.ts` checks all Runtime / bridge / relay entry points.
 2. **One route tree, layouts by width**: `<768px` mobile, `768–1279px` tablet
    (split, collapsible list), `≥1280px` desktop. Fixes today's gap at
    900–1023 px (neither `max-[899px]` nor `lg:` applies).
@@ -147,18 +142,18 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
-5. **Wide screens (≥ 768 px, 2026-11-23)**: no mobile layout blown up.
-   会话 and 工单 are the same split (`session-split.tsx`): the list
-   sticky on the left with its own scroll, the open conversation beside it
-   on the page scroll (so the chat's pin-to-bottom is unchanged), filling
-   the rest of the width (no 900 px cap since the list has its own divider,
-   2026-11-24); the current row is highlighted, picking another replaces the
-   history entry, j / k move through the list's order and the URL follows,
-   y copies the open session's reference;
-   no back button. 我的 shows separated groups on the left, the chosen one past
-   会话's full-height divider (default 连接; group links replace); its inner interaction and agent lists split again at ≥1280 px and share the overlay scroller. 工单动态 uses a full-width head and a readable timeline. Sheets: a
-   centred dialog (fade + scale, no grab handle). 工单's run / cache / cost
-   band opens in a dialog from the list head (sidebar links 工单动态).
+5. **Wide screens (≥ 768 px, 2026-11-23; Telegram rail 2026-11-27)**: no mobile layout blown up.
+   Left nav is a 68 px Telegram Desktop icon rail (WezDeck mark top, 会话 / 工单
+   primary, 诊断(local) / 我的 / `?` Shortcuts bottom; 工单动态 lives in `CollabTopBar`
+   on both phone and desktop, keeping `g a`), while `StatusBand` / `RemoteBand`
+   sits in a slim 28 px bottom strip so splits start flush at the top edge.
+   会话 and 工单 share the sticky split (`session-split.tsx`, full remaining width,
+   no 900 px cap, j / k + y, replace history, no back button). 我的 uses
+   `SplitColumn` with flat `.me-list` inset-hairline groups (phone: compact
+   `StickyBar` + full-bleed surface groups; inner interaction/agent lists split at
+   ≥1280 px). 工单动态 and 诊断 align to flat surface, sticky `SectionHeading` /
+   `StickyBar` + `BackButton` on phones, and `data-search` `/` focus. Sheets:
+   centred dialog (fade + scale, no grab handle). 工单 metrics open in a dialog.
 6. **Desktop keyboard**: `j`/`k` move, `Esc` closes a sheet and, with none
    open, lets go of a focused button / link (closing a sheet hands focus
    back to its trigger, which kept Space pressing it), `/` filter,

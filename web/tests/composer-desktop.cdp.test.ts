@@ -1,4 +1,5 @@
-// covers: web/src/features/session-composer.tsx web/src/features/chat-scroll.ts
+// covers: web/src/features/session-composer.tsx web/src/features/composer-enter.ts
+// covers: web/src/features/chat-scroll.ts
 // covers: web/src/features/console-sessions.tsx web/src/features/console-keys.tsx
 // covers: web/src/lib/use-draft.ts web/src/features/composer-images.ts
 import { execFileSync } from 'node:child_process'
@@ -253,18 +254,48 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     })
     const page = await context.newPage()
     await approve(page)
-    await page.goto(`${base}/zh/console/sessions/fresh-session`)
-    const box = page.getByLabel('发给 Agent 的消息')
-    await box.waitFor({ timeout: 15_000 })
-    await box.click()
-    await box.pressSequentially('甲')
-    await page.keyboard.press('Enter')
-    await box.pressSequentially('乙')
-    expect(await box.inputValue()).toBe('甲\n乙')
-    expect(await box.getAttribute('enterkeyhint')).toBe('enter')
+    await assertTouchPhoneEnter(page)
+    await context.close()
+  })
+
+  it('on a touch tablet with a hardware keyboard Enter sends and Shift+Enter breaks', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1024, height: 768 },
+      hasTouch: true,
+      isMobile: true,
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await approve(page)
+    await assertTabletHardwareEnter(page)
     await context.close()
   })
 })
+
+async function assertTouchPhoneEnter(page: Page) {
+  await page.goto(`${base}/zh/console/sessions/fresh-session`)
+  const box = page.getByLabel('发给 Agent 的消息')
+  await box.waitFor({ timeout: 15_000 })
+  await box.click()
+  await box.pressSequentially('甲')
+  await page.keyboard.press('Enter')
+  await box.pressSequentially('乙')
+  expect(await box.inputValue()).toBe('甲\n乙')
+  expect(await box.getAttribute('enterkeyhint')).toBe('enter')
+}
+
+async function assertTabletHardwareEnter(page: Page) {
+  await page.goto(`${base}/zh/console/sessions/fresh-session`)
+  const box = page.getByLabel('发给 Agent 的消息')
+  await box.waitFor({ timeout: 15_000 })
+  await box.click()
+  await box.fill('平板第一行')
+  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.type('平板第二行')
+  expect(await box.inputValue()).toBe('平板第一行\n平板第二行')
+  await page.keyboard.press('Enter')
+  await expect.poll(() => box.inputValue(), { timeout: 2_000 }).toBe('')
+}
 
 /**
  * The caret: the browser's bar by default, a block once picked in 我的 › 外观,

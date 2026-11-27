@@ -6,6 +6,7 @@ import { useLingui } from '@lingui/react/macro'
 import { useLocale } from '#/lib/locale-context'
 import { fromYou, parseThread, threadClipped } from '#/lib/ticket-thread'
 import { cn } from '#/lib/utils'
+import { ChatMarkdown } from './chat-markdown'
 
 function useWho() {
   const { t } = useLingui()
@@ -33,9 +34,9 @@ export function TicketThread({
   const entries = parseThread(text)
   if (entries.length === 0)
     return (
-      <p className="px-4 pb-4 text-caption whitespace-pre-wrap text-brand-muted">
-        {text.trim()}
-      </p>
+      <div className="px-4 pb-4 text-brand-text">
+        <ChatMarkdown text={text.trim()} className="text-caption" />
+      </div>
     )
   const when = (at: string) => {
     const ms = Date.parse(at)
@@ -79,14 +80,14 @@ export function TicketThread({
               data-asking={asking ? '' : undefined}
               className={cn(
                 // anywhere, not break-word: long paths / ids must not widen the bubble
-                'rounded-xl px-3.5 py-2.5 text-body leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap',
+                'rounded-xl px-3.5 py-2.5 text-body leading-relaxed [overflow-wrap:anywhere]',
                 mine
-                  ? 'bg-brand-text text-brand-deck'
+                  ? 'whitespace-pre-wrap bg-brand-text text-brand-deck'
                   : 'bg-brand-deck text-brand-text',
                 asking && 'ring-2 ring-brand-waiting',
               )}
             >
-              {entry.text}
+              {mine ? entry.text : <ChatMarkdown text={entry.text} />}
             </div>
             <span
               className={cn(

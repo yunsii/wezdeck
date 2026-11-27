@@ -235,6 +235,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '会话 agent 实际加载的 skill（Claude 读会话记录、Codex 读 rollout、Grok 跑 inspect），供「能力」与输入框 / 补全',
         'Skills the session agent was actually given (Claude transcript, Codex rollout, Grok inspect), for 能力 and the composer / completion',
       ),
+      c(
+        'session.autotitle.status',
+        '读取后台会话自动标题配置、可用本地 CLI 智能体与各会话当前标题来源',
+        'Read background session auto-title config, available host CLI providers and current session title sources',
+      ),
       c('host.warp.status', '读取 One Client 状态', 'Read One Client status'),
       c(
         'host.oppo.status',
@@ -333,6 +338,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'session.handoff',
         '跨 agent 接力：本格替换为目标 agent，粘贴接续 brief（不 recycle、不迁 transcript；之后 F5 跟目标 agent）',
         'Cross-agent handoff: replace this pane with the target agent and paste a continuation brief (no recycle, no transcript migrate; later F5 keeps the target)',
+      ),
+      c(
+        'session.autotitle.update',
+        '更新后台会话自动标题开关、指定本地 CLI 智能体、扫描周期，或手动重算/解锁单条会话标题',
+        'Update background session auto-title settings (enabled, host CLI provider, interval), or trigger a refresh / unlock one session title',
       ),
       c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
       c(

@@ -6,20 +6,24 @@
 // the 5 s refresh pushing new lines on top does not move the selection.
 import { useLingui } from '@lingui/react/macro'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Search } from 'lucide-react'
+import { Copy, Search, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
 import { SplitColumn } from '#/components/deck/split-column'
+import { StickyBar } from '#/components/deck/sticky-bar'
 import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
 import { copyText } from '#/lib/clipboard'
+import { useGoBack } from '#/lib/go-back'
+import { useLocale } from '#/lib/locale-context'
 import { getDiagnostics } from '#/lib/runtime-client'
 import type { DiagnosticsState } from '#/lib/runtime-contract'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
@@ -71,6 +75,11 @@ const clockOf = (ts: string) => ts.match(/\d{2}:\d{2}:\d{2}/)?.[0] ?? ts
 
 export function ConsoleDiagnosticsPage() {
   const { t } = useLingui()
+  const { locale } = useLocale()
+  const back = useGoBack({
+    to: '/{-$locale}/console/me',
+    params: { locale: locale === 'en' ? undefined : locale },
+  })
   const wide = useIsWidePhoneFirst()
   const runtime = useRuntimeData()
   const [query, setQuery] = useState('')
@@ -110,23 +119,41 @@ export function ConsoleDiagnosticsPage() {
 
   const filters = (
     <div className="grid gap-2">
-      <label className="flex min-h-11 items-center gap-2 rounded-xl border border-brand-edge bg-brand-deck px-3 focus-within:ring-2 focus-within:ring-brand-running md:min-h-9">
-        <Search size={15} aria-hidden className="text-brand-label" />
+      <label className="relative min-w-0" data-text-field>
+        <Search
+          size={16}
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-brand-label"
+        />
         <Input
-          variant="bare"
+          variant="field"
+          data-search
           type="search"
           value={query}
           aria-label={t`Trace ID or text`}
           placeholder={t`Trace ID or text`}
           onChange={(event) => setQuery(event.target.value.trim())}
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-body outline-none placeholder:text-brand-label md:text-caption"
+          className="h-9 min-h-9 w-full pl-8 pr-8 text-caption"
         />
+        {query ? (
+          <Button
+            type="button"
+            variant="plain"
+            size="none"
+            aria-label={t`Clear search`}
+            onClick={() => setQuery('')}
+            className="absolute top-1/2 right-1 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-brand-muted"
+          >
+            <X size={14} aria-hidden />
+          </Button>
+        ) : null}
       </label>
       <div className="flex items-center gap-2">
         <Segmented
           label={t`Level`}
           value={level}
           onChange={setLevel}
+          dense
           className="min-w-0 flex-1"
           options={[
             { value: 'all', label: t`All`, count: count('all') },
@@ -168,6 +195,7 @@ export function ConsoleDiagnosticsPage() {
       <div className="grid grid-cols-[minmax(320px,400px)_minmax(0,1fr)] items-stretch">
         <SplitColumn
           label={t`Log stream`}
+          className="bg-brand-surface [--split-pad:0.75rem]"
           head={
             <>
               <h1 className="text-body font-semibold">{t`Diagnostics`}</h1>
@@ -190,8 +218,16 @@ export function ConsoleDiagnosticsPage() {
       </div>
     )
   return (
-    <div className="grid content-start gap-3">
-      {filters}
+    <div className="flex min-h-full w-full flex-1 flex-col bg-brand-surface">
+      <StickyBar className="top-0 mx-0 my-0 grid gap-2 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
+        <div className="flex min-h-8 items-center gap-1">
+          <BackButton onClick={back} label={t`Settings`} className="-ml-2" />
+          <h1 className="min-w-0 flex-1 truncate text-title font-semibold">
+            {t`Diagnostics`}
+          </h1>
+        </div>
+        {filters}
+      </StickyBar>
       {list}
       <Sheet
         open={sheetOpen && Boolean(current)}
@@ -256,22 +292,16 @@ function EntryList({
   const { t } = useLingui()
   if (entries.length === 0)
     return (
-      <p className="rounded-2xl bg-brand-surface px-4 py-10 text-center text-caption text-brand-muted md:rounded-none md:bg-transparent md:px-[var(--page-x)]">
+      <p className="px-4 py-12 text-center text-caption text-brand-muted">
         {empty}
       </p>
     )
   return (
-    <ul
-      aria-label={t`Log stream`}
-      className="overflow-hidden rounded-2xl bg-brand-surface md:rounded-none"
-    >
+    <ul aria-label={t`Log stream`} className="diag-list bg-brand-surface">
       {entries.map((entry) => {
         const active = entry.id === selected
         return (
-          <li
-            key={entry.id}
-            className="border-b border-brand-edge last:border-b-0"
-          >
+          <li key={entry.id}>
             <Button
               variant="plain"
               type="button"
@@ -279,7 +309,7 @@ function EntryList({
               aria-current={active ? 'true' : undefined}
               onClick={() => onPick(entry.id)}
               className={cn(
-                'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-4 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-[var(--page-x)]',
+                'list-row grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 px-3 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
                 active && 'row-selected',
               )}
             >

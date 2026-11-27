@@ -203,7 +203,8 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
       await card.getByText(/src\/b\/\*\* · 依赖 拆分甲：实现 fmt/).count(),
     ).toBe(1)
     await card.getByRole('button', { name: '技术细节' }).click()
-    await card.getByText(/fmt\(\)` lives in a\//).waitFor()
+    await card.locator('code', { hasText: 'fmt()' }).waitFor()
+    await card.getByText(/lives in/).waitFor()
     // a parked parent answers here, not with the free-text reply box
     expect(await page.getByLabel('你的回复').count()).toBe(0)
 

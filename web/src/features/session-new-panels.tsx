@@ -64,24 +64,27 @@ export function useNewSessionAgentOptions(
 ): Array<PickerOption> {
   const { t } = useLingui()
   return [
-    {
-      value: '',
-      label: t`Repository default`,
-      disabled: defaultAgentDisabled,
-      icon: <AgentAvatar size={24} />,
-    },
-    ...agentProfiles.map((profile) => ({
-      value: profile.id,
-      disabled: profile.disabled,
-      icon: <AgentAvatar profile={profile.id} size={24} />,
-      label: profile.disabled
-        ? `${profile.label} (${t`Disabled`})`
-        : profile.id === 'claude_kimi' && !profile.configured
-          ? `${profile.label} (${t`Not configured`})`
-          : profile.default
-            ? `${profile.label} (${t`host default`})`
-            : profile.label,
-    })),
+    ...(defaultAgentDisabled
+      ? []
+      : [
+          {
+            value: '',
+            label: t`Repository default`,
+            icon: <AgentAvatar size={24} />,
+          },
+        ]),
+    ...agentProfiles
+      .filter((profile) => !profile.disabled)
+      .map((profile) => ({
+        value: profile.id,
+        icon: <AgentAvatar profile={profile.id} size={24} />,
+        label:
+          profile.id === 'claude_kimi' && !profile.configured
+            ? `${profile.label} (${t`Not configured`})`
+            : profile.default
+              ? `${profile.label} (${t`host default`})`
+              : profile.label,
+      })),
   ]
 }
 

@@ -17,7 +17,8 @@ import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
 import { Disclosure } from '#/components/ui/disclosure'
-import { useDraft } from '#/lib/use-draft'
+import { ticketDraftKey, useDraft } from '#/lib/use-draft'
+import { ChatMarkdown } from './chat-markdown'
 import { TicketThread } from './ticket-thread-view'
 
 export { openQuestion } from '#/lib/ticket-thread'
@@ -114,7 +115,7 @@ export function TicketReply({
   const client = useQueryClient()
   const device = useDeviceState()
   // unsent reply survives leaving the page, like the session composer
-  const [text, setText] = useDraft(`wezdeck.draft.ticket.${id}`)
+  const [text, setText] = useDraft(ticketDraftKey(id))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const asked = questions?.questions ?? []
@@ -165,9 +166,7 @@ export function TicketReply({
           ))}
         </div>
       ) : question ? (
-        <p className="text-body leading-relaxed whitespace-pre-wrap">
-          {question}
-        </p>
+        <ChatMarkdown text={question} />
       ) : null}
       <label htmlFor={`reply-${id}`} className="sr-only">
         {t`Your reply`}
@@ -282,9 +281,15 @@ export function TicketSections({
               waiting={waiting}
             />
           ) : (
-            <p className="px-4 pb-4 text-caption leading-relaxed whitespace-pre-wrap text-brand-muted">
-              {section.text.replace(/^##.*\n?/m, '').trim()}
-            </p>
+            <div
+              className="px-4 pb-4 text-brand-text"
+              data-testid="ticket-section-md"
+            >
+              <ChatMarkdown
+                text={section.text.replace(/^##.*\n?/m, '').trim()}
+                className="text-caption"
+              />
+            </div>
           )}
         </Disclosure>
       ))}

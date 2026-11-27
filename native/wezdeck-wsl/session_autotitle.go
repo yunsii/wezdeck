@@ -33,23 +33,44 @@ import (
 )
 
 const (
-	autoTitleDefaultInterval = 20 * time.Second
-	autoTitleMinCooldown     = 90 * time.Second
-	autoTitleTopicShiftAge   = 4 * time.Minute
-	autoTitleExecTimeout     = 45 * time.Second
-	autoTitleMaxPerSweep     = 2
-	autoTitleMaxRunes        = 40
-	autoTitlePruneAfter      = 30 * 24 * time.Hour
+	autoTitleDefaultInterval  = 20 * time.Second
+	autoTitleMinCooldown      = 90 * time.Second
+	autoTitleTopicShiftAge    = 4 * time.Minute
+	autoTitleExecTimeout      = 45 * time.Second
+	autoTitleMaxPerSweep      = 2
+	autoTitleMaxRunes         = 40
+	autoTitlePruneAfter       = 30 * 24 * time.Hour
+	autoTitleMaxHistory       = 50
+	autoTitleSimilarityThresh = 0.65
+	autoTitleRefineWindow     = 3 * time.Minute
 )
 
+type autoTitleAction int
+
+const (
+	autoTitleShift autoTitleAction = iota
+	autoTitleRefine
+	autoTitleUnchanged
+)
+
+type autoTitleHistoryItem struct {
+	Title     string `json:"title"`
+	At        int64  `json:"at"`                   // unix ms when this task title became active
+	EndedAt   int64  `json:"ended_at,omitempty"`   // unix ms when superseded by a newer task
+	UserTurns int    `json:"user_turns,omitempty"` // substantive user turns at the time
+	Source    string `json:"source,omitempty"`     // "auto" | "manual" | "native"
+	Provider  string `json:"provider,omitempty"`
+}
+
 type autoTitleEntry struct {
-	Title      string `json:"title"`
-	Agent      string `json:"agent,omitempty"`
-	UpdatedAt  int64  `json:"updated_at"` // unix ms
-	UserTurns  int    `json:"user_turns"` // substantive user turns seen when generated
-	LastDigest string `json:"last_digest,omitempty"`
-	Locked     bool   `json:"locked,omitempty"` // explicit manual /rename
-	Provider   string `json:"provider,omitempty"`
+	Title      string                 `json:"title"`
+	Agent      string                 `json:"agent,omitempty"`
+	UpdatedAt  int64                  `json:"updated_at"` // unix ms
+	UserTurns  int                    `json:"user_turns"` // substantive user turns seen when generated
+	LastDigest string                 `json:"last_digest,omitempty"`
+	Locked     bool                   `json:"locked,omitempty"` // explicit manual /rename
+	Provider   string                 `json:"provider,omitempty"`
+	History    []autoTitleHistoryItem `json:"history,omitempty"`
 }
 
 type autoTitleFile struct {
@@ -106,15 +127,153 @@ func loadAutoTitles() map[string]autoTitleEntry {
 	return cloneAutoTitles(doc.Entries)
 }
 
+func cloneAutoTitleHistory(in []autoTitleHistoryItem) []autoTitleHistoryItem {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]autoTitleHistoryItem, len(in))
+	copy(out, in)
+	return out
+}
+
 func cloneAutoTitles(in map[string]autoTitleEntry) map[string]autoTitleEntry {
 	out := make(map[string]autoTitleEntry, len(in))
 	for k, v := range in {
+		v.History = cloneAutoTitleHistory(v.History)
 		out[k] = v
 	}
 	return out
 }
 
+func normalizeTitleForCompare(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(strings.TrimSpace(s)) {
+		switch r {
+		case ' ', '\t', '\n', '\r', '-', '_', '/', '·', '•', '、', '，', ',', '。', '.', ':', '：', ';', '；', '(', ')', '（', '）', '[', ']', '【', '】', '「', '」', '"', '\'':
+			continue
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// titleSimilarity returns bigram Jaccard similarity in [0, 1] over normalized runes.
+// Works uniformly for CJK and Latin titles to keep minor rewordings from creating
+// noisy duplicate task entries in the session's title history.
+func titleSimilarity(a, b string) float64 {
+	na := normalizeTitleForCompare(a)
+	nb := normalizeTitleForCompare(b)
+	if na == "" || nb == "" {
+		return 0
+	}
+	if na == nb {
+		return 1
+	}
+	ra := []rune(na)
+	rb := []rune(nb)
+	if len(ra) < 2 || len(rb) < 2 {
+		return 0
+	}
+	grams := func(rs []rune) map[string]struct{} {
+		m := make(map[string]struct{}, len(rs)-1)
+		for i := 0; i < len(rs)-1; i++ {
+			m[string(rs[i:i+2])] = struct{}{}
+		}
+		return m
+	}
+	ga := grams(ra)
+	gb := grams(rb)
+	inter := 0
+	for g := range ga {
+		if _, ok := gb[g]; ok {
+			inter++
+		}
+	}
+	union := len(ga) + len(gb) - inter
+	if union == 0 {
+		return 0
+	}
+	return float64(inter) / float64(union)
+}
+
+func seedHistoryFromEntry(e autoTitleEntry) []autoTitleHistoryItem {
+	if len(e.History) > 0 {
+		return cloneAutoTitleHistory(e.History)
+	}
+	if strings.TrimSpace(e.Title) == "" {
+		return nil
+	}
+	src := "auto"
+	if e.Locked {
+		src = "manual"
+	}
+	return []autoTitleHistoryItem{{
+		Title:     e.Title,
+		At:        e.UpdatedAt,
+		UserTurns: e.UserTurns,
+		Source:    src,
+		Provider:  e.Provider,
+	}}
+}
+
+func appendTitleHistory(prev []autoTitleHistoryItem, next autoTitleHistoryItem, action autoTitleAction) []autoTitleHistoryItem {
+	next.Title = strings.TrimSpace(next.Title)
+	out := cloneAutoTitleHistory(prev)
+	if next.Title == "" {
+		return out
+	}
+	if len(out) == 0 {
+		next.EndedAt = 0
+		return []autoTitleHistoryItem{next}
+	}
+	last := &out[len(out)-1]
+	if normalizeTitleForCompare(last.Title) == normalizeTitleForCompare(next.Title) {
+		if next.Provider != "" && last.Provider == "" {
+			last.Provider = next.Provider
+		}
+		if next.UserTurns > last.UserTurns {
+			last.UserTurns = next.UserTurns
+		}
+		return out
+	}
+	isRefine := action == autoTitleRefine
+	if !isRefine && next.Source == "auto" && last.Source == "auto" {
+		if titleSimilarity(last.Title, next.Title) >= autoTitleSimilarityThresh {
+			isRefine = true
+		} else if last.At > 0 && next.At > last.At &&
+			next.At-last.At < autoTitleRefineWindow.Milliseconds() &&
+			last.UserTurns > 0 && next.UserTurns > 0 &&
+			next.UserTurns-last.UserTurns <= 1 {
+			isRefine = true
+		}
+	}
+	if isRefine {
+		last.Title = next.Title
+		if next.Provider != "" {
+			last.Provider = next.Provider
+		}
+		if next.UserTurns > last.UserTurns {
+			last.UserTurns = next.UserTurns
+		}
+		return out
+	}
+	if next.At > last.At {
+		last.EndedAt = next.At
+	}
+	next.EndedAt = 0
+	out = append(out, next)
+	if len(out) > autoTitleMaxHistory {
+		out = out[len(out)-autoTitleMaxHistory:]
+	}
+	return out
+}
+
 func saveAutoTitleEntry(sessionID string, entry autoTitleEntry) error {
+	return saveAutoTitleEntryWithAction(sessionID, entry, autoTitleShift)
+}
+
+func saveAutoTitleEntryWithAction(sessionID string, entry autoTitleEntry, action autoTitleAction) error {
 	path := autoTitleStorePath()
 	if path == "" || sessionID == "" {
 		return nil
@@ -129,10 +288,40 @@ func saveAutoTitleEntry(sessionID string, entry autoTitleEntry) error {
 			entries = doc.Entries
 		}
 	}
+	existing, hasExisting := entries[sessionID]
 	// Do not clobber a manual lock with an automatic update.
-	if existing, ok := entries[sessionID]; ok && existing.Locked && !entry.Locked {
+	if hasExisting && existing.Locked && !entry.Locked {
 		return nil
 	}
+	history := seedHistoryFromEntry(existing)
+	if action == autoTitleUnchanged {
+		if len(history) == 0 && strings.TrimSpace(entry.Title) != "" {
+			src := "auto"
+			if entry.Locked {
+				src = "manual"
+			}
+			history = []autoTitleHistoryItem{{
+				Title:     strings.TrimSpace(entry.Title),
+				At:        entry.UpdatedAt,
+				UserTurns: entry.UserTurns,
+				Source:    src,
+				Provider:  entry.Provider,
+			}}
+		}
+	} else if strings.TrimSpace(entry.Title) != "" {
+		src := "auto"
+		if entry.Locked {
+			src = "manual"
+		}
+		history = appendTitleHistory(history, autoTitleHistoryItem{
+			Title:     strings.TrimSpace(entry.Title),
+			At:        entry.UpdatedAt,
+			UserTurns: entry.UserTurns,
+			Source:    src,
+			Provider:  entry.Provider,
+		}, action)
+	}
+	entry.History = history
 	entries[sessionID] = entry
 
 	cutoff := time.Now().Add(-autoTitlePruneAfter).UnixMilli()
@@ -347,9 +536,34 @@ func shouldAutoTitle(e attentionEntry, prev autoTitleEntry, hasPrev bool, ctx au
 	return "", false
 }
 
-// parseAutoTitleOutput cleans raw single-shot CLI output into a safe title.
-// Returns (title, unchanged, valid).
-func parseAutoTitleOutput(raw string) (string, bool, bool) {
+// resolveSessionTitleHistory returns the chronological list of task titles
+// recorded for a session (oldest to newest).
+func resolveSessionTitleHistory(sessionID, path, agent string) []autoTitleHistoryItem {
+	var hist []autoTitleHistoryItem
+	if sessionID != "" {
+		if entries := loadAutoTitles(); entries != nil {
+			if rec, ok := entries[sessionID]; ok {
+				hist = seedHistoryFromEntry(rec)
+			}
+		}
+	}
+	if agent == "claude" && path != "" {
+		if manual := claudeCustomTitle(path); manual != "" {
+			if len(hist) == 0 || normalizeTitleForCompare(hist[len(hist)-1].Title) != normalizeTitleForCompare(manual) {
+				hist = appendTitleHistory(hist, autoTitleHistoryItem{
+					Title:  manual,
+					At:     lastTurnAt(path, agent),
+					Source: "manual",
+				}, autoTitleShift)
+			}
+		}
+	}
+	return hist
+}
+
+// parseAutoTitleOutput cleans raw single-shot CLI output into a safe title and
+// history update action (shift / refine / unchanged).
+func parseAutoTitleOutput(raw string) (string, autoTitleAction, bool) {
 	line := ""
 	for _, l := range strings.Split(raw, "\n") {
 		s := strings.TrimSpace(l)
@@ -360,7 +574,23 @@ func parseAutoTitleOutput(raw string) (string, bool, bool) {
 		break
 	}
 	if line == "" {
-		return "", false, false
+		return "", autoTitleShift, false
+	}
+	action := autoTitleShift
+	for _, p := range []string{"REFINE:", "REFINE：", "refine:", "refine："} {
+		if strings.HasPrefix(line, p) {
+			action = autoTitleRefine
+			line = strings.TrimSpace(strings.TrimPrefix(line, p))
+			break
+		}
+	}
+	if action == autoTitleShift {
+		for _, p := range []string{"SHIFT:", "SHIFT：", "shift:", "shift："} {
+			if strings.HasPrefix(line, p) {
+				line = strings.TrimSpace(strings.TrimPrefix(line, p))
+				break
+			}
+		}
 	}
 	// Strip common bullet / prefix / quote wrappers.
 	for _, prefix := range []string{"标题：", "标题:", "Title:", "title:", "- ", "* "} {
@@ -373,24 +603,28 @@ func parseAutoTitleOutput(raw string) (string, bool, bool) {
 	line = strings.Trim(line, "\"'`“”‘’《》【】「」")
 	line = strings.TrimSpace(line)
 	if line == "" {
-		return "", false, false
+		return "", autoTitleShift, false
 	}
 	upper := strings.ToUpper(line)
-	if upper == "UNCHANGED" || strings.HasPrefix(upper, "UNCHANGED ") || strings.HasPrefix(upper, "UNCHANGED(") {
-		return "", true, true
+	if upper == "UNCHANGED" || strings.HasPrefix(upper, "UNCHANGED ") || strings.HasPrefix(upper, "UNCHANGED(") ||
+		upper == "KEEP" || strings.HasPrefix(upper, "KEEP ") || strings.HasPrefix(upper, "KEEP(") {
+		return "", autoTitleUnchanged, true
 	}
 	if strings.Contains(line, "__PROVIDER_UNAVAILABLE__") ||
-		strings.HasPrefix(strings.ToLower(line), "error:") {
-		return "", false, false
+		strings.HasPrefix(strings.ToLower(line), "error:") ||
+		strings.HasPrefix(line, "我先") ||
+		strings.HasPrefix(line, "我将") ||
+		strings.Contains(line, "计划文件") {
+		return "", autoTitleShift, false
 	}
 	runes := []rune(line)
 	if len(runes) < 2 {
-		return "", false, false
+		return "", autoTitleShift, false
 	}
 	if len(runes) > autoTitleMaxRunes {
 		line = strings.TrimSpace(string(runes[:autoTitleMaxRunes]))
 	}
-	return line, false, true
+	return line, action, true
 }
 
 // runAutoTitleFunc is injectable for tests; production routes through
@@ -402,7 +636,11 @@ func runAutoTitleCLI(ctx context.Context, promptInput string) (output string, pr
 	if _, statErr := os.Stat(script); statErr != nil {
 		return "", "", fmt.Errorf("autotitle script missing: %w", statErr)
 	}
-	cmd := exec.CommandContext(ctx, "bash", script)
+	args := []string{script}
+	if cfg := loadAutoTitleConfig(); cfg.Provider != "" {
+		args = append(args, "--provider", cfg.Provider)
+	}
+	cmd := exec.CommandContext(ctx, "bash", args...)
 	cmd.Stdin = strings.NewReader(promptInput)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Cancel = func() error {
@@ -558,7 +796,7 @@ func (a *autoTitler) runCandidate(parent context.Context, c autoTitleCandidate) 
 		return
 	}
 
-	title, unchanged, valid := parseAutoTitleOutput(raw)
+	title, action, valid := parseAutoTitleOutput(raw)
 	if !valid {
 		a.recordFailure(c.id)
 		relayLogf("session_title_auto", "session_id=%s agent=%s provider=%s trigger=%s outcome=invalid latency_ms=%d",
@@ -567,34 +805,38 @@ func (a *autoTitler) runCandidate(parent context.Context, c autoTitleCandidate) 
 	}
 	a.clearFailure(c.id)
 
-	if unchanged {
+	if action == autoTitleUnchanged {
 		kept := c.prev.Title
 		if kept == "" {
 			kept = c.currentTitle
 		}
-		_ = saveAutoTitleEntry(c.id, autoTitleEntry{
+		_ = saveAutoTitleEntryWithAction(c.id, autoTitleEntry{
 			Title:      kept,
 			Agent:      c.agent,
 			UpdatedAt:  a.now().UnixMilli(),
 			UserTurns:  c.ctx.substantiveUsers,
 			LastDigest: c.ctx.digest,
 			Provider:   provider,
-		})
+		}, autoTitleUnchanged)
 		relayLogf("session_title_auto", "session_id=%s agent=%s provider=%s trigger=%s outcome=unchanged latency_ms=%d",
 			c.id, c.agent, provider, c.trigger, elapsed)
 		return
 	}
 
-	_ = saveAutoTitleEntry(c.id, autoTitleEntry{
+	_ = saveAutoTitleEntryWithAction(c.id, autoTitleEntry{
 		Title:      title,
 		Agent:      c.agent,
 		UpdatedAt:  a.now().UnixMilli(),
 		UserTurns:  c.ctx.substantiveUsers,
 		LastDigest: c.ctx.digest,
 		Provider:   provider,
-	})
-	relayLogf("session_title_auto", "session_id=%s agent=%s provider=%s trigger=%s outcome=updated len=%d latency_ms=%d",
-		c.id, c.agent, provider, c.trigger, len([]rune(title)), elapsed)
+	}, action)
+	outcome := "updated"
+	if action == autoTitleRefine {
+		outcome = "refined"
+	}
+	relayLogf("session_title_auto", "session_id=%s agent=%s provider=%s trigger=%s outcome=%s len=%d latency_ms=%d",
+		c.id, c.agent, provider, c.trigger, outcome, len([]rune(title)), elapsed)
 }
 
 func autoTitleInterval() time.Duration {
@@ -607,13 +849,11 @@ func autoTitleInterval() time.Duration {
 }
 
 func startAutoTitler(ctx context.Context) {
-	if strings.TrimSpace(os.Getenv("WEZDECK_AUTOTITLE")) == "0" {
-		relayLogf("session_title_auto", "outcome=disabled")
-		return
-	}
 	titler := newAutoTitler()
-	interval := autoTitleInterval()
-	relayLogf("session_title_auto", "outcome=started interval_s=%d", int(interval.Seconds()))
+	setActiveTitler(titler)
+	cfg := loadAutoTitleConfig()
+	relayLogf("session_title_auto", "outcome=started enabled=%t provider=%q interval_s=%d",
+		cfg.Enabled, cfg.Provider, cfg.IntervalS)
 
 	// Initial short delay so relay startup / websocket connect finishes first.
 	timer := time.NewTimer(5 * time.Second)
@@ -623,10 +863,17 @@ func startAutoTitler(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			if entries, err := liveSessions(); err == nil && len(entries) > 0 {
-				titler.sweep(ctx, entries)
+			cfg = loadAutoTitleConfig()
+			if cfg.Enabled {
+				if entries, err := liveSessions(); err == nil && len(entries) > 0 {
+					titler.sweep(ctx, entries)
+				}
 			}
-			timer.Reset(interval)
+			next := time.Duration(cfg.IntervalS) * time.Second
+			if next < 10*time.Second {
+				next = autoTitleDefaultInterval
+			}
+			timer.Reset(next)
 		}
 	}
 }

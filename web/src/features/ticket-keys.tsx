@@ -13,6 +13,12 @@ import type { LedTone } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
+import {
+  readDraft,
+  ticketDraftKey,
+  useDraftRevision,
+  visibleDraft,
+} from '#/lib/use-draft'
 import { cn } from '#/lib/utils'
 import { ticketTone } from './console-collab'
 import { RowCopyButton, useCopyTicketReference } from './copy-reference'
@@ -49,6 +55,7 @@ export function TicketKeys({
 }) {
   const { t } = useLingui()
   const [showOlder, setShowOlder] = useState(false)
+  useDraftRevision()
   if (tickets.length === 0 && older.length === 0) {
     return (
       <p className="px-4 py-12 text-center text-caption text-brand-muted">
@@ -129,6 +136,9 @@ function TicketKey({
   const statusLabel = useStatusLabel()
   const tone = ticketTone(ticket)
   const copyReference = useCopyTicketReference()
+  const hasDraft = Boolean(
+    visibleDraft(ticket.id, selected, readDraft(ticketDraftKey(ticket.id))),
+  )
   const warm = () => prefetchTicket(client, ticket.id)
   const copy = () => copyReference(ticket.id)
   return (
@@ -182,6 +192,14 @@ function TicketKey({
                 {ago(ticket.updated_at)}
               </span>
               <span className="col-start-2 col-end-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                {hasDraft ? (
+                  <span
+                    data-testid="ticket-draft"
+                    className="inline-flex shrink-0 items-center rounded bg-brand-waiting/15 px-1.5 py-0.5 text-meta leading-none font-semibold text-brand-waiting"
+                  >
+                    {t`Draft`}
+                  </span>
+                ) : null}
                 <span className={cn('text-meta font-medium', toneText[tone])}>
                   {statusLabel(ticket)}
                 </span>

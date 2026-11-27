@@ -264,7 +264,7 @@ function NewSessionComposer({
           variant="solid"
           type="submit"
           disabled={!ready || sending}
-          className="min-h-11 gap-1.5 px-4 text-body disabled:opacity-40"
+          className="inline-flex min-h-11 items-center justify-center gap-1.5 px-4 text-body whitespace-nowrap disabled:opacity-40"
         >
           <SendHorizontal size={16} aria-hidden />
           {t`Create session`}

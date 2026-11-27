@@ -79,33 +79,48 @@ function useSections() {
     label: string
     icon: ReactNode
     local?: boolean
+    footer?: boolean
   }> = [
     {
       id: 'sessions',
       label: t({ message: 'Sessions', context: 'nav' }),
-      icon: <MessagesSquare size={16} aria-hidden />,
+      icon: <MessagesSquare size={20} aria-hidden />,
     },
     {
       id: 'collab',
       label: t`Tickets`,
-      icon: <GitPullRequestArrow size={16} aria-hidden />,
+      icon: <GitPullRequestArrow size={20} aria-hidden />,
     },
     {
       id: 'activity',
       label: t`Ticket activity`,
-      icon: <ListTree size={16} aria-hidden />,
+      icon: <ListTree size={20} aria-hidden />,
     },
     {
       id: 'diagnostics',
       label: t`Diagnostics`,
-      icon: <Activity size={16} aria-hidden />,
+      icon: <Activity size={20} aria-hidden />,
       local: true,
+      footer: true,
     },
-    { id: 'me', label: t`Settings`, icon: <UserRound size={16} aria-hidden /> },
+    {
+      id: 'me',
+      label: t`Settings`,
+      icon: <UserRound size={20} aria-hidden />,
+      footer: true,
+    },
   ]
+  // Desktop narrow Telegram-style rail mirrors mobile IA: 会话 / 工单 on top,
+  // 诊断 (local) / 我的 anchored at the bottom. 工单动态 lives in the Tickets
+  // top bar on both phone and desktop (g a still jumps straight to it).
+  const rail = all.filter(
+    (item) => item.id !== 'activity' && (mode === 'local' || !item.local),
+  )
   return {
     mode,
-    sidebar: all.filter((item) => mode === 'local' || !item.local),
+    all,
+    railPrimary: rail.filter((item) => !item.footer),
+    railFooter: rail.filter((item) => item.footer),
     // phone tabs, in this order: 会话 is the home
     tabs: (['sessions', 'collab', 'me'] as const).map((id) =>
       all.find((item) => item.id === id)!,
@@ -167,6 +182,71 @@ function useShellAutoSync(location: string) {
   return { health, sessions }
 }
 
+type RailItem = {
+  id: Section
+  label: string
+  icon: ReactNode
+  local?: boolean
+  footer?: boolean
+}
+
+function RailLink({
+  item,
+  current,
+  localeParam,
+  badge,
+  onSelect,
+}: {
+  item: RailItem
+  current: Section
+  localeParam: 'zh' | undefined
+  badge?: number
+  onSelect: (item: RailItem, active: boolean) => void
+}) {
+  const active =
+    current === item.id ||
+    (item.id === 'collab' && (current === 'activity' || current === 'inbox'))
+  const jump = Object.entries(JUMP_KEYS).find(
+    ([, section]) => section === item.id,
+  )?.[0]
+  return (
+    <Link
+      to={SECTION_PATH[item.id]}
+      params={{ locale: localeParam }}
+      aria-current={active ? 'page' : undefined}
+      title={jump ? `${item.label} (g ${jump})` : item.label}
+      onClick={(event) => {
+        // a modified click still opens a new tab / window
+        if (
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.button !== 0
+        )
+          return
+        event.preventDefault()
+        onSelect(item, active)
+      }}
+      className={cn(
+        'relative flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
+        active
+          ? 'bg-brand-running/12 font-semibold text-brand-running'
+          : 'text-brand-muted hover:bg-brand-soft hover:text-brand-text',
+      )}
+    >
+      <span className="shrink-0">{item.icon}</span>
+      <span className="max-w-full truncate text-meta leading-tight">
+        {item.label}
+      </span>
+      {badge ? (
+        <span className="absolute top-0.5 right-1">
+          <CountBadge value={badge} />
+        </span>
+      ) : null}
+    </Link>
+  )
+}
+
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -179,7 +259,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const client = useQueryClient()
   const current = sectionOf(location)
   const localeParam = locale === 'en' ? undefined : locale
-  const { mode, sidebar, tabs } = useSections()
+  const { mode, all, railPrimary, railFooter, tabs } = useSections()
   const { health, sessions } = useShellAutoSync(location)
   // ticket / session detail pages bring their own back bar instead of a title
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
@@ -189,10 +269,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const chat = /\/console\/sessions\/[^/]+$/.test(location)
   // ticket detail pins its own sticky header flush against the top edge
   const ticketDetail = /\/console\/(collab|inbox)\/[^/]+$/.test(location)
-  // 会话 and 工单 lists share a Telegram-style full-bleed rail + compact sticky bar
-  const flatIndex =
-    (current === 'sessions' || current === 'collab' || current === 'inbox') &&
-    !detail
+  // Every index / list view shares the Telegram-style full-bleed surface + compact sticky bar
+  const flatIndex = !detail && !subPage
   const badges: Partial<Record<Section, number>> = {
     collab: health.data?.waiting_human ?? 0,
     sessions: unreadChatCount(sessions.data?.sessions ?? []),
@@ -216,10 +294,12 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   )
   useJumpKeys(go)
   useWarmSections(
-    [...sidebar, ...tabs].map((item) => item.id),
+    all
+      .filter((item) => mode === 'local' || !item.local)
+      .map((item) => item.id),
     localeParam,
   )
-  const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
+  const title = all.find((item) => item.id === current)?.label
   const remoteMode = useRemoteMode()
   // Start the remote link (adopts a #pair= token) on every console page, not
   // only when a collab read happens: settings and sessions need it too.
@@ -227,6 +307,19 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
     installClientTrace()
     return remoteLink.start()
   }, [])
+  const onRailSelect = useCallback(
+    (item: RailItem, active: boolean) => {
+      if (!active) go(item.id)
+      // clicking 会话 while on it: re-read the held order
+      else if (item.id === 'sessions') {
+        resetSessionOrder()
+        void client.invalidateQueries({ queryKey: ['remote'] })
+      } else if (item.id === 'collab' && current !== 'collab') {
+        go('collab')
+      }
+    },
+    [client, current, go],
+  )
   return (
     <main
       data-deck
@@ -236,94 +329,59 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       // viewport, measured by host diagnostics) and the bottom tab bar sat
       // below the screen until restart. The fixed box follows the real layout
       // viewport, keyboard included (interactive-widget=resizes-content).
-      className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text md:grid-rows-[auto_minmax(0,1fr)]"
+      className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text"
     >
-      {/* top: status band (wide, local) / remote band (wide) / phone top bar */}
-      {/* one fixed height whatever fills it, so the swap never shifts the page */}
-      <div className="vt-band hidden h-9 overflow-hidden border-b border-brand-border bg-brand-surface md:block">
-        {mode === 'local' ? (
-          <StatusBand />
-        ) : mode === 'remote' ? (
-          <RemoteBand />
-        ) : null}
-      </div>
-      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*52)_minmax(0,1fr)] md:items-stretch">
-        <aside className="vt-sidebar hidden min-h-0 flex-col overflow-hidden border-r border-brand-edge bg-brand-deck md:flex">
+      <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*17)_minmax(0,1fr)] md:items-stretch">
+        <aside className="vt-sidebar hidden min-h-0 flex-col items-stretch overflow-hidden border-r border-brand-edge bg-brand-deck px-1.5 py-2 md:flex">
           {/* the brand is the way home (the landing page); language and
               theme live in 我的 › 外观, not in a second set of buttons here */}
           <Link
             to="/{-$locale}"
             params={{ locale: localeParam }}
-            className="m-1.5 flex items-center gap-2 rounded-xl px-2 py-2 outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
+            aria-label={t`WezDeck`}
+            title={
+              mode === 'local'
+                ? `${t`WezDeck`} · ${t`This computer`}`
+                : mode === 'remote'
+                  ? `${t`WezDeck`} · ${t`Remote`}`
+                  : t`WezDeck`
+            }
+            className="mb-2 flex size-11 shrink-0 items-center justify-center self-center rounded-xl outline-none transition-colors hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
           >
             <img src="/brand-icon.svg" alt="" width="28" height="28" />
-            <div>
-              <p className="text-body font-semibold">{t`WezDeck`}</p>
-              <p className="text-meta text-brand-muted">
-                {mode === 'local'
-                  ? t`This computer`
-                  : mode === 'remote'
-                    ? t`Remote`
-                    : ''}
-              </p>
-            </div>
           </Link>
-          <nav className="min-h-0 flex-1" aria-label={t`Console navigation`}>
+          <nav
+            className="flex min-h-0 flex-1 flex-col"
+            aria-label={t`Console navigation`}
+          >
             <OverlayScroll>
-              <div className="grid content-start gap-1.5 px-2.5 py-1">
-                {sidebar.map((item) => {
-                  const active = current === item.id
-                  const jump = Object.entries(JUMP_KEYS).find(
-                    ([, section]) => section === item.id,
-                  )?.[0]
-                  return (
-                    <Link
-                      key={item.id}
-                      to={SECTION_PATH[item.id]}
-                      params={{ locale: localeParam }}
-                      aria-current={active ? 'page' : undefined}
-                      onClick={(event) => {
-                        // a modified click still opens a new tab / window
-                        if (
-                          event.metaKey ||
-                          event.ctrlKey ||
-                          event.shiftKey ||
-                          event.button !== 0
-                        )
-                          return
-                        event.preventDefault()
-                        if (!active) go(item.id)
-                        // clicking 会话 while on it: re-read the held order
-                        else if (item.id === 'sessions') {
-                          resetSessionOrder()
-                          void client.invalidateQueries({
-                            queryKey: ['remote'],
-                          })
-                        }
-                      }}
-                      className={cn(
-                        'flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-                        active
-                          ? 'bg-brand-surface font-semibold text-brand-text'
-                          : 'text-brand-muted hover:bg-brand-soft',
-                      )}
-                    >
-                      <span>{item.icon}</span>
-                      <span className="flex-1">{item.label}</span>
-                      {badges[item.id] ? (
-                        <CountBadge value={badges[item.id]!} />
-                      ) : jump ? (
-                        <kbd className="text-meta text-brand-label">
-                          g {jump}
-                        </kbd>
-                      ) : null}
-                    </Link>
-                  )
-                })}
+              <div className="grid content-start gap-1">
+                {railPrimary.map((item) => (
+                  <RailLink
+                    key={item.id}
+                    item={item}
+                    current={current}
+                    localeParam={localeParam}
+                    badge={badges[item.id]}
+                    onSelect={onRailSelect}
+                  />
+                ))}
               </div>
             </OverlayScroll>
+            <div className="mt-auto grid gap-1 border-t border-brand-edge pt-2">
+              {railFooter.map((item) => (
+                <RailLink
+                  key={item.id}
+                  item={item}
+                  current={current}
+                  localeParam={localeParam}
+                  badge={badges[item.id]}
+                  onSelect={onRailSelect}
+                />
+              ))}
+              <KeysEntry />
+            </div>
           </nav>
-          <KeysEntry />
         </aside>
         <div
           ref={scroller}
@@ -363,6 +421,14 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      {/* bottom: mobile tab bar (<768px) or slim desktop terminal status bar (≥768px) */}
+      <div className="vt-band hidden h-7 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">
+        {mode === 'local' ? (
+          <StatusBand />
+        ) : mode === 'remote' ? (
+          <RemoteBand />
+        ) : null}
+      </div>
       <nav
         aria-label={t`Sections`}
         className={cn(
@@ -372,7 +438,11 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
         )}
       >
         {tabs.map((item) => {
-          const active = current === item.id
+          const active =
+            current === item.id ||
+            (item.id === 'collab' &&
+              (current === 'activity' || current === 'inbox')) ||
+            (item.id === 'me' && current === 'diagnostics')
           return (
             <Link
               key={item.id}
@@ -382,8 +452,8 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
               aria-current={active ? 'page' : undefined}
               onClick={(event) => {
                 event.preventDefault()
-                // a pushed page of this tab (我的 › 连接): back to its index
-                if (!active || subPage) {
+                // a pushed page of this tab (我的 › 连接, 工单 › 动态): back to its index
+                if (!active || subPage || current !== item.id) {
                   go(item.id)
                   return
                 }
@@ -397,14 +467,16 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
                 void client.invalidateQueries({ queryKey: ['remote'] })
               }}
               className={cn(
-                'relative flex min-h-12 flex-col items-center justify-center gap-0.5 text-meta',
-                active ? 'font-semibold text-brand-text' : 'text-brand-label',
+                'relative flex min-h-12 flex-col items-center justify-center gap-0.5 text-meta transition-colors',
+                active
+                  ? 'font-semibold text-brand-running'
+                  : 'text-brand-label',
               )}
             >
-              <span className="[&>svg]:size-6">{item.icon}</span>
+              <span className="[&>svg]:size-5.5">{item.icon}</span>
               <span>{item.label}</span>
               {badges[item.id] ? (
-                <span className="absolute top-0.5 left-[calc(50%+4px)]">
+                <span className="absolute top-0.5 left-[calc(50%+6px)]">
                   <CountBadge value={badges[item.id]!} />
                 </span>
               ) : null}

@@ -185,7 +185,7 @@ function JobProgressCard({
             variant="solid"
             onClick={onTrust}
             disabled={trusting}
-            className="min-h-11 justify-self-start gap-2 px-3"
+            className="inline-flex min-h-11 items-center justify-center justify-self-start gap-2 px-3 whitespace-nowrap"
             data-testid="agy-trust-worktree"
           >
             <ShieldCheck size={16} aria-hidden />
@@ -209,7 +209,7 @@ function JobProgressCard({
               disabled={retrying}
               onClick={onRetry}
               data-testid="new-session-retry"
-              className="min-h-11 gap-1.5 px-3"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 whitespace-nowrap"
             >
               <RotateCcw size={15} aria-hidden />
               {t`Retry`}

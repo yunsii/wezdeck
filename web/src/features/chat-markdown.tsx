@@ -5,6 +5,8 @@
 import { Streamdown, defaultRehypePlugins } from 'streamdown'
 import type { Components, StreamdownProps } from 'streamdown'
 
+import { cn } from '#/lib/utils'
+
 const hardenEntry = defaultRehypePlugins.harden as [
   unknown,
   Record<string, unknown>,
@@ -76,7 +78,7 @@ const components: Components = {
       </code>
     ),
   pre: ({ children }) => (
-    <pre className="my-2 overflow-x-auto rounded-xl bg-brand-deck p-2.5 font-mono text-meta leading-snug">
+    <pre className="my-2 overflow-x-auto rounded-xl border border-brand-edge bg-brand-deck p-2.5 font-mono text-meta leading-snug">
       {children}
     </pre>
   ),
@@ -122,12 +124,14 @@ const reveal = {
 export function ChatMarkdown({
   text,
   streaming = false,
+  className,
 }: {
   text: string
   streaming?: boolean
+  className?: string
 }) {
   return (
-    <div className="text-body leading-relaxed break-words">
+    <div className={cn('text-body leading-relaxed break-words', className)}>
       <Streamdown
         components={components}
         rehypePlugins={rehypePlugins}

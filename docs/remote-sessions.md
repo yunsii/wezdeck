@@ -30,10 +30,21 @@ non-harness user turns plus the latest assistant reply snippet, and calls
 `scripts/runtime/session-autotitle.sh` (which routes single-shot host CLI
 invocation through `skills/adversarial-review/lib/provider.sh`, defaulting to
 `grok` → `claude` → `codex`, overridable via `WEZDECK_AUTOTITLE_PROVIDER`).
-The prompt asks for `UNCHANGED` when the topic has not shifted; otherwise it
-writes a concise title to `~/.local/state/wezdeck/session-titles.json` (0600,
-atomic rename, 30-day prune). Precedence: explicit manual `/rename` (Claude
-`custom-title` or locked web `/rename`) > auto-title > agent native title.
+The prompt asks for `UNCHANGED` when the topic has not shifted, `REFINE: <title>`
+when polishing the current task's wording, or a new title (`SHIFT: <title>` or
+plain line) when the conversation moved on; otherwise it writes the title and a
+capped chronological `history[]` (up to 50 entries, recording `title`, `at`,
+`ended_at`, `user_turns`, `source`, `provider`, with bigram-similarity and
+short-window refinement dedup so minor rewordings update the latest task in
+place instead of adding noise) to `~/.local/state/wezdeck/session-titles.json`
+(0600, atomic rename, 30-day prune). Runtime settings (enabled, provider, scan
+interval) persist in `~/.local/state/wezdeck/autotitle-config.json` and are
+managed from `我的 › 自动标题` (`/console/me/autotitle`, backed by
+`session.autotitle.status` and signed `session.autotitle.update`). Precedence:
+explicit manual `/rename` (Claude `custom-title` or locked web `/rename`, which
+also appends a `manual` history item) > auto-title > agent native title;
+`会话信息` reports `title_source` and surfaces the session's task timeline
+(`title_history`, also expandable per session under `我的 › 自动标题`).
 Triggering is debounced (first substantive turn runs immediately; subsequent
 updates require a settled turn, ≥90 s cooldown, and either ≥2 new substantive
 turns or ≥4 min since the last update, ignoring trivial acks like "可以" /

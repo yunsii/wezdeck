@@ -143,7 +143,9 @@ describe.runIf(attention && devicesFile && stack)(
       await prompt.fill('从手机开的新会话')
       if ((page.viewportSize()?.width ?? 0) < 768) await checkMobilePicker(page)
       expect(await view.getByTestId('new-session-group-name').count()).toBe(0)
-      await view.getByRole('button', { name: '创建会话' }).click()
+      const createButton = view.getByRole('button', { name: '创建会话' })
+      await assertIconInline(createButton)
+      await createButton.click()
       await page.waitForURL(/\/console\/sessions\/job-/, { timeout: 10_000 })
       const jobView = page.getByTestId('new-session-job-view')
       await jobView.getByTestId('new-session-first-prompt').waitFor()
@@ -266,6 +268,21 @@ describe.runIf(attention && devicesFile && stack)(
     }, 90_000)
   },
 )
+
+async function assertIconInline(button: ReturnType<Page['getByRole']>) {
+  // icon and label must sit on one horizontal line (variant="solid" is skin-only)
+  const sameLine = await button.evaluate((el) => {
+    const svg = el.querySelector('svg')
+    if (!svg) return false
+    const br = el.getBoundingClientRect()
+    const sr = svg.getBoundingClientRect()
+    return (
+      br.height <= 48 &&
+      Math.abs(sr.top + sr.height / 2 - (br.top + br.height / 2)) <= 3
+    )
+  })
+  expect(sameLine).toBe(true)
+}
 
 function initTestRepo(repo: string) {
   execFileSync('git', ['init', '-q', repo])
