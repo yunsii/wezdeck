@@ -40,7 +40,7 @@ func sessionMeta(e attentionEntry, path, agent string, t *transcript) []metaGrou
 	session := metaGroup{Name: "session"}
 	session.add("id", e.SessionID)
 	session.add("agent", agent)
-	session.add("title", readSessionTitle(path, agent))
+	session.add("title", resolveSessionTitle(e.SessionID, path, agent))
 	session.add("agent_name", e.AgentName)
 	session.add("window", e.WindowName)
 	model, effort := "", ""

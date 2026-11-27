@@ -156,6 +156,8 @@ _provider_mock() {
       printf '%s' "$tail_json" | jq -c '{ideas:map(. + {score:7,verdict:"maybe",judge_note:"mock judgement"}),synthesis:"mock synthesis",key_tradeoffs:["mock tradeoff A vs B"]}' 2>/dev/null || printf '%s' '{"ideas":[],"synthesis":"","key_tradeoffs":[]}' ;;
     repro.md)
       printf '%s\n' '```bash' 'exit 99' '```' ;;
+    session-autotitle-prompt.md)
+      printf '%s\n' 'Mock auto session title' ;;
     *)
       printf '%s' '[]' ;;
   esac

@@ -78,6 +78,11 @@ func sendToSession(args json.RawMessage) (any, error) {
 	if err := pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text); err != nil {
 		return nil, err
 	}
+	if renamed, ok := strings.CutPrefix(strings.TrimSpace(a.Text), "/rename "); ok {
+		if renamed = strings.TrimSpace(renamed); renamed != "" {
+			lockSessionTitle(a.ID, e.AgentName, renamed)
+		}
+	}
 	_ = tmuxCmd(e.TmuxSocket, "display-message", "-d", "4000", "-t", e.TmuxPane, "网页端发来一条消息").Run()
 	return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text))}, nil
 }
