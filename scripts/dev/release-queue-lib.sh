@@ -184,9 +184,14 @@ release_live_canary() {
   fi
   # /relay/health is authenticated before DO lookup: 200 with a valid client
   # token, 401 without one (never 404/5xx).
-  relay_token="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
-  if [[ -z "$relay_token" && -f "$HOME/.config/shell-env.d/wezdeck-remote.env" ]]; then
+  # Prefer the on-disk env file over inherited shell env: long-lived agent
+  # shells can still carry a pre-rotation WEZDECK_RELAY_CLIENT_TOKEN.
+  relay_token=''
+  if [[ -f "$HOME/.config/shell-env.d/wezdeck-remote.env" ]]; then
     relay_token="$(sed -n 's/^WEZDECK_RELAY_CLIENT_TOKEN=//p' "$HOME/.config/shell-env.d/wezdeck-remote.env" | tail -1)"
+  fi
+  if [[ -z "$relay_token" ]]; then
+    relay_token="${WEZDECK_RELAY_CLIENT_TOKEN:-${RELAY_CLIENT_TOKEN:-}}"
   fi
   if [[ -n "$relay_token" ]]; then
     relay_code="$(curl -sS -m 8 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $relay_token" "$site/relay/health" 2>/dev/null || echo 000)"
