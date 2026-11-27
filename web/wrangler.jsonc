@@ -10,13 +10,14 @@
   "routes": [{ "pattern": "wezdeck.yuns.love", "custom_domain": true }],
   "workers_dev": false,
   // HostRelay lives in its own standalone Worker (`wezdeck-relay-do`,
-  // wrangler.relay.jsonc) so routine frontend deploys never recycle the DO
-  // or drop active WebSocket/WebRTC sessions. docs/remote-access.md
+  // wrangler.relay.jsonc) under class `HostRelayDO` so routine frontend deploys
+  // never recycle the DO and v2 `deleted_classes: ["HostRelay"]` does not
+  // collide with the cross-script binding (Cloudflare error 10061).
   "durable_objects": {
     "bindings": [
       {
         "name": "HOST_RELAY",
-        "class_name": "HostRelay",
+        "class_name": "HostRelayDO",
         "script_name": "wezdeck-relay-do",
       },
     ],
