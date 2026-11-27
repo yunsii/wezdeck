@@ -12,7 +12,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr "，"
 
-#: src/features/chat-thread.tsx:496
+#: src/features/chat-thread.tsx:497
 msgid "· summary"
 msgstr "· 摘要"
 
@@ -1143,11 +1143,11 @@ msgstr "上下文"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "上下文 {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:480
+#: src/features/chat-thread.tsx:481
 msgid "Context compacted (/compact)"
 msgstr "上下文已手动压缩"
 
-#: src/features/chat-thread.tsx:481
+#: src/features/chat-thread.tsx:482
 msgid "Context compacted automatically"
 msgstr "上下文已自动压缩"
 

@@ -117,7 +117,7 @@
 .chat-item {
   min-width: 0;
   content-visibility: auto;
-  contain-intrinsic-size: auto 120px;
+  contain-intrinsic-size: auto var(--chat-item-est, 120px);
 }
 
 /* A queued message the agent took: the faded bubble (opacity-55) becomes
