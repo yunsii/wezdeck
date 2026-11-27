@@ -579,3 +579,15 @@ server (`-f /dev/null`), two real Claude 2.1 fullscreen sessions resumed with
 The tmux switch is not the limit: both land within one or two 60 Hz frames.
 WezTerm paint and the jump dispatch (`attention.jump` 10–27 ms in `hotkey
 dispatched` rows) add on top.
+
+## Relay RPC hot path: `/mnt/c` glob trap (2026-11-27)
+
+Every `wezdeck-wsl relay` session RPC (`sessions`, `session`, `sent.list`, `ticket.targets`, `session.skills`, `send`) developed a **1.5–3.9 s** floor even though `attention.json` reads in 1.5 ms and `tmux list-panes -a` takes 3 ms. Profiling `liveSessionsFrom()` showed **1625 ms (95%)** came from calling `sessionWasClosed()` → `attentionFile()` (`filepath.Glob("/mnt/c/Users/*/AppData/...")` + `os.Stat`) 45 times per request over 9P/DrvFs, plus 24+ sequential `tmux display-message` forks. Fixed in `4bc61281`: cache the discovered `attentionFile()` path for 60 s (`WEZDECK_ATTENTION_FILE` bypasses), read `.closed-sessions` once via `os.ReadDir`, and batch tmux state via one `list-panes -a` + `list-clients` per socket.
+
+| Metric | Before | After (`4bc61281`) |
+| --- | --- | --- |
+| `liveSessionsFrom()` bench | 1363 ms | **86 ms** (16×) |
+| Live `sent.list` / `ticket.targets` / `session` | p50 1589–1627 ms | **65–120 ms** |
+| Live `sessions` | p50 1758 ms (max 3962) | **228–358 ms** |
+
+**Rule:** never run `filepath.Glob` or per-item `os.Stat` against `/mnt/c/*` inside a per-request or loop hot path in WSL Go/shell code — cache resolved DrvFs paths and read directory state in a single call.
