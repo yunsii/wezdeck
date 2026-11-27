@@ -220,6 +220,8 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.goBack()
     await page.waitForURL('**/console/sessions?remote=1')
     await expect.poll(scrollTop).toBe(0)
+    await page.waitForTimeout(1_100)
+    expect(await scrollTop()).toBe(0)
 
     await page.evaluate(() => {
       const el = document.querySelector('.vt-page')
@@ -241,9 +243,15 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.evaluate(() => {
       const el = document.querySelector<HTMLElement>('.vt-page')!
       el.scrollTop = el.scrollHeight
-      window.dispatchEvent(new Event('resize'))
     })
-    await expect.poll(scrollTop).toBe(80)
+    await page.waitForTimeout(100)
+    expect(await scrollTop()).toBe(80)
+    expect(
+      await page.evaluate(
+        () =>
+          getComputedStyle(document.querySelector('.vt-page')!).overflowAnchor,
+      ),
+    ).toBe('none')
 
     await page.evaluate(() => {
       const el = document.querySelector<HTMLElement>('.vt-page')!
@@ -253,6 +261,12 @@ describe.runIf(attention)('A session list that holds still', () => {
     })
     await page.waitForTimeout(100)
     expect(await scrollTop()).toBe(160)
+    expect(
+      await page.evaluate(
+        () =>
+          getComputedStyle(document.querySelector('.vt-page')!).overflowAnchor,
+      ),
+    ).toBe('auto')
     await context.close()
   }, 60_000)
 })

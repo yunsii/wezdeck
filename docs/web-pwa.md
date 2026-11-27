@@ -71,7 +71,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    phone the title opens the same grouped switcher sheet as `Alt+g` / `Alt+x`.
    Switching replaces the history entry, so back returns to
    the list. The shell restores its saved scroll offset after navigation and
-   keyboard-driven viewport changes; touch input stops the correction.
+   suppresses scroll anchoring during return; touch ends the correction.
    Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
    filter (`c` on a keyboard) is 新会话 — message first; location bar for
