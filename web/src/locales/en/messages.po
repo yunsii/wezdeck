@@ -291,7 +291,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:477
+#: src/features/tickets-view.tsx:479
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -310,6 +310,10 @@ msgstr "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 #: src/features/session-statusbar.tsx:108
 msgid "Accept edits"
 msgstr "Accept edits"
+
+#: src/features/console-keys.tsx:107
+msgid "Accept the top input suggestion"
+msgstr "Accept the top input suggestion"
 
 #: src/features/session-info.tsx:103
 msgid "Account limits"
@@ -595,7 +599,7 @@ msgstr "Assumptions"
 msgid "assumptions challenged"
 msgstr "assumptions challenged"
 
-#: src/features/console-keys.tsx:203
+#: src/features/console-keys.tsx:205
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
@@ -810,7 +814,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:261
 #: src/features/session-detail-notices.tsx:18
 #: src/features/session-detail-parts.tsx:67
 msgid "Can't get the latest from the host, showing {staleAt}:"
@@ -963,7 +967,7 @@ msgstr "Close"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "Close a sheet, or let go of a focused button"
 
-#: src/features/console-keys.tsx:127
+#: src/features/console-keys.tsx:129
 msgid "Close the viewer"
 msgstr "Close the viewer"
 
@@ -1159,7 +1163,7 @@ msgstr "context usage"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:54
+#: src/features/session-composer.tsx:55
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:186
@@ -1199,7 +1203,7 @@ msgstr "Copied: {shown}"
 #: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:54
+#: src/features/session-composer.tsx:55
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1219,7 +1223,7 @@ msgstr "Copy command"
 msgid "Copy document"
 msgstr "Copy document"
 
-#: src/features/session-composer.tsx:46
+#: src/features/session-composer.tsx:47
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1274,7 +1278,7 @@ msgstr "Copy session reference for an agent"
 msgid "Copy the open session's reference"
 msgstr "Copy the open session's reference"
 
-#: src/features/console-keys.tsx:119
+#: src/features/console-keys.tsx:121
 msgid "Copy the open ticket's reference"
 msgstr "Copy the open ticket's reference"
 
@@ -1380,8 +1384,8 @@ msgstr "Creation did not finish. Retry or edit your message above."
 
 #: src/features/collab-top-bar.tsx:34
 #: src/features/tickets-view.tsx:403
-msgid "Cross-repo collab"
-msgstr "Cross-repo collab"
+#~ msgid "Cross-repo collab"
+#~ msgstr "Cross-repo collab"
 
 #: src/features/session-elicitation.tsx:203
 #: src/features/session-elicitation.tsx:297
@@ -1895,7 +1899,7 @@ msgstr "Handoff brief"
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:478
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1967,7 +1971,7 @@ msgstr "Image"
 msgid "Image preview"
 msgstr "Image preview"
 
-#: src/features/console-keys.tsx:124
+#: src/features/console-keys.tsx:126
 msgid "Image viewer"
 msgstr "Image viewer"
 
@@ -2018,7 +2022,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:477
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -2111,9 +2115,9 @@ msgstr "just restarted"
 msgid "Keep planning"
 msgstr "Keep planning"
 
-#: src/features/console-keys.tsx:221
-#: src/features/console-keys.tsx:280
-#: src/features/console-keys.tsx:281
+#: src/features/console-keys.tsx:223
+#: src/features/console-keys.tsx:282
+#: src/features/console-keys.tsx:283
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
@@ -2183,7 +2187,7 @@ msgstr "Leave blank to keep current key"
 msgid "letter"
 msgstr "letter"
 
-#: src/features/console-keys.tsx:227
+#: src/features/console-keys.tsx:229
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 
@@ -2377,12 +2381,16 @@ msgstr "Max context"
 msgid "May stop to ask you:"
 msgstr "May stop to ask you:"
 
+#: src/features/console-keys.tsx:108
+msgid "Mention an open repo ticket"
+msgstr "Mention an open repo ticket"
+
 #: src/features/ticket-pipeline.tsx:331
 #: src/features/ticket-timeline.tsx:152
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/session-composer.tsx:176
+#: src/features/session-composer.tsx:178
 msgid "Message"
 msgstr "Message"
 
@@ -2396,7 +2404,7 @@ msgstr "Message actions"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
-#: src/features/session-composer.tsx:175
+#: src/features/session-composer.tsx:177
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2492,7 +2500,7 @@ msgstr "New conversation"
 msgid "New conversation (/new)"
 msgstr "New conversation (/new)"
 
-#: src/features/console-keys.tsx:108
+#: src/features/console-keys.tsx:110
 msgid "New line"
 msgstr "New line"
 
@@ -2531,7 +2539,7 @@ msgstr "New session in this group"
 msgid "New session title"
 msgstr "New session title"
 
-#: src/features/console-keys.tsx:120
+#: src/features/console-keys.tsx:122
 #: src/features/ticket-new.tsx:64
 #: src/features/ticket-quick-form.tsx:377
 msgid "New ticket"
@@ -2561,7 +2569,7 @@ msgstr "Next / previous running session"
 msgid "Next / previous session in the list"
 msgstr "Next / previous session in the list"
 
-#: src/features/console-keys.tsx:118
+#: src/features/console-keys.tsx:120
 msgid "Next / previous ticket"
 msgstr "Next / previous ticket"
 
@@ -2778,7 +2786,7 @@ msgstr "Note"
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
-#: src/features/tickets-view.tsx:540
+#: src/features/tickets-view.tsx:542
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -2912,7 +2920,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:256
+#: src/features/session-composer.tsx:283
 #: src/features/session-detail-notices.tsx:55
 #: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
@@ -3116,7 +3124,7 @@ msgstr "Prepare workstation"
 msgid "Preview {label}"
 msgstr "Preview {label}"
 
-#: src/features/console-keys.tsx:126
+#: src/features/console-keys.tsx:128
 msgid "Previous / next image"
 msgstr "Previous / next image"
 
@@ -3262,6 +3270,10 @@ msgstr "Recall the last sent message (when empty)"
 #: src/features/session-git.tsx:306
 msgid "Recent commits"
 msgstr "Recent commits"
+
+#: src/features/composer-suggest-list.tsx:97
+msgid "Recent sent messages"
+msgstr "Recent sent messages"
 
 #: src/features/session-worktree-lifecycle.tsx:64
 #: src/features/session-worktree-lifecycle.tsx:119
@@ -3424,6 +3436,7 @@ msgstr "Reply and continue"
 msgid "Repo filter"
 msgstr "Repo filter"
 
+#: src/features/composer-suggest-list.tsx:39
 #: src/features/session-header.tsx:296
 #: src/features/session-tickets.tsx:218
 msgid "Repo tickets"
@@ -3706,8 +3719,8 @@ msgstr "Running substate"
 msgid "Runs"
 msgstr "Runs"
 
-#: src/features/collab-top-bar.tsx:82
 #: src/features/collab-top-bar.tsx:83
+#: src/features/collab-top-bar.tsx:84
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
@@ -3715,10 +3728,10 @@ msgstr "Runs and cost"
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 
-#: src/features/collab-top-bar.tsx:44
 #: src/features/collab-top-bar.tsx:45
-#: src/features/collab-top-bar.tsx:65
-#: src/features/collab-top-bar.tsx:102
+#: src/features/collab-top-bar.tsx:46
+#: src/features/collab-top-bar.tsx:66
+#: src/features/collab-top-bar.tsx:103
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
@@ -3754,7 +3767,7 @@ msgstr "Same as Ctrl+X in the Alt+/ picker"
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "Same as Enter in the Alt+/ picker (key: o)"
 
-#: src/features/console-keys.tsx:198
+#: src/features/console-keys.tsx:200
 msgid "Same at the desk"
 msgstr "Same at the desk"
 
@@ -3853,14 +3866,14 @@ msgstr "seen"
 msgid "Select a target repository first."
 msgstr "Select a target repository first."
 
-#: src/features/console-keys.tsx:107
+#: src/features/console-keys.tsx:109
 #: src/features/message-composer.tsx:340
 #: src/features/message-composer.tsx:342
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "Send"
 
-#: src/features/console-keys.tsx:111
+#: src/features/console-keys.tsx:113
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "Send (also on a touch screen, where Enter is a new line)"
 
@@ -4018,7 +4031,7 @@ msgstr "Shared"
 msgid "shipped"
 msgstr "shipped"
 
-#: src/features/console-keys.tsx:286
+#: src/features/console-keys.tsx:288
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
@@ -4103,7 +4116,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:267
 #: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
@@ -4495,7 +4508,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:235
+#: src/features/session-composer.tsx:262
 #: src/features/session-detail-notices.tsx:19
 #: src/features/session-detail-parts.tsx:68
 msgid "this device is offline"
@@ -4559,10 +4572,10 @@ msgstr "Ticket {ticketId} created"
 msgid "Ticket {ticketId} created (AI structuring in background)"
 msgstr "Ticket {ticketId} created (AI structuring in background)"
 
-#: src/features/collab-top-bar.tsx:54
 #: src/features/collab-top-bar.tsx:55
-#: src/features/collab-top-bar.tsx:92
+#: src/features/collab-top-bar.tsx:56
 #: src/features/collab-top-bar.tsx:93
+#: src/features/collab-top-bar.tsx:94
 #: src/features/console-activity.tsx:226
 #: src/features/console-shell.tsx:96
 msgid "Ticket activity"
@@ -4587,7 +4600,7 @@ msgstr "Ticket ID and headless run metrics"
 msgid "Ticket info"
 msgstr "Ticket info"
 
-#: src/features/console-keys.tsx:116
+#: src/features/console-keys.tsx:118
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
@@ -4604,6 +4617,12 @@ msgstr "Ticket waiting on you"
 #: src/features/console-collab.tsx:114
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
+msgid "Tickets"
+msgstr "Tickets"
+
+#: src/features/collab-top-bar.tsx:36
+#: src/features/tickets-view.tsx:405
+msgctxt "nav"
 msgid "Tickets"
 msgstr "Tickets"
 
@@ -4899,7 +4918,7 @@ msgstr "Verify"
 msgid "Version"
 msgstr "Version"
 
-#: src/features/tickets-view.tsx:526
+#: src/features/tickets-view.tsx:528
 msgid "via {handler}"
 msgstr "via {handler}"
 
@@ -4991,8 +5010,8 @@ msgstr "waiting on you"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:55
-#: src/features/tickets-view.tsx:403
-#: src/features/tickets-view.tsx:543
+#: src/features/tickets-view.tsx:404
+#: src/features/tickets-view.tsx:545
 msgid "Waiting on you"
 msgstr "Waiting on you"
 

@@ -10,6 +10,7 @@ import { Button } from '#/components/ui/button'
 import { setDiagnosticsPage } from '#/lib/client-trace'
 import { CommandPanel } from './session-commands'
 import { useSkillCompletion } from './composer-complete'
+import { useComposerSuggestions } from './composer-suggest-hook'
 import { MAX_IMAGES } from './composer-images'
 import { useSpaceToFocus } from './composer-keys'
 import { MessageComposer, useRichDraft } from './message-composer'
@@ -120,6 +121,7 @@ export function ComposerBox({
   const { t } = useLingui()
   const [commandsOpen, setCommandsOpen] = useState(false)
   const complete = useSkillCompletion(composer, session)
+  const suggest = useComposerSuggestions(composer, Boolean(complete.list))
 
   useSpaceToFocus()
   useEffect(() => {
@@ -176,10 +178,35 @@ export function ComposerBox({
         placeholder={t`Message`}
         writable={writable}
         blocked={blocked}
-        topSlot={complete.list}
-        inputProps={complete.inputProps}
-        onChangeTrack={complete.track}
-        onExtraKeyDown={complete.key}
+        topSlot={complete.list ?? suggest.list}
+        inputProps={{
+          ...complete.inputProps,
+          role: complete.list || suggest.open ? 'combobox' : undefined,
+          'aria-expanded': complete.list || suggest.open ? true : undefined,
+          'aria-controls': complete.list
+            ? 'composer-completions'
+            : suggest.open
+              ? 'composer-suggestions'
+              : undefined,
+          'aria-activedescendant': complete.list
+            ? complete.inputProps['aria-activedescendant']
+            : suggest.open && suggest.active >= 0
+              ? `composer-suggestion-${suggest.active}`
+              : undefined,
+          onSelect: (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+            complete.inputProps.onSelect(event)
+            suggest.track(event.currentTarget.selectionStart)
+          },
+          onBlur: () => {
+            complete.inputProps.onBlur()
+            suggest.track(null)
+          },
+        }}
+        onChangeTrack={(pos) => {
+          complete.track(pos)
+          suggest.track(pos)
+        }}
+        onExtraKeyDown={(event) => complete.key(event) || suggest.key(event)}
         onRecallLatest={onRecallLatest}
         leadingSlot={
           <ComposerTools

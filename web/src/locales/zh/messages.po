@@ -291,7 +291,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:477
+#: src/features/tickets-view.tsx:479
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -310,6 +310,10 @@ msgstr "每个约 {minLow}–{minHigh} 分钟，内存峰值约 {gb} GB"
 #: src/features/session-statusbar.tsx:108
 msgid "Accept edits"
 msgstr "自动编辑"
+
+#: src/features/console-keys.tsx:107
+msgid "Accept the top input suggestion"
+msgstr "采纳首条输入联想"
 
 #: src/features/session-info.tsx:103
 msgid "Account limits"
@@ -595,7 +599,7 @@ msgstr "假设"
 msgid "assumptions challenged"
 msgstr "对前提提出了质疑"
 
-#: src/features/console-keys.tsx:203
+#: src/features/console-keys.tsx:205
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
@@ -810,7 +814,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/session-composer.tsx:234
+#: src/features/session-composer.tsx:261
 #: src/features/session-detail-notices.tsx:18
 #: src/features/session-detail-parts.tsx:67
 msgid "Can't get the latest from the host, showing {staleAt}:"
@@ -963,7 +967,7 @@ msgstr "关闭"
 msgid "Close a sheet, or let go of a focused button"
 msgstr "关闭面板；或让按钮、链接失去焦点"
 
-#: src/features/console-keys.tsx:127
+#: src/features/console-keys.tsx:129
 msgid "Close the viewer"
 msgstr "关闭图片查看"
 
@@ -1159,7 +1163,7 @@ msgstr "上下文占用"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:54
+#: src/features/session-composer.tsx:55
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:186
@@ -1199,7 +1203,7 @@ msgstr "已复制：{shown}"
 #: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:54
+#: src/features/session-composer.tsx:55
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1219,7 +1223,7 @@ msgstr "复制命令"
 msgid "Copy document"
 msgstr "复制文档"
 
-#: src/features/session-composer.tsx:46
+#: src/features/session-composer.tsx:47
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -1274,7 +1278,7 @@ msgstr "复制会话引用（给 agent 用）"
 msgid "Copy the open session's reference"
 msgstr "复制当前会话的引用"
 
-#: src/features/console-keys.tsx:119
+#: src/features/console-keys.tsx:121
 msgid "Copy the open ticket's reference"
 msgstr "复制当前工单的引用"
 
@@ -1380,8 +1384,8 @@ msgstr "创建未完成，可在上方重试或修改消息后重发。"
 
 #: src/features/collab-top-bar.tsx:34
 #: src/features/tickets-view.tsx:403
-msgid "Cross-repo collab"
-msgstr "跨仓协作"
+#~ msgid "Cross-repo collab"
+#~ msgstr "跨仓协作"
 
 #: src/features/session-elicitation.tsx:203
 #: src/features/session-elicitation.tsx:297
@@ -1895,7 +1899,7 @@ msgstr "接力 brief"
 msgid "Handoff failed"
 msgstr "接力失败"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:478
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1967,7 +1971,7 @@ msgstr "图片"
 msgid "Image preview"
 msgstr "图片预览"
 
-#: src/features/console-keys.tsx:124
+#: src/features/console-keys.tsx:126
 msgid "Image viewer"
 msgstr "图片查看"
 
@@ -2018,7 +2022,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:477
 msgid "Initiator"
 msgstr "发起方"
 
@@ -2111,9 +2115,9 @@ msgstr "刚重启"
 msgid "Keep planning"
 msgstr "继续规划"
 
-#: src/features/console-keys.tsx:221
-#: src/features/console-keys.tsx:280
-#: src/features/console-keys.tsx:281
+#: src/features/console-keys.tsx:223
+#: src/features/console-keys.tsx:282
+#: src/features/console-keys.tsx:283
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
@@ -2183,7 +2187,7 @@ msgstr "留空以保留当前密钥"
 msgid "letter"
 msgstr "字母"
 
-#: src/features/console-keys.tsx:227
+#: src/features/console-keys.tsx:229
 msgid "Letter keys work when the caret is not in a text box. Chrome may keep Ctrl+N for a new window; c does the same."
 msgstr "字母键只在光标不在输入框里时生效。Chrome 可能把 Ctrl+N 留给「新窗口」，这时按 c 效果相同。"
 
@@ -2377,12 +2381,16 @@ msgstr "最大上下文"
 msgid "May stop to ask you:"
 msgstr "可能停下来问你："
 
+#: src/features/console-keys.tsx:108
+msgid "Mention an open repo ticket"
+msgstr "引用本仓未结工单"
+
 #: src/features/ticket-pipeline.tsx:331
 #: src/features/ticket-timeline.tsx:152
 msgid "Merge"
 msgstr "合并分支"
 
-#: src/features/session-composer.tsx:176
+#: src/features/session-composer.tsx:178
 msgid "Message"
 msgstr "发消息"
 
@@ -2396,7 +2404,7 @@ msgstr "消息操作"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "给工单管理者发消息（Ctrl+Enter 发送）…"
 
-#: src/features/session-composer.tsx:175
+#: src/features/session-composer.tsx:177
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -2492,7 +2500,7 @@ msgstr "新开会话"
 msgid "New conversation (/new)"
 msgstr "新对话 /new"
 
-#: src/features/console-keys.tsx:108
+#: src/features/console-keys.tsx:110
 msgid "New line"
 msgstr "换行"
 
@@ -2531,7 +2539,7 @@ msgstr "在此组新建会话"
 msgid "New session title"
 msgstr "新的会话标题"
 
-#: src/features/console-keys.tsx:120
+#: src/features/console-keys.tsx:122
 #: src/features/ticket-new.tsx:64
 #: src/features/ticket-quick-form.tsx:377
 msgid "New ticket"
@@ -2561,7 +2569,7 @@ msgstr "下一个 / 上一个运行中的会话"
 msgid "Next / previous session in the list"
 msgstr "列表里的下一个 / 上一个会话"
 
-#: src/features/console-keys.tsx:118
+#: src/features/console-keys.tsx:120
 msgid "Next / previous ticket"
 msgstr "下一张 / 上一张工单"
 
@@ -2778,7 +2786,7 @@ msgstr "备注"
 msgid "Nothing is created until you confirm."
 msgstr "确认之前不会建任何单。"
 
-#: src/features/tickets-view.tsx:540
+#: src/features/tickets-view.tsx:542
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -2912,7 +2920,7 @@ msgstr "打开仓库外链（快捷键：l）"
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/session-composer.tsx:256
+#: src/features/session-composer.tsx:283
 #: src/features/session-detail-notices.tsx:55
 #: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
@@ -3116,7 +3124,7 @@ msgstr "准备工作站"
 msgid "Preview {label}"
 msgstr "预览{label}"
 
-#: src/features/console-keys.tsx:126
+#: src/features/console-keys.tsx:128
 msgid "Previous / next image"
 msgstr "上一张 / 下一张图片"
 
@@ -3262,6 +3270,10 @@ msgstr "回填上一条已发送消息（输入框为空时）"
 #: src/features/session-git.tsx:306
 msgid "Recent commits"
 msgstr "最近提交"
+
+#: src/features/composer-suggest-list.tsx:97
+msgid "Recent sent messages"
+msgstr "最近已发消息"
 
 #: src/features/session-worktree-lifecycle.tsx:64
 #: src/features/session-worktree-lifecycle.tsx:119
@@ -3424,6 +3436,7 @@ msgstr "回复并继续"
 msgid "Repo filter"
 msgstr "仓库筛选"
 
+#: src/features/composer-suggest-list.tsx:39
 #: src/features/session-header.tsx:296
 #: src/features/session-tickets.tsx:218
 msgid "Repo tickets"
@@ -3706,8 +3719,8 @@ msgstr "运行子状态"
 msgid "Runs"
 msgstr "运行次数"
 
-#: src/features/collab-top-bar.tsx:82
 #: src/features/collab-top-bar.tsx:83
+#: src/features/collab-top-bar.tsx:84
 msgid "Runs and cost"
 msgstr "运行与花费"
 
@@ -3715,10 +3728,10 @@ msgstr "运行与花费"
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标题始终贴合当前任务；手动 /rename 的标题不会被覆盖。"
 
-#: src/features/collab-top-bar.tsx:44
 #: src/features/collab-top-bar.tsx:45
-#: src/features/collab-top-bar.tsx:65
-#: src/features/collab-top-bar.tsx:102
+#: src/features/collab-top-bar.tsx:46
+#: src/features/collab-top-bar.tsx:66
+#: src/features/collab-top-bar.tsx:103
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
@@ -3754,7 +3767,7 @@ msgstr "等同于 Alt+/ 面板里的 Ctrl+X"
 msgid "Same as Enter in the Alt+/ picker (key: o)"
 msgstr "等同 Alt+/ 选择器里的 Enter（快捷键 o）"
 
-#: src/features/console-keys.tsx:198
+#: src/features/console-keys.tsx:200
 msgid "Same at the desk"
 msgstr "终端同键"
 
@@ -3853,14 +3866,14 @@ msgstr "最近活动"
 msgid "Select a target repository first."
 msgstr "请先选择目标仓库。"
 
-#: src/features/console-keys.tsx:107
+#: src/features/console-keys.tsx:109
 #: src/features/message-composer.tsx:340
 #: src/features/message-composer.tsx:342
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Send"
 msgstr "发送"
 
-#: src/features/console-keys.tsx:111
+#: src/features/console-keys.tsx:113
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "发送（触屏上回车是换行，这个键也能发送）"
 
@@ -4018,7 +4031,7 @@ msgstr "共享"
 msgid "shipped"
 msgstr "已交付"
 
-#: src/features/console-keys.tsx:286
+#: src/features/console-keys.tsx:288
 msgid "Shortcuts"
 msgstr "快捷键"
 
@@ -4103,7 +4116,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/session-composer.tsx:240
+#: src/features/session-composer.tsx:267
 #: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
@@ -4495,7 +4508,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/session-composer.tsx:235
+#: src/features/session-composer.tsx:262
 #: src/features/session-detail-notices.tsx:19
 #: src/features/session-detail-parts.tsx:68
 msgid "this device is offline"
@@ -4559,10 +4572,10 @@ msgstr "已创建工单 {ticketId}"
 msgid "Ticket {ticketId} created (AI structuring in background)"
 msgstr "已创建工单 {ticketId}（AI 正在后台整理）"
 
-#: src/features/collab-top-bar.tsx:54
 #: src/features/collab-top-bar.tsx:55
-#: src/features/collab-top-bar.tsx:92
+#: src/features/collab-top-bar.tsx:56
 #: src/features/collab-top-bar.tsx:93
+#: src/features/collab-top-bar.tsx:94
 #: src/features/console-activity.tsx:226
 #: src/features/console-shell.tsx:96
 msgid "Ticket activity"
@@ -4587,7 +4600,7 @@ msgstr "工单 ID 与无头运行指标"
 msgid "Ticket info"
 msgstr "工单信息"
 
-#: src/features/console-keys.tsx:116
+#: src/features/console-keys.tsx:118
 msgid "Ticket pages"
 msgstr "工单"
 
@@ -4604,6 +4617,12 @@ msgstr "工单等你回复"
 #: src/features/console-collab.tsx:114
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
+msgid "Tickets"
+msgstr "工单"
+
+#: src/features/collab-top-bar.tsx:36
+#: src/features/tickets-view.tsx:405
+msgctxt "nav"
 msgid "Tickets"
 msgstr "工单"
 
@@ -4899,7 +4918,7 @@ msgstr "独立验收"
 msgid "Version"
 msgstr "版本"
 
-#: src/features/tickets-view.tsx:526
+#: src/features/tickets-view.tsx:528
 msgid "via {handler}"
 msgstr "经 {handler}"
 
@@ -4991,8 +5010,8 @@ msgstr "等你回复"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:55
-#: src/features/tickets-view.tsx:403
-#: src/features/tickets-view.tsx:543
+#: src/features/tickets-view.tsx:404
+#: src/features/tickets-view.tsx:545
 msgid "Waiting on you"
 msgstr "等你处理"
 

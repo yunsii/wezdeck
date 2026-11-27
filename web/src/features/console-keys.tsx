@@ -104,6 +104,8 @@ function useKeyGroups(): Array<Group> {
       items: [
         { keys: ['Space'], what: t`Put the caret in the composer` },
         { keys: ['↑'], what: t`Recall the last sent message (when empty)` },
+        { keys: ['Tab'], what: t`Accept the top input suggestion` },
+        { keys: ['#'], what: t`Mention an open repo ticket` },
         { keys: ['Enter'], what: t`Send` },
         { keys: ['Shift+Enter'], what: t`New line` },
         {

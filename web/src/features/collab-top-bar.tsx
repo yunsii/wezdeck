@@ -27,35 +27,36 @@ export function CollabTopBar({
   const wide = useIsWide()
   const summary = useMetricsSummary()
   if (wide)
-    // the split column's head: the title and the band one click away in a
-    // dialog — unfolded inline it pushed the list half a column down
+    // the split column's head: compact title + icon actions matching the phone
+    // row (24h summary sits in the metrics icon's tooltip; clicking opens the
+    // full sheet), keeping the 300–360 px column uncramped
     return (
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-body font-semibold">{t`Cross-repo collab`}</h1>
-        <div className="flex min-w-0 items-center gap-1.5">
-          {/* the band in short (24h): runs · cache hit · cost; the full one
-              opens in a dialog. The long 「运行、缓存命中与花费」 crowded the
-              title row once the new-ticket button moved up here */}
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <h1 className="truncate text-body font-semibold">
+          {t({ message: 'Tickets', context: 'nav' })}
+        </h1>
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             type="button"
+            aria-haspopup="dialog"
             onClick={() => setOpen(true)}
-            title={t`Runs, cache hit and cost`}
+            title={`${t`Runs, cache hit and cost`} · ${summary}`}
             aria-label={t`Runs, cache hit and cost`}
-            className="min-w-0 gap-1 text-caption text-brand-muted"
+            data-testid="collab-metrics-button"
+            className="size-9 shrink-0 rounded-xl text-brand-muted"
           >
-            <ChartColumn size={14} aria-hidden className="shrink-0" />
-            <span className="truncate tabular-nums">{summary}</span>
+            <ChartColumn size={18} aria-hidden />
           </Button>
           <Link
             to="/{-$locale}/console/activity"
             params={{ locale: locale === 'en' ? undefined : locale }}
             aria-label={t`Ticket activity`}
             title={`${t`Ticket activity`} (g a)`}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl text-brand-muted outline-none transition-colors hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-brand-muted outline-none transition-colors hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
           >
-            <ListTree size={16} aria-hidden />
+            <ListTree size={18} aria-hidden />
           </Link>
           <NewTicketButton />
         </div>

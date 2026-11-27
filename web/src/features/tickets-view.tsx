@@ -400,7 +400,9 @@ export function TicketsView({
   return (
     <div className="flex min-h-full w-full flex-1 flex-col bg-brand-surface">
       <h1 className="sr-only">
-        {base === 'inbox' ? t`Waiting on you` : t`Cross-repo collab`}
+        {base === 'inbox'
+          ? t`Waiting on you`
+          : t({ message: 'Tickets', context: 'nav' })}
       </h1>
       <StickyBar className="top-0 mx-0 my-0 grid gap-2 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
         {searchInTop ? (
