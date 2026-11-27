@@ -100,10 +100,15 @@ export function transitionTypes(
  * for and applies it after render, so a switch in the wide split drew the
  * new conversation at the old one's offset — its middle — and the sticky
  * prompt flashed. A conversation lands at its bottom (chat-scroll), a
- * ticket at its top (tickets-view); lists keep restoration, so back on a
- * phone returns to the same place.
+ * ticket at its top (tickets-view). The sessions list uses explicit scroll
+ * save/restore in console-shell: the router copies a detail's scroll into a
+ * first-visit list when that list has not emitted a scroll event yet.
  */
 export function restoresScroll(pathname: string) {
   const path = consolePath(pathname)
-  return !(path && /^\/console\/(sessions|collab|inbox)\/[^/]+$/.test(path))
+  return !(
+    path &&
+    (/^\/console\/sessions(?:\/[^/]+)?$/.test(path) ||
+      /^\/console\/(collab|inbox)\/[^/]+$/.test(path))
+  )
 }

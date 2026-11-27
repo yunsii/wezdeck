@@ -190,4 +190,51 @@ describe.runIf(attention)('A session list that holds still', () => {
     await expect.poll(tree).not.toEqual([])
     await context.close()
   }, 60_000)
+
+  it('phone: first back from a long session keeps the list at its initial top', async () => {
+    const context = await browser.newContext({
+      ...devices['Pixel 7'],
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await page.goto(`${base}/zh/console/sessions?remote=1#pair=${token}`)
+    await page.locator('[data-session=st-c]').waitFor({ timeout: 20_000 })
+    await page.addStyleTag({
+      content: '#console-main { min-height: 3000px !important; }',
+    })
+    const scrollTop = () =>
+      page.evaluate(() => document.querySelector('.vt-page')?.scrollTop ?? -1)
+    expect(await scrollTop()).toBe(0)
+
+    await page
+      .locator('[data-session=st-c]')
+      .evaluate((el: HTMLElement) => el.click())
+    await page.waitForURL('**/console/sessions/st-c')
+    await page.evaluate(() => {
+      const el = document.querySelector('.vt-page')
+      if (el) el.scrollTop = 900
+    })
+    await expect.poll(scrollTop).toBeGreaterThan(500)
+    await page.goBack()
+    await page.waitForURL('**/console/sessions?remote=1')
+    await expect.poll(scrollTop).toBe(0)
+
+    await page.evaluate(() => {
+      const el = document.querySelector('.vt-page')
+      if (el) el.scrollTop = 80
+    })
+    await expect.poll(scrollTop).toBe(80)
+    await page
+      .locator('[data-session=st-c]')
+      .evaluate((el: HTMLElement) => el.click())
+    await page.waitForURL('**/console/sessions/st-c')
+    await page.evaluate(() => {
+      const el = document.querySelector('.vt-page')
+      if (el) el.scrollTop = 900
+    })
+    await page.goBack()
+    await page.waitForURL('**/console/sessions?remote=1')
+    await expect.poll(scrollTop).toBe(80)
+    await context.close()
+  }, 60_000)
 })
