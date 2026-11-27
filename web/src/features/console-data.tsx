@@ -107,7 +107,14 @@ function useRuntimeDataQuery() {
       Boolean(data?.health.ready) &&
       !(snapshot.isError && Date.now() - snapshot.dataUpdatedAt > 12_000),
     eventReady: Boolean(probe.data),
-    loading: snapshot.isPending || probe.isPending,
+    // Only true before the initial Runtime check has ever settled: a failed
+    // remote poll retries every 5 s and must never flip useConsoleMode() back
+    // to 'checking' (which flashed pages keyed by mode, 2026-11-27).
+    loading:
+      (snapshot.isPending &&
+        snapshot.failureCount === 0 &&
+        !snapshot.isFetched) ||
+      (probe.isPending && probe.failureCount === 0 && !probe.isFetched),
     error: snapshot.error instanceof Error ? snapshot.error.message : undefined,
     refreshAll,
   }

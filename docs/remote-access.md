@@ -383,13 +383,39 @@ scripts/dev/install-remote-relay.sh               # tokens (once) + build + user
 scripts/dev/install-remote-relay.sh --push-secrets  # after creating / rotating tokens
 scripts/dev/install-remote-relay.sh --pair        # pairing link + QR for the remote device
 scripts/dev/install-remote-relay.sh --check       # unit state + /relay/health presence
-scripts/dev/wezdeck-release.sh                    # publish primary master
-scripts/dev/wezdeck-release.sh --land HEAD        # integrate and publish a committed task worktree
+scripts/dev/wezdeck-release.sh                    # publish primary master (coalesced + L0 smoke gate)
+scripts/dev/wezdeck-release.sh --land HEAD        # integrate, push, and wait for coalesced batch
+scripts/dev/wezdeck-release.sh status             # inspect coordinator phase, deployed SHA, pending queue
+scripts/dev/wezdeck-release.sh rollback           # emergency rollback of Cloudflare worker + relay binary
 ```
 
-`--land COMMIT` resolves the commit in the task worktree and delegates to
-the primary `master`. The lock in the shared Git directory covers integration,
-push, and deployment for all linked worktrees on this host.
+`--land COMMIT` resolves the commit in the task worktree and delegates to the
+primary `master`. The pipeline splits into three stages:
+
+1. **Fast land (`wezdeck-land.lock`, ~2–5 s)**: merges onto primary `master`,
+   checks i18n catalogs on the merged commit, pushes `origin/master`, records
+   the commit in `~/.local/state/wezdeck/release/state.json`, and releases the
+   land lock immediately so concurrent worktrees never stall behind builds or
+   tests.
+2. **Singleton coalesced deploy (`wezdeck-deploy.lock`)**: after a short
+   debounce window (`WEZDECK_RELEASE_COALESCE_S=5`, `--now` to skip), builds
+   changed artifacts, runs the mandatory **L0 core availability smoke gate**
+   (`scripts/dev/release-smoke-gate.sh` + `web/tests/smoke-core.cdp.test.ts` on
+   an isolated `:3019` stack: connect, authorize, list/open session, send
+   message, answer prompt — aborting before deploy if anything fails), deploys
+   only changed `relay`/`web`, verifies the public site with a live canary
+   probe (auto-running `wrangler rollback --yes` on failure), and notifies
+   connected browsers non-disruptively via `wezdeck-wsl diag --notify-update`
+   (shows a sticky "New version available · Reload" toast and waits for a safe
+   idle window instead of interrupting active users; pass `--force-reload` for
+   immediate device-check reloads). If additional commits landed on
+   `origin/master` while a batch was shipping, the coordinator loops once to
+   ship all of them together in a single coalesced batch; callers with default
+   `--wait` (override with `--no-wait`) return once their commit is an ancestor
+   of `deployed_sha`.
+3. **Detached async regression (`scripts/dev/release-async-verify.sh`)**: runs
+   `web-affected-tests.sh` outside all locks in a dedicated detached worktree
+   and automatically cancels stale runs when a newer batch ships.
 `WEZDECK_RELEASE_LOCK_WAIT` sets the wait in seconds (300 by default).
 The script fetches `origin/master` before integrating. A merge conflict
 returns to the task worktree for resolution. If the remote advances during

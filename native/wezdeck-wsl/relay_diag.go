@@ -502,11 +502,16 @@ func runDiag(args []string) error {
 		Steps  json.RawMessage `json:"steps,omitempty"`
 	}
 	body.Wait = 15
-	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE] [--reload]")
+	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE] [--reload | --notify-update]")
 	reload := false
+	notifyUpdate := false
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--reload" {
 			reload = true
+			continue
+		}
+		if args[i] == "--notify-update" {
+			notifyUpdate = true
 			continue
 		}
 		if i+1 >= len(args) {
@@ -538,13 +543,17 @@ func runDiag(args []string) error {
 	if len(body.Steps) > 0 && !json.Valid(body.Steps) {
 		return errors.New("--steps is not valid JSON")
 	}
-	if reload {
-		// last step: the page answers first, then reloads onto the new build
+	if reload || notifyUpdate {
+		// last step: the page answers first, then reloads (or shows a non-disruptive update banner)
 		var steps []json.RawMessage
 		if len(body.Steps) > 0 && json.Unmarshal(body.Steps, &steps) != nil {
-			return errors.New("--steps must be a JSON array to add --reload")
+			return errors.New("--steps must be a JSON array to add --reload/--notify-update")
 		}
-		steps = append(steps, json.RawMessage(`{"do":"reload"}`))
+		if reload {
+			steps = append(steps, json.RawMessage(`{"do":"reload"}`))
+		} else {
+			steps = append(steps, json.RawMessage(`{"do":"notify-update"}`))
+		}
 		body.Steps, _ = json.Marshal(steps)
 	}
 	client := http.Client{

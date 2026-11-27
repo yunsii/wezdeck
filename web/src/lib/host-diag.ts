@@ -17,7 +17,12 @@
 // (default 700).
 import type { AnyRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { buildId } from '#/lib/pwa'
+import {
+  UPDATED_KEY,
+  UPDATED_REASON_KEY,
+  buildId,
+  notifyUpdateAvailable,
+} from '#/lib/pwa'
 
 import {
   diagnosticsSnapshot,
@@ -27,6 +32,8 @@ import {
 } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
 import { hostRead, hostWrite, readsLocally } from '#/lib/runtime-client'
+
+export { UPDATED_KEY, UPDATED_REASON_KEY }
 
 type Step = {
   do: string
@@ -207,6 +214,10 @@ async function runStep(
       // done after the snapshot is sent (answer): reloading here would
       // lose the answer
       return { ok: true, deferred: 'after the snapshot' }
+    case 'notify-update':
+      // non-disruptive: show sticky "New version available" toast and wait for
+      // a safe idle window instead of reloading under active fingers
+      return { ok: true, deferred: 'notify-update' }
   }
   return { skipped: `unknown step ${step.do}` }
 }
@@ -255,21 +266,35 @@ async function answer(
   const steps = Array.isArray(data.steps) ? data.steps.slice(0, MAX_STEPS) : []
   const reason = clipDiagReason(data.reason)
   const willReload = steps.some((step) => step.do === 'reload')
+  const willNotifyUpdate =
+    !willReload && steps.some((step) => step.do === 'notify-update')
   trace('host-diag', {
     id,
     steps: steps.length,
     reason,
-    action: willReload ? 'reload' : steps.length ? 'steps' : 'snapshot',
+    action: willReload
+      ? 'reload'
+      : willNotifyUpdate
+        ? 'notify-update'
+        : steps.length
+          ? 'steps'
+          : 'snapshot',
   })
   // outside React (no Lingui provider here): pick the page language
   const zh = document.documentElement.lang.startsWith('zh')
-  // Always say why: diag read / reproduce, and a short pre-reload notice
-  // (the post-reload toast in pwa-boot carries the same reason). No subject
-  // like 「电脑…」 — on the host browser that read as nonsense.
-  toast(
-    diagToastMessage(zh, steps.length, reason, willReload ? 'reload' : 'diag'),
-    { id: 'host-diag', duration: willReload ? 2500 : 4000 },
-  )
+  // Non-disruptive update announcements let pwa-boot show the quiet sticky
+  // "New version available · Reload" toast instead of a pre-reload warning.
+  if (!willNotifyUpdate) {
+    toast(
+      diagToastMessage(
+        zh,
+        steps.length,
+        reason,
+        willReload ? 'reload' : 'diag',
+      ),
+      { id: 'host-diag', duration: willReload ? 2500 : 4000 },
+    )
+  }
   const results: Array<Record<string, unknown>> = []
   for (const step of steps) {
     const frames = sampleFrames(Math.min(step.sample ?? 700, 5000))
@@ -309,11 +334,8 @@ async function answer(
   // wants this phone on the new build without anyone tapping 刷新 — the
   // snapshot above still reports the build it ran
   if (willReload) reloadWhenIdle(reason)
+  else if (willNotifyUpdate) void notifyUpdateAvailable(reason)
 }
-
-export const UPDATED_KEY = 'wezdeck.updated-from'
-/** Why the host asked for a reload (`--reason`); shown after the new page loads. */
-export const UPDATED_REASON_KEY = 'wezdeck.updated-reason'
 
 /** typing in a text field (the composer, a reply box) */
 const typing = () => {
