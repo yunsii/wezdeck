@@ -164,7 +164,7 @@ msgstr "{staleCount} 个子 agent 很久没动静"
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · 外链"
 
-#: src/features/me-autotitle.tsx:214
+#: src/features/me-autotitle.tsx:215
 msgid "{taskCount} tasks"
 msgstr "{taskCount} 项任务"
 
@@ -176,7 +176,7 @@ msgstr "{tools} 次工具调用"
 msgid "{total} messages, showing {shown}"
 msgstr "共 {total} 条，已显示 {shown} 条"
 
-#: src/features/me-autotitle.tsx:172
+#: src/features/me-autotitle.tsx:171
 #: src/features/ticket-runs.tsx:88
 msgid "{turns} turns"
 msgstr "{turns} 轮"
@@ -222,7 +222,7 @@ msgstr "↓ {tokens} tokens"
 #~ msgid "+ New direction"
 #~ msgstr "+ 新方向"
 
-#: src/features/me-autotitle.tsx:214
+#: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 项任务"
 
@@ -314,7 +314,7 @@ msgstr "账号额度"
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "操作已发送，等待 Agent 继续……"
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:169
 msgid "Active"
 msgstr "活跃"
 
@@ -422,7 +422,7 @@ msgstr "全部标签"
 msgid "All tiers"
 msgstr "全部档位"
 
-#: src/features/me-host.tsx:138
+#: src/features/me-host.tsx:144
 msgid "All time"
 msgstr "累计"
 
@@ -526,11 +526,11 @@ msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。�
 msgid "Approve the plan"
 msgstr "批准计划"
 
-#: src/features/me-autotitle.tsx:319
+#: src/features/me-autotitle.tsx:316
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 
-#: src/features/host-quick-controls.tsx:124
+#: src/features/host-quick-controls.tsx:82
 #: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
@@ -545,7 +545,7 @@ msgstr "已批准"
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "已获批。这台设备可以查看电脑上的会话和工单、发消息、回复工单。每台设备（手机、平板、其他浏览器）分别授权；在电脑上撤销后，读取和写入同时失效。"
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:169
 msgid "Archived"
 msgstr "已归档"
 
@@ -561,15 +561,15 @@ msgstr "对前提提出了质疑"
 msgid "At the desk: {host}"
 msgstr "终端：{host}"
 
-#: src/features/me-autotitle.tsx:166
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:337
 #: src/features/session-statusbar.tsx:96
 #: src/features/session-title-history.tsx:89
 msgid "Auto"
 msgstr "Auto"
 
-#: src/features/me-autotitle.tsx:119
-#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:164
 msgid "Auto · {eff}"
 msgstr "自动 · {eff}"
 
@@ -577,7 +577,7 @@ msgstr "自动 · {eff}"
 msgid "Auto · {provider}"
 msgstr "自动 · {provider}"
 
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:337
 msgid "Auto ({autoChain})"
 msgstr "自动（{autoChain}）"
 
@@ -613,7 +613,7 @@ msgstr "自动批准编辑（未开启 Auto 模式）"
 msgid "Auto-title agent CLI"
 msgstr "自动标题智能体 CLI"
 
-#: src/features/me-autotitle.tsx:307
+#: src/features/me-autotitle.tsx:304
 msgid "Auto-title settings saved"
 msgstr "自动标题配置已保存"
 
@@ -779,7 +779,7 @@ msgstr "正在取消……"
 msgid "Capabilities"
 msgstr "能力"
 
-#: src/features/me-host.tsx:160
+#: src/features/me-host.tsx:166
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
@@ -805,7 +805,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "变更"
 
-#: src/features/host-quick-controls.tsx:111
+#: src/features/host-quick-controls.tsx:117
 msgid "Changing One Client…"
 msgstr "正在切换 One Client…"
 
@@ -1033,7 +1033,7 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
 
-#: src/features/host-quick-controls.tsx:114
+#: src/features/host-quick-controls.tsx:120
 msgid "Connect One Client"
 msgstr "连接 One Client"
 
@@ -1238,7 +1238,7 @@ msgstr "创建失败：{reason}"
 msgid "Could not read agent profiles."
 msgstr "无法读取智能体配置。"
 
-#: src/features/me-autotitle.tsx:327
+#: src/features/me-autotitle.tsx:324
 msgid "Could not read auto-title status."
 msgstr "无法读取自动标题状态。"
 
@@ -1420,7 +1420,7 @@ msgstr "停用此 Agent"
 msgid "Disabled"
 msgstr "已停用"
 
-#: src/features/host-quick-controls.tsx:113
+#: src/features/host-quick-controls.tsx:119
 msgid "Disconnect One Client"
 msgstr "断开 One Client"
 
@@ -1510,7 +1510,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "已结束"
 
-#: src/features/me-host.tsx:123
+#: src/features/me-host.tsx:128
 msgid "Endpoint"
 msgstr "端点"
 
@@ -1868,8 +1868,8 @@ msgstr "发起方"
 msgid "Input cleared"
 msgstr "已清空输入"
 
-#: src/features/me-host.tsx:128
-#: src/features/me-host.tsx:129
+#: src/features/me-host.tsx:133
+#: src/features/me-host.tsx:135
 msgid "Input method"
 msgstr "输入法"
 
@@ -1881,7 +1881,7 @@ msgstr "安装 WezDeck"
 msgid "Installed"
 msgstr "已安装"
 
-#: src/features/me-host.tsx:122
+#: src/features/me-host.tsx:127
 msgid "Instance"
 msgstr "实例"
 
@@ -1935,6 +1935,8 @@ msgid "Keep planning"
 msgstr "继续规划"
 
 #: src/features/console-keys.tsx:207
+#: src/features/console-keys.tsx:266
+#: src/features/console-keys.tsx:267
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
 
@@ -1971,7 +1973,7 @@ msgstr "上次直连"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-status-band.tsx:87
-#: src/features/me-host.tsx:125
+#: src/features/me-host.tsx:130
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -1980,11 +1982,11 @@ msgid "Last turn"
 msgstr "最后一轮"
 
 #: src/features/chat-controls.tsx:31
-#: src/features/me-host.tsx:139
+#: src/features/me-host.tsx:145
 msgid "Latest"
 msgstr "回到最新"
 
-#: src/features/host-quick-controls.tsx:97
+#: src/features/host-quick-controls.tsx:103
 msgid "Latest OPPO connection"
 msgstr "最近一次 OPPO 连接"
 
@@ -2063,7 +2065,7 @@ msgstr "正在加载原图…"
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
 #: src/features/me-agents.tsx:174
-#: src/features/me-autotitle.tsx:334
+#: src/features/me-autotitle.tsx:331
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
@@ -2129,7 +2131,7 @@ msgstr "受管模型覆盖"
 msgid "Manual"
 msgstr "手动"
 
-#: src/features/me-autotitle.tsx:162
+#: src/features/me-autotitle.tsx:161
 msgid "Manual /rename"
 msgstr "手动 /rename"
 
@@ -2237,7 +2239,7 @@ msgstr "给会话命名"
 msgid "Names sessions"
 msgstr "自动命名会话"
 
-#: src/features/me-autotitle.tsx:167
+#: src/features/me-autotitle.tsx:166
 #: src/features/session-title-history.tsx:86
 msgid "Native"
 msgstr "原生"
@@ -2385,7 +2387,7 @@ msgstr "下一个等你处理的会话"
 msgid "no"
 msgstr "否"
 
-#: src/features/host-quick-controls.tsx:92
+#: src/features/host-quick-controls.tsx:98
 msgid "No active session"
 msgstr "当前没有远控会话"
 
@@ -2446,7 +2448,7 @@ msgstr "没有匹配的外链。"
 msgid "No links resolved for this repository."
 msgstr "这个仓库没有解析出外链。"
 
-#: src/features/me-autotitle.tsx:348
+#: src/features/me-autotitle.tsx:345
 msgid "No local CLI available"
 msgstr "无可用本地 CLI"
 
@@ -2474,7 +2476,7 @@ msgstr "暂无最近的连接结果"
 #~ msgid "No session"
 #~ msgstr "无会话"
 
-#: src/features/me-autotitle.tsx:148
+#: src/features/me-autotitle.tsx:147
 msgid "No session titles recorded yet."
 msgstr "暂无已记录的会话标题。"
 
@@ -2528,7 +2530,7 @@ msgstr "未送达：agent 已空闲，没收到这条"
 msgid "not done"
 msgstr "未实现"
 
-#: src/features/me-host.tsx:149
+#: src/features/me-host.tsx:155
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
@@ -2588,7 +2590,7 @@ msgid "now {label}"
 msgstr "状态：{label}"
 
 #: src/features/console-me.tsx:268
-#: src/features/me-autotitle.tsx:116
+#: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
 msgid "Off"
 msgstr "未启用"
@@ -2605,7 +2607,7 @@ msgstr "离线"
 msgid "Offline, try again later"
 msgstr "离线中，稍后再试"
 
-#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:117
 #: src/features/me-autotitle.tsx:369
 msgid "On"
 msgstr "开启"
@@ -2705,7 +2707,7 @@ msgstr "正在打开…"
 #~ msgid "opens one more"
 #~ msgstr "将新开"
 
-#: src/features/host-quick-controls.tsx:87
+#: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO 远控"
 
@@ -2864,7 +2866,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/me-host.tsx:155
+#: src/features/me-host.tsx:161
 msgid "Process"
 msgstr "进程"
 
@@ -2926,7 +2928,7 @@ msgstr "排队"
 msgid "Queued messages"
 msgstr "排队中的消息"
 
-#: src/features/host-quick-controls.tsx:82
+#: src/features/host-quick-controls.tsx:88
 msgid "Quick controls"
 msgstr "快捷控制"
 
@@ -2957,7 +2959,7 @@ msgstr "读了 {reads} 个文件"
 #: src/features/console-shared.tsx:211
 #: src/features/console-status-band.tsx:51
 #: src/features/me-host.tsx:60
-#: src/features/me-host.tsx:151
+#: src/features/me-host.tsx:157
 msgid "Ready"
 msgstr "就绪"
 
@@ -2987,19 +2989,19 @@ msgstr "立即刷新活跃会话"
 msgid "Refresh links"
 msgstr "刷新外链"
 
-#: src/features/me-autotitle.tsx:298
+#: src/features/me-autotitle.tsx:295
 msgid "Refreshing session titles in the background…"
 msgstr "正在后台刷新活跃会话标题……"
 
-#: src/features/me-autotitle.tsx:250
+#: src/features/me-autotitle.tsx:253
 msgid "Regenerate"
 msgstr "重算"
 
-#: src/features/me-autotitle.tsx:244
+#: src/features/me-autotitle.tsx:246
 msgid "Regenerate title now"
 msgstr "立即重新生成标题"
 
-#: src/features/me-autotitle.tsx:297
+#: src/features/me-autotitle.tsx:294
 msgid "Regenerating title for this session…"
 msgstr "正在重新生成该会话标题……"
 
@@ -3257,7 +3259,7 @@ msgstr "恢复会话"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:551
-#: src/features/me-host.tsx:109
+#: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
 msgid "Retry"
@@ -3381,7 +3383,7 @@ msgstr "运行次数"
 msgid "Runs and cost"
 msgstr "运行与花费"
 
-#: src/features/me-autotitle.tsx:356
+#: src/features/me-autotitle.tsx:357
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标题始终贴合当前任务；手动 /rename 的标题不会被覆盖。"
 
@@ -3392,7 +3394,7 @@ msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标�
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
-#: src/features/me-host.tsx:121
+#: src/features/me-host.tsx:126
 msgid "Runtime"
 msgstr "运行时"
 
@@ -3571,7 +3573,7 @@ msgstr "会话"
 msgid "Session actions"
 msgstr "会话操作"
 
-#: src/features/host-quick-controls.tsx:90
+#: src/features/host-quick-controls.tsx:96
 msgid "Session active"
 msgstr "远控会话进行中"
 
@@ -3641,9 +3643,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:478
 #: src/features/console-me.tsx:482
-#: src/features/console-me.tsx:506
+#: src/features/console-me.tsx:486
+#: src/features/console-me.tsx:510
 #: src/features/console-shell.tsx:108
 msgid "Settings"
 msgstr "我的"
@@ -3656,8 +3658,6 @@ msgstr "共享"
 msgid "shipped"
 msgstr "已交付"
 
-#: src/features/console-keys.tsx:266
-#: src/features/console-keys.tsx:267
 #: src/features/console-keys.tsx:272
 msgid "Shortcuts"
 msgstr "键盘快捷键"
@@ -3732,7 +3732,7 @@ msgstr "槽位 #{slot}"
 msgid "Snapshot"
 msgstr "分支快照"
 
-#: src/features/me-host.tsx:154
+#: src/features/me-host.tsx:160
 msgid "Socket"
 msgstr "套接字"
 
@@ -3862,7 +3862,7 @@ msgid "State"
 msgstr "状态"
 
 #: src/features/console-collab.tsx:222
-#: src/features/me-host.tsx:147
+#: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:110
@@ -4232,7 +4232,7 @@ msgstr "标题"
 msgid "Title source"
 msgstr "标题来源"
 
-#: src/features/me-autotitle.tsx:305
+#: src/features/me-autotitle.tsx:302
 msgid "Title unlocked; auto-titling will resume."
 msgstr "已解除锁定，后续将恢复自动更新标题。"
 
@@ -4273,7 +4273,7 @@ msgid "To-dos of this repo"
 msgstr "这个仓库的待办"
 
 #: src/features/console-activity.tsx:169
-#: src/features/me-host.tsx:131
+#: src/features/me-host.tsx:137
 msgid "Today"
 msgstr "今日"
 
@@ -4281,7 +4281,7 @@ msgstr "今日"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
-#: src/features/me-host.tsx:135
+#: src/features/me-host.tsx:141
 msgid "Today events"
 msgstr "今日事件"
 
@@ -4390,11 +4390,11 @@ msgstr "撤销"
 msgid "Unknown"
 msgstr "未知"
 
-#: src/features/me-autotitle.tsx:236
+#: src/features/me-autotitle.tsx:238
 msgid "Unlock"
 msgstr "解锁"
 
-#: src/features/me-autotitle.tsx:230
+#: src/features/me-autotitle.tsx:231
 msgid "Unlock to resume auto-titling"
 msgstr "解除锁定并恢复自动更新"
 
@@ -4431,7 +4431,7 @@ msgstr "正在上传 {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-status-band.tsx:93
-#: src/features/me-host.tsx:124
+#: src/features/me-host.tsx:129
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -4772,7 +4772,7 @@ msgid "Worktrees"
 msgstr "工作树"
 
 #: src/features/me-host.tsx:41
-#: src/features/me-host.tsx:145
+#: src/features/me-host.tsx:151
 msgid "WSL bridge"
 msgstr "WSL 通道"
 

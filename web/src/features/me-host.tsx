@@ -71,7 +71,7 @@ export function HostPage() {
       </p>
     )
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 grid-cols-1 gap-5">
       <HostQuickControls />
       {mode === 'local' ? <LocalHostDetails /> : null}
     </div>
@@ -88,9 +88,13 @@ function LocalHostDetails() {
   const checks = useHostChecks()
   const capabilityCount = data?.health.capabilities.length ?? 0
   const none = t`Unavailable`
-  const group = (title: string, rows: Array<[string, string]>) => (
-    <section className="grid gap-1">
-      <SectionHeading as="h2" className="bg-brand-key">
+  const group = (
+    title: string,
+    rows: Array<[string, string]>,
+    footer?: React.ReactNode,
+  ) => (
+    <section className="grid min-w-0 grid-cols-1 gap-1.5">
+      <SectionHeading as="h2" className="bg-brand-deck">
         {title}
       </SectionHeading>
       <FieldList>
@@ -98,10 +102,11 @@ function LocalHostDetails() {
           <Field key={label} label={label} value={value} mono />
         ))}
       </FieldList>
+      {footer}
     </section>
   )
   return (
-    <div className="grid gap-4">
+    <div className="grid min-w-0 grid-cols-1 gap-5">
       {error && !loading ? (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-waiting/10 px-3 py-2 text-body">
           <span>{error}</span>
@@ -110,7 +115,7 @@ function LocalHostDetails() {
           </Button>
         </div>
       ) : null}
-      <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-caption text-brand-muted">
+      <ul className="flex flex-wrap gap-x-4 gap-y-2 rounded-xl bg-brand-surface px-3.5 py-2.5 text-caption text-brand-muted">
         {checks.map((check) => (
           <li key={check.name} className="inline-flex items-center gap-1.5">
             <Led tone={check.tone} size={9} />
@@ -124,8 +129,9 @@ function LocalHostDetails() {
         [t`Uptime`, formatDuration(data?.health.uptime_ms)],
         [t`Last sample`, formatTime(data?.health.observed_at)],
       ])}
-      <section className="grid gap-1">
-        {group(t`Input method`, [
+      {group(
+        t`Input method`,
+        [
           [t`Input method`, data?.ime?.mode ?? none],
           [
             t`Today`,
@@ -137,11 +143,11 @@ function LocalHostDetails() {
           ],
           [t`All time`, formatNumber(data?.rime?.chars)],
           [t`Latest`, formatTime(data?.rime?.last_ts)],
-        ])}
+        ],
         <p className="px-1 text-meta text-brand-label">
           <ImeDetail ime={data?.ime} />
-        </p>
-      </section>
+        </p>,
+      )}
       {group(t`WSL bridge`, [
         [
           t`Status`,

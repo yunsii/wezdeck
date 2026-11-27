@@ -75,10 +75,16 @@ export function HostQuickControls() {
         ? t`Connection failed`
         : t`No recent result`
   const warpError = change.error ?? warp.error
+  const statusMessage =
+    warpError?.message ??
+    oppo.error?.message ??
+    (mode === 'remote' && device.state !== 'approved'
+      ? t`Approve this device in Device access to use host controls.`
+      : null)
   if (!authorized) return null
   return (
-    <section className="grid gap-1">
-      <SectionHeading as="h2" className="bg-brand-key">
+    <section className="grid min-w-0 grid-cols-1 gap-1.5">
+      <SectionHeading as="h2" className="bg-brand-deck">
         {t`Quick controls`}
       </SectionHeading>
       <FieldList>
@@ -117,13 +123,11 @@ export function HostQuickControls() {
           <span className="text-meta text-brand-muted">{warp.data.reason}</span>
         ) : null}
       </div>
-      <div role="status" className="px-1 text-meta text-brand-muted">
-        {warpError?.message ??
-          oppo.error?.message ??
-          (mode === 'remote' && device.state !== 'approved'
-            ? t`Approve this device in Device access to use host controls.`
-            : null)}
-      </div>
+      {statusMessage ? (
+        <div role="status" className="px-1 text-meta text-brand-muted">
+          {statusMessage}
+        </div>
+      ) : null}
     </section>
   )
 }
