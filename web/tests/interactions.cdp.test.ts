@@ -81,7 +81,11 @@ describe('Interaction debugging page', () => {
         return detail.getAttribute('data-interaction')
       })
       .toBe('permission-bash')
-    await detail.getByRole('button', { name: '允许' }).click()
+    const allowBtn = detail.getByRole('button', { name: '允许' })
+    const permCard = detail.getByTestId('permission-card')
+    const permBefore = await permCard.boundingBox()
+    const allowBefore = await allowBtn.boundingBox()
+    await allowBtn.click()
     await expect
       .poll(() =>
         detail
@@ -89,6 +93,14 @@ describe('Interaction debugging page', () => {
           .getAttribute('data-prompt-loading'),
       )
       .toBe('waiting')
+    const permAfter = await permCard.boundingBox()
+    const allowAfter = await allowBtn.boundingBox()
+    expect(
+      Math.abs((permAfter?.height ?? 0) - (permBefore?.height ?? 0)),
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs((allowAfter?.width ?? 0) - (allowBefore?.width ?? 0)),
+    ).toBeLessThanOrEqual(1)
     await expect
       .poll(() => page.getByTestId('interaction-log').textContent())
       .toContain('permission-bash → 1')
@@ -171,6 +183,10 @@ describe('Interaction debugging page', () => {
         page.getByTestId('interaction-detail').getAttribute('data-interaction'),
       )
       .toBe('claude-ask-review')
+    const askCard = page
+      .getByTestId('interaction-detail')
+      .getByTestId('session-ask')
+    const askBefore = await askCard.boundingBox()
     await page.getByTestId('ask-submit').click()
     await expect
       .poll(() =>
@@ -180,6 +196,10 @@ describe('Interaction debugging page', () => {
           .textContent(),
       )
       .toContain('答案已发送，等待 Agent 继续')
+    const askAfter = await askCard.boundingBox()
+    expect(
+      Math.abs((askAfter?.height ?? 0) - (askBefore?.height ?? 0)),
+    ).toBeLessThanOrEqual(1)
     await page.goto(`${base}/zh/console/me/interactions#plan-approval`)
     await expect
       .poll(() =>
@@ -415,10 +435,21 @@ describe('Interaction debugging page', () => {
           .getAttribute('aria-pressed'),
       )
       .toBe('true')
-    await card.getByTestId('grok-ask-submit').click()
+    const submitBtn = card.getByTestId('grok-ask-submit')
+    const cardBefore = await card.boundingBox()
+    const submitBefore = await submitBtn.boundingBox()
+    await submitBtn.click()
     await expect
       .poll(() => card.getByTestId('grok-ask-loading').textContent())
       .toContain('答案已发送，等待 Agent 继续')
+    const cardAfter = await card.boundingBox()
+    const submitAfter = await submitBtn.boundingBox()
+    expect(
+      Math.abs((cardAfter?.height ?? 0) - (cardBefore?.height ?? 0)),
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs((submitAfter?.width ?? 0) - (submitBefore?.width ?? 0)),
+    ).toBeLessThanOrEqual(1)
     await page.waitForTimeout(250)
     await card.getByTestId('grok-ask-loading').waitFor()
     await expect.poll(() => log.textContent()).toContain('grok-ask → Enter')

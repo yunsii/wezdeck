@@ -272,7 +272,7 @@ msgstr "自动编辑"
 msgid "Account limits"
 msgstr "账号额度"
 
-#: src/features/prompt-action-state.tsx:96
+#: src/features/prompt-action-state.tsx:135
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "操作已发送，等待 Agent 继续……"
 
@@ -360,7 +360,7 @@ msgstr "全部档位"
 msgid "All time"
 msgstr "累计"
 
-#: src/features/session-permission.tsx:315
+#: src/features/session-permission.tsx:316
 msgid "Allow"
 msgstr "允许"
 
@@ -384,8 +384,8 @@ msgstr "已是最新版本"
 #~ msgid "Answer sent; waiting for Grok to continue…"
 #~ msgstr "答案已发送，等待 Grok 继续……"
 
-#: src/features/session-ask-claude.tsx:211
-#: src/features/session-elicitation.tsx:218
+#: src/features/session-ask-claude.tsx:220
+#: src/features/session-elicitation.tsx:222
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "答案已发送，等待 Agent 继续……"
 
@@ -432,11 +432,11 @@ msgstr "外观"
 msgid "Approve"
 msgstr "批准"
 
-#: src/features/session-elicitation.tsx:384
+#: src/features/session-elicitation.tsx:390
 msgid "Approve plan"
 msgstr "批准计划"
 
-#: src/features/session-elicitation.tsx:417
+#: src/features/session-elicitation.tsx:426
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q——与 Grok TUI 相同。"
 
@@ -444,7 +444,7 @@ msgstr "批准发 a，请修改发 s（再在下方输入说明），退出发 q
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "批准会选 Claude 的第一个选项（它默认的编辑方式）。选择继续规划后，可以在下面输入框里说明要改什么。"
 
-#: src/features/session-permission.tsx:315
+#: src/features/session-permission.tsx:316
 msgid "Approve the plan"
 msgstr "批准计划"
 
@@ -635,11 +635,11 @@ msgstr "取消"
 msgid "Cancel"
 msgstr "取消"
 
-#: src/features/session-ask-claude.tsx:205
+#: src/features/session-ask-claude.tsx:208
 msgid "Cancel (Esc)"
 msgstr "取消（Esc）"
 
-#: src/features/prompt-action-state.tsx:100
+#: src/features/prompt-action-state.tsx:142
 msgid "Cancelling…"
 msgstr "正在取消……"
 
@@ -1101,8 +1101,8 @@ msgstr "创建中…"
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
-#: src/features/session-elicitation.tsx:211
-#: src/features/session-elicitation.tsx:306
+#: src/features/session-elicitation.tsx:214
+#: src/features/session-elicitation.tsx:310
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
@@ -1159,7 +1159,7 @@ msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工�
 msgid "Delete session"
 msgstr "删除会话"
 
-#: src/features/session-permission.tsx:333
+#: src/features/session-permission.tsx:335
 msgid "Deny"
 msgstr "拒绝"
 
@@ -1295,9 +1295,9 @@ msgstr "已结束"
 msgid "Endpoint"
 msgstr "端点"
 
-#: src/features/session-ask-claude.tsx:180
-#: src/features/session-elicitation.tsx:178
-#: src/features/session-elicitation.tsx:304
+#: src/features/session-ask-claude.tsx:182
+#: src/features/session-elicitation.tsx:179
+#: src/features/session-elicitation.tsx:308
 msgid "Enter"
 msgstr "回车"
 
@@ -1305,8 +1305,8 @@ msgstr "回车"
 msgid "Errors"
 msgstr "错误"
 
-#: src/features/session-elicitation.tsx:195
-#: src/features/session-elicitation.tsx:305
+#: src/features/session-elicitation.tsx:197
+#: src/features/session-elicitation.tsx:309
 msgid "Esc"
 msgstr "Esc"
 
@@ -1675,7 +1675,7 @@ msgstr "刚刚"
 msgid "just restarted"
 msgstr "刚重启"
 
-#: src/features/session-permission.tsx:333
+#: src/features/session-permission.tsx:335
 msgid "Keep planning"
 msgstr "继续规划"
 
@@ -1930,11 +1930,11 @@ msgstr "已修改"
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
 
-#: src/features/session-ask-claude.tsx:124
+#: src/features/session-ask-claude.tsx:126
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "多选：每点一次切换一个选项，对照下面的终端画面确认后按回车。"
 
-#: src/features/session-elicitation.tsx:221
+#: src/features/session-elicitation.tsx:225
 msgid "Multiple choice: tap to toggle options, then press Enter."
 msgstr "多选题：点击切换选项，然后按 Enter。"
 
@@ -2154,7 +2154,7 @@ msgstr "无 Origin（脚本、curl 或其他程序）"
 msgid "No output yet"
 msgstr "还没有输出"
 
-#: src/features/session-elicitation.tsx:367
+#: src/features/session-elicitation.tsx:372
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
@@ -2488,7 +2488,7 @@ msgstr "计划模式"
 msgid "Plan mode"
 msgstr "计划模式"
 
-#: src/features/session-elicitation.tsx:361
+#: src/features/session-elicitation.tsx:366
 msgid "Plan ready for review"
 msgstr "计划待你确认"
 
@@ -2574,7 +2574,7 @@ msgstr "快捷键不可用"
 msgid "Quiet for over a week ({count})"
 msgstr "一周以上没动静（{count}）"
 
-#: src/features/session-elicitation.tsx:412
+#: src/features/session-elicitation.tsx:420
 msgid "Quit plan"
 msgstr "退出计划"
 
@@ -2763,7 +2763,7 @@ msgstr "仓库根目录"
 msgid "Request access"
 msgstr "申请授权"
 
-#: src/features/session-elicitation.tsx:398
+#: src/features/session-elicitation.tsx:405
 msgid "Request changes"
 msgstr "请修改"
 
@@ -3074,7 +3074,7 @@ msgstr "向 agent 窗口发送 Enter、Esc 或 Ctrl+C"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/prompt-action-state.tsx:101
+#: src/features/prompt-action-state.tsx:143
 msgid "Sending action…"
 msgstr "正在发送操作……"
 
@@ -3332,7 +3332,7 @@ msgstr "状态更新于"
 msgid "Sub-agent"
 msgstr "子智能体"
 
-#: src/features/session-ask-claude.tsx:114
+#: src/features/session-ask-claude.tsx:115
 msgid "Submit answers"
 msgstr "提交答案"
 
@@ -3340,8 +3340,8 @@ msgstr "提交答案"
 msgid "submitted"
 msgstr "已提交"
 
-#: src/features/session-ask-claude.tsx:210
-#: src/features/session-elicitation.tsx:217
+#: src/features/session-ask-claude.tsx:219
+#: src/features/session-elicitation.tsx:221
 msgid "Submitting your answer…"
 msgstr "正在提交答案……"
 
@@ -3413,11 +3413,12 @@ msgstr "接管到 tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "点一行即可复制它的值；长按或右键有更多选项。"
 
-#: src/features/session-elicitation.tsx:224
+#: src/features/session-elicitation.tsx:228
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字再回车"
 
-#: src/features/session-elicitation.tsx:223
+#: src/features/session-ask-claude.tsx:216
+#: src/features/session-elicitation.tsx:227
 msgid "Tap an option to send its number into the agent pane."
 msgstr "点选项会向 Agent 窗格发送对应数字"
 
@@ -3434,9 +3435,9 @@ msgstr "问答可点选项"
 msgid "Technical details"
 msgstr "技术细节"
 
-#: src/features/session-elicitation.tsx:230
+#: src/features/session-elicitation.tsx:234
 #: src/features/session-info-actions.tsx:168
-#: src/features/session-permission.tsx:339
+#: src/features/session-permission.tsx:342
 msgid "Terminal"
 msgstr "终端画面"
 
@@ -3449,7 +3450,7 @@ msgstr "终端画面"
 msgid "Text caret"
 msgstr "输入光标"
 
-#: src/features/session-elicitation.tsx:295
+#: src/features/session-elicitation.tsx:299
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
@@ -3798,7 +3799,7 @@ msgstr "更新于 {time}"
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
 
-#: src/features/prompt-action-state.tsx:98
+#: src/features/prompt-action-state.tsx:140
 msgid "Updating your selection…"
 msgstr "正在更新选择……"
 
@@ -3978,7 +3979,7 @@ msgstr "希望下一个 agent 先做什么？"
 msgid "What the other repository should do"
 msgstr "要对方仓库做什么"
 
-#: src/features/session-ask-claude.tsx:216
+#: src/features/session-ask-claude.tsx:225
 msgid "What the terminal shows"
 msgstr "终端画面"
 

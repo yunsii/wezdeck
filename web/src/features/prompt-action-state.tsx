@@ -6,6 +6,7 @@
 // dismisses or replaces the prompt — or unlocks immediately on write failure.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 
 import { trace } from '#/lib/client-trace'
 import { cn } from '#/lib/utils'
@@ -74,6 +75,46 @@ export function PromptActionSpinner({ className }: { className?: string }) {
   )
 }
 
+/**
+ * Overlay spinner inside a button without altering its intrinsic width or
+ * height: the label stays in flow (opacity-0 while loading, keeping both
+ * layout dimensions and accessible name intact), preventing flex-wrap buttons
+ * from shifting neighbors or wrapping onto a new row.
+ */
+export function PromptActionLabel({
+  loading,
+  spinnerClassName,
+  children,
+}: {
+  loading: boolean
+  spinnerClassName?: string
+  children: ReactNode
+}) {
+  return (
+    <span className="inline-grid place-items-center">
+      <span
+        className={cn(
+          'col-start-1 row-start-1 inline-flex items-center justify-center',
+          loading && 'opacity-0 select-none',
+        )}
+      >
+        {children}
+      </span>
+      {loading ? (
+        <PromptActionSpinner
+          className={cn('col-start-1 row-start-1', spinnerClassName)}
+        />
+      ) : null}
+    </span>
+  )
+}
+
+/**
+ * Zero-shift status slot shared by every interactive prompt card. Stacks the
+ * idle hint, an invisible waiting-text sizer, and the active pending status
+ * inside the same CSS Grid cell so toggling idle → sending → waiting → idle
+ * keeps the card height strictly constant across all viewport widths.
+ */
 export function PromptActionStatus({
   pending,
   idle,
@@ -90,10 +131,11 @@ export function PromptActionStatus({
   className?: string
 }) {
   const { t } = useLingui()
-  if (!pending && !idle) return null
+  const resolvedWaiting =
+    waitingText ?? t`Action sent; waiting for the agent to continue…`
   const activeText = pending
     ? pending.phase === 'waiting'
-      ? (waitingText ?? t`Action sent; waiting for the agent to continue…`)
+      ? resolvedWaiting
       : pending.kind === 'toggle'
         ? t`Updating your selection…`
         : pending.kind === 'cancel'
@@ -101,25 +143,43 @@ export function PromptActionStatus({
           : (sendingText ?? t`Sending action…`)
     : ''
   return (
-    <p
-      role={pending ? 'status' : undefined}
-      aria-live={pending ? 'polite' : undefined}
-      data-testid={pending ? loadingTestId : undefined}
-      data-prompt-loading={pending ? pending.phase : undefined}
+    <div
       className={cn(
-        'flex min-h-5 items-center gap-2 text-meta leading-relaxed',
-        pending ? 'text-brand-running' : 'text-brand-label',
+        'grid min-h-5 items-start text-meta leading-relaxed',
         className,
       )}
     >
+      {/* Invisible sizer keeps the slot tall enough for the longest status line */}
+      <p
+        aria-hidden
+        className="pointer-events-none col-start-1 row-start-1 flex items-center gap-2 opacity-0 select-none"
+      >
+        <PromptActionSpinner className="animate-none" />
+        <span>{resolvedWaiting}</span>
+      </p>
+      {idle ? (
+        <p
+          aria-hidden={Boolean(pending)}
+          className={cn(
+            'col-start-1 row-start-1 text-brand-label transition-opacity duration-150',
+            pending && 'pointer-events-none opacity-0 select-none',
+          )}
+        >
+          {idle}
+        </p>
+      ) : null}
       {pending ? (
-        <>
+        <p
+          role="status"
+          aria-live="polite"
+          data-testid={loadingTestId}
+          data-prompt-loading={pending.phase}
+          className="col-start-1 row-start-1 flex items-center gap-2 text-brand-running"
+        >
           <PromptActionSpinner />
           <span>{activeText}</span>
-        </>
-      ) : (
-        idle
-      )}
-    </p>
+        </p>
+      ) : null}
+    </div>
   )
 }
