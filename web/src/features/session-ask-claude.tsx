@@ -1,14 +1,13 @@
-// Claude's AskUserQuestion on the phone (host agent_claude_ask.go). The TUI
-// takes one question at a time: a digit picks the option and moves to the
-// next question; with several questions it ends on a review page that waits
-// for Enter ("Submit answers"). Every action goes through usePromptAction so
-// tapping an option, submitting or cancelling gives immediate loading →
-// waiting feedback until the next step or host poll settles.
+// Claude's AskUserQuestion on the phone (host agent_claude_ask.go). Inside
+// SessionDetail (onResolve provided), tapping an option advances steps or
+// dismisses the card at 0ms while queuing keys serially; standalone demos keep
+// usePromptAction's loading → waiting flow.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { createSerialQueue } from '#/lib/optimistic-state'
 import { cn } from '#/lib/utils'
 import {
   PromptActionStatus,
@@ -16,50 +15,193 @@ import {
   usePromptAction,
 } from './prompt-action-state'
 import { SessionElicitation } from './session-elicitation'
-import type { Elicitation } from './session-elicitation'
+import type { Elicitation, PromptResolveFn } from './session-elicitation'
 
 const KEY_DIGITS = 4 // the host key allowlist: 1–4 (AskUserQuestion has ≤ 4)
+const claudeAskQueue = createSerialQueue()
+
+function useClaudeAskState({
+  elicitation,
+  onKey,
+  hostPromptKey,
+  onResolve,
+}: {
+  elicitation: Elicitation
+  onKey: (key: string) => Promise<unknown> | void
+  hostPromptKey?: string
+  onResolve?: PromptResolveFn
+}) {
+  const questions = elicitation.questions
+  const askId = elicitation.tool_call_id ?? ''
+  const optimistic = Boolean(onResolve)
+  const queueKey = `claude-ask:${hostPromptKey ?? askId}`
+  const [picked, setPicked] = useState<{ id: string; labels: Array<string> }>({
+    id: askId,
+    labels: [],
+  })
+  const [multiPicked, setMultiPicked] = useState<{
+    id: string
+    byStep: Record<number, Array<number>>
+  }>({ id: askId, byStep: {} })
+  const labels = picked.id === askId ? picked.labels : []
+  const review =
+    Boolean(elicitation.review) ||
+    (questions.length > 1 && labels.length >= questions.length)
+  const step = Math.min(labels.length, questions.length - 1)
+  const current = questions.at(step)
+  const multiByStep = multiPicked.id === askId ? multiPicked.byStep : {}
+  const multiChecked = multiByStep[step] ?? []
+  const total = questions.length
+  const promptKey = `${askId}:${step}:${review ? 'review' : 'ask'}`
+  const { pending, run } = usePromptAction(promptKey)
+
+  const enqueueKey = (key: string) =>
+    claudeAskQueue.enqueue(queueKey, async () => (await onKey(key)) !== false)
+
+  const pick = async (index: number, label: string) => {
+    const stayWaiting = total <= 1
+    if (optimistic && onResolve) {
+      if (stayWaiting) {
+        await onResolve({
+          kind: 'prompt-submit',
+          promptKey: hostPromptKey ?? askId,
+          execute: async () => (await enqueueKey(String(index + 1))).ok,
+        })
+        return
+      }
+      const prevLabels = labels
+      setPicked({ id: askId, labels: [...prevLabels, label] })
+      const res = await enqueueKey(String(index + 1))
+      if (!res.ok && !res.aborted) setPicked({ id: askId, labels: prevLabels })
+      return
+    }
+    const ok = await run(`opt-${index}`, () => onKey(String(index + 1)), {
+      stayWaiting,
+    })
+    if (ok && !stayWaiting) setPicked({ id: askId, labels: [...labels, label] })
+  }
+
+  const toggleMulti = async (oi: number) => {
+    if (optimistic) {
+      const prev = multiChecked
+      const next = prev.includes(oi)
+        ? prev.filter((item) => item !== oi)
+        : [...prev, oi]
+      setMultiPicked({ id: askId, byStep: { ...multiByStep, [step]: next } })
+      const res = await enqueueKey(String(oi + 1))
+      if (!res.ok && !res.aborted) {
+        setMultiPicked((cur) => ({
+          id: askId,
+          byStep: { ...(cur.id === askId ? cur.byStep : {}), [step]: prev },
+        }))
+      }
+      return
+    }
+    await run(`opt-${oi}`, () => onKey(String(oi + 1)), {
+      kind: 'toggle',
+      stayWaiting: false,
+    })
+  }
+
+  const submitMulti = async () => {
+    const stayWaiting = total <= 1
+    if (optimistic && onResolve) {
+      if (stayWaiting) {
+        await onResolve({
+          kind: 'prompt-submit',
+          promptKey: hostPromptKey ?? askId,
+          execute: async () => (await enqueueKey('Enter')).ok,
+        })
+        return
+      }
+      const prevLabels = labels
+      setPicked({ id: askId, labels: [...prevLabels, '✓'] })
+      const res = await enqueueKey('Enter')
+      if (!res.ok && !res.aborted) setPicked({ id: askId, labels: prevLabels })
+      return
+    }
+    const ok = await run('enter', () => onKey('Enter'), { stayWaiting })
+    if (ok && !stayWaiting) setPicked({ id: askId, labels: [...labels, '✓'] })
+  }
+
+  const submitReview = () => {
+    if (optimistic && onResolve) {
+      void onResolve({
+        kind: 'prompt-submit',
+        promptKey: hostPromptKey ?? askId,
+        execute: async () => (await enqueueKey('Enter')).ok,
+      })
+      return
+    }
+    void run('submit', () => onKey('Enter'))
+  }
+
+  const cancelAsk = () => {
+    if (optimistic && onResolve) {
+      claudeAskQueue.abort(queueKey)
+      setPicked({ id: askId, labels: [] })
+      void onResolve({
+        kind: 'prompt-cancel',
+        promptKey: hostPromptKey ?? askId,
+        execute: async () => (await onKey('Escape')) !== false,
+      })
+      return
+    }
+    void (async () => {
+      const ok = await run('cancel', () => onKey('Escape'), { kind: 'cancel' })
+      if (ok) setPicked({ id: askId, labels: [] })
+    })()
+  }
+
+  return {
+    questions,
+    labels,
+    review,
+    step,
+    current,
+    multiChecked,
+    total,
+    pending,
+    pick,
+    toggleMulti,
+    submitMulti,
+    submitReview,
+    cancelAsk,
+  }
+}
 
 export function ClaudeAsk({
   elicitation,
   screen,
   disabled,
   onKey,
+  promptKey: hostPromptKey,
+  onResolve,
 }: {
   elicitation: Elicitation
   screen?: string
   disabled: boolean
   onKey: (key: string) => Promise<unknown> | void
+  promptKey?: string
+  onResolve?: PromptResolveFn
 }) {
   const { t } = useLingui()
-  const questions = elicitation.questions
-  const askId = elicitation.tool_call_id ?? ''
-  // answers picked on this phone, per ask; reset when a new ask arrives
-  const [picked, setPicked] = useState<{ id: string; labels: Array<string> }>({
-    id: askId,
-    labels: [],
-  })
-  const labels = picked.id === askId ? picked.labels : []
-  // the pane is the truth (answered at the desk, or a pick that missed)
-  const review =
-    Boolean(elicitation.review) ||
-    (questions.length > 1 && labels.length >= questions.length)
-  const step = Math.min(labels.length, questions.length - 1)
-  const current = questions.at(step)
-  const total = questions.length
+  const {
+    questions,
+    labels,
+    review,
+    step,
+    current,
+    multiChecked,
+    total,
+    pending,
+    pick,
+    toggleMulti,
+    submitMulti,
+    submitReview,
+    cancelAsk,
+  } = useClaudeAskState({ elicitation, onKey, hostPromptKey, onResolve })
   const number = step + 1
-  const promptKey = `${askId}:${step}:${review ? 'review' : 'ask'}`
-  const { pending, run } = usePromptAction(promptKey)
-
-  const pick = async (index: number, label: string) => {
-    const stayWaiting = total <= 1
-    const ok = await run(`opt-${index}`, () => onKey(String(index + 1)), {
-      stayWaiting,
-    })
-    if (ok && !stayWaiting) {
-      setPicked({ id: askId, labels: [...labels, label] })
-    }
-  }
 
   return (
     <div
@@ -100,7 +242,7 @@ export function ClaudeAsk({
             variant="solid"
             type="button"
             disabled={disabled || Boolean(pending)}
-            onClick={() => void run('submit', () => onKey('Enter'))}
+            onClick={submitReview}
             data-testid="ask-submit"
             className={cn(
               'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
@@ -120,51 +262,44 @@ export function ClaudeAsk({
               {t`Multiple choice: each tap toggles an option; check the screen below, then press Enter.`}
             </p>
           ) : null}
-          {current.options.slice(0, KEY_DIGITS).map((opt, oi) => (
-            <Button
-              variant="key"
-              key={`${oi}-${opt.label}`}
-              type="button"
-              disabled={disabled || Boolean(pending)}
-              onClick={() =>
-                current.multi_select
-                  ? void run(`opt-${oi}`, () => onKey(String(oi + 1)), {
-                      kind: 'toggle',
-                      stayWaiting: false,
-                    })
-                  : void pick(oi, opt.label)
-              }
-              className={cn(
-                'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
-                promptButtonClass(pending, `opt-${oi}`),
-              )}
-            >
-              <span className="text-body font-medium">
-                {oi + 1}. {opt.label}
-              </span>
-              {opt.description ? (
-                <span className="text-caption text-brand-muted">
-                  {opt.description}
+          {current.options.slice(0, KEY_DIGITS).map((opt, oi) => {
+            const isChecked = current.multi_select && multiChecked.includes(oi)
+            return (
+              <Button
+                variant="key"
+                key={`${oi}-${opt.label}`}
+                type="button"
+                disabled={disabled || Boolean(pending)}
+                aria-pressed={current.multi_select ? isChecked : undefined}
+                onClick={() =>
+                  current.multi_select
+                    ? void toggleMulti(oi)
+                    : void pick(oi, opt.label)
+                }
+                className={cn(
+                  'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
+                  isChecked && 'border-brand-running bg-brand-running/10',
+                  promptButtonClass(pending, `opt-${oi}`),
+                )}
+              >
+                <span className="text-body font-medium">
+                  {isChecked ? '✓ ' : ''}
+                  {oi + 1}. {opt.label}
                 </span>
-              ) : null}
-            </Button>
-          ))}
+                {opt.description ? (
+                  <span className="text-caption text-brand-muted">
+                    {opt.description}
+                  </span>
+                ) : null}
+              </Button>
+            )
+          })}
           {current.multi_select ? (
             <Button
               variant="key"
               type="button"
               disabled={disabled || Boolean(pending)}
-              onClick={() =>
-                void (async () => {
-                  const stayWaiting = total <= 1
-                  const ok = await run('enter', () => onKey('Enter'), {
-                    stayWaiting,
-                  })
-                  if (ok && !stayWaiting) {
-                    setPicked({ id: askId, labels: [...labels, '✓'] })
-                  }
-                })()
-              }
+              onClick={() => void submitMulti()}
               className={cn(
                 'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
                 promptButtonClass(pending, 'enter'),
@@ -180,14 +315,7 @@ export function ClaudeAsk({
           variant="key"
           type="button"
           disabled={disabled || Boolean(pending)}
-          onClick={() =>
-            void (async () => {
-              const ok = await run('cancel', () => onKey('Escape'), {
-                kind: 'cancel',
-              })
-              if (ok) setPicked({ id: askId, labels: [] })
-            })()
-          }
+          onClick={cancelAsk}
           className={cn(
             'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
             promptButtonClass(pending, 'cancel'),
@@ -227,12 +355,16 @@ export function AskCard({
   screen,
   disabled,
   sendKey,
+  promptKey,
+  onResolve,
 }: {
   agent?: string
   elicitation: Elicitation
   screen?: string
   disabled: boolean
   sendKey: (key: string) => Promise<unknown>
+  promptKey?: string
+  onResolve?: PromptResolveFn
 }) {
   if (agent === 'claude')
     return (
@@ -241,6 +373,8 @@ export function AskCard({
         screen={screen}
         disabled={disabled}
         onKey={sendKey}
+        promptKey={promptKey}
+        onResolve={onResolve}
       />
     )
   return (
@@ -250,6 +384,8 @@ export function AskCard({
       screen={screen}
       disabled={disabled}
       sendKey={sendKey}
+      promptKey={promptKey}
+      onResolve={onResolve}
     />
   )
 }

@@ -64,6 +64,10 @@ export type Pending = {
   note?: string
   /** uploaded names sent with it: the bubble shows them as the message will */
   attachments?: Array<string>
+  /** local object URLs shown inside the optimistic bubble while uploading */
+  localPreviews?: Array<string>
+  /** progress label while local image attachments are uploading */
+  uploading?: string
   /** absolute transcript index where the transcript ended when it was sent */
   after?: number
   /** host outbox record id when backed by host sent-messages.json */

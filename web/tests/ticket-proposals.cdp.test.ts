@@ -228,16 +228,25 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
     await reason.fill('按层拆，不按模块')
     await page.keyboard.press('Control+Enter')
     await card.waitFor({ state: 'detached', timeout: 20_000 })
-    const rejected = JSON.parse(
-      readFileSync(data(rejectMe, 'proposals.json'), 'utf8'),
-    ) as Array<{ status: string; reason: string }>
-    expect(rejected[0]).toMatchObject({
-      status: 'rejected',
-      reason: '按层拆，不按模块',
-    })
-    expect(readFileSync(data(rejectMe, 'ticket.md'), 'utf8')).toMatch(
-      /status: rejected/,
-    )
+    await expect
+      .poll(
+        () =>
+          (
+            JSON.parse(
+              readFileSync(data(rejectMe, 'proposals.json'), 'utf8'),
+            ) as Array<{ status: string; reason?: string }>
+          )[0],
+        { timeout: 20_000 },
+      )
+      .toMatchObject({
+        status: 'rejected',
+        reason: '按层拆，不按模块',
+      })
+    await expect
+      .poll(() => readFileSync(data(rejectMe, 'ticket.md'), 'utf8'), {
+        timeout: 20_000,
+      })
+      .toMatch(/status: rejected/)
     expect(readFileSync(data(rejectMe, 'ticket.md'), 'utf8')).toMatch(
       /phase: plan_rejected/,
     )
@@ -248,18 +257,28 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
     await card2.waitFor({ timeout: 20_000 })
     await card2.getByRole('button', { name: '确认并开始' }).click()
     await card2.waitFor({ state: 'detached', timeout: 30_000 })
+    await expect
+      .poll(
+        () =>
+          (
+            JSON.parse(
+              readFileSync(data(confirmMe, 'proposals.json'), 'utf8'),
+            ) as Array<{ status: string }>
+          )[0]?.status,
+        { timeout: 30_000 },
+      )
+      .toBe('approved')
     const props = JSON.parse(
       readFileSync(data(confirmMe, 'proposals.json'), 'utf8'),
     ) as Array<{ status: string; created: Record<string, string> }>
-    expect(props[0].status).toBe('approved')
     const first = props[0].created.a
     expect(
       JSON.parse(readFileSync(data(props[0].created.b, 'meta.json'), 'utf8'))
         .depends_on,
     ).toEqual([first])
-    // the children table shows them on the same page
+    // the children list shows them on the same page
     await page
-      .getByRole('table', { name: '子单' })
+      .getByRole('list', { name: '子单' })
       .getByText('拆分甲：实现 fmt')
       // its own row, and 乙's 依赖 column names it too
       .first()

@@ -73,6 +73,7 @@ export function useComposer({
     storageKey: draftKey(id),
     imageKey: id,
     onSend,
+    deferUpload: true,
   })
   const pageState = useRef(diagnostics)
   pageState.current = diagnostics

@@ -6,6 +6,11 @@
 // screen is cleared on its own (useSeenAck).
 import { useLingui } from '@lingui/react/macro'
 import { trace } from '#/lib/client-trace'
+import {
+  acceptSessionOptimistic,
+  applySessionOptimistic,
+  rollbackSessionOptimistic,
+} from '#/lib/optimistic-state'
 import { hostWrite } from '#/lib/runtime-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
@@ -13,6 +18,8 @@ import { useEffect, useState } from 'react'
 import { useDeviceState } from './device-state'
 import { Button } from '#/components/ui/button'
 import { SwipeActions } from './session-row-swipe'
+import type { Detail } from './session-detail-types'
+import type { SessionsReply } from './session-delete-state'
 
 /** an entry counts while running / waiting / done; idle ones have nothing to clear */
 export const clearable = (status: string, waitingKind?: string) =>
@@ -49,14 +56,24 @@ export function useSeenAck(
       timer = setTimeout(() => {
         if (document.visibilityState !== 'visible' || acked.has(key)) return
         acked.add(key)
+        const opId = crypto.randomUUID()
+        applySessionOptimistic({
+          id,
+          opId,
+          kind: 'clear',
+          baseline: { status: 'done', ts },
+        })
         hostWrite('clear', { id, ts, status: 'done' })
           .then((result) => {
             const skipped = (result as { skipped?: string } | null)?.skipped
             trace('session-seen-ack', { id, ts, skipped: skipped ?? null })
+            if (skipped) rollbackSessionOptimistic(id, opId, skipped)
+            else acceptSessionOptimistic(id, opId)
             return client.invalidateQueries({ queryKey: ['remote'] })
           })
           .catch((error: unknown) => {
             acked.delete(key) // try again next time it is on screen
+            rollbackSessionOptimistic(id, opId, String(error))
             trace('session-seen-ack', { id, ts, error: String(error) })
           })
       }, SEEN_AFTER_MS)
@@ -77,11 +94,28 @@ export function useClearSession() {
   const clear = async (id: string) => {
     setBusy(true)
     setError('')
+    const opId = crypto.randomUUID()
+    const detail = client.getQueryData<Detail>(['remote', 'session', id])
+    const listRow = client
+      .getQueryData<SessionsReply>(['remote', 'sessions'])
+      ?.sessions.find((row) => row.id === id)
+    applySessionOptimistic({
+      id,
+      opId,
+      kind: 'clear',
+      baseline: {
+        status: detail?.status ?? listRow?.status,
+        ts: detail?.ts ?? listRow?.ts,
+        waitingKind: detail?.waiting_kind ?? listRow?.waiting_kind,
+      },
+    })
     try {
       await hostWrite('clear', { id })
-      await client.invalidateQueries({ queryKey: ['remote'] })
+      acceptSessionOptimistic(id, opId)
+      void client.invalidateQueries({ queryKey: ['remote'] })
       return true
     } catch (e) {
+      rollbackSessionOptimistic(id, opId, (e as Error).message)
       setError((e as Error).message)
       return false
     } finally {

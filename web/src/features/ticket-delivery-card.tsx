@@ -16,6 +16,13 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
 import { collabKey } from '#/lib/collab-query'
+import {
+  acceptTicketOptimistic,
+  applyTicketOptimistic,
+  rollbackTicketOptimistic,
+  ticketUpdatedOf,
+  useTicketOptimistic,
+} from '#/lib/optimistic-tickets'
 import { hostWrite } from '#/lib/runtime-client'
 import type { CollabShow } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
@@ -26,35 +33,31 @@ type IntegrationMap = NonNullable<
   NonNullable<CollabShow['collab']>['integration']
 >
 
-export function TicketDeliveryCard({
-  data,
+function useDeliveryAction({
+  ticket,
+  hasManager,
+  hasConflict,
+  mergedRepos,
 }: {
-  data: CollabShow & { ticket: NonNullable<CollabShow['ticket']> }
+  ticket: NonNullable<CollabShow['ticket']>
+  hasManager: boolean
+  hasConflict: boolean
+  mergedRepos: Array<[string, IntegrationMap[string]]>
 }) {
   const { t } = useLingui()
-  const device = useDeviceState()
   const client = useQueryClient()
-  const [diffOpen, setDiffOpen] = useState(false)
-  const integration: IntegrationMap | null | undefined =
-    data.collab?.integration
-  if (!integration || Object.keys(integration).length === 0) return null
-
-  const ticket = data.ticket
-  const canWrite = device.state === 'approved'
-  const hasManager = Boolean(ticket.manager_session)
-  const entries = Object.entries(integration)
-  const conflicts = entries.filter(([, info]) => Boolean(info.conflict))
-  const mergedRepos = entries.filter(
-    ([, info]) => !info.conflict && !info.skipped && info.merged.length > 0,
-  )
-  const verifyFailed = ticket.phase === 'verify_failed'
-  const hasConflict =
-    conflicts.length > 0 || ticket.phase === 'integration_conflict'
-  const isClosed = ticket.status === 'closed'
-  const readyToDeliver = !hasConflict && !verifyFailed && mergedRepos.length > 0
-
-  const sendAction = useMutation({
+  return useMutation({
     mutationFn: async (kind: 'deliver' | 'fix') => {
+      const opId = crypto.randomUUID()
+      applyTicketOptimistic({
+        id: ticket.id,
+        opId,
+        kind,
+        baseline: {
+          status: ticket.status,
+          updated: ticketUpdatedOf(ticket),
+        },
+      })
       const repoSummary = mergedRepos
         .map(([repo, info]) => `${repo} (${info.branch ?? 'integration'})`)
         .join(', ')
@@ -64,25 +67,35 @@ export function TicketDeliveryCard({
           : hasConflict
             ? `Please inspect and resolve the integration merge conflict on ${ticket.id}, re-run verification, and report back.`
             : `Please inspect the failed integration verification on ${ticket.id}, fix the issue, re-verify, and report back.`
-      if (hasManager) {
-        return hostWrite('ticket.manager.send', { id: ticket.id, text })
+      try {
+        const res = hasManager
+          ? await hostWrite('ticket.manager.send', { id: ticket.id, text })
+          : await hostWrite('reply', {
+              id: ticket.id,
+              decision: text,
+              continue: true,
+            })
+        acceptTicketOptimistic(ticket.id, opId)
+        if (kind === 'deliver') {
+          trace('deliver-confirmed', {
+            id: ticket.id,
+            repos: mergedRepos.length,
+          })
+          toast(t`Delivery confirmation sent`)
+        } else {
+          toast(t`Fix request sent`)
+        }
+        return res
+      } catch (err) {
+        rollbackTicketOptimistic(
+          ticket.id,
+          opId,
+          err instanceof Error ? err.message : String(err),
+        )
+        throw err
       }
-      return hostWrite('reply', {
-        id: ticket.id,
-        decision: text,
-        continue: true,
-      })
     },
-    onSuccess: (_res, kind) => {
-      if (kind === 'deliver') {
-        trace('deliver-confirmed', {
-          id: ticket.id,
-          repos: mergedRepos.length,
-        })
-        toast(t`Delivery confirmation sent`)
-      } else {
-        toast(t`Fix request sent`)
-      }
+    onSuccess: () => {
       void client.invalidateQueries({
         queryKey: collabKey('show', { id: ticket.id }),
       })
@@ -91,6 +104,40 @@ export function TicketDeliveryCard({
       toast.error(err instanceof Error ? err.message : String(err))
     },
   })
+}
+
+export function TicketDeliveryCard({
+  data,
+}: {
+  data: CollabShow & { ticket: NonNullable<CollabShow['ticket']> }
+}) {
+  const { t } = useLingui()
+  const device = useDeviceState()
+  const [diffOpen, setDiffOpen] = useState(false)
+  const integration: IntegrationMap | null | undefined =
+    data.collab?.integration
+  const ticket = data.ticket
+  const canWrite = device.state === 'approved'
+  const hasManager = Boolean(ticket.manager_session)
+  const entries = integration ? Object.entries(integration) : []
+  const conflicts = entries.filter(([, info]) => Boolean(info.conflict))
+  const mergedRepos = entries.filter(
+    ([, info]) => !info.conflict && !info.skipped && info.merged.length > 0,
+  )
+  const verifyFailed = ticket.phase === 'verify_failed'
+  const hasConflict =
+    conflicts.length > 0 || ticket.phase === 'integration_conflict'
+  const isClosed = ticket.status === 'closed'
+  const readyToDeliver = !hasConflict && !verifyFailed && mergedRepos.length > 0
+  const overlay = useTicketOptimistic(ticket.id)
+  const optimisticSent = overlay?.kind === 'deliver' || overlay?.kind === 'fix'
+  const sendAction = useDeliveryAction({
+    ticket,
+    hasManager,
+    hasConflict,
+    mergedRepos,
+  })
+  if (!integration || entries.length === 0) return null
 
   return (
     <>
@@ -182,43 +229,49 @@ export function TicketDeliveryCard({
         ) : null}
 
         {canWrite && !isClosed ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {readyToDeliver ? (
-              <Button
-                variant="solid"
-                type="button"
-                data-testid="delivery-confirm-button"
-                disabled={sendAction.isPending}
-                onClick={() => sendAction.mutate('deliver')}
-                className="inline-flex min-h-10 items-center gap-1.5"
-              >
-                <Send size={14} aria-hidden />
-                <span>
-                  {sendAction.isPending
-                    ? t`Sending…`
-                    : t`Confirm delivery & close`}
-                </span>
-              </Button>
-            ) : hasConflict || verifyFailed ? (
-              <Button
-                variant="solid"
-                type="button"
-                data-testid="delivery-fix-button"
-                disabled={sendAction.isPending}
-                onClick={() => sendAction.mutate('fix')}
-                className="inline-flex min-h-10 items-center gap-1.5"
-              >
-                <Send size={14} aria-hidden />
-                <span>
-                  {sendAction.isPending
-                    ? t`Sending…`
-                    : hasConflict
+          optimisticSent ? (
+            <p
+              role="status"
+              data-testid="delivery-optimistic-status"
+              className="text-caption text-brand-running"
+            >
+              {overlay.kind === 'deliver'
+                ? t`Delivery confirmed; waiting for the agent to finish…`
+                : t`Fix request sent; waiting for the agent…`}
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {readyToDeliver ? (
+                <Button
+                  variant="solid"
+                  type="button"
+                  data-testid="delivery-confirm-button"
+                  disabled={sendAction.isPending}
+                  onClick={() => sendAction.mutate('deliver')}
+                  className="inline-flex min-h-10 items-center gap-1.5"
+                >
+                  <Send size={14} aria-hidden />
+                  <span>{t`Confirm delivery & close`}</span>
+                </Button>
+              ) : hasConflict || verifyFailed ? (
+                <Button
+                  variant="solid"
+                  type="button"
+                  data-testid="delivery-fix-button"
+                  disabled={sendAction.isPending}
+                  onClick={() => sendAction.mutate('fix')}
+                  className="inline-flex min-h-10 items-center gap-1.5"
+                >
+                  <Send size={14} aria-hidden />
+                  <span>
+                    {hasConflict
                       ? t`Ask manager to resolve conflict`
                       : t`Ask manager to fix verification`}
-                </span>
-              </Button>
-            ) : null}
-          </div>
+                  </span>
+                </Button>
+              ) : null}
+            </div>
+          )
         ) : null}
       </section>
 

@@ -2,6 +2,11 @@ import { useMutationState, useQuery } from '@tanstack/react-query'
 
 import { useCallback } from 'react'
 
+import {
+  applySessionsListOverlay,
+  reconcileSessionsList,
+  useAllSessionOptimistics,
+} from '#/lib/optimistic-state'
 import { hostRead } from '#/lib/runtime-client'
 import type { SessionCard } from './session-card'
 import type { NewSessionJob } from './session-new-route'
@@ -73,15 +78,24 @@ export function useSessionDeleteReview(id: string) {
 
 export function useSessions() {
   const pending = usePendingSessionDeletes()
+  const overlays = useAllSessionOptimistics()
   const select = useCallback(
-    (data: SessionsReply) => hideDeletedSessions(data, new Set(pending)),
-    [pending],
+    (data: SessionsReply) =>
+      applySessionsListOverlay(
+        hideDeletedSessions(data, new Set(pending)),
+        overlays,
+      ),
+    [pending, overlays],
   )
   return useQuery({
     queryKey: ['remote', 'sessions'],
     enabled: typeof window !== 'undefined',
     refetchInterval: 5_000,
-    queryFn: async () => (await hostRead('sessions', {})) as SessionsReply,
+    queryFn: async () => {
+      const reply = (await hostRead('sessions', {})) as SessionsReply
+      reconcileSessionsList(reply.sessions)
+      return reply
+    },
     select,
   })
 }

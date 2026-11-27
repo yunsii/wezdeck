@@ -12,6 +12,7 @@ import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { collabKey, useCollab } from '#/lib/collab-query'
+import { useTicketOptimistic } from '#/lib/optimistic-tickets'
 import type { CollabShow, CollabTicket } from '#/lib/runtime-contract'
 import { cn } from '#/lib/utils'
 import { CollabMetricsBand } from './collab-metrics'
@@ -78,12 +79,14 @@ export function TicketReading({
 }) {
   const { t } = useLingui()
   const client = useQueryClient()
+  const ticketOverlay = useTicketOptimistic(id)
   const peek = client.getQueryData<CollabShow>(collabKey('show', { id }))
   const peekLive = Boolean(
-    peek?.ok &&
-    ((peek.ticket?.running.length ?? 0) > 0 ||
-      peek.collab?.scheduler?.alive ||
-      peek.children_detail.some((item) => item.running.length > 0)),
+    ticketOverlay ||
+    (peek?.ok &&
+      ((peek.ticket?.running.length ?? 0) > 0 ||
+        peek.collab?.scheduler?.alive ||
+        peek.children_detail.some((item) => item.running.length > 0))),
   )
   // switching tickets keeps the last one on screen until the next arrives:
   // a Loading… heading for ~50 ms between them read as a flash

@@ -7,9 +7,19 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
+import {
+  applyCollabHealthOverlay,
+  applyCollabListOverlay,
+  applyCollabShowOverlay,
+  reconcileTicketList,
+  reconcileTicketShow,
+  useAllTicketOptimistics,
+} from './optimistic-tickets'
 import { getCollab } from './runtime-client'
 import type { CollabCommand } from './runtime-client'
+import type { CollabHealth, CollabList, CollabShow } from './runtime-contract'
 
 type Params = Record<string, string | number | undefined>
 
@@ -30,12 +40,21 @@ export function useCollab<TCommand extends CollabCommand>(
 ) {
   const client = useQueryClient()
   const key = collabKey(command, params)
-  return useQuery({
+  const overlays = useAllTicketOptimistics()
+  const showId =
+    command === 'show' && typeof params.id === 'string' ? params.id : undefined
+
+  const query = useQuery({
     queryKey: key,
     queryFn: async () => {
       const result = await getCollab(command, params)
       if (!result.ok && client.getQueryData(key)) {
         throw new Error(result.error?.message ?? 'unavailable')
+      }
+      if (command === 'show' && showId) {
+        reconcileTicketShow(showId, result as CollabShow)
+      } else if (command === 'list') {
+        reconcileTicketList(result as CollabList)
       }
       return result
     },
@@ -44,4 +63,24 @@ export function useCollab<TCommand extends CollabCommand>(
     staleTime: options.staleTime,
     placeholderData: options.keepPrevious ? keepPreviousData : undefined,
   })
+
+  const projected = useMemo(() => {
+    const raw = query.data
+    if (!raw || overlays.size === 0) return raw
+    if (command === 'show' && showId) {
+      return (applyCollabShowOverlay(raw as CollabShow, overlays.get(showId)) ??
+        raw) as typeof raw
+    }
+    if (command === 'list') {
+      return (applyCollabListOverlay(raw as CollabList, overlays) ??
+        raw) as typeof raw
+    }
+    if (command === 'health') {
+      return (applyCollabHealthOverlay(raw as CollabHealth, overlays) ??
+        raw) as typeof raw
+    }
+    return raw
+  }, [query.data, command, showId, overlays])
+
+  return projected === query.data ? query : { ...query, data: projected }
 }

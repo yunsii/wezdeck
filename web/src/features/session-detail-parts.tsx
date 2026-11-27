@@ -12,6 +12,7 @@ import type { Message } from './chat-thread'
 import { ErrorLine } from './session-composer'
 import type { Detail } from './session-detail-types'
 import { PromptPanels } from './session-elicitation'
+import type { PromptResolveFn } from './session-elicitation'
 import { EmptySession } from './session-empty'
 import type { mergeOutboxPending, useSessionWrites } from './session-send'
 import { SessionSubagents } from './session-subagents'
@@ -125,6 +126,7 @@ export function SessionThreadBody({
   onLoadManual,
   pendingProps,
   onRun,
+  onResolvePrompt,
 }: {
   id: string
   wide: boolean
@@ -152,6 +154,7 @@ export function SessionThreadBody({
     action: 'key' | 'session.restart',
     args: Record<string, unknown>,
   ) => Promise<boolean>
+  onResolvePrompt?: PromptResolveFn
 }) {
   return (
     <div
@@ -212,6 +215,7 @@ export function SessionThreadBody({
           sending={sending}
           canWrite={!readOnly && approved}
           onKey={(key) => onRun('key', { key })}
+          onResolve={onResolvePrompt}
         />
         <div ref={end} />
       </div>

@@ -8,9 +8,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { collabKey } from '#/lib/collab-query'
+import {
+  acceptTicketOptimistic,
+  applyTicketOptimistic,
+  rollbackTicketOptimistic,
+  ticketUpdatedOf,
+} from '#/lib/optimistic-tickets'
 import { hostWrite } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
-import type { TicketProposal } from '#/lib/runtime-contract'
+import type { CollabShow, TicketProposal } from '#/lib/runtime-contract'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { Select } from '#/components/ui/select'
@@ -118,6 +125,65 @@ export function TicketProposals({
   )
 }
 
+function useProposalDecision(
+  id: string,
+  proposal: TicketProposal,
+  backends: Record<string, string>,
+  reason: string,
+) {
+  const { t } = useLingui()
+  const client = useQueryClient()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const n = proposal.items.length
+  const decide = async (verdict: 'approve' | 'reject') => {
+    setBusy(true)
+    setError('')
+    const opId = crypto.randomUUID()
+    const cached = client.getQueryData<CollabShow>(collabKey('show', { id }))
+    const overrides = Object.fromEntries(
+      Object.entries(backends).filter(([, v]) => v && v !== 'default'),
+    )
+    applyTicketOptimistic({
+      id,
+      opId,
+      kind: verdict === 'approve' ? 'proposal-approve' : 'proposal-reject',
+      proposalId: proposal.id,
+      baseline: {
+        status: cached?.ticket?.status,
+        updated: ticketUpdatedOf(cached?.ticket),
+        proposalsCount: cached?.proposals.length,
+      },
+    })
+    try {
+      await hostWrite('reply', {
+        id,
+        proposal: proposal.id,
+        verdict,
+        text: verdict === 'reject' ? reason : '',
+        ...(verdict === 'approve' && Object.keys(overrides).length > 0
+          ? { backends: overrides }
+          : {}),
+      })
+      acceptTicketOptimistic(id, opId)
+      toast(
+        verdict === 'approve'
+          ? t`Confirmed: ${n} child ticket(s) created, scheduler started`
+          : t`Proposal rejected`,
+      )
+      void client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
+    } catch (e) {
+      const message = (e as Error).message
+      rollbackTicketOptimistic(id, opId, message)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return { busy, error, decide }
+}
+
 function ProposalCard({
   id,
   proposal,
@@ -128,13 +194,16 @@ function ProposalCard({
   childTitle: (id: string) => string | undefined
 }) {
   const { t } = useLingui()
-  const client = useQueryClient()
   const device = useDeviceState()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState('')
   const [backends, setBackends] = useState<Record<string, string>>({})
+  const { busy, error, decide } = useProposalDecision(
+    id,
+    proposal,
+    backends,
+    reason,
+  )
   const n = proposal.items.length
   const pid = proposal.id
   const by = proposal.by ? (childTitle(proposal.by) ?? proposal.by) : ''
@@ -143,34 +212,6 @@ function ProposalCard({
       ? proposal.outcome.backend
       : 'claude'
   const approved = device.state === 'approved'
-  const decide = async (verdict: 'approve' | 'reject') => {
-    setBusy(true)
-    setError('')
-    try {
-      const overrides = Object.fromEntries(
-        Object.entries(backends).filter(([, v]) => v && v !== 'default'),
-      )
-      await hostWrite('reply', {
-        id,
-        proposal: proposal.id,
-        verdict,
-        text: verdict === 'reject' ? reason : '',
-        ...(verdict === 'approve' && Object.keys(overrides).length > 0
-          ? { backends: overrides }
-          : {}),
-      })
-      toast(
-        verdict === 'approve'
-          ? t`Confirmed: ${n} child ticket(s) created, scheduler started`
-          : t`Proposal rejected`,
-      )
-      await client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
   return (
     <section
       aria-label={t`Split proposal ${pid}`}

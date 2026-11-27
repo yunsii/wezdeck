@@ -12,13 +12,18 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:515
+#: src/features/chat-thread.tsx:519
 msgid "· summary"
 msgstr "· summary"
 
-#: src/features/ticket-reply.tsx:70
+#: src/features/ticket-reply.tsx:81
 msgid "(pick any)"
 msgstr "(pick any)"
+
+#. placeholder {0}: p.attachments.length
+#: src/features/console-sessions.tsx:405
+#~ msgid "{0} images"
+#~ msgstr "{0} images"
 
 #: src/components/deck/session-tags.tsx:289
 #: src/components/deck/session-tags.tsx:544
@@ -41,12 +46,13 @@ msgstr "{behind} commits to pull."
 msgid "{bg} background tasks running"
 msgstr "{bg} background tasks running"
 
-#: src/features/ticket-proposals.tsx:183
+#: src/features/ticket-proposals.tsx:224
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/console-sessions.tsx:376
-#: src/features/message-composer.tsx:136
+#: src/features/console-sessions.tsx:313
+#: src/features/message-composer.tsx:134
+#: src/features/message-composer.tsx:164
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -95,7 +101,7 @@ msgstr "{label} {percent}% used"
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
-#: src/features/ticket-delivery-card.tsx:169
+#: src/features/ticket-delivery-card.tsx:216
 msgid "{mergedCount} merged"
 msgstr "{mergedCount} merged"
 
@@ -123,7 +129,7 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/console-collab.tsx:249
+#: src/features/console-collab.tsx:252
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} queued"
 
@@ -131,7 +137,7 @@ msgstr "{queuedCount} queued"
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
-#: src/features/console-collab.tsx:247
+#: src/features/console-collab.tsx:250
 #: src/features/ticket-keys.tsx:265
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
@@ -186,7 +192,7 @@ msgstr "{total} sent messages not yet confirmed in transcript"
 msgid "{turns} turns"
 msgstr "{turns} turns"
 
-#: src/features/ticket-reply.tsx:207
+#: src/features/ticket-reply.tsx:250
 msgid "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 msgstr "{unanswered} question(s) still unanswered; the agent sees only what you picked."
 
@@ -206,16 +212,16 @@ msgstr "{untracked} untracked"
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} tokens"
 
-#: src/features/console-collab.tsx:252
+#: src/features/console-collab.tsx:255
 #: src/features/ticket-keys.tsx:260
 msgid "{waitingCount} waiting"
 msgstr "{waitingCount} waiting"
 
-#: src/features/ticket-proposals.tsx:371
+#: src/features/ticket-proposals.tsx:412
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 
-#: src/features/chat-turn.tsx:150
+#: src/features/chat-turn.tsx:153
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -295,7 +301,7 @@ msgstr "A person (taken over)"
 msgid "A worker raised a question or challenge needing your decision."
 msgstr "A worker raised a question or challenge needing your decision."
 
-#: src/features/ticket-proposals.tsx:372
+#: src/features/ticket-proposals.tsx:413
 msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 msgstr "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 
@@ -339,11 +345,11 @@ msgstr "added"
 msgid "Added data-testid attributes and verified all 14 unit tests pass."
 msgstr "Added data-testid attributes and verified all 14 unit tests pass."
 
-#: src/features/ticket-proposals.tsx:72
+#: src/features/ticket-proposals.tsx:79
 msgid "after"
 msgstr "after"
 
-#: src/features/session-permission.tsx:303
+#: src/features/session-permission.tsx:339
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
@@ -386,7 +392,7 @@ msgstr "Agy is waiting for this worktree to be trusted."
 msgid "AI draft preview"
 msgstr "AI draft preview"
 
-#: src/features/console-collab.tsx:181
+#: src/features/console-collab.tsx:184
 msgid "AI is structuring the title and assumptions in the background…"
 msgstr "AI is structuring the title and assumptions in the background…"
 
@@ -428,7 +434,7 @@ msgstr "All"
 msgid "All categories"
 msgstr "All categories"
 
-#: src/features/session-ask-claude.tsx:97
+#: src/features/session-ask-claude.tsx:239
 msgid "All questions answered. The agent waits until you submit."
 msgstr "All questions answered. The agent waits until you submit."
 
@@ -452,11 +458,11 @@ msgstr "All tiers"
 msgid "All time"
 msgstr "All time"
 
-#: src/features/session-permission.tsx:205
+#: src/features/session-permission.tsx:241
 msgid "Allow"
 msgstr "Allow"
 
-#: src/features/session-permission.tsx:302
+#: src/features/session-permission.tsx:338
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
@@ -464,11 +470,11 @@ msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persi
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
-#: src/features/session-permission.tsx:301
+#: src/features/session-permission.tsx:337
 msgid "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
 msgstr "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
 
-#: src/features/ticket-proposals.tsx:396
+#: src/features/ticket-proposals.tsx:437
 msgid "already done"
 msgstr "already done"
 
@@ -476,16 +482,16 @@ msgstr "already done"
 msgid "Already the latest"
 msgstr "Already the latest"
 
-#: src/features/session-permission.tsx:245
+#: src/features/session-permission.tsx:275
 msgid "Always allow"
 msgstr "Always allow"
 
-#: src/features/session-ask-claude.tsx:207
-#: src/features/session-elicitation.tsx:210
+#: src/features/session-ask-claude.tsx:335
+#: src/features/session-elicitation.tsx:346
 msgid "Answer sent; waiting for the agent to continue…"
 msgstr "Answer sent; waiting for the agent to continue…"
 
-#: src/features/session-permission.tsx:328
+#: src/features/session-permission.tsx:364
 msgid "Antigravity asks to run this"
 msgstr "Antigravity asks to run this"
 
@@ -497,7 +503,7 @@ msgstr "Antigravity commands"
 msgid "Antigravity commands, sent into the pane"
 msgstr "Antigravity commands, sent into the pane"
 
-#: src/features/ticket-reply.tsx:195
+#: src/features/ticket-reply.tsx:238
 msgid "Anything to add (optional)"
 msgstr "Anything to add (optional)"
 
@@ -532,19 +538,19 @@ msgstr "Approval"
 msgid "Approve"
 msgstr "Approve"
 
-#: src/features/session-elicitation.tsx:369
+#: src/features/session-plan-keys.tsx:154
 msgid "Approve plan"
 msgstr "Approve plan"
 
-#: src/features/session-elicitation.tsx:398
+#: src/features/session-plan-keys.tsx:183
 msgid "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 msgstr "Approve sends a, request changes sends s (then type notes below), quit sends q — same as the Grok TUI."
 
-#: src/features/session-permission.tsx:298
+#: src/features/session-permission.tsx:334
 msgid "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 msgstr "Approve takes Claude's first option (its default edit mode). After keep planning, say in the box below what to change."
 
-#: src/features/session-permission.tsx:205
+#: src/features/session-permission.tsx:241
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
@@ -571,15 +577,15 @@ msgstr "Approved. This device can read the host's sessions and tickets, send mes
 msgid "Archived"
 msgstr "Archived"
 
-#: src/features/ticket-delivery-card.tsx:217
+#: src/features/ticket-delivery-card.tsx:269
 msgid "Ask manager to fix verification"
 msgstr "Ask manager to fix verification"
 
-#: src/features/ticket-delivery-card.tsx:216
+#: src/features/ticket-delivery-card.tsx:268
 msgid "Ask manager to resolve conflict"
 msgstr "Ask manager to resolve conflict"
 
-#: src/features/ticket-reply.tsx:283
+#: src/features/ticket-reply.tsx:326
 msgid "Assumptions"
 msgstr "Assumptions"
 
@@ -600,8 +606,8 @@ msgstr "Attach images"
 msgid "Attached screenshots (kept with ticket)"
 msgstr "Attached screenshots (kept with ticket)"
 
-#: src/features/ticket-reply.tsx:282
-#: src/features/ticket-reply.tsx:360
+#: src/features/ticket-reply.tsx:325
+#: src/features/ticket-reply.tsx:403
 msgid "Attachments"
 msgstr "Attachments"
 
@@ -662,7 +668,7 @@ msgid "Availability and note"
 msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:124
-#: src/features/console-collab.tsx:112
+#: src/features/console-collab.tsx:115
 #: src/features/console-me.tsx:387
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
@@ -678,7 +684,7 @@ msgstr "Back to agents"
 msgid "Back to edit"
 msgstr "Back to edit"
 
-#: src/features/console-collab.tsx:154
+#: src/features/console-collab.tsx:157
 msgid "Back to parent ticket"
 msgstr "Back to parent ticket"
 
@@ -690,7 +696,7 @@ msgstr "Backend"
 msgid "background"
 msgstr "background"
 
-#: src/features/session-permission.tsx:82
+#: src/features/session-permission.tsx:83
 msgid "Background"
 msgstr "Background"
 
@@ -774,7 +780,7 @@ msgstr "By target repo"
 msgid "By trigger"
 msgstr "By trigger"
 
-#: src/features/session-permission.tsx:78
+#: src/features/session-permission.tsx:79
 msgid "Bypass sandbox"
 msgstr "Bypass sandbox"
 
@@ -788,7 +794,7 @@ msgstr "Cache"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:338
+#: src/features/console-collab.tsx:341
 #: src/features/session-info.tsx:96
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -798,9 +804,9 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:261
+#: src/features/session-composer.tsx:262
 #: src/features/session-detail-notices.tsx:18
-#: src/features/session-detail-parts.tsx:67
+#: src/features/session-detail-parts.tsx:68
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -814,11 +820,11 @@ msgstr "cancel"
 #: src/features/session-restart.tsx:90
 #: src/features/session-worktree-lifecycle.tsx:87
 #: src/features/ticket-info.tsx:214
-#: src/features/ticket-proposals.tsx:297
+#: src/features/ticket-proposals.tsx:338
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/features/session-ask-claude.tsx:196
+#: src/features/session-ask-claude.tsx:324
 msgid "Cancel (Esc)"
 msgstr "Cancel (Esc)"
 
@@ -888,8 +894,8 @@ msgstr "Child finished"
 msgid "Child tickets"
 msgstr "Child tickets"
 
-#: src/features/console-collab.tsx:244
-#: src/features/console-collab.tsx:257
+#: src/features/console-collab.tsx:247
+#: src/features/console-collab.tsx:260
 msgid "Children"
 msgstr "Children"
 
@@ -901,7 +907,7 @@ msgstr "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services
 msgid "claimed"
 msgstr "claimed"
 
-#: src/features/session-permission.tsx:329
+#: src/features/session-permission.tsx:365
 msgid "Claude asks to run this"
 msgstr "Claude asks to run this"
 
@@ -913,7 +919,7 @@ msgstr "Claude commands"
 msgid "Claude commands, sent into the pane"
 msgstr "Claude commands, sent into the pane"
 
-#: src/features/session-permission.tsx:326
+#: src/features/session-permission.tsx:362
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
@@ -931,7 +937,7 @@ msgstr "Clear search"
 
 #: src/features/session-chat-group.tsx:157
 #: src/features/session-chat-row.tsx:71
-#: src/features/session-clear.tsx:114
+#: src/features/session-clear.tsx:148
 msgid "Clearing…"
 msgstr "Clearing…"
 
@@ -1010,7 +1016,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:346
+#: src/features/session-send.ts:468
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1032,7 +1038,7 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
-#: src/features/chat-turn.tsx:143
+#: src/features/chat-turn.tsx:146
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -1056,7 +1062,7 @@ msgstr "confirm"
 msgid "Confirm & create ticket"
 msgstr "Confirm & create ticket"
 
-#: src/features/ticket-proposals.tsx:327
+#: src/features/ticket-proposals.tsx:368
 msgid "Confirm and start"
 msgstr "Confirm and start"
 
@@ -1064,7 +1070,7 @@ msgstr "Confirm and start"
 msgid "Confirm close"
 msgstr "Confirm close"
 
-#: src/features/ticket-delivery-card.tsx:199
+#: src/features/ticket-delivery-card.tsx:254
 msgid "Confirm delivery & close"
 msgstr "Confirm delivery & close"
 
@@ -1080,11 +1086,11 @@ msgstr "Confirm removal"
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
-#: src/features/ticket-proposals.tsx:164
+#: src/features/ticket-proposals.tsx:171
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
-#: src/features/ticket-delivery-card.tsx:158
+#: src/features/ticket-delivery-card.tsx:205
 msgid "conflict"
 msgstr "conflict"
 
@@ -1142,11 +1148,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:499
+#: src/features/chat-thread.tsx:503
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:500
+#: src/features/chat-thread.tsx:504
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1163,7 +1169,7 @@ msgstr "context usage"
 #: src/features/sent-history-row.tsx:190
 #: src/features/session-composer.tsx:55
 #: src/features/session-info-actions.tsx:115
-#: src/features/session-permission.tsx:310
+#: src/features/session-permission.tsx:346
 #: src/features/ticket-info.tsx:147
 msgid "Copied"
 msgstr "Copied"
@@ -1202,9 +1208,9 @@ msgstr "Copied: {shown}"
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
 #: src/features/session-composer.tsx:55
-#: src/features/session-permission.tsx:137
-#: src/features/session-permission.tsx:347
-#: src/features/session-permission.tsx:388
+#: src/features/session-permission.tsx:138
+#: src/features/session-permission.tsx:383
+#: src/features/session-permission.tsx:424
 msgid "Copy"
 msgstr "Copy"
 
@@ -1310,7 +1316,7 @@ msgstr "Could not copy path"
 msgid "Could not copy the reference: {reason}"
 msgstr "Could not copy the reference: {reason}"
 
-#: src/features/session-permission.tsx:311
+#: src/features/session-permission.tsx:347
 msgid "Could not copy to clipboard"
 msgstr "Could not copy to clipboard"
 
@@ -1372,8 +1378,8 @@ msgstr "Creating…"
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
 
-#: src/features/session-elicitation.tsx:203
-#: src/features/session-elicitation.tsx:297
+#: src/features/session-elicitation.tsx:339
+#: src/features/session-plan-keys.tsx:66
 msgid "Ctrl+C"
 msgstr "Ctrl+C"
 
@@ -1394,7 +1400,7 @@ msgstr "Current runner"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
-#: src/features/session-permission.tsx:80
+#: src/features/session-permission.tsx:81
 msgid "Daemon"
 msgstr "Daemon"
 
@@ -1408,11 +1414,11 @@ msgstr "Dark"
 msgid "data as of {time}"
 msgstr "data as of {time}"
 
-#: src/features/ticket-reply.tsx:287
+#: src/features/ticket-reply.tsx:330
 msgid "Decision"
 msgstr "Decision"
 
-#: src/features/ticket-proposals.tsx:38
+#: src/features/ticket-proposals.tsx:45
 msgid "Default ({defaultBackend})"
 msgstr "Default ({defaultBackend})"
 
@@ -1447,23 +1453,27 @@ msgstr "Delete session"
 msgid "Deliver first message"
 msgstr "Deliver first message"
 
-#: src/features/ticket-delivery-card.tsx:130
+#: src/features/ticket-delivery-card.tsx:177
 msgid "Delivered"
 msgstr "Delivered"
 
-#: src/features/ticket-delivery-card.tsx:82
+#: src/features/ticket-delivery-card.tsx:84
 msgid "Delivery confirmation sent"
 msgstr "Delivery confirmation sent"
 
-#: src/features/ticket-delivery-card.tsx:180
+#: src/features/ticket-delivery-card.tsx:239
+msgid "Delivery confirmed; waiting for the agent to finish…"
+msgstr "Delivery confirmed; waiting for the agent to finish…"
+
+#: src/features/ticket-delivery-card.tsx:227
 msgid "Delivery policy: business repos push branch and open a draft MR (never auto-merge); personal repos land onto mainline after verification."
 msgstr "Delivery policy: business repos push branch and open a draft MR (never auto-merge); personal repos land onto mainline after verification."
 
-#: src/features/session-permission.tsx:221
+#: src/features/session-permission.tsx:253
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:344
+#: src/features/console-collab.tsx:347
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1566,7 +1576,7 @@ msgid "Documents"
 msgstr "Documents"
 
 #: src/features/chat-tools.tsx:100
-#: src/features/chat-turn.tsx:160
+#: src/features/chat-turn.tsx:163
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:129
 #: src/features/session-list.tsx:57
@@ -1574,7 +1584,7 @@ msgstr "Documents"
 msgid "Done"
 msgstr "Done"
 
-#: src/features/chat-turn.tsx:161
+#: src/features/chat-turn.tsx:164
 msgid "done {when}"
 msgstr "done {when}"
 
@@ -1592,7 +1602,7 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/chat-pending.tsx:94
+#: src/features/chat-pending.tsx:108
 msgid "Edit"
 msgstr "Edit"
 
@@ -1643,9 +1653,9 @@ msgstr "Ended"
 msgid "Endpoint"
 msgstr "Endpoint"
 
-#: src/features/session-ask-claude.tsx:173
-#: src/features/session-elicitation.tsx:174
-#: src/features/session-elicitation.tsx:295
+#: src/features/session-ask-claude.tsx:308
+#: src/features/session-elicitation.tsx:314
+#: src/features/session-plan-keys.tsx:64
 msgid "Enter"
 msgstr "Enter"
 
@@ -1661,12 +1671,12 @@ msgstr "Error"
 msgid "Errors"
 msgstr "Errors"
 
-#: src/features/session-elicitation.tsx:189
-#: src/features/session-elicitation.tsx:296
+#: src/features/session-elicitation.tsx:327
+#: src/features/session-plan-keys.tsx:65
 msgid "Esc"
 msgstr "Esc"
 
-#: src/features/ticket-proposals.tsx:380
+#: src/features/ticket-proposals.tsx:421
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "Estimated from this machine's past runs, not by the planner."
 
@@ -1767,9 +1777,13 @@ msgstr "First turn"
 msgid "Fit"
 msgstr "Fit"
 
-#: src/features/ticket-delivery-card.tsx:84
+#: src/features/ticket-delivery-card.tsx:86
 msgid "Fix request sent"
 msgstr "Fix request sent"
+
+#: src/features/ticket-delivery-card.tsx:240
+msgid "Fix request sent; waiting for the agent…"
+msgstr "Fix request sent; waiting for the agent…"
 
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
@@ -1804,8 +1818,8 @@ msgstr "Full access"
 msgid "Full access: auto-approves all actions"
 msgstr "Full access: auto-approves all actions"
 
-#: src/features/session-permission.tsx:357
-#: src/features/session-permission.tsx:398
+#: src/features/session-permission.tsx:393
+#: src/features/session-permission.tsx:434
 msgid "Full view"
 msgstr "Full view"
 
@@ -1918,7 +1932,7 @@ msgstr "Host up since"
 msgid "How it fits together"
 msgstr "How it fits together"
 
-#: src/features/ticket-proposals.tsx:200
+#: src/features/ticket-proposals.tsx:241
 msgid "How it will be done"
 msgstr "How it will be done"
 
@@ -1953,7 +1967,7 @@ msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
 #: src/features/ticket-pipeline.tsx:337
-#: src/features/ticket-reply.tsx:285
+#: src/features/ticket-reply.tsx:328
 #: src/features/ticket-timeline.tsx:207
 msgid "Implement"
 msgstr "Implement"
@@ -1990,7 +2004,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/message-composer.tsx:150
+#: src/features/message-composer.tsx:178
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -2015,15 +2029,15 @@ msgstr "Instance"
 msgid "Integration conflict, verification failure, or run error."
 msgstr "Integration conflict, verification failure, or run error."
 
-#: src/features/ticket-delivery-card.tsx:98
+#: src/features/ticket-delivery-card.tsx:145
 msgid "Integration delivery"
 msgstr "Integration delivery"
 
-#: src/features/ticket-delivery-card.tsx:126
+#: src/features/ticket-delivery-card.tsx:173
 msgid "Integration merge conflict"
 msgstr "Integration merge conflict"
 
-#: src/features/ticket-delivery-card.tsx:128
+#: src/features/ticket-delivery-card.tsx:175
 msgid "Integration verification failed"
 msgstr "Integration verification failed"
 
@@ -2047,7 +2061,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:260
+#: src/features/session-send.ts:393
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -2075,7 +2089,7 @@ msgstr "just now"
 msgid "just restarted"
 msgstr "just restarted"
 
-#: src/features/session-permission.tsx:221
+#: src/features/session-permission.tsx:253
 msgid "Keep planning"
 msgstr "Keep planning"
 
@@ -2093,7 +2107,7 @@ msgstr "Kimi API key"
 msgid "LAN"
 msgstr "LAN"
 
-#: src/features/ticket-proposals.tsx:373
+#: src/features/ticket-proposals.tsx:414
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
@@ -2187,7 +2201,7 @@ msgid "list available commands"
 msgstr "list available commands"
 
 #: src/features/console-collab-run.tsx:58
-#: src/features/ticket-manager-panel.tsx:264
+#: src/features/ticket-manager-panel.tsx:392
 msgid "live"
 msgstr "live"
 
@@ -2195,7 +2209,7 @@ msgstr "live"
 msgid "Load earlier"
 msgstr "Load earlier"
 
-#: src/features/ticket-manager-panel.tsx:315
+#: src/features/ticket-manager-panel.tsx:443
 #: src/features/ticket-run-chat.tsx:248
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
@@ -2219,7 +2233,7 @@ msgstr "Loading original…"
 #: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
 #: src/features/console-collab-run.tsx:216
-#: src/features/console-collab.tsx:119
+#: src/features/console-collab.tsx:122
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:106
@@ -2287,24 +2301,24 @@ msgstr "Managed in host configuration"
 msgid "Managed override"
 msgstr "Managed override"
 
-#: src/features/ticket-manager-panel.tsx:254
-#: src/features/ticket-manager-panel.tsx:261
+#: src/features/ticket-manager-panel.tsx:382
+#: src/features/ticket-manager-panel.tsx:389
 msgid "Manager session"
 msgstr "Manager session"
 
-#: src/features/ticket-manager-panel.tsx:329
+#: src/features/ticket-manager-panel.tsx:457
 msgid "Manager session is parked. Sending a message wakes it automatically."
 msgstr "Manager session is parked. Sending a message wakes it automatically."
 
-#: src/features/ticket-manager-panel.tsx:328
+#: src/features/ticket-manager-panel.tsx:456
 msgid "Manager session is ready — send an instruction below to start orchestrating."
 msgstr "Manager session is ready — send an instruction below to start orchestrating."
 
-#: src/features/ticket-manager-panel.tsx:187
+#: src/features/ticket-manager-panel.tsx:219
 msgid "Manager session parked"
 msgstr "Manager session parked"
 
-#: src/features/ticket-manager-panel.tsx:175
+#: src/features/ticket-manager-panel.tsx:188
 msgid "Manager session started"
 msgstr "Manager session started"
 
@@ -2324,12 +2338,12 @@ msgstr "Manual fields"
 #: src/features/session-chat-group.tsx:298
 #: src/features/session-chat-row.tsx:70
 #: src/features/session-chat-row.tsx:217
-#: src/features/session-clear.tsx:113
-#: src/features/session-clear.tsx:157
+#: src/features/session-clear.tsx:147
+#: src/features/session-clear.tsx:191
 msgid "Mark read"
 msgstr "Mark read"
 
-#: src/features/session-clear.tsx:157
+#: src/features/session-clear.tsx:191
 msgid "Marked read"
 msgstr "Marked read"
 
@@ -2337,7 +2351,7 @@ msgstr "Marked read"
 msgid "Max context"
 msgstr "Max context"
 
-#: src/features/ticket-proposals.tsx:376
+#: src/features/ticket-proposals.tsx:417
 msgid "May stop to ask you:"
 msgstr "May stop to ask you:"
 
@@ -2350,7 +2364,7 @@ msgstr "Mention an open repo ticket"
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/session-composer.tsx:178
+#: src/features/session-composer.tsx:179
 msgid "Message"
 msgstr "Message"
 
@@ -2360,11 +2374,11 @@ msgstr "Message"
 msgid "Message actions"
 msgstr "Message actions"
 
-#: src/features/ticket-manager-panel.tsx:112
+#: src/features/ticket-manager-panel.tsx:118
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
-#: src/features/session-composer.tsx:177
+#: src/features/session-composer.tsx:178
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2409,11 +2423,11 @@ msgstr "Modified"
 msgid "More files changed than listed here."
 msgstr "More files changed than listed here."
 
-#: src/features/session-ask-claude.tsx:120
+#: src/features/session-ask-claude.tsx:262
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 msgstr "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
 
-#: src/features/session-elicitation.tsx:213
+#: src/features/session-elicitation.tsx:349
 msgid "Multiple choice: tap to toggle options, then press Enter."
 msgstr "Multiple choice: tap to toggle options, then press Enter."
 
@@ -2631,7 +2645,7 @@ msgstr "No Origin (script, curl, another app)"
 msgid "No output yet"
 msgstr "No output yet"
 
-#: src/features/session-elicitation.tsx:356
+#: src/features/session-plan-keys.tsx:141
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
@@ -2663,7 +2677,7 @@ msgstr "No text diff available"
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
-#: src/features/console-collab.tsx:60
+#: src/features/console-collab.tsx:61
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
@@ -2701,11 +2715,11 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered"
 msgstr "Not delivered"
 
-#: src/features/chat-pending.tsx:76
+#: src/features/chat-pending.tsx:90
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
-#: src/features/ticket-proposals.tsx:394
+#: src/features/ticket-proposals.tsx:435
 msgid "not done"
 msgstr "not done"
 
@@ -2743,7 +2757,7 @@ msgstr "Not set"
 msgid "Note"
 msgstr "Note"
 
-#: src/features/ticket-proposals.tsx:186
+#: src/features/ticket-proposals.tsx:227
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
@@ -2823,7 +2837,7 @@ msgstr "Only reusable worktrees can be managed here"
 msgid "Only this trace"
 msgstr "Only this trace"
 
-#: src/features/message-composer.tsx:90
+#: src/features/message-composer.tsx:97
 msgid "Only up to {MAX_IMAGES} images fit in one message"
 msgstr "Only up to {MAX_IMAGES} images fit in one message"
 
@@ -2877,9 +2891,9 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:283
+#: src/features/session-composer.tsx:284
 #: src/features/session-detail-notices.tsx:55
-#: src/features/session-detail-parts.tsx:95
+#: src/features/session-detail-parts.tsx:96
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -2929,7 +2943,7 @@ msgstr "Opus tier"
 msgid "Origin session"
 msgstr "Origin session"
 
-#: src/features/ticket-reply.tsx:281
+#: src/features/ticket-reply.tsx:324
 msgid "Original request"
 msgstr "Original request"
 
@@ -3000,11 +3014,11 @@ msgstr "Pane role"
 msgid "Parallelism"
 msgstr "Parallelism"
 
-#: src/features/ticket-manager-panel.tsx:285
+#: src/features/ticket-manager-panel.tsx:413
 msgid "Park"
 msgstr "Park"
 
-#: src/features/ticket-manager-panel.tsx:264
+#: src/features/ticket-manager-panel.tsx:392
 msgid "parked"
 msgstr "parked"
 
@@ -3012,7 +3026,7 @@ msgstr "parked"
 msgid "Part"
 msgstr "Part"
 
-#: src/features/ticket-proposals.tsx:395
+#: src/features/ticket-proposals.tsx:436
 msgid "partly done"
 msgstr "partly done"
 
@@ -3062,7 +3076,7 @@ msgstr "Plan"
 msgid "Plan mode"
 msgstr "Plan mode"
 
-#: src/features/session-elicitation.tsx:350
+#: src/features/session-plan-keys.tsx:135
 msgid "Plan ready for review"
 msgstr "Plan ready for review"
 
@@ -3103,7 +3117,7 @@ msgstr "Progress"
 msgid "Project config"
 msgstr "Project config"
 
-#: src/features/ticket-manager-panel.tsx:60
+#: src/features/ticket-manager-panel.tsx:66
 msgid "Promote this ticket to a repo-neutral Manager Session for conversational orchestration."
 msgstr "Promote this ticket to a repo-neutral Manager Session for conversational orchestration."
 
@@ -3115,11 +3129,11 @@ msgstr "Prompt composition"
 msgid "Proposal"
 msgstr "Proposal"
 
-#: src/features/ticket-proposals.tsx:165
+#: src/features/ticket-proposals.tsx:172
 msgid "Proposal rejected"
 msgstr "Proposal rejected"
 
-#: src/features/ticket-proposals.tsx:182
+#: src/features/ticket-proposals.tsx:223
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "Proposed plan: {n} child ticket(s)"
 
@@ -3186,7 +3200,7 @@ msgstr "Quiet for over 14 days ({count})"
 msgid "Quiet while active on another device"
 msgstr "Quiet while active on another device"
 
-#: src/features/session-elicitation.tsx:393
+#: src/features/session-plan-keys.tsx:178
 msgid "Quit plan"
 msgstr "Quit plan"
 
@@ -3210,7 +3224,7 @@ msgid "Ready"
 msgstr "Ready"
 
 #: src/features/me-notifications.tsx:162
-#: src/features/ticket-delivery-card.tsx:131
+#: src/features/ticket-delivery-card.tsx:178
 msgid "Ready to deliver"
 msgstr "Ready to deliver"
 
@@ -3272,11 +3286,11 @@ msgstr "Regenerate title now"
 msgid "Regenerating title for this session…"
 msgstr "Regenerating title for this session…"
 
-#: src/features/ticket-proposals.tsx:306
+#: src/features/ticket-proposals.tsx:347
 msgid "Reject"
 msgstr "Reject"
 
-#: src/features/ticket-proposals.tsx:318
+#: src/features/ticket-proposals.tsx:359
 msgid "Reject…"
 msgstr "Reject…"
 
@@ -3316,7 +3330,7 @@ msgstr "Remote devices"
 msgid "Remote project"
 msgstr "Remote project"
 
-#: src/features/chat-pending.tsx:114
+#: src/features/chat-pending.tsx:128
 msgid "Remove"
 msgstr "Remove"
 
@@ -3361,11 +3375,11 @@ msgstr "Replace this pane with a blank {to}. No continuation brief or first mess
 msgid "replied"
 msgstr "replied"
 
-#: src/features/ticket-reply.tsx:146
+#: src/features/ticket-reply.tsx:183
 msgid "Replied"
 msgstr "Replied"
 
-#: src/features/ticket-reply.tsx:146
+#: src/features/ticket-reply.tsx:183
 msgid "Replied, the agent continues"
 msgstr "Replied, the agent continues"
 
@@ -3374,12 +3388,12 @@ msgid "replied: {body}"
 msgstr "replied: {body}"
 
 #: src/features/host-file-sheet.tsx:147
-#: src/features/ticket-reply.tsx:223
+#: src/features/ticket-reply.tsx:266
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
 msgstr "Reply"
 
-#: src/features/ticket-reply.tsx:232
+#: src/features/ticket-reply.tsx:275
 msgid "Reply and continue"
 msgstr "Reply and continue"
 
@@ -3433,7 +3447,7 @@ msgstr "Repository root"
 msgid "Request access"
 msgstr "Request access"
 
-#: src/features/session-elicitation.tsx:381
+#: src/features/session-plan-keys.tsx:166
 msgid "Request changes"
 msgstr "Request changes"
 
@@ -3462,7 +3476,7 @@ msgstr "Research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/chat-pending.tsx:84
+#: src/features/chat-pending.tsx:98
 #: src/features/sent-history-row.tsx:161
 msgid "Resend"
 msgstr "Resend"
@@ -3547,7 +3561,7 @@ msgstr "Reusable"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/ticket-proposals.tsx:422
+#: src/features/ticket-proposals.tsx:463
 msgid "Reuses"
 msgstr "Reuses"
 
@@ -3555,7 +3569,7 @@ msgstr "Reuses"
 msgid "Review"
 msgstr "Review"
 
-#: src/features/ticket-delivery-card.tsx:143
+#: src/features/ticket-delivery-card.tsx:190
 msgid "Review net diff"
 msgstr "Review net diff"
 
@@ -3640,8 +3654,8 @@ msgstr "Run started"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:272
-#: src/features/console-collab.tsx:273
+#: src/features/console-collab.tsx:275
+#: src/features/console-collab.tsx:276
 #: src/features/tickets-view.tsx:120
 msgid "running"
 msgstr "running"
@@ -3714,7 +3728,7 @@ msgstr "Runtime diagnostics are unavailable while Runtime is offline."
 msgid "Runtime reported reason:"
 msgstr "Runtime reported reason:"
 
-#: src/features/session-clear.tsx:153
+#: src/features/session-clear.tsx:187
 msgid "Same as Ctrl+X in the Alt+/ picker"
 msgstr "Same as Ctrl+X in the Alt+/ picker"
 
@@ -3823,9 +3837,9 @@ msgid "Select a target repository first."
 msgstr "Select a target repository first."
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:345
-#: src/features/message-composer.tsx:347
-#: src/features/ticket-manager-panel.tsx:126
+#: src/features/message-composer.tsx:373
+#: src/features/message-composer.tsx:375
+#: src/features/ticket-manager-panel.tsx:132
 msgid "Send"
 msgstr "Send"
 
@@ -3837,11 +3851,11 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/chat-pending.tsx:75
+#: src/features/chat-pending.tsx:89
 msgid "Send failed"
 msgstr "Send failed"
 
-#: src/features/chat-pending.tsx:74
+#: src/features/chat-pending.tsx:88
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
@@ -3870,9 +3884,7 @@ msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
 #: src/features/me-notifications.tsx:378
-#: src/features/ticket-delivery-card.tsx:198
-#: src/features/ticket-delivery-card.tsx:214
-#: src/features/ticket-manager-panel.tsx:126
+#: src/features/ticket-manager-panel.tsx:132
 msgid "Sending…"
 msgstr "Sending…"
 
@@ -4064,7 +4076,7 @@ msgstr "Snapshot"
 msgid "Socket"
 msgstr "Socket"
 
-#: src/features/ticket-reply.tsx:288
+#: src/features/ticket-reply.tsx:331
 msgid "Solution"
 msgstr "Solution"
 
@@ -4072,8 +4084,8 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/session-composer.tsx:267
-#: src/features/session-detail-parts.tsx:79
+#: src/features/session-composer.tsx:268
+#: src/features/session-detail-parts.tsx:80
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4096,7 +4108,7 @@ msgstr "Source changed"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
-#: src/features/ticket-proposals.tsx:176
+#: src/features/ticket-proposals.tsx:217
 msgid "Split proposal {pid}"
 msgstr "Split proposal {pid}"
 
@@ -4146,7 +4158,7 @@ msgstr "Start agent"
 msgid "Start fresh"
 msgstr "Start fresh"
 
-#: src/features/ticket-manager-panel.tsx:71
+#: src/features/ticket-manager-panel.tsx:77
 msgid "Start manager session"
 msgstr "Start manager session"
 
@@ -4181,7 +4193,7 @@ msgid "Starting the agent…"
 msgstr "Starting the agent…"
 
 #: src/features/session-subagents.tsx:80
-#: src/features/ticket-manager-panel.tsx:71
+#: src/features/ticket-manager-panel.tsx:77
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -4213,7 +4225,7 @@ msgstr "Structuring…"
 msgid "Sub-agent"
 msgstr "Sub-agent"
 
-#: src/features/session-ask-claude.tsx:110
+#: src/features/session-ask-claude.tsx:252
 msgid "Submit answers"
 msgstr "Submit answers"
 
@@ -4221,8 +4233,8 @@ msgstr "Submit answers"
 msgid "submitted"
 msgstr "submitted"
 
-#: src/features/session-ask-claude.tsx:206
-#: src/features/session-elicitation.tsx:209
+#: src/features/session-ask-claude.tsx:334
+#: src/features/session-elicitation.tsx:345
 msgid "Submitting your answer…"
 msgstr "Submitting your answer…"
 
@@ -4233,7 +4245,7 @@ msgstr "Submitting your answer…"
 msgid "summarise the context"
 msgstr "summarise the context"
 
-#: src/features/ticket-reply.tsx:280
+#: src/features/ticket-reply.tsx:323
 msgid "Summary"
 msgstr "Summary"
 
@@ -4294,12 +4306,12 @@ msgstr "Take over in tmux"
 msgid "Tap a row to copy its value; long-press or right-click for more."
 msgstr "Tap a row to copy its value; long-press or right-click for more."
 
-#: src/features/session-elicitation.tsx:216
+#: src/features/session-elicitation.tsx:352
 msgid "Tap an option to send its number and Enter into the agent pane."
 msgstr "Tap an option to send its number and Enter into the agent pane."
 
-#: src/features/session-ask-claude.tsx:203
-#: src/features/session-elicitation.tsx:215
+#: src/features/session-ask-claude.tsx:331
+#: src/features/session-elicitation.tsx:351
 msgid "Tap an option to send its number into the agent pane."
 msgstr "Tap an option to send its number into the agent pane."
 
@@ -4317,13 +4329,13 @@ msgstr "Task prompt ({promptCount})"
 
 #: src/features/session-info.tsx:129
 #: src/features/ticket-info.tsx:349
-#: src/features/ticket-proposals.tsx:231
+#: src/features/ticket-proposals.tsx:272
 msgid "Technical details"
 msgstr "Technical details"
 
-#: src/features/session-elicitation.tsx:222
+#: src/features/session-elicitation.tsx:358
 #: src/features/session-info-actions.tsx:168
-#: src/features/session-permission.tsx:442
+#: src/features/session-permission.tsx:480
 msgid "Terminal"
 msgstr "Terminal"
 
@@ -4344,7 +4356,7 @@ msgstr "Test notification sent"
 msgid "Text caret"
 msgstr "Text caret"
 
-#: src/features/session-elicitation.tsx:286
+#: src/features/session-plan-keys.tsx:55
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
@@ -4352,21 +4364,26 @@ msgstr "The agent asks:"
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
-#: src/features/session-ask-claude.tsx:77
-#: src/features/session-elicitation.tsx:123
+#: src/features/session-ask-claude.tsx:219
+#: src/features/session-elicitation.tsx:263
 msgid "The agent is asking you"
 msgstr "The agent is asking you"
 
 #. placeholder {0}: step + 1
-#: src/features/session-elicitation.tsx:122
-msgid "The agent is asking you (question {0} of {total})"
-msgstr "The agent is asking you (question {0} of {total})"
+#: src/features/session-elicitation.tsx:223
+#~ msgid "The agent is asking you (question {0} of {total})"
+#~ msgstr "The agent is asking you (question {0} of {total})"
 
-#: src/features/session-ask-claude.tsx:76
+#: src/features/session-ask-claude.tsx:218
+#: src/features/session-elicitation.tsx:262
 msgid "The agent is asking you (question {number} of {total})"
 msgstr "The agent is asking you (question {number} of {total})"
 
-#: src/features/ticket-reply.tsx:156
+#: src/features/session-elicitation.tsx:262
+#~ msgid "The agent is asking you (question {questionNumber} of {total})"
+#~ msgstr "The agent is asking you (question {questionNumber} of {total})"
+
+#: src/features/ticket-reply.tsx:199
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
@@ -4381,6 +4398,10 @@ msgstr "The contract or behaviour you expect — the target checks this first"
 #: src/features/console-shared.tsx:360
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
+
+#: src/features/session-send.ts:322
+msgid "The host did not confirm the action; please check and retry."
+msgstr "The host did not confirm the action; please check and retry."
 
 #: src/features/runtime-restart.ts:37
 msgid "The local Runtime restarted (about {gone} s without it)"
@@ -4447,8 +4468,8 @@ msgid "This device"
 msgstr "This device"
 
 #: src/features/console-sessions.tsx:158
-#: src/features/ticket-proposals.tsx:250
-#: src/features/ticket-reply.tsx:202
+#: src/features/ticket-proposals.tsx:291
+#: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
 
@@ -4456,9 +4477,9 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:262
+#: src/features/session-composer.tsx:263
 #: src/features/session-detail-notices.tsx:19
-#: src/features/session-detail-parts.tsx:68
+#: src/features/session-detail-parts.tsx:69
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4503,7 +4524,7 @@ msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "This worktree has local changes. Review them in the session before deleting."
 
-#: src/features/ticket-reply.tsx:286
+#: src/features/ticket-reply.tsx:329
 #: src/features/ticket-thread-view.tsx:54
 msgid "Thread"
 msgstr "Thread"
@@ -4556,7 +4577,7 @@ msgstr "Ticket info"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:119
+#: src/features/console-collab.tsx:122
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
@@ -4566,7 +4587,7 @@ msgstr "Ticket waiting on you"
 
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
-#: src/features/console-collab.tsx:114
+#: src/features/console-collab.tsx:117
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
 msgid "Tickets"
@@ -4633,7 +4654,7 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/chat-pending.tsx:104
+#: src/features/chat-pending.tsx:118
 #: src/features/sent-history-row.tsx:174
 msgid "To ticket"
 msgstr "To ticket"
@@ -4664,7 +4685,7 @@ msgstr "Tokens"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
-#: src/features/chat-turn.tsx:160
+#: src/features/chat-turn.tsx:163
 msgid "Took {took}"
 msgstr "Took {took}"
 
@@ -4692,8 +4713,8 @@ msgstr "Transcript"
 msgid "Trigger"
 msgstr "Trigger"
 
-#: src/features/session-permission.tsx:164
-#: src/features/session-permission.tsx:425
+#: src/features/session-permission.tsx:165
+#: src/features/session-permission.tsx:461
 msgid "Truncated at 64 KB — check the terminal for the full payload."
 msgstr "Truncated at 64 KB — check the terminal for the full payload."
 
@@ -4705,8 +4726,8 @@ msgstr "Trust this worktree and continue"
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
-#: src/features/session-detail-parts.tsx:74
-#: src/features/session-send.ts:257
+#: src/features/session-detail-parts.tsx:75
+#: src/features/session-send.ts:389
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
@@ -4735,7 +4756,7 @@ msgstr "turns"
 msgid "Turns"
 msgstr "Turns"
 
-#: src/features/ticket-manager-panel.tsx:113
+#: src/features/ticket-manager-panel.tsx:119
 msgid "Type a message to wake and steer the ticket manager…"
 msgstr "Type a message to wake and steer the ticket manager…"
 
@@ -4756,7 +4777,7 @@ msgstr "Unconfirmed ({unsettledCount})"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/message-composer.tsx:152
+#: src/features/message-composer.tsx:180
 msgid "Undo"
 msgstr "Undo"
 
@@ -4800,7 +4821,8 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/message-composer.tsx:127
+#: src/features/message-composer.tsx:145
+#: src/features/message-composer.tsx:155
 msgid "Uploading {step}/{total}…"
 msgstr "Uploading {step}/{total}…"
 
@@ -4836,7 +4858,7 @@ msgstr "User"
 msgid "VAPID push keys are not configured on the relay Worker yet."
 msgstr "VAPID push keys are not configured on the relay Worker yet."
 
-#: src/features/ticket-reply.tsx:284
+#: src/features/ticket-reply.tsx:327
 msgid "Verification"
 msgstr "Verification"
 
@@ -4951,7 +4973,7 @@ msgstr "Waiting on you"
 msgid "WakaTime"
 msgstr "WakaTime"
 
-#: src/features/ticket-manager-panel.tsx:298
+#: src/features/ticket-manager-panel.tsx:426
 msgid "Wake"
 msgstr "Wake"
 
@@ -5009,11 +5031,11 @@ msgstr "WebSocket relay"
 msgid "WezDeck"
 msgstr "WezDeck"
 
-#: src/features/ticket-proposals.tsx:196
+#: src/features/ticket-proposals.tsx:237
 msgid "What already exists"
 msgstr "What already exists"
 
-#: src/features/ticket-proposals.tsx:219
+#: src/features/ticket-proposals.tsx:260
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
@@ -5021,7 +5043,7 @@ msgstr "What confirming starts"
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
-#: src/features/ticket-proposals.tsx:189
+#: src/features/ticket-proposals.tsx:230
 msgid "What it solves"
 msgstr "What it solves"
 
@@ -5037,7 +5059,7 @@ msgstr "What should the next agent do first?"
 msgid "What the target repository should do"
 msgstr "What the target repository should do"
 
-#: src/features/session-ask-claude.tsx:212
+#: src/features/session-ask-claude.tsx:340
 msgid "What the terminal shows"
 msgstr "What the terminal shows"
 
@@ -5068,11 +5090,11 @@ msgstr "Where it runs"
 msgid "Which table should the weekly report read?"
 msgstr "Which table should the weekly report read?"
 
-#: src/features/ticket-proposals.tsx:277
+#: src/features/ticket-proposals.tsx:318
 msgid "Why — the planner reads this (required)"
 msgstr "Why — the planner reads this (required)"
 
-#: src/features/ticket-proposals.tsx:256
+#: src/features/ticket-proposals.tsx:297
 msgid "Why reject"
 msgstr "Why reject"
 
@@ -5113,7 +5135,7 @@ msgstr "Workflow timeline"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-turn.tsx:143
+#: src/features/chat-turn.tsx:146
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:127
 #: src/features/session-list.tsx:58
@@ -5168,10 +5190,10 @@ msgstr "You (initiator)"
 msgid "You can continue chatting here as soon as the session is ready…"
 msgstr "You can continue chatting here as soon as the session is ready…"
 
-#: src/features/ticket-reply.tsx:196
+#: src/features/ticket-reply.tsx:239
 msgid "Your decision, extra context, or an answer to the challenge"
 msgstr "Your decision, extra context, or an answer to the challenge"
 
-#: src/features/ticket-reply.tsx:173
+#: src/features/ticket-reply.tsx:216
 msgid "Your reply"
 msgstr "Your reply"

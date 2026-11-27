@@ -54,7 +54,21 @@ export function PendingBubbles({
               <SentAttachments
                 text={withAttachmentNote(item.text, item.attachments)}
               />
-              {item.note && !item.attachments?.length ? (
+              {item.localPreviews?.length && !item.attachments?.length ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {item.localPreviews.map((url, idx) => (
+                    <img
+                      key={`${idx}-${url}`}
+                      src={url}
+                      alt=""
+                      className="size-16 rounded-lg object-cover opacity-90"
+                    />
+                  ))}
+                </div>
+              ) : null}
+              {item.uploading ? (
+                <p className="mt-1 text-meta opacity-80">{item.uploading}</p>
+              ) : item.note && !item.attachments?.length ? (
                 <span className="opacity-70">
                   {item.text ? ' ' : ''}({item.note})
                 </span>
