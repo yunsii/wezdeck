@@ -1885,11 +1885,11 @@ msgstr "May stop to ask you:"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:495
+#: src/features/session-composer.tsx:492
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer.tsx:442
+#: src/features/session-composer.tsx:439
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -3053,7 +3053,7 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:93
-#: src/features/session-composer.tsx:504
+#: src/features/session-composer.tsx:501
 msgid "Send"
 msgstr "Send"
 

@@ -1885,11 +1885,11 @@ msgstr "可能停下来问你："
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:495
+#: src/features/session-composer.tsx:492
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer.tsx:442
+#: src/features/session-composer.tsx:439
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -3053,7 +3053,7 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:93
-#: src/features/session-composer.tsx:504
+#: src/features/session-composer.tsx:501
 msgid "Send"
 msgstr "发送"
 
