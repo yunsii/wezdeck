@@ -24,11 +24,12 @@ check_windows_powershell_interop() {
   [[ "$target_home" =~ ^/mnt/[A-Za-z]/ ]] || return 0
 
   sync_trace "step=powershell-interop status=checking target_home=$target_home"
-  if ! command -v powershell.exe >/dev/null 2>&1; then
+  local powershell=""
+  if ! powershell="$(windows_powershell_exe)"; then
     sync_trace "step=powershell-interop status=failed reason=missing_powershell"
     cat >&2 <<'EOF'
-[sync] Windows target detected, but powershell.exe is not on PATH.
-[sync] Restore WSL interop and Windows PATH integration in /etc/wsl.conf:
+[sync] Windows target detected, but powershell.exe was not found on PATH or in Windows System32.
+[sync] Check the Windows installation and WSL interop settings in /etc/wsl.conf:
 
 [interop]
 enabled=true
@@ -39,8 +40,14 @@ EOF
     return 1
   fi
 
+  # Later sync and canary steps also call powershell.exe by name.
+  if ! command -v powershell.exe >/dev/null 2>&1; then
+    export PATH="${powershell%/*}:$PATH"
+    sync_trace "step=powershell-interop status=resolved path=$powershell"
+  fi
+
   local probe_output=""
-  if ! probe_output="$(powershell.exe -NoProfile -NonInteractive -Command '[Console]::Write("interop-ok")' 2>&1)"; then
+  if ! probe_output="$("$powershell" -NoProfile -NonInteractive -Command '[Console]::Write("interop-ok")' 2>&1)"; then
     sync_trace "step=powershell-interop status=failed reason=unexecutable output=$(printf '%s' "$probe_output" | tr '\r\n' '  ' | cut -c1-180)"
     cat >&2 <<'EOF'
 [sync] powershell.exe was found but could not execute (WSL interop is likely disabled).

@@ -17,6 +17,11 @@ Use this doc when you need to apply or verify changes.
    4. On success: close canary processes (command-line match on `wezdeck-canary` / `wezterm-runtime\canary`), backup live → `last-good/`, promote canary → live. Manual `--launch` leaves the probe window open for inspection.
    5. On failure/timeout: kill leftover canary processes, **leave live alone**, exit non-zero — your running wezdeck keeps working.
 
+The sync preflight resolves PowerShell from Windows System32 when an agent
+shell omits Windows PATH entries. The canary resolves WezTerm from its Windows
+installation record before trying common install directories, so installs on
+another drive still pass the same health gate.
+
 3. Reload the main WezTerm window (or open a new one) after a successful sync so it picks up the promoted tree.
 4. Reload tmux only when needed; reload affected interactive shells if shell rc files changed.
 
@@ -69,7 +74,8 @@ wezterm.exe -n start --always-new-process
 
 For a Windows target such as `/mnt/c/Users/<user>`, `sync-runtime.sh` first
 probes `powershell.exe` through the WSL interop boundary before creating the
-canary tree. `command -v powershell.exe` alone is insufficient: if
+canary tree. A missing PATH entry falls back to Windows System32; finding
+the file alone is insufficient: if
 `/proc/sys/fs/binfmt_misc/WSLInterop` is unavailable, the file can be visible
 but not executable and helper installation would fail late in the sync. The
 precheck aborts early with the repair text. Ensure `/etc/wsl.conf` contains:

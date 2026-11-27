@@ -14,6 +14,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$repo_root/scripts/runtime/windows-runtime-paths-lib.sh" 2>/dev/null || true
 # shellcheck disable=SC1091
 source "$repo_root/scripts/runtime/windows-shell-lib.sh" 2>/dev/null || true
+# shellcheck disable=SC1091
+source "$repo_root/scripts/dev/wezterm-canary-exe-lib.sh"
 
 target_runtime_state_dir() {
   local target_home="${1:?missing target home}"
@@ -96,28 +98,6 @@ LAST_GOOD_BOOTSTRAP="$LAST_GOOD_ROOT/.wezterm.lua"
 LAST_GOOD_RUNTIME="$LAST_GOOD_ROOT/.wezterm-x"
 CANARY_STAMP="$CANARY_ROOT/healthy.stamp"
 
-find_wezterm_exe() {
-  local candidate
-  for candidate in \
-    "$(command -v wezterm.exe 2>/dev/null || true)" \
-    "/mnt/c/Program Files/WezTerm/wezterm.exe" \
-    "/mnt/c/Program Files/WezTerm/wezterm-gui.exe" \
-    "${WINDOWS_USERPROFILE_WSL:-}/scoop/apps/wezterm/current/wezterm.exe" \
-    "${WINDOWS_USERPROFILE_WSL:-}/AppData/Local/Programs/WezTerm/wezterm.exe" \
-    "${WINDOWS_USERPROFILE_WSL:-}/AppData/Local/Microsoft/WinGet/Packages"/*/WezTerm*/wezterm.exe
-  do
-    [[ -n "$candidate" && -f "$candidate" ]] || continue
-    printf '%s\n' "$candidate"
-    return 0
-  done
-  # Last resort: PATH wezterm (posix-local)
-  if command -v wezterm >/dev/null 2>&1; then
-    command -v wezterm
-    return 0
-  fi
-  return 1
-}
-
 to_win_path() {
   local p="$1"
   if command -v wslpath >/dev/null 2>&1 && [[ "$p" == /mnt/* ]]; then
@@ -130,8 +110,9 @@ to_win_path() {
 # QuitApplication from Lua is unreliable on Windows for these short-lived
 # probe instances; kill by command-line marker instead.
 kill_canary_processes() {
-  command -v powershell.exe >/dev/null 2>&1 || return 0
-  powershell.exe -NoProfile -Command '
+  local powershell=""
+  powershell="$(windows_powershell_exe)" || return 0
+  "$powershell" -NoProfile -Command '
 $statePaths = @(
   (Join-Path $env:LOCALAPPDATA "wezterm-runtime\canary\state\helper\state.env"),
   (Join-Path $env:LOCALAPPDATA "wezterm-runtime\canary\canary\state\helper\state.env")

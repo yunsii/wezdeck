@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+windows_powershell_exe() {
+  if command -v powershell.exe >/dev/null 2>&1; then
+    command -v powershell.exe
+  elif [[ -f /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe ]]; then
+    printf '%s\n' /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+  else
+    return 1
+  fi
+}
+
 windows_powershell_quote() {
   local value="${1-}"
   value="${value//\'/\'\'}"
@@ -16,7 +26,8 @@ windows_powershell_utf8_prologue() {
 windows_run_powershell_command_utf8() {
   local script_body="${1:?missing powershell command}"
 
-  local command="" encoded_command=""
+  local command="" encoded_command="" powershell=""
+  powershell="$(windows_powershell_exe)" || return 1
   command="$(windows_powershell_utf8_prologue)$script_body"
   encoded_command="$(
     printf '%s' "$command" \
@@ -25,7 +36,7 @@ windows_run_powershell_command_utf8() {
       | tr -d '\r\n'
   )"
 
-  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "$encoded_command"
+  "$powershell" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "$encoded_command"
 }
 
 windows_run_powershell_script_utf8() {
