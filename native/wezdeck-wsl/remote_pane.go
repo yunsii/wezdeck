@@ -24,6 +24,9 @@ type tmuxPaneSnap struct {
 	profile        string
 	interrupt      string
 	agentSessionID string
+	pid            int
+	attached       bool
+	windowActivity int64 // unix ms
 }
 
 const attentionPathCacheTTL = 60 * time.Second
@@ -64,21 +67,29 @@ func resolveDefaultAttentionFile() string {
 func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 	out := map[string]tmuxPaneSnap{}
 	for socket := range sockets {
-		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
-			"#{pane_id}\t#{session_name}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}\t#{@wezterm_agent_session_id}").Output()
-		if err != nil {
+		if isKnownDeadTmuxSocket(socket) {
 			continue
 		}
+		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
+			"#{pane_id}\t#{session_name}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}\t#{@wezterm_agent_session_id}\t#{pane_pid}\t#{session_attached}\t#{window_activity}").Output()
+		if err != nil {
+			markDeadTmuxSocket(socket)
+			continue
+		}
+		clearDeadTmuxSocket(socket)
 		for _, line := range strings.Split(strings.TrimRight(string(raw), "\r\n"), "\n") {
 			if line == "" {
 				continue
 			}
-			parts := strings.SplitN(line, "\t", 10)
+			parts := strings.SplitN(line, "\t", 13)
 			if len(parts) < 5 || parts[0] == "" {
 				continue
 			}
 			index, _ := strconv.Atoi(parts[4])
 			paneProfile, windowProfile, role, interrupt, sid := "", "", "", "", ""
+			var pid int
+			var attached bool
+			var winAct int64
 			if len(parts) > 5 {
 				paneProfile = normalizeAgentProfile(parts[5])
 			}
@@ -94,6 +105,17 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 			if len(parts) > 9 {
 				sid = strings.TrimSpace(parts[9])
 			}
+			if len(parts) > 10 {
+				pid, _ = strconv.Atoi(strings.TrimSpace(parts[10]))
+			}
+			if len(parts) > 11 {
+				attached = strings.TrimSpace(parts[11]) != "0"
+			}
+			if len(parts) > 12 {
+				if v, err := strconv.ParseInt(strings.TrimSpace(parts[12]), 10, 64); err == nil && v > 0 {
+					winAct = v * 1000
+				}
+			}
 			out[socket+"|"+parts[0]] = tmuxPaneSnap{
 				id:             parts[0],
 				session:        parts[1],
@@ -103,6 +125,9 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 				profile:        pickManagedAgentProfile(paneProfile, windowProfile, role),
 				interrupt:      interrupt,
 				agentSessionID: sid,
+				pid:            pid,
+				attached:       attached,
+				windowActivity: winAct,
 			}
 		}
 	}
@@ -127,7 +152,7 @@ func agentSessionPinsFromSnap(snap map[string]tmuxPaneSnap) map[string]attention
 			TmuxPane:    p.id,
 			Status:      "idle",
 		}
-		if !isAgentPane(p.cmd, e) {
+		if !isAgentPaneSnap(p, e) {
 			continue
 		}
 		out[p.agentSessionID] = e
@@ -164,6 +189,15 @@ func paneHasLauncherProcess(e attentionEntry) bool {
 	}) != nil && paneHasLauncherArg(e.TmuxSocket, e.TmuxPane)
 }
 
+func paneHasLauncherProcessSnap(p tmuxPaneSnap) bool {
+	if p.pid <= 0 {
+		return false
+	}
+	return paneDescendantArgsFromPID(p.pid, func(comm string) bool {
+		return comm == "bash" || comm == "sh"
+	}) != nil && paneHasLauncherArgFromPID(p.pid)
+}
+
 func paneHasLauncherArg(socket, pane string) bool {
 	out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_pid}").Output()
 	if err != nil {
@@ -171,6 +205,13 @@ func paneHasLauncherArg(socket, pane string) bool {
 	}
 	root, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil || root <= 0 {
+		return false
+	}
+	return paneHasLauncherArgFromPID(root)
+}
+
+func paneHasLauncherArgFromPID(root int) bool {
+	if root <= 0 {
 		return false
 	}
 	pids := []int{root}
@@ -209,6 +250,30 @@ func isAgentPane(cmd string, e attentionEntry) bool {
 		return paneHasProcess(e, "agy")
 	}
 	if cmd != "python3" {
+		return false
+	}
+	if strings.EqualFold(e.AgentName, "grok") {
+		return true
+	}
+	if _, agent := findTranscript(e.SessionID); agent == "grok" {
+		return true
+	}
+	return false
+}
+
+// isAgentPaneSnap checks the same invariant as isAgentPane using the already-
+// fetched pane_pid from snapshotTmuxPanes so hot polls avoid per-pane tmux forks.
+func isAgentPaneSnap(p tmuxPaneSnap, e attentionEntry) bool {
+	if agentCommands[p.cmd] {
+		return true
+	}
+	if p.cmd == "bash" || p.cmd == "zsh" || p.cmd == "sh" {
+		if p.pid > 0 {
+			return paneDescendantArgsFromPID(p.pid, func(comm string) bool { return comm == "agy" }) != nil
+		}
+		return paneHasProcess(e, "agy")
+	}
+	if p.cmd != "python3" {
 		return false
 	}
 	if strings.EqualFold(e.AgentName, "grok") {
@@ -297,6 +362,13 @@ func paneDescendantArgs(socket, pane string, match func(string) bool) []string {
 	}
 	root, err := strconv.Atoi(strings.TrimSpace(string(out)))
 	if err != nil || root <= 0 {
+		return nil
+	}
+	return paneDescendantArgsFromPID(root, match)
+}
+
+func paneDescendantArgsFromPID(root int, match func(string) bool) []string {
+	if root <= 0 {
 		return nil
 	}
 	pids := []int{root}
@@ -490,6 +562,9 @@ func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
 	if cwd == "" {
 		return "", "", ""
 	}
+	if r, root, wt, ok := lookupGitRepoMetaCached(cwd); ok {
+		return r, root, wt
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 400*time.Millisecond)
 	defer cancel()
 	out, err := exec.CommandContext(ctx, "git", "-C", cwd, "rev-parse", "--show-toplevel", "--git-common-dir").Output()
@@ -503,6 +578,7 @@ func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
 	worktree = lines[0]
 	repo = filepath.Base(worktree)
 	if len(lines) < 2 || lines[1] == "" {
+		storeGitRepoMetaCached(cwd, repo, worktree, worktree)
 		return repo, worktree, worktree
 	}
 	common := lines[1]
@@ -515,6 +591,7 @@ func gitRepoMeta(cwd string) (repo, repoRoot, worktree string) {
 	} else {
 		repo = filepath.Base(repoRoot)
 	}
+	storeGitRepoMetaCached(cwd, repo, repoRoot, worktree)
 	return repo, repoRoot, worktree
 }
 

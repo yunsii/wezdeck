@@ -179,12 +179,16 @@ func adapterFor(name string) agentAdapter {
 
 // findTranscript locates a session's conversation file and its agent.
 func findTranscript(sessionID string) (path, agent string) {
-	if !sessionIDPattern.MatchString(sessionID) {
+	if !sessionIDPattern.MatchString(sessionID) || isPendingSessionID(sessionID) {
 		return "", ""
 	}
 	home, _ := os.UserHomeDir()
+	if p, ag, ok := lookupTranscriptCached(home, sessionID); ok {
+		return p, ag
+	}
 	for _, a := range agentAdapters {
 		if p := a.Locate(home, sessionID); p != "" {
+			storeTranscriptCached(home, sessionID, p, a.Name())
 			return p, a.Name()
 		}
 	}

@@ -10,6 +10,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -167,9 +168,9 @@ export function group(messages: Array<Message>) {
 }
 
 /** items rendered at once when a conversation opens; the rest follow */
-const FIRST_ITEMS = 12
+const FIRST_ITEMS = 6
 /** items added per idle slice after that */
-const ITEM_CHUNK = 20
+const ITEM_CHUNK = 16
 
 /**
  * The first item index to render. A conversation opens with its newest
@@ -277,7 +278,7 @@ export function ChatThread({
   useLayoutEffect(() => {
     wasSyncing.current = syncing
   }, [syncing])
-  const items = group(messages)
+  const items = useMemo(() => group(messages), [messages])
   // the first message not shown yet; a backlog (page was hidden, phone
   // locked) shows all but its newest reply at once (chat-catchup.ts)
   const from = cursor === null ? (baseline.current ?? end) : cursor

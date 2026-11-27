@@ -153,3 +153,49 @@ func BenchmarkLiveSessionsFrom(b *testing.B) {
 		_ = liveSessionsFrom(entries, recent)
 	}
 }
+
+func TestTranscriptLocateCacheValidatesAndInvalidates(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	id := "cache-test-session-1"
+	dir := filepath.Join(home, ".claude", "projects", "proj-a")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(dir, id+".jsonl")
+	if err := os.WriteFile(file, []byte("{}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	gotPath, gotAgent := findTranscript(id)
+	if gotPath != file || gotAgent != "claude" {
+		t.Fatalf("first lookup: want (%q, claude), got (%q, %q)", file, gotPath, gotAgent)
+	}
+	if p, ag, ok := lookupTranscriptCached(home, id); !ok || p != file || ag != "claude" {
+		t.Fatalf("expected warm transcript cache hit, got (%q, %q, %v)", p, ag, ok)
+	}
+
+	// Removing the file invalidates the cache on the very next lookup.
+	if err := os.Remove(file); err != nil {
+		t.Fatal(err)
+	}
+	if p, ag := findTranscript(id); p != "" || ag != "" {
+		t.Fatalf("removed file must invalidate cache, got (%q, %q)", p, ag)
+	}
+	// pending-* placeholders always short-circuit cleanly.
+	if p, ag := findTranscript("pending-1234"); p != "" || ag != "" {
+		t.Fatalf("pending id must short-circuit, got (%q, %q)", p, ag)
+	}
+}
+
+func TestDropEmptyHandoffSplashesSkipsTranscriptIOWhenNoHandoff(t *testing.T) {
+	cards := []sessionCard{
+		{ID: "s-1", Worktree: "/wt-a", Status: "idle"},
+		{ID: "s-2", Worktree: "/wt-b", Status: "running"},
+	}
+	// No cleared_to targets among listed cards -> must return original slice unchanged.
+	got := dropEmptyHandoffSplashes(cards, nil)
+	if len(got) != 2 || got[0].ID != "s-1" || got[1].ID != "s-2" {
+		t.Fatalf("unexpected cards: %+v", got)
+	}
+}
