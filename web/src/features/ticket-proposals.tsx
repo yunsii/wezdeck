@@ -13,9 +13,70 @@ import { cn } from '#/lib/utils'
 import type { TicketProposal } from '#/lib/runtime-contract'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
+import { Select } from '#/components/ui/select'
 import { Textarea } from '#/components/ui/textarea'
 import { ChatMarkdown } from './chat-markdown'
 import { useDeviceState } from './device-state'
+
+function ProposalItemsList({
+  items,
+  childTitle,
+  backends,
+  defaultBackend,
+  canEdit,
+  onBackendChange,
+}: {
+  items: TicketProposal['items']
+  childTitle: (id: string) => string | undefined
+  backends: Record<string, string>
+  defaultBackend: string
+  canEdit: boolean
+  onBackendChange: (key: string, next: string) => void
+}) {
+  const { t } = useLingui()
+  const backendOptions = [
+    { value: 'default', label: t`Default (${defaultBackend})` },
+    { value: 'claude', label: 'Claude' },
+    { value: 'codex', label: 'Codex' },
+    { value: 'grok', label: 'Grok' },
+  ]
+  return (
+    <ol className="grid">
+      {items.map((item) => (
+        <li
+          key={item.key}
+          className="grid gap-1 border-b border-brand-edge py-2 last:border-b-0"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-caption font-medium">{item.title}</span>
+            {canEdit ? (
+              <div
+                data-testid={`proposal-backend-${item.key}`}
+                className="w-36 shrink-0"
+              >
+                <Select
+                  size="sm"
+                  value={backends[item.key] ?? 'default'}
+                  onValueChange={(val) => onBackendChange(item.key, val)}
+                  options={backendOptions}
+                />
+              </div>
+            ) : null}
+          </div>
+          {item.effect ? (
+            <span className="text-caption leading-relaxed">{item.effect}</span>
+          ) : null}
+          <span className="font-mono text-meta text-brand-muted">
+            {item.to} · {item.scope.join(', ') || '*'}
+            {item.depends_on.length > 0
+              ? ` · ${t`after`} ${dependsLabel(item.depends_on, items, childTitle)}`
+              : ''}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
 
 /** `depends_on` keys / ids → readable names (sibling items, else existing children) */
 export function dependsLabel(
@@ -73,19 +134,30 @@ function ProposalCard({
   const [error, setError] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState('')
+  const [backends, setBackends] = useState<Record<string, string>>({})
   const n = proposal.items.length
   const pid = proposal.id
   const by = proposal.by ? (childTitle(proposal.by) ?? proposal.by) : ''
+  const defaultBackend =
+    typeof proposal.outcome?.backend === 'string'
+      ? proposal.outcome.backend
+      : 'claude'
   const approved = device.state === 'approved'
   const decide = async (verdict: 'approve' | 'reject') => {
     setBusy(true)
     setError('')
     try {
+      const overrides = Object.fromEntries(
+        Object.entries(backends).filter(([, v]) => v && v !== 'default'),
+      )
       await hostWrite('reply', {
         id,
         proposal: proposal.id,
         verdict,
         text: verdict === 'reject' ? reason : '',
+        ...(verdict === 'approve' && Object.keys(overrides).length > 0
+          ? { backends: overrides }
+          : {}),
       })
       toast(
         verdict === 'approve'
@@ -132,27 +204,16 @@ function ProposalCard({
             className="text-caption"
           />
         ) : null}
-        <ol className="grid">
-          {proposal.items.map((item) => (
-            <li
-              key={item.key}
-              className="grid gap-0.5 border-b border-brand-edge py-2 last:border-b-0"
-            >
-              <span className="text-caption font-medium">{item.title}</span>
-              {item.effect ? (
-                <span className="text-caption leading-relaxed">
-                  {item.effect}
-                </span>
-              ) : null}
-              <span className="font-mono text-meta text-brand-muted">
-                {item.to} · {item.scope.join(', ') || '*'}
-                {item.depends_on.length > 0
-                  ? ` · ${t`after`} ${dependsLabel(item.depends_on, proposal.items, childTitle)}`
-                  : ''}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <ProposalItemsList
+          items={proposal.items}
+          childTitle={childTitle}
+          backends={backends}
+          defaultBackend={defaultBackend}
+          canEdit={approved && !busy}
+          onBackendChange={(key, next) =>
+            setBackends((prev) => ({ ...prev, [key]: next }))
+          }
+        />
       </Part>
       {proposal.outcome ? (
         <Part title={t`What confirming starts`}>

@@ -269,10 +269,27 @@ def take(pid: str, prop_id: str | None) -> tuple[list[dict[str, Any]], dict[str,
     raise collab.CollabError(f"no proposal {prop_id!r} on {pid}")
 
 
+ALLOWED_BACKENDS = {"claude", "codex", "grok"}
+
+
+def parse_backends(raw: str | None) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for entry in collab.csv(raw):
+        if "=" not in entry:
+            raise collab.CollabError(f"invalid --backends entry {entry!r} (expected key=backend)")
+        k, v = entry.split("=", 1)
+        k, v = k.strip(), v.strip()
+        if not k or v not in ALLOWED_BACKENDS:
+            raise collab.CollabError(f"unsupported backend {v!r} for {k!r} (allowed: {sorted(ALLOWED_BACKENDS)})")
+        out[k] = v
+    return out
+
+
 def cmd_approve(argv: list[str]) -> dict[str, Any]:
     pid = collab.observe_tid(collab.opt(argv, "--parent"))
     props, prop = take(pid, collab.opt(argv, "--proposal"))
     only = collab.csv(collab.opt(argv, "--only"))
+    backend_overrides = parse_backends(collab.opt(argv, "--backends"))
     items = [i for i in prop["items"] if not only or i["key"] in only]
     keys = {i["key"] for i in items}
     dropped = [d for i in items for d in i.get("depends_on") or [] if d not in keys and d in
@@ -294,9 +311,13 @@ def cmd_approve(argv: list[str]) -> dict[str, Any]:
         args += ["--depends-on", ",".join(deps)] if deps else []
         cid = collab.cmd_add(args)["id"]
         created[k] = cid
-        if prop["origin"] == "split":
+        chosen_backend = backend_overrides.get(k) or (i.get("backend") if i.get("backend") in ALLOWED_BACKENDS else None)
+        if prop["origin"] == "split" or chosen_backend:
             mj = ticket_fs.read_meta_json(cid)
-            mj["split_from"] = prop["by"]
+            if prop["origin"] == "split":
+                mj["split_from"] = prop["by"]
+            if chosen_backend:
+                mj["backend"] = chosen_backend
             ticket_fs.write_meta_json(cid, mj)
     prop.update({"status": "approved", "created": created, "decided_at": ticket_fs.now_iso(),
                  "skipped": [i["key"] for i in prop["items"] if i["key"] not in keys]})

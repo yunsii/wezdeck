@@ -107,6 +107,19 @@ class TestManagerAndDeadEnds(unittest.TestCase):
         self.assertEqual(after["manager_session"]["state"], "parked")
         self.assertEqual(after["manager_session"]["id"], "sess-old")
 
+    def test_split_parse_backends(self) -> None:
+        import fanout  # noqa: F401, PLC0415
+        import split  # noqa: PLC0415
+
+        self.assertEqual(split.parse_backends("a=codex,b=claude,c=grok"), {
+            "a": "codex",
+            "b": "claude",
+            "c": "grok",
+        })
+        self.assertEqual(split.parse_backends(None), {})
+        with self.assertRaises(Exception):
+            split.parse_backends("a=unknown")
+
 
 if __name__ == "__main__":
     unittest.main()

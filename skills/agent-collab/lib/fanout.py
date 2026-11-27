@@ -442,7 +442,11 @@ class Scheduler:
         override = os.environ.get("TICKET_COLLAB_RUN_CMD")
         if override:
             return [*shlex.split(override), cid]
-        cmd = [str(RUN_SH), "run", "--id", cid, "--phase", "auto", "--backend", self.backend]
+        mj = ticket_fs.read_meta_json(cid)
+        backend = str(mj.get("backend") or self.backend)
+        if backend not in ("claude", "codex", "grok"):
+            backend = self.backend
+        cmd = [str(RUN_SH), "run", "--id", cid, "--phase", "auto", "--backend", backend]
         return cmd + (["--mock"] if self.mock else [])
 
     def dispatch(self, cid: str, kids: dict[str, dict[str, Any]]) -> bool:

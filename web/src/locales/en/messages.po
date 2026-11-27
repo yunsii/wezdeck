@@ -41,7 +41,7 @@ msgstr "{behind} commits to pull."
 msgid "{bg} background tasks running"
 msgstr "{bg} background tasks running"
 
-#: src/features/ticket-proposals.tsx:111
+#: src/features/ticket-proposals.tsx:183
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
@@ -95,6 +95,10 @@ msgstr "{label} {percent}% used"
 msgid "{linked} linked worktrees"
 msgstr "{linked} linked worktrees"
 
+#: src/features/ticket-delivery-card.tsx:169
+msgid "{mergedCount} merged"
+msgstr "{mergedCount} merged"
+
 #: src/features/session-commands.tsx:87
 msgid "{minutes} min ago"
 msgstr "{minutes} min ago"
@@ -119,7 +123,7 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
-#: src/features/console-collab.tsx:236
+#: src/features/console-collab.tsx:237
 msgid "{queuedCount} queued"
 msgstr "{queuedCount} queued"
 
@@ -127,7 +131,7 @@ msgstr "{queuedCount} queued"
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
 
-#: src/features/console-collab.tsx:234
+#: src/features/console-collab.tsx:235
 #: src/features/ticket-keys.tsx:205
 msgid "{runningCount} running"
 msgstr "{runningCount} running"
@@ -202,12 +206,12 @@ msgstr "{untracked} untracked"
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} tokens"
 
-#: src/features/console-collab.tsx:239
+#: src/features/console-collab.tsx:240
 #: src/features/ticket-keys.tsx:200
 msgid "{waitingCount} waiting"
 msgstr "{waitingCount} waiting"
 
-#: src/features/ticket-proposals.tsx:310
+#: src/features/ticket-proposals.tsx:371
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 
@@ -291,7 +295,7 @@ msgstr "A person"
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
-#: src/features/ticket-new.tsx:184
+#: src/features/ticket-new.tsx:339
 msgid "A ticket goes to another repository."
 msgstr "A ticket goes to another repository."
 
@@ -299,7 +303,7 @@ msgstr "A ticket goes to another repository."
 msgid "A worker raised a question or challenge needing your decision."
 msgstr "A worker raised a question or challenge needing your decision."
 
-#: src/features/ticket-proposals.tsx:311
+#: src/features/ticket-proposals.tsx:372
 msgid "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 msgstr "About {minLow}–{minHigh} min each, memory peak about {gb} GB"
 
@@ -343,7 +347,7 @@ msgstr "added"
 msgid "Added data-testid attributes and verified all 14 unit tests pass."
 msgstr "Added data-testid attributes and verified all 14 unit tests pass."
 
-#: src/features/ticket-proposals.tsx:150
+#: src/features/ticket-proposals.tsx:72
 msgid "after"
 msgstr "after"
 
@@ -448,7 +452,7 @@ msgstr "Allow LAN direct"
 msgid "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
 msgstr "Allow runs once; Always allow saves the shown rule; Deny sends Esc."
 
-#: src/features/ticket-proposals.tsx:335
+#: src/features/ticket-proposals.tsx:396
 msgid "already done"
 msgstr "already done"
 
@@ -551,6 +555,14 @@ msgstr "Approved. This device can read the host's sessions and tickets, send mes
 msgid "Archived"
 msgstr "Archived"
 
+#: src/features/ticket-delivery-card.tsx:217
+msgid "Ask manager to fix verification"
+msgstr "Ask manager to fix verification"
+
+#: src/features/ticket-delivery-card.tsx:216
+msgid "Ask manager to resolve conflict"
+msgstr "Ask manager to resolve conflict"
+
 #: src/features/ticket-reply.tsx:254
 msgid "Assumptions"
 msgstr "Assumptions"
@@ -607,6 +619,10 @@ msgstr "Auto titles"
 msgid "Auto-approves edits; auto mode off"
 msgstr "Auto-approves edits; auto mode off"
 
+#: src/features/ticket-new.tsx:129
+msgid "Auto-filled from the first line of your goal"
+msgstr "Auto-filled from the first line of your goal"
+
 #: src/features/me-autotitle.tsx:378
 msgid "Auto-title agent CLI"
 msgstr "Auto-title agent CLI"
@@ -620,7 +636,7 @@ msgid "Availability and note"
 msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:124
-#: src/features/console-collab.tsx:111
+#: src/features/console-collab.tsx:112
 #: src/features/console-me.tsx:387
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
@@ -632,7 +648,7 @@ msgstr "Back"
 msgid "Back to agents"
 msgstr "Back to agents"
 
-#: src/features/console-collab.tsx:153
+#: src/features/console-collab.tsx:154
 msgid "Back to parent ticket"
 msgstr "Back to parent ticket"
 
@@ -742,7 +758,7 @@ msgstr "Cache"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:256
+#: src/features/console-collab.tsx:257
 #: src/features/session-info.tsx:96
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -767,7 +783,7 @@ msgstr "cancel"
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
 #: src/features/session-worktree-lifecycle.tsx:87
-#: src/features/ticket-proposals.tsx:236
+#: src/features/ticket-proposals.tsx:297
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -833,7 +849,7 @@ msgstr "Checking…"
 msgid "Checkout"
 msgstr "Checkout"
 
-#: src/features/console-collab.tsx:251
+#: src/features/console-collab.tsx:252
 msgid "Child"
 msgstr "Child"
 
@@ -845,8 +861,8 @@ msgstr "Child finished"
 msgid "Child tickets"
 msgstr "Child tickets"
 
-#: src/features/console-collab.tsx:231
-#: src/features/console-collab.tsx:246
+#: src/features/console-collab.tsx:232
+#: src/features/console-collab.tsx:247
 msgid "Children"
 msgstr "Children"
 
@@ -996,9 +1012,13 @@ msgstr "Configured"
 msgid "confirm"
 msgstr "confirm"
 
-#: src/features/ticket-proposals.tsx:266
+#: src/features/ticket-proposals.tsx:327
 msgid "Confirm and start"
 msgstr "Confirm and start"
+
+#: src/features/ticket-delivery-card.tsx:199
+msgid "Confirm delivery & close"
+msgstr "Confirm delivery & close"
 
 #: src/features/session-worktree-lifecycle.tsx:96
 msgid "Confirm recycle"
@@ -1012,11 +1032,11 @@ msgstr "Confirm removal"
 msgid "Confirm revoke"
 msgstr "Confirm revoke"
 
-#: src/features/ticket-proposals.tsx:92
+#: src/features/ticket-proposals.tsx:164
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
-#: src/features/console-collab.tsx:359
+#: src/features/ticket-delivery-card.tsx:158
 msgid "conflict"
 msgstr "conflict"
 
@@ -1090,6 +1110,10 @@ msgstr "Context compactions"
 #: src/features/session-skills.tsx:63
 msgid "context usage"
 msgstr "context usage"
+
+#: src/features/ticket-new.tsx:329
+msgid "Conversational"
+msgstr "Conversational"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history.tsx:228
@@ -1266,11 +1290,15 @@ msgstr "Could not read the sources: {errorText}"
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 
+#: src/features/ticket-new.tsx:380
+msgid "Create & open manager"
+msgstr "Create & open manager"
+
 #: src/features/session-new.tsx:285
 msgid "Create session"
 msgstr "Create session"
 
-#: src/features/ticket-new.tsx:242
+#: src/features/ticket-new.tsx:381
 msgid "Create ticket"
 msgstr "Create ticket"
 
@@ -1286,13 +1314,17 @@ msgstr "Creating sessions"
 msgid "Creating the session group…"
 msgstr "Creating the session group…"
 
-#: src/features/ticket-new.tsx:242
+#: src/features/ticket-new.tsx:378
 msgid "Creating…"
 msgstr "Creating…"
 
 #: src/features/session-new-job.tsx:447
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
+
+#: src/features/ticket-new.tsx:325
+msgid "Creation mode"
+msgstr "Creation mode"
 
 #: src/features/collab-top-bar.tsx:34
 #: src/features/tickets-view.tsx:391
@@ -1339,6 +1371,10 @@ msgstr "data as of {time}"
 msgid "Decision"
 msgstr "Decision"
 
+#: src/features/ticket-proposals.tsx:38
+msgid "Default ({defaultBackend})"
+msgstr "Default ({defaultBackend})"
+
 #: src/features/me-agents.tsx:136
 msgid "Default agent"
 msgstr "Default agent"
@@ -1370,13 +1406,29 @@ msgstr "Delete session"
 msgid "Deliver first message"
 msgstr "Deliver first message"
 
+#: src/features/ticket-delivery-card.tsx:130
+msgid "Delivered"
+msgstr "Delivered"
+
+#: src/features/ticket-delivery-card.tsx:82
+msgid "Delivery confirmation sent"
+msgstr "Delivery confirmation sent"
+
+#: src/features/ticket-delivery-card.tsx:180
+msgid "Delivery policy: business repos push branch and open a draft MR (never auto-merge); personal repos land onto mainline after verification."
+msgstr "Delivery policy: business repos push branch and open a draft MR (never auto-merge); personal repos land onto mainline after verification."
+
 #: src/features/session-permission.tsx:221
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:254
+#: src/features/console-collab.tsx:255
 msgid "Depends on"
 msgstr "Depends on"
+
+#: src/features/ticket-new.tsx:118
+msgid "Describe what you want done in plain language — the ticket Manager Session will research, draft a split proposal, and wait for your confirmation…"
+msgstr "Describe what you want done in plain language — the ticket Manager Session will research, draft a split proposal, and wait for your confirmation…"
 
 #: src/features/session-info.tsx:91
 msgid "Desk idle for"
@@ -1573,7 +1625,7 @@ msgstr "Errors"
 msgid "Esc"
 msgstr "Esc"
 
-#: src/features/ticket-proposals.tsx:319
+#: src/features/ticket-proposals.tsx:380
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "Estimated from this machine's past runs, not by the planner."
 
@@ -1674,6 +1726,10 @@ msgstr "First turn"
 msgid "Fit"
 msgstr "Fit"
 
+#: src/features/ticket-delivery-card.tsx:84
+msgid "Fix request sent"
+msgstr "Fix request sent"
+
 #: src/features/console-keys.tsx:71
 msgid "Focus session search or return to list"
 msgstr "Focus session search or return to list"
@@ -1691,7 +1747,7 @@ msgstr "Force delete session and worktree"
 msgid "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 msgstr "Found both metrics_v1 and metrics_v2. Should I read from metrics_v2?"
 
-#: src/features/ticket-new.tsx:179
+#: src/features/ticket-new.tsx:334
 msgid "From"
 msgstr "From"
 
@@ -1720,6 +1776,10 @@ msgstr "Git status"
 #: src/features/console-keys.tsx:29
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
+
+#: src/features/ticket-new.tsx:111
+msgid "Goal"
+msgstr "Goal"
 
 #: src/features/remote-badge.tsx:145
 msgid "Grant failed ({micError}) — retry"
@@ -1825,7 +1885,7 @@ msgstr "Host up since"
 msgid "How it fits together"
 msgstr "How it fits together"
 
-#: src/features/ticket-proposals.tsx:128
+#: src/features/ticket-proposals.tsx:200
 msgid "How it will be done"
 msgstr "How it will be done"
 
@@ -1920,12 +1980,24 @@ msgstr "Instance"
 
 #: src/features/console-collab.tsx:352
 #: src/features/console-collab.tsx:353
-msgid "Integration"
-msgstr "Integration"
+#~ msgid "Integration"
+#~ msgstr "Integration"
 
 #: src/features/me-notifications.tsx:156
 msgid "Integration conflict, verification failure, or run error."
 msgstr "Integration conflict, verification failure, or run error."
+
+#: src/features/ticket-delivery-card.tsx:98
+msgid "Integration delivery"
+msgstr "Integration delivery"
+
+#: src/features/ticket-delivery-card.tsx:126
+msgid "Integration merge conflict"
+msgstr "Integration merge conflict"
+
+#: src/features/ticket-delivery-card.tsx:128
+msgid "Integration verification failed"
+msgstr "Integration verification failed"
 
 #: src/features/me-notifications.tsx:163
 msgid "Integration verification passed and awaits delivery confirmation."
@@ -1989,7 +2061,7 @@ msgstr "Kimi API key"
 msgid "LAN"
 msgstr "LAN"
 
-#: src/features/ticket-proposals.tsx:312
+#: src/features/ticket-proposals.tsx:373
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
@@ -2115,7 +2187,7 @@ msgstr "Loading original…"
 #: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
 #: src/features/console-collab-run.tsx:210
-#: src/features/console-collab.tsx:118
+#: src/features/console-collab.tsx:119
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:212
 #: src/features/console-usage.tsx:106
@@ -2233,7 +2305,7 @@ msgstr "Marked read"
 msgid "Max context"
 msgstr "Max context"
 
-#: src/features/ticket-proposals.tsx:315
+#: src/features/ticket-proposals.tsx:376
 msgid "May stop to ask you:"
 msgstr "May stop to ask you:"
 
@@ -2243,8 +2315,8 @@ msgid "Merge"
 msgstr "Merge"
 
 #: src/features/console-collab.tsx:364
-msgid "merged"
-msgstr "merged"
+#~ msgid "merged"
+#~ msgstr "merged"
 
 #: src/features/session-composer.tsx:176
 msgid "Message"
@@ -2396,12 +2468,12 @@ msgid "New session title"
 msgstr "New session title"
 
 #: src/features/console-keys.tsx:116
-#: src/features/ticket-new.tsx:72
-#: src/features/ticket-new.tsx:173
+#: src/features/ticket-new.tsx:81
+#: src/features/ticket-new.tsx:319
 msgid "New ticket"
 msgstr "New ticket"
 
-#: src/features/ticket-new.tsx:65
+#: src/features/ticket-new.tsx:74
 msgid "New ticket (n)"
 msgstr "New ticket (n)"
 
@@ -2550,7 +2622,7 @@ msgstr "No text diff available"
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
-#: src/features/console-collab.tsx:59
+#: src/features/console-collab.tsx:60
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
@@ -2592,7 +2664,7 @@ msgstr "Not delivered"
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
-#: src/features/ticket-proposals.tsx:333
+#: src/features/ticket-proposals.tsx:394
 msgid "not done"
 msgstr "not done"
 
@@ -2630,7 +2702,7 @@ msgstr "Not set"
 msgid "Note"
 msgstr "Note"
 
-#: src/features/ticket-proposals.tsx:114
+#: src/features/ticket-proposals.tsx:186
 msgid "Nothing is created until you confirm."
 msgstr "Nothing is created until you confirm."
 
@@ -2718,7 +2790,7 @@ msgstr "Only this trace"
 msgid "Only up to {MAX_IMAGES} images fit in one message"
 msgstr "Only up to {MAX_IMAGES} images fit in one message"
 
-#: src/features/ticket-new.tsx:228
+#: src/features/ticket-new.tsx:208
 msgid "Open a repo-neutral Manager Session for this ticket"
 msgstr "Open a repo-neutral Manager Session for this ticket"
 
@@ -2797,6 +2869,10 @@ msgstr "Opening the connection is one request."
 #: src/features/ticket-info.tsx:205
 msgid "Opening…"
 msgstr "Opening…"
+
+#: src/features/ticket-new.tsx:133
+msgid "Opens a repo-neutral Manager Session immediately and sends your goal so you can steer the plan conversationally."
+msgstr "Opens a repo-neutral Manager Session immediately and sends your goal so you can steer the plan conversationally."
 
 #: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
@@ -2893,7 +2969,7 @@ msgstr "parked"
 msgid "Part"
 msgstr "Part"
 
-#: src/features/ticket-proposals.tsx:334
+#: src/features/ticket-proposals.tsx:395
 msgid "partly done"
 msgstr "partly done"
 
@@ -2991,11 +3067,11 @@ msgstr "Prompt composition"
 msgid "Proposal"
 msgstr "Proposal"
 
-#: src/features/ticket-proposals.tsx:93
+#: src/features/ticket-proposals.tsx:165
 msgid "Proposal rejected"
 msgstr "Proposal rejected"
 
-#: src/features/ticket-proposals.tsx:110
+#: src/features/ticket-proposals.tsx:182
 msgid "Proposed plan: {n} child ticket(s)"
 msgstr "Proposed plan: {n} child ticket(s)"
 
@@ -3080,6 +3156,7 @@ msgid "Ready"
 msgstr "Ready"
 
 #: src/features/me-notifications.tsx:162
+#: src/features/ticket-delivery-card.tsx:131
 msgid "Ready to deliver"
 msgstr "Ready to deliver"
 
@@ -3137,11 +3214,11 @@ msgstr "Regenerate title now"
 msgid "Regenerating title for this session…"
 msgstr "Regenerating title for this session…"
 
-#: src/features/ticket-proposals.tsx:245
+#: src/features/ticket-proposals.tsx:306
 msgid "Reject"
 msgstr "Reject"
 
-#: src/features/ticket-proposals.tsx:257
+#: src/features/ticket-proposals.tsx:318
 msgid "Reject…"
 msgstr "Reject…"
 
@@ -3252,7 +3329,7 @@ msgstr "Reply"
 msgid "Reply and continue"
 msgstr "Reply and continue"
 
-#: src/features/console-collab.tsx:252
+#: src/features/console-collab.tsx:253
 msgid "Repo"
 msgstr "Repo"
 
@@ -3406,13 +3483,17 @@ msgstr "Reusable"
 msgid "reuse reasons"
 msgstr "reuse reasons"
 
-#: src/features/ticket-proposals.tsx:361
+#: src/features/ticket-proposals.tsx:422
 msgid "Reuses"
 msgstr "Reuses"
 
 #: src/features/sent-history.tsx:111
 msgid "Review"
 msgstr "Review"
+
+#: src/features/ticket-delivery-card.tsx:143
+msgid "Review net diff"
+msgstr "Review net diff"
 
 #: src/features/ticket-diff.tsx:188
 msgid "Review note for {repoName}/{filePath}…"
@@ -3491,8 +3572,8 @@ msgstr "Run started"
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:276
 #: src/features/console-collab.tsx:277
+#: src/features/console-collab.tsx:278
 #: src/features/tickets-view.tsx:134
 msgid "running"
 msgstr "running"
@@ -3616,7 +3697,7 @@ msgstr "Scheduler active"
 msgid "Scheduler ended"
 msgstr "Scheduler ended"
 
-#: src/features/console-collab.tsx:255
+#: src/features/console-collab.tsx:256
 #: src/features/sent-history.tsx:356
 msgid "Scope"
 msgstr "Scope"
@@ -3712,6 +3793,8 @@ msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
 #: src/features/me-notifications.tsx:378
+#: src/features/ticket-delivery-card.tsx:198
+#: src/features/ticket-delivery-card.tsx:214
 #: src/features/ticket-manager-panel.tsx:126
 msgid "Sending…"
 msgstr "Sending…"
@@ -3936,7 +4019,7 @@ msgstr "Source changed"
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
 
-#: src/features/ticket-proposals.tsx:104
+#: src/features/ticket-proposals.tsx:176
 msgid "Split proposal {pid}"
 msgstr "Split proposal {pid}"
 
@@ -3994,7 +4077,7 @@ msgstr "Start manager session"
 msgid "Start without context"
 msgstr "Start without context"
 
-#: src/features/ticket-new.tsx:220
+#: src/features/ticket-new.tsx:200
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
 
@@ -4028,7 +4111,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:253
+#: src/features/console-collab.tsx:254
 #: src/features/me-host.tsx:153
 #: src/features/session-info.tsx:85
 #: src/features/session-worktree-detail.tsx:65
@@ -4040,6 +4123,10 @@ msgstr "Status"
 #: src/features/session-info.tsx:90
 msgid "Status updated"
 msgstr "Status updated"
+
+#: src/features/ticket-new.tsx:330
+msgid "Structured form"
+msgstr "Structured form"
 
 #: src/features/me-agent-detail.tsx:105
 msgid "Sub-agent"
@@ -4141,7 +4228,7 @@ msgstr "Task history ({count})"
 
 #: src/features/session-info.tsx:129
 #: src/features/ticket-info.tsx:243
-#: src/features/ticket-proposals.tsx:170
+#: src/features/ticket-proposals.tsx:231
 msgid "Technical details"
 msgstr "Technical details"
 
@@ -4194,11 +4281,11 @@ msgstr "The agent is asking you (question {number} of {total})"
 msgid "The agent is waiting for your answer"
 msgstr "The agent is waiting for your answer"
 
-#: src/features/ticket-new.tsx:205
+#: src/features/ticket-new.tsx:185
 msgid "The behaviour, error or data you actually observed"
 msgstr "The behaviour, error or data you actually observed"
 
-#: src/features/ticket-new.tsx:215
+#: src/features/ticket-new.tsx:195
 msgid "The contract or behaviour you expect from it — the target checks this first"
 msgstr "The contract or behaviour you expect from it — the target checks this first"
 
@@ -4271,7 +4358,7 @@ msgid "This device"
 msgstr "This device"
 
 #: src/features/console-sessions.tsx:156
-#: src/features/ticket-proposals.tsx:189
+#: src/features/ticket-proposals.tsx:250
 #: src/features/ticket-reply.tsx:201
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
@@ -4356,7 +4443,7 @@ msgstr "Ticket info"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:118
+#: src/features/console-collab.tsx:119
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
@@ -4366,7 +4453,7 @@ msgstr "Ticket waiting on you"
 
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
-#: src/features/console-collab.tsx:113
+#: src/features/console-collab.tsx:114
 #: src/features/console-shell.tsx:91
 #: src/features/landing-page.tsx:106
 msgid "Tickets"
@@ -4393,9 +4480,13 @@ msgid "Time the relay was actually handling messages; while idle it hibernates a
 msgstr "Time the relay was actually handling messages; while idle it hibernates and is not counted."
 
 #: src/features/session-info.tsx:61
-#: src/features/ticket-new.tsx:188
+#: src/features/ticket-new.tsx:168
 msgid "Title"
 msgstr "Title"
+
+#: src/features/ticket-new.tsx:122
+msgid "Title (optional)"
+msgstr "Title (optional)"
 
 #: src/features/session-info.tsx:62
 msgid "Title source"
@@ -4417,7 +4508,7 @@ msgstr "tmux session"
 msgid "tmux window"
 msgstr "tmux window"
 
-#: src/features/ticket-new.tsx:180
+#: src/features/ticket-new.tsx:335
 msgid "To"
 msgstr "To"
 
@@ -4800,11 +4891,11 @@ msgstr "WebSocket relay"
 msgid "WezDeck"
 msgstr "WezDeck"
 
-#: src/features/ticket-proposals.tsx:124
+#: src/features/ticket-proposals.tsx:196
 msgid "What already exists"
 msgstr "What already exists"
 
-#: src/features/ticket-proposals.tsx:158
+#: src/features/ticket-proposals.tsx:219
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
@@ -4812,7 +4903,7 @@ msgstr "What confirming starts"
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
-#: src/features/ticket-proposals.tsx:117
+#: src/features/ticket-proposals.tsx:189
 msgid "What it solves"
 msgstr "What it solves"
 
@@ -4824,7 +4915,7 @@ msgstr "What should it work on?"
 msgid "What should the next agent do first?"
 msgstr "What should the next agent do first?"
 
-#: src/features/ticket-new.tsx:195
+#: src/features/ticket-new.tsx:175
 msgid "What the other repository should do"
 msgstr "What the other repository should do"
 
@@ -4841,11 +4932,11 @@ msgstr "What this session's agent was given, read from its own record. Tap one t
 msgid "What this workstation is for, one line"
 msgstr "What this workstation is for, one line"
 
-#: src/features/ticket-new.tsx:209
+#: src/features/ticket-new.tsx:189
 msgid "What you assume"
 msgstr "What you assume"
 
-#: src/features/ticket-new.tsx:199
+#: src/features/ticket-new.tsx:179
 msgid "What you saw"
 msgstr "What you saw"
 
@@ -4857,11 +4948,11 @@ msgstr "Where it runs"
 msgid "Which table should the weekly report read?"
 msgstr "Which table should the weekly report read?"
 
-#: src/features/ticket-proposals.tsx:216
+#: src/features/ticket-proposals.tsx:277
 msgid "Why — the planner reads this (required)"
 msgstr "Why — the planner reads this (required)"
 
-#: src/features/ticket-proposals.tsx:195
+#: src/features/ticket-proposals.tsx:256
 msgid "Why reject"
 msgstr "Why reject"
 

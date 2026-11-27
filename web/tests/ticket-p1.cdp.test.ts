@@ -1,7 +1,8 @@
 // covers: web/src/features/ticket-list-groups.ts web/src/features/ticket-keys.tsx
 // covers: web/src/features/tickets-view.tsx web/src/features/ticket-run-chat.tsx
 // covers: web/src/features/ticket-diff.tsx web/src/features/ticket-header.tsx
-// covers: web/src/features/ticket-manager-panel.tsx
+// covers: web/src/features/ticket-manager-panel.tsx web/src/features/ticket-delivery-card.tsx
+// covers: web/src/features/ticket-proposals.tsx
 // covers: native/wezdeck-wsl/collab_chat.go native/wezdeck-wsl/collab_diff.go
 // covers: native/wezdeck-wsl/collab_manager.go
 import { execFileSync } from 'node:child_process'
@@ -82,6 +83,13 @@ function createFixture() {
     {
       kind: 'parent',
       repos: ['demo-repo'],
+      integration: {
+        'demo-repo': {
+          worktree,
+          branch: 'ticket/p1-integration',
+          merged: [childId],
+        },
+      },
       manager_session: {
         backend: 'claude',
         profile: 'claude-sonnet',
@@ -296,7 +304,7 @@ describe.runIf(stack)(
       await sendReviewBtn.waitFor({ timeout: 5_000 })
       expect(await sendReviewBtn.innerText()).toContain('1')
 
-      // 6. Navigate to parent ticket -> parked Manager Session panel renders with Wake + composer
+      // 6. Navigate to parent ticket -> parked Manager Session panel + Ready-to-deliver checklist card render
       await page.goto(
         `${base}/zh/console/collab/${fixture.parentId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
       )
@@ -304,6 +312,10 @@ describe.runIf(stack)(
       await mgrPanel.waitFor({ timeout: 15_000 })
       await mgrPanel.getByTestId('ticket-manager-resume-button').waitFor()
       await mgrPanel.getByTestId('ticket-manager-composer').waitFor()
+      const deliveryCard = page.getByTestId('ticket-delivery-card')
+      await deliveryCard.waitFor({ timeout: 10_000 })
+      await deliveryCard.getByTestId('delivery-open-diff').waitFor()
+      await deliveryCard.getByTestId('delivery-confirm-button').waitFor()
 
       await context.close()
     }, 60_000)

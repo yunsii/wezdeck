@@ -18,6 +18,7 @@ import { CollabMetricsBand } from './collab-metrics'
 import { CollabTopBar } from './collab-top-bar'
 import { pct } from './console-collab-format'
 import { Reading } from './inspector'
+import { TicketDeliveryCard } from './ticket-delivery-card'
 import { TicketHeader } from './ticket-header'
 import { TicketManagerPanel } from './ticket-manager-panel'
 import { TicketPipeline, useGateLabel } from './ticket-pipeline'
@@ -178,7 +179,7 @@ export function TicketReading({
           <ChildrenTable children={data.children_detail} onOpen={onOpen} />
         ) : null}
         {data.collab?.integration ? (
-          <IntegrationSummary integration={data.collab.integration} />
+          <TicketDeliveryCard data={{ ...data, ticket }} />
         ) : null}
         {data.runs.length > 0 || ticket.running.length > 0 ? (
           <TicketRunChat
@@ -338,33 +339,6 @@ function ChildrenTable({
           </tbody>
         </table>
       </div>
-    </section>
-  )
-}
-
-function IntegrationSummary({
-  integration,
-}: {
-  integration: NonNullable<NonNullable<CollabShow['collab']>['integration']>
-}) {
-  const { t } = useLingui()
-  return (
-    <section aria-label={t`Integration`} className="grid gap-1">
-      <h2 className="text-body font-semibold">{t`Integration`}</h2>
-      {Object.entries(integration).map(([repo, info]) => (
-        <p key={repo} className="font-mono text-meta text-brand-muted">
-          {repo}:{' '}
-          {info.conflict ? (
-            <span className="text-brand-error">
-              {t`conflict`} ({info.conflict.files.join(', ')})
-            </span>
-          ) : info.skipped ? (
-            info.skipped
-          ) : (
-            `${t`merged`} ${info.merged.length} → ${info.branch ?? ''}`
-          )}
-        </p>
-      ))}
     </section>
   )
 }
