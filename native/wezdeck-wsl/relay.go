@@ -437,7 +437,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 	case "usage":
 		return fetchUsage()
 	case "send", "key", "reply", "attach", "upload", "sent.action", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "session.restart", "session.delete",
-		"session.handoff", "session.autotitle.update", "ticket.draft", "ticket.new", "ticket.manager.start", "ticket.manager.park", "ticket.manager.send", "worktree.describe", "worktree.recycle", "worktree.remove", "host.warp.set":
+		"session.handoff", "session.autotitle.update", "ticket.draft", "ticket.new", "ticket.close", "ticket.manager.start", "ticket.manager.park", "ticket.manager.send", "worktree.describe", "worktree.recycle", "worktree.remove", "host.warp.set":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
 			r.logf("write_denied", "via=%s action=%q err=%q", via, f.Action, err)
@@ -453,7 +453,7 @@ func dispatchRPC(f relayFrame, via string, r *relay) (any, error) {
 var signedActions = map[string]bool{
 	"send": true, "key": true, "reply": true, "attach": true, "upload": true,
 	"sent.action": true, "clear": true, "session.new": true, "session.new.trust": true, "agent.profile.configure": true, "agent.profile.model": true, "agent.profile.settings": true, "session.restart": true, "session.delete": true,
-	"session.handoff": true, "session.autotitle.update": true, "ticket.draft": true, "ticket.new": true, "ticket.manager.start": true, "ticket.manager.park": true, "ticket.manager.send": true, "worktree.describe": true, "worktree.recycle": true, "worktree.remove": true, "host.warp.set": true,
+	"session.handoff": true, "session.autotitle.update": true, "ticket.draft": true, "ticket.new": true, "ticket.close": true, "ticket.manager.start": true, "ticket.manager.park": true, "ticket.manager.send": true, "worktree.describe": true, "worktree.recycle": true, "worktree.remove": true, "host.warp.set": true,
 }
 
 // handleRPC answers one request frame and logs it.

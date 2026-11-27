@@ -36,37 +36,23 @@ import { useTicketExpandedMap } from './ticket-collapse'
 import { TicketKeys } from './ticket-keys'
 import {
   TICKET_FILTERS,
+  bucketOpenGroups,
   buildTicketGroups,
   countTicketFilters,
   filterTicketGroups,
   flattenVisibleGroupIds,
-  splitQuietGroups,
 } from './ticket-list-groups'
-import type { TicketFilter, TicketGroup } from './ticket-list-groups'
+import type {
+  TicketBucket,
+  TicketFilter,
+  TicketGroup,
+} from './ticket-list-groups'
 import { SearchBox } from './ticket-search'
 
 export type { TicketFilter } from './ticket-list-groups'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
-const QUIET_DAYS = 7
-
-/**
- * 进行中 lists what is moving: a ticket nobody touched for QUIET_DAYS (not
- * running, not waiting on you) folds into 较早 at the end — 19- to 62-day-old
- * 已提交 tickets used to push the live ones down.
- */
-export function splitQuiet(tickets: Array<CollabTicket>, now = Date.now()) {
-  const cutoff = now - QUIET_DAYS * 86_400_000
-  const quiet = (ticket: CollabTicket) =>
-    ticket.running.length === 0 &&
-    ticket.status !== 'waiting_initiator' &&
-    Date.parse(ticket.updated_at ?? '') < cutoff
-  return {
-    recent: tickets.filter((ticket) => !quiet(ticket)),
-    older: tickets.filter(quiet),
-  }
-}
 
 function clock(ms: number) {
   return ms
@@ -189,19 +175,9 @@ function StatusSegments({
       dense
       options={[
         {
-          value: 'all',
-          label: t({ message: 'All', context: 'filter' }),
-          count: counts.all,
-        },
-        {
-          value: 'active',
-          label: t({ message: 'In progress', context: 'filter' }),
-          count: counts.active,
-        },
-        {
-          value: 'mine',
-          label: t({ message: 'Waiting on you', context: 'filter' }),
-          count: counts.mine,
+          value: 'open',
+          label: t({ message: 'Pending', context: 'filter' }),
+          count: counts.open,
         },
         {
           value: 'research',
@@ -212,6 +188,11 @@ function StatusSegments({
           value: 'ended',
           label: t({ message: 'Ended', context: 'filter' }),
           count: counts.ended,
+        },
+        {
+          value: 'all',
+          label: t({ message: 'All', context: 'filter' }),
+          count: counts.all,
         },
       ]}
     />
@@ -251,10 +232,10 @@ export function TicketsView({
   const poll = (health.data?.running ?? 0) > 0 ? ACTIVE_POLL_MS : IDLE_POLL_MS
   const list = useTicketList()
   const copyReference = useCopyTicketReference()
-  // kept per browser like 会话's (lib/last-opened.ts)
+  // kept per browser like 会话's (lib/last-opened.ts); legacy `active`/`mine` fall back to `open`
   const [chosen, setChosen] = useStoredChoice<TicketFilter>(
     `wezdeck-ticket-filter-${base}`,
-    'active',
+    'open',
     (value) => TICKET_FILTERS.has(value as TicketFilter) && value !== 'inbox',
   )
   const filter = fixedFilter ?? chosen
@@ -297,10 +278,15 @@ export function TicketsView({
     <StatusSegments groups={allGroups} value={chosen} onChange={chooseFilter} />
   )
 
-  const { recent, older } =
-    (filter === 'active' || filter === 'all') && !needle
-      ? splitQuietGroups(matchedGroups)
-      : { recent: matchedGroups, older: [] }
+  let buckets: Array<TicketBucket> | undefined
+  let recent: Array<TicketGroup> = matchedGroups
+  let older: Array<TicketGroup> = []
+  if (filter === 'open' && !needle) {
+    const split = bucketOpenGroups(matchedGroups)
+    buckets = split.buckets
+    recent = split.buckets.flatMap((bucket) => bucket.groups)
+    older = split.older
+  }
 
   // no ticket in the URL (wide): the one last opened under this filter, else
   // the one last opened at all if it still exists (switching to 全部 — ONLY on
@@ -369,6 +355,7 @@ export function TicketsView({
         >
           <TicketKeys
             groups={recent}
+            buckets={buckets}
             older={older}
             empty={emptyText}
             base={base}
@@ -416,7 +403,13 @@ export function TicketsView({
       {list.isError ? (
         <div className="border-b border-brand-edge">{freshness}</div>
       ) : null}
-      <TicketKeys groups={recent} older={older} empty={emptyText} base={base} />
+      <TicketKeys
+        groups={recent}
+        buckets={buckets}
+        older={older}
+        empty={emptyText}
+        base={base}
+      />
     </div>
   )
 }

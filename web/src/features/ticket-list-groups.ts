@@ -1,25 +1,42 @@
-// Pure 3+1 ticket list grouping & filtering helpers:
+// Pure ticket list grouping, 4-tab filtering (open / research / ended / all),
+// 3-tier priority bucketing inside `open`, and 14-day stale folding:
 // - Folds `child` tickets under their `parent` row (with aggregated progress
 //   and waiting/running/failed rollup) so parent work never floods the flat list.
-// - Separates standalone `research` tickets into a dedicated `research` filter
-//   while hiding internal `fanout draft` research children from the top level.
+// - Defaults to `open` ("待处理"): surfaces waiting_initiator, failed, running,
+//   and queued tickets together, prioritized by urgency instead of splitting
+//   active vs waiting across separate tabs.
+// - Separates standalone `research` tickets into `research` while hiding
+//   internal `fanout draft` research children from the top level.
 import type { CollabTicket } from '#/lib/runtime-contract'
 
 /** Segments on the tickets page; `inbox` is the old 待处理 route's fixed filter. */
-export type TicketFilter =
-  'all' | 'active' | 'mine' | 'research' | 'ended' | 'inbox'
+export type TicketFilter = 'open' | 'research' | 'ended' | 'all' | 'inbox'
 
 export const TICKET_FILTERS: ReadonlySet<TicketFilter> = new Set([
-  'all',
-  'active',
-  'mine',
+  'open',
   'research',
   'ended',
+  'all',
   'inbox',
 ])
 
-const ENDED = new Set(['shipped', 'closed', 'failed', 'rejected'])
-const QUIET_DAYS = 7
+/** Map legacy stored filter values (`active` / `mine`) smoothly onto `open`. */
+export function normalizeTicketFilter(value: string): TicketFilter | null {
+  if (value === 'active' || value === 'mine') return 'open'
+  if (TICKET_FILTERS.has(value as TicketFilter) && value !== 'inbox') {
+    return value as TicketFilter
+  }
+  return null
+}
+
+/** True terminal states (`failed` stays actionable under `open`). */
+export const TERMINAL_TICKET_STATUSES: ReadonlySet<string> = new Set([
+  'shipped',
+  'closed',
+  'rejected',
+])
+const HARD_CLOSED = new Set(['closed', 'rejected'])
+const STALE_DAYS = 14
 
 export type TicketGroupSummary = {
   total: number
@@ -37,6 +54,13 @@ export type TicketGroup = {
   summary: TicketGroupSummary
   /** true when search matched inside a child (auto-expand group in UI) */
   matchInChild: boolean
+}
+
+export type TicketBucketKey = 'attention' | 'running' | 'queued'
+
+export type TicketBucket = {
+  key: TicketBucketKey
+  groups: Array<TicketGroup>
 }
 
 export function isResearchTicket(ticket: CollabTicket): boolean {
@@ -65,12 +89,35 @@ function summarizeChildren(children: Array<CollabTicket>): TicketGroupSummary {
   let waiting = 0
   let failed = 0
   for (const child of children) {
-    if (child.running.length > 0) running += 1
+    const hardClosed = HARD_CLOSED.has(child.status ?? '')
+    if (!hardClosed && child.running.length > 0) running += 1
     if (child.status === 'waiting_initiator') waiting += 1
-    if (child.status === 'failed' || child.status === 'rejected') failed += 1
-    if (child.status === 'shipped' || child.status === 'closed') done += 1
+    if (child.status === 'failed') failed += 1
+    if (TERMINAL_TICKET_STATUSES.has(child.status ?? '')) done += 1
   }
   return { total: children.length, done, running, waiting, failed }
+}
+
+function groupSignals(group: TicketGroup) {
+  const { root, summary } = group
+  const status = root.status ?? ''
+  const hardClosed = HARD_CLOSED.has(status)
+  const rootTerminal = TERMINAL_TICKET_STATUSES.has(status)
+  const anyRunning =
+    !hardClosed && (root.running.length > 0 || summary.running > 0)
+  const anyWaiting =
+    !hardClosed && (status === 'waiting_initiator' || summary.waiting > 0)
+  const anyFailed = !hardClosed && (status === 'failed' || summary.failed > 0)
+  const managerLive = !hardClosed && root.manager_session?.state === 'live'
+  return {
+    hardClosed,
+    rootTerminal,
+    anyRunning,
+    anyWaiting,
+    anyFailed,
+    managerLive,
+    research: isResearchTicket(root),
+  }
 }
 
 /** Group flat `collab.list` rows into top-level rows with nested `children`. */
@@ -90,7 +137,6 @@ export function buildTicketGroups(
 
   const groups: Array<TicketGroup> = []
   for (const ticket of allTickets) {
-    // Nested under an existing parent: folded, not duplicated at top level.
     if (ticket.parent && byId.has(ticket.parent)) continue
     const children = (childrenByParent.get(ticket.id) ?? []).sort(
       (a, b) => ticketTime(a.created_at) - ticketTime(b.created_at),
@@ -117,32 +163,25 @@ export function groupMatchesFilter(
   group: TicketGroup,
   filter: TicketFilter,
 ): boolean {
-  const { root, summary } = group
-  const rootEnded = ENDED.has(root.status ?? '')
-  const rootRunning = root.running.length > 0
-  const anyRunning = rootRunning || summary.running > 0
-  const anyWaiting = root.status === 'waiting_initiator' || summary.waiting > 0
-  const research = isResearchTicket(root)
-
+  const s = groupSignals(group)
   switch (filter) {
     case 'all':
       return true
     case 'research':
-      return research
-    case 'mine':
-      return anyWaiting
+      return s.research
     case 'inbox':
-      return (
-        anyWaiting ||
-        root.status === 'failed' ||
-        root.status === 'rejected' ||
-        summary.failed > 0
-      )
+      return s.anyWaiting || s.anyFailed
     case 'ended':
-      return !research && rootEnded && !anyRunning && !anyWaiting
-    case 'active':
-      if (research) return false
-      return anyRunning || (!rootEnded && root.status !== 'waiting_initiator')
+      return (
+        !s.research &&
+        s.rootTerminal &&
+        !s.anyRunning &&
+        !s.anyWaiting &&
+        !s.anyFailed
+      )
+    case 'open':
+      if (s.research) return false
+      return !s.rootTerminal || s.anyRunning || s.anyWaiting || s.anyFailed
   }
 }
 
@@ -150,17 +189,15 @@ export function countTicketFilters(
   groups: Array<TicketGroup>,
 ): Record<TicketFilter, number> {
   const counts: Record<TicketFilter, number> = {
-    all: 0,
-    active: 0,
-    mine: 0,
+    open: 0,
     research: 0,
     ended: 0,
+    all: 0,
     inbox: 0,
   }
   for (const group of groups) {
     counts.all += 1
-    if (groupMatchesFilter(group, 'active')) counts.active += 1
-    if (groupMatchesFilter(group, 'mine')) counts.mine += 1
+    if (groupMatchesFilter(group, 'open')) counts.open += 1
     if (groupMatchesFilter(group, 'research')) counts.research += 1
     if (groupMatchesFilter(group, 'ended')) counts.ended += 1
     if (groupMatchesFilter(group, 'inbox')) counts.inbox += 1
@@ -203,21 +240,43 @@ export function filterTicketGroups(
   return out
 }
 
-export function splitQuietGroups(
+/**
+ * Partition `open` ("待处理") tickets into 3 urgency-ordered buckets
+ * (`attention` → `running` → `queued`) plus a collapsed `older` tail for
+ * inactive tickets untouched for > 14 days.
+ */
+export function bucketOpenGroups(
   groups: Array<TicketGroup>,
   now = Date.now(),
-): { recent: Array<TicketGroup>; older: Array<TicketGroup> } {
-  const cutoff = now - QUIET_DAYS * 86_400_000
-  const quiet = (g: TicketGroup) =>
-    g.root.running.length === 0 &&
-    g.summary.running === 0 &&
-    g.root.status !== 'waiting_initiator' &&
-    g.summary.waiting === 0 &&
-    g.activityAt < cutoff
-  return {
-    recent: groups.filter((g) => !quiet(g)),
-    older: groups.filter(quiet),
+): { buckets: Array<TicketBucket>; older: Array<TicketGroup> } {
+  const cutoff = now - STALE_DAYS * 86_400_000
+  const attention: Array<TicketGroup> = []
+  const running: Array<TicketGroup> = []
+  const queued: Array<TicketGroup> = []
+  const older: Array<TicketGroup> = []
+
+  for (const group of groups) {
+    const s = groupSignals(group)
+    const isLive = s.anyRunning || s.managerLive
+    if (!isLive && group.activityAt > 0 && group.activityAt < cutoff) {
+      older.push(group)
+      continue
+    }
+    if (s.anyWaiting || s.anyFailed) {
+      attention.push(group)
+    } else if (isLive || group.root.status === 'in_progress') {
+      running.push(group)
+    } else {
+      queued.push(group)
+    }
   }
+
+  const buckets: Array<TicketBucket> = []
+  if (attention.length > 0)
+    buckets.push({ key: 'attention', groups: attention })
+  if (running.length > 0) buckets.push({ key: 'running', groups: running })
+  if (queued.length > 0) buckets.push({ key: 'queued', groups: queued })
+  return { buckets, older }
 }
 
 export function groupIsExpanded(
@@ -231,7 +290,6 @@ export function groupIsExpanded(
   if (Object.prototype.hasOwnProperty.call(expandedMap, group.root.id)) {
     return expandedMap[group.root.id]
   }
-  // Auto-expand parents that currently have running or waiting children; fold quiet/ended parents.
   return group.summary.running > 0 || group.summary.waiting > 0
 }
 

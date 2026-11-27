@@ -6,8 +6,8 @@
 //   Tier 3: default-collapsed Technical details (ticket ID, phase, full runs table).
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, SquareTerminal } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Copy, SquareTerminal, XCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Led } from '#/components/deck/led'
@@ -22,6 +22,7 @@ import { hostWrite } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
 import { ticketTone } from './console-collab'
 import { useDeviceState } from './device-state'
+import { TERMINAL_TICKET_STATUSES } from './ticket-list-groups'
 import { RunMetricsTable } from './ticket-runs'
 import { RepoRoute, useOwnerLabel, useStatusLabel } from './tickets-view'
 
@@ -38,38 +39,36 @@ function hasResumableSession(sessions: Record<string, unknown>) {
   )
 }
 
-export function TicketInfo({
+function TicketQuickActions({
   data,
-  open,
   onClose,
 }: {
   data: CollabShow
-  open: boolean
   onClose: () => void
 }) {
   const { t } = useLingui()
   const client = useQueryClient()
   const device = useDeviceState()
-  const statusLabel = useStatusLabel()
-  const ownerLabel = useOwnerLabel()
   const [copiedRef, setCopiedRef] = useState(false)
   const [attaching, setAttaching] = useState(false)
   const [attachError, setAttachError] = useState('')
+  const [confirmClose, setConfirmClose] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [closeError, setCloseError] = useState('')
   const ticket = data.ticket
+  const ticketId = ticket?.id ?? ''
+  useEffect(() => {
+    setConfirmClose(false)
+    setCloseError('')
+  }, [ticketId])
   if (!ticket) return null
 
-  const tone = ticketTone(ticket)
-  const fullTitle = ticket.title?.trim() || ticket.id
   const running = ticket.running.length > 0
   const canAttach = hasResumableSession(data.sessions)
-
-  const copyTitle = () => {
-    void copyText(fullTitle).then(() => {
-      const shown =
-        fullTitle.length > 40 ? `${fullTitle.slice(0, 39)}…` : fullTitle
-      toast(t`Copied: ${shown}`)
-    })
-  }
+  const canClose = !TERMINAL_TICKET_STATUSES.has(ticket.status ?? '')
+  const actionCount =
+    (data.reference ? 1 : 0) + (canAttach ? 1 : 0) + (canClose ? 1 : 0)
+  if (actionCount === 0) return null
 
   const copyReference = () => {
     if (!data.reference) return
@@ -100,6 +99,179 @@ export function TicketInfo({
     }
   }
 
+  const closeTicket = async () => {
+    setClosing(true)
+    setCloseError('')
+    try {
+      await hostWrite('ticket.close', { id: ticket.id })
+      toast(t`Ticket closed`)
+      setConfirmClose(false)
+      await client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
+      onClose()
+    } catch (error) {
+      setCloseError((error as Error).message)
+    } finally {
+      setClosing(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-1.5">
+      <div
+        className={cn(
+          'grid gap-2',
+          actionCount === 1
+            ? 'grid-cols-1'
+            : actionCount === 2
+              ? 'grid-cols-2'
+              : 'grid-cols-3',
+        )}
+      >
+        {data.reference ? (
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            data-testid="ticket-copy-reference"
+            onClick={copyReference}
+            className={tileClass}
+          >
+            <span className="text-brand-muted">
+              {copiedRef ? (
+                <Check size={16} className="text-brand-done" aria-hidden />
+              ) : (
+                <Copy size={16} aria-hidden />
+              )}
+            </span>
+            <span className="max-w-full truncate">
+              {copiedRef ? t`Copied` : t`Copy reference`}
+            </span>
+          </Button>
+        ) : null}
+        {canAttach ? (
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            data-write
+            data-testid="ticket-attach-button"
+            disabled={attaching || running || device.state !== 'approved'}
+            onClick={() => void attach()}
+            className={tileClass}
+          >
+            <span className="text-brand-muted">
+              <SquareTerminal size={16} aria-hidden />
+            </span>
+            <span className="max-w-full truncate">
+              {attaching ? t`Opening…` : t`Take over in tmux`}
+            </span>
+          </Button>
+        ) : null}
+        {canClose ? (
+          <Button
+            variant="plain"
+            size="none"
+            type="button"
+            data-write
+            data-testid="ticket-close-button"
+            disabled={closing || running || device.state !== 'approved'}
+            onClick={() => {
+              setCloseError('')
+              setConfirmClose((prev) => !prev)
+            }}
+            className={cn(
+              tileClass,
+              confirmClose && 'bg-brand-error/10 text-brand-error',
+            )}
+          >
+            <span
+              className={confirmClose ? 'text-brand-error' : 'text-brand-muted'}
+            >
+              <XCircle size={16} aria-hidden />
+            </span>
+            <span className="max-w-full truncate">
+              {closing ? t`Closing…` : t`Close ticket`}
+            </span>
+          </Button>
+        ) : null}
+      </div>
+      {confirmClose && canClose ? (
+        <div
+          data-testid="ticket-close-confirm"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-error/30 bg-brand-error/5 px-3 py-2"
+        >
+          <p className="text-meta text-brand-text">
+            {t`Close this ticket? It will move to Ended and leave Pending.`}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={closing}
+              onClick={() => setConfirmClose(false)}
+            >
+              {t`Cancel`}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="warning"
+              data-write
+              data-testid="ticket-close-confirm-button"
+              disabled={closing}
+              onClick={() => void closeTicket()}
+            >
+              {closing ? t`Closing…` : t`Confirm close`}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {(canAttach || canClose) && running ? (
+        <p className="px-1 text-meta text-brand-muted">
+          {t`A headless run is still going; wait until it finishes.`}
+        </p>
+      ) : null}
+      {attachError ? (
+        <p role="alert" className="px-1 text-meta text-brand-error">
+          {attachError}
+        </p>
+      ) : null}
+      {closeError ? (
+        <p role="alert" className="px-1 text-meta text-brand-error">
+          {closeError}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export function TicketInfo({
+  data,
+  open,
+  onClose,
+}: {
+  data: CollabShow
+  open: boolean
+  onClose: () => void
+}) {
+  const { t } = useLingui()
+  const statusLabel = useStatusLabel()
+  const ownerLabel = useOwnerLabel()
+  const ticket = data.ticket
+  if (!ticket) return null
+
+  const tone = ticketTone(ticket)
+  const fullTitle = ticket.title?.trim() || ticket.id
+
+  const copyTitle = () => {
+    void copyText(fullTitle).then(() => {
+      const shown =
+        fullTitle.length > 40 ? `${fullTitle.slice(0, 39)}…` : fullTitle
+      toast(t`Copied: ${shown}`)
+    })
+  }
+
   const handlerParts = [
     ticket.handler?.repo,
     ticket.handler?.cwd?.split('/').filter(Boolean).at(-1),
@@ -115,8 +287,6 @@ export function TicketInfo({
   ].filter(([, value]) => Boolean(value) && value !== '—') as Array<
     [string, string]
   >
-
-  const actionCount = (data.reference ? 1 : 0) + (canAttach ? 1 : 0)
 
   return (
     <Sheet
@@ -154,71 +324,7 @@ export function TicketInfo({
         </div>
 
         {/* Tier 1: Quick action icon tiles */}
-        {actionCount > 0 ? (
-          <div className="grid gap-1.5">
-            <div
-              className={cn(
-                'grid gap-2',
-                actionCount === 1 ? 'grid-cols-1' : 'grid-cols-2',
-              )}
-            >
-              {data.reference ? (
-                <Button
-                  variant="plain"
-                  size="none"
-                  type="button"
-                  data-testid="ticket-copy-reference"
-                  onClick={copyReference}
-                  className={tileClass}
-                >
-                  <span className="text-brand-muted">
-                    {copiedRef ? (
-                      <Check
-                        size={16}
-                        className="text-brand-done"
-                        aria-hidden
-                      />
-                    ) : (
-                      <Copy size={16} aria-hidden />
-                    )}
-                  </span>
-                  <span className="max-w-full truncate">
-                    {copiedRef ? t`Copied` : t`Copy reference`}
-                  </span>
-                </Button>
-              ) : null}
-              {canAttach ? (
-                <Button
-                  variant="plain"
-                  size="none"
-                  type="button"
-                  data-write
-                  data-testid="ticket-attach-button"
-                  disabled={attaching || running || device.state !== 'approved'}
-                  onClick={() => void attach()}
-                  className={tileClass}
-                >
-                  <span className="text-brand-muted">
-                    <SquareTerminal size={16} aria-hidden />
-                  </span>
-                  <span className="max-w-full truncate">
-                    {attaching ? t`Opening…` : t`Take over in tmux`}
-                  </span>
-                </Button>
-              ) : null}
-            </div>
-            {canAttach && running ? (
-              <p className="px-1 text-meta text-brand-muted">
-                {t`A headless run is still going; take over when it finishes.`}
-              </p>
-            ) : null}
-            {attachError ? (
-              <p role="alert" className="px-1 text-meta text-brand-error">
-                {attachError}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        {open ? <TicketQuickActions data={data} onClose={onClose} /> : null}
 
         {/* Tier 2: Overview */}
         {overviewRows.length > 0 ? (

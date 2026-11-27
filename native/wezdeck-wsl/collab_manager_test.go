@@ -98,3 +98,11 @@ func TestReplyArgv_ProposalBackends(t *testing.T) {
 		t.Fatal("expected error for unsupported backend override")
 	}
 }
+
+func TestCloseTicket_InvalidID(t *testing.T) {
+	for _, raw := range []string{`{}`, `{"id":""}`, `{"id":"../etc/passwd"}`, `{"id":"bad id"}`} {
+		if _, err := closeTicket(json.RawMessage(raw)); err == nil {
+			t.Fatalf("expected invalid ticket id error for %s", raw)
+		}
+	}
+}

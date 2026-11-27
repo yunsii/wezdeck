@@ -383,6 +383,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'File a quick or manual single-repo / cross-repo ticket (with attachments and background AI enrichment)',
       ),
       c(
+        'ticket.close',
+        '关闭工单并回收工作树、自动休眠管理会话（ticket close）',
+        'Close a ticket, reclaim its worktree, and park its manager session (ticket close)',
+      ),
+      c(
         'ticket.manager.start',
         '启动或唤醒工单的仓中立顶层管理会话（wezterm_collab_tickets）',
         'Start or resume a ticket’s repo-neutral top-level Manager Session',

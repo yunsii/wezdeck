@@ -372,6 +372,18 @@ func attachTicket(args json.RawMessage) (any, error) {
 	return runTicketCLI("ticket attach", []string{"attach", "--id", a.ID})
 }
 
+// closeTicket closes a ticket via `ticket close --id <id>` (reclaims worktree
+// and auto-parks any idle manager session).
+func closeTicket(args json.RawMessage) (any, error) {
+	var a struct {
+		ID string `json:"id"`
+	}
+	if json.Unmarshal(args, &a) != nil || !ticketIDPattern.MatchString(a.ID) {
+		return nil, errors.New("invalid ticket id")
+	}
+	return runTicketCLI("ticket close", []string{"close", "--id", a.ID})
+}
+
 // runTicketCLI runs skills/agent-collab/ticket and returns its last JSON line.
 func runTicketCLI(label string, args []string) (any, error) {
 	argv := append([]string{filepath.Join(repoRoot(), "skills", "agent-collab", "ticket")}, args...)

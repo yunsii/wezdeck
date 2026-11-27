@@ -269,12 +269,19 @@ describe.runIf(stack)(
       )
       await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
 
-      // 1. Default "进行中" folds child under parent and excludes standalone research
-      const groupEl = page.locator(`[data-ticket-group="${fixture.parentId}"]`)
+      // 1. Default "待处理" (open) shows urgency buckets, folds child under parent, and excludes standalone research
+      const attentionBucket = page.locator('[data-ticket-bucket="attention"]')
+      await attentionBucket.waitFor({ timeout: 15_000 })
+      const groupEl = attentionBucket.locator(
+        `[data-ticket-group="${fixture.parentId}"]`,
+      )
       await groupEl.waitFor({ timeout: 15_000 })
       await groupEl.getByTestId('ticket-group-waiting').waitFor()
       expect(
         await page.locator(`[data-ticket="${fixture.researchId}"]`).count(),
+      ).toBe(0)
+      expect(
+        await page.locator(`[data-ticket="${fixture.shippedId}"]`).count(),
       ).toBe(0)
 
       // Toggle collapse/expand on parent group
@@ -285,14 +292,19 @@ describe.runIf(stack)(
       await groupEl.getByTestId('ticket-group-toggle').click()
       await childLink.waitFor()
 
-      // 2. Switching to "等你" and "调研" stays on the chosen filter even when
-      //    localStorage remembers a shipped ticket from another filter (regression: toAll bounce)
-      await page.evaluate((sid) => {
-        localStorage.setItem('wezdeck-last-ticket-collab', sid)
-      }, fixture.shippedId)
-      const mineTab = page.getByRole('radio', { name: /等你/ })
-      await mineTab.click()
-      await expect.poll(() => mineTab.getAttribute('aria-checked')).toBe('true')
+      // 2. Switching to "已完结" and "调研" stays on the chosen filter even when
+      //    localStorage remembers a ticket from another filter (regression: toAll bounce)
+      await page.evaluate((pid) => {
+        localStorage.setItem('wezdeck-last-ticket-collab', pid)
+      }, fixture.parentId)
+      const endedTab = page.getByRole('radio', { name: /已完结/ })
+      await endedTab.click()
+      await expect
+        .poll(() => endedTab.getAttribute('aria-checked'))
+        .toBe('true')
+      await page
+        .locator(`[data-ticket="${fixture.shippedId}"]`)
+        .waitFor({ timeout: 10_000 })
       const researchTab = page.getByRole('radio', { name: /调研/ })
       await researchTab.click()
       await expect
@@ -347,7 +359,15 @@ describe.runIf(stack)(
       await deliveryCard.getByTestId('delivery-open-diff').waitFor()
       await deliveryCard.getByTestId('delivery-confirm-button').waitFor()
 
-      // 7. Terminal shipped ticket must NOT offer "Start manager session"
+      // 6b. Open ticket info sheet -> offers one-tap "关闭工单" (with inline confirm)
+      await page.getByTestId('ticket-info-button').click()
+      const infoSheet = page.getByTestId('ticket-info')
+      await infoSheet.waitFor({ timeout: 10_000 })
+      await infoSheet.getByTestId('ticket-close-button').click()
+      await infoSheet.getByTestId('ticket-close-confirm').waitFor()
+      await page.keyboard.press('Escape')
+
+      // 7. Terminal shipped ticket must NOT offer "Start manager session" or "Close ticket"
       await page.goto(
         `${base}/zh/console/collab/${fixture.shippedId}?remote=1#pair=${encodeURIComponent(token)}${roomQuery}`,
       )
@@ -356,6 +376,9 @@ describe.runIf(stack)(
         .getByText(`Shipped Ticket ${fixture.suffix}`)
         .waitFor({ timeout: 15_000 })
       expect(await page.getByTestId('ticket-manager-upgrade').count()).toBe(0)
+      await page.getByTestId('ticket-info-button').click()
+      await page.getByTestId('ticket-info').waitFor({ timeout: 10_000 })
+      expect(await page.getByTestId('ticket-close-button').count()).toBe(0)
 
       await context.close()
     }, 60_000)

@@ -81,7 +81,7 @@ describe.runIf(stack)('Tickets split on a wide screen', () => {
       const page = await context.newPage()
       await page.goto(`${base}/zh/console/collab?remote=1#pair=${token}`)
       await page.locator('a[data-ticket]').first().waitFor({ timeout: 20_000 })
-      for (const filter of ['active', 'all']) {
+      for (const filter of ['open', 'all']) {
         await page.locator(`[role=radio][data-value=${filter}]`).click()
         const past = await page.evaluate(() =>
           [...document.querySelectorAll('main *')]

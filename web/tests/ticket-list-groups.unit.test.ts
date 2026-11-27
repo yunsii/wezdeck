@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest'
 
 import type { CollabTicket } from '#/lib/runtime-contract'
 import {
+  bucketOpenGroups,
   buildTicketGroups,
   countTicketFilters,
   filterTicketGroups,
   flattenVisibleGroupIds,
   groupIsExpanded,
+  normalizeTicketFilter,
 } from '#/features/ticket-list-groups'
 
 function makeTicket(overrides: Partial<CollabTicket>): CollabTicket {
@@ -32,7 +34,7 @@ function makeTicket(overrides: Partial<CollabTicket>): CollabTicket {
   }
 }
 
-describe('ticket-list-groups (3+1 folding and research separation)', () => {
+describe('ticket-list-groups (4-tab filtering, 3-tier bucketing, and folding)', () => {
   const parent = makeTicket({
     id: 'req-parent',
     kind: 'parent',
@@ -73,6 +75,21 @@ describe('ticket-list-groups (3+1 folding and research separation)', () => {
     status: 'in_progress',
     updated_at: '2026-11-27T08:30:00Z',
   })
+  const failedTicket = makeTicket({
+    id: 'req-failed-1',
+    kind: 'ticket',
+    title: 'Broken build run',
+    status: 'failed',
+    updated_at: '2026-11-27T07:30:00Z',
+  })
+  const closedStaleRunning = makeTicket({
+    id: 'req-closed-dirty',
+    kind: 'ticket',
+    title: 'Closed ticket with stale running entry',
+    status: 'closed',
+    running: [{ run: 'run-stale' } as never],
+    updated_at: '2026-11-27T07:15:00Z',
+  })
   const doneTicket = makeTicket({
     id: 'req-done-1',
     kind: 'ticket',
@@ -87,15 +104,18 @@ describe('ticket-list-groups (3+1 folding and research separation)', () => {
     child2,
     internalDraft,
     standaloneResearch,
+    failedTicket,
+    closedStaleRunning,
     doneTicket,
   ]
 
   it('folds children under parent, hides internal draft research, and bubbles activity & counts', () => {
     const groups = buildTicketGroups(all)
-    // Only 3 top-level groups: standaloneResearch, parent, doneTicket
     expect(groups.map((g) => g.root.id)).toEqual([
       'req-research-1',
       'req-parent',
+      'req-failed-1',
+      'req-closed-dirty',
       'req-done-1',
     ])
 
@@ -111,28 +131,88 @@ describe('ticket-list-groups (3+1 folding and research separation)', () => {
       waiting: 1,
       failed: 0,
     })
-    // Parent inherits newest child activity timestamp (08:20 > 08:00)
     expect(parentGroup.activityAt).toBe(Date.parse('2026-11-27T08:20:00Z'))
   })
 
-  it('separates standalone research out of active/ended and bubbles waiting child to mine', () => {
+  it('keeps failed in open, excludes closed with stale running from open, and isolates research', () => {
     const groups = buildTicketGroups(all)
     const counts = countTicketFilters(groups)
     expect(counts).toEqual({
-      all: 3,
-      active: 1, // parent only (research excluded from active)
-      mine: 1, // parent (child2 waiting_initiator)
+      open: 2, // parent + failedTicket
       research: 1, // standaloneResearch only (internalDraft hidden)
-      ended: 1, // doneTicket
-      inbox: 1, // parent (child2 waiting)
+      ended: 2, // closedStaleRunning + doneTicket
+      all: 5,
+      inbox: 2, // parent (child waiting) + failedTicket
     })
 
     expect(
-      filterTicketGroups(groups, 'active', '').map((g) => g.root.id),
-    ).toEqual(['req-parent'])
+      filterTicketGroups(groups, 'open', '').map((g) => g.root.id),
+    ).toEqual(['req-parent', 'req-failed-1'])
+    expect(
+      filterTicketGroups(groups, 'ended', '').map((g) => g.root.id),
+    ).toEqual(['req-closed-dirty', 'req-done-1'])
     expect(
       filterTicketGroups(groups, 'research', '').map((g) => g.root.id),
     ).toEqual(['req-research-1'])
+  })
+
+  it('maps legacy stored filters (active/mine) smoothly onto open', () => {
+    expect(normalizeTicketFilter('active')).toBe('open')
+    expect(normalizeTicketFilter('mine')).toBe('open')
+    expect(normalizeTicketFilter('open')).toBe('open')
+    expect(normalizeTicketFilter('research')).toBe('research')
+    expect(normalizeTicketFilter('ended')).toBe('ended')
+    expect(normalizeTicketFilter('all')).toBe('all')
+    expect(normalizeTicketFilter('inbox')).toBeNull()
+    expect(normalizeTicketFilter('bogus')).toBeNull()
+  })
+
+  it('partitions open groups into attention -> running -> queued and folds >14d stale rows', () => {
+    const now = Date.parse('2026-11-27T12:00:00Z')
+    const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString()
+    const groups = buildTicketGroups([
+      makeTicket({
+        id: 'req-queued',
+        status: 'submitted',
+        updated_at: daysAgo(1),
+      }),
+      makeTicket({
+        id: 'req-running',
+        status: 'in_progress',
+        updated_at: daysAgo(2),
+      }),
+      makeTicket({
+        id: 'req-attention',
+        status: 'waiting_initiator',
+        updated_at: daysAgo(3),
+      }),
+      makeTicket({
+        id: 'req-failed',
+        status: 'failed',
+        updated_at: daysAgo(4),
+      }),
+      makeTicket({
+        id: 'req-stale-waiting',
+        status: 'waiting_initiator',
+        updated_at: daysAgo(20),
+      }),
+      makeTicket({
+        id: 'req-live-old',
+        status: 'in_progress',
+        running: [{ run: 'r-live' } as never],
+        updated_at: daysAgo(25),
+      }),
+    ])
+
+    const { buckets, older } = bucketOpenGroups(groups, now)
+    expect(buckets.map((b) => [b.key, b.groups.map((g) => g.root.id)])).toEqual(
+      [
+        ['attention', ['req-attention', 'req-failed']],
+        ['running', ['req-running', 'req-live-old']],
+        ['queued', ['req-queued']],
+      ],
+    )
+    expect(older.map((g) => g.root.id)).toEqual(['req-stale-waiting'])
   })
 
   it('auto-expands parent when child matches search or is waiting, and flattens visible IDs', () => {
@@ -143,20 +223,22 @@ describe('ticket-list-groups (3+1 folding and research separation)', () => {
     expect(searchHit[0].matchInChild).toBe(true)
     expect(groupIsExpanded(searchHit[0], { 'req-parent': false })).toBe(true)
 
-    // Waiting child auto-expands parent when no explicit toggle stored
     const visible = flattenVisibleGroupIds(groups, {})
     expect(visible).toEqual([
       'req-research-1',
       'req-parent',
       'req-child-1',
       'req-child-2',
+      'req-failed-1',
+      'req-closed-dirty',
       'req-done-1',
     ])
 
-    // Explicit collapse hides children unless one of them is selected
     expect(flattenVisibleGroupIds(groups, { 'req-parent': false })).toEqual([
       'req-research-1',
       'req-parent',
+      'req-failed-1',
+      'req-closed-dirty',
       'req-done-1',
     ])
     expect(
@@ -166,6 +248,8 @@ describe('ticket-list-groups (3+1 folding and research separation)', () => {
       'req-parent',
       'req-child-1',
       'req-child-2',
+      'req-failed-1',
+      'req-closed-dirty',
       'req-done-1',
     ])
   })

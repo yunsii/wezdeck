@@ -27,7 +27,11 @@ import { SwipeActions } from './session-row-swipe'
 import { prefetchTicket } from './ticket-autosync'
 import { setTicketGroupExpanded, useTicketExpandedMap } from './ticket-collapse'
 import { groupIsExpanded } from './ticket-list-groups'
-import type { TicketGroup } from './ticket-list-groups'
+import type {
+  TicketBucket,
+  TicketBucketKey,
+  TicketGroup,
+} from './ticket-list-groups'
 import { RepoRoute, useAgo, useStatusLabel } from './tickets-view'
 
 const toneText: Record<LedTone, string> = {
@@ -52,42 +56,95 @@ function effectiveGroupTone(group: TicketGroup): LedTone {
   return ticketTone(group.root)
 }
 
-/** Unified flat ticket list with foldable parent-child groups. */
+function useBucketMeta() {
+  const { t } = useLingui()
+  return (key: TicketBucketKey): { label: string; tone: LedTone } => {
+    switch (key) {
+      case 'attention':
+        return {
+          label: t({ message: 'Needs attention', context: 'ticket bucket' }),
+          tone: 'waiting',
+        }
+      case 'running':
+        return {
+          label: t({ message: 'Running', context: 'ticket bucket' }),
+          tone: 'running',
+        }
+      case 'queued':
+        return {
+          label: t({ message: 'Queued', context: 'ticket bucket' }),
+          tone: 'muted',
+        }
+    }
+  }
+}
+
+/** Unified flat ticket list with optional 3-tier urgency buckets and foldable parent-child groups. */
 export function TicketKeys({
   groups,
+  buckets,
   older,
   empty,
   base,
   selected,
 }: {
   groups: Array<TicketGroup>
+  /** optional urgency buckets (used inside `open` / 待处理) */
+  buckets?: Array<TicketBucket>
   /** wide split: the open ticket, marked; rows replace instead of push */
   selected?: string
-  /** quiet groups (splitQuietGroups), folded at the end */
+  /** stale groups (>14d untouched, not live), folded at the end */
   older: Array<TicketGroup>
   empty: string
   base: 'collab' | 'inbox'
 }) {
   const { t } = useLingui()
+  const bucketMeta = useBucketMeta()
   const [showOlder, setShowOlder] = useState(false)
   const expandedMap = useTicketExpandedMap()
   useDraftRevision()
 
-  if (groups.length === 0 && older.length === 0) {
+  const hasPrimary = buckets ? buckets.length > 0 : groups.length > 0
+  if (!hasPrimary && older.length === 0) {
     return (
       <p className="px-4 py-12 text-center text-caption text-brand-muted">
         {empty}
       </p>
     )
   }
-  if (groups.length === 0) {
-    groups = older
-    older = []
-  }
   const count = older.length
+  const olderExpanded = showOlder || !hasPrimary
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] bg-brand-surface">
-      {groups.length ? (
+      {buckets ? (
+        buckets.map((bucket) => {
+          const meta = bucketMeta(bucket.key)
+          return (
+            <section key={bucket.key} data-ticket-bucket={bucket.key}>
+              <div className="flex items-center justify-between border-y border-brand-edge/70 bg-brand-deck/80 px-3 py-1 text-meta font-semibold text-brand-label">
+                <span className="inline-flex items-center gap-1.5">
+                  <Led tone={meta.tone} size={8} />
+                  <span>{meta.label}</span>
+                </span>
+                <span className="font-mono text-meta font-normal tabular-nums">
+                  {bucket.groups.length}
+                </span>
+              </div>
+              <ul aria-label={meta.label} className="ticket-list">
+                {bucket.groups.map((group) => (
+                  <TicketGroupItem
+                    key={group.root.id}
+                    group={group}
+                    expanded={groupIsExpanded(group, expandedMap, selected)}
+                    base={base}
+                    selected={selected}
+                  />
+                ))}
+              </ul>
+            </section>
+          )
+        })
+      ) : groups.length ? (
         <ul aria-label={t`Collab tickets`} className="ticket-list">
           {groups.map((group) => (
             <TicketGroupItem
@@ -105,20 +162,23 @@ export function TicketKeys({
           <Button
             variant="plain"
             type="button"
-            aria-expanded={showOlder}
-            onClick={() => setShowOlder(!showOlder)}
+            aria-expanded={olderExpanded}
+            onClick={() => setShowOlder(!olderExpanded)}
             data-testid="tickets-older"
             className="flex min-h-9 w-full items-center justify-between border-y border-brand-edge bg-brand-deck px-3 py-1.5 text-left text-meta font-semibold text-brand-label transition-colors hover:text-brand-text"
           >
-            {t`Quiet for over a week (${count})`}
+            {t`Quiet for over 14 days (${count})`}
             <span
               aria-hidden
-              className={cn('transition-transform', showOlder && 'rotate-90')}
+              className={cn(
+                'transition-transform',
+                olderExpanded && 'rotate-90',
+              )}
             >
               ›
             </span>
           </Button>
-          {showOlder ? (
+          {olderExpanded ? (
             <ul className="ticket-list bg-brand-surface">
               {older.map((group) => (
                 <TicketGroupItem
