@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import {
   canFollowSession,
+  isConsistentListRedirect,
   isPendingResolution,
   resetSessionFollowState,
   sessionIdFromPath,
@@ -49,6 +50,16 @@ describe('canFollowSession', () => {
   it('refuses empty or identical ids', () => {
     expect(canFollowSession('', 'b', new Set())).toBe(false)
     expect(canFollowSession('a', 'a', new Set())).toBe(false)
+  })
+})
+
+describe('isConsistentListRedirect', () => {
+  it('only follows redirects from an unlisted id to a live listed id', () => {
+    const listed = new Set(['live-a', 'live-b'])
+    expect(isConsistentListRedirect('old-a', 'live-a', listed)).toBe(true)
+    expect(isConsistentListRedirect('live-a', 'pending-z', listed)).toBe(false)
+    expect(isConsistentListRedirect('live-a', 'live-b', listed)).toBe(false)
+    expect(isConsistentListRedirect('old-a', 'pending-z', listed)).toBe(false)
   })
 })
 

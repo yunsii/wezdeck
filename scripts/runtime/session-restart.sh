@@ -72,12 +72,12 @@ if ((!fresh)); then
   out="$(bash "$SCRIPT_DIR/tmux-reset.sh" refresh-current-window \
     --session-name "$session_name" --window-id "$window_id" --cwd "${cwd:-}" 2>/dev/null)" || true
   out="${out//$'\r'/}"
+  attention_state_clear_restart_pending "${WEZDECK_RESTART_SESSION_ID:-}" 2>/dev/null || true
   if [[ "${out##*$'\n'}" == "reset_window_in_place" ]]; then
     finish respawned
     exit 0
   fi
   finish "failed:${out##*$'\n'}" warn
-  attention_state_clear_restart_pending "${WEZDECK_RESTART_SESSION_ID:-}" 2>/dev/null || true
   exit 1
 fi
 
@@ -97,6 +97,7 @@ case "$outcome" in
 esac
 if [[ -z "$outcome" ]]; then
   tmux set-option -p -u -t "$pane" @wezdeck_fresh_session_id 2>/dev/null || true
+  attention_state_clear_restart_pending "${WEZDECK_RESTART_SESSION_ID:-}" 2>/dev/null || true
   finish "failed:$(sed -n 's/^outcome=//p' <<<"$out" | tail -1)" warn
   exit 1
 fi

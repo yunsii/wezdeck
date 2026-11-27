@@ -283,16 +283,57 @@ func rebindOutboxSession(fromID, toID string) {
 	unlock := lockOutbox()
 	defer unlock()
 	s = loadOutboxDisk()
-	changed := false
+	changed := 0
 	for i := range s.Items {
 		if s.Items[i].SessionID == fromID {
 			s.Items[i].SessionID = toID
 			s.Items[i].TranscriptEndAtSend = 0
-			changed = true
+			changed++
 		}
 	}
-	if changed {
+	if changed > 0 {
 		_ = saveOutboxLocked(s)
+		relayLogf("outbox_rebind", "reason=replaced_from from=%s to=%s count=%d", fromID, toID, changed)
+	}
+}
+
+// rebindPendingOutboxForPane moves unsettled records sent under temporary
+// `pending-*` ids that belonged to this exact (socket, pane) handoff chain
+// onto the real session that now owns the pane.
+func rebindPendingOutboxForPane(pane string, pendingIDs map[string]bool, toID string) {
+	if pane == "" || len(pendingIDs) == 0 || toID == "" || strings.HasPrefix(toID, "pending-") {
+		return
+	}
+	s := readOutboxCached()
+	has := false
+	for _, rec := range s.Items {
+		if rec.Pane == pane && pendingIDs[rec.SessionID] && isUnsettledOutboxStatus(rec.Status) {
+			has = true
+			break
+		}
+	}
+	if !has {
+		return
+	}
+	unlock := lockOutbox()
+	defer unlock()
+	s = loadOutboxDisk()
+	changed := 0
+	var sampleFrom string
+	for i := range s.Items {
+		rec := &s.Items[i]
+		if rec.Pane == pane && pendingIDs[rec.SessionID] && isUnsettledOutboxStatus(rec.Status) {
+			if sampleFrom == "" {
+				sampleFrom = rec.SessionID
+			}
+			rec.SessionID = toID
+			rec.TranscriptEndAtSend = 0
+			changed++
+		}
+	}
+	if changed > 0 {
+		_ = saveOutboxLocked(s)
+		relayLogf("outbox_rebind", "reason=pane_pending pane=%s from=%s to=%s count=%d", pane, sampleFrom, toID, changed)
 	}
 }
 

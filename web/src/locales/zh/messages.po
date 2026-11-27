@@ -4498,7 +4498,7 @@ msgstr "打开这份快捷键说明"
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
-#: src/features/session-follow.ts:80
+#: src/features/session-follow.ts:98
 msgid "This pane switched sessions"
 msgstr "这个窗格已切换会话，已跟过去"
 

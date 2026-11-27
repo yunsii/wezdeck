@@ -37,6 +37,31 @@ describe('turn line', () => {
     ).toEqual({ kind: 'working', activity: { since: t0 + 60_000 } })
   })
 
+  it('never shows working for lost or failed outbox bubbles', () => {
+    expect(
+      turnState({
+        messages: [],
+        left: [
+          { text: 'dropped', at: t0, state: 'lost' },
+          { text: 'errored', at: t0 + 10_000, state: 'failed' },
+        ],
+        busy: false,
+        status: 'idle',
+      }),
+    ).toBeNull()
+    expect(
+      turnState({
+        messages: [],
+        left: [
+          { text: 'dropped', at: t0, state: 'lost' },
+          { text: 'fresh retry', at: t0 + 60_000, state: 'queued' },
+        ],
+        busy: false,
+        status: 'idle',
+      }),
+    ).toEqual({ kind: 'working', activity: { since: t0 + 60_000 } })
+  })
+
   it('keeps working while the prompt is in the transcript but not running yet', () => {
     expect(
       turnState({

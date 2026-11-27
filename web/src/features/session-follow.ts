@@ -54,18 +54,36 @@ export function sessionIdFromPath(path: string) {
   return /\/console\/sessions\/([^/]+)\/?$/.exec(path)?.[1]
 }
 
+export type FollowSource = 'replaced_by' | 'list-redirect' | 'write'
+
+/**
+ * Defense-in-depth guard for list-driven redirects: never redirect away from a
+ * session that is still live in the list, and never redirect to an unlisted id.
+ */
+export function isConsistentListRedirect(
+  from: string,
+  to: string,
+  listedIds: ReadonlySet<string>,
+): boolean {
+  if (!from || !to || from === to) return false
+  if (listedIds.has(from)) return false
+  if (!listedIds.has(to)) return false
+  return true
+}
+
 export function useNavigateToSession() {
   const { t } = useLingui()
   const navigate = useNavigate()
   const router = useRouter()
   const { locale } = useLocale()
   return useCallback(
-    (from: string, to: string) => {
+    (from: string, to: string, source: FollowSource = 'write') => {
       if (sessionIdFromPath(router.state.location.pathname) !== from) return
       if (!canFollowSession(from, to)) {
         trace('session-follow', {
           id: to,
           action: from,
+          source,
           skipped: 'cycle',
         })
         return
@@ -79,7 +97,7 @@ export function useNavigateToSession() {
         toasted.add(key)
         toast(t`This pane switched sessions`)
       }
-      trace('session-follow', { id: to, action: from })
+      trace('session-follow', { id: to, action: from, source })
       void navigate({
         to: '/{-$locale}/console/sessions/$id',
         params: { locale: locale === 'en' ? undefined : locale, id: to },
@@ -101,7 +119,7 @@ export function useFollowReplacement(replacedBy?: string) {
   const go = useNavigateToSession()
   useEffect(() => {
     if (!replacedBy || !id || replacedBy === id) return
-    go(id, replacedBy)
+    go(id, replacedBy, 'replaced_by')
   }, [replacedBy, id, go])
 }
 
@@ -117,10 +135,23 @@ export function useFollowSessionRedirect() {
   })
   const go = useNavigateToSession()
   const redirects = sessions.data?.redirects
+  const list = sessions.data?.sessions
   useEffect(() => {
     if (!id || !redirects?.length) return
     const hit = redirects.find((r) => r.from === id && r.to && r.to !== id)
     if (!hit) return
-    go(hit.from, hit.to)
-  }, [id, redirects, go])
+    if (list) {
+      const listedIds = new Set(list.map((s) => s.id))
+      if (!isConsistentListRedirect(hit.from, hit.to, listedIds)) {
+        trace('session-follow', {
+          id: hit.to,
+          action: hit.from,
+          source: 'list-redirect',
+          skipped: 'inconsistent-list',
+        })
+        return
+      }
+    }
+    go(hit.from, hit.to, 'list-redirect')
+  }, [id, redirects, list, go])
 }

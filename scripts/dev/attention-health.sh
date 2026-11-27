@@ -72,20 +72,28 @@ entry_count=0
 running_n=0
 waiting_n=0
 done_n=0
+malformed_n=0
+malformed_ids=""
 if [[ -f "$attention_path" ]]; then
-  read -r entry_count running_n waiting_n done_n < <(
+  read -r entry_count running_n waiting_n done_n malformed_n malformed_ids < <(
     jq -r '
       (.entries // {}) as $e
+      | ($e | to_entries | map(select((.value | type) != "object" or ((.value.tmux_pane // "") == "")) | .key) | sort) as $bad
       | [
           ($e | length),
           ([ $e[] | select(.status=="running") ] | length),
           ([ $e[] | select(.status=="waiting") ] | length),
-          ([ $e[] | select(.status=="done") ] | length)
+          ([ $e[] | select(.status=="done") ] | length),
+          ($bad | length),
+          (if ($bad | length) > 0 then ($bad[:5] | join(",")) else "-" end)
         ]
       | @tsv
     ' "$attention_path"
   )
-  add_info "attention_entries=${entry_count} running=${running_n} waiting=${waiting_n} done=${done_n}"
+  add_info "attention_entries=${entry_count} running=${running_n} waiting=${waiting_n} done=${done_n} malformed=${malformed_n}"
+  if (( malformed_n > 0 )); then
+    add_warn "attention.json has ${malformed_n} malformed entry(ies) missing tmux_pane (e.g. ${malformed_ids}) — run attention_state_prune_malformed_entries"
+  fi
 else
   add_warn "attention.json missing at ${attention_path}"
 fi
@@ -180,6 +188,7 @@ if [[ "$json" == "1" ]]; then
     --argjson running_n "$running_n" \
     --argjson waiting_n "$waiting_n" \
     --argjson done_n "$done_n" \
+    --argjson malformed_n "$malformed_n" \
     --argjson sessions_n "$sessions_n" \
     --argjson panes_n "$panes_n" \
     --argjson live_age_ms "$live_age_ms" \
@@ -191,7 +200,7 @@ if [[ "$json" == "1" ]]; then
       status:$status,
       attention_path:$attention_path,
       live_path:$live_path,
-      entries:{total:$entry_count, running:$running_n, waiting:$waiting_n, done:$done_n},
+      entries:{total:$entry_count, running:$running_n, waiting:$waiting_n, done:$done_n, malformed:$malformed_n},
       live_panes:{sessions:$sessions_n, panes:$panes_n, age_ms:$live_age_ms},
       pane_session_files:$pane_session_n,
       wezterm_cli_panes:$cli_panes,

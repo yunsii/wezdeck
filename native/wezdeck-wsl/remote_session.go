@@ -167,13 +167,17 @@ func liveSessionsWithContext(entries map[string]attentionEntry, recent []recentE
 	out := map[string]attentionEntry{}
 	panes := map[string]bool{}
 	sockets := map[string]bool{}
+	var missingPaneIDs []string
 	for id, e := range entries {
+		if e.TmuxPane == "" {
+			missingPaneIDs = append(missingPaneIDs, id)
+			continue
+		}
 		out[id] = e
 		panes[e.TmuxSocket+"|"+e.TmuxPane] = true
-		if e.TmuxPane != "" {
-			sockets[e.TmuxSocket] = true
-		}
+		sockets[e.TmuxSocket] = true
 	}
+	observeMissingPaneEntries(missingPaneIDs)
 	for _, r := range recent {
 		if r.TmuxPane != "" {
 			sockets[r.TmuxSocket] = true
@@ -432,7 +436,11 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 	cards = dropEmptyHandoffSplashes(cards, recent)
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
-	redirects := sessionRedirectsFromSnap(recent, entries, paneSnap)
+	listed := make(map[string]bool, len(cards))
+	for _, c := range cards {
+		listed[c.ID] = true
+	}
+	redirects := sessionRedirectsFromSnap(recent, entries, paneSnap, listed)
 	jobs := activeNewSessionJobsFor(cards)
 	timing.add("post_ms", time.Since(tPost))
 	return map[string]any{
@@ -525,11 +533,17 @@ func sessionRedirects(recent []recentEntry, entries map[string]attentionEntry) [
 			sockets[r.TmuxSocket] = true
 		}
 	}
-	return sessionRedirectsFromSnap(recent, entries, snapshotTmuxPanes(sockets))
+	return sessionRedirectsFromSnap(recent, entries, snapshotTmuxPanes(sockets), nil)
 }
 
-func sessionRedirectsFromSnap(recent []recentEntry, entries map[string]attentionEntry, snap map[string]tmuxPaneSnap) []sessionRedirect {
+func sessionRedirectsFromSnap(recent []recentEntry, entries map[string]attentionEntry, snap map[string]tmuxPaneSnap, listed map[string]bool) []sessionRedirect {
 	pins := agentSessionPinsFromSnap(snap)
+	paneOwner := map[string]string{}
+	for id, e := range entries {
+		if e.TmuxPane != "" && (listed == nil || listed[id]) {
+			paneOwner[e.TmuxSocket+"|"+e.TmuxPane] = id
+		}
+	}
 	seen := map[string]bool{}
 	var out []sessionRedirect
 	add := func(from, to, fromPane, fromSocket string) {
@@ -537,12 +551,29 @@ func sessionRedirectsFromSnap(recent []recentEntry, entries map[string]attention
 			!sessionIDPattern.MatchString(to) || seen[from] {
 			return
 		}
-		if _, ok := entries[to]; !ok {
-			return
+		if listed != nil {
+			if listed[from] {
+				observeSuppressedRedirect(from, to, "from_live")
+				return
+			}
+			if !listed[to] {
+				observeSuppressedRedirect(from, to, "to_unlisted")
+				return
+			}
+		} else {
+			if _, fromLive := entries[from]; fromLive {
+				observeSuppressedRedirect(from, to, "from_live")
+				return
+			}
+			if toEntry, ok := entries[to]; !ok || (toEntry.TmuxPane == "" && toEntry.SessionID == "") {
+				observeSuppressedRedirect(from, to, "to_unlisted")
+				return
+			}
 		}
 		// Still the live pin on another pane: not a handoff the web should follow.
 		if pin, ok := pins[from]; ok &&
 			(pin.TmuxPane != fromPane || pin.TmuxSocket != fromSocket) {
+			observeSuppressedRedirect(from, to, "from_pinned_elsewhere")
 			return
 		}
 		seen[from] = true
@@ -551,6 +582,11 @@ func sessionRedirectsFromSnap(recent []recentEntry, entries map[string]attention
 	for _, r := range recent {
 		if next := r.ClearedTo; sessionIDPattern.MatchString(next) {
 			add(r.SessionID, next, r.TmuxPane, r.TmuxSocket)
+			if strings.HasPrefix(next, "pending-") && r.TmuxPane != "" {
+				if owner := paneOwner[r.TmuxSocket+"|"+r.TmuxPane]; owner != "" && owner != next {
+					add(next, owner, r.TmuxPane, r.TmuxSocket)
+				}
+			}
 		}
 	}
 	for id, e := range entries {
@@ -704,6 +740,11 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 	out["meta"] = sessionMeta(e, path, agent, nil)
 	if e.ReplacedFrom != "" {
 		rebindOutboxSession(e.ReplacedFrom, a.ID)
+	}
+	if !strings.HasPrefix(a.ID, "pending-") && e.TmuxPane != "" {
+		if pendingIDs := recentPendingIDsForPane(recent, e.TmuxSocket, e.TmuxPane); len(pendingIDs) > 0 {
+			rebindPendingOutboxForPane(e.TmuxPane, pendingIDs, a.ID)
+		}
 	}
 	var agyPending *pendingCall
 	var loadedTranscript *transcript
