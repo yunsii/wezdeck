@@ -783,7 +783,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/session-composer.tsx:427
+#: src/features/session-composer.tsx:429
 #: src/features/session-detail-notices.tsx:18
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
@@ -2281,7 +2281,7 @@ msgstr "合并分支"
 msgid "merged"
 msgstr "已合并"
 
-#: src/features/session-composer.tsx:370
+#: src/features/session-composer.tsx:372
 msgid "Message"
 msgstr "发消息"
 
@@ -2291,7 +2291,7 @@ msgstr "发消息"
 msgid "Message actions"
 msgstr "消息操作"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:305
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -2802,7 +2802,7 @@ msgstr "打开仓库外链（快捷键：l）"
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/session-composer.tsx:449
+#: src/features/session-composer.tsx:451
 #: src/features/session-detail-notices.tsx:55
 msgid "Open settings"
 msgstr "去设置"
@@ -3705,8 +3705,8 @@ msgid "seen"
 msgstr "最近活动"
 
 #: src/features/console-keys.tsx:98
-#: src/features/session-composer.tsx:379
 #: src/features/session-composer.tsx:381
+#: src/features/session-composer.tsx:383
 msgid "Send"
 msgstr "发送"
 
@@ -3943,7 +3943,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
 #: src/features/console-sessions.tsx:502
-#: src/features/session-composer.tsx:433
+#: src/features/session-composer.tsx:435
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
 
@@ -4322,7 +4322,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/session-composer.tsx:428
+#: src/features/session-composer.tsx:430
 #: src/features/session-detail-notices.tsx:19
 msgid "this device is offline"
 msgstr "这台设备当前离线"

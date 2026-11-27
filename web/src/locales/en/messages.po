@@ -783,7 +783,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:427
+#: src/features/session-composer.tsx:429
 #: src/features/session-detail-notices.tsx:18
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
@@ -2281,7 +2281,7 @@ msgstr "Merge"
 msgid "merged"
 msgstr "merged"
 
-#: src/features/session-composer.tsx:370
+#: src/features/session-composer.tsx:372
 msgid "Message"
 msgstr "Message"
 
@@ -2291,7 +2291,7 @@ msgstr "Message"
 msgid "Message actions"
 msgstr "Message actions"
 
-#: src/features/session-composer.tsx:303
+#: src/features/session-composer.tsx:305
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2802,7 +2802,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:449
+#: src/features/session-composer.tsx:451
 #: src/features/session-detail-notices.tsx:55
 msgid "Open settings"
 msgstr "Open settings"
@@ -3705,8 +3705,8 @@ msgid "seen"
 msgstr "seen"
 
 #: src/features/console-keys.tsx:98
-#: src/features/session-composer.tsx:379
 #: src/features/session-composer.tsx:381
+#: src/features/session-composer.tsx:383
 msgid "Send"
 msgstr "Send"
 
@@ -3943,7 +3943,7 @@ msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
 #: src/features/console-sessions.tsx:502
-#: src/features/session-composer.tsx:433
+#: src/features/session-composer.tsx:435
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4322,7 +4322,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:428
+#: src/features/session-composer.tsx:430
 #: src/features/session-detail-notices.tsx:19
 msgid "this device is offline"
 msgstr "this device is offline"
