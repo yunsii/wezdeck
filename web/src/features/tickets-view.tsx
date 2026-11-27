@@ -6,12 +6,14 @@
 // All sections share one "all tickets" read and filter on the client, so
 // switching tabs costs no request and the status keys can show counts.
 import { useLingui } from '@lingui/react/macro'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
-import { BackButton } from '#/components/deck/back-button'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
+import { SplitColumn } from '#/components/deck/split-column'
+import { StickyBar } from '#/components/deck/sticky-bar'
 import { useGoBack } from '#/lib/go-back'
 import {
   RememberOpened,
@@ -19,20 +21,19 @@ import {
   pickLast,
   useStoredChoice,
 } from '#/lib/last-opened'
-import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useLocale } from '#/lib/locale-context'
 import type { CollabTicket } from '#/lib/runtime-contract'
+import { useTicketHealth, useTicketList } from '#/lib/ticket-sync'
 import { useIsWide } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { TicketReading } from './console-collab'
 import { useRemoteState } from './console-mode'
+import { CopyKey, useCopyTicketReference } from './copy-reference'
 import { Reading } from './inspector'
 import { nextInCycle } from './session-order'
-import { SearchBox, TicketListActions } from './ticket-search'
+import { prefetchTicket } from './ticket-autosync'
 import { TicketKeys } from './ticket-keys'
-import { CopyKey, useCopyTicketReference } from './copy-reference'
-import { StickyBar } from '#/components/deck/sticky-bar'
-import { SplitColumn } from '#/components/deck/split-column'
+import { SearchBox } from './ticket-search'
 
 const ACTIVE_POLL_MS = 2_000
 const IDLE_POLL_MS = 30_000
@@ -267,8 +268,6 @@ export function TicketsView({
   )
   const filter = fixedFilter ?? chosen
   const [query, setQuery] = useState('')
-  // phone: the search field opens from an icon instead of taking a row
-  const [searching, setSearching] = useState(false)
   const needle = query.trim().toLowerCase()
   const all: Array<CollabTicket> = list.data?.ok ? list.data.tickets : []
   const tickets = all
@@ -300,27 +299,11 @@ export function TicketsView({
   const freshness = (
     <Freshness updatedAt={list.dataUpdatedAt} failed={list.isError} />
   )
-  // phone: search opens from an icon; with new-ticket it goes to the head's
-  // link row when the head takes it, so the filter has the row to itself
-  const actions = wide ? null : (
-    <TicketListActions
-      searching={searching}
-      onSearching={(next) => {
-        setSearching(next)
-        if (!next) setQuery('')
-      }}
-    />
-  )
-  const actionsInHead = typeof topSlot === 'function'
-  const top = actionsInHead ? topSlot(actions) : topSlot
+  const searchBox = <SearchBox value={query} onChange={setQuery} />
+  const searchInTop = typeof topSlot === 'function'
+  const top = searchInTop ? topSlot(searchBox) : topSlot
   const keys = fixedFilter ? null : (
-    <div className="flex items-center gap-2">
-      <div className="min-w-0 flex-1">
-        <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
-      </div>
-      {/* wide: on the title row, beside the metrics (collab-top-bar) */}
-      {actionsInHead ? null : actions}
-    </div>
+    <StatusSegments tickets={all} value={chosen} onChange={setChosen} />
   )
 
   const { recent, older } =
@@ -368,12 +351,13 @@ export function TicketsView({
         <RememberOpened storageKey={lastKey} id={current} filter={filter} />
         <SplitColumn
           label={t`Collab tickets`}
+          className="bg-brand-surface [--split-pad:0.75rem]"
           head={
             <>
               {top}
               {list.isError ? freshness : null}
               {keys}
-              <SearchBox value={query} onChange={setQuery} />
+              {searchBox}
             </>
           }
         >
@@ -404,32 +388,26 @@ export function TicketsView({
   }
 
   if (id) {
-    return (
-      <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
-        {/* the header of every pushed page: ‹, the page name
-            (it was a lone 「‹ 返回」 line above the ticket) */}
-        <div className="-ml-2 flex items-center gap-1 pt-1">
-          <BackButton onClick={back} label={t`Back`} />
-          <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
-            {t`Tickets`}
-          </h1>
-        </div>
-        <TicketReading id={id} poll={poll} onOpen={open} />
-      </div>
-    )
+    return <TicketReading id={id} poll={poll} onOpen={open} onBack={back} />
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
-      {top}
-      <StickyBar>
+    <div className="flex min-h-full w-full flex-1 flex-col bg-brand-surface">
+      <h1 className="sr-only">
+        {base === 'inbox' ? t`Waiting on you` : t`Cross-repo collab`}
+      </h1>
+      <StickyBar className="top-0 mx-0 my-0 grid gap-2 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
+        {searchInTop ? (
+          top
+        ) : (
+          <div className="flex min-w-0 items-center gap-1.5">{searchBox}</div>
+        )}
         {keys}
-        {searching || query || fixedFilter ? (
-          <SearchBox value={query} onChange={setQuery} autoFocus={searching} />
-        ) : null}
       </StickyBar>
       {/* "updated HH:MM" only when it matters: the host is unreachable */}
-      {list.isError ? freshness : null}
+      {list.isError ? (
+        <div className="border-b border-brand-edge">{freshness}</div>
+      ) : null}
       <TicketKeys
         tickets={recent}
         older={older}
@@ -450,6 +428,15 @@ function TicketListKeys({
   current: string
   onGo: (id: string) => void
 }) {
+  const client = useQueryClient()
+  // warm neighbors so j / k stepping opens from cache without waiting
+  useEffect(() => {
+    if (!current || ids.length < 2) return
+    const next = nextInCycle(ids, current, 1)
+    const prev = nextInCycle(ids, current, -1)
+    if (next) prefetchTicket(client, next)
+    if (prev && prev !== next) prefetchTicket(client, prev)
+  }, [client, ids, current])
   // read at the keypress, the URL first (idInUrl): the page re-renders only
   // after the switch's view transition
   const now = useRef({ ids, current, onGo })

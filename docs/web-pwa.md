@@ -104,23 +104,25 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    我的 returns to the index; write access is per device: phone, tablet or
    another browser each get their own key). Filters with counts never wrap:
    the count is a smaller figure and segments size by their text, so four
-   statuses plus + fit a 320 px mobile screen; 工单's band and 工单动态 are one line
-   of text links; on a phone search (an icon) and 新建 sit at the end of that
-   line (`ticket-search.tsx`), so the filter has its row to itself — beside
-   it they ran past a 360 px screen. 进行中 sorts by last activity and
+   statuses fit a 320 px mobile screen; 工单 shares 会话's full-bleed flat list
+   (`bg-brand-surface`, inset hairlines `.ticket-list`), with a 2-row sticky
+   phone bar (row 1: always-visible search + metrics sheet icon + 工单动态 icon
+   + 新建; row 2: dense status `Segmented`). 进行中 sorts by last activity and
    folds tickets quiet for over a week (not running, not waiting on you) into
    一周以上没动静 (`splitQuiet`); ▲ marks only 等你, waiting on the other side is
-   ○; rows are real links. Ticket detail is a pushed page: facts as Field
-   rows, 摘要 open, 讨论 as a conversation (`lib/ticket-thread.ts`: the CLI
-   writes it newest first; the initiator on the right, the newest question
-   ringed while it waits on you; a note when the API cut the oldest off at
-   8000 characters); the reply box keeps a draft and sends with Ctrl+Enter.
+   ○; rows are real links with swipe-right & context-menu 复制引用 (plus desktop
+   hover shortcut) and hover/focus/`j`/`k` neighbor prefetch. Ticket detail
+   aligns with 会话: sticky `TicketHeader` (mobile back + LED + tappable title
+   + `ⓘ`), 3-tier Telegram-profile `TicketInfo` sheet (copyable title, quick
+   action tiles for 复制引用 & 接管到 tmux, Overview `FieldList`, collapsed
+   Technical details with ticket ID & full run metrics), body focused on
+   proposals/reply + 摘要/讨论 (`lib/ticket-thread.ts`) + compact run rows
+   opening `RunDetail` in a sheet (`ticket-runs.tsx`).
    诊断 (local Runtime) uses the same fixed-head split (console-diagnostics.tsx):
    levels with counts, search, a category select; an entry's facts as Field
    rows, copy raw line, only this trace; entry ids are stable, so the 5 s
    refresh does not move the selection; mobile opens an entry in a sheet.
-   On a phone the status filter row of 会话 / 工单 (with 工单's opened search) is
-   a `StickyBar` (`components/deck/sticky-bar.tsx`) at the top of the page
+   On a phone 会话 / 工单 use a full-bleed `StickyBar` at the top of the page
    scroll. Wide, both lists are a `SplitColumn`
    (`components/deck/split-column.tsx`): the title, status filter and search
    sit in a fixed head above a divider and only the list below scrolls via
@@ -136,17 +138,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    ticket beside it in the
    page scroll, j / k move through the list and y copies the open ticket's
    reference (not while typing or a sheet is open), rows replace instead of
-   push. Every ticket and session row has a copy key beside its link
-   (`copy-reference.tsx`; always shown on a phone, on hover / focus when
-   wide) that copies the item's reference without opening it: a ticket's
-   `ticket api show` block, a session's relay block (from the open session's
-   cache, else a one-message `session` read); the click's gesture is kept
-   across the fetch with a promised `ClipboardItem` (`copyTextLater`). The ticket list syncs on change
-   (`lib/ticket-sync.ts`): the shell polls collab health (~380 B; 3 s while a
-   run is in flight, 15 s otherwise) and refetches the list (~45 KB) when its
-   events head, counts or runs move, with a backstop of 10 s while running /
-   5 min idle; pages read that cache without timers of their own, so going
-   back to 工单 refetches nothing. A run opens in a bottom
+   push. The ticket list syncs on change (`lib/ticket-sync.ts`: collab health
+   3 s running / 15 s idle → list refetch on head/count change), and
+   `ticket-autosync.ts` (traced `ticket-autosync`, concurrency ≤ 2) pre-pulls
+   `collab show` for `waiting_initiator` and running tickets into the persisted
+   IndexedDB cache so opening them is instant. A run opens in a bottom
    sheet (transcript, prompt). Connection status lives in 我的 › 连接 (desktop
    keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android

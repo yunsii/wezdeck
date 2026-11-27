@@ -1,0 +1,90 @@
+// Sticky top bar of a ticket page (mirroring SessionHeader): mobile back
+// button, status LED + tappable ticket title (opens TicketInfo sheet), and ⓘ.
+import { useLingui } from '@lingui/react/macro'
+import { Info } from 'lucide-react'
+import { useState } from 'react'
+
+import { BackButton } from '#/components/deck/back-button'
+import { Led } from '#/components/deck/led'
+import { Button } from '#/components/ui/button'
+import type { CollabShow } from '#/lib/runtime-contract'
+import { ticketTone } from './console-collab'
+import { TicketInfo } from './ticket-info'
+import { useStatusLabel } from './tickets-view'
+
+export function TicketHeader({
+  data,
+  onBack,
+}: {
+  data: CollabShow
+  onBack?: () => void
+}) {
+  const { t } = useLingui()
+  const statusLabel = useStatusLabel()
+  const [infoOpen, setInfoOpen] = useState(false)
+  const ticket = data.ticket
+  if (!ticket) return null
+  const tone = ticketTone(ticket)
+  const title = ticket.title || ticket.id
+  const route = `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`
+  return (
+    <header
+      data-testid="ticket-header"
+      className="sticky top-0 z-30 -mx-[var(--page-x)] border-b border-brand-edge bg-brand-deck px-[var(--page-x)] pt-[max(env(safe-area-inset-top),0.375rem)] pb-2 md:pt-2"
+    >
+      <div className="flex min-w-0 items-center gap-1.5">
+        {onBack ? (
+          <BackButton
+            onClick={onBack}
+            label={t`Back`}
+            className="-ml-2 md:hidden"
+          />
+        ) : null}
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 px-1 py-0.5">
+          <Led tone={tone} size={13} />
+          <div className="grid min-w-0 flex-1">
+            <h1 className="min-w-0 truncate text-body leading-snug font-semibold text-brand-text">
+              <Button
+                variant="plain"
+                size="none"
+                type="button"
+                aria-haspopup="dialog"
+                data-testid="ticket-title"
+                data-ticket-id={ticket.id}
+                title={t`Ticket info`}
+                onClick={() => setInfoOpen(true)}
+                className="block max-w-full truncate text-left text-body leading-snug font-semibold text-brand-text"
+              >
+                {title}
+              </Button>
+            </h1>
+            <span
+              className="truncate text-meta text-brand-muted"
+              title={ticket.phase ?? undefined}
+            >
+              {statusLabel(ticket)} · {route}
+            </span>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          aria-haspopup="dialog"
+          aria-label={t`Ticket info`}
+          title={t`Ticket info`}
+          data-testid="ticket-info-button"
+          onClick={() => setInfoOpen(true)}
+          className="size-9 shrink-0 rounded-xl text-brand-muted"
+        >
+          <Info size={18} aria-hidden />
+        </Button>
+      </div>
+      <TicketInfo
+        data={data}
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+      />
+    </header>
+  )
+}

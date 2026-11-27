@@ -9,7 +9,16 @@ import { num, pct, usd } from './console-collab-format'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 
-export function RunDetail({ run, poll }: { run: string; poll: number }) {
+export function RunDetail({
+  run,
+  poll,
+  defaultOpenTranscript,
+}: {
+  run: string
+  poll: number
+  /** inside RunDetailSheet the user tapped a run to read it: open Transcript right away */
+  defaultOpenTranscript?: boolean
+}) {
   const { t } = useLingui()
   const detail = useQuery({
     queryKey: ['runtime', 'collab', 'run', run],
@@ -23,6 +32,7 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
   })
   const [showPrompt, setShowPrompt] = useState(false)
   const wide = useIsWide()
+  const openLog = defaultOpenTranscript ?? wide
   const launch = detail.data?.launch
   const sha = launch?.prompt.store_sha256 ?? ''
   const prompt = useQuery({
@@ -35,11 +45,10 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
   const tokens = record?.tokens
   return (
     <section className="grid gap-3" aria-label={t`Run detail`}>
-      {/* the agent's own output and the step log: long and mono, so folded
-          on a phone (open on a wide screen) */}
+      {/* the agent's own output and the step log: open in the run sheet */}
       <Disclosure
-        key={`t-${wide}`}
-        defaultOpen={wide}
+        key={`t-${openLog}`}
+        defaultOpen={openLog}
         className="grid gap-2"
         title={
           <span>
@@ -87,8 +96,8 @@ export function RunDetail({ run, poll }: { run: string; poll: number }) {
       </Disclosure>
       {record?.final_text_tail ? (
         <Disclosure
-          key={`o-${wide}`}
-          defaultOpen={wide}
+          key={`o-${openLog}`}
+          defaultOpen={openLog}
           className="grid gap-2"
           title={t`Final output`}
         >

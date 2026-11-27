@@ -1,4 +1,6 @@
 // covers: web/src/features/tickets-view.tsx web/src/features/ticket-keys.tsx
+// covers: web/src/features/ticket-autosync.ts web/src/features/ticket-header.tsx
+// covers: web/src/features/ticket-info.tsx web/src/features/ticket-runs.tsx
 // covers: web/src/features/ticket-thread-view.tsx
 // covers: web/src/features/ticket-reply.tsx
 import { chromium } from '@playwright/test'
@@ -59,10 +61,10 @@ describe.runIf(stack)('Tickets split on a wide screen', () => {
       .poll(() =>
         page
           .getByTestId('ticket-pane')
-          .getByText(now ?? '')
-          .count(),
+          .getByTestId('ticket-title')
+          .getAttribute('data-ticket-id'),
       )
-      .toBeGreaterThan(0)
+      .toBe(now)
     await context.close()
   })
 

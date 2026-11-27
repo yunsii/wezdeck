@@ -1,9 +1,12 @@
 // covers: web/src/features/console-collab* web/src/features/collab-top-bar.tsx
 // covers: web/src/features/collab-metrics.tsx
 // covers: web/src/features/tickets-view.tsx
+// covers: web/src/features/ticket-autosync.ts web/src/features/ticket-header.tsx
+// covers: web/src/features/ticket-info.tsx web/src/features/ticket-runs.tsx
+// covers: web/src/features/ticket-search.tsx
 // covers: web/src/features/ticket-thread-view.tsx
 // covers: web/src/features/ticket-reply.tsx native/wezdeck-wsl/collab.go
-// covers: web/src/features/ticket-copy-reference.tsx skills/agent-collab/lib/reference.py
+// covers: skills/agent-collab/lib/reference.py
 // covers: web/src/features/ticket-keys.tsx web/src/features/copy-reference.tsx
 // covers: web/src/lib/last-opened.tsx
 import { execFileSync } from 'node:child_process'
@@ -125,11 +128,14 @@ describe.runIf(stack)('工单 over the remote link', () => {
     if (!withRun) return
     await open(page, `/console/collab/${withRun}`)
     const pane = page.getByTestId('ticket-pane')
-    const runs = pane.getByRole('table', { name: 'Runs' })
+    const runs = pane.getByRole('list', { name: 'Runs' })
     await runs.waitFor({ timeout: 15_000 })
-    expect(await runs.locator('tbody tr').count()).toBeGreaterThan(0)
-    const detail = pane.getByRole('region', { name: 'Run detail' })
-    // the transcript is open on a wide screen
+    expect(await runs.getByTestId('ticket-run-row').count()).toBeGreaterThan(0)
+    // tapping a compact run row opens RunDetail inside a dialog sheet
+    await runs.getByTestId('ticket-run-row').first().click()
+    const runSheet = page.getByTestId('ticket-run-sheet')
+    await runSheet.waitFor({ timeout: 10_000 })
+    const detail = runSheet.getByRole('region', { name: 'Run detail' })
     await detail
       .getByRole('list', { name: 'Transcript' })
       .locator('li')
@@ -139,14 +145,25 @@ describe.runIf(stack)('工单 over the remote link', () => {
     await detail.getByText('Origin session').waitFor()
     await detail.getByRole('button', { name: 'Show initial prompt' }).click()
     await detail.getByRole('button', { name: 'Hide initial prompt' }).waitFor()
-    // 复制引用: the reference.py block, ids and run metadata included
-    await pane.getByTestId('ticket-copy-reference').click()
-    await pane.getByRole('button', { name: 'Copied' }).waitFor()
+    await page.keyboard.press('Escape')
+    await expect
+      .poll(() => page.getByTestId('ticket-run-sheet').count())
+      .toBe(0)
+    // ⓘ / title opens 3-tier TicketInfo sheet: 复制引用 + Technical details
+    await pane.getByTestId('ticket-info-button').click()
+    const info = page.getByTestId('ticket-info')
+    await info.waitFor({ timeout: 5_000 })
+    await info.getByTestId('ticket-copy-reference').click()
+    await info.getByRole('button', { name: 'Copied' }).waitFor()
     const copied = await page.evaluate(() => navigator.clipboard.readText())
     expect(copied).toMatch(/^\[wezdeck 工单\] /)
     expect(copied).toContain(`id: ${withRun}`)
     expect(copied).toContain('运行合计: ')
     expect(copied).toContain(`ticket api show --id ${withRun}`)
+    await info.getByTestId('ticket-tech-details').getByRole('button').click()
+    await info.getByRole('table', { name: 'Run metrics' }).waitFor()
+    await page.keyboard.press('Escape')
+    await expect.poll(() => page.getByTestId('ticket-info').count()).toBe(0)
     // the list: y copies the open ticket; a row's key copies that row's
     await page.evaluate(() => navigator.clipboard.writeText(''))
     await page.evaluate(() =>
@@ -181,26 +198,37 @@ describe.runIf(stack)('工单 over the remote link', () => {
     await context.close()
   }, 90_000)
 
-  it('phone: run keys, the transcript one tap away', async () => {
+  it('phone: compact run rows open transcript in a sheet, header opens ticket info', async () => {
     if (!withRun) return // the store copy has no ticket with a run
     const context = await browser.newContext({ ...devices['iPhone 13'] })
     const page = await context.newPage()
     // a phone detail page is full screen: no connection badge to wait for
     await page.goto(`${base}/console/collab/${withRun}?remote=1#pair=${token}`)
     const runs = page.getByRole('list', { name: 'Runs' })
-    await runs.getByRole('button').first().waitFor({ timeout: 25_000 })
-    const detail = page.getByRole('region', { name: 'Run detail' })
-    await detail.waitFor()
-    // folded on a phone: the mono log would push everything else away
-    expect(await detail.getByRole('list', { name: 'Transcript' }).count()).toBe(
+    await runs
+      .getByTestId('ticket-run-row')
+      .first()
+      .waitFor({ timeout: 25_000 })
+    // Run detail lives in a bottom sheet, not bloated inline
+    expect(await page.getByRole('region', { name: 'Run detail' }).count()).toBe(
       0,
     )
-    await detail.getByRole('button', { name: /^Transcript/ }).click()
+    await runs.getByTestId('ticket-run-row').first().click()
+    const runSheet = page.getByTestId('ticket-run-sheet')
+    await runSheet.waitFor({ timeout: 10_000 })
+    const detail = runSheet.getByRole('region', { name: 'Run detail' })
     await detail
       .getByRole('list', { name: 'Transcript' })
       .locator('li')
       .first()
-      .waitFor()
+      .waitFor({ timeout: 15_000 })
+    await page.keyboard.press('Escape')
+    await expect
+      .poll(() => page.getByTestId('ticket-run-sheet').count())
+      .toBe(0)
+    // tapping header title opens TicketInfo
+    await page.getByTestId('ticket-title').click()
+    await page.getByTestId('ticket-info').waitFor({ timeout: 5_000 })
     await context.close()
   }, 90_000)
 })
