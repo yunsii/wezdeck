@@ -29,6 +29,7 @@ const KINDS = new Set([
   'composer-clear',
   'web-write',
   'session-sync',
+  'session-autosync',
   'session-new-picker',
   'chat-render',
   'error',

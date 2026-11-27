@@ -58,14 +58,14 @@ archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can
 inherit its original pane environment. Agy remains visible after a turn ends
 while its managed pane's bash launcher still has an `agy` child process;
-`pane_current_command` alone reports `bash`. The Web session list is an IM chat rail:
-one row per worktree — a worktree running several agent sessions gets a
-foldable header plus one stable sub-row per session
+`pane_current_command` alone reports `bash`. The Web session list is one unified full-bleed Telegram-style IM rail across mobile and desktop:
+one flat row per single-session worktree (inline workstation hint only for named directions/purposes) — a worktree running several agent sessions gets a
+foldable header plus left-rail-guided stable sub-rows
 (`web/src/features/session-chat-group.tsx`): own avatar, tone, preview,
 unread and direct link, so two busy agents no longer take turns repainting
 one shared focus row and every session stays reachable; the header folds
-back to the focus preview (the old single-row look), remembered per worktree
-(`session-collapse.ts`, localStorage best-effort). The switcher sheet and
+back into a full group chat row keeping focus avatar, preview, time and unread count, remembered per worktree
+(`session-collapse.ts`, localStorage best-effort). Waiting and done sessions auto-sync incrementally into the persisted query cache in the background (`web/src/features/session-autosync.ts`, traced as `session-autosync`) so opening them needs no click-time wait. The switcher sheet and
 `Alt+j` / `Alt+k` / `Alt+l` jumps likewise target every session, not just
 each worktree's focus. Browser-local unsent composer text appears as a 草稿
 marker on the second line of each session row and collapsed group, while the

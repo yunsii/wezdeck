@@ -9,7 +9,14 @@ import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, ChevronDown, ChevronRight, Hash, Plus } from 'lucide-react'
+import {
+  CheckCheck,
+  ChevronDown,
+  ChevronRight,
+  GitFork,
+  Hash,
+  Plus,
+} from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { useLocale } from '#/lib/locale-context'
@@ -148,7 +155,7 @@ function SessionSubRow({
             onPointerDown={warm}
             onFocus={warm}
             className={cn(
-              'list-row flex items-center gap-3 px-4 py-2 md:px-[var(--split-pad)]',
+              'list-row flex items-center gap-3 pr-3 pl-7 py-2',
               compact ? 'min-h-11' : 'min-h-14',
               selected && 'row-selected',
             )}
@@ -156,7 +163,7 @@ function SessionSubRow({
             <AgentAvatar
               agent={session.agent}
               profile={session.agent_profile}
-              size={26}
+              size={36}
               tone={tone}
             />
             <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
@@ -165,7 +172,11 @@ function SessionSubRow({
                   data-testid="chat-title"
                   className={cn(
                     'min-w-0 truncate text-body',
-                    compact ? 'text-brand-muted' : 'font-medium',
+                    compact
+                      ? 'text-brand-muted'
+                      : needsAttention(session)
+                        ? 'font-semibold'
+                        : 'font-medium',
                   )}
                 >
                   {compact
@@ -173,13 +184,8 @@ function SessionSubRow({
                     : title || agentLabel(session.agent, session.agent_profile)}
                 </span>
                 {compact ? null : (
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    {needsAttention(session) ? (
-                      <UnreadBadge tone={tone} n={1} />
-                    ) : null}
-                    <span className="text-meta text-brand-label">
-                      {timeLabel}
-                    </span>
+                  <span className="shrink-0 text-meta text-brand-label tabular-nums">
+                    {timeLabel}
                   </span>
                 )}
               </span>
@@ -187,22 +193,27 @@ function SessionSubRow({
                 <span
                   data-testid="session-preview"
                   data-tone={tone}
-                  className="flex min-w-0 items-baseline gap-1.5 text-caption text-brand-muted"
+                  className="flex min-w-0 items-center justify-between gap-2 text-caption text-brand-muted"
                 >
-                  {statusLabel ? (
-                    <span className={cn('shrink-0', statusToneClass(tone))}>
-                      {statusLabel}
-                    </span>
+                  <span className="flex min-w-0 items-baseline gap-1.5">
+                    {statusLabel ? (
+                      <span className={cn('shrink-0', statusToneClass(tone))}>
+                        {statusLabel}
+                      </span>
+                    ) : null}
+                    {draft ? (
+                      <span
+                        data-testid="chat-draft"
+                        className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+                      >
+                        {t`Draft`}
+                      </span>
+                    ) : null}
+                    {prompt ? <span className="truncate">{prompt}</span> : null}
+                  </span>
+                  {needsAttention(session) ? (
+                    <UnreadBadge tone={tone} n={1} />
                   ) : null}
-                  {draft ? (
-                    <span
-                      data-testid="chat-draft"
-                      className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
-                    >
-                      {t`Draft`}
-                    </span>
-                  ) : null}
-                  {prompt ? <span className="truncate">{prompt}</span> : null}
                 </span>
               ) : null}
             </span>
@@ -277,11 +288,13 @@ export function ChatGroupRow({
   chat,
   selectedId,
   replace,
+  preview,
   timeOf,
 }: {
   chat: SessionChat
   selectedId?: string
   replace: boolean
+  preview: string
   timeOf: (ms?: number) => string
 }) {
   const { t } = useLingui()
@@ -294,54 +307,107 @@ export function ChatGroupRow({
   })
   const anchor = chat.sessions.find((session) => session.tmux_pane)
   const [collapsed, toggle] = useChatCollapsed(chat.key)
+  const groupLabel = chat.purpose || chat.title
+  const focusTone = chatTone(chat.focus)
   const tone = chat.sessions.some((session) => chatTone(session) === 'waiting')
     ? 'waiting'
     : 'done'
   const hasDraft = chat.sessions.some((session) =>
     Boolean(session.draft?.trim()),
   )
-  const header = (
+  const header = collapsed ? (
     <Button
       variant="plain"
       size="none"
       type="button"
       data-testid="chat-group-toggle"
       data-chat={chat.key}
-      aria-expanded={!collapsed}
-      title={collapsed ? t`Expand sessions` : t`Collapse sessions`}
-      aria-label={chat.purpose || chat.title}
+      aria-expanded={false}
+      title={t`Expand sessions`}
+      aria-label={groupLabel}
       onClick={toggle}
-      className="flex min-h-10 w-full min-w-0 select-none items-center gap-1.5 px-4 py-1 text-left text-caption text-brand-label md:px-[var(--split-pad)]"
+      className="list-row flex min-h-15 w-full min-w-0 select-none items-center gap-3 px-3 py-2 text-left"
     >
-      {collapsed ? (
-        <ChevronRight
-          size={16}
-          className="shrink-0 text-brand-label"
-          aria-hidden
-        />
-      ) : (
-        <ChevronDown
-          size={16}
-          className="shrink-0 text-brand-label"
-          aria-hidden
-        />
-      )}
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate font-medium">
-          {chat.purpose || chat.title}
-        </span>
-        {collapsed && hasDraft ? (
-          <span
-            data-testid="chat-draft"
-            className="w-fit rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
-          >
-            {t`Draft`}
+      <AgentAvatar
+        agent={chat.focus.agent}
+        profile={chat.focus.agent_profile}
+        size={40}
+        tone={focusTone}
+      />
+      <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)] gap-0.5">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-1">
+            <ChevronRight
+              size={14}
+              className="shrink-0 text-brand-label"
+              aria-hidden
+            />
+            <GitFork
+              size={12}
+              className="shrink-0 text-brand-label"
+              aria-hidden
+            />
+            <span
+              className={cn(
+                'min-w-0 truncate text-body text-brand-text',
+                chat.unread > 0 ? 'font-semibold' : 'font-medium',
+              )}
+            >
+              {groupLabel}
+            </span>
+            <span className="shrink-0 text-meta text-brand-label tabular-nums">
+              · {chat.sessions.length}
+            </span>
           </span>
-        ) : null}
+          <span className="shrink-0 text-meta text-brand-label tabular-nums">
+            {timeOf(chat.focus.ts || chat.activity)}
+          </span>
+        </span>
+        <span className="flex min-w-0 items-center justify-between gap-2 text-caption">
+          <span className="flex min-w-0 items-center gap-1.5">
+            {hasDraft ? (
+              <span
+                data-testid="chat-draft"
+                className="shrink-0 rounded bg-brand-waiting/15 px-1.5 py-0.5 font-semibold text-brand-waiting"
+              >
+                {t`Draft`}
+              </span>
+            ) : null}
+            <span
+              data-testid="chat-preview"
+              data-tone={focusTone}
+              className={cn('min-w-0 truncate', statusToneClass(focusTone))}
+            >
+              {preview}
+            </span>
+          </span>
+          {chat.unread > 0 ? <UnreadBadge tone={tone} n={chat.unread} /> : null}
+        </span>
       </span>
-      {collapsed && chat.unread > 0 ? (
-        <UnreadBadge tone={tone} n={chat.unread} />
-      ) : null}
+    </Button>
+  ) : (
+    <Button
+      variant="plain"
+      size="none"
+      type="button"
+      data-testid="chat-group-toggle"
+      data-chat={chat.key}
+      aria-expanded={true}
+      title={t`Collapse sessions`}
+      aria-label={groupLabel}
+      onClick={toggle}
+      className="flex min-h-8 w-full min-w-0 select-none items-center gap-1.5 px-3 py-1.5 text-left text-caption text-brand-muted transition-colors hover:bg-brand-soft"
+    >
+      <ChevronDown
+        size={14}
+        className="shrink-0 text-brand-label"
+        aria-hidden
+      />
+      <GitFork size={12} className="shrink-0 text-brand-label" aria-hidden />
+      <span className="min-w-0 flex-1 truncate font-medium">{groupLabel}</span>
+      <span className="shrink-0 text-meta text-brand-label tabular-nums">
+        {chat.sessions.length}
+      </span>
     </Button>
   )
   const canStart = Boolean(anchor) && device.state === 'approved'
@@ -386,7 +452,7 @@ export function ChatGroupRow({
       )}
       {sheet}
       {collapsed ? null : (
-        <ul>
+        <ul className="chat-sublist relative before:pointer-events-none before:absolute before:top-1.5 before:bottom-2 before:left-[18px] before:w-0.5 before:rounded-full before:bg-brand-edge">
           {chat.sessions.map((session) => (
             <li key={session.id}>
               <SessionSubRow

@@ -236,15 +236,17 @@ export function OpenTodos() {
     repos.set(todo.repo_label, [...(repos.get(todo.repo_label) ?? []), todo])
   return (
     <section
-      className="grid grid-cols-[minmax(0,1fr)] gap-2"
+      className="grid grid-cols-[minmax(0,1fr)] bg-brand-surface"
       data-testid="open-todos"
     >
-      <h2 className="text-heading font-semibold">{t`To follow up`}</h2>
-      <ul className="overflow-hidden rounded-2xl bg-brand-surface">
+      <h2 className="border-y border-brand-edge bg-brand-deck px-3 py-1.5 text-meta font-medium text-brand-label">
+        {t`To follow up`}
+      </h2>
+      <ul>
         {[...repos].map(([repo, items]) => (
           <li
             key={repo}
-            className="grid gap-1 border-b border-brand-edge px-4 py-3 last:border-b-0"
+            className="grid gap-1 border-b border-brand-edge px-3 py-2.5 last:border-b-0"
           >
             <span className="text-caption font-semibold text-brand-muted">
               {repo}

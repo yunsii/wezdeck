@@ -308,8 +308,8 @@ msgstr "Agent"
 msgid "Agent name"
 msgstr "Agent name"
 
-#: src/features/session-list.tsx:427
-#: src/features/session-list.tsx:487
+#: src/features/session-list.tsx:210
+#: src/features/session-list.tsx:271
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -368,7 +368,7 @@ msgstr "Allow"
 msgid "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 msgstr "Allow confirms the highlighted Yes option (Enter); Deny sends Esc. Persistent allow rules stay at the terminal."
 
-#: src/features/remote-badge.tsx:135
+#: src/features/remote-badge.tsx:146
 msgid "Allow LAN direct"
 msgstr "Allow LAN direct"
 
@@ -729,14 +729,14 @@ msgstr "Clear input"
 #~ msgstr "Clear input (Esc Esc)"
 
 #: src/features/repo-links.tsx:274
-#: src/features/session-list.tsx:309
-#: src/features/session-list.tsx:417
+#: src/features/session-list.tsx:101
+#: src/features/session-list.tsx:200
 msgid "Clear search"
 msgstr "Clear search"
 
-#: src/features/session-chat-group.tsx:120
+#: src/features/session-chat-group.tsx:127
+#: src/features/session-chat-row.tsx:71
 #: src/features/session-clear.tsx:114
-#: src/features/session-list.tsx:125
 msgid "Clearing…"
 msgstr "Clearing…"
 
@@ -796,7 +796,7 @@ msgstr "Collab metrics"
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
-#: src/features/session-chat-group.tsx:311
+#: src/features/session-chat-group.tsx:396
 msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
@@ -887,8 +887,8 @@ msgid "Connected"
 msgstr "Connected"
 
 #: src/features/host-quick-controls.tsx:66
-#: src/features/remote-badge.tsx:80
 #: src/features/remote-badge.tsx:87
+#: src/features/remote-badge.tsx:94
 msgid "Connecting…"
 msgstr "Connecting…"
 
@@ -896,7 +896,8 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/console-shell.tsx:328
+#: src/features/console-shell.tsx:403
+#: src/features/session-list.tsx:293
 msgid "Connection details"
 msgstr "Connection details"
 
@@ -908,7 +909,7 @@ msgstr "Connection failed"
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
-#: src/features/console-shell.tsx:239
+#: src/features/console-shell.tsx:242
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -1001,10 +1002,10 @@ msgstr "Copy raw line"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:139
 #: src/features/me-agents.tsx:140
-#: src/features/session-chat-group.tsx:111
-#: src/features/session-chat-group.tsx:224
-#: src/features/session-list.tsx:116
-#: src/features/session-list.tsx:235
+#: src/features/session-chat-group.tsx:118
+#: src/features/session-chat-group.tsx:235
+#: src/features/session-chat-row.tsx:62
+#: src/features/session-chat-row.tsx:191
 #: src/features/ticket-copy-reference.tsx:31
 msgid "Copy reference"
 msgstr "Copy reference"
@@ -1144,10 +1145,10 @@ msgstr "Degraded"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
-#: src/features/session-chat-group.tsx:253
+#: src/features/session-chat-group.tsx:264
+#: src/features/session-chat-row.tsx:212
 #: src/features/session-delete.tsx:103
 #: src/features/session-info.tsx:332
-#: src/features/session-list.tsx:256
 msgid "Delete session"
 msgstr "Delete session"
 
@@ -1173,11 +1174,11 @@ msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:173
 #: src/features/console-me.tsx:403
-#: src/features/console-shell.tsx:98
+#: src/features/console-shell.tsx:94
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
-#: src/features/remote-badge.tsx:84
+#: src/features/remote-badge.tsx:91
 msgid "Direct"
 msgstr "Direct"
 
@@ -1217,8 +1218,8 @@ msgstr "Disconnecting…"
 
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
-#: src/features/session-chat-group.tsx:98
-#: src/features/session-list.tsx:64
+#: src/features/session-chat-group.tsx:105
+#: src/features/session-list.tsx:52
 msgid "Done"
 msgstr "Done"
 
@@ -1230,9 +1231,9 @@ msgstr "Done ({doneCount})"
 msgid "done {when}"
 msgstr "done {when}"
 
-#: src/features/session-chat-group.tsx:202
-#: src/features/session-chat-group.tsx:338
-#: src/features/session-list.tsx:202
+#: src/features/session-chat-group.tsx:209
+#: src/features/session-chat-group.tsx:373
+#: src/features/session-chat-row.tsx:143
 msgid "Draft"
 msgstr "Draft"
 
@@ -1248,8 +1249,8 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/session-chat-group.tsx:231
-#: src/features/session-chat-group.tsx:362
+#: src/features/session-chat-group.tsx:242
+#: src/features/session-chat-group.tsx:428
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "Edit group name"
@@ -1334,7 +1335,7 @@ msgstr "Execution mode: {mode}"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/session-chat-group.tsx:311
+#: src/features/session-chat-group.tsx:326
 msgid "Expand sessions"
 msgstr "Expand sessions"
 
@@ -1439,7 +1440,7 @@ msgstr "Git status"
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 
-#: src/features/remote-badge.tsx:134
+#: src/features/remote-badge.tsx:145
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
@@ -1505,8 +1506,8 @@ msgstr "hit {hit}%"
 msgid "host default"
 msgstr "host default"
 
-#: src/features/remote-badge.tsx:81
 #: src/features/remote-badge.tsx:88
+#: src/features/remote-badge.tsx:95
 #: src/features/tickets-view.tsx:160
 msgid "Host offline"
 msgstr "Host offline"
@@ -1631,7 +1632,7 @@ msgstr "Integration"
 msgid "Interaction debugging"
 msgstr "Interaction debugging"
 
-#: src/features/remote-badge.tsx:74
+#: src/features/remote-badge.tsx:81
 msgid "internet"
 msgstr "internet"
 
@@ -1659,7 +1660,7 @@ msgstr "Just compacted; updates after the next reply"
 msgid "just now"
 msgstr "just now"
 
-#: src/features/console-shell.tsx:495
+#: src/features/console-status-band.tsx:105
 msgid "just restarted"
 msgstr "just restarted"
 
@@ -1679,7 +1680,7 @@ msgstr "Keys"
 msgid "Kimi API key"
 msgstr "Kimi API key"
 
-#: src/features/remote-badge.tsx:73
+#: src/features/remote-badge.tsx:80
 msgid "LAN"
 msgstr "LAN"
 
@@ -1703,7 +1704,7 @@ msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
 #: src/features/console-shared.tsx:106
-#: src/features/console-shell.tsx:477
+#: src/features/console-status-band.tsx:87
 #: src/features/me-host.tsx:125
 msgid "Last sample"
 msgstr "Last sample"
@@ -1841,12 +1842,12 @@ msgstr "Managed override"
 msgid "Mark done"
 msgstr "Mark done"
 
-#: src/features/session-chat-group.tsx:119
-#: src/features/session-chat-group.tsx:264
+#: src/features/session-chat-group.tsx:126
+#: src/features/session-chat-group.tsx:275
+#: src/features/session-chat-row.tsx:70
+#: src/features/session-chat-row.tsx:223
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
-#: src/features/session-list.tsx:124
-#: src/features/session-list.tsx:267
 msgid "Mark read"
 msgstr "Mark read"
 
@@ -1930,7 +1931,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/session-list.tsx:63
+#: src/features/session-list.tsx:51
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -1976,7 +1977,7 @@ msgstr "New line"
 #~ msgid "New round"
 #~ msgstr "New round"
 
-#: src/features/session-chat-group.tsx:172
+#: src/features/session-chat-group.tsx:183
 #: src/features/session-new.tsx:288
 #: src/features/session-new.tsx:460
 msgid "New session"
@@ -1994,10 +1995,10 @@ msgstr "New session (c)"
 msgid "New session group"
 msgstr "New session group"
 
-#: src/features/session-chat-group.tsx:247
-#: src/features/session-chat-group.tsx:377
+#: src/features/session-chat-group.tsx:258
+#: src/features/session-chat-group.tsx:443
+#: src/features/session-chat-row.tsx:206
 #: src/features/session-info.tsx:325
-#: src/features/session-list.tsx:250
 #: src/features/session-new.tsx:459
 msgid "New session in this group"
 msgstr "New session in this group"
@@ -2072,7 +2073,7 @@ msgstr "No activity yet"
 #~ msgid "No agent is working right now."
 #~ msgstr "No agent is working right now."
 
-#: src/features/session-list.tsx:422
+#: src/features/session-list.tsx:205
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2097,7 +2098,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:66
+#: src/features/session-list.tsx:54
 #: src/features/session-switcher.tsx:156
 msgid "No human message yet"
 msgstr "No human message yet"
@@ -2142,7 +2143,7 @@ msgstr "No recent result"
 msgid "No session"
 msgstr "No session"
 
-#: src/features/session-list.tsx:409
+#: src/features/session-list.tsx:192
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -2204,7 +2205,7 @@ msgstr "Not pulled"
 msgid "Not pushed"
 msgstr "Not pushed"
 
-#: src/features/console-shell.tsx:428
+#: src/features/console-status-band.tsx:38
 msgid "Not running"
 msgstr "Not running"
 
@@ -2266,7 +2267,7 @@ msgstr "Offline, try again later"
 msgid "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 msgstr "On a keyboard: Alt+j next waiting, Alt+k next finished, Alt+l next running, Alt+g this list."
 
-#: src/features/remote-badge.tsx:130
+#: src/features/remote-badge.tsx:141
 msgid "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 msgstr "Only lets the browser reveal its LAN address so the host can connect directly; the microphone is closed immediately and nothing is recorded."
 
@@ -2390,7 +2391,7 @@ msgstr "Owner"
 msgid "Pages, the relay handshake and the usage check; static files are free."
 msgstr "Pages, the relay handshake and the usage check; static files are free."
 
-#: src/features/remote-badge.tsx:82
+#: src/features/remote-badge.tsx:89
 msgid "Pair again"
 msgstr "Pair again"
 
@@ -2555,7 +2556,7 @@ msgid "read {reads} files"
 msgstr "read {reads} files"
 
 #: src/features/console-shared.tsx:211
-#: src/features/console-shell.tsx:441
+#: src/features/console-status-band.tsx:51
 #: src/features/me-host.tsx:60
 #: src/features/me-host.tsx:151
 msgid "Ready"
@@ -2590,7 +2591,7 @@ msgstr "Reject…"
 msgid "rejected"
 msgstr "rejected"
 
-#: src/features/remote-badge.tsx:83
+#: src/features/remote-badge.tsx:90
 msgid "Relay"
 msgstr "Relay"
 
@@ -2606,11 +2607,11 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:234
+#: src/features/console-shell.tsx:237
 msgid "Remote"
 msgstr "Remote"
 
-#: src/features/console-shell.tsx:404
+#: src/features/console-status-band.tsx:14
 msgid "Remote access"
 msgstr "Remote access"
 
@@ -2782,7 +2783,7 @@ msgstr "Restart this session's pane on the computer; the agent resumes this conv
 msgid "restarting"
 msgstr "restarting"
 
-#: src/features/session-chat-group.tsx:93
+#: src/features/session-chat-group.tsx:100
 msgid "Restarting…"
 msgstr "Restarting…"
 
@@ -2803,7 +2804,7 @@ msgid "Resumes this ticket's agent conversation in a window of the target repo's
 msgstr "Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it."
 
 #: src/features/chat-images.tsx:58
-#: src/features/console-shell.tsx:546
+#: src/features/console-shell.tsx:461
 #: src/features/me-host.tsx:109
 msgid "Retry"
 msgstr "Retry"
@@ -2880,7 +2881,7 @@ msgstr "running"
 
 #: src/features/chat-tools.tsx:97
 #: src/features/collab-metrics.tsx:150
-#: src/features/console-shell.tsx:428
+#: src/features/console-status-band.tsx:38
 msgid "Running"
 msgstr "Running"
 
@@ -3000,8 +3001,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:299
-#: src/features/session-list.tsx:300
+#: src/features/session-list.tsx:91
+#: src/features/session-list.tsx:92
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3009,7 +3010,7 @@ msgstr "Search sessions"
 msgid "Search skills"
 msgstr "Search skills"
 
-#: src/features/console-shell.tsx:340
+#: src/features/console-shell.tsx:335
 msgid "Sections"
 msgstr "Sections"
 
@@ -3102,20 +3103,21 @@ msgstr "Session pages"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:83
+#: src/features/console-shell.tsx:79
 #: src/features/landing-page.tsx:84
 #: src/features/session-header.tsx:185
-#: src/features/session-list.tsx:377
+#: src/features/session-list.tsx:171
+#: src/features/session-list.tsx:286
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:399
+#: src/features/session-list.tsx:182
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/console-me.tsx:316
-#: src/features/console-shell.tsx:102
+#: src/features/console-shell.tsx:98
 msgid "Settings"
 msgstr "Settings"
 
@@ -3167,7 +3169,7 @@ msgstr "Skills · {count}"
 msgid "Skills this agent was given"
 msgstr "Skills this agent was given"
 
-#: src/features/console-shell.tsx:311
+#: src/features/console-shell.tsx:314
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -3443,7 +3445,7 @@ msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTer
 msgid "The local Runtime restarted (about {gone} s without it)"
 msgstr "The local Runtime restarted (about {gone} s without it)"
 
-#: src/features/console-shell.tsx:492
+#: src/features/console-status-band.tsx:102
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
@@ -3485,7 +3487,7 @@ msgstr "This browser"
 
 #: src/features/console-me.tsx:123
 #: src/features/console-me.tsx:332
-#: src/features/console-shell.tsx:232
+#: src/features/console-shell.tsx:235
 msgid "This computer"
 msgstr "This computer"
 
@@ -3523,7 +3525,7 @@ msgstr "This is the last session and the worktree has local changes. Inspect Git
 msgid "This list of shortcuts"
 msgstr "This list of shortcuts"
 
-#: src/features/console-shell.tsx:541
+#: src/features/console-shell.tsx:456
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -3554,7 +3556,7 @@ msgstr "Ticket"
 
 #: src/features/console-activity.tsx:206
 #: src/features/console-activity.tsx:294
-#: src/features/console-shell.tsx:93
+#: src/features/console-shell.tsx:89
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -3566,7 +3568,7 @@ msgstr "Ticket pages"
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-shell.tsx:88
+#: src/features/console-shell.tsx:84
 #: src/features/landing-page.tsx:88
 #: src/features/tickets-view.tsx:415
 msgid "Tickets"
@@ -3613,7 +3615,7 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/session-todos.tsx:242
+#: src/features/session-todos.tsx:243
 msgid "To follow up"
 msgstr "To follow up"
 
@@ -3647,7 +3649,7 @@ msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; goi
 msgid "Today events"
 msgstr "Today events"
 
-#: src/features/remote-badge.tsx:89
+#: src/features/remote-badge.tsx:96
 msgid "Token rejected — pair again"
 msgstr "Token rejected — pair again"
 
@@ -3701,7 +3703,7 @@ msgstr "Turn on write access in Settings to send commands"
 msgid "Turn on write access in Settings to send these keys"
 msgstr "Turn on write access in Settings to send these keys"
 
-#: src/features/remote-badge.tsx:75
+#: src/features/remote-badge.tsx:82
 msgid "TURN relay"
 msgstr "TURN relay"
 
@@ -3758,7 +3760,7 @@ msgid "Uploading {step}/{steps}…"
 msgstr "Uploading {step}/{steps}…"
 
 #: src/features/console-shared.tsx:112
-#: src/features/console-shell.tsx:483
+#: src/features/console-status-band.tsx:93
 #: src/features/me-host.tsx:124
 msgid "Uptime"
 msgstr "Uptime"
@@ -3843,8 +3845,8 @@ msgstr "waiting on target"
 msgid "waiting on you"
 msgstr "waiting on you"
 
-#: src/features/session-chat-group.tsx:97
-#: src/features/session-list.tsx:62
+#: src/features/session-chat-group.tsx:104
+#: src/features/session-list.tsx:50
 #: src/features/tickets-view.tsx:526
 msgid "Waiting on you"
 msgstr "Waiting on you"
@@ -3854,7 +3856,7 @@ msgctxt "filter"
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
-#: src/features/console-shell.tsx:452
+#: src/features/console-status-band.tsx:62
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -3879,24 +3881,24 @@ msgstr "Warnings"
 msgid "Web sending is unavailable for this session."
 msgstr "Web sending is unavailable for this session."
 
-#: src/features/remote-badge.tsx:91
+#: src/features/remote-badge.tsx:98
 msgid "WebRTC direct"
 msgstr "WebRTC direct"
 
-#: src/features/remote-badge.tsx:91
+#: src/features/remote-badge.tsx:98
 msgid "WebRTC direct · {pathLabel}"
 msgstr "WebRTC direct · {pathLabel}"
 
-#: src/features/remote-badge.tsx:115
+#: src/features/remote-badge.tsx:122
 msgid "WebRTC: {note}"
 msgstr "WebRTC: {note}"
 
-#: src/features/remote-badge.tsx:90
+#: src/features/remote-badge.tsx:97
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:229
-#: src/features/console-shell.tsx:323
+#: src/features/console-shell.tsx:232
+#: src/features/console-shell.tsx:398
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
@@ -3995,8 +3997,8 @@ msgid "working"
 msgstr "working"
 
 #: src/features/chat-turn.tsx:143
-#: src/features/session-chat-group.tsx:96
-#: src/features/session-list.tsx:65
+#: src/features/session-chat-group.tsx:103
+#: src/features/session-list.tsx:53
 msgid "Working"
 msgstr "Working"
 
@@ -4036,7 +4038,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:166
-#: src/features/session-list.tsx:77
+#: src/features/session-list.tsx:65
 msgid "Yesterday"
 msgstr "Yesterday"
 

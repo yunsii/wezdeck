@@ -188,6 +188,33 @@ html[data-theme='dark'] .list-row.row-selected::after {
   opacity: 1;
 }
 
+/* Telegram-style inset hairlines for the flat session rail: align with the
+   text column past the avatar (never colliding with .list-row::before/after).
+   A multi-session workstation group ends with a wider divider to separate it
+   cleanly from the next chat item. */
+.chat-list > li,
+.chat-sublist > li {
+  position: relative;
+}
+.chat-list > li:not(:last-child)::after,
+.chat-sublist > li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: var(--divider-inset, 4rem);
+  height: 1px;
+  background: var(--brand-edge);
+  pointer-events: none;
+  z-index: 1;
+}
+.chat-list > li[data-group]:not(:last-child)::after {
+  left: 0;
+}
+.chat-sublist > li:not(:last-child)::after {
+  left: 4.75rem;
+}
+
 /* A session tag (components/deck/session-tags.tsx): a light fill of its
    tone and ink leaning to that tone, readable in both themes. Tones: an
    agent's own colour, the accent (主, running), waiting, done, neutral. */
