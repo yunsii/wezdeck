@@ -153,7 +153,7 @@ msgstr "已暂存 {staged}，已修改 {unstaged}，未跟踪 {untracked}"
 msgid "{staleCount} subagents silent for a while"
 msgstr "{staleCount} 个子 agent 很久没动静"
 
-#: src/features/repo-links.tsx:239
+#: src/features/repo-links.tsx:264
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · 外链"
 
@@ -879,7 +879,7 @@ msgid "Clear input"
 msgstr "清空输入"
 
 #: src/features/console-diagnostics.tsx:143
-#: src/features/repo-links.tsx:274
+#: src/features/repo-links.tsx:300
 #: src/features/session-list.tsx:108
 #: src/features/session-list.tsx:310
 #: src/features/ticket-search.tsx:42
@@ -1122,7 +1122,7 @@ msgid "Copied the raw line"
 msgstr "已复制原始日志"
 
 #: src/components/ui/field.tsx:61
-#: src/features/repo-links.tsx:73
+#: src/features/repo-links.tsx:74
 #: src/features/session-info.tsx:188
 #: src/features/session-title-history.tsx:62
 #: src/features/ticket-info.tsx:70
@@ -1161,8 +1161,8 @@ msgstr "复制错误信息"
 msgid "Copy failed"
 msgstr "复制失败"
 
-#: src/features/repo-links.tsx:125
 #: src/features/repo-links.tsx:126
+#: src/features/repo-links.tsx:127
 msgid "Copy link"
 msgstr "复制链接"
 
@@ -1630,7 +1630,7 @@ msgstr "失败"
 msgid "Failed runs"
 msgstr "失败次数"
 
-#: src/features/repo-links.tsx:206
+#: src/features/repo-links.tsx:231
 msgid "Failed to refresh links"
 msgstr "刷新外链失败"
 
@@ -2126,7 +2126,7 @@ msgstr "正在加载原图…"
 #: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
-#: src/features/repo-links.tsx:309
+#: src/features/repo-links.tsx:146
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
 #: src/features/session-header.tsx:247
@@ -2502,11 +2502,11 @@ msgstr "还没有人工消息"
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
 
-#: src/features/repo-links.tsx:315
+#: src/features/repo-links.tsx:339
 msgid "No links match that search."
 msgstr "没有匹配的外链。"
 
-#: src/features/repo-links.tsx:317
+#: src/features/repo-links.tsx:341
 msgid "No links resolved for this repository."
 msgstr "这个仓库没有解析出外链。"
 
@@ -2750,12 +2750,12 @@ msgstr "在 VS Code 中打开"
 msgid "Open now"
 msgstr "在线"
 
-#: src/features/repo-links.tsx:418
-#: src/features/repo-links.tsx:468
+#: src/features/repo-links.tsx:442
+#: src/features/repo-links.tsx:492
 msgid "Open repository links"
 msgstr "打开仓库外链"
 
-#: src/features/repo-links.tsx:417
+#: src/features/repo-links.tsx:441
 #: src/features/session-info-actions.tsx:151
 msgid "Open repository links (key: l)"
 msgstr "打开仓库外链（快捷键：l）"
@@ -2818,7 +2818,7 @@ msgstr "Opus 档"
 msgid "Origin session"
 msgstr "发起会话"
 
-#: src/features/repo-links.tsx:52
+#: src/features/repo-links.tsx:53
 msgid "Other"
 msgstr "其他"
 
@@ -2979,7 +2979,7 @@ msgstr "进程"
 msgid "Progress"
 msgstr "进展"
 
-#: src/features/repo-links.tsx:49
+#: src/features/repo-links.tsx:50
 msgid "Project config"
 msgstr "项目配置"
 
@@ -3116,8 +3116,8 @@ msgstr "刷新"
 msgid "Refresh active sessions now"
 msgstr "立即刷新活跃会话"
 
-#: src/features/repo-links.tsx:288
-#: src/features/repo-links.tsx:289
+#: src/features/repo-links.tsx:314
+#: src/features/repo-links.tsx:315
 msgid "Refresh links"
 msgstr "刷新外链"
 
@@ -3181,7 +3181,7 @@ msgstr "远程"
 msgid "Remote devices"
 msgstr "远程设备"
 
-#: src/features/repo-links.tsx:50
+#: src/features/repo-links.tsx:51
 msgid "Remote project"
 msgstr "远程项目"
 
@@ -3264,7 +3264,7 @@ msgstr "仓库"
 msgid "Repo filter"
 msgstr "仓库筛选"
 
-#: src/features/repo-links.tsx:48
+#: src/features/repo-links.tsx:49
 #: src/features/session-info.tsx:67
 #: src/features/session-new-panels.tsx:232
 #: src/features/session-new-panels.tsx:239
@@ -3279,8 +3279,8 @@ msgstr "仓库"
 msgid "Repository default"
 msgstr "按仓库设置"
 
-#: src/features/repo-links.tsx:239
-#: src/features/repo-links.tsx:432
+#: src/features/repo-links.tsx:264
+#: src/features/repo-links.tsx:456
 msgid "Repository links"
 msgstr "仓库外链"
 
@@ -3630,11 +3630,11 @@ msgstr "改动范围"
 msgid "Search"
 msgstr "搜索"
 
-#: src/features/repo-links.tsx:265
+#: src/features/repo-links.tsx:291
 msgid "Search links"
 msgstr "搜索外链"
 
-#: src/features/repo-links.tsx:264
+#: src/features/repo-links.tsx:290
 msgid "Search links…"
 msgstr "搜索外链…"
 
@@ -3823,7 +3823,7 @@ msgstr "会话通过远程链接读取，这台设备还没配对。在主机上
 msgid "Settings"
 msgstr "我的"
 
-#: src/features/repo-links.tsx:51
+#: src/features/repo-links.tsx:52
 msgid "Shared"
 msgstr "共享"
 
@@ -4665,7 +4665,7 @@ msgstr "查看源码"
 msgid "VS Code window focused"
 msgstr "已切到 VS Code 窗口"
 
-#: src/features/repo-links.tsx:318
+#: src/features/repo-links.tsx:342
 msgid "vscode-links is not installed on the host."
 msgstr "主机尚未安装 vscode-links。"
 

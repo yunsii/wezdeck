@@ -36,6 +36,9 @@ the first render. Hide and disable it until write access is confirmed so
 the search field and neighboring controls keep their positions.
 The session detail title row also reserves the avatar and action slots
 while session data loads. Quota alerts can add a row when they are needed.
+The session list skeleton uses the loaded repository heading and row heights.
+The repository links sheet opens at its final viewport-bounded height and
+shows link-shaped placeholders until the response arrives.
 
 ## Compositor layer discipline (Chromium HiDPI)
 
