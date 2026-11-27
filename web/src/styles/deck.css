@@ -89,6 +89,10 @@ html[data-theme='dark'] [data-deck] {
    continuation of the input surface, rather than a stack of floating cards. */
 .composer-toolbar {
   border-top: 1px solid var(--brand-edge);
+  scrollbar-width: none;
+}
+.composer-toolbar::-webkit-scrollbar {
+  display: none;
 }
 .composer-tool {
   background: transparent;

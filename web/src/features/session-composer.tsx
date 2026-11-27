@@ -235,7 +235,7 @@ function Toolbar({
       role="toolbar"
       aria-label={t`Composer tools`}
       data-testid="composer-tools"
-      className="composer-toolbar flex items-center gap-1 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
+      className="composer-toolbar flex min-w-0 max-w-full items-center gap-1 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
     >
       {agent && onQuickNew ? (
         <QuickNewConversation onStart={onQuickNew} />
