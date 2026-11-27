@@ -625,7 +625,7 @@ msgstr "Auto-title settings saved"
 msgid "Availability and note"
 msgstr "Availability and note"
 
-#: src/components/ui/sheet.tsx:119
+#: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:107
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
@@ -902,7 +902,7 @@ msgstr "CLI default"
 msgid "CLI selects automatically"
 msgstr "CLI selects automatically"
 
-#: src/components/ui/sheet.tsx:144
+#: src/components/ui/sheet.tsx:149
 #: src/features/image-viewer.tsx:150
 msgid "Close"
 msgstr "Close"
@@ -1125,11 +1125,11 @@ msgstr "Copied"
 msgid "Copied {label}"
 msgstr "Copied {label}"
 
-#: src/features/host-file-sheet.tsx:213
+#: src/features/host-file-sheet.tsx:211
 msgid "Copied document"
 msgstr "Copied document"
 
-#: src/features/host-file-sheet.tsx:213
+#: src/features/host-file-sheet.tsx:211
 msgid "Copied path"
 msgstr "Copied path"
 
@@ -1151,7 +1151,7 @@ msgid "Copied: {shown}"
 msgstr "Copied: {shown}"
 
 #: src/features/doc-code-block.tsx:108
-#: src/features/host-file-sheet.tsx:122
+#: src/features/host-file-sheet.tsx:120
 #: src/features/inspector.tsx:87
 #: src/features/session-composer.tsx:82
 #: src/features/session-permission.tsx:137
@@ -1168,8 +1168,8 @@ msgstr "Copy “{label}: …”"
 msgid "Copy command"
 msgstr "Copy command"
 
-#: src/features/host-file-sheet.tsx:112
-#: src/features/host-file-sheet.tsx:113
+#: src/features/host-file-sheet.tsx:110
+#: src/features/host-file-sheet.tsx:111
 msgid "Copy document"
 msgstr "Copy document"
 
@@ -1182,8 +1182,8 @@ msgstr "Copy error"
 msgid "Copy link"
 msgstr "Copy link"
 
-#: src/features/host-file-sheet.tsx:96
-#: src/features/host-file-sheet.tsx:97
+#: src/features/host-file-sheet.tsx:94
+#: src/features/host-file-sheet.tsx:95
 #: src/features/session-worktree-detail.tsx:81
 #: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
@@ -1474,7 +1474,7 @@ msgstr "Dispatched"
 
 #: src/features/host-file-context.tsx:93
 #: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:203
+#: src/features/host-file-sheet.tsx:201
 msgid "Document"
 msgstr "Document"
 
@@ -2846,7 +2846,7 @@ msgstr "Part"
 msgid "partly done"
 msgstr "partly done"
 
-#: src/features/host-file-sheet.tsx:106
+#: src/features/host-file-sheet.tsx:104
 #: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "Path"
@@ -3033,8 +3033,8 @@ msgstr "Recent commits"
 msgid "Recycle worktree"
 msgstr "Recycle worktree"
 
+#: src/features/host-file-sheet.tsx:77
 #: src/features/host-file-sheet.tsx:78
-#: src/features/host-file-sheet.tsx:79
 #: src/features/me-devices.tsx:165
 msgid "Refresh"
 msgstr "Refresh"
@@ -3052,7 +3052,7 @@ msgstr "Refresh links"
 msgid "Refreshing session titles in the background…"
 msgstr "Refreshing session titles in the background…"
 
-#: src/features/host-file-sheet.tsx:136
+#: src/features/host-file-sheet.tsx:134
 msgid "Regarding {ref}: "
 msgstr "Regarding {ref}: "
 
@@ -3181,7 +3181,7 @@ msgstr "Replied, the agent continues"
 msgid "replied: {body}"
 msgstr "replied: {body}"
 
-#: src/features/host-file-sheet.tsx:142
+#: src/features/host-file-sheet.tsx:140
 #: src/features/ticket-reply.tsx:222
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
@@ -3331,7 +3331,7 @@ msgstr "Resume a conversation"
 
 #: src/features/chat-images.tsx:58
 #: src/features/console-shell.tsx:551
-#: src/features/host-file-sheet.tsx:299
+#: src/features/host-file-sheet.tsx:297
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3639,7 +3639,7 @@ msgstr "Sending the first message…"
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
-#: src/features/host-file-sheet.tsx:272
+#: src/features/host-file-sheet.tsx:270
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
 
@@ -3773,7 +3773,7 @@ msgstr "Show initial prompt"
 msgid "Show the call"
 msgstr "Show the call"
 
-#: src/features/host-file-sheet.tsx:268
+#: src/features/host-file-sheet.tsx:266
 msgid "Showing the first 256 KB of this file."
 msgstr "Showing the first 256 KB of this file."
 

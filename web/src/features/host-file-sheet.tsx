@@ -22,7 +22,6 @@ import { trace } from '#/lib/client-trace'
 import { copyText } from '#/lib/clipboard'
 import { formatLineRange } from '#/lib/host-file-link'
 import { hostRead } from '#/lib/runtime-client'
-import { cn } from '#/lib/utils'
 import {
   CodeFileBody,
   FileLoadingSkeleton,
@@ -81,11 +80,10 @@ function FileViewerActions({
         onClick={onRefresh}
         className="inline-flex size-8 items-center justify-center rounded-lg text-brand-muted"
       >
-        <RefreshCw
-          size={14}
-          aria-hidden
-          className={cn(isFetching && 'animate-spin')}
-        />
+        {/* Static icon while fetching: animate-spin creates an ActiveTransformAnimation
+            GPU layer right inside the modal title bar, causing the header text to
+            flicker when the layer mounts and tears down on fetch completion. */}
+        <RefreshCw size={14} aria-hidden />
       </Button>
       {data ? (
         <>

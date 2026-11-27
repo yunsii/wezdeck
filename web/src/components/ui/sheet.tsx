@@ -51,10 +51,12 @@ export function Sheet({
       disablePointerDismissal={fullscreen}
     >
       <Drawer.Portal>
-        <Drawer.Backdrop
-          data-deck
-          className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-[var(--motion-medium)] ease-[var(--ease-standard)] data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--motion-short)] data-[starting-style]:opacity-0 starting:opacity-0"
-        />
+        {!fullscreen ? (
+          <Drawer.Backdrop
+            data-deck
+            className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-[var(--motion-medium)] ease-[var(--ease-standard)] data-[ending-style]:opacity-0 data-[ending-style]:duration-[var(--motion-short)] data-[starting-style]:opacity-0 starting:opacity-0"
+          />
+        ) : null}
         <Drawer.Viewport
           className={cn(
             'fixed inset-0 z-50 flex justify-center',
@@ -72,8 +74,11 @@ export function Sheet({
               // the header holds still; only the body below it scrolls, so the
               // scrollbar starts under the title and never runs into a corner
               'flex w-full flex-col overflow-hidden bg-brand-deck text-brand-text outline-none',
+              // Fullscreen reader opens directly at opacity 1 (no full-viewport
+              // ActiveOpacityAnimation GPU layer that flashes the title bar when
+              // the layer demotes on transitionend).
               fullscreen
-                ? 'h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0 transition-opacity duration-[var(--motion-medium)] ease-[var(--ease-enter)] data-[ending-style]:duration-[var(--motion-short)] data-[ending-style]:ease-[var(--ease-exit)] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 starting:opacity-0'
+                ? 'h-[100dvh] max-h-[100dvh] max-w-none rounded-none border-0'
                 : cn(
                     'max-h-[88dvh] rounded-t-[20px] border-t border-brand-edge shadow-[0_-10px_40px_rgba(0,0,0,0.28)] md:max-w-xl',
                     // motion tokens (styles/motion.css): in slower and decelerating, out

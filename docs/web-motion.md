@@ -17,7 +17,7 @@ and `MotionConfig reducedMotion="user"` (opacity only under reduced motion).
 
 | Change | How | Timing |
 | --- | --- | --- |
-| state: hover, press, open, a colour | CSS transition, preferably of `opacity` on a pseudo-element layer (compositor: smooth while the main thread renders) | short, standard |
+| state: hover, press, open, a colour | Paint-only CSS `background-color` / `color` transitions (avoid `opacity` transitions inside split scrollers so Chromium never spawns `ActiveOpacityAnimation` + multi-row `Overlap` layers) | short, standard |
 | an element arrives / leaves (sticky prompt, a chip, a hint) | `AnimatePresence` + `m.div` with a preset; the leaving element keeps its last content | enter medium + enter curve; leave exit + exit curve |
 | a page / pane | View Transitions (`lib/view-transition.ts`) for top-level / mobile route changes; within a wide split, switching conversations swaps directly at `opacity: 1` (no `.pane-enter` dip) | 0 ms inside split; 120–240 ms on pushed pages |
 
@@ -30,6 +30,17 @@ froze ~140 ms and jumped); travel stays small (≤ 8 px). Verify with
 `scripts/dev/web-frame-probe.sh` ([`remote-access.md`](remote-access.md#testing-locally)):
 `grey-step`, `snap`, `row-fill` and the other findings fail the run, `jank`
 (main-thread stalls) is reported as a warning.
+
+## Compositor layer discipline (Chromium HiDPI)
+
+On fractional-DPR displays (`1.25×` / `2.625×`, Chrome 152 / Android tablet Vulkan + Skia Graphite), Chromium `CompositeAfterPaint` promotes any CSS `opacity` or `transform` animation (`ActiveOpacityAnimation` / `ActiveTransformAnimation`) to a dedicated GPU layer and then overlap-promotes (`Overlap`) adjacent rows, dividers, and scrolling containers into temporary GPU squashing layers. Creating or destroying those layers toggles text between LCD subpixel and grayscale antialiasing and re-snaps fractional coordinates, reading as multi-row or title-bar flicker (2026-11-27).
+
+Enforced rules:
+- **Ambient status indicators** (`.led-running`): animate paint-only SVG `fill-opacity` on `.led-running circle`, never CSS `opacity` on the `<svg>` or stacked `animate-[pulse]`.
+- **Split-list row states** (`.list-row` / `::before`): use paint-only `background-color` transitions, never `opacity` transitions on pseudo-elements.
+- **Loading skeletons** (`components/ui/skeleton.tsx`): use paint-only `.skeleton-breathe` (`background-color` keyframes), never Tailwind `animate-pulse` (`opacity`).
+- **Headers & fullscreen readers** (`host-file-sheet.tsx`, `sheet.tsx`): never mount `animate-spin` (`ActiveTransformAnimation`) inside a persistent title bar, and open opaque `fullscreen` sheets directly at `opacity: 1` (no hidden `Drawer.Backdrop` or full-viewport `transition-opacity`).
+- **Automated guard**: `split-list-stability.cdp.test.ts` queries CDP `LayerTree.compositingReasons` across `idle ↔ running` switches and fails if any `ActiveOpacityAnimation` or `ActiveTransformAnimation` layer appears.
 
 ## Split switches
 
@@ -78,14 +89,14 @@ never flash `Loading…`. In the same pass, `SwipeActions` omits idle
 starts, `motion.css` scopes `view-transition-name` to
 `html:active-view-transition`, `TagLine` keeps its observers stable and caps
 single-line height to prevent statusbar height bounces (paired with stale-on-timeout
-git/worktree caching in `git_status.go` / `session_env.go`), and
-`.list-row::after` paints its translucent accent tint at `z-index: 1`
-(`::before` at `z-index: 2`) instead of `z-index: -1` — an opacity transition
-at `z-index: -1` inside a scroller overlap-promoted sibling rows below it in
-Chromium, flipping every uninvolved row's text between LCD subpixel and
-grayscale antialiasing at `t = 0` and `+150 ms` on every switch (~1,133 px per
-row). Covered by `split-list-stability.cdp.test.ts` (including per-frame CDP
-screencast) and `split-switch.cdp.test.ts`.
+git/worktree caching in `git_status.go` / `session_env.go`). Both `.list-row`
+state tints/accent bar and `.led-running` breathing dots stay paint-only
+(`background-color` on `.list-row` / `::before`, SVG `fill-opacity` on
+`.led-running circle`, no duplicate `animate-[pulse]` on `AgentAvatar`) so
+Chromium spawns zero `ActiveOpacityAnimation` layers and zero multi-row
+`Overlap` squashing layers in the session list or right-pane thread across
+`idle ↔ running` switches (verified via CDP `LayerTree.compositingReasons` in
+`split-list-stability.cdp.test.ts` alongside `split-switch.cdp.test.ts`).
 
 Live-device list-flicker observability (2026-11-27): `client-trace.ts` records
 `layout-shift` (`PerformanceObserver` CLS ≥ 0.001, ignoring recent input, noting

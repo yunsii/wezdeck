@@ -168,15 +168,7 @@ export function AgentAvatar({
           data-tone={tone}
           className="pointer-events-none absolute -top-0.5 -left-0.5 rounded-full bg-brand-surface p-px"
         >
-          <Led
-            tone={ledTone}
-            size={statusPx}
-            label={statusLabel}
-            className={cn(
-              tone === 'running' &&
-                'motion-safe:animate-[pulse_1.6s_ease-in-out_infinite]',
-            )}
-          />
+          <Led tone={ledTone} size={statusPx} label={statusLabel} />
         </span>
       ) : null}
       {badge ? (
