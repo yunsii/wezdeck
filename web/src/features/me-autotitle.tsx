@@ -3,7 +3,15 @@
 import { useLingui } from '@lingui/react/macro'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Lock, RefreshCw, Unlock } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronUp,
+  History,
+  Lock,
+  RefreshCw,
+  Unlock,
+} from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Segmented } from '#/components/deck/segmented'
@@ -15,7 +23,9 @@ import { useLocale } from '#/lib/locale-context'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { AgentAvatar } from './agent-avatar'
 import { useConsoleMode, useRemoteState } from './console-mode'
+import type { TitleHistoryItem } from './console-sessions'
 import { useDeviceState } from './device-state'
+import { TitleHistoryTimeline } from './session-title-history'
 
 type AutoTitleProvider = {
   id: string
@@ -33,6 +43,7 @@ type AutoTitleItem = {
   user_turns?: number
   locked?: boolean
   active: boolean
+  history?: Array<TitleHistoryItem>
 }
 
 export type AutoTitleStatus = {
@@ -114,6 +125,7 @@ function AutoTitleEntryList({
   onAction: (payload: Record<string, unknown>) => void
 }) {
   const { t } = useLingui()
+  const [openHistory, setOpenHistory] = useState<Record<string, boolean>>({})
   if (entries.length === 0) {
     return (
       <p className="px-1 text-caption text-brand-muted">
@@ -126,6 +138,9 @@ function AutoTitleEntryList({
       {entries.map((item) => {
         const eff = providerLabel(item.provider)
         const turns = item.user_turns
+        const history = item.history ?? []
+        const taskCount = history.length
+        const isHistoryOpen = Boolean(openHistory[item.session_id])
         const sourceText =
           item.source === 'locked'
             ? t`Manual /rename`
@@ -143,62 +158,99 @@ function AutoTitleEntryList({
         return (
           <li
             key={item.session_id}
-            className="flex items-center gap-3 border-b border-brand-edge px-3 py-2.5 last:border-b-0"
+            className="grid border-b border-brand-edge px-3 py-2.5 last:border-b-0"
           >
-            <AgentAvatar agent={item.agent} size={32} />
-            <div className="min-w-0 flex-1">
-              {item.active ? (
-                <Link
-                  to="/{-$locale}/console/sessions/$id"
-                  params={{ locale: localeParam, id: item.session_id }}
-                  className="block truncate text-body font-medium hover:underline"
+            <div className="flex items-center gap-3">
+              <AgentAvatar agent={item.agent} size={32} />
+              <div className="min-w-0 flex-1">
+                {item.active ? (
+                  <Link
+                    to="/{-$locale}/console/sessions/$id"
+                    params={{ locale: localeParam, id: item.session_id }}
+                    className="block truncate text-body font-medium hover:underline"
+                  >
+                    {item.title}
+                  </Link>
+                ) : (
+                  <p className="truncate text-body font-medium text-brand-muted">
+                    {item.title}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <p className="truncate text-meta text-brand-label">
+                    {metaParts.join(' · ')}
+                  </p>
+                  {history.length > 0 ? (
+                    <Button
+                      type="button"
+                      variant="plain"
+                      size="none"
+                      aria-expanded={isHistoryOpen}
+                      onClick={() =>
+                        setOpenHistory((prev) => ({
+                          ...prev,
+                          [item.session_id]: !prev[item.session_id],
+                        }))
+                      }
+                      className="inline-flex items-center gap-1 text-meta text-brand-muted hover:text-brand-text"
+                    >
+                      <History size={11} aria-hidden />
+                      {taskCount === 1 ? t`1 task` : t`${taskCount} tasks`}
+                      {isHistoryOpen ? (
+                        <ChevronUp size={11} aria-hidden />
+                      ) : (
+                        <ChevronDown size={11} aria-hidden />
+                      )}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+              {item.locked ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  type="button"
+                  disabled={!reachable || busy}
+                  title={t`Unlock to resume auto-titling`}
+                  onClick={() =>
+                    onAction({ op: 'unlock', session_id: item.session_id })
+                  }
                 >
-                  {item.title}
-                </Link>
+                  <Unlock size={14} aria-hidden />
+                  {t`Unlock`}
+                </Button>
+              ) : item.active ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  type="button"
+                  disabled={!reachable || busy}
+                  title={t`Regenerate title now`}
+                  onClick={() =>
+                    onAction({ op: 'refresh', session_id: item.session_id })
+                  }
+                >
+                  <RefreshCw size={14} aria-hidden />
+                  {t`Regenerate`}
+                </Button>
               ) : (
-                <p className="truncate text-body font-medium text-brand-muted">
-                  {item.title}
-                </p>
+                <Lock
+                  size={14}
+                  aria-hidden
+                  className="mr-2 shrink-0 text-brand-label opacity-0"
+                />
               )}
-              <p className="truncate text-meta text-brand-label">
-                {metaParts.join(' · ')}
-              </p>
             </div>
-            {item.locked ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                disabled={!reachable || busy}
-                title={t`Unlock to resume auto-titling`}
-                onClick={() =>
-                  onAction({ op: 'unlock', session_id: item.session_id })
-                }
-              >
-                <Unlock size={14} aria-hidden />
-                {t`Unlock`}
-              </Button>
-            ) : item.active ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                disabled={!reachable || busy}
-                title={t`Regenerate title now`}
-                onClick={() =>
-                  onAction({ op: 'refresh', session_id: item.session_id })
-                }
-              >
-                <RefreshCw size={14} aria-hidden />
-                {t`Regenerate`}
-              </Button>
-            ) : (
-              <Lock
-                size={14}
-                aria-hidden
-                className="mr-2 shrink-0 text-brand-label opacity-0"
-              />
-            )}
+            {isHistoryOpen && history.length > 0 ? (
+              <div className="mt-2 border-t border-brand-edge/60 pl-11">
+                <TitleHistoryTimeline
+                  history={history}
+                  defaultLimit={10}
+                  compact
+                  testId={`autotitle-history-${item.session_id}`}
+                />
+              </div>
+            ) : null}
           </li>
         )
       })}

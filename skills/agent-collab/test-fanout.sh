@@ -252,6 +252,8 @@ check "draft: brief stored (problem/approach, status check, risks, effect per ch
 check "draft: outcome computed, not modelled (3 workers, 2 stages, 2 at once, branch, no push, no money)" \
   jq -e --arg p "$DP" '.proposal.outcome|.workers==3 and .stages==2 and .max_parallel==2 and .pushes==false and .delivery.rx==("ticket/"+$p+"-integration") and (.minutes_each|length==2) and (has("usd")|not) and .est_mb_each>0' <<<"$dr"
 check "draft: contract stored on the parent" grep -q 'exports f()' "$TICKETS_ROOT/_data/$DP/contract.md"
+check "draft: prompt instructs reading release/migration docs for multi-release constraints" \
+  bash -c "grep -rq 'Release and migration constraints' '$TICKETS_ROOT/prompts/'"
 check "run refuses while the draft awaits confirmation" bash -c "'$run' fanout run --parent '$DP' --mock | jq -e '.ok==false and (.error|test(\"awaits user confirmation\"))'"
 shp="$("$run" api show --id "$DP")"
 check "api show exposes the pending draft + contract + brief + outcome (schema-valid) for the web console" \

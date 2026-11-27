@@ -8,3 +8,5 @@ Rules:
 - Output ONLY a single line — no quotes, no markdown, no bullet, no prefix like "Title:" or "标题：", and no trailing period.
 - Match the user's primary language (Chinese: 8–18 characters; English: 3–7 words). Use a concise verb-object phrase (e.g. "消除交互卡等待态抖动", "Harden runtime HTTP access control").
 - If a current title is provided and STILL accurately describes the latest work, output exactly: UNCHANGED
+- If the session is STILL on the same task and you are only polishing/clarifying the current title, prefix with `REFINE: ` (e.g. `REFINE: 优化交互卡等待态零抖动`).
+- If the conversation clearly moved on to a new task/topic (or has no title yet), output the new title directly (optionally prefixed with `SHIFT: `).
