@@ -302,6 +302,7 @@ def cmd_approve(argv: list[str]) -> dict[str, Any]:
                  "skipped": [i["key"] for i in prop["items"] if i["key"] not in keys]})
     save(pid, props)
     collab.event(pid, "proposal_approved", proposal=prop["id"], origin=prop["origin"], created=created)
+    ticket_fs.record_handler(pid, ticket_fs.detect_handler())
     if prop["origin"] == "draft" or (parked(pid) and not pending(pid)):
         collab.set_status(pid, "in_progress", owner="initiator", phase="planning")
     res: dict[str, Any] = {"parent": pid, "proposal": prop["id"], "created": created}

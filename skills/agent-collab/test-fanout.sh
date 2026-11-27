@@ -255,6 +255,8 @@ check "draft: parent records real target repos (not from→from) and matches api
   bash -c "jq -e '.ticket.to==\"rx\" and .ticket.repos==[\"rx\",\"ry\"]' <<<\"\$('$run' api show --id '$DP')\" >/dev/null && jq -e --arg p '$DP' '.tickets|map(.id)|index(\$p)!=null' <<<\"\$('$run' api list --repo ry)\" >/dev/null"
 check "set-from: updates ticket source (incl. non-repo origin) and logs from_changed" \
   bash -c "'$run' set-from --id '$DP' --from human | jq -e '.ok and .old_from==\"src\" and .from==\"human\"' >/dev/null && grep -q '^from: human$' '$TICKETS_ROOT/_data/$DP/ticket.md' && jq -e -s '[.[]|select(.kind==\"from_changed\")][0]|.old_from==\"src\" and .new_from==\"human\"' '$TICKETS_ROOT/_data/$DP/events.jsonl' >/dev/null"
+check "set-handler: records orchestrator repo without changing from/to, searchable by --repo and in reference" \
+  bash -c "'$run' set-handler --id '$DP' --repo src --via agent-tui | jq -e '.ok and .handler.repo==\"src\" and .handler.via==\"agent-tui\"' >/dev/null && jq -e '.ticket.from==\"human\" and .ticket.to==\"rx\" and .ticket.handler.repo==\"src\" and (.reference|test(\"处理方 src\"))' <<<\"\$('$run' api show --id '$DP')\" >/dev/null && jq -e --arg p '$DP' '.tickets|map(.id)|index(\$p)!=null' <<<\"\$('$run' api list --repo src)\" >/dev/null"
 check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
 check "draft: brief stored (problem/approach, status check, risks, effect per child)" \
   jq -e '.proposal.summary.approach and (.proposal.status_check[0].status=="missing") and .proposal.risks==["需要迁移"] and (.proposal.items|all(.effect))' <<<"$dr"

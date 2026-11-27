@@ -219,6 +219,16 @@ function useDescribeEvent(childTitle: (childId: string) => string | undefined) {
           label: t`Source changed`,
           detail: `${str('old_from') || '?'} → ${str('new_from') || '?'}`,
         }
+      case 'handler_changed': {
+        const oldRepo = str('old_repo')
+        const newRepo = str('new_repo') || '—'
+        const via = str('via')
+        const routeText = oldRepo ? `${oldRepo} → ${newRepo}` : newRepo
+        return {
+          label: t`Handler changed`,
+          detail: via ? `${routeText} (${via})` : routeText,
+        }
+      }
       case 'error':
       case 'warning':
         return {

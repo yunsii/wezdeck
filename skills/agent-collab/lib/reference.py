@@ -131,8 +131,10 @@ def build(
     lines = [f"[wezdeck 工单] {ticket.get('title') or tid}",
              "id: " + _join(tid, f"类型 {kind}",
                             f"父单 {ticket['parent']}" if ticket.get("parent") else None)]
+    handler = mj.get("handler") if isinstance(mj.get("handler"), dict) else None
     lines.append("路由: " + _join(
-        f"{ticket.get('from') or '?'} → {ticket.get('to') or '?'}",
+        f"{ticket.get('from') or '?'} → {', '.join(ticket.get('repos') or []) or ticket.get('to') or '?'}",
+        f"处理方 {handler['repo']}" + (f"（{handler['via']}）" if handler.get("via") else "") if handler and handler.get("repo") else None,
         f"状态 {ticket.get('status')}" + (f"（phase {ticket['phase']}）" if ticket.get("phase") else ""),
         f"owner {ticket['owner']}" if ticket.get("owner") else None,
         f"认领 {meta['claimed_by']}（第 {mj.get('claim_gen')} 次）" if meta.get("claimed_by") else None,

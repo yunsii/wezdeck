@@ -513,5 +513,57 @@ print(json.dumps({"ok": True, "id": tid, "old_from": old_from, "from": new_from}
 PY
 }
 
+cmd_set_handler() {
+  local id="" repo="" cwd="" session="" via="" clear=0
+  while (($#)); do
+    case "$1" in
+      --id) id=$2; shift 2 ;;
+      --repo) repo=$2; shift 2 ;;
+      --cwd) cwd=$2; shift 2 ;;
+      --session) session=$2; shift 2 ;;
+      --via) via=$2; shift 2 ;;
+      --clear) clear=1; shift ;;
+      *) ticket_die "unknown set-handler arg: $1" ;;
+    esac
+  done
+  [[ -n "$id" ]] || ticket_die "set-handler requires --id"
+  ticket_ensure_tree
+  local repo_key="" root lock
+  if ((clear == 0)) && [[ -n "$repo" ]]; then
+    repo_key="$(ticket_resolve_source_key "$repo")"
+  fi
+  root="$(ticket_store_root)"
+  lock="$root/.locks/tickets.lock"
+  ticket_with_lock "$lock" -- \
+    env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+      ID="$id" REPO="$repo_key" CWD="$cwd" SESSION="$session" VIA="$via" CLEAR="$clear" python3 - <<'PY'
+import importlib.util, json, os, sys
+spec = importlib.util.spec_from_file_location(
+    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+tid = os.environ["ID"]
+try:
+    meta, body = mod.read_ticket(tid)
+except FileNotFoundError as e:
+    print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
+    sys.exit(2)
+if os.environ.get("CLEAR") == "1":
+    h = mod.record_handler(tid, None)
+else:
+    h = mod.detect_handler(
+        repo=os.environ.get("REPO") or None,
+        cwd=os.environ.get("CWD") or None,
+        session=os.environ.get("SESSION") or None,
+        via=os.environ.get("VIA") or None,
+    )
+    h = mod.record_handler(tid, h)
+meta["updated_at"] = mod.now_iso()
+mod.write_ticket(tid, meta, body)
+print(json.dumps({"ok": True, "id": tid, "handler": h}, ensure_ascii=False))
+PY
+}
+
 # Watch loop for a blocked initiator: poll ticket and auto-continue when the
 # ball returns to the worker (approved_to_implement / research_done accept).

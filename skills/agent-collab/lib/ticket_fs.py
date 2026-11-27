@@ -356,6 +356,133 @@ def write_meta_json(tid: str, meta: dict[str, Any]) -> None:
     (d / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _load_target_paths() -> dict[str, str]:
+    cfg = tickets_root() / "config.yml"
+    if not cfg.is_file():
+        return {}
+    out: dict[str, str] = {}
+    cur: str | None = None
+    for line in cfg.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^  ([A-Za-z0-9_-]+):\s*$", line)
+        if m:
+            cur = m.group(1)
+            continue
+        if cur:
+            m = re.match(r"^    path:\s*(.+?)\s*$", line)
+            if m:
+                raw = os.path.expanduser(m.group(1).strip().strip("\"'"))
+                try:
+                    out[str(Path(raw).resolve())] = cur
+                except OSError:
+                    out[raw] = cur
+    return out
+
+
+def resolve_repo_for_cwd(cwd: str | None) -> str | None:
+    if not cwd:
+        return None
+    path_map = _load_target_paths()
+    if not path_map:
+        return None
+    try:
+        p = Path(cwd).resolve()
+    except OSError:
+        return None
+    for cand in [p, *p.parents]:
+        hit = path_map.get(str(cand))
+        if hit:
+            return hit
+    # Linked worktree → primary checkout root via `.git` file or git-common-dir
+    for cand in [p, *p.parents]:
+        g = cand / ".git"
+        if g.is_file():
+            try:
+                text = g.read_text(encoding="utf-8").strip()
+            except OSError:
+                text = ""
+            if text.lower().startswith("gitdir:"):
+                gd = Path(text.split(":", 1)[1].strip())
+                if gd.parent.name == "worktrees" and gd.parent.parent.name == ".git":
+                    main = gd.parent.parent.parent
+                    try:
+                        hit = path_map.get(str(main.resolve()))
+                    except OSError:
+                        hit = path_map.get(str(main))
+                    if hit:
+                        return hit
+            break
+        if g.is_dir():
+            break
+    return None
+
+
+def detect_handler(
+    *,
+    repo: str | None = None,
+    cwd: str | None = None,
+    session: str | None = None,
+    via: str | None = None,
+) -> dict[str, Any] | None:
+    eff_cwd = cwd or os.environ.get("TICKET_ORIGIN_CWD") or os.getcwd()
+    eff_via = via or os.environ.get("TICKET_TRIGGER_SOURCE")
+    if not eff_via:
+        if os.environ.get("AI_AGENT") or os.environ.get("CLAUDE_CODE_SESSION_ID"):
+            eff_via = "agent-tui"
+        elif os.environ.get("TMUX_PANE"):
+            eff_via = "human-cli"
+        else:
+            eff_via = "cli"
+    eff_repo = repo if repo is not None else resolve_repo_for_cwd(eff_cwd)
+    eff_session = session
+    if eff_session is None:
+        if os.environ.get("TICKET_SESSION_ID"):
+            eff_session = os.environ["TICKET_SESSION_ID"]
+        elif os.environ.get("TMUX_PANE"):
+            eff_session = f"tmux:{os.environ['TMUX_PANE']}"
+        elif os.environ.get("CLAUDE_CODE_SESSION_ID"):
+            eff_session = f"claude:{os.environ['CLAUDE_CODE_SESSION_ID']}"
+    if not eff_repo and not eff_via:
+        return None
+    return {
+        "repo": eff_repo or None,
+        "cwd": eff_cwd if eff_repo else None,
+        "session": eff_session or None,
+        "via": eff_via or None,
+        "updated_at": now_iso(),
+    }
+
+
+def record_handler(tid: str, handler: dict[str, Any] | None) -> dict[str, Any] | None:
+    mj = read_meta_json(tid)
+    old = mj.get("handler") if isinstance(mj.get("handler"), dict) else None
+    if handler is None:
+        if old is None:
+            return None
+        mj["handler"] = None
+        write_meta_json(tid, mj)
+        append_event(tid, {
+            "type": "handler_changed",
+            "old_repo": old.get("repo"),
+            "new_repo": None,
+            "via": None,
+            "session": None,
+        })
+        return None
+    old_sig = (old.get("repo"), old.get("session"), old.get("via")) if old else None
+    new_sig = (handler.get("repo"), handler.get("session"), handler.get("via"))
+    mj["handler"] = handler
+    write_meta_json(tid, mj)
+    if old_sig != new_sig and (old is not None or handler.get("repo")):
+        append_event(tid, {
+            "type": "handler_changed",
+            "old_repo": old.get("repo") if old else None,
+            "new_repo": handler.get("repo"),
+            "via": handler.get("via"),
+            "session": handler.get("session"),
+        })
+    return handler
+
+
 def bucket_for(status: str, owner: str | None) -> str:
     status = status or ""
     owner = owner or ""

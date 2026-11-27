@@ -27,6 +27,13 @@ export function TicketHeader({
   const tone = ticketTone(ticket)
   const title = ticket.title || ticket.id
   const route = formatRepoRoute(ticket.from, ticket.to, ticket.repos)
+  const handlerRepo = ticket.handler?.repo ?? ''
+  const targets =
+    ticket.repos.length > 0 ? ticket.repos : ticket.to ? [ticket.to] : []
+  const showHandler =
+    Boolean(handlerRepo) &&
+    handlerRepo !== ticket.from &&
+    !targets.includes(handlerRepo)
   return (
     <header
       data-testid="ticket-header"
@@ -63,6 +70,7 @@ export function TicketHeader({
               title={ticket.phase ?? undefined}
             >
               {statusLabel(ticket)} · {route}
+              {showHandler ? ` · ${t`via ${handlerRepo}`}` : ''}
             </span>
           </div>
         </div>

@@ -175,6 +175,7 @@ def summary(tid: str) -> dict[str, Any]:
         "from": meta.get("from"),
         "to": eff_to,
         "repos": repos,
+        "handler": mj.get("handler") if isinstance(mj.get("handler"), dict) else None,
         "status": meta.get("status"),
         "phase": meta.get("phase"),
         "owner": meta.get("owner"),
@@ -210,7 +211,7 @@ def cmd_health(argv: list[str]) -> dict[str, Any]:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
             continue
-        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m)):
+        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m), (_m.get("handler") or {}).get("repo")):
             continue
         st = str(meta.get("status") or "submitted")
         by_status[st] = by_status.get(st, 0) + 1
@@ -247,7 +248,7 @@ def cmd_list(argv: list[str]) -> dict[str, Any]:
             continue
         if statuses and s["status"] not in statuses:
             continue
-        if repo and repo not in (s["to"], s["from"], *(s.get("repos") or [])):
+        if repo and repo not in (s["to"], s["from"], *(s.get("repos") or []), (s.get("handler") or {}).get("repo")):
             continue
         if parent and s["parent"] != parent:
             continue
@@ -535,7 +536,7 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
             continue
-        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m)):
+        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m), (_m.get("handler") or {}).get("repo")):
             continue
         d = root() / "_data" / tid / "runs"
         for rec in run_records(tid):

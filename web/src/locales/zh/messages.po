@@ -262,7 +262,7 @@ msgstr "WebRTC 直连时完全不经过中转，不产生任何用量。"
 msgid "A fresh conversation is starting"
 msgstr "正在新开会话"
 
-#: src/features/ticket-info.tsx:200
+#: src/features/ticket-info.tsx:212
 msgid "A headless run is still going; take over when it finishes."
 msgstr "后台还在跑，等它结束再接管。"
 
@@ -290,7 +290,7 @@ msgstr "远程网页端（配对过的手机、平板或其他电脑）经 WebRT
 msgid "A person"
 msgstr "人工"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:483
 msgid "A person (taken over)"
 msgstr "已由人接管"
 
@@ -626,7 +626,7 @@ msgstr "可用状态与备注"
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
-#: src/features/ticket-header.tsx:39
+#: src/features/ticket-header.tsx:46
 msgid "Back"
 msgstr "返回"
 
@@ -932,7 +932,7 @@ msgstr "已关闭"
 msgid "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
 msgstr "Cloudflare 用「GB-秒」计时长：占用内存（GB）× 运行秒数。中转固定按 128 MB 计，运行 1 秒记 0.128 GB-秒；每天免费 {freeGbs} GB-秒，约 {freeTime}。今天已用 {usedGbs} GB-秒。"
 
-#: src/features/tickets-view.tsx:288
+#: src/features/tickets-view.tsx:295
 msgid "Collab data unavailable: {unavailable}"
 msgstr "协作数据不可用：{unavailable}"
 
@@ -941,7 +941,7 @@ msgid "Collab metrics"
 msgstr "协作指标"
 
 #: src/features/ticket-keys.tsx:75
-#: src/features/tickets-view.tsx:353
+#: src/features/tickets-view.tsx:360
 msgid "Collab tickets"
 msgstr "协作工单"
 
@@ -1106,7 +1106,7 @@ msgstr "上下文占用"
 #: src/features/session-composer.tsx:81
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
-#: src/features/ticket-info.tsx:174
+#: src/features/ticket-info.tsx:186
 msgid "Copied"
 msgstr "已复制"
 
@@ -1178,9 +1178,9 @@ msgstr "复制原始日志"
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
-#: src/features/ticket-info.tsx:174
+#: src/features/ticket-info.tsx:186
 #: src/features/ticket-keys.tsx:149
-#: src/features/ticket-keys.tsx:228
+#: src/features/ticket-keys.tsx:229
 msgid "Copy reference"
 msgstr "复制引用"
 
@@ -1199,7 +1199,7 @@ msgstr "复制当前工单的引用"
 #: src/components/ui/field.tsx:130
 #: src/features/session-info.tsx:206
 #: src/features/session-title-history.tsx:121
-#: src/features/ticket-info.tsx:134
+#: src/features/ticket-info.tsx:141
 msgid "Copy value"
 msgstr "复制值"
 
@@ -1287,7 +1287,7 @@ msgid "Creation did not finish. Retry or edit your message above."
 msgstr "创建未完成，可在上方重试或修改消息后重发。"
 
 #: src/features/collab-top-bar.tsx:34
-#: src/features/tickets-view.tsx:397
+#: src/features/tickets-view.tsx:404
 msgid "Cross-repo collab"
 msgstr "跨仓协作"
 
@@ -1520,7 +1520,7 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
-#: src/features/ticket-timeline.tsx:225
+#: src/features/ticket-timeline.tsx:235
 msgid "Error"
 msgstr "错误"
 
@@ -1714,6 +1714,14 @@ msgstr "把活儿以工单的形式交给另一个仓库。后台 Agent 负责�
 msgid "Handed off to {toAgent}"
 msgstr "已接力给 {toAgent}"
 
+#: src/features/ticket-info.tsx:112
+msgid "Handler"
+msgstr "处理方"
+
+#: src/features/ticket-timeline.tsx:228
+msgid "Handler changed"
+msgstr "处理方变更"
+
 #: src/features/session-handoff.tsx:171
 msgid "Handoff brief"
 msgstr "接力 brief"
@@ -1722,7 +1730,7 @@ msgstr "接力 brief"
 msgid "Handoff failed"
 msgstr "接力失败"
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:482
 msgid "Headless worker"
 msgstr "后台执行"
 
@@ -1852,7 +1860,7 @@ msgstr "初始消息"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "各阶段初始消息（估算 token）"
 
-#: src/features/tickets-view.tsx:474
+#: src/features/tickets-view.tsx:481
 msgid "Initiator"
 msgstr "发起方"
 
@@ -2063,7 +2071,7 @@ msgstr "正在加载原图…"
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
-#: src/features/tickets-view.tsx:286
+#: src/features/tickets-view.tsx:293
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -2474,7 +2482,7 @@ msgstr "暂无已记录的会话标题。"
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
-#: src/features/tickets-view.tsx:381
+#: src/features/tickets-view.tsx:388
 msgid "No ticket selected"
 msgstr "未选中工单"
 
@@ -2561,7 +2569,7 @@ msgstr "确认之前不会建任何单。"
 #~ msgid "Nothing is waiting on you."
 #~ msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:529
+#: src/features/tickets-view.tsx:546
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -2689,7 +2697,7 @@ msgstr "开单：{from} → {to}"
 msgid "Opening the connection is one request."
 msgstr "建立连接算 1 次请求。"
 
-#: src/features/ticket-info.tsx:193
+#: src/features/ticket-info.tsx:205
 msgid "Opening…"
 msgstr "正在打开…"
 
@@ -2744,11 +2752,11 @@ msgstr "输出速率"
 
 #: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:316
-#: src/features/ticket-info.tsx:215
+#: src/features/ticket-info.tsx:227
 msgid "Overview"
 msgstr "概览"
 
-#: src/features/ticket-info.tsx:105
+#: src/features/ticket-info.tsx:111
 msgid "Owner"
 msgstr "负责方"
 
@@ -2793,7 +2801,7 @@ msgid "Pending"
 msgstr "待批准"
 
 #: src/features/collab-metrics.tsx:231
-#: src/features/ticket-info.tsx:244
+#: src/features/ticket-info.tsx:256
 #: src/features/ticket-runs.tsx:132
 msgid "Phase"
 msgstr "阶段"
@@ -2860,7 +2868,7 @@ msgstr "上一张"
 msgid "Process"
 msgstr "进程"
 
-#: src/features/ticket-info.tsx:106
+#: src/features/ticket-info.tsx:113
 #: src/features/ticket-timeline.tsx:136
 msgid "Progress"
 msgstr "进展"
@@ -3857,7 +3865,7 @@ msgstr "状态"
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:65
-#: src/features/ticket-info.tsx:104
+#: src/features/ticket-info.tsx:110
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "状态"
@@ -3947,7 +3955,7 @@ msgstr "已同步"
 msgid "System"
 msgstr "跟随系统"
 
-#: src/features/ticket-info.tsx:193
+#: src/features/ticket-info.tsx:205
 msgid "Take over in tmux"
 msgstr "接管到 tmux"
 
@@ -3982,7 +3990,7 @@ msgid "Task history ({count})"
 msgstr "任务轨迹（{count}）"
 
 #: src/features/session-info.tsx:128
-#: src/features/ticket-info.tsx:231
+#: src/features/ticket-info.tsx:243
 #: src/features/ticket-proposals.tsx:170
 msgid "Technical details"
 msgstr "技术细节"
@@ -4155,7 +4163,7 @@ msgstr "工作树还有本地改动，请进入会话检查后再删除。"
 msgid "Thread"
 msgstr "讨论"
 
-#: src/features/ticket-info.tsx:242
+#: src/features/ticket-info.tsx:254
 msgid "Ticket"
 msgstr "工单编号"
 
@@ -4168,14 +4176,14 @@ msgstr "工单编号"
 msgid "Ticket activity"
 msgstr "工单动态"
 
-#: src/features/ticket-info.tsx:234
+#: src/features/ticket-info.tsx:246
 msgid "Ticket ID and headless run metrics"
 msgstr "工单 ID 与无头运行指标"
 
-#: src/features/ticket-header.tsx:54
-#: src/features/ticket-header.tsx:74
-#: src/features/ticket-header.tsx:75
-#: src/features/ticket-info.tsx:118
+#: src/features/ticket-header.tsx:61
+#: src/features/ticket-header.tsx:82
+#: src/features/ticket-header.tsx:83
+#: src/features/ticket-info.tsx:125
 msgid "Ticket info"
 msgstr "工单信息"
 
@@ -4195,7 +4203,7 @@ msgstr "工单不可用"
 msgid "Tickets"
 msgstr "工单"
 
-#: src/features/tickets-view.tsx:382
+#: src/features/tickets-view.tsx:389
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "ticket 提单或运行跨仓任务后，工单会出现在这里。"
 
@@ -4463,6 +4471,14 @@ msgstr "独立验收"
 msgid "Version"
 msgstr "版本"
 
+#: src/features/tickets-view.tsx:532
+msgid "via {handler}"
+msgstr "经 {handler}"
+
+#: src/features/ticket-header.tsx:73
+msgid "via {handlerRepo}"
+msgstr "经 {handlerRepo}"
+
 #: src/features/landing-page.tsx:79
 msgid "View the source"
 msgstr "查看源码"
@@ -4539,8 +4555,8 @@ msgstr "等你回复"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:126
 #: src/features/session-list.tsx:54
-#: src/features/tickets-view.tsx:397
-#: src/features/tickets-view.tsx:532
+#: src/features/tickets-view.tsx:404
+#: src/features/tickets-view.tsx:549
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -4565,7 +4581,7 @@ msgstr "耗时 p50 / p95"
 msgid "Wall total"
 msgstr "总耗时"
 
-#: src/features/ticket-timeline.tsx:225
+#: src/features/ticket-timeline.tsx:235
 msgid "Warning"
 msgstr "警告"
 
@@ -4700,8 +4716,8 @@ msgstr "子单执行"
 msgid "Workflow progress"
 msgstr "流程进度"
 
-#: src/features/ticket-timeline.tsx:276
-#: src/features/ticket-timeline.tsx:294
+#: src/features/ticket-timeline.tsx:286
+#: src/features/ticket-timeline.tsx:304
 msgid "Workflow timeline"
 msgstr "流程时间线"
 
@@ -4730,7 +4746,7 @@ msgstr "运行中"
 #~ msgstr "工作站用途"
 
 #: src/features/session-info.tsx:68
-#: src/features/ticket-info.tsx:107
+#: src/features/ticket-info.tsx:114
 #: src/features/ticket-pipeline.tsx:335
 #: src/features/ticket-timeline.tsx:185
 msgid "Worktree"

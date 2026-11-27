@@ -240,7 +240,11 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     Parent tickets record their target `repos` (from `--repos` or child `to`s,
     rather than `from → from`), and `ticket set-from --id ID --from SOURCE`
     updates an initiator origin (including non-repo origins like `human` / `web`)
-    with a `from_changed` event.
+    with a `from_changed` event. Separately, `meta.json` records `handler`
+    (`{repo, cwd, session, via, updated_at}`, auto-captured on `plan`/`approve`
+    or updated via `ticket set-handler --id ID --repo R`, emitting
+    `handler_changed`) so orchestrating a ticket from a third repo leaves `from`
+    and `to` untouched while staying visible and filterable via `--repo`.
   - A running child (phase view tells it how) may `fanout propose --by-child C`
     one sibling whose scope sits **inside C's scope**. One level: an approved
     split carries `split_from` and cannot split again; pending proposals count

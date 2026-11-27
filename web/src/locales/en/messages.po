@@ -262,7 +262,7 @@ msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 msgid "A fresh conversation is starting"
 msgstr "A fresh conversation is starting"
 
-#: src/features/ticket-info.tsx:200
+#: src/features/ticket-info.tsx:212
 msgid "A headless run is still going; take over when it finishes."
 msgstr "A headless run is still going; take over when it finishes."
 
@@ -290,7 +290,7 @@ msgstr "A paired phone or tablet reaches the host over WebRTC, the relay as fall
 msgid "A person"
 msgstr "A person"
 
-#: src/features/tickets-view.tsx:476
+#: src/features/tickets-view.tsx:483
 msgid "A person (taken over)"
 msgstr "A person (taken over)"
 
@@ -626,7 +626,7 @@ msgstr "Availability and note"
 #: src/features/console-me.tsx:448
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
-#: src/features/ticket-header.tsx:39
+#: src/features/ticket-header.tsx:46
 msgid "Back"
 msgstr "Back"
 
@@ -932,7 +932,7 @@ msgstr "closed"
 msgid "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
 msgstr "Cloudflare measures that time in GB-s: memory in GB × seconds running. The relay is billed at 128 MB, so each second counts as 0.128 GB-s; {freeGbs} GB-s free a day is about {freeTime}. Used today: {usedGbs} GB-s."
 
-#: src/features/tickets-view.tsx:288
+#: src/features/tickets-view.tsx:295
 msgid "Collab data unavailable: {unavailable}"
 msgstr "Collab data unavailable: {unavailable}"
 
@@ -941,7 +941,7 @@ msgid "Collab metrics"
 msgstr "Collab metrics"
 
 #: src/features/ticket-keys.tsx:75
-#: src/features/tickets-view.tsx:353
+#: src/features/tickets-view.tsx:360
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
@@ -1106,7 +1106,7 @@ msgstr "context usage"
 #: src/features/session-composer.tsx:81
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
-#: src/features/ticket-info.tsx:174
+#: src/features/ticket-info.tsx:186
 msgid "Copied"
 msgstr "Copied"
 
@@ -1178,9 +1178,9 @@ msgstr "Copy raw line"
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
-#: src/features/ticket-info.tsx:174
+#: src/features/ticket-info.tsx:186
 #: src/features/ticket-keys.tsx:149
-#: src/features/ticket-keys.tsx:228
+#: src/features/ticket-keys.tsx:229
 msgid "Copy reference"
 msgstr "Copy reference"
 
@@ -1199,7 +1199,7 @@ msgstr "Copy the open ticket's reference"
 #: src/components/ui/field.tsx:130
 #: src/features/session-info.tsx:206
 #: src/features/session-title-history.tsx:121
-#: src/features/ticket-info.tsx:134
+#: src/features/ticket-info.tsx:141
 msgid "Copy value"
 msgstr "Copy value"
 
@@ -1287,7 +1287,7 @@ msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
 
 #: src/features/collab-top-bar.tsx:34
-#: src/features/tickets-view.tsx:397
+#: src/features/tickets-view.tsx:404
 msgid "Cross-repo collab"
 msgstr "Cross-repo collab"
 
@@ -1520,7 +1520,7 @@ msgstr "Endpoint"
 msgid "Enter"
 msgstr "Enter"
 
-#: src/features/ticket-timeline.tsx:225
+#: src/features/ticket-timeline.tsx:235
 msgid "Error"
 msgstr "Error"
 
@@ -1714,6 +1714,14 @@ msgstr "Hand work to another repository as a ticket. A headless agent researches
 msgid "Handed off to {toAgent}"
 msgstr "Handed off to {toAgent}"
 
+#: src/features/ticket-info.tsx:112
+msgid "Handler"
+msgstr "Handler"
+
+#: src/features/ticket-timeline.tsx:228
+msgid "Handler changed"
+msgstr "Handler changed"
+
 #: src/features/session-handoff.tsx:171
 msgid "Handoff brief"
 msgstr "Handoff brief"
@@ -1722,7 +1730,7 @@ msgstr "Handoff brief"
 msgid "Handoff failed"
 msgstr "Handoff failed"
 
-#: src/features/tickets-view.tsx:475
+#: src/features/tickets-view.tsx:482
 msgid "Headless worker"
 msgstr "Headless worker"
 
@@ -1852,7 +1860,7 @@ msgstr "Initial prompt"
 msgid "Initial prompt by phase (est. tokens)"
 msgstr "Initial prompt by phase (est. tokens)"
 
-#: src/features/tickets-view.tsx:474
+#: src/features/tickets-view.tsx:481
 msgid "Initiator"
 msgstr "Initiator"
 
@@ -2063,7 +2071,7 @@ msgstr "Loading original…"
 #: src/features/session-skeleton.tsx:18
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
-#: src/features/tickets-view.tsx:286
+#: src/features/tickets-view.tsx:293
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -2474,7 +2482,7 @@ msgstr "No session titles recorded yet."
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
-#: src/features/tickets-view.tsx:381
+#: src/features/tickets-view.tsx:388
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
@@ -2561,7 +2569,7 @@ msgstr "Nothing is created until you confirm."
 #~ msgid "Nothing is waiting on you."
 #~ msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:529
+#: src/features/tickets-view.tsx:546
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -2689,7 +2697,7 @@ msgstr "opened, {from} → {to}"
 msgid "Opening the connection is one request."
 msgstr "Opening the connection is one request."
 
-#: src/features/ticket-info.tsx:193
+#: src/features/ticket-info.tsx:205
 msgid "Opening…"
 msgstr "Opening…"
 
@@ -2744,11 +2752,11 @@ msgstr "Output rate"
 
 #: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:316
-#: src/features/ticket-info.tsx:215
+#: src/features/ticket-info.tsx:227
 msgid "Overview"
 msgstr "Overview"
 
-#: src/features/ticket-info.tsx:105
+#: src/features/ticket-info.tsx:111
 msgid "Owner"
 msgstr "Owner"
 
@@ -2793,7 +2801,7 @@ msgid "Pending"
 msgstr "Pending"
 
 #: src/features/collab-metrics.tsx:231
-#: src/features/ticket-info.tsx:244
+#: src/features/ticket-info.tsx:256
 #: src/features/ticket-runs.tsx:132
 msgid "Phase"
 msgstr "Phase"
@@ -2860,7 +2868,7 @@ msgstr "Previous image"
 msgid "Process"
 msgstr "Process"
 
-#: src/features/ticket-info.tsx:106
+#: src/features/ticket-info.tsx:113
 #: src/features/ticket-timeline.tsx:136
 msgid "Progress"
 msgstr "Progress"
@@ -3857,7 +3865,7 @@ msgstr "State"
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:65
-#: src/features/ticket-info.tsx:104
+#: src/features/ticket-info.tsx:110
 #: src/features/tickets-view.tsx:197
 msgid "Status"
 msgstr "Status"
@@ -3947,7 +3955,7 @@ msgstr "Synced"
 msgid "System"
 msgstr "System"
 
-#: src/features/ticket-info.tsx:193
+#: src/features/ticket-info.tsx:205
 msgid "Take over in tmux"
 msgstr "Take over in tmux"
 
@@ -3982,7 +3990,7 @@ msgid "Task history ({count})"
 msgstr "Task history ({count})"
 
 #: src/features/session-info.tsx:128
-#: src/features/ticket-info.tsx:231
+#: src/features/ticket-info.tsx:243
 #: src/features/ticket-proposals.tsx:170
 msgid "Technical details"
 msgstr "Technical details"
@@ -4155,7 +4163,7 @@ msgstr "This worktree has local changes. Review them in the session before delet
 msgid "Thread"
 msgstr "Thread"
 
-#: src/features/ticket-info.tsx:242
+#: src/features/ticket-info.tsx:254
 msgid "Ticket"
 msgstr "Ticket"
 
@@ -4168,14 +4176,14 @@ msgstr "Ticket"
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
-#: src/features/ticket-info.tsx:234
+#: src/features/ticket-info.tsx:246
 msgid "Ticket ID and headless run metrics"
 msgstr "Ticket ID and headless run metrics"
 
-#: src/features/ticket-header.tsx:54
-#: src/features/ticket-header.tsx:74
-#: src/features/ticket-header.tsx:75
-#: src/features/ticket-info.tsx:118
+#: src/features/ticket-header.tsx:61
+#: src/features/ticket-header.tsx:82
+#: src/features/ticket-header.tsx:83
+#: src/features/ticket-info.tsx:125
 msgid "Ticket info"
 msgstr "Ticket info"
 
@@ -4195,7 +4203,7 @@ msgstr "Ticket unavailable"
 msgid "Tickets"
 msgstr "Tickets"
 
-#: src/features/tickets-view.tsx:382
+#: src/features/tickets-view.tsx:389
 msgid "Tickets appear here when ticket files or runs cross-repo work."
 msgstr "Tickets appear here when ticket files or runs cross-repo work."
 
@@ -4463,6 +4471,14 @@ msgstr "Verify"
 msgid "Version"
 msgstr "Version"
 
+#: src/features/tickets-view.tsx:532
+msgid "via {handler}"
+msgstr "via {handler}"
+
+#: src/features/ticket-header.tsx:73
+msgid "via {handlerRepo}"
+msgstr "via {handlerRepo}"
+
 #: src/features/landing-page.tsx:79
 msgid "View the source"
 msgstr "View the source"
@@ -4539,8 +4555,8 @@ msgstr "waiting on you"
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:126
 #: src/features/session-list.tsx:54
-#: src/features/tickets-view.tsx:397
-#: src/features/tickets-view.tsx:532
+#: src/features/tickets-view.tsx:404
+#: src/features/tickets-view.tsx:549
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
@@ -4565,7 +4581,7 @@ msgstr "Wall p50 / p95"
 msgid "Wall total"
 msgstr "Wall total"
 
-#: src/features/ticket-timeline.tsx:225
+#: src/features/ticket-timeline.tsx:235
 msgid "Warning"
 msgstr "Warning"
 
@@ -4700,8 +4716,8 @@ msgstr "Workers"
 msgid "Workflow progress"
 msgstr "Workflow progress"
 
-#: src/features/ticket-timeline.tsx:276
-#: src/features/ticket-timeline.tsx:294
+#: src/features/ticket-timeline.tsx:286
+#: src/features/ticket-timeline.tsx:304
 msgid "Workflow timeline"
 msgstr "Workflow timeline"
 
@@ -4730,7 +4746,7 @@ msgstr "Working"
 #~ msgstr "Workstation purpose"
 
 #: src/features/session-info.tsx:68
-#: src/features/ticket-info.tsx:107
+#: src/features/ticket-info.tsx:114
 #: src/features/ticket-pipeline.tsx:335
 #: src/features/ticket-timeline.tsx:185
 msgid "Worktree"

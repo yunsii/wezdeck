@@ -1419,7 +1419,7 @@ case "$cmd" in
   release|renew) "cmd_$cmd" "$@" ;;
   challenge) cmd_challenge "$@" ;;
   reply) cmd_reply "$@" ;;
-  set-status|set-from) "cmd_${cmd//-/_}" "$@" ;;
+  set-status|set-from|set-handler) "cmd_${cmd//-/_}" "$@" ;;
   status) cmd_status "$@" ;;
   board) cmd_board "$@" ;;
   close) cmd_close "$@" ;;

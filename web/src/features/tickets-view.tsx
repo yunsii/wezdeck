@@ -276,7 +276,14 @@ export function TicketsView({
     .filter(
       (ticket) =>
         !needle ||
-        [ticket.id, ticket.title, ticket.from, ticket.to]
+        [
+          ticket.id,
+          ticket.title,
+          ticket.from,
+          ticket.to,
+          ...ticket.repos,
+          ticket.handler?.repo,
+        ]
           .filter(Boolean)
           .some((field) => String(field).toLowerCase().includes(needle)),
     )
@@ -494,16 +501,21 @@ export function RepoRoute({
   from,
   to,
   repos,
+  handler,
 }: {
   from?: string | null
   to?: string | null
   repos?: Array<string> | null
+  handler?: string | null
 }) {
+  const { t } = useLingui()
   const tag =
     'max-w-full truncate rounded-full border border-brand-edge px-2 py-0.5 text-meta text-brand-muted'
   const targets = repos && repos.length > 0 ? repos : to ? [to] : []
   const showFrom =
     Boolean(from) && !(targets.length === 1 && targets[0] === from)
+  const showHandler =
+    Boolean(handler) && handler !== from && !targets.includes(handler ?? '')
   return (
     <span className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1">
       {showFrom ? (
@@ -515,6 +527,11 @@ export function RepoRoute({
         </>
       ) : null}
       <span className={tag}>{targets.join(', ') || '?'}</span>
+      {showHandler ? (
+        <span className="max-w-full truncate rounded-full border border-dashed border-brand-edge px-2 py-0.5 text-meta text-brand-label">
+          {t`via ${handler}`}
+        </span>
+      ) : null}
     </span>
   )
 }

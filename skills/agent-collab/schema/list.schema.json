@@ -63,6 +63,48 @@
                   "type": "string"
                 }
               },
+              "handler": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "repo": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "cwd": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "session": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "via": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "updated_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
               "status": {
                 "type": [
                   "string",

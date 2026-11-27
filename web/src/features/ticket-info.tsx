@@ -100,9 +100,16 @@ export function TicketInfo({
     }
   }
 
+  const handlerParts = [
+    ticket.handler?.repo,
+    ticket.handler?.cwd?.split('/').filter(Boolean).at(-1),
+    ticket.handler?.via,
+  ].filter(Boolean)
+  const handlerSummary = [...new Set(handlerParts)].join(' · ')
   const overviewRows: Array<[string, string]> = [
     [t`Status`, statusLabel(ticket)],
     [t`Owner`, ownerLabel(ticket.owner)],
+    [t`Handler`, handlerSummary],
     [t`Progress`, ticket.progress?.message ?? ''],
     [t`Worktree`, ticket.branch ?? ticket.worktree ?? ''],
   ].filter(([, value]) => Boolean(value) && value !== '—') as Array<
@@ -137,7 +144,12 @@ export function TicketInfo({
             >
               {fullTitle}
             </Button>
-            <RepoRoute from={ticket.from} to={ticket.to} repos={ticket.repos} />
+            <RepoRoute
+              from={ticket.from}
+              to={ticket.to}
+              repos={ticket.repos}
+              handler={ticket.handler?.repo}
+            />
           </div>
         </div>
 

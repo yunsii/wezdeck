@@ -163,6 +163,7 @@ def cmd_plan(argv: list[str]) -> dict[str, Any]:
     mj = ticket_fs.read_meta_json(pid)
     mj.update({"kind": "parent", "contract_sha256": stored["sha256"], "repos": target_repos})
     ticket_fs.write_meta_json(pid, mj)
+    ticket_fs.record_handler(pid, ticket_fs.detect_handler())
     set_status(pid, "in_progress", owner="initiator", phase="planning")
     event(pid, "contract", sha256=stored["sha256"], bytes=stored["bytes"])
     return {"id": pid, "contract_sha256": stored["sha256"], "repos": target_repos}

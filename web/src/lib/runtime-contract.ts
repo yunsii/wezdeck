@@ -252,6 +252,16 @@ export const collabChildGateSchema = z
   })
   .passthrough()
 
+export const collabHandlerSchema = z
+  .object({
+    repo: nstr,
+    cwd: nstr,
+    session: nstr,
+    via: nstr,
+    updated_at: nstr,
+  })
+  .passthrough()
+
 export const collabTicketSchema = z
   .object({
     id: z.string(),
@@ -259,6 +269,7 @@ export const collabTicketSchema = z
     from: nstr,
     to: nstr,
     repos: z.array(z.string()).default([]),
+    handler: collabHandlerSchema.nullable().optional(),
     status: nstr,
     phase: nstr,
     owner: nstr,

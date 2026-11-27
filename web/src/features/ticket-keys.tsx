@@ -207,6 +207,7 @@ function TicketKey({
                   from={ticket.from}
                   to={ticket.to}
                   repos={ticket.repos}
+                  handler={ticket.handler?.repo}
                 />
               </span>
             </Link>
