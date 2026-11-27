@@ -48,6 +48,15 @@ export function CollabTopBar({
             <ChartColumn size={14} aria-hidden className="shrink-0" />
             <span className="truncate tabular-nums">{summary}</span>
           </Button>
+          <Link
+            to="/{-$locale}/console/activity"
+            params={{ locale: locale === 'en' ? undefined : locale }}
+            aria-label={t`Ticket activity`}
+            title={`${t`Ticket activity`} (g a)`}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl text-brand-muted outline-none transition-colors hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
+          >
+            <ListTree size={16} aria-hidden />
+          </Link>
           <NewTicketButton />
         </div>
         <Sheet
