@@ -17,6 +17,7 @@ export type OpenHostFileArgs = HostFileTarget & { label?: string }
 export type HostFileContextValue = {
   sessionId: string
   openFile: (target: OpenHostFileArgs) => void
+  prefetchFile?: (target: OpenHostFileArgs) => void
 }
 
 export const HostFileContext = createContext<HostFileContextValue | null>(null)
@@ -46,6 +47,11 @@ export function HostFileLink({
       </span>
     )
   }
+  const openArgs: OpenHostFileArgs = {
+    ...target,
+    label: typeof children === 'string' ? children : undefined,
+  }
+  const warm = () => viewer.prefetchFile?.(openArgs)
   return (
     <Button
       variant="plain"
@@ -54,12 +60,10 @@ export function HostFileLink({
       data-testid="host-file-link"
       data-host-file={target.path}
       title={range ? `${target.path} (${range})` : target.path}
-      onClick={() =>
-        viewer.openFile({
-          ...target,
-          label: typeof children === 'string' ? children : undefined,
-        })
-      }
+      onPointerEnter={warm}
+      onFocus={warm}
+      onTouchStart={warm}
+      onClick={() => viewer.openFile(openArgs)}
       className="inline-flex max-w-full items-center gap-1 rounded-lg bg-brand-soft/80 px-1.5 py-px align-baseline text-brand-running underline decoration-brand-running/40 underline-offset-2 transition-colors hover:bg-brand-soft"
     >
       <FileText size={13} aria-hidden className="shrink-0" />
@@ -121,6 +125,11 @@ export function ArtifactCard({
             size="md"
             type="button"
             data-testid="artifact-open"
+            onPointerEnter={() =>
+              viewer?.prefetchFile?.({ path, label: title })
+            }
+            onFocus={() => viewer?.prefetchFile?.({ path, label: title })}
+            onTouchStart={() => viewer?.prefetchFile?.({ path, label: title })}
             onClick={() => viewer?.openFile({ path, label: title })}
             className="min-h-9 gap-1 px-3 text-caption"
           >
@@ -171,6 +180,15 @@ export function SessionDocumentsSection({
             type="button"
             variant="plain"
             size="none"
+            onPointerEnter={() =>
+              viewer.prefetchFile?.({ path: doc.path, label: doc.title })
+            }
+            onFocus={() =>
+              viewer.prefetchFile?.({ path: doc.path, label: doc.title })
+            }
+            onTouchStart={() =>
+              viewer.prefetchFile?.({ path: doc.path, label: doc.title })
+            }
             onClick={() => {
               onSelect?.()
               viewer.openFile({ path: doc.path, label: doc.title })

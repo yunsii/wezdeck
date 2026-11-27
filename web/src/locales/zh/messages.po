@@ -1081,7 +1081,7 @@ msgid "Console navigation"
 msgstr "控制台导航"
 
 #: src/features/host-file-body.tsx:249
-#: src/features/host-file-body.tsx:279
+#: src/features/host-file-body.tsx:277
 msgid "Contents"
 msgstr "目录"
 
@@ -1128,11 +1128,11 @@ msgstr "已复制"
 msgid "Copied {label}"
 msgstr "已复制 {label}"
 
-#: src/features/host-file-sheet.tsx:224
+#: src/features/host-file-sheet.tsx:261
 msgid "Copied document"
 msgstr "已复制文档"
 
-#: src/features/host-file-sheet.tsx:224
+#: src/features/host-file-sheet.tsx:261
 msgid "Copied path"
 msgstr "已复制路径"
 
@@ -1154,7 +1154,7 @@ msgid "Copied: {shown}"
 msgstr "已复制：{shown}"
 
 #: src/features/doc-code-block.tsx:108
-#: src/features/host-file-sheet.tsx:125
+#: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history.tsx:228
 #: src/features/session-composer.tsx:54
@@ -1172,8 +1172,8 @@ msgstr "复制「{label}：…」"
 msgid "Copy command"
 msgstr "复制命令"
 
-#: src/features/host-file-sheet.tsx:112
-#: src/features/host-file-sheet.tsx:113
+#: src/features/host-file-sheet.tsx:114
+#: src/features/host-file-sheet.tsx:115
 msgid "Copy document"
 msgstr "复制文档"
 
@@ -1190,8 +1190,8 @@ msgstr "复制失败"
 msgid "Copy link"
 msgstr "复制链接"
 
-#: src/features/host-file-sheet.tsx:93
-#: src/features/host-file-sheet.tsx:94
+#: src/features/host-file-sheet.tsx:95
+#: src/features/host-file-sheet.tsx:96
 #: src/features/session-worktree-detail.tsx:81
 #: src/features/session-worktree-detail.tsx:82
 #: src/features/session-worktree-manager.tsx:224
@@ -1510,13 +1510,13 @@ msgstr "忽略"
 msgid "Dispatched"
 msgstr "已派发"
 
-#: src/features/host-file-context.tsx:93
-#: src/features/host-file-context.tsx:159
-#: src/features/host-file-sheet.tsx:214
+#: src/features/host-file-context.tsx:97
+#: src/features/host-file-context.tsx:168
+#: src/features/host-file-sheet.tsx:251
 msgid "Document"
 msgstr "文档"
 
-#: src/features/host-file-context.tsx:166
+#: src/features/host-file-context.tsx:175
 msgid "Documents"
 msgstr "文档"
 
@@ -2977,7 +2977,7 @@ msgstr "组成"
 msgid "partly done"
 msgstr "部分实现"
 
-#: src/features/host-file-sheet.tsx:106
+#: src/features/host-file-sheet.tsx:108
 #: src/features/session-worktree-detail.tsx:76
 msgid "Path"
 msgstr "路径"
@@ -3148,7 +3148,7 @@ msgstr "运行 {commands} 条命令"
 msgid "read {reads} files"
 msgstr "读了 {reads} 个文件"
 
-#: src/features/host-file-context.tsx:127
+#: src/features/host-file-context.tsx:136
 msgid "Read document"
 msgstr "阅读文档"
 
@@ -3181,8 +3181,8 @@ msgstr "最近提交"
 msgid "Recycle worktree"
 msgstr "回收工作树"
 
-#: src/features/host-file-sheet.tsx:78
-#: src/features/host-file-sheet.tsx:79
+#: src/features/host-file-sheet.tsx:80
+#: src/features/host-file-sheet.tsx:81
 #: src/features/me-devices.tsx:165
 #: src/features/ticket-diff.tsx:334
 #: src/features/ticket-diff.tsx:335
@@ -3202,7 +3202,7 @@ msgstr "刷新外链"
 msgid "Refreshing session titles in the background…"
 msgstr "正在后台刷新活跃会话标题……"
 
-#: src/features/host-file-sheet.tsx:139
+#: src/features/host-file-sheet.tsx:141
 msgid "Regarding {ref}: "
 msgstr "关于 {ref}："
 
@@ -3323,7 +3323,7 @@ msgstr "已回复，Agent 继续处理"
 msgid "replied: {body}"
 msgstr "回复：{body}"
 
-#: src/features/host-file-sheet.tsx:145
+#: src/features/host-file-sheet.tsx:147
 #: src/features/ticket-reply.tsx:222
 #: src/features/ticket-timeline.tsx:216
 msgid "Reply"
@@ -3468,7 +3468,7 @@ msgstr "恢复会话"
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:549
-#: src/features/host-file-sheet.tsx:312
+#: src/features/host-file-sheet.tsx:359
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:215
 #: src/features/ticket-timeline.tsx:131
@@ -3803,7 +3803,7 @@ msgstr "正在发送接续 brief…"
 msgid "Sending…"
 msgstr "发送中…"
 
-#: src/features/host-file-sheet.tsx:283
+#: src/features/host-file-sheet.tsx:327
 msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "敏感令牌已在离开宿主机前自动脱敏。"
 
@@ -3946,7 +3946,7 @@ msgstr "跳到发起的调用"
 msgid "Showing {shownCount} of {total} items"
 msgstr "已显示 {shownCount} / {total} 条"
 
-#: src/features/host-file-sheet.tsx:279
+#: src/features/host-file-sheet.tsx:323
 msgid "Showing the first 256 KB of this file."
 msgstr "文件较大，仅显示前 256 KB。"
 

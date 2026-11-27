@@ -3,7 +3,7 @@
 // fenced blocks + clickable nested file:// links) and syntax-highlighted code
 // with `#L10-L20` line highlighting.
 import { useLingui } from '@lingui/react/macro'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
   Copy,
@@ -12,14 +12,16 @@ import {
   MessageSquarePlus,
   RefreshCw,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
+import { ContentReveal } from '#/components/ui/content-reveal'
 import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
 import { copyText } from '#/lib/clipboard'
+import { highlightLines, langOf } from '#/lib/highlight'
 import { formatLineRange } from '#/lib/host-file-link'
 import { hostRead } from '#/lib/runtime-client'
 import { useDelayedLoading } from '#/lib/use-delayed-loading'
@@ -149,6 +151,37 @@ function FileViewerActions({
   )
 }
 
+function sessionFileQueryOptions(
+  sessionId: string,
+  target: OpenHostFileArgs | null,
+) {
+  return {
+    queryKey: [
+      'remote',
+      'session.file',
+      sessionId,
+      target?.path ?? '',
+      target?.lineStart ?? 0,
+      target?.lineEnd ?? 0,
+    ] as const,
+    staleTime: 15_000,
+    retry: false,
+    queryFn: async () => {
+      const res = (await hostRead('session.file', {
+        id: sessionId,
+        path: target?.path,
+        ...(target?.lineStart ? { line_start: target.lineStart } : {}),
+        ...(target?.lineEnd ? { line_end: target.lineEnd } : {}),
+      })) as SessionFileResponse
+      if (res.kind === 'code' && res.content) {
+        const lang = res.lang || langOf(res.path)
+        if (lang) void highlightLines(res.content.split('\n'), lang)
+      }
+      return res
+    },
+  }
+}
+
 function FileViewerSheet({
   sessionId,
   stack,
@@ -163,28 +196,32 @@ function FileViewerSheet({
   onQuote?: (text: string) => void
 }) {
   const { t } = useLingui()
-  const current = stack.at(-1) ?? null
+  const isOpen = stack.length > 0
+  // Retain the last displayed stack while the sheet plays its 130 ms exit
+  // glide so the title and document never snap to empty mid-close.
+  const [retainedStack, setRetainedStack] = useState<Array<OpenHostFileArgs>>(
+    [],
+  )
+  const prevDepthRef = useRef(0)
+  const [navDir, setNavDir] = useState<'none' | 'forward' | 'back'>('none')
+  useEffect(() => {
+    if (stack.length > 0) {
+      setRetainedStack(stack)
+      const prev = prevDepthRef.current
+      if (prev > 0 && stack.length > prev) setNavDir('forward')
+      else if (prev > 0 && stack.length < prev) setNavDir('back')
+      else setNavDir('none')
+    }
+    prevDepthRef.current = stack.length
+  }, [stack])
+
+  const activeStack = isOpen ? stack : retainedStack
+  const current = activeStack.at(-1) ?? null
   const [copied, setCopied] = useState<'none' | 'content' | 'path'>('none')
 
   const fileQuery = useQuery({
-    queryKey: [
-      'remote',
-      'session.file',
-      sessionId,
-      current?.path ?? '',
-      current?.lineStart ?? 0,
-      current?.lineEnd ?? 0,
-    ],
-    enabled: Boolean(sessionId && current?.path),
-    staleTime: 5_000,
-    retry: false,
-    queryFn: async () =>
-      (await hostRead('session.file', {
-        id: sessionId,
-        path: current?.path,
-        ...(current?.lineStart ? { line_start: current.lineStart } : {}),
-        ...(current?.lineEnd ? { line_end: current.lineEnd } : {}),
-      })) as SessionFileResponse,
+    ...sessionFileQueryOptions(sessionId, current),
+    enabled: Boolean(isOpen && sessionId && current?.path),
   })
 
   const data = fileQuery.data
@@ -244,14 +281,21 @@ function FileViewerSheet({
     </div>
   )
 
+  const bodyEnterClass =
+    navDir === 'forward'
+      ? 'content-slide-forward'
+      : navDir === 'back'
+        ? 'content-slide-back'
+        : 'content-enter'
+
   return (
     <Sheet
-      open={Boolean(current)}
+      open={isOpen}
       onOpenChange={(next) => {
         if (!next) onClose()
       }}
       fullscreen
-      onBack={stack.length > 1 ? onBack : undefined}
+      onBack={activeStack.length > 1 ? onBack : undefined}
       title={displayName}
       subtitle={headerSubtitle}
       actions={
@@ -286,47 +330,51 @@ function FileViewerSheet({
           </div>
         ) : null}
 
-        {fileQuery.isPending || showSkeleton ? (
-          showSkeleton ? (
-            <FileLoadingSkeleton isCode={likelyCode} />
-          ) : null
-        ) : fileQuery.isError ? (
-          <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
-            <div
-              role="alert"
-              data-testid="host-file-error"
-              className="grid w-full gap-3 rounded-2xl border border-brand-error/30 bg-brand-error/10 p-5 text-caption text-brand-error"
-            >
-              <p>
-                {fileQuery.error instanceof Error
-                  ? fileQuery.error.message
-                  : String(fileQuery.error)}
-              </p>
-              <div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  onClick={() => void fileQuery.refetch()}
-                >
-                  {t`Retry`}
-                </Button>
+        <ContentReveal
+          key={requestKey}
+          loading={showSkeleton}
+          pending={fileQuery.isPending}
+          enterClass={bodyEnterClass}
+          skeleton={<FileLoadingSkeleton isCode={likelyCode} />}
+        >
+          {fileQuery.isError ? (
+            <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">
+              <div
+                role="alert"
+                data-testid="host-file-error"
+                className="grid w-full gap-3 rounded-2xl border border-brand-error/30 bg-brand-error/10 p-5 text-caption text-brand-error"
+              >
+                <p>
+                  {fileQuery.error instanceof Error
+                    ? fileQuery.error.message
+                    : String(fileQuery.error)}
+                </p>
+                <div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    onClick={() => void fileQuery.refetch()}
+                  >
+                    {t`Retry`}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : data ? (
-          data.kind === 'markdown' ? (
-            <MarkdownFileBody content={data.content} />
-          ) : (
-            <CodeFileBody
-              content={data.content}
-              path={data.path}
-              langHint={data.lang}
-              lineStart={data.line_start}
-              lineEnd={data.line_end}
-            />
-          )
-        ) : null}
+          ) : data ? (
+            data.kind === 'markdown' ? (
+              <MarkdownFileBody content={data.content} />
+            ) : (
+              <CodeFileBody
+                content={data.content}
+                path={data.path}
+                langHint={data.lang}
+                lineStart={data.line_start}
+                lineEnd={data.line_end}
+              />
+            )
+          ) : null}
+        </ContentReveal>
       </div>
     </Sheet>
   )
@@ -341,6 +389,7 @@ export function HostFileProvider({
   onQuote?: (text: string) => void
   children: ReactNode
 }) {
+  const queryClient = useQueryClient()
   const [stack, setStack] = useState<Array<OpenHostFileArgs>>([])
 
   // Clear open viewer when switching sessions
@@ -362,7 +411,18 @@ export function HostFileProvider({
     })
   }, [])
 
-  const value = useMemo(() => ({ sessionId, openFile }), [sessionId, openFile])
+  const prefetchFile = useCallback(
+    (target: OpenHostFileArgs) => {
+      if (!sessionId || !target.path) return
+      void queryClient.prefetchQuery(sessionFileQueryOptions(sessionId, target))
+    },
+    [queryClient, sessionId],
+  )
+
+  const value = useMemo(
+    () => ({ sessionId, openFile, prefetchFile }),
+    [sessionId, openFile, prefetchFile],
+  )
 
   return (
     <HostFileContext.Provider value={value}>
