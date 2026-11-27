@@ -177,11 +177,26 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(runtimeDir, "primary-pane-wrapper.sh"), []byte("exec \"$@\"\n"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	launcher := fmt.Sprintf("[[ \"$WEZDECK_RESUME_SESSION_ID\" == %q && \"$1\" == codex ]] || exit 1\nexec %q\n", id, codex)
+	launcher := fmt.Sprintf("[[ \"$WEZDECK_RESUME_SESSION_ID\" == %q && \"$1\" == codex ]] || exit 1\nsleep 0.4\nexec %q\n", id, codex)
 	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := restartSession(recoverArgs); err != nil {
+	done := make(chan error, 1)
+	go func() {
+		_, err := restartSession(recoverArgs)
+		done <- err
+	}()
+	deadline := time.Now().Add(2 * time.Second)
+	for !strings.Contains(run("display-message", "-p", "-t", pane, "#{pane_start_command}"), "agent-launcher.sh") {
+		if time.Now().After(deadline) {
+			t.Fatal("recovery did not launch")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if _, err := restartSession(recoverArgs); err == nil {
+		t.Fatal("concurrent recovery must not replace the launching pane")
+	}
+	if err := <-done; err != nil {
 		t.Fatal(err)
 	}
 	check(false)

@@ -12,7 +12,7 @@ import (
 func canRecoverCodex(e attentionEntry, p tmuxPaneSnap) bool {
 	return sessionIDPattern.MatchString(e.SessionID) && !isPendingSessionID(e.SessionID) &&
 		p.id != "" && p.pid > 0 && p.session == e.TmuxSession &&
-		p.agentSessionID == e.SessionID && shells[p.cmd]
+		p.agentSessionID == e.SessionID && shells[p.cmd] && !paneHasLauncherArgFromPID(p.pid)
 }
 
 // Only the tracked, pinned shell is eligible. The tmux conditional checks
@@ -28,6 +28,11 @@ func recoverCodexSession(id string) (any, error) {
 	if closed[id] || !canRecoverCodex(e, pane) {
 		return nil, errors.New("the original Codex pane is unavailable for recovery")
 	}
+	unlock, err := lockSessionWorktree(pane.cwd)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
 	if _, agent := findTranscript(id); agent != "codex" {
 		return nil, errors.New("the original Codex transcript is unavailable")
 	}
