@@ -436,8 +436,10 @@ primary `master`. The pipeline splits into three stages:
    clones), builds changed
    artifacts there, and runs the mandatory **L0 core availability smoke gate**
    (`scripts/dev/release-smoke-gate.sh` + `web/tests/smoke-core.cdp.test.ts` on
-   an isolated `:3019` stack: connect, authorize, list/open session, send
-   message, answer prompt — aborting before deploy if anything fails), deploys
+   an isolated `:3019` stack checks login, session reads, and receipt of
+   submitted messages and confirmation keys by the process inside tmux).
+   Relay changes also run the read-only client and partial-send retry tests.
+   The gate aborts deployment on failure. The release then deploys
    only changed `relay`/`web`, verifies the public site with a live canary
    probe (`build.json` up to 20 s, HTML + entry JS up to 6×, `/relay/health`
    up to 5× reading the on-disk token file first — auto-running

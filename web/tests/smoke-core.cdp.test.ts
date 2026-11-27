@@ -62,7 +62,7 @@ describe.runIf(attention && devicesFile)(
     beforeAll(async () => {
       const bin = mkdtempSync(join(tmpdir(), 'wd-smoke-bin-'))
       symlinkSync(
-        execFileSync('which', ['cat']).toString().trim(),
+        execFileSync('which', ['bash']).toString().trim(),
         join(bin, 'claude'),
       )
       tmux(
@@ -75,6 +75,14 @@ describe.runIf(attention && devicesFile)(
         '-y',
         '20',
         join(bin, 'claude'),
+        '-c',
+        [
+          'IFS= read -r message',
+          'printf "MESSAGE_RECEIVED=%s\\n" "$message"',
+          'IFS= read -rsn 1 key',
+          'printf "KEY_RECEIVED=%s\\n" "$key"',
+          'exec cat',
+        ].join(' && '),
       )
       writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
       writeSession('done')
@@ -134,26 +142,20 @@ describe.runIf(attention && devicesFile)(
         .poll(() => bubble.getAttribute('data-pending'), { timeout: 15_000 })
         .toBe('queued')
 
-      const deadline = Date.now() + 8_000
-      while (!tmux('capture-pane', '-p', '-t', 'smoke').includes(marker)) {
-        if (Date.now() > deadline) {
-          throw new Error('smoke message never reached tmux pane')
-        }
-        await page.waitForTimeout(200)
-      }
+      const receivedLines = () =>
+        tmux('capture-pane', '-p', '-t', 'smoke').split('\n')
+      await expect
+        .poll(receivedLines, { timeout: 8_000 })
+        .toContain(`MESSAGE_RECEIVED=${marker}`)
 
       // 4. Verify interactive prompt key write path works when waiting
       writeSession('waiting', 'permission_prompt')
       const allowBtn = page.getByRole('button', { name: /允许|1/ }).first()
       await allowBtn.waitFor({ timeout: 10_000 })
       await allowBtn.click()
-      const keyDeadline = Date.now() + 8_000
-      while (!tmux('capture-pane', '-p', '-t', 'smoke').includes('1')) {
-        if (Date.now() > keyDeadline) {
-          throw new Error('smoke interactive key never reached tmux pane')
-        }
-        await page.waitForTimeout(200)
-      }
+      await expect
+        .poll(receivedLines, { timeout: 8_000 })
+        .toContain('KEY_RECEIVED=1')
 
       expect(pageErrors).toEqual([])
       await context.close()
