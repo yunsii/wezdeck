@@ -151,6 +151,9 @@ fi
 if [[ -n "$agent_profile_override" ]]; then
   launch_env+=("WEZDECK_AGENT_PROFILE_OVERRIDE=$base_profile")
 fi
+if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
+  launch_env+=("WEZDECK_FORCE_FRESH_SESSION=1")
+fi
 # `env` with no extra args is a noop wrapper; the shape stays consistent
 # whether we set anything or not.
 
