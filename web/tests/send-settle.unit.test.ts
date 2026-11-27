@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { LOST_AFTER_MS, settle, settleMatches } from '#/features/chat-thread'
+import {
+  LOST_AFTER_MS,
+  collectSettledIndices,
+  settle,
+  settleMatches,
+} from '#/features/chat-thread'
 import type { Message, Pending } from '#/features/chat-thread'
+import { pendingKey } from '#/features/chat-pending'
 import { mergeOutboxPending } from '#/features/session-send'
 import type { SentRecord } from '#/features/sent-history'
 
@@ -174,5 +180,37 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
       clientOp: 'op-2',
       state: 'sending',
     })
+  })
+
+  it('keeps pendingKey stable when host outbox attaches sentId to a clientOp bubble', () => {
+    const local = sent('hello', 3, { clientOp: 'op-1', at: NOW - 1_000 })
+    const hostMerged = sent('hello', 3, {
+      clientOp: 'op-1',
+      sentId: 'sent-20261128-072000-abcdef',
+      at: NOW - 900,
+    })
+    expect(pendingKey(local)).toBe('op-1')
+    expect(pendingKey(hostMerged)).toBe('op-1')
+    // Cross-device host-only record (no clientOp) still keys cleanly by sentId.
+    expect(pendingKey({ sentId: 'sent-remote', at: NOW })).toBe('sent-remote')
+  })
+
+  it('marks a newly arrived user message as settling when host outbox already dropped it', () => {
+    const prevShown = [
+      sent('settled on same poll', 10, { sentId: 'sent-1', at: NOW - 2_000 }),
+    ]
+    const messages = [say('reply'), ask('settled on same poll')]
+    // Host reconciled outbox in the same response, so current pending is empty.
+    const current = settleMatches([], messages, 10, true, NOW)
+    const settled = collectSettledIndices(
+      current.took,
+      prevShown,
+      [],
+      messages,
+      10,
+      true,
+      NOW,
+    )
+    expect([...settled]).toEqual([11])
   })
 })
