@@ -164,7 +164,7 @@ msgstr "{staleCount} subagents silent for a while"
 msgid "{targetLabel} · Links"
 msgstr "{targetLabel} · Links"
 
-#: src/features/me-autotitle.tsx:212
+#: src/features/me-autotitle.tsx:214
 msgid "{taskCount} tasks"
 msgstr "{taskCount} tasks"
 
@@ -176,7 +176,7 @@ msgstr "{tools} tool calls"
 msgid "{total} messages, showing {shown}"
 msgstr "{total} messages, showing {shown}"
 
-#: src/features/me-autotitle.tsx:170
+#: src/features/me-autotitle.tsx:172
 #: src/features/ticket-runs.tsx:88
 msgid "{turns} turns"
 msgstr "{turns} turns"
@@ -222,7 +222,7 @@ msgstr "↓ {tokens} tokens"
 #~ msgid "+ New direction"
 #~ msgstr "+ New direction"
 
-#: src/features/me-autotitle.tsx:212
+#: src/features/me-autotitle.tsx:214
 msgid "1 task"
 msgstr "1 task"
 
@@ -314,11 +314,11 @@ msgstr "Account limits"
 msgid "Action sent; waiting for the agent to continue…"
 msgstr "Action sent; waiting for the agent to continue…"
 
-#: src/features/me-autotitle.tsx:168
+#: src/features/me-autotitle.tsx:170
 msgid "Active"
 msgstr "Active"
 
-#: src/features/me-autotitle.tsx:417
+#: src/features/me-autotitle.tsx:427
 msgid "Active CLI"
 msgstr "Active CLI"
 
@@ -357,7 +357,7 @@ msgstr "After deny, say in the box below what to do instead. \"Don't ask again\"
 msgid "Agent"
 msgstr "Agent"
 
-#: src/features/me-autotitle.tsx:368
+#: src/features/me-autotitle.tsx:376
 msgid "Agent CLI used to generate titles"
 msgstr "Agent CLI used to generate titles"
 
@@ -377,7 +377,7 @@ msgid "agent settings and execution mode"
 msgstr "agent settings and execution mode"
 
 #: src/features/console-me.tsx:130
-#: src/features/me-agents.tsx:87
+#: src/features/me-agents.tsx:176
 msgid "Agents"
 msgstr "Agents"
 
@@ -518,7 +518,7 @@ msgstr "Approve takes Claude's first option (its default edit mode). After keep 
 msgid "Approve the plan"
 msgstr "Approve the plan"
 
-#: src/features/me-autotitle.tsx:317
+#: src/features/me-autotitle.tsx:319
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "Approve this device in Device access to manage auto titles."
 
@@ -537,7 +537,7 @@ msgstr "Approved"
 msgid "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 msgstr "Approved. This device can read the host's sessions and tickets, send messages and reply. Each device (phone, tablet, another browser) is approved on its own, and revoking it on the host cuts reading and writing at once."
 
-#: src/features/me-autotitle.tsx:168
+#: src/features/me-autotitle.tsx:170
 msgid "Archived"
 msgstr "Archived"
 
@@ -553,14 +553,15 @@ msgstr "assumptions challenged"
 msgid "At the desk: {host}"
 msgstr "At the desk: {host}"
 
-#: src/features/me-autotitle.tsx:164
+#: src/features/me-autotitle.tsx:166
+#: src/features/me-autotitle.tsx:340
 #: src/features/session-statusbar.tsx:96
 #: src/features/session-title-history.tsx:89
 msgid "Auto"
 msgstr "Auto"
 
-#: src/features/me-autotitle.tsx:117
-#: src/features/me-autotitle.tsx:163
+#: src/features/me-autotitle.tsx:119
+#: src/features/me-autotitle.tsx:165
 msgid "Auto · {eff}"
 msgstr "Auto · {eff}"
 
@@ -568,9 +569,13 @@ msgstr "Auto · {eff}"
 msgid "Auto · {provider}"
 msgstr "Auto · {provider}"
 
+#: src/features/me-autotitle.tsx:340
+msgid "Auto ({autoChain})"
+msgstr "Auto ({autoChain})"
+
 #: src/features/me-autotitle.tsx:380
-msgid "Auto (Grok → Claude → Codex)"
-msgstr "Auto (Grok → Claude → Codex)"
+#~ msgid "Auto (Grok → Claude → Codex)"
+#~ msgstr "Auto (Grok → Claude → Codex)"
 
 #: src/features/me-agent-detail.tsx:73
 msgid "Auto compact"
@@ -596,11 +601,11 @@ msgstr "Auto titles"
 msgid "Auto-approves edits; auto mode off"
 msgstr "Auto-approves edits; auto mode off"
 
-#: src/features/me-autotitle.tsx:370
+#: src/features/me-autotitle.tsx:378
 msgid "Auto-title agent CLI"
 msgstr "Auto-title agent CLI"
 
-#: src/features/me-autotitle.tsx:305
+#: src/features/me-autotitle.tsx:307
 msgid "Auto-title settings saved"
 msgstr "Auto-title settings saved"
 
@@ -617,7 +622,7 @@ msgstr "Availability and note"
 msgid "Back"
 msgstr "Back"
 
-#: src/features/me-agents.tsx:168
+#: src/features/me-agents.tsx:240
 msgid "Back to agents"
 msgstr "Back to agents"
 
@@ -641,8 +646,8 @@ msgstr "background"
 msgid "Background"
 msgstr "Background"
 
-#: src/features/me-autotitle.tsx:353
-#: src/features/me-autotitle.tsx:355
+#: src/features/me-autotitle.tsx:361
+#: src/features/me-autotitle.tsx:363
 msgid "Background auto-titling"
 msgstr "Background auto-titling"
 
@@ -1158,8 +1163,8 @@ msgstr "Copy raw line"
 #: src/features/copy-reference.tsx:127
 #: src/features/me-agent-detail.tsx:346
 #: src/features/me-agent-detail.tsx:347
-#: src/features/me-agents.tsx:141
-#: src/features/me-agents.tsx:142
+#: src/features/me-agents.tsx:83
+#: src/features/me-agents.tsx:84
 #: src/features/session-chat-group.tsx:146
 #: src/features/session-chat-group.tsx:256
 #: src/features/session-chat-row.tsx:62
@@ -1221,11 +1226,11 @@ msgstr "Could not copy to clipboard"
 msgid "Could not create it: {reason}"
 msgstr "Could not create it: {reason}"
 
-#: src/features/me-agents.tsx:31
+#: src/features/me-agents.tsx:120
 msgid "Could not read agent profiles."
 msgstr "Could not read agent profiles."
 
-#: src/features/me-autotitle.tsx:325
+#: src/features/me-autotitle.tsx:327
 msgid "Could not read auto-title status."
 msgstr "Could not read auto-title status."
 
@@ -1292,7 +1297,7 @@ msgstr "Current"
 msgid "Current API key"
 msgstr "Current API key"
 
-#: src/features/me-autotitle.tsx:414
+#: src/features/me-autotitle.tsx:424
 msgid "Current runner"
 msgstr "Current runner"
 
@@ -1318,11 +1323,11 @@ msgstr "data as of {time}"
 msgid "Decision"
 msgstr "Decision"
 
-#: src/features/me-agents.tsx:47
+#: src/features/me-agents.tsx:136
 msgid "Default agent"
 msgstr "Default agent"
 
-#: src/features/me-agents.tsx:45
+#: src/features/me-agents.tsx:134
 msgid "Default agent for new sessions in this browser"
 msgstr "Default agent for new sessions in this browser"
 
@@ -1402,7 +1407,8 @@ msgid "Disable this agent"
 msgstr "Disable this agent"
 
 #: src/features/me-agent-detail.tsx:336
-#: src/features/me-agents.tsx:122
+#: src/features/me-agents.tsx:59
+#: src/features/me-autotitle.tsx:395
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -2040,8 +2046,8 @@ msgstr "Loading original…"
 #: src/features/console-diagnostics.tsx:110
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
-#: src/features/me-agents.tsx:85
-#: src/features/me-autotitle.tsx:332
+#: src/features/me-agents.tsx:174
+#: src/features/me-autotitle.tsx:334
 #: src/features/repo-links.tsx:309
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
@@ -2107,7 +2113,7 @@ msgstr "Managed override"
 msgid "Manual"
 msgstr "Manual"
 
-#: src/features/me-autotitle.tsx:160
+#: src/features/me-autotitle.tsx:162
 msgid "Manual /rename"
 msgstr "Manual /rename"
 
@@ -2215,7 +2221,7 @@ msgstr "name this session"
 msgid "Names sessions"
 msgstr "Names sessions"
 
-#: src/features/me-autotitle.tsx:165
+#: src/features/me-autotitle.tsx:167
 #: src/features/session-title-history.tsx:86
 msgid "Native"
 msgstr "Native"
@@ -2424,7 +2430,7 @@ msgstr "No links match that search."
 msgid "No links resolved for this repository."
 msgstr "No links resolved for this repository."
 
-#: src/features/me-autotitle.tsx:340
+#: src/features/me-autotitle.tsx:348
 msgid "No local CLI available"
 msgstr "No local CLI available"
 
@@ -2452,7 +2458,7 @@ msgstr "No recent result"
 #~ msgid "No session"
 #~ msgstr "No session"
 
-#: src/features/me-autotitle.tsx:146
+#: src/features/me-autotitle.tsx:148
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
@@ -2485,7 +2491,7 @@ msgstr "No upstream branch: nothing to compare with."
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
-#: src/features/me-agents.tsx:129
+#: src/features/me-agents.tsx:71
 #: src/features/session-new-panels.tsx:83
 msgid "Not configured"
 msgstr "Not configured"
@@ -2566,8 +2572,8 @@ msgid "now {label}"
 msgstr "now {label}"
 
 #: src/features/console-me.tsx:268
-#: src/features/me-autotitle.tsx:114
-#: src/features/me-autotitle.tsx:362
+#: src/features/me-autotitle.tsx:116
+#: src/features/me-autotitle.tsx:370
 msgid "Off"
 msgstr "Off"
 
@@ -2583,8 +2589,8 @@ msgstr "Offline"
 msgid "Offline, try again later"
 msgstr "Offline, try again later"
 
-#: src/features/me-autotitle.tsx:116
-#: src/features/me-autotitle.tsx:361
+#: src/features/me-autotitle.tsx:118
+#: src/features/me-autotitle.tsx:369
 msgid "On"
 msgstr "On"
 
@@ -2956,7 +2962,7 @@ msgstr "Recycle worktree"
 msgid "Refresh"
 msgstr "Refresh"
 
-#: src/features/me-autotitle.tsx:432
+#: src/features/me-autotitle.tsx:442
 msgid "Refresh active sessions now"
 msgstr "Refresh active sessions now"
 
@@ -2965,19 +2971,19 @@ msgstr "Refresh active sessions now"
 msgid "Refresh links"
 msgstr "Refresh links"
 
-#: src/features/me-autotitle.tsx:296
+#: src/features/me-autotitle.tsx:298
 msgid "Refreshing session titles in the background…"
 msgstr "Refreshing session titles in the background…"
 
-#: src/features/me-autotitle.tsx:248
+#: src/features/me-autotitle.tsx:250
 msgid "Regenerate"
 msgstr "Regenerate"
 
-#: src/features/me-autotitle.tsx:242
+#: src/features/me-autotitle.tsx:244
 msgid "Regenerate title now"
 msgstr "Regenerate title now"
 
-#: src/features/me-autotitle.tsx:295
+#: src/features/me-autotitle.tsx:297
 msgid "Regenerating title for this session…"
 msgstr "Regenerating title for this session…"
 
@@ -3125,7 +3131,7 @@ msgid "Repository"
 msgstr "Repository"
 
 #: src/features/console-me.tsx:283
-#: src/features/me-agents.tsx:63
+#: src/features/me-agents.tsx:152
 #: src/features/session-new-panels.tsx:72
 msgid "Repository default"
 msgstr "Repository default"
@@ -3359,7 +3365,7 @@ msgstr "Runs"
 msgid "Runs and cost"
 msgstr "Runs and cost"
 
-#: src/features/me-autotitle.tsx:348
+#: src/features/me-autotitle.tsx:356
 msgid "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 msgstr "Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten."
 
@@ -3436,8 +3442,8 @@ msgstr "Saving writes api.kimi.ai/coding/, ANTHROPIC_API_KEY, all Claude tiers, 
 msgid "Saving…"
 msgstr "Saving…"
 
-#: src/features/me-autotitle.tsx:396
-#: src/features/me-autotitle.tsx:398
+#: src/features/me-autotitle.tsx:406
+#: src/features/me-autotitle.tsx:408
 msgid "Scan interval"
 msgstr "Scan interval"
 
@@ -3595,7 +3601,7 @@ msgstr "Session info"
 msgid "Session pages"
 msgstr "Session pages"
 
-#: src/features/me-autotitle.tsx:439
+#: src/features/me-autotitle.tsx:449
 msgid "Session titles"
 msgstr "Session titles"
 
@@ -4206,7 +4212,7 @@ msgstr "Title"
 msgid "Title source"
 msgstr "Title source"
 
-#: src/features/me-autotitle.tsx:303
+#: src/features/me-autotitle.tsx:305
 msgid "Title unlocked; auto-titling will resume."
 msgstr "Title unlocked; auto-titling will resume."
 
@@ -4285,7 +4291,7 @@ msgstr "Trace"
 msgid "Trace ID or text"
 msgstr "Trace ID or text"
 
-#: src/features/me-autotitle.tsx:419
+#: src/features/me-autotitle.tsx:429
 msgid "Tracked titles"
 msgstr "Tracked titles"
 
@@ -4339,10 +4345,14 @@ msgstr "TURN relay"
 msgid "Turns"
 msgstr "Turns"
 
-#: src/features/me-autotitle.tsx:388
+#: src/features/me-autotitle.tsx:398
 #: src/features/me-host.tsx:90
 msgid "Unavailable"
 msgstr "Unavailable"
+
+#: src/features/me-agents.tsx:200
+msgid "Unavailable agents ({disabledCount})"
+msgstr "Unavailable agents ({disabledCount})"
 
 #: src/features/session-new-direction.tsx:69
 #~ msgid "uncommitted changes"
@@ -4360,11 +4370,11 @@ msgstr "Undo"
 msgid "Unknown"
 msgstr "Unknown"
 
-#: src/features/me-autotitle.tsx:234
+#: src/features/me-autotitle.tsx:236
 msgid "Unlock"
 msgstr "Unlock"
 
-#: src/features/me-autotitle.tsx:228
+#: src/features/me-autotitle.tsx:230
 msgid "Unlock to resume auto-titling"
 msgstr "Unlock to resume auto-titling"
 

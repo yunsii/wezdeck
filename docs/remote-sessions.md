@@ -28,8 +28,10 @@ logs refreshes without recording the titles.
 it scans active sessions (`liveSessions()`), extracts up to the last 5
 non-harness user turns plus the latest assistant reply snippet, and calls
 `scripts/runtime/session-autotitle.sh` (which routes single-shot host CLI
-invocation through `skills/adversarial-review/lib/provider.sh`, defaulting to
-`grok` → `claude` → `codex`, overridable via `WEZDECK_AUTOTITLE_PROVIDER`).
+invocation through `skills/adversarial-review/lib/provider.sh`, automatically
+skipping any agent profile marked `disabled` in `~/.config/wezdeck/agent-profiles/`
+and resolving fnm/nvm/user bin dirs so `grok` / `codex` / `claude` work under
+systemd's minimal `PATH`, overridable via `WEZDECK_AUTOTITLE_PROVIDER`).
 The prompt asks for `UNCHANGED` when the topic has not shifted, `REFINE: <title>`
 when polishing the current task's wording, or a new title (`SHIFT: <title>` or
 plain line) when the conversation moved on; otherwise it writes the title and a

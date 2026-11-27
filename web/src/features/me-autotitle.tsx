@@ -31,6 +31,8 @@ import { TitleHistoryTimeline } from './session-title-history'
 type AutoTitleProvider = {
   id: string
   available: boolean
+  disabled?: boolean
+  note?: string
   model: string
 }
 
@@ -148,7 +150,7 @@ function AutoTitleEntryList({
     )
   }
   return (
-    <ul className="overflow-hidden rounded-xl border border-brand-edge bg-brand-surface">
+    <ul className="min-w-0 overflow-hidden rounded-xl border border-brand-edge bg-brand-surface">
       {entries.map((item) => {
         const eff = providerLabel(item.provider)
         const turns = item.user_turns
@@ -172,9 +174,9 @@ function AutoTitleEntryList({
         return (
           <li
             key={item.session_id}
-            className="grid border-b border-brand-edge px-3 py-2.5 last:border-b-0"
+            className="grid min-w-0 border-b border-brand-edge px-3 py-2.5 last:border-b-0"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <AgentAvatar agent={item.agent} size={32} />
               <div className="min-w-0 flex-1">
                 {item.active ? (
@@ -333,6 +335,12 @@ export function AutoTitlePage() {
   }
 
   const providers = data.providers
+  const enabledProviders = providers.filter((p) => p.available && !p.disabled)
+  const autoChain = enabledProviders.map((p) => providerLabel(p.id)).join(' → ')
+  const autoLabel = autoChain ? t`Auto (${autoChain})` : t`Auto`
+  const visibleProviders = providers.filter(
+    (p) => !p.disabled || p.id === data.provider,
+  )
   const effectiveText = data.effective_provider
     ? data.effective_model
       ? `${providerLabel(data.effective_provider)} (${data.effective_model})`
@@ -343,13 +351,13 @@ export function AutoTitlePage() {
     data.interval_s <= 30 ? '20' : data.interval_s <= 90 ? '60' : '180'
 
   return (
-    <div className="grid gap-4" data-testid="autotitle-page">
+    <div className="grid min-w-0 gap-4" data-testid="autotitle-page">
       <p className="text-caption text-brand-muted">
         {t`Runs in the host relay using a local agent CLI to keep active session titles aligned with your latest task. Manual /rename titles are never overwritten.`}
       </p>
 
-      <div className="grid gap-3">
-        <div className="grid gap-1.5">
+      <div className="grid min-w-0 gap-3">
+        <div className="grid min-w-0 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Background auto-titling`}</span>
           <Segmented
             label={t`Background auto-titling`}
@@ -364,7 +372,7 @@ export function AutoTitlePage() {
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="grid min-w-0 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Agent CLI used to generate titles`}</span>
           <Select
             aria-label={t`Auto-title agent CLI`}
@@ -377,22 +385,24 @@ export function AutoTitlePage() {
             options={[
               {
                 value: '',
-                label: t`Auto (Grok → Claude → Codex)`,
+                label: autoLabel,
                 icon: <AgentAvatar size={24} />,
               },
-              ...providers.map((p) => ({
+              ...visibleProviders.map((p) => ({
                 value: p.id,
                 icon: <AgentAvatar agent={p.id} size={24} />,
-                label: p.available
-                  ? `${providerLabel(p.id)} · ${p.model}`
-                  : `${providerLabel(p.id)} (${t`Unavailable`})`,
-                disabled: !p.available,
+                label: p.disabled
+                  ? `${providerLabel(p.id)} (${t`Disabled`})`
+                  : p.available
+                    ? `${providerLabel(p.id)} · ${p.model}`
+                    : `${providerLabel(p.id)} (${t`Unavailable`})`,
+                disabled: !p.available || Boolean(p.disabled),
               })),
             ]}
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="grid min-w-0 gap-1.5">
           <span className="text-caption text-brand-muted">{t`Scan interval`}</span>
           <Segmented
             label={t`Scan interval`}
@@ -409,7 +419,7 @@ export function AutoTitlePage() {
         </div>
       </div>
 
-      <section className="grid gap-1">
+      <section className="grid min-w-0 gap-1">
         <SectionHeading as="h2" className="bg-brand-key">
           {t`Current runner`}
         </SectionHeading>
@@ -434,7 +444,7 @@ export function AutoTitlePage() {
         </div>
       </section>
 
-      <section className="grid gap-1.5">
+      <section className="grid min-w-0 gap-1.5">
         <SectionHeading as="h2" className="bg-brand-key">
           {t`Session titles`}
         </SectionHeading>

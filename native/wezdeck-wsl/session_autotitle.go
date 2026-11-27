@@ -639,6 +639,10 @@ func runAutoTitleCLI(ctx context.Context, promptInput string) (output string, pr
 	args := []string{script}
 	if cfg := loadAutoTitleConfig(); cfg.Provider != "" {
 		args = append(args, "--provider", cfg.Provider)
+	} else if order := enabledAutoTitleOrder(); len(order) > 0 {
+		args = append(args, "--order", strings.Join(order, ","))
+	} else {
+		return "", "", fmt.Errorf("no enabled auto-title CLI provider available")
 	}
 	cmd := exec.CommandContext(ctx, "bash", args...)
 	cmd.Stdin = strings.NewReader(promptInput)

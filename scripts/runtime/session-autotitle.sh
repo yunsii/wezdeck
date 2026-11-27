@@ -24,6 +24,7 @@ PROMPT_FILE="$SCRIPT_DIR/session-autotitle-prompt.md"
 PROVIDER_LIB="$REPO_ROOT/skills/adversarial-review/lib/provider.sh"
 
 req_provider="${WEZDECK_AUTOTITLE_PROVIDER:-}"
+req_order="${WEZDECK_AUTOTITLE_ORDER:-}"
 effort="${WEZDECK_AUTOTITLE_EFFORT:-low}"
 
 while [ "$#" -gt 0 ]; do
@@ -32,11 +33,29 @@ while [ "$#" -gt 0 ]; do
       req_provider="${2:-}"
       shift 2
       ;;
+    --order)
+      req_order="${2:-}"
+      shift 2
+      ;;
     *)
       shift
       ;;
   esac
 done
+
+# Ensure user/fnm/nvm CLI paths are visible under minimal systemd service PATH.
+for extra_bin in \
+  "$HOME/.local/bin" \
+  "$HOME/.local/share/fnm/aliases/default/bin" \
+  "$HOME/.fnm/aliases/default/bin" \
+  "$HOME/.nvm/current/bin" \
+  "$HOME/.grok/bin" \
+  "$HOME/.codex/bin"; do
+  if [ -d "$extra_bin" ] && [[ ":$PATH:" != *":$extra_bin:"* ]]; then
+    PATH="$extra_bin:$PATH"
+  fi
+done
+export PATH
 
 [ -f "$PROMPT_FILE" ] || { echo "missing prompt: $PROMPT_FILE" >&2; exit 2; }
 [ -f "$PROVIDER_LIB" ] || { echo "missing provider lib: $PROVIDER_LIB" >&2; exit 2; }
@@ -55,6 +74,8 @@ input="$(cat)"
 candidates=()
 if [ -n "$req_provider" ]; then
   candidates+=("$req_provider")
+elif [ -n "$req_order" ]; then
+  IFS=',' read -r -a candidates <<<"$req_order"
 else
   # Prefer grok first (fast, does not consume primary Claude quota), then claude, then codex.
   candidates=(grok claude codex)

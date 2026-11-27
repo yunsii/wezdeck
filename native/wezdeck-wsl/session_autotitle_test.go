@@ -374,3 +374,53 @@ func TestAutoTitleConfigStatusAndUnlock(t *testing.T) {
 		t.Fatalf("unlocked source = %q, want auto", src)
 	}
 }
+
+func TestAutoTitleProvidersSkipDisabledAndFindFnm(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("PATH", "/usr/bin:/bin")
+
+	// Create fake executables: grok in ~/.local/bin, claude in ~/.local/bin, codex in fnm default bin.
+	for _, rel := range []string{
+		".local/bin/grok",
+		".local/bin/claude",
+		".local/share/fnm/aliases/default/bin/codex",
+	} {
+		p := filepath.Join(home, rel)
+		if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("#!/bin/sh\nexit 0\n"), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Mark claude disabled in agent-profiles settings.
+	cfgDir := filepath.Join(home, ".config", "wezdeck", "agent-profiles")
+	if err := os.MkdirAll(cfgDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(cfgDir, "claude.json"), []byte(`{"disabled":true,"note":"当前不可用"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	providers := listAutoTitleProviders()
+	byID := map[string]autoTitleProviderInfo{}
+	for _, p := range providers {
+		byID[p.ID] = p
+	}
+	if !byID["grok"].Available || byID["grok"].Disabled {
+		t.Fatalf("grok should be available and enabled: %#v", byID["grok"])
+	}
+	if byID["claude"].Available || !byID["claude"].Disabled {
+		t.Fatalf("claude should be unavailable and disabled: %#v", byID["claude"])
+	}
+	if !byID["codex"].Available || byID["codex"].Disabled {
+		t.Fatalf("codex in fnm bin should be available: %#v", byID["codex"])
+	}
+
+	order := enabledAutoTitleOrder()
+	if strings.Join(order, ",") != "grok,codex" {
+		t.Fatalf("enabledAutoTitleOrder = %v, want [grok codex]", order)
+	}
+}
