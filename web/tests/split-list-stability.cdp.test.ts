@@ -45,19 +45,35 @@ async function countPixelDiff(page: Page, a: Buffer, b: Buffer) {
         canvas.height = bmp.height
         const ctx = canvas.getContext('2d')!
         ctx.drawImage(bmp, 0, 0)
-        return ctx.getImageData(0, 0, bmp.width, bmp.height).data
+        return {
+          width: bmp.width,
+          height: bmp.height,
+          data: ctx.getImageData(0, 0, bmp.width, bmp.height).data,
+        }
       }
       const d1 = await decode(s1)
       const d2 = await decode(s2)
-      let changed = 0
-      for (let i = 0; i < d1.length; i += 4) {
-        const diff =
-          Math.abs(d1[i] - d2[i]) +
-          Math.abs(d1[i + 1] - d2[i + 1]) +
-          Math.abs(d1[i + 2] - d2[i + 2])
-        if (diff > 3) changed += 1
-      }
-      return changed
+      if (d1.width !== d2.width || d1.height !== d2.height) return Infinity
+      // Fractional DPR can move a composited row's raster phase by one device
+      // pixel while all DOM rectangles stay unchanged. Compare the shared
+      // interior after that small alignment; actual content changes still fail.
+      return Math.min(
+        ...[-1, 0, 1].map((dy) => {
+          let changed = 0
+          for (let y = 1; y < d1.height - 1; y++) {
+            for (let x = 0; x < d1.width; x++) {
+              const i = (y * d1.width + x) * 4
+              const j = ((y + dy) * d2.width + x) * 4
+              const diff =
+                Math.abs(d1.data[i] - d2.data[j]) +
+                Math.abs(d1.data[i + 1] - d2.data[j + 1]) +
+                Math.abs(d1.data[i + 2] - d2.data[j + 2])
+              if (diff > 3) changed += 1
+            }
+          }
+          return changed
+        }),
+      )
     },
     [a.toString('base64'), b.toString('base64')],
   )
@@ -243,9 +259,15 @@ describe.runIf(attention)('Wide split: list stability', () => {
       const before = await page.screenshot({ clip: watchBox! })
       await page.keyboard.press('j') // st-short -> st-tall
       await page.waitForTimeout(350)
+      expect(
+        await page.locator('[data-session=st-watch]').boundingBox(),
+      ).toEqual(watchBox)
       const afterTall = await page.screenshot({ clip: watchBox! })
       await page.keyboard.press('k') // st-tall -> st-short
       await page.waitForTimeout(350)
+      expect(
+        await page.locator('[data-session=st-watch]').boundingBox(),
+      ).toEqual(watchBox)
       const afterShort = await page.screenshot({ clip: watchBox! })
 
       expect(await countPixelDiff(page, before, afterTall)).toBe(0)
