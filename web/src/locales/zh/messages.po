@@ -3406,13 +3406,13 @@ msgstr "在当前窗格启动空白 agent 进程"
 msgid "start a fresh conversation"
 msgstr "开一个新会话"
 
-#: src/features/session-new-job.tsx:171
-msgid "Start agent"
-msgstr "启动 Agent"
-
 #: src/features/session-restart.tsx:77
 msgid "Start a new conversation in the current agent without restarting its process. The current conversation stays available in Resume."
 msgstr "在当前 agent 中开始新对话，不重启进程。当前对话仍可在「恢复会话」中找回。"
+
+#: src/features/session-new-job.tsx:171
+msgid "Start agent"
+msgstr "启动 Agent"
 
 #: src/features/session-restart.tsx:101
 msgid "Start fresh"

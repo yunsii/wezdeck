@@ -3406,13 +3406,13 @@ msgstr "Start a blank agent process in this pane"
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
-#: src/features/session-new-job.tsx:171
-msgid "Start agent"
-msgstr "Start agent"
-
 #: src/features/session-restart.tsx:77
 msgid "Start a new conversation in the current agent without restarting its process. The current conversation stays available in Resume."
 msgstr "Start a new conversation in the current agent without restarting its process. The current conversation stays available in Resume."
+
+#: src/features/session-new-job.tsx:171
+msgid "Start agent"
+msgstr "Start agent"
 
 #: src/features/session-restart.tsx:101
 msgid "Start fresh"
