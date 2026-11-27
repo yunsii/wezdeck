@@ -23,23 +23,18 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
 
 1. **Manifest scope is the whole site** (`id`/`scope` `/`), `start_url`
    `/console`; installed app opens the console, the landing page stays
-   reachable in-app (the sidebar's WezDeck mark links it). The landing page
-   uses the console's ink theme ([data-deck]): one line on what it is, 打开控制台
-   and the source, a still of the session list with the real status lights,
-   then sessions / tickets / from anywhere. Language and theme there are
-   click menus (never hover); in the console they live only in 我的 › 外观.
-   `/architecture` (架构解析, linked from the landing page and from the
-   console's 我的 list; opened from inside the app it shows the same ‹ back
-   as a pushed page — the installed console has no browser back) is the
-   public explainer: concepts and flows in prose (设备授权 `flows-access.ts`:
-   host tokens and relay join, pairing, device registration, approval,
-   signed hello, per-request checks, revoke), files / endpoints folded. Each
-   diagram is a React Flow canvas (`@xyflow/react`, lazy chunk; desktop only)
-   above its step list, which is the keyboard path and the whole diagram on
-   mobile. Data lives in `web/src/features/architecture/` (`overview.ts`,
-   `flows*.ts`, `capabilities.ts`); `tests/architecture.unit.test.ts` reads
-   the Runtime routes / actions, the bridge switch and the relay's
-   `readRPC` / `runWrite` and fails until a new entry point is described.
+   reachable in-app (rail's WezDeck mark links it). Landing and `/architecture`
+   share sticky `PublicHeader` (`public-header.tsx`: logo, nav links, click-only
+   language/theme menus, console CTA; in-console language/theme live in 我的 › 外观).
+   Landing uses `[data-deck]` ink and flat Telegram language: an interactive
+   IM session preview (`AgentAvatar` + `.chat-list`) and flat feature slices.
+   `/architecture` (linked from landing and 我的; shows `‹` back from in-app)
+   adds a wide sticky left TOC (compact horizontal chapter rail when narrow),
+   flat surface sections, and a searchable `Capabilities` filter; prose covers
+   concepts and flows (设备授权 `flows-access.ts`), files / endpoints folded.
+   Diagrams are React Flow (`@xyflow/react`, lazy, desktop only) above their
+   step list (keyboard path + mobile view). Data in `web/src/features/architecture/`;
+   `tests/architecture.unit.test.ts` checks all Runtime / bridge / relay entry points.
 2. **One route tree, layouts by width**: `<768px` mobile, `768–1279px` tablet
    (split, collapsible list), `≥1280px` desktop. Fixes today's gap at
    900–1023 px (neither `max-[899px]` nor `lg:` applies).
@@ -147,18 +142,18 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
-5. **Wide screens (≥ 768 px, 2026-11-23)**: no mobile layout blown up.
-   会话 and 工单 are the same split (`session-split.tsx`): the list
-   sticky on the left with its own scroll, the open conversation beside it
-   on the page scroll (so the chat's pin-to-bottom is unchanged), filling
-   the rest of the width (no 900 px cap since the list has its own divider,
-   2026-11-24); the current row is highlighted, picking another replaces the
-   history entry, j / k move through the list's order and the URL follows,
-   y copies the open session's reference;
-   no back button. 我的 shows separated groups on the left, the chosen one past
-   会话's full-height divider (default 连接; group links replace); its inner interaction and agent lists split again at ≥1280 px and share the overlay scroller. 工单动态 uses a full-width head and a readable timeline. Sheets: a
-   centred dialog (fade + scale, no grab handle). 工单's run / cache / cost
-   band opens in a dialog from the list head (sidebar links 工单动态).
+5. **Wide screens (≥ 768 px, 2026-11-23; Telegram rail 2026-11-27)**: no mobile layout blown up.
+   Left nav is a 68 px Telegram Desktop icon rail (WezDeck mark top, 会话 / 工单
+   primary, 诊断(local) / 我的 / `?` Shortcuts bottom; 工单动态 lives in `CollabTopBar`
+   on both phone and desktop, keeping `g a`), while `StatusBand` / `RemoteBand`
+   sits in a slim 28 px bottom strip so splits start flush at the top edge.
+   会话 and 工单 share the sticky split (`session-split.tsx`, full remaining width,
+   no 900 px cap, j / k + y, replace history, no back button). 我的 uses
+   `SplitColumn` with flat `.me-list` inset-hairline groups (phone: compact
+   `StickyBar` + full-bleed surface groups; inner interaction/agent lists split at
+   ≥1280 px). 工单动态 and 诊断 align to flat surface, sticky `SectionHeading` /
+   `StickyBar` + `BackButton` on phones, and `data-search` `/` focus. Sheets:
+   centred dialog (fade + scale, no grab handle). 工单 metrics open in a dialog.
 6. **Desktop keyboard**: `j`/`k` move, `Esc` closes a sheet and, with none
    open, lets go of a focused button / link (closing a sheet hands focus
    back to its trigger, which kept Space pressing it), `/` filter,
@@ -167,7 +162,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sheet open), `Ctrl/⌘+N` starts `/new` in the current agent and
    `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane; `c` opens
    the full 新会话 flow for creating or reusing a worktree,
-   and the composer 快捷 panel exposes both same-pane actions on touch
+   and the header's 会话操作 Sheet exposes both same-pane actions on touch
    screens: 新对话 (`/new`, current agent process) and 新进程 (fresh process).
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
@@ -446,19 +441,20 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   wobble (< 8 px) never counts as scrolling away; a finger dragging the
   history down keeps it unpinned until it lifts (re-pinning from scroll
   events mid-drag flapped the state every frame). The follow observes the
-  whole page content, so a growing composer (toolbar, thumbnails, a long
+  whole page content, so a growing composer (thumbnails, a long
   draft) keeps a pinned thread at the bottom too. The reveal cursor never
   stays inside a run of tool calls that grew after it was shown
   (`settleCursor`, `npm run test:unit`), which had stalled the thread until
-  the page reopened. One toolbar row above the composer holds every tool:
-  快捷 (always shown; disabled with a hint until write access is enabled on this device),
-  命令 / 待办 / 能力 when the session offers them, then 图片 once this device
-  may write. Picked thumbnails stay in their own row. Tool panels attach to
-  the input surface with one shared header and close affordance; the `/`
-  completion list uses the same surface treatment. 快捷 opens three labelled keys — `Enter` confirm, `Esc` cancel,
-  `Ctrl+C` interrupt (host `key` RPC; `C-c` is what stops Grok) — and
-  closes once a key is sent (diagnostics are pulled by the host, see
-  remote-sessions.md "Diagnostics on demand"). Choices (digits,
+  the page reopened. The composer keeps a single input row: `＋` opens a
+  portalled Sheet for images, commands, skills and clearing the draft;
+  picked thumbnails remain above the input. The header's 待办 counter opens
+  a repository-scoped Sheet with a flat list and a sticky add field. The
+  header's `⋯` opens session actions, with the running interrupt visible
+  and terminal keys / agent switching under expandable rows. These Sheets
+  overlay the thread instead of growing the composer; open events use
+  `session-controls` with a menu type. Terminal keys include `Enter` confirm,
+  `Esc` cancel and `Ctrl+C` interrupt (host `key` RPC; `C-c` stops Grok).
+  Choices (digits,
   arrows, `Tab`) are deliberately not keys: questions, plans and
   permission prompts get tap targets; inline bodies clip so swipes scroll
   the thread; full text opens in a Sheet (`session-permission.tsx`). The composer is
@@ -474,7 +470,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   (`wezdeck.draft.<id>`, picks in IndexedDB) — cleared the moment send is
   tapped (back in mid-upload found the sent draft), put back on a failed
   upload / send, synced across mounted copies (`use-draft.ts` events); ×
-  clears with an undo (`composer-clear` trace); Esc blurs the field; errors have a
+  clears from the `＋` menu with an undo (`composer-clear` trace); Esc blurs the field; errors have a
   one-tap copy; a "terminal was just used" refusal counts down and resends
   (`session-send.ts`)
   ([`remote-sessions.md` Attachments](remote-sessions.md#attachments)). The sticky composer rests flush with the scroller

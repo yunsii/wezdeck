@@ -456,7 +456,7 @@ export function RepoSectionHeader({
   const { t } = useLingui()
   const canOpen = Boolean(repoRoot || fallbackCwd)
   return (
-    <h2 className="flex items-center border-y border-brand-edge bg-brand-deck px-3 py-0.5 text-meta font-medium text-brand-label group-first/repo-section:border-t-0">
+    <h2 className="flex h-8 items-center border-y border-brand-edge bg-brand-deck px-3 text-meta font-medium text-brand-label group-first/repo-section:border-t-0">
       {canOpen ? (
         <Button
           variant="plain"
@@ -474,7 +474,7 @@ export function RepoSectionHeader({
               cwd: repoRoot ? undefined : fallbackCwd,
             })
           }}
-          className="group/repo flex min-h-7 w-full min-w-0 items-center gap-1.5 rounded-lg py-0.5 text-left text-meta font-medium text-brand-label transition-colors hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
+          className="group/repo flex h-7 w-full min-w-0 items-center gap-1.5 rounded-lg text-left text-meta font-medium text-brand-label transition-colors hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
         >
           <FolderGit2 size={13} aria-hidden className="shrink-0" />
           <span className="min-w-0 truncate">{label}</span>
@@ -485,7 +485,7 @@ export function RepoSectionHeader({
           />
         </Button>
       ) : (
-        <span className="flex min-h-7 items-center gap-1.5 py-0.5">
+        <span className="flex h-7 items-center gap-1.5">
           <FolderGit2 size={13} aria-hidden className="shrink-0" />
           {label}
         </span>

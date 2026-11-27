@@ -49,6 +49,21 @@ until the next arrives (`keepPrevious`, no Loading… between tickets),
 scrolled to its top. `split-switch.cdp.test.ts` samples every frame
 after a switch.
 
+The split list itself must stay pixel-still across switches (2026-11-27):
+`Draft` pills (`chat-draft`, `ticket-draft`) use `text-meta leading-none py-0.5`
+(16 px inside a 20 px `leading-5` caption line) so hiding/showing a draft on
+selection never changes row height (±4 px before), and `SessionSubRow` computes
+its `compact` mode from the raw saved draft rather than `visibleDraft` so an
+empty idle sub-row with a draft never collapses its second line (±13.5 px
+before). List rows use integer multiple-of-8 heights (`min-h-16` 64 px /
+`min-h-14` 56 px, `h-8` 32 px repo headings, `56 px` inset-shadow split head)
+so `.list-row` transitions never snap across half-pixel `61.5 px` boundaries,
+and `.vt-split-list` carries `will-change: transform` so switching between a
+short and a tall conversation never promotes/demotes the sticky rail's
+compositor layer (which previously flipped every uninvolved row's text between
+grayscale and subpixel LCD antialiasing at 1.25x–2.625x DPR). Covered by
+`split-list-stability.cdp.test.ts`.
+
 Rendering cost of a switch (2026-11-24, CPU profile of a real conversation,
 symbolized against a source-mapped build): one ~76 ms long task — React
 render ~30 ms, markdown (streamdown → remark / rehype) ~25 ms, the forced

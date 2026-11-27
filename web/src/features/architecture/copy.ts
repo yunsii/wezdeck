@@ -41,6 +41,16 @@ export const COPY = {
   console: { zh: '打开控制台', en: 'Open the console' },
   entry: { zh: '入口', en: 'Entry point' },
   what: { zh: '做什么', en: 'What it does' },
+  toc: { zh: '目录', en: 'On this page' },
+  filterCapabilities: {
+    zh: '搜索接口、动作或说明…',
+    en: 'Filter endpoints, actions or descriptions…',
+  },
+  clearFilter: { zh: '清空筛选', en: 'Clear filter' },
+  noCapabilitiesMatch: {
+    zh: '没有匹配的本地服务能力。',
+    en: 'No matching local service capabilities.',
+  },
 } satisfies Record<string, Text>
 
 export const KINDS: Array<{ kind: LinkKind; label: Text }> = [

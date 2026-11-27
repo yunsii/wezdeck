@@ -27,6 +27,7 @@ import type { Subagent } from './session-subagents'
 import { StickyPrompt } from './chat-sticky'
 import { EmptySession } from './session-empty'
 import { ComposerBox, ErrorLine, useComposer } from './session-composer'
+import type { Composer, Outgoing } from './session-composer'
 import { PromptPanels, hasPromptPanel } from './session-elicitation'
 import type { Elicitation } from './session-elicitation'
 import { useFollowReplacement, useSessionWrites } from './session-send'
@@ -298,6 +299,20 @@ function useLeaveMissingSession(gone: boolean) {
   }, [gone, locale, navigate])
 }
 
+function draftTodo(composer: Composer, text: string) {
+  composer.setText((current) =>
+    current.trim() ? `${current.trimEnd()}\n${text}` : text,
+  )
+  setTimeout(() => document.getElementById('session-composer')?.focus(), 200)
+}
+
+function renameSession(
+  send: (message: Outgoing) => Promise<boolean>,
+  title: string,
+) {
+  void send({ text: `/rename ${title}`, attachments: [], note: 'rename' })
+}
+
 export function SessionDetail({ id }: { id: string }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -367,13 +382,13 @@ export function SessionDetail({ id }: { id: string }) {
         visibleUsage={visibleUsage}
         onBack={back}
         renameDisabled={readOnly || sending || device.state !== 'approved'}
-        onRename={(title) =>
-          void send({
-            text: `/rename ${title}`,
-            attachments: [],
-            note: 'rename',
-          })
+        canWrite={!readOnly && !sending && device.state === 'approved'}
+        onRun={run}
+        onNewConversation={() =>
+          send({ text: '/new', attachments: [], note: '' })
         }
+        onTodoUse={!readOnly ? (text) => draftTodo(composer, text) : undefined}
+        onRename={(title) => renameSession(send, title)}
       />
 
       <div

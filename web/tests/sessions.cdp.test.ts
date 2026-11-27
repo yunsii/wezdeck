@@ -245,6 +245,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     // the host now: wezdeck-wsl diag, not a composer toggle)
     if (uploadsDir) {
       expect(await page.getByRole('button', { name: '诊断' }).count()).toBe(0)
+      await page.getByTestId('composer-tools-button').click()
       await page
         .locator('[data-testid=composer-tools] input[type=file]')
         .setInputFiles({
@@ -252,7 +253,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
           mimeType: 'image/png',
           buffer: onePixelPng,
         })
-      // the pick sits in its own row above the toolbar, not inside it
+      // the pick sits in its own row above the input, not inside the menu
       const thumbs = page.getByTestId('composer-images')
       await thumbs.getByRole('button', { name: '预览图片' }).waitFor()
       expect(
@@ -349,7 +350,11 @@ async function commandsAndResume(
   page: Page,
   tmux: (...args: Array<string>) => string,
 ) {
-  await page.getByRole('button', { name: '命令' }).click()
+  await page.getByTestId('composer-tools-button').click()
+  await page
+    .getByTestId('composer-tools')
+    .getByRole('button', { name: '命令' })
+    .click()
   await page
     .getByTestId('session-commands')
     .getByRole('button', { name: /\/context/ })

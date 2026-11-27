@@ -435,16 +435,20 @@ func relayControlPath() string {
 }
 
 // serveControl: the relay's local control socket (0600, this user only).
-func (r *relay) serveControl() {
+// Returns a cleanup callback that removes the socket only if its inode still
+// matches this instance (preventing a draining process from unlinking a newer
+// relay's socket).
+func (r *relay) serveControl() func() {
 	path := relayControlPath()
 	_ = os.MkdirAll(filepath.Dir(path), 0o700)
 	_ = os.Remove(path)
 	ln, err := net.Listen("unix", path)
 	if err != nil {
 		r.logf("control_error", "path=%s err=%q", path, err)
-		return
+		return func() {}
 	}
 	_ = os.Chmod(path, 0o600)
+	ownInfo, _ := os.Stat(path)
 	mux := http.NewServeMux()
 	// local-mode pages, through the bridge (serve.go remote.diag.*)
 	mux.HandleFunc("/diag/pending", func(w http.ResponseWriter, req *http.Request) {
@@ -491,7 +495,18 @@ func (r *relay) serveControl() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(r.requestDiagnostics(wait, body.Reason, body.Steps))
 	})
-	go func() { _ = http.Serve(ln, mux) }()
+	srv := &http.Server{Handler: mux}
+	go func() { _ = srv.Serve(ln) }()
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		_ = srv.Shutdown(ctx)
+		cancel()
+		if ownInfo != nil {
+			if curInfo, err := os.Stat(path); err == nil && os.SameFile(ownInfo, curInfo) {
+				_ = os.Remove(path)
+			}
+		}
+	}
 }
 
 // runDiag is `wezdeck-wsl diag`: ask the running relay, print its JSON answer.
@@ -502,11 +517,16 @@ func runDiag(args []string) error {
 		Steps  json.RawMessage `json:"steps,omitempty"`
 	}
 	body.Wait = 15
-	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE] [--reload]")
+	usage := errors.New("usage: wezdeck-wsl diag [--wait SECONDS] [--reason TEXT] [--steps JSON | --steps-file FILE] [--reload | --notify-update]")
 	reload := false
+	notifyUpdate := false
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--reload" {
 			reload = true
+			continue
+		}
+		if args[i] == "--notify-update" {
+			notifyUpdate = true
 			continue
 		}
 		if i+1 >= len(args) {
@@ -538,13 +558,17 @@ func runDiag(args []string) error {
 	if len(body.Steps) > 0 && !json.Valid(body.Steps) {
 		return errors.New("--steps is not valid JSON")
 	}
-	if reload {
-		// last step: the page answers first, then reloads onto the new build
+	if reload || notifyUpdate {
+		// last step: the page answers first, then reloads (or shows a non-disruptive update banner)
 		var steps []json.RawMessage
 		if len(body.Steps) > 0 && json.Unmarshal(body.Steps, &steps) != nil {
-			return errors.New("--steps must be a JSON array to add --reload")
+			return errors.New("--steps must be a JSON array to add --reload/--notify-update")
 		}
-		steps = append(steps, json.RawMessage(`{"do":"reload"}`))
+		if reload {
+			steps = append(steps, json.RawMessage(`{"do":"reload"}`))
+		} else {
+			steps = append(steps, json.RawMessage(`{"do":"notify-update"}`))
+		}
 		body.Steps, _ = json.Marshal(steps)
 	}
 	client := http.Client{

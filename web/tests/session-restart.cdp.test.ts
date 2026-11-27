@@ -109,8 +109,28 @@ describe.runIf(attention && devicesFile && stack)(
       await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
 
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.getByTestId('session-statusbar').waitFor()
+      const layout = () =>
+        page.evaluate(() => {
+          const field = document.querySelector('[data-text-field="true"]')
+          const form = field?.closest('form')
+          if (!field || !form) return null
+          const f = field.getBoundingClientRect()
+          const c = form.getBoundingClientRect()
+          return { offset: f.top - c.top, formHeight: c.height }
+        })
+      const beforeMenus = await layout()
+      await page.getByTestId('session-todos-button').click()
+      await page.getByTestId('todo-panel').waitFor()
+      expect(await layout()).toEqual(beforeMenus)
+      await page.keyboard.press('Escape')
+      await page.getByTestId('composer-tools-button').click()
+      await page.getByTestId('composer-tools').waitFor()
+      expect(await layout()).toEqual(beforeMenus)
+      await page.keyboard.press('Escape')
       const openKeys = async () => {
-        await page.getByRole('button', { name: '快捷键', exact: true }).click()
+        await page.getByTestId('session-actions-button').click()
         await page.getByTestId('session-restart').waitFor({ timeout: 15_000 })
       }
       const calls = () => {
@@ -138,7 +158,10 @@ describe.runIf(attention && devicesFile && stack)(
       })
       await openKeys()
       const confirm = page.getByTestId('session-restart-confirm')
-      await page.setViewportSize({ width: 390, height: 844 })
+      const shell = page.getByTestId('session-actions-sheet')
+      await shell.waitFor()
+      expect(await page.getByTestId('composer-tools-button').count()).toBe(1)
+      expect(await page.getByTestId('session-todos-button').count()).toBe(1)
       const actions = page.getByTestId('session-restart')
       await expect
         .poll(() => actions.locator('[data-restart=new]').textContent())
@@ -201,6 +224,7 @@ describe.runIf(attention && devicesFile && stack)(
       // 空白切换: same target-agent confirmation, no note or brief. The
       // relay returns its pending id and the page opens the blank session.
       await openKeys()
+      await page.getByRole('button', { name: '切换 Agent' }).click()
       await page
         .getByTestId('session-handoff-mode')
         .getByRole('radio', { name: /空白切换/ })

@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "wezdeck-relay-do",
+  "main": "src/relay/do-worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  // Hosts the HostRelay Durable Object independently of the `wezdeck` web
+  // Worker so frontend deploys never evict live host/client WebSockets.
+  "durable_objects": {
+    "bindings": [{ "name": "HOST_RELAY", "class_name": "HostRelay" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HostRelay"] }],
+}

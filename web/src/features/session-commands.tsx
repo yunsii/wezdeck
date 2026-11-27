@@ -1,4 +1,4 @@
-// Claude slash commands from the phone: the composer's 命令 panel (the
+// Claude slash commands from the phone: the composer's 命令 Sheet (the
 // common ones, sent as the TUI would take them) and 恢复会话, a list of the
 // project's earlier conversations — Claude's own /resume picker is a TUI
 // list a phone cannot drive. Picking one sends `/resume <id>`; the
@@ -15,7 +15,6 @@ import { Sheet } from '#/components/ui/sheet'
 import { hostRead } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
 import type { Outgoing } from './session-composer'
-import { ComposerPanel } from './composer-panel'
 
 type HistoryItem = {
   id: string
@@ -184,6 +183,7 @@ function ResumeSheet({
  * conversation as a command row (chat-command.tsx).
  */
 export function CommandPanel({
+  open,
   agent,
   disabled,
   onCommand,
@@ -191,6 +191,7 @@ export function CommandPanel({
   onResume,
   onClose,
 }: {
+  open: boolean
   agent?: string
   disabled: boolean
   onCommand: (text: string) => void
@@ -267,65 +268,71 @@ export function CommandPanel({
   const key =
     'grid h-12 place-content-center gap-0.5 rounded-xl px-1 disabled:opacity-40'
   return (
-    <ComposerPanel
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
       title={isAgy ? t`Antigravity commands` : t`Claude commands`}
-      onClose={onClose}
-      closeLabel={t`Close commands`}
+      testId="session-commands-sheet"
+      write
     >
-      <p className="text-meta text-brand-label">
-        {disabled
-          ? t`Turn on write access in Settings to send commands`
-          : isAgy
-            ? t`Antigravity commands, sent into the pane`
-            : t`Claude commands, sent into the pane`}
-      </p>
-      <div
-        role="group"
-        aria-label={t`Commands`}
-        data-testid="session-commands"
-        className="grid grid-cols-3 gap-1.5"
-      >
-        {commands.map((command) => (
-          <Button
-            variant="key"
-            key={command.label}
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              command.run()
-              onClose()
-            }}
-            className={key}
-          >
-            <span className="font-mono text-caption leading-none">
-              {command.label}
-            </span>
-            <span className="text-meta leading-none text-brand-label">
-              {command.hint}
-            </span>
-          </Button>
-        ))}
-      </div>
-      {models.length ? (
-        <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
-          <span className="text-meta text-brand-label">/model</span>
-          {models.map((model) => (
+      <div className="grid gap-3 px-4">
+        <p className="text-meta text-brand-label">
+          {disabled
+            ? t`Turn on write access in Settings to send commands`
+            : isAgy
+              ? t`Antigravity commands, sent into the pane`
+              : t`Claude commands, sent into the pane`}
+        </p>
+        <div
+          role="group"
+          aria-label={t`Commands`}
+          data-testid="session-commands"
+          className="grid grid-cols-3 gap-1.5"
+        >
+          {commands.map((command) => (
             <Button
               variant="key"
-              key={model}
+              key={command.label}
               type="button"
               disabled={disabled}
               onClick={() => {
-                onCommand(`/model ${model}`)
+                command.run()
                 onClose()
               }}
-              className={cn('h-8 rounded-full px-3 font-mono text-caption')}
+              className={key}
             >
-              {model}
+              <span className="font-mono text-caption leading-none">
+                {command.label}
+              </span>
+              <span className="text-meta leading-none text-brand-label">
+                {command.hint}
+              </span>
             </Button>
           ))}
         </div>
-      ) : null}
-    </ComposerPanel>
+        {models.length ? (
+          <div className="flex flex-wrap items-center gap-1.5 px-1 pt-1">
+            <span className="text-meta text-brand-label">/model</span>
+            {models.map((model) => (
+              <Button
+                variant="key"
+                key={model}
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  onCommand(`/model ${model}`)
+                  onClose()
+                }}
+                className={cn('h-8 rounded-full px-3 font-mono text-caption')}
+              >
+                {model}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </Sheet>
   )
 }

@@ -78,7 +78,10 @@ const config = defineConfig({
     devtools(),
     lingui(),
     babel({ presets: [linguiTransformerBabelPreset()] }),
-    cloudflare({ viteEnvironment: { name: 'ssr' } }),
+    cloudflare({
+      viteEnvironment: { name: 'ssr' },
+      auxiliaryWorkers: [{ configPath: './wrangler.relay.jsonc' }],
+    }),
     tailwindcss(),
     tanstackStart(),
     viteReact(),

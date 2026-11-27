@@ -45,7 +45,7 @@ export function EntryRow({
   const wide = useIsWide()
   const Icon = ICONS[page]
   return (
-    <li className="border-b border-brand-edge last:border-b-0">
+    <li>
       <Link
         to="/{-$locale}/console/me/$page"
         params={{ locale: locale === 'en' ? undefined : locale, page }}
@@ -53,9 +53,8 @@ export function EntryRow({
         aria-current={active ? 'page' : undefined}
         data-me={page}
         className={cn(
-          'key-press flex min-h-13 items-center gap-3 px-4 py-2.5',
-          wide && 'list-row',
-          active && (wide ? 'row-selected' : 'bg-brand-soft'),
+          'list-row flex min-h-13 items-center gap-3 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-3',
+          active && 'row-selected',
         )}
       >
         <Icon size={18} aria-hidden className="shrink-0 text-brand-label" />
