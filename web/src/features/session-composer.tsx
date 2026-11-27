@@ -24,6 +24,10 @@ const draftKey = (id: string) => `wezdeck.draft.${id}`
 /** An error line with a one-tap copy, for pasting it elsewhere. */
 export function ErrorLine({ message }: { message: string }) {
   const { t } = useLingui()
+  const displayMessage =
+    message === 'tmux send-keys: client is read-only'
+      ? t`tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying.`
+      : message
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     try {
@@ -39,7 +43,9 @@ export function ErrorLine({ message }: { message: string }) {
       role="alert"
       className="flex items-start gap-2 text-meta text-brand-error"
     >
-      <span className="min-w-0 flex-1 break-words select-text">{message}</span>
+      <span className="min-w-0 flex-1 break-words select-text">
+        {displayMessage}
+      </span>
       <Button
         variant="plain"
         type="button"

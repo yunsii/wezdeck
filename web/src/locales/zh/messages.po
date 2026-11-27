@@ -798,7 +798,7 @@ msgstr "缓存命中"
 msgid "cache hit {hit}%"
 msgstr "缓存命中 {hit}%"
 
-#: src/features/session-composer.tsx:261
+#: src/features/session-composer.tsx:267
 #: src/features/session-detail-notices.tsx:18
 #: src/features/session-detail-parts.tsx:67
 msgid "Can't get the latest from the host, showing {staleAt}:"
@@ -1161,7 +1161,7 @@ msgstr "上下文占用"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:55
+#: src/features/session-composer.tsx:61
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:147
@@ -1201,7 +1201,7 @@ msgstr "已复制：{shown}"
 #: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:55
+#: src/features/session-composer.tsx:61
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1221,7 +1221,7 @@ msgstr "复制命令"
 msgid "Copy document"
 msgstr "复制文档"
 
-#: src/features/session-composer.tsx:47
+#: src/features/session-composer.tsx:53
 msgid "Copy error"
 msgstr "复制错误信息"
 
@@ -2350,7 +2350,7 @@ msgstr "引用本仓未结工单"
 msgid "Merge"
 msgstr "合并分支"
 
-#: src/features/session-composer.tsx:178
+#: src/features/session-composer.tsx:184
 msgid "Message"
 msgstr "发消息"
 
@@ -2364,7 +2364,7 @@ msgstr "消息操作"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "给工单管理者发消息（Ctrl+Enter 发送）…"
 
-#: src/features/session-composer.tsx:177
+#: src/features/session-composer.tsx:183
 msgid "Message to the agent"
 msgstr "发给 Agent 的消息"
 
@@ -2877,7 +2877,7 @@ msgstr "打开仓库外链（快捷键：l）"
 msgid "Open session"
 msgstr "打开会话"
 
-#: src/features/session-composer.tsx:283
+#: src/features/session-composer.tsx:289
 #: src/features/session-detail-notices.tsx:55
 #: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
@@ -4072,7 +4072,7 @@ msgstr "方案"
 msgid "Some numbers are missing: {missing}"
 msgstr "部分数据没拿到：{missing}"
 
-#: src/features/session-composer.tsx:267
+#: src/features/session-composer.tsx:273
 #: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "终端刚有输入，{retryIn} 秒后自动重发…"
@@ -4420,6 +4420,10 @@ msgstr "思考"
 msgid "This agent lists no skills yet"
 msgstr "这个 agent 还没有列出能力"
 
+#: src/features/session-detail-notices.tsx:28
+msgid "This archived conversation is read-only."
+msgstr "此会话已归档，仅供查看。"
+
 #: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "当前浏览器"
@@ -4456,7 +4460,7 @@ msgstr "这台设备还没获批（我的 › 设备授权）。"
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
-#: src/features/session-composer.tsx:262
+#: src/features/session-composer.tsx:268
 #: src/features/session-detail-notices.tsx:19
 #: src/features/session-detail-parts.tsx:68
 msgid "this device is offline"
@@ -4615,6 +4619,10 @@ msgstr "标题来源"
 #: src/features/me-autotitle.tsx:302
 msgid "Title unlocked; auto-titling will resume."
 msgstr "已解除锁定，后续将恢复自动更新标题。"
+
+#: src/features/session-composer.tsx:29
+msgid "tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying."
+msgstr "tmux 客户端处于只读模式，提交按键被拒绝。重试前请检查终端输入框是否已粘贴这条消息。"
 
 #: src/features/session-info.tsx:73
 msgid "tmux pane"
@@ -4980,8 +4988,8 @@ msgid "Web (this console)"
 msgstr "网页端（当前控制台）"
 
 #: src/features/session-detail-notices.tsx:28
-msgid "Web sending is unavailable for this session."
-msgstr "此会话暂时无法从网页发送消息。"
+#~ msgid "Web sending is unavailable for this session."
+#~ msgstr "此会话暂时无法从网页发送消息。"
 
 #: src/features/landing-page.tsx:133
 #: src/features/remote-badge.tsx:98

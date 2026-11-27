@@ -798,7 +798,7 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:261
+#: src/features/session-composer.tsx:267
 #: src/features/session-detail-notices.tsx:18
 #: src/features/session-detail-parts.tsx:67
 msgid "Can't get the latest from the host, showing {staleAt}:"
@@ -1161,7 +1161,7 @@ msgstr "context usage"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:55
+#: src/features/session-composer.tsx:61
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:310
 #: src/features/ticket-info.tsx:147
@@ -1201,7 +1201,7 @@ msgstr "Copied: {shown}"
 #: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:55
+#: src/features/session-composer.tsx:61
 #: src/features/session-permission.tsx:137
 #: src/features/session-permission.tsx:347
 #: src/features/session-permission.tsx:388
@@ -1221,7 +1221,7 @@ msgstr "Copy command"
 msgid "Copy document"
 msgstr "Copy document"
 
-#: src/features/session-composer.tsx:47
+#: src/features/session-composer.tsx:53
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -2350,7 +2350,7 @@ msgstr "Mention an open repo ticket"
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/session-composer.tsx:178
+#: src/features/session-composer.tsx:184
 msgid "Message"
 msgstr "Message"
 
@@ -2364,7 +2364,7 @@ msgstr "Message actions"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
-#: src/features/session-composer.tsx:177
+#: src/features/session-composer.tsx:183
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2877,7 +2877,7 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:283
+#: src/features/session-composer.tsx:289
 #: src/features/session-detail-notices.tsx:55
 #: src/features/session-detail-parts.tsx:95
 msgid "Open settings"
@@ -4072,7 +4072,7 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/session-composer.tsx:267
+#: src/features/session-composer.tsx:273
 #: src/features/session-detail-parts.tsx:79
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
@@ -4420,6 +4420,10 @@ msgstr "Thinking"
 msgid "This agent lists no skills yet"
 msgstr "This agent lists no skills yet"
 
+#: src/features/session-detail-notices.tsx:28
+msgid "This archived conversation is read-only."
+msgstr "This archived conversation is read-only."
+
 #: src/features/me-devices.tsx:120
 msgid "This browser"
 msgstr "This browser"
@@ -4456,7 +4460,7 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:262
+#: src/features/session-composer.tsx:268
 #: src/features/session-detail-notices.tsx:19
 #: src/features/session-detail-parts.tsx:68
 msgid "this device is offline"
@@ -4615,6 +4619,10 @@ msgstr "Title source"
 #: src/features/me-autotitle.tsx:302
 msgid "Title unlocked; auto-titling will resume."
 msgstr "Title unlocked; auto-titling will resume."
+
+#: src/features/session-composer.tsx:29
+msgid "tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying."
+msgstr "tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying."
 
 #: src/features/session-info.tsx:73
 msgid "tmux pane"
@@ -4980,8 +4988,8 @@ msgid "Web (this console)"
 msgstr "Web (this console)"
 
 #: src/features/session-detail-notices.tsx:28
-msgid "Web sending is unavailable for this session."
-msgstr "Web sending is unavailable for this session."
+#~ msgid "Web sending is unavailable for this session."
+#~ msgstr "Web sending is unavailable for this session."
 
 #: src/features/landing-page.tsx:133
 #: src/features/remote-badge.tsx:98
