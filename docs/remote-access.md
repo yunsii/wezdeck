@@ -48,8 +48,13 @@ flowchart LR
    `stun.cloudflare.com`, non-trickle: SDP carries all candidates, one
    round trip over the relay socket). pion on the host answers.
 3. DataChannel open → requests and pings move to it; the relay carries
-   nothing else. Not open within 15 s or ICE failed → stay on the WebSocket
-   relay, retry WebRTC every 60 s.
+   nothing else. Not open within 15 s, ICE `disconnected` for 3 s, or ICE
+   failed → stay on the WebSocket relay; retry WebRTC every 60 s (or back off
+   60 s → 180 s → 600 s when `samePublic=no`, reset on `online` / manual retry).
+   In the foreground, 3 consecutive missed pongs (6 s) or a silent RPC timeout
+   fall back from WebRTC or force-reconnect a half-open WebSocket; returning to
+   the foreground or regaining network (`visibilitychange` / `online`) resets
+   reconnect backoff and sends an immediate 4 s liveness probe.
 
 Why direct often fails on a phone, and the mic button: mobile browsers hide
 their LAN address behind mDNS (`xxxx.local`); the host cannot resolve it
@@ -202,9 +207,12 @@ socket, and catches `host.send()` failures (`host_send_error`) instead of
 blackholing frames onto a stale/closing index-0 socket after a TCP reset.
 `/relay/health` reports `hosts`, `hosts_total`, `host_id`, `clients`, and
 `clients_total`; Cloudflare Worker logs record `host_connected`, `host_closed`,
-`host_send_error`, `client_connected`, `client_closed`, `client_send_error`, and
+`host_send_error`, `client_connected`, `client_closed`, `client_send_error`
+(closing broken client sockets and notifying the host `bye`), and
 `presence_changed`. The host relay also logs `send_error` / `ping_error` if
-writing to the DO socket fails.
+writing to the DO socket fails, and browser diagnostics snapshots keep an
+independent 80-entry `linkEvents` ring buffer (`remote-link-trace.ts`) so
+high-volume UI traces never evict disconnect / timeout forensics.
 
 Rotation (`rm` the env file, rerun install + `--push-secrets`) evicts open
 browser sockets: each carries a SHA-256 tag of its token, checked by the DO on
@@ -223,11 +231,13 @@ reconnect needed. WebRTC signaling (`sig`, capped at 16 peers) and host
 diagnostics pushes / `diag.submit` also require an approved `device.hello`
 connection, so an unapproved or revoked browser cannot probe host ICE
 candidates or inject diagnostics. Open without `device.hello`:
-`device.register`, `device.hello`; writes carry their own signature. The host
-keeps the cid → device binding in memory, so a relay
-restart (crash, reboot, a release) forgets it while the page's socket to
-the Worker stays up: a read refused as not approved on a socket that already
-said hello says hello again and retries once (`retriable` in
+`device.register`, `device.hello`; writes carry their own signature (`diag.submit`
+also runs `device.hello` and retries once on `NotApprovedError`). The host
+persists recent `cid → device` bindings (2 h TTL in `relay-authed.json`, 0600,
+still re-checked against `remote-devices.json` on every read) across relay
+restarts so DO-buffered RPCs do not hit `read_denied`, and browsers proactively
+re-send `device.hello` whenever `host.since` advances; a read still refused as
+not approved on a socket that already said hello retries once (`retriable` in
 `remote-auth.ts`; `remote-test-stack.sh restart-relay` reproduces it). The
 page says hello once per socket (`remote-link.ts`) and maps
 the refusal to "not approved — 我的 › 设备授权" (`remote-auth.ts`); a new
@@ -283,8 +293,9 @@ hibernating relay (the periodic dataset's `inboundWebsocketMsgCount` stays
 0 under hibernation), `http` is upgrades and presence fetches — billable =
 http + ⌈hibernation ÷ 20⌉. `durableObjectsPeriodicGroups` (`activeTime` in
 µs, `outboundWebsocketMsgCount`) cannot filter by script, so it is summed
-over the `namespaceId`s the invocations reported; `workersInvocationsAdaptive`
-filters by `scriptName`. Measured 2026-11-22 (UTC day, ≈ 13 h in): Worker
+over the `namespaceId`s the invocations reported; `workersInvocationsAdaptive` and `durableObjectsInvocationsAdaptiveGroups` both
+filter `scriptName_in: ["wezdeck", "wezdeck-relay-do"]` so DO metrics stay
+accurate after the standalone DO split. Measured 2026-11-22 (UTC day, ≈ 13 h in): Worker
 949 requests; relay 245 http + 30,505 messages ≈ 1,771 billable of 100,000;
 active 16.5 s ≈ 2 GB-s of 13,000. The card shows relay duration as time
 (GB-s ÷ 0.128 — the relay's fixed 128 MB, counted decimal as Cloudflare's
@@ -432,8 +443,8 @@ primary `master`. The pipeline splits into three stages:
    up to 5× reading the on-disk token file first — auto-running
    `wrangler rollback --yes` only on real failure), and notifies
    connected browsers non-disruptively via `wezdeck-wsl diag --notify-update`
-   (shows a sticky "New version available · Reload" toast and waits for a safe
-   idle window instead of interrupting active users; pass `--force-reload` for
+   (shows a sticky "New version available · Reload" toast and waits for a 45 s
+   safe foreground idle window instead of reloading on unlock/foreground return; pass `--force-reload` for
    immediate device-check reloads). `HostRelay` runs in its own standalone
    Cloudflare Worker (`wezdeck-relay-do`, `web/wrangler.relay.jsonc`) bound via
    `script_name`, so routine frontend deploys never recycle the DO or drop live
@@ -441,11 +452,12 @@ primary `master`. The pipeline splits into three stages:
    changes). The frontend Worker has no local DO migration after the split;
    its old `HostRelay` namespace remains dormant. A bound class cannot also
    have a delete migration, which the release smoke gate checks. When the host
-   `wezdeck-wsl relay` restarts, it drains in-flight RPCs for up to 5 s
-   (`SIGTERM` / close code `4000`), keeps P2P WebRTC peers
-   alive across transient WS blinks, `HostRelay` buffers client RPCs for 3 s
-   before broadcasting offline, and browsers transparently retry pre-execution
-   offline errors across a 6 s reconnect grace window. If additional commits
+   `wezdeck-wsl relay` restarts, it keeps its WebSocket open while draining
+   in-flight RPCs for up to 5 s (`SIGTERM` / close code `4000`) so replies
+   finish delivery before closing, persists `cid → device` auth bindings, keeps
+   P2P WebRTC peers alive across transient WS blinks, `HostRelay` buffers
+   client RPCs for 3 s before broadcasting offline, and browsers transparently
+   retry pre-execution offline errors across a 6 s reconnect grace window. If additional commits
    landed on `origin/master` while a batch was shipping, the coordinator loops
    once to ship all of them together in a single coalesced batch; callers with
    default `--wait` (override with `--no-wait`) return once their commit is an

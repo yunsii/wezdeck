@@ -85,12 +85,7 @@ func attentionFile() string {
 	if p := os.Getenv("WEZDECK_ATTENTION_FILE"); p != "" {
 		return p
 	}
-	matches, _ := filepath.Glob("/mnt/c/Users/*/AppData/Local/wezterm-runtime/state/agent-attention/attention.json")
-	if len(matches) > 0 {
-		return matches[0]
-	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".local/state/wezterm-runtime/state/agent-attention/attention.json")
+	return resolveDefaultAttentionFile()
 }
 
 type recentEntry struct {
@@ -167,36 +162,44 @@ func liveSessions() (map[string]attentionEntry, error) {
 }
 
 func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) map[string]attentionEntry {
+	out, _, _ := liveSessionsWithContext(entries, recent)
+	return out
+}
+
+func liveSessionsWithContext(entries map[string]attentionEntry, recent []recentEntry) (map[string]attentionEntry, map[string]tmuxPaneSnap, map[string]bool) {
 	out := map[string]attentionEntry{}
 	panes := map[string]bool{}
 	sockets := map[string]bool{}
 	for id, e := range entries {
 		out[id] = e
 		panes[e.TmuxSocket+"|"+e.TmuxPane] = true
-		if e.TmuxSocket != "" {
+		if e.TmuxPane != "" {
 			sockets[e.TmuxSocket] = true
 		}
 	}
 	for _, r := range recent {
-		if r.TmuxSocket != "" {
+		if r.TmuxPane != "" {
 			sockets[r.TmuxSocket] = true
 		}
 	}
+	snap := snapshotTmuxPanes(sockets)
+	closed := closedSessionsSet()
 	// session_id → pane still advertising that pin (another window may keep
 	// running a session this pane's cleared_to replaced).
-	pins := agentSessionPins(sockets)
+	pins := agentSessionPinsFromSnap(snap)
 	sort.Slice(recent, func(i, j int) bool { return recent[i].ArchivedTS > recent[j].ArchivedTS })
 	paneMeta := recentPaneMeta(recent)
 	for _, r := range recent {
 		key := r.TmuxSocket + "|" + r.TmuxPane
-		if r.SessionID == "" || r.TmuxPane == "" || panes[key] || sessionWasClosed(r.SessionID) {
+		if r.SessionID == "" || r.TmuxPane == "" || panes[key] || closed[r.SessionID] {
 			continue
 		}
 		panes[key] = true
-		_, _, cmd, _, profile, alive := paneState(r.attentionEntry)
+		p, alive := snap[key]
 		if !alive {
 			continue
 		}
+		cmd, profile := p.cmd, p.profile
 		isPending := strings.HasPrefix(r.ClearedTo, "pending-")
 		if !isAgentPane(cmd, r.attentionEntry) &&
 			!(isPending && agentCommands[profileFamily(profile)] && paneHasLauncherProcess(r.attentionEntry)) {
@@ -244,40 +247,7 @@ func liveSessionsFrom(entries map[string]attentionEntry, recent []recentEntry) m
 		}
 		out[r.SessionID] = e
 	}
-	return out
-}
-
-// agentSessionPins reads @wezterm_agent_session_id from every pane on the
-// given tmux sockets. Used so a cleared_to on pane A does not hide the same
-// session id still running on pane B.
-func agentSessionPins(sockets map[string]bool) map[string]attentionEntry {
-	out := map[string]attentionEntry{}
-	for socket := range sockets {
-		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
-			"#{pane_id}\t#{session_name}\t#{pane_current_command}\t#{@wezterm_agent_session_id}").Output()
-		if err != nil {
-			continue
-		}
-		for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
-			parts := strings.Split(line, "\t")
-			if len(parts) < 4 {
-				continue
-			}
-			pane, sess, cmd, sid := parts[0], parts[1], parts[2], strings.TrimSpace(parts[3])
-			if !sessionIDPattern.MatchString(sid) {
-				continue
-			}
-			e := attentionEntry{
-				SessionID: sid, TmuxSocket: socket, TmuxSession: sess, TmuxPane: pane,
-				Status: "idle",
-			}
-			if !isAgentPane(cmd, e) {
-				continue
-			}
-			out[sid] = e
-		}
-	}
-	return out
+	return out, snap, closed
 }
 
 // replacementForArchived finds the live session that took over an archived
@@ -379,21 +349,23 @@ func listSessionsFor(includeArchived bool) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	entries := liveSessionsFrom(active, recent)
+	entries, paneSnap, closed := liveSessionsWithContext(active, recent)
 	now := time.Now()
 	cards := []sessionCard{}
 	gitCache := map[string][3]string{} // cwd → repo, repoRoot, worktree
 	attachments := map[string]map[string]bool{}
+	deskBySock := map[string]map[string]int64{}
 	visits := worktreeVisits()
 	aliases := parseRepoAliases(repoAliasSpec())
 	for id, e := range entries {
 		if e.TmuxPane == "" {
 			continue
 		}
-		_, cwd, cmd, index, profile, interrupt, alive := paneStateWithInterrupt(e)
+		p, alive := paneSnap[e.TmuxSocket+"|"+e.TmuxPane]
 		if !alive {
 			continue
 		}
+		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
 		if e.interrupted(interrupt) {
 			e.Status = "idle"
 			e.RunningKind = ""
@@ -464,7 +436,12 @@ func listSessionsFor(includeArchived bool) (any, error) {
 		card.OrderAt = sessionOrderAt(e, card.TS)
 		card.OrderSource = sessionOrderSource(e, card.TimeSource)
 		observeSessionOrder(card, e.TS)
-		if act := deskActivity(e); act > 0 {
+		sockDesk, cachedDesk := deskBySock[e.TmuxSocket]
+		if !cachedDesk {
+			sockDesk = deskActivityBySession(e.TmuxSocket)
+			deskBySock[e.TmuxSocket] = sockDesk
+		}
+		if act := sockDesk[e.TmuxSession]; act > 0 {
 			card.DeskIdleS = now.Unix() - act
 		} else {
 			card.DeskIdleS = -1
@@ -477,7 +454,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			listed[card.ID] = true
 		}
 		for _, r := range recent {
-			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" || sessionWasClosed(r.SessionID) ||
+			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" || closed[r.SessionID] ||
 				replacementForArchived(r.SessionID, recent, entries) != "" ||
 				now.Sub(time.UnixMilli(r.ArchivedTS)) >= recentFinishedSession {
 				continue

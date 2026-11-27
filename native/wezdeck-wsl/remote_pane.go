@@ -7,9 +7,131 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 )
+
+type tmuxPaneSnap struct {
+	id             string
+	session        string
+	cwd            string
+	cmd            string
+	index          int
+	profile        string
+	interrupt      string
+	agentSessionID string
+}
+
+const attentionPathCacheTTL = 60 * time.Second
+
+var (
+	attentionPathMu      sync.Mutex
+	attentionPathCached  string
+	attentionPathChecked time.Time
+)
+
+func resolveDefaultAttentionFile() string {
+	attentionPathMu.Lock()
+	if attentionPathCached != "" && time.Since(attentionPathChecked) < attentionPathCacheTTL {
+		p := attentionPathCached
+		attentionPathMu.Unlock()
+		return p
+	}
+	attentionPathMu.Unlock()
+
+	resolved := ""
+	if matches, _ := filepath.Glob("/mnt/c/Users/*/AppData/Local/wezterm-runtime/state/agent-attention/attention.json"); len(matches) > 0 {
+		resolved = matches[0]
+	} else {
+		home, _ := os.UserHomeDir()
+		resolved = filepath.Join(home, ".local/state/wezterm-runtime/state/agent-attention/attention.json")
+	}
+
+	attentionPathMu.Lock()
+	attentionPathCached = resolved
+	attentionPathChecked = time.Now()
+	attentionPathMu.Unlock()
+	return resolved
+}
+
+// snapshotTmuxPanes reads pane metadata for every socket with one
+// `tmux list-panes -a` call per socket instead of per-pane display-message forks.
+func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
+	out := map[string]tmuxPaneSnap{}
+	for socket := range sockets {
+		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
+			"#{pane_id}\t#{session_name}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}\t#{@wezterm_agent_session_id}").Output()
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(strings.TrimRight(string(raw), "\r\n"), "\n") {
+			if line == "" {
+				continue
+			}
+			parts := strings.SplitN(line, "\t", 10)
+			if len(parts) < 5 || parts[0] == "" {
+				continue
+			}
+			index, _ := strconv.Atoi(parts[4])
+			paneProfile, windowProfile, role, interrupt, sid := "", "", "", "", ""
+			if len(parts) > 5 {
+				paneProfile = normalizeAgentProfile(parts[5])
+			}
+			if len(parts) > 6 {
+				windowProfile = normalizeAgentProfile(parts[6])
+			}
+			if len(parts) > 7 {
+				role = parts[7]
+			}
+			if len(parts) > 8 {
+				interrupt = parts[8]
+			}
+			if len(parts) > 9 {
+				sid = strings.TrimSpace(parts[9])
+			}
+			out[socket+"|"+parts[0]] = tmuxPaneSnap{
+				id:             parts[0],
+				session:        parts[1],
+				cwd:            parts[2],
+				cmd:            parts[3],
+				index:          index,
+				profile:        pickManagedAgentProfile(paneProfile, windowProfile, role),
+				interrupt:      interrupt,
+				agentSessionID: sid,
+			}
+		}
+	}
+	return out
+}
+
+func agentSessionPins(sockets map[string]bool) map[string]attentionEntry {
+	return agentSessionPinsFromSnap(snapshotTmuxPanes(sockets))
+}
+
+func agentSessionPinsFromSnap(snap map[string]tmuxPaneSnap) map[string]attentionEntry {
+	out := map[string]attentionEntry{}
+	for key, p := range snap {
+		if !sessionIDPattern.MatchString(p.agentSessionID) {
+			continue
+		}
+		socket, _, _ := strings.Cut(key, "|")
+		e := attentionEntry{
+			SessionID:   p.agentSessionID,
+			TmuxSocket:  socket,
+			TmuxSession: p.session,
+			TmuxPane:    p.id,
+			Status:      "idle",
+		}
+		if !isAgentPane(p.cmd, e) {
+			continue
+		}
+		out[p.agentSessionID] = e
+	}
+	return out
+}
 
 func tmuxCmd(socket string, args ...string) *exec.Cmd {
 	full := args
@@ -292,6 +414,26 @@ func attachedTmuxSessions(socket string) map[string]bool {
 		}
 	}
 	return states
+}
+
+// deskActivityBySession reads newest client_activity per tmux session with one
+// `tmux list-clients` call per socket instead of one fork per session card.
+func deskActivityBySession(socket string) map[string]int64 {
+	out, err := tmuxCmd(socket, "list-clients", "-F", "#{session_name}\t#{client_activity}").Output()
+	if err != nil {
+		return nil
+	}
+	newest := map[string]int64{}
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		parts := strings.Split(line, "\t")
+		if len(parts) != 2 {
+			continue
+		}
+		if v, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64); err == nil && v > newest[parts[0]] {
+			newest[parts[0]] = v
+		}
+	}
+	return newest
 }
 
 // pickManagedAgentProfile: among pane pin, window sticky, and agent-cli role,

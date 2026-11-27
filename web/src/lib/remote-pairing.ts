@@ -144,3 +144,19 @@ export function relayBase() {
   if (configured) return configured.replace(/\/$/, '')
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`
 }
+
+/** Check `/relay/auth` to distinguish a rejected pairing token (401) from a network outage. */
+export async function checkTokenRefused(token: string) {
+  try {
+    const response = await fetch(
+      `${relayBase().replace(/^ws/, 'http')}/relay/auth${roomQuery()}`,
+      {
+        headers: { authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      },
+    )
+    return response.status === 401
+  } catch {
+    return false
+  }
+}

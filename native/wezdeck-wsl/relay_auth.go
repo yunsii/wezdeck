@@ -17,7 +17,95 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
+	"time"
 )
+
+const (
+	relayAuthedTTL = 2 * time.Hour
+	relayAuthedMax = 128
+)
+
+type persistedAuthEntry struct {
+	Device string `json:"device"`
+	At     int64  `json:"at"`
+}
+
+func relayAuthedPath() string {
+	return filepath.Join(filepath.Dir(relayControlPath()), "relay-authed.json")
+}
+
+// loadAuthed restores recent cid -> device bindings across relay restarts so
+// DO-buffered RPCs succeed on the first try without read_denied storms. Every
+// readAllowed() call still checks loadDevices().Approved, so revokes take
+// effect immediately.
+func (r *relay) loadAuthed() {
+	raw, err := os.ReadFile(relayAuthedPath())
+	if err != nil {
+		return
+	}
+	var stored map[string]persistedAuthEntry
+	if json.Unmarshal(raw, &stored) != nil {
+		return
+	}
+	cutoff := time.Now().Add(-relayAuthedTTL).Unix()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.authed == nil {
+		r.authed = map[string]string{}
+	}
+	for cid, entry := range stored {
+		if cid == "" || entry.Device == "" || entry.At < cutoff {
+			continue
+		}
+		r.authed[cid] = entry.Device
+	}
+}
+
+func (r *relay) saveAuthed() {
+	r.mu.Lock()
+	if len(r.authed) == 0 {
+		r.mu.Unlock()
+		_ = os.Remove(relayAuthedPath())
+		return
+	}
+	now := time.Now().Unix()
+	out := make(map[string]persistedAuthEntry, len(r.authed))
+	count := 0
+	for cid, device := range r.authed {
+		if cid == "" || device == "" {
+			continue
+		}
+		out[cid] = persistedAuthEntry{Device: device, At: now}
+		count++
+		if count >= relayAuthedMax {
+			break
+		}
+	}
+	r.mu.Unlock()
+
+	data, err := json.Marshal(out)
+	if err != nil {
+		return
+	}
+	path := relayAuthedPath()
+	_ = os.MkdirAll(filepath.Dir(path), 0o700)
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".relay-authed-*.tmp")
+	if err != nil {
+		return
+	}
+	tmpName := tmp.Name()
+	_, werr := tmp.Write(data)
+	cerr := tmp.Close()
+	if werr != nil || cerr != nil {
+		_ = os.Remove(tmpName)
+		return
+	}
+	_ = os.Chmod(tmpName, 0o600)
+	if os.Rename(tmpName, path) != nil {
+		_ = os.Remove(tmpName)
+	}
+}
 
 // errNotApproved is matched by the page (remote-link.ts) to say which
 // device id to approve; keep the prefix stable.
@@ -33,17 +121,22 @@ func openReads() bool {
 
 func (r *relay) authorize(cid, device string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 	if r.authed == nil {
 		r.authed = map[string]string{}
 	}
 	r.authed[cid] = device
+	r.mu.Unlock()
+	r.saveAuthed()
 }
 
 func (r *relay) forgetAuth(cid string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	_, existed := r.authed[cid]
 	delete(r.authed, cid)
+	r.mu.Unlock()
+	if existed {
+		r.saveAuthed()
+	}
 }
 
 func (r *relay) deviceOf(cid string) string {

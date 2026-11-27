@@ -15,7 +15,6 @@ export const UPDATED_KEY = 'wezdeck.updated-from'
 export const UPDATED_REASON_KEY = 'wezdeck.updated-reason'
 
 const IDLE_RELOAD_MS = 45_000
-const HIDDEN_RETURN_RELOAD_MS = 15_000
 
 let deferred: InstallPrompt | null = null
 let update: { buildId: string; reason?: string } | null = null
@@ -133,9 +132,10 @@ let idleWatcherInstalled = false
 let pendingReloadReason = ''
 
 /**
- * Wait for a genuinely safe idle window (45 s without interaction, or returning
- * after >= 15 s in the background) before silently reloading onto the new build.
- * Active users keep working uninterrupted and can click the sticky toast anytime.
+ * Wait for a genuinely safe foreground idle window (45 s without interaction)
+ * before silently reloading onto the new build. Returning from background no
+ * longer reloads immediately so unlocking a phone never yanks the page mid-read;
+ * users can still tap the sticky "New version available · Reload" toast anytime.
  */
 export function scheduleSafeIdleReload(reason = '') {
   if (typeof window === 'undefined') return
@@ -144,7 +144,6 @@ export function scheduleSafeIdleReload(reason = '') {
   idleWatcherInstalled = true
 
   let lastActivity = Date.now()
-  let hiddenAt: number | null = null
   const bump = () => {
     lastActivity = Date.now()
   }
@@ -152,21 +151,9 @@ export function scheduleSafeIdleReload(reason = '') {
     window.addEventListener(ev, bump, { passive: true, capture: true })
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      hiddenAt = Date.now()
-      return
+    if (document.visibilityState === 'visible') {
+      lastActivity = Date.now()
     }
-    if (
-      hiddenAt !== null &&
-      Date.now() - hiddenAt >= HIDDEN_RETURN_RELOAD_MS &&
-      update &&
-      isSafeToAutoReload()
-    ) {
-      reloadToUpdate(pendingReloadReason)
-      return
-    }
-    hiddenAt = null
-    lastActivity = Date.now()
   })
   window.setInterval(() => {
     if (!update || document.visibilityState !== 'visible') return

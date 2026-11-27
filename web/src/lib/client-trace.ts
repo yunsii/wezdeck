@@ -5,6 +5,7 @@
 // carry the pairing token, is dropped).
 import { buildId } from '#/lib/pwa'
 import { remoteLink } from '#/lib/remote-link'
+import { linkEventsSnapshot } from '#/lib/remote-link-trace'
 import { installLocalEvents, recordLocalEvent } from '#/lib/local-events'
 
 type TraceEvent = { t: number; kind: string; data?: Record<string, unknown> }
@@ -494,6 +495,7 @@ export function diagnosticsSnapshot(extra: Record<string, unknown> = {}) {
       samePublic: link.samePublic,
       rtcNote: link.rtcNote,
     },
+    linkEvents: linkEventsSnapshot(),
     ...pageState(),
     ...extra,
     // the last events of the previous document in this tab (pagehide)

@@ -288,6 +288,18 @@ func closedSessionMarker(id string) string {
 	return filepath.Join(attentionFile()+".closed-sessions", id)
 }
 
+func closedSessionsSet() map[string]bool {
+	entries, err := os.ReadDir(attentionFile() + ".closed-sessions")
+	if err != nil || len(entries) == 0 {
+		return nil
+	}
+	out := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		out[entry.Name()] = true
+	}
+	return out
+}
+
 func sessionWasClosed(id string) bool {
 	if !sessionIDPattern.MatchString(id) {
 		return false

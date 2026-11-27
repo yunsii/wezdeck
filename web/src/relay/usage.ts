@@ -23,7 +23,10 @@ export type UsageEnv = {
   CF_ANALYTICS_TOKEN?: string
 }
 
-const SCRIPT = 'wezdeck'
+const WEB_SCRIPT = 'wezdeck'
+const DO_SCRIPT = 'wezdeck-relay-do'
+const WORKER_SCRIPTS = [WEB_SCRIPT, DO_SCRIPT]
+const DO_SCRIPTS = [DO_SCRIPT, WEB_SCRIPT]
 const TTL_S = 300
 
 type GraphResult = {
@@ -79,7 +82,8 @@ async function collect(env: UsageEnv): Promise<UsageReply> {
   if (!env.CF_ACCOUNT_ID || !env.CF_ANALYTICS_TOKEN) return reply
   const vars = {
     account: env.CF_ACCOUNT_ID,
-    script: SCRIPT,
+    workerScripts: WORKER_SCRIPTS,
+    doScripts: DO_SCRIPTS,
     day,
     start: `${day}T00:00:00Z`,
     end: now.toISOString(),
@@ -87,9 +91,9 @@ async function collect(env: UsageEnv): Promise<UsageReply> {
   const jobs: Array<Promise<void>> = [
     graph(
       env,
-      `query ($account: String!, $script: String!, $start: Time!, $end: Time!) {
+      `query ($account: String!, $workerScripts: [String!], $start: Time!, $end: Time!) {
         viewer { accounts(filter: { accountTag: $account }) {
-          workersInvocationsAdaptive(limit: 1000, filter: { scriptName: $script, datetime_geq: $start, datetime_leq: $end }) { sum { requests errors } }
+          workersInvocationsAdaptive(limit: 1000, filter: { scriptName_in: $workerScripts, datetime_geq: $start, datetime_leq: $end }) { sum { requests errors } }
         } } }`,
       vars,
     ).then((a) => {
@@ -104,9 +108,9 @@ async function collect(env: UsageEnv): Promise<UsageReply> {
     // namespaces the invocations reported.
     graph(
       env,
-      `query ($account: String!, $script: String!, $day: Date!) {
+      `query ($account: String!, $doScripts: [String!], $day: Date!) {
         viewer { accounts(filter: { accountTag: $account }) {
-          durableObjectsInvocationsAdaptiveGroups(limit: 1000, filter: { scriptName: $script, date_geq: $day, date_leq: $day }) {
+          durableObjectsInvocationsAdaptiveGroups(limit: 1000, filter: { scriptName_in: $doScripts, date_geq: $day, date_leq: $day }) {
             sum { requests } dimensions { type namespaceId }
           }
         } } }`,
@@ -185,7 +189,7 @@ export async function usageFetch(
   if (!env.RELAY_HOST_TOKEN || !safeEqual(presented, env.RELAY_HOST_TOKEN))
     return new Response('unauthorized', { status: 401 })
   const cache = (caches as unknown as { default: Cache }).default
-  const key = new Request(new URL('/relay/usage/v1', request.url))
+  const key = new Request(new URL('/relay/usage/v2', request.url))
   const hit = await cache.match(key)
   if (hit) return hit
   const response = Response.json(await collect(env), {

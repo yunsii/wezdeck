@@ -160,6 +160,14 @@ export class HostRelay extends DurableObject<RelayEnv> {
         t: String(frame.t ?? ''),
         err: err instanceof Error ? err.message : String(err),
       })
+      try {
+        ws.close(1011, 'client send failed')
+      } catch {
+        // already closing/closed
+      }
+      if (cid) {
+        this.sendToHost({ t: 'bye', cid }, 'client_send_failed')
+      }
       return false
     }
   }

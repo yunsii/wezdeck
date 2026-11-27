@@ -154,6 +154,7 @@ func runRelay() error {
 	}
 	url := relayURL()
 	r := &relay{peers: map[string]*webrtc.PeerConnection{}, clients: map[string]*clientChan{}}
+	r.loadAuthed()
 	activeRelay = r
 	if path := relayLogPath(); path != "" {
 		if f, err := openRelayLog(path); err == nil {
@@ -204,10 +205,12 @@ func runRelay() error {
 		}
 	}
 
-	r.logf("draining", "timeout_ms=%d", relayDrainTimeout.Milliseconds())
+	// Drain any remaining in-flight RPCs (e.g. if SIGTERM arrived while
+	// disconnected or over WebRTC DataChannel) before closing peers and exit.
 	drained := r.waitInflight(relayDrainTimeout)
+	r.saveAuthed()
 	r.closePeers()
-	r.logf("drained", "clean=%t", drained)
+	r.logf("shutdown", "drained=%t", drained)
 	return nil
 }
 
@@ -234,6 +237,13 @@ func (r *relay) session(parent context.Context, url, token string) error {
 	r.conn = conn
 	r.mu.Unlock()
 	defer func() {
+		// On SIGTERM/SIGINT, keep the WebSocket open while draining in-flight
+		// RPCs so their replies actually reach waiting browsers before close.
+		if parent.Err() != nil {
+			r.logf("draining", "timeout_ms=%d", relayDrainTimeout.Milliseconds())
+			drained := r.waitInflight(relayDrainTimeout)
+			r.logf("drained", "clean=%t", drained)
+		}
 		r.mu.Lock()
 		r.conn = nil
 		r.mu.Unlock()

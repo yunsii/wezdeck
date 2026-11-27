@@ -2,11 +2,12 @@
 // requests go without the per-connection hello, and how the host's refusal
 // reads on the page. remote-link.ts says the hello.
 
-/** answered without a hello: asking, saying hello, host-requested diagnostics; writes sign themselves */
+import { loadDeviceKey, signPayload } from './device-key'
+
+/** answered without a hello: device registration/hello and self-signed writes */
 export const OPEN_ACTIONS = new Set([
   'device.register',
   'device.hello',
-  'diag.submit',
   'send',
   'key',
   'reply',
@@ -100,4 +101,24 @@ export const isTransientReconnectError = (error: unknown): boolean => {
     msg === 'home host is offline' ||
     msg === 'remote link is not connected'
   )
+}
+
+/** Build signed write arguments using this device's ECDSA P-256 key. */
+export async function buildSignedWriteArgs(
+  action: string,
+  args: Record<string, unknown>,
+) {
+  const key = await loadDeviceKey()
+  if (!key) throw new Error('writing is not enabled on this device')
+  const payload = JSON.stringify({
+    action,
+    args,
+    ts: Date.now(),
+    nonce: crypto.randomUUID(),
+  })
+  return {
+    device: key.id,
+    payload,
+    sig: await signPayload(key, payload),
+  }
 }

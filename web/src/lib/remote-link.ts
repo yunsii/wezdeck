@@ -1,6 +1,7 @@
 import type { UsageReply } from '#/lib/usage-contract'
 import {
   OPEN_ACTIONS,
+  buildSignedWriteArgs,
   isTransientReconnectError,
   refusal,
   retriable,
@@ -8,58 +9,35 @@ import {
 import {
   NOT_PAIRED,
   adoptPairingHash,
+  checkTokenRefused,
   forcedRemote,
   readPairedToken,
   relayBase,
   roomQuery,
 } from './remote-pairing'
-import { loadDeviceKey, signPayload } from './device-key'
+import { loadDeviceKey } from './device-key'
 import { sendFocusFrame } from './remote-focus'
+import { notReadyError, recordLinkEvent } from './remote-link-trace'
+import type { RemoteMode, RemotePath, RemoteState } from './remote-link-trace'
+import { RemoteRtc } from './remote-rtc'
 import { ReplyParts } from './reply-parts'
-import { median, selectedPath } from './rtc-path'
+import { median } from './rtc-path'
 
 export { NOT_PAIRED, forcedRemote }
+export type { RemoteMode, RemotePath, RemoteState }
 
 // Remote access to the home host when the loopback Runtime is unreachable
 // (phone / tablet on wezdeck.yuns.love). One WebSocket to the HostRelay
 // Durable Object is always kept: it carries presence, WebRTC signaling, and
-// is the fallback transport. On top of it we try a WebRTC DataChannel straight
-// to `wezdeck-wsl relay`; once open, requests use it and the relay only
-// carries only signaling. Design: docs/remote-access.md.
-
-export type RemoteMode =
-  | 'unpaired'
-  | 'unauthorized'
-  | 'connecting'
-  | 'host-offline'
-  | 'websocket'
-  | 'webrtc'
-/** How the DataChannel got through: same LAN, NAT punched, or TURN relay. */
-export type RemotePath = 'lan' | 'internet' | 'turn'
-
-export interface RemoteState {
-  mode: RemoteMode
-  path?: RemotePath
-  /** median round trip of the last 5 pings over the active transport */
-  rttMs?: number
-  hostSince?: string | null
-  /** last WebRTC failure, shown so the fallback is explainable */
-  rtcNote?: string
-  /** answered requests per transport (observability for the badge / tests) */
-  rpcCount: { webrtc: number; websocket: number }
-  /** host's verdict: both sides behind the same public address (LAN path possible) */
-  samePublic?: 'yes' | 'no'
-  /** selected ICE pair, e.g. "local=host remote=srflx 203.0.113.5" */
-  pathDetail?: string
-}
+// is the fallback transport. Design: docs/remote-access.md.
 
 const PING_MS = 2_000
+const PONG_MISS_LIMIT = 3
+const WAKE_PROBE_MS = 4_000
 const RPC_TIMEOUT_MS = 10_000
 const SLOW_WORKTREE_WRITE = /^worktree\.(recycle|remove)$/
 const RECONNECT_GRACE_MS = 6_000
 const OFFLINE_RTC_GRACE_MS = 2_000
-const RTC_OPEN_TIMEOUT_MS = 15_000
-const RTC_RETRY_MS = 60_000
 
 type Frame = Record<string, unknown> & { t: string; id?: string }
 type Pending = {
@@ -78,8 +56,6 @@ class RemoteLink {
   /** the socket this device said hello on (reads need it: relay_auth.go) */
   private helloWs?: WebSocket
   private hello?: Promise<void>
-  private pc?: RTCPeerConnection
-  private dc?: RTCDataChannel
   private pending = new Map<string, Pending>()
   private parts = new ReplyParts()
   private pings = new Map<string, number>()
@@ -87,10 +63,44 @@ class RemoteLink {
   private seq = 0
   private started = false
   private wsRetry = 1_000
-  private rtcTimer?: ReturnType<typeof setTimeout>
+  private wsReconnectTimer?: ReturnType<typeof setTimeout>
+  private wakeProbeTimer?: ReturnType<typeof setTimeout>
   private offlineRtcTimer?: ReturnType<typeof setTimeout>
+  private lastFrameAt = 0
+  private missedPongs = 0
   private hashListener?: () => void
   private focusBound = false
+  private readonly rtc: RemoteRtc
+
+  constructor() {
+    this.rtc = new RemoteRtc({
+      getSocket: () => this.ws,
+      isHostOffline: () => this.state.mode === 'host-offline',
+      getSamePublic: () => this.state.samePublic,
+      sayHello: () => this.sayHello(),
+      onFrame: (raw) => this.onFrame(raw, 'webrtc'),
+      onOpened: () => {
+        this.samples = []
+        this.set({ mode: 'webrtc', rtcNote: undefined, rttMs: undefined })
+      },
+      onOpen: (path, pathDetail) => this.set({ path, pathDetail }),
+      onClosed: (note, relayUp) => {
+        this.samples = []
+        this.set({
+          rtcNote: note,
+          path: undefined,
+          rttMs: undefined,
+          mode: relayUp
+            ? 'websocket'
+            : this.state.mode === 'webrtc'
+              ? 'connecting'
+              : this.state.mode,
+        })
+      },
+      onNote: (rtcNote) => this.set({ rtcNote }),
+      onSamePublic: (samePublic) => this.set({ samePublic }),
+    })
+  }
 
   token() {
     return readPairedToken()
@@ -104,8 +114,6 @@ class RemoteLink {
   /** Idempotent; called by the first consumer (getCollab / the badge). */
   start() {
     if (this.started || typeof window === 'undefined') return
-    // Opening a new pairing link in an already-open tab only changes the
-    // hash (no reload): adopt it and reload so the new token is used.
     if (!this.hashListener) {
       this.hashListener = () => {
         if (!/[#&]pair=/.test(location.hash)) return
@@ -115,7 +123,15 @@ class RemoteLink {
     }
     if (!this.focusBound) {
       this.focusBound = true
-      document.addEventListener('visibilitychange', () => this.reportFocus())
+      document.addEventListener('visibilitychange', () => {
+        this.reportFocus()
+        if (document.visibilityState === 'visible')
+          this.onForegroundWake('visible')
+      })
+      window.addEventListener('online', () => {
+        this.rtc.resetBackoff()
+        this.onForegroundWake('online')
+      })
       window.addEventListener('popstate', () => this.reportFocus())
     }
     adoptPairingHash()
@@ -139,6 +155,8 @@ class RemoteLink {
   }
 
   private openSocket() {
+    clearTimeout(this.wsReconnectTimer)
+    this.wsReconnectTimer = undefined
     const ws = new WebSocket(`${relayBase()}/relay/client${roomQuery()}`, [
       'wezdeck.v1',
       `token.${this.token()}`,
@@ -149,33 +167,33 @@ class RemoteLink {
     ws.onopen = () => {
       opened = true
       this.wsRetry = 300
+      this.missedPongs = 0
+      this.lastFrameAt = Date.now()
+      recordLinkEvent('ws_open')
       this.reportFocus()
     }
     ws.onclose = (event) => {
       if (this.ws !== ws) return
       this.ws = undefined
-      const dcOpen = this.dc?.readyState === 'open'
-      // Keep an open P2P WebRTC DataChannel alive across transient relay
-      // WebSocket blinks (e.g. Cloudflare DO recycle); only tear it down on
-      // token rotation (4401) or when no direct channel is open.
+      clearTimeout(this.wakeProbeTimer)
+      this.wakeProbeTimer = undefined
+      const dcOpen = this.rtc.isOpen()
       if (event.code === 4401) {
-        this.closeRtc('pairing token rotated')
+        this.rtc.close('pairing token rotated')
       } else if (!dcOpen) {
-        this.closeRtc('relay socket closed')
+        this.rtc.close('relay socket closed')
         this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
       }
-      // 4401: the DO evicted us after the token was rotated. A handshake that
-      // never opened may be a refused token too; the browser hides the 401,
-      // so ask /relay/auth before retrying.
       const refused =
         event.code === 4401
           ? Promise.resolve(true)
           : opened
             ? Promise.resolve(false)
-            : this.tokenRefused()
+            : checkTokenRefused(this.token())
       void refused.then((isRefused) => {
         if (isRefused) {
-          this.closeRtc('pairing token rejected')
+          recordLinkEvent('ws_close', { code: event.code, refused: true })
+          this.rtc.close('pairing token rejected')
           this.set({
             mode: 'unauthorized',
             rtcNote: 'pairing token rejected; pair this device again',
@@ -183,34 +201,80 @@ class RemoteLink {
           return
         }
         const delay = opened ? 300 : this.wsRetry
-        setTimeout(() => this.openSocket(), delay)
+        recordLinkEvent('ws_close', {
+          code: event.code,
+          reason: event.reason || undefined,
+          opened,
+          retryMs: delay,
+        })
+        clearTimeout(this.wsReconnectTimer)
+        this.wsReconnectTimer = setTimeout(() => this.openSocket(), delay)
         this.wsRetry = Math.min(Math.max(this.wsRetry * 2, 600), 30_000)
       })
     }
   }
 
-  /**
-   * today's Cloudflare usage: asked of the host over the relay (an approved
-   * device only — relay_usage.go), which fetches relay/usage.ts with the
-   * host token; the client token alone no longer reads it
-   */
-  async usage() {
-    return (await this.rpc('usage', {})) as UsageReply
+  private forceReconnect(reason: string) {
+    recordLinkEvent('ws_force_reconnect', { reason, mode: this.state.mode })
+    clearTimeout(this.wakeProbeTimer)
+    this.wakeProbeTimer = undefined
+    this.missedPongs = 0
+    this.wsRetry = 300
+    const prev = this.ws
+    this.ws = undefined
+    if (prev) {
+      try {
+        prev.close(4008, reason)
+      } catch {
+        // already closing/closed
+      }
+    }
+    if (!this.rtc.isOpen()) {
+      this.rtc.close(reason)
+      this.set({ mode: 'connecting', path: undefined, rttMs: undefined })
+    }
+    clearTimeout(this.wsReconnectTimer)
+    this.wsReconnectTimer = setTimeout(() => this.openSocket(), 100)
   }
 
-  private async tokenRefused() {
-    try {
-      const response = await fetch(
-        `${relayBase().replace(/^ws/, 'http')}/relay/auth${roomQuery()}`,
-        {
-          headers: { authorization: `Bearer ${this.token()}` },
-          cache: 'no-store',
-        },
-      )
-      return response.status === 401
-    } catch {
-      return false
+  private onForegroundWake(source: 'visible' | 'online') {
+    if (!this.started || this.state.mode === 'unauthorized') return
+    this.wsRetry = 300
+    this.missedPongs = 0
+    const ws = this.ws
+    recordLinkEvent('wake_probe', {
+      source,
+      mode: this.state.mode,
+      wsState: ws?.readyState ?? -1,
+    })
+    if (
+      !ws ||
+      ws.readyState === WebSocket.CLOSED ||
+      ws.readyState === WebSocket.CLOSING
+    ) {
+      clearTimeout(this.wsReconnectTimer)
+      this.wsReconnectTimer = undefined
+      this.openSocket()
+      return
     }
+    if (ws.readyState !== WebSocket.OPEN) return
+    const probeAt = Date.now()
+    this.sendPing()
+    clearTimeout(this.wakeProbeTimer)
+    this.wakeProbeTimer = setTimeout(() => {
+      this.wakeProbeTimer = undefined
+      if (this.lastFrameAt >= probeAt) return
+      if (this.rtc.isOpen()) {
+        recordLinkEvent('rtc_fallback', { reason: 'wake probe timeout' })
+        this.rtc.close('WebRTC liveness timeout')
+        return
+      }
+      if (this.ws === ws) this.forceReconnect('wake probe timeout')
+    }, WAKE_PROBE_MS)
+  }
+
+  async usage() {
+    return (await this.rpc('usage', {})) as UsageReply
   }
 
   private onFrame(raw: string, via: 'websocket' | 'webrtc') {
@@ -220,80 +284,39 @@ class RemoteLink {
     } catch {
       return
     }
+    this.lastFrameAt = Date.now()
+    this.missedPongs = 0
+    clearTimeout(this.wakeProbeTimer)
+    this.wakeProbeTimer = undefined
     switch (frame.t) {
       case 'part': {
-        // a big reply in slices (lib/reply-parts.ts)
         if (!this.pending.has(String(frame.id ?? ''))) return
         const joined = this.parts.add(frame)
         if (joined !== null) this.onFrame(joined, via)
         return
       }
       case 'host': {
-        const online = Boolean(frame.online)
-        const dcOpen = this.dc?.readyState === 'open'
-        if (online) {
-          clearTimeout(this.offlineRtcTimer)
-          this.offlineRtcTimer = undefined
-          this.set({
-            hostSince: (frame.since as string | null) ?? null,
-            mode: dcOpen ? 'webrtc' : 'websocket',
-          })
-          if (!dcOpen) this.scheduleRtc(0)
-          return
-        }
-        if (dcOpen) {
-          // Host WS blinked while P2P DataChannel is still open: hold WebRTC
-          // briefly so a transient DO/WS recycle does not drop live traffic.
-          clearTimeout(this.offlineRtcTimer)
-          this.offlineRtcTimer = setTimeout(() => {
-            this.offlineRtcTimer = undefined
-            if (this.dc?.readyState !== 'open') return
-            this.set({
-              hostSince: (frame.since as string | null) ?? null,
-              mode: 'host-offline',
-            })
-            this.closeRtc('host offline')
-          }, OFFLINE_RTC_GRACE_MS)
-          return
-        }
-        this.set({
-          hostSince: (frame.since as string | null) ?? null,
-          mode: 'host-offline',
-        })
-        this.closeRtc('host offline')
+        this.onHostFrame(frame)
         return
       }
       case 'sig': {
-        const data = frame.data as
-          { type?: string; sdp?: string; samePublic?: string } | undefined
-        if (data?.type === 'answer' && this.pc) {
-          this.set({
-            samePublic:
-              data.samePublic === 'yes' || data.samePublic === 'no'
-                ? data.samePublic
-                : undefined,
-          })
-          void this.pc
-            .setRemoteDescription({ type: 'answer', sdp: data.sdp })
-            .catch((error: unknown) => {
-              this.closeRtc(`answer rejected: ${String(error)}`)
-            })
-        }
+        this.rtc.handleAnswer(
+          frame.data as
+            { type?: string; sdp?: string; samePublic?: string } | undefined,
+        )
         return
       }
       case 'pong': {
         const sent = this.pings.get(frame.id ?? '')
         if (sent === undefined || frame.ok === false) return
         this.pings.delete(frame.id ?? '')
-        const activeVia =
-          this.dc?.readyState === 'open' ? 'webrtc' : 'websocket'
+        const activeVia = this.rtc.isOpen() ? 'webrtc' : 'websocket'
         if (via !== activeVia) return
         this.samples = [...this.samples, performance.now() - sent].slice(-5)
         this.set({ rttMs: Math.round(median(this.samples)) })
         return
       }
       case 'diag.request': {
-        // pushed by the host (relay_diag.go); lib/host-diag.ts answers
         this.hostRequest?.(frame)
         return
       }
@@ -315,12 +338,46 @@ class RemoteLink {
     }
   }
 
+  private onHostFrame(frame: Frame) {
+    const online = Boolean(frame.online)
+    const nextSince = (frame.since as string | null) ?? null
+    const sinceChanged = Boolean(
+      online &&
+      this.state.hostSince &&
+      nextSince &&
+      nextSince !== this.state.hostSince,
+    )
+    recordLinkEvent('host_presence', { online, since: nextSince, sinceChanged })
+    const dcOpen = this.rtc.isOpen()
+    if (online) {
+      clearTimeout(this.offlineRtcTimer)
+      this.offlineRtcTimer = undefined
+      this.set({ hostSince: nextSince, mode: dcOpen ? 'webrtc' : 'websocket' })
+      if (sinceChanged) {
+        this.helloWs = undefined
+        recordLinkEvent('reauth', { reason: 'host_since_changed' })
+        void this.sayHello()
+      }
+      if (!dcOpen) this.rtc.schedule(0)
+      return
+    }
+    if (dcOpen) {
+      clearTimeout(this.offlineRtcTimer)
+      this.offlineRtcTimer = setTimeout(() => {
+        this.offlineRtcTimer = undefined
+        if (!this.rtc.isOpen()) return
+        this.set({ hostSince: nextSince, mode: 'host-offline' })
+        this.rtc.close('host offline')
+      }, OFFLINE_RTC_GRACE_MS)
+      return
+    }
+    this.set({ hostSince: nextSince, mode: 'host-offline' })
+    this.rtc.close('host offline')
+  }
+
   private send(frame: Frame) {
     const body = JSON.stringify(frame)
-    if (this.dc?.readyState === 'open') {
-      this.dc.send(body)
-      return true
-    }
+    if (this.rtc.send(body)) return true
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(body)
       return true
@@ -328,12 +385,54 @@ class RemoteLink {
     return false
   }
 
-  private ping() {
-    if (this.state.mode !== 'websocket' && this.state.mode !== 'webrtc') return
+  private sendPing() {
     const id = `p${++this.seq}`
     this.pings.set(id, performance.now())
     if (this.pings.size > 20) this.pings.delete(this.pings.keys().next().value!)
-    this.send({ t: 'ping', id })
+    return this.send({ t: 'ping', id })
+  }
+
+  private ping() {
+    if (this.state.mode !== 'websocket' && this.state.mode !== 'webrtc') return
+    if (
+      typeof document !== 'undefined' &&
+      document.visibilityState === 'hidden'
+    )
+      return
+    if (this.missedPongs >= PONG_MISS_LIMIT) {
+      const via = this.rtc.isOpen() ? 'webrtc' : 'websocket'
+      recordLinkEvent('pong_timeout', {
+        via,
+        missed: this.missedPongs,
+        silentMs: this.lastFrameAt ? Date.now() - this.lastFrameAt : -1,
+      })
+      if (via === 'webrtc') {
+        this.missedPongs = 0
+        this.rtc.close('WebRTC liveness timeout')
+      } else {
+        this.forceReconnect('pong timeout')
+      }
+      return
+    }
+    if (this.sendPing()) this.missedPongs++
+  }
+
+  private probeAfterTimeout(
+    action: string,
+    via: 'webrtc' | 'websocket',
+    timeoutMs: number,
+  ) {
+    const silentMs = this.lastFrameAt ? Date.now() - this.lastFrameAt : -1
+    recordLinkEvent('rpc_timeout', { action, via, timeoutMs, silentMs })
+    if (via === 'webrtc' && silentMs > 3_000) {
+      this.rtc.close('WebRTC RPC timeout')
+      return
+    }
+    if (via === 'websocket' && silentMs > 5_000) {
+      this.forceReconnect(`rpc timeout (${action})`)
+      return
+    }
+    this.sendPing()
   }
 
   /** Resolves once a transport can carry requests (first page load races the socket). */
@@ -361,13 +460,6 @@ class RemoteLink {
     this.hostRequest = handler
   }
 
-  /**
-   * One request. A read refused as "not approved" on a socket that already
-   * said hello means the host forgot it — the relay restarted (crash,
-   * reboot, a release) while this socket stayed up: say hello again and
-   * retry once. A device that really is not approved fails the hello and
-   * keeps the refusal.
-   */
   async rpc(action: string, args: Record<string, unknown>): Promise<unknown> {
     try {
       return await this.rpcOnce(action, args)
@@ -376,10 +468,6 @@ class RemoteLink {
         this.helloWs = undefined
         return this.rpcOnce(action, args)
       }
-      // Transient reconnect window (relay restart or DO handoff): wait up to
-      // RECONNECT_GRACE_MS for the link to come back and retry once. Because
-      // these errors happen before the host executes the action, retrying a
-      // signed write with its original nonce is safe and idempotent.
       if (isTransientReconnectError(error)) {
         const recovered = await this.ready(RECONNECT_GRACE_MS)
         if (recovered) {
@@ -394,26 +482,16 @@ class RemoteLink {
   private async rpcOnce(action: string, args: Record<string, unknown>) {
     this.start()
     const timeoutMs = SLOW_WORKTREE_WRITE.test(action) ? 90_000 : RPC_TIMEOUT_MS
-    // no token: nothing will ever connect, so say why now instead of after
-    // the timeout (a browser on the host itself reads tickets through the
-    // local Runtime and never got paired)
     if (!this.token()) throw new Error(NOT_PAIRED)
-    if (!(await this.ready(timeoutMs))) {
-      throw new Error(
-        this.state.mode === 'host-offline'
-          ? 'home host is offline'
-          : this.state.mode === 'unauthorized'
-            ? 'pairing token rejected; pair this device again'
-            : 'remote link is not connected',
-      )
-    }
-    // reads need this connection to have said hello as an approved device
+    if (!(await this.ready(timeoutMs))) throw notReadyError(this.state.mode)
     if (!OPEN_ACTIONS.has(action)) await this.sayHello()
     return new Promise((resolve, reject) => {
       const id = `r${++this.seq}`
+      const via = this.rtc.isOpen() ? 'webrtc' : 'websocket'
       const timer = setTimeout(() => {
         this.pending.delete(id)
         this.parts.drop(id)
+        this.probeAfterTimeout(action, via, timeoutMs)
         reject(new Error('remote host did not answer in time'))
       }, timeoutMs)
       this.pending.set(id, { resolve, reject, timer })
@@ -425,12 +503,6 @@ class RemoteLink {
     })
   }
 
-  /**
-   * Once per relay socket (a reconnect is a new cid): sign `device.hello`
-   * with this device's key so the host serves its reads. No key, or not
-   * approved yet: reads come back "device not approved", which says what to
-   * do (describeError). Concurrent requests share the one hello.
-   */
   private sayHello() {
     if (this.helloWs && this.helloWs === this.ws) return Promise.resolve()
     this.hello ??= (async () => {
@@ -439,8 +511,12 @@ class RemoteLink {
         if (!(await loadDeviceKey())) return
         await this.write('device.hello', {})
         this.helloWs = ws
-        if (this.ws === ws && this.state.mode === 'websocket' && !this.pc)
-          this.scheduleRtc(0)
+        if (
+          this.ws === ws &&
+          this.state.mode === 'websocket' &&
+          !this.rtc.hasPeer()
+        )
+          this.rtc.schedule(0)
       } catch {
         // not approved (yet): the reads themselves report it
       } finally {
@@ -450,134 +526,15 @@ class RemoteLink {
     return this.hello
   }
 
-  private failNote(reason: string) {
-    return this.state.samePublic === 'no'
-      ? `${reason}: phone and host are on different networks and hole punching failed`
-      : reason
-  }
-
   /** Try the DataChannel again now (e.g. after the mic grant exposed a real LAN address). */
   retryDirect() {
-    if (this.state.mode === 'websocket' && !this.pc) this.scheduleRtc(0)
+    this.rtc.resetBackoff()
+    if (this.state.mode === 'websocket' && !this.rtc.hasPeer())
+      this.rtc.schedule(0)
   }
 
-  /**
-   * A write (send / key / reply): signed with this device's key so the host
-   * can tell it came from an approved phone (device-key.ts).
-   */
   async write(action: string, args: Record<string, unknown>) {
-    const key = await loadDeviceKey()
-    if (!key) throw new Error('writing is not enabled on this device')
-    const payload = JSON.stringify({
-      action,
-      args,
-      ts: Date.now(),
-      nonce: crypto.randomUUID(),
-    })
-    return this.rpc(action, {
-      device: key.id,
-      payload,
-      sig: await signPayload(key, payload),
-    })
-  }
-
-  private scheduleRtc(delay: number) {
-    clearTimeout(this.rtcTimer)
-    this.rtcTimer = setTimeout(() => void this.startRtc(), delay)
-  }
-
-  private canStartRtc(ws: WebSocket | undefined): ws is WebSocket {
-    return Boolean(
-      ws && !this.pc && this.ws === ws && ws.readyState === WebSocket.OPEN,
-    )
-  }
-
-  private async startRtc() {
-    if (typeof RTCPeerConnection === 'undefined')
-      return this.set({ rtcNote: 'WebRTC not supported by this browser' })
-    const ws = this.ws
-    if (!this.canStartRtc(ws)) return
-    if (new URLSearchParams(location.search).get('transport') === 'websocket')
-      return this.set({ rtcNote: 'WebRTC disabled by ?transport=websocket' })
-    // Bind this socket to the approved device key before offering WebRTC so
-    // unauthenticated connections cannot probe host ICE candidates.
-    await this.sayHello()
-    if (!this.canStartRtc(ws)) return
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
-    })
-    this.pc = pc
-    const dc = pc.createDataChannel('rpc')
-    dc.onmessage = (event) => this.onFrame(String(event.data), 'webrtc')
-    dc.onopen = () => {
-      if (this.pc !== pc) return
-      this.dc = dc
-      clearTimeout(this.rtcTimer)
-      this.samples = []
-      this.set({ mode: 'webrtc', rtcNote: undefined, rttMs: undefined })
-      void selectedPath(pc).then(({ path, detail }) =>
-        this.set({ path, pathDetail: detail }),
-      )
-    }
-    dc.onclose = () => {
-      if (this.pc === pc) this.closeRtc('data channel closed')
-    }
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed')
-        this.closeRtc(this.failNote('ICE failed'))
-    }
-    this.rtcTimer = setTimeout(() => {
-      if (this.pc === pc && dc.readyState !== 'open')
-        this.closeRtc(this.failNote('no direct path within 15 s'))
-    }, RTC_OPEN_TIMEOUT_MS)
-    await pc.setLocalDescription(await pc.createOffer())
-    await new Promise<void>((resolve) => {
-      if (pc.iceGatheringState === 'complete') return resolve()
-      const timer = setTimeout(resolve, 5_000)
-      pc.addEventListener('icegatheringstatechange', () => {
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(timer)
-          resolve()
-        }
-      })
-    })
-    if (this.pc !== pc) return
-    // The relay socket may have closed while gathering; send() then throws.
-    try {
-      ws.send(
-        JSON.stringify({
-          t: 'sig',
-          data: { type: 'offer', sdp: pc.localDescription?.sdp },
-        }),
-      )
-    } catch {
-      this.closeRtc('relay socket closed before the offer was sent')
-    }
-  }
-
-  private closeRtc(note: string) {
-    const hadRtc = Boolean(this.pc)
-    clearTimeout(this.rtcTimer)
-    this.dc?.close()
-    this.pc?.close()
-    this.dc = undefined
-    this.pc = undefined
-    if (!hadRtc) return
-    this.samples = []
-    const relayUp =
-      this.ws?.readyState === WebSocket.OPEN &&
-      this.state.mode !== 'host-offline'
-    this.set({
-      rtcNote: note,
-      path: undefined,
-      rttMs: undefined,
-      mode: relayUp
-        ? 'websocket'
-        : this.state.mode === 'webrtc'
-          ? 'connecting'
-          : this.state.mode,
-    })
-    if (relayUp) this.scheduleRtc(RTC_RETRY_MS)
+    return this.rpc(action, await buildSignedWriteArgs(action, args))
   }
 }
 

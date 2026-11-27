@@ -274,4 +274,44 @@ describe('HostRelay host selection & observability', () => {
       host_id: null,
     })
   })
+
+  it('closes a broken client socket and notifies the host bye on client_send_error', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    const { relay, createdPairs } = makeRelay()
+    await relay.fetch(
+      new Request('https://relay/host', {
+        headers: { upgrade: 'websocket', 'x-relay-role': 'host' },
+      }),
+    )
+    const host = createdPairs[0][1]
+    const tag = await tokenTag('client-secret')
+    await relay.fetch(
+      new Request('https://relay/client', {
+        headers: {
+          upgrade: 'websocket',
+          'x-relay-role': 'client',
+          'x-relay-token-tag': tag,
+        },
+      }),
+    )
+    const client = createdPairs[1][1]
+    const cid = (client.attachment as { cid: string }).cid
+    client.failSend = true
+    host.sent = []
+
+    await relay.webSocketMessage(
+      host as unknown as WebSocket,
+      JSON.stringify({ t: 'res', cid, id: 'r9', ok: true, result: {} }),
+    )
+
+    expect(client.closed).toEqual([
+      { code: 1011, reason: 'client send failed' },
+    ])
+    expect(host.sent.map((s) => JSON.parse(s))).toContainEqual({
+      t: 'bye',
+      cid,
+    })
+    const events = logSpy.mock.calls.map(([line]) => JSON.parse(String(line)))
+    expect(events.some((e) => e.event === 'client_send_error')).toBe(true)
+  })
 })
