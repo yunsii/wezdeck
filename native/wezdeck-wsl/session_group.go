@@ -90,17 +90,29 @@ func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 	go func() {
 		defer unlock()
 		defer releaseSessionWorktree(tree)
-		err := runGroupedSession(job.ID, id, entry, repo, tree, agent, prompt, groupName)
+		started := time.Now()
+		tel := newSessionTelemetry{Stage: "window"}
+		err := runGroupedSessionWithTelemetry(job.ID, id, entry, repo, tree, agent, prompt, groupName, &tel)
+		tel.TotalMS = time.Since(started).Milliseconds()
 		if err != nil {
-			setJob(job.ID, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
+			setJob(job.ID, func(j *newSessionJob) {
+				j.Stage, j.Error, j.finishedAt = "failed", clip(err.Error(), 300), time.Now()
+			})
 			if oid := jobOutboxID(job.ID); oid != "" {
 				_, _ = outboxUpdate(oid, func(r *sentRecord) {
 					r.Status = "failed"
 					r.Error = clip(err.Error(), 300)
+					if tel.Pane != "" {
+						r.Pane = tel.Pane
+					}
 				})
 			}
 		}
-		relayLogf("session_group_new", "job=%s ok=%t worktree=%q", job.ID, err == nil, tree)
+		relayLogf("session_group_new",
+			"job=%s agent=%q ok=%t stage=%s pane=%q cmd=%q session_id=%q worktree=%q ready_ms=%d ready_reason=%q banner_seen=%t trust_ms=%d paste_ms=%d wait_id_ms=%d nudges=%d total_ms=%d err=%q",
+			job.ID, agent, err == nil, tel.Stage, tel.Pane, tel.Command, tel.SessionID, tree,
+			tel.ReadyMS, tel.ReadyReason, tel.BannerSeen, tel.TrustMS, tel.PasteMS, tel.WaitIDMS,
+			tel.Nudges, tel.TotalMS, errText(err))
 	}()
 	return map[string]any{"v": 1, "ok": true, "job": job.ID}, nil
 }
@@ -131,6 +143,11 @@ func releaseSessionWorktree(tree string) {
 }
 
 func runGroupedSession(jobID, anchorID string, anchor attentionEntry, repo, tree, agent, prompt, groupName string) error {
+	var tel newSessionTelemetry
+	return runGroupedSessionWithTelemetry(jobID, anchorID, anchor, repo, tree, agent, prompt, groupName, &tel)
+}
+
+func runGroupedSessionWithTelemetry(jobID, anchorID string, anchor attentionEntry, repo, tree, agent, prompt, groupName string, tel *newSessionTelemetry) error {
 	current, _, checkout, err := sessionGroupTarget(anchorID)
 	if err != nil || checkout != tree || current.TmuxPane != anchor.TmuxPane || current.TmuxSocket != anchor.TmuxSocket {
 		return errors.New("the source session changed before launch")
@@ -148,10 +165,11 @@ func runGroupedSession(jobID, anchorID string, anchor attentionEntry, repo, tree
 		return fmt.Errorf("start an agent in the worktree: %w", err)
 	}
 	pane := strings.TrimSpace(string(out))
+	tel.Pane = pane
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	setJob(jobID, func(j *newSessionJob) { j.Stage = "starting" })
-	return sendNewSessionPrompt(ctx, jobID, anchor.TmuxSocket, pane, prompt, func() string {
+	return sendNewSessionPromptWithTelemetry(ctx, jobID, anchor.TmuxSocket, pane, prompt, func() string {
 		if groupName == "" {
 			return ""
 		}
@@ -160,7 +178,7 @@ func runGroupedSession(jobID, anchorID string, anchor attentionEntry, repo, tree
 			return clip(err.Error(), 300)
 		}
 		return ""
-	})
+	}, tel)
 }
 
 func deleteGroupedSession(args json.RawMessage) (any, error) {

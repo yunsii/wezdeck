@@ -111,13 +111,14 @@ type newSessionJob struct {
 	Warning      string `json:"warning,omitempty"`
 	// Mode: new (a new direction), parallel (one more slot of a direction
 	// whose slots are all busy) or reuse (an idle slot starts a new round)
-	Mode     string `json:"mode,omitempty"`
-	at       time.Time
-	trustCh  chan struct{}
-	socket   string
-	pane     string
-	trusting bool
-	outboxID string
+	Mode       string `json:"mode,omitempty"`
+	at         time.Time
+	finishedAt time.Time
+	trustCh    chan struct{}
+	socket     string
+	pane       string
+	trusting   bool
+	outboxID   string
 }
 
 func repoLabelFor(repo string) string {
@@ -152,6 +153,10 @@ func activeNewSessionJobsFor(cards []sessionCard) []newSessionJob {
 		if j == nil {
 			continue
 		}
+		ended := j.finishedAt
+		if ended.IsZero() {
+			ended = j.at
+		}
 		switch j.Stage {
 		case "done":
 			if j.SessionID != "" && listed[j.SessionID] {
@@ -160,11 +165,11 @@ func activeNewSessionJobsFor(cards []sessionCard) []newSessionJob {
 			if j.SessionID == "" && j.Worktree != "" && listedWorktrees[j.Worktree] {
 				continue
 			}
-			if time.Since(j.at) > 30*time.Second {
+			if time.Since(ended) > 30*time.Second {
 				continue
 			}
 		case "failed":
-			if time.Since(j.at) > 10*time.Minute {
+			if time.Since(ended) > 10*time.Minute {
 				continue
 			}
 		default:
@@ -391,7 +396,7 @@ func startNewSession(args json.RawMessage) (any, error) {
 	newJobsMu.Unlock()
 	go func() {
 		defer unlock()
-		runNewSession(job.ID, a.Repo, a.Name, a.Description, a.Prompt, a.Agent, reuse)
+		runNewSession(job.ID, mode, a.Repo, a.Name, a.Description, a.Prompt, a.Agent, reuse)
 		if reuse != "" {
 			newJobsMu.Lock()
 			delete(reusing, reuse)
@@ -613,16 +618,38 @@ func jobOutboxID(id string) string {
 	return ""
 }
 
-func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
+func runNewSession(id, mode, repo, name, description, prompt, agent, reuse string) {
+	started := time.Now()
+	if mode == "" {
+		mode = "new"
+		if reuse != "" {
+			mode = "reuse"
+		}
+	}
+	tel := newSessionTelemetry{Stage: "worktree"}
+	var worktreePath, branchName string
 	fail := func(err error) {
-		setJob(id, func(j *newSessionJob) { j.Stage, j.Error = "failed", clip(err.Error(), 300) })
+		tel.TotalMS = time.Since(started).Milliseconds()
+		setJob(id, func(j *newSessionJob) {
+			j.Stage, j.Error, j.finishedAt = "failed", clip(err.Error(), 300), time.Now()
+		})
 		if oid := jobOutboxID(id); oid != "" {
 			_, _ = outboxUpdate(oid, func(r *sentRecord) {
 				r.Status = "failed"
 				r.Error = clip(err.Error(), 300)
+				if tel.Pane != "" {
+					r.Pane = tel.Pane
+				}
+				if worktreePath != "" {
+					r.Worktree = worktreePath
+				}
 			})
 		}
-		relayLogf("session_new", "job=%s ok=false err=%q", id, err)
+		relayLogf("session_new",
+			"job=%s mode=%s agent=%q reuse=%t ok=false stage=%s pane=%q cmd=%q session_id=%q worktree=%q branch=%q worktree_ms=%d ready_ms=%d ready_reason=%q banner_seen=%t trust_ms=%d paste_ms=%d wait_id_ms=%d nudges=%d total_ms=%d err=%q",
+			id, mode, agent, reuse != "", tel.Stage, tel.Pane, tel.Command, tel.SessionID,
+			worktreePath, branchName, tel.WorktreeMS, tel.ReadyMS, tel.ReadyReason, tel.BannerSeen,
+			tel.TrustMS, tel.PasteMS, tel.WaitIDMS, tel.Nudges, tel.TotalMS, err)
 	}
 	cmdPath := os.Getenv("WEZDECK_SESSION_NEW_CMD")
 	if cmdPath == "" {
@@ -637,9 +664,15 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 			reusePath = filepath.Join(repoRoot(), "scripts", "runtime", "worktree", "reuse-workstation")
 		}
 		cmd = exec.CommandContext(ctx, reusePath, newSessionReuseArgs(reuse, agent)...)
+	} else {
+		// Fresh worktrees have no prior conversation; bypass resume --last so
+		// Codex/Claude boot straight into a blank TUI.
+		cmd.Env = append(os.Environ(), "WEZDECK_FORCE_FRESH_SESSION=1")
 	}
 	cmd.Dir = repo
+	wtStart := time.Now()
 	out, err := cmd.Output()
+	tel.WorktreeMS = time.Since(wtStart).Milliseconds()
 	result := map[string]string{}
 	sc := bufio.NewScanner(strings.NewReader(string(out)))
 	for sc.Scan() {
@@ -647,6 +680,7 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 			result[k] = v
 		}
 	}
+	worktreePath, branchName = result["worktree_path"], result["branch_name"]
 	if err != nil || result["window_id"] == "" {
 		msg := "no tmux window was opened"
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -659,50 +693,96 @@ func runNewSession(id, repo, name, description, prompt, agent, reuse string) {
 	}
 	socket := result["tmux_socket"] // the test fake names its socket
 	setJob(id, func(j *newSessionJob) {
-		j.Stage, j.Worktree, j.Branch = "starting", result["worktree_path"], result["branch_name"]
+		j.Stage, j.Worktree, j.Branch = "starting", worktreePath, branchName
 	})
+	tel.Stage = "pane"
 	pane, err := tmuxCmd(socket, "display-message", "-p", "-t", result["window_id"], "#{pane_id}").Output()
 	if err != nil {
 		fail(fmt.Errorf("the new window is gone: %v", err))
 		return
 	}
 	target := strings.TrimSpace(string(pane))
-	if err := sendNewSessionPrompt(ctx, id, socket, target, prompt, nil); err != nil {
+	tel.Pane = target
+	if err := sendNewSessionPromptWithTelemetry(ctx, id, socket, target, prompt, nil, &tel); err != nil {
 		fail(err)
 		return
 	}
-	relayLogf("session_new", "job=%s ok=true reuse=%t worktree=%q branch=%q",
-		id, reuse != "", result["worktree_path"], result["branch_name"])
+	tel.TotalMS = time.Since(started).Milliseconds()
+	relayLogf("session_new",
+		"job=%s mode=%s agent=%q reuse=%t ok=true stage=done pane=%q cmd=%q session_id=%q worktree=%q branch=%q worktree_ms=%d ready_ms=%d ready_reason=%q banner_seen=%t trust_ms=%d paste_ms=%d wait_id_ms=%d nudges=%d total_ms=%d",
+		id, mode, agent, reuse != "", tel.Pane, tel.Command, tel.SessionID,
+		worktreePath, branchName, tel.WorktreeMS, tel.ReadyMS, tel.ReadyReason, tel.BannerSeen,
+		tel.TrustMS, tel.PasteMS, tel.WaitIDMS, tel.Nudges, tel.TotalMS)
 }
 
 func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string, afterSend func() string) error {
-	if err := waitAgentReady(socket, target, 90*time.Second); err != nil {
+	var tel newSessionTelemetry
+	return sendNewSessionPromptWithTelemetry(ctx, id, socket, target, prompt, afterSend, &tel)
+}
+
+func sendNewSessionPromptWithTelemetry(ctx context.Context, id, socket, target, prompt string, afterSend func() string, tel *newSessionTelemetry) error {
+	tel.Pane = target
+	tel.Stage = "ready"
+	readyInfo, err := waitAgentReadyDetailed(socket, target, 90*time.Second)
+	tel.ReadyMS = readyInfo.Duration.Milliseconds()
+	tel.ReadyReason = readyInfo.Reason
+	tel.Command = readyInfo.Command
+	tel.BannerSeen = readyInfo.BannerSeen
+	if err != nil {
 		return err
 	}
+	tel.Stage = "trust"
+	trustStart := time.Now()
 	if err := clearWorkspaceTrust(ctx, id, socket, target, true); err != nil {
+		tel.TrustMS = time.Since(trustStart).Milliseconds()
 		return err
 	}
+	tel.TrustMS = time.Since(trustStart).Milliseconds()
 	beforeIDs := paneAttentionIDs(socket, target)
 	setJob(id, func(j *newSessionJob) { j.Stage = "sending" })
-	if err := pasteToPane(socket, target, prompt); err != nil {
+	tel.Stage = "paste"
+	pasteStart := time.Now()
+	err = pasteToPane(socket, target, prompt)
+	tel.PasteMS = time.Since(pasteStart).Milliseconds()
+	logPaneWrite(attentionEntry{SessionID: "job:" + id, TmuxSocket: socket, TmuxPane: target}, id, "session.new", pasteStart, err)
+	if err != nil {
 		return err
 	}
 	waitFor := 20 * time.Second
 	// test stubs set WEZDECK_SESSION_NEW_CMD and often write attention.json
 	// after stage=done; keep the wait short there so they never stall.
-	if os.Getenv("WEZDECK_SESSION_NEW_CMD") != "" {
-		waitFor = 400 * time.Millisecond
+	if os.Getenv("WEZDECK_SESSION_NEW_CMD") != "" || os.Getenv("WEZDECK_SESSION_REUSE_CMD") != "" {
+		waitFor = sessionIDStubWait
 	}
 	warning := ""
 	if afterSend != nil {
 		warning = afterSend()
 	}
-	newID := waitNewSessionID(socket, target, beforeIDs, waitFor)
+	tel.Stage = "wait_session_id"
+	waitStart := time.Now()
+	newID, nudges, paneDead, lastCmd := waitNewSessionIDWithNudge(ctx, id, socket, target, prompt, beforeIDs, waitFor)
+	tel.WaitIDMS = time.Since(waitStart).Milliseconds()
+	tel.Nudges = nudges
+	if lastCmd != "" {
+		tel.Command = lastCmd
+	}
+	tel.SessionID = newID
+	if newID == "" && requireNewSessionAttentionID() {
+		if paneDead {
+			return errors.New("the agent exited before accepting the first message")
+		}
+		waitLabel := waitFor.Round(time.Second)
+		if waitLabel <= 0 {
+			waitLabel = waitFor.Round(time.Millisecond)
+		}
+		return fmt.Errorf("the agent did not accept the first message within %s; retry or check the terminal", waitLabel)
+	}
 	var wt string
 	setJob(id, func(j *newSessionJob) {
 		j.SessionID = newID
 		j.Warning = warning
 		j.Stage = "done"
+		j.finishedAt = time.Now()
 		wt = j.Worktree
 	})
 	if oid := jobOutboxID(id); oid != "" {
@@ -717,6 +797,7 @@ func sendNewSessionPrompt(ctx context.Context, id, socket, target, prompt string
 			}
 		})
 	}
+	tel.Stage = "done"
 	return nil
 }
 
@@ -737,44 +818,3 @@ func newSessionReuseArgs(path, agent string) []string {
 }
 
 var shells = map[string]bool{"bash": true, "zsh": true, "sh": true, "fish": true, "dash": true}
-
-// waitAgentReady waits until the agent has a drawable screen. Agent TUIs do
-// not all settle visually during startup. Grok streams a changing status
-// screen, while Agy and Codex can keep a spinner or trust prompt moving, so
-// requiring a fully static 1.5 s screen made Web 新会话 appear stuck and
-// delayed the first prompt. A live agent descendant plus a non-empty capture
-// is enough to proceed. Shell wrappers still use the old static-screen
-// fallback when the descendant is not visible yet.
-func waitAgentReady(socket, pane string, limit time.Duration) error {
-	deadline := time.Now().Add(limit)
-	last, stable := "", time.Time{}
-	for time.Now().Before(deadline) {
-		time.Sleep(250 * time.Millisecond)
-		cmd, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_current_command}").Output()
-		if err != nil {
-			return errors.New("the agent pane closed while starting")
-		}
-		command := strings.TrimSpace(string(cmd))
-		hasAgent := paneHasAgentProcess(socket, pane)
-		if shells[command] && !hasAgent {
-			last, stable = "", time.Time{}
-			continue
-		}
-		screen, _ := tmuxCmd(socket, "capture-pane", "-p", "-t", pane).Output()
-		s := strings.TrimSpace(string(screen))
-		if s != "" && hasAgent {
-			return nil
-		}
-		if s != "" && s == last {
-			if !stable.IsZero() && time.Since(stable) >= 1500*time.Millisecond {
-				return nil
-			}
-			if stable.IsZero() {
-				stable = time.Now()
-			}
-		} else {
-			last, stable = s, time.Time{}
-		}
-	}
-	return fmt.Errorf("the agent did not come up within %s", limit.Round(time.Second))
-}

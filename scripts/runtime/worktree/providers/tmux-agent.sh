@@ -489,6 +489,9 @@ provider_build_pane_command() {
   if [[ -n "${WT_PROVIDER_LOGIN_SHELL:-}" ]]; then
     command_string="$command_string WT_PROVIDER_LOGIN_SHELL=$(wt_shell_quote "$WT_PROVIDER_LOGIN_SHELL")"
   fi
+  if [[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]]; then
+    command_string="$command_string WEZDECK_FORCE_FRESH_SESSION=1"
+  fi
   command_string="$command_string bash $(wt_shell_quote "$SCRIPT_DIR/tmux-agent.sh") run-pane-command --variant $(wt_shell_quote "$resolved_variant")"
 
   printf '%s\n' "$command_string"
@@ -795,6 +798,7 @@ provider_run_pane_command() {
     printf 'tmux-agent pane command exited with status %s\n' "$status" >&2
   fi
 
+  unset WEZDECK_FORCE_FRESH_SESSION
   exec "$login_shell" -il
 }
 

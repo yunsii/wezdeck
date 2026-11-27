@@ -309,3 +309,165 @@ func TestActiveNewSessionJobsExcludesListedDoneJobs(t *testing.T) {
 		t.Fatalf("unexpected active jobs: %+v", got)
 	}
 }
+
+func TestActiveNewSessionJobsUsesFinishedAtGraceWindow(t *testing.T) {
+	newJobsMu.Lock()
+	saved := newJobs
+	newJobs = map[string]*newSessionJob{
+		// Created 45s ago, finished 2s ago: must stay visible for the full 30s grace.
+		"done-slow": {
+			ID:         "done-slow",
+			Stage:      "done",
+			Worktree:   "/tmp/r/.worktrees/slow",
+			CreatedAt:  200,
+			at:         time.Now().Add(-45 * time.Second),
+			finishedAt: time.Now().Add(-2 * time.Second),
+		},
+		// Finished 45s ago: expired.
+		"done-old": {
+			ID:         "done-old",
+			Stage:      "done",
+			Worktree:   "/tmp/r/.worktrees/old",
+			CreatedAt:  100,
+			at:         time.Now().Add(-70 * time.Second),
+			finishedAt: time.Now().Add(-45 * time.Second),
+		},
+	}
+	newJobsMu.Unlock()
+	t.Cleanup(func() {
+		newJobsMu.Lock()
+		newJobs = saved
+		newJobsMu.Unlock()
+	})
+	got := activeNewSessionJobsFor(nil)
+	if len(got) != 1 || got[0].ID != "done-slow" {
+		t.Fatalf("expected only done-slow to stay visible, got %+v", got)
+	}
+}
+
+func TestIsLauncherLoadingBannerAndPromptUnsubmitted(t *testing.T) {
+	if !isLauncherLoadingBanner("\n  Loading codex ...\n  Mode: auto\n") {
+		t.Fatal("failed to detect agent-launcher loading banner")
+	}
+	if !isLauncherLoadingBanner("Loading claude-kimi ...") {
+		t.Fatal("failed to detect single-line loading banner")
+	}
+	if isLauncherLoadingBanner("  >_ OpenAI Codex (v0.172.0)\n› Ask Codex to do anything\n") {
+		t.Fatal("misclassified real Codex TUI as loading banner")
+	}
+	if isLauncherLoadingBanner("Quick safety check: Is this a project you created or one you trust?\n❯ 1. Yes, I trust this folder") {
+		t.Fatal("misclassified trust prompt as loading banner")
+	}
+
+	stuckScreen := "  >_ OpenAI Codex (v0.172.0)\n     ~/github/…/session-c550\n\n› 刚才我有一个优化创建新会话的的新会\n  话，在创建中我有刷新页面\n\n  GPT-6-Sol medium fast\n"
+	if !promptStillUnsubmitted(stuckScreen, "刚才我有一个优化创建新会话的的新会话，在创建中我有刷新页面") {
+		t.Fatal("failed to detect wrapped unsubmitted prompt in Codex composer")
+	}
+	submittedScreen := "› 刚才我有一个优化创建新会话的的新会话\n• Working...\n\n› Ask Codex to do anything\n"
+	if promptStillUnsubmitted(submittedScreen, "刚才我有一个优化创建新会话的的新会话") {
+		t.Fatal("false positive on already-submitted history echo above empty composer")
+	}
+	trustScreen := "Do you trust the contents of this project?\n> Yes, I trust this folder\n"
+	if promptStillUnsubmitted(trustScreen, "Yes, I trust this folder") {
+		t.Fatal("false positive during trust prompt")
+	}
+}
+
+func TestWaitAgentReadySkipsLoadingBannerAndNudgesStuckPrompt(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux missing")
+	}
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 missing")
+	}
+	origPoll, origSettle, origStubWait, origIDPoll, origNudgeFirst, origNudgeGap := agentReadyPollInterval, agentTUISettleDuration, sessionIDStubWait, sessionIDPollInterval, sessionNudgeFirstAfter, sessionNudgeRetryGap
+	agentReadyPollInterval = 50 * time.Millisecond
+	agentTUISettleDuration = 120 * time.Millisecond
+	sessionIDStubWait = 3 * time.Second
+	sessionIDPollInterval = 100 * time.Millisecond
+	sessionNudgeFirstAfter = 180 * time.Millisecond
+	sessionNudgeRetryGap = 200 * time.Millisecond
+	t.Cleanup(func() {
+		agentReadyPollInterval = origPoll
+		agentTUISettleDuration = origSettle
+		sessionIDStubWait = origStubWait
+		sessionIDPollInterval = origIDPoll
+		sessionNudgeFirstAfter = origNudgeFirst
+		sessionNudgeRetryGap = origNudgeGap
+	})
+
+	repo, socket := newSessionFixture(t)
+	attPath := os.Getenv("WEZDECK_ATTENTION_FILE")
+	t.Setenv("WEZDECK_SESSION_NEW_REQUIRE_ID", "1")
+
+	// Create a fake binary named "codex" so paneHasAgentProcess returns true
+	// while the loading banner is still shown — reproducing the exact race.
+	binDir := t.TempDir()
+	fakeCodex := filepath.Join(binDir, "codex")
+	pyBody := `#!/usr/bin/env python3
+import json, os, subprocess, sys, time
+socket, att = sys.argv[1], sys.argv[2]
+sys.stdout.write("\033[2J\033[H\n\n  Loading codex ...\n  Mode: auto\n")
+sys.stdout.flush()
+time.sleep(0.35)
+sys.stdout.write("\033[2J\033[H  >_ OpenAI Codex (test)\n› Ask Codex to do anything\n")
+sys.stdout.flush()
+# First line arrives from pasteToPane: emulate Codex keeping text in composer
+# while swallowing the initial Enter, then wait for a nudge Enter.
+first = sys.stdin.readline().strip()
+sys.stdout.write(f"\033[2J\033[H  >_ OpenAI Codex (test)\n› {first}\n")
+sys.stdout.flush()
+sys.stdin.readline()  # nudge Enter
+pane = subprocess.check_output(["tmux", "-S", socket, "display-message", "-p", "-t", "fake", "#{pane_id}"], text=True).strip()
+with open(att, "w", encoding="utf-8") as f:
+    json.dump({"entries": {"sess-nudged-1": {"session_id": "sess-nudged-1", "tmux_socket": socket, "tmux_pane": pane, "status": "running"}}}, f)
+sys.stdout.write("\033[2J\033[H  >_ OpenAI Codex (test)\n› Ask Codex to do anything\n")
+sys.stdout.flush()
+for _ in sys.stdin:
+    pass
+`
+	if err := os.WriteFile(fakeCodex, []byte(pyBody), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fake := filepath.Join(t.TempDir(), "fake-codex-open")
+	script := `#!/usr/bin/env bash
+set -e
+[[ "${WEZDECK_FORCE_FRESH_SESSION:-0}" == "1" ]] || { echo "missing WEZDECK_FORCE_FRESH_SESSION=1" >&2; exit 2; }
+tmux -S ` + socket + ` new-session -d -s fake -x 100 -y 20 "` + fakeCodex + ` ` + socket + ` ` + attPath + `"
+echo "branch_name=dev/${5}"
+echo "worktree_path=$PWD/.worktrees/$5"
+echo "window_id=$(tmux -S ` + socket + ` display-message -p -t fake '#{window_id}')"
+echo "tmux_socket=` + socket + `"
+`
+	if err := os.WriteFile(fake, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_SESSION_NEW_CMD", fake)
+
+	raw, _ := json.Marshal(map[string]string{"repo": repo, "name": "codex-nudge", "prompt": "优化新建会话体验"})
+	res, err := startNewSession(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	j := waitJob(t, res.(map[string]any)["job"].(string))
+	if j.Stage != "done" || j.SessionID != "sess-nudged-1" {
+		t.Fatalf("expected nudged session to succeed with sess-nudged-1, got %+v", j)
+	}
+}
+
+func TestNewSessionFailsWhenAgentNeverRegistersSessionID(t *testing.T) {
+	if _, err := exec.LookPath("tmux"); err != nil {
+		t.Skip("tmux missing")
+	}
+	repo, _ := newSessionFixture(t)
+	t.Setenv("WEZDECK_SESSION_NEW_REQUIRE_ID", "1")
+	raw, _ := json.Marshal(map[string]string{"repo": repo, "name": "silent", "prompt": "never registered"})
+	res, err := startNewSession(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	j := waitJob(t, res.(map[string]any)["job"].(string))
+	if j.Stage != "failed" || !strings.Contains(j.Error, "did not accept the first message") {
+		t.Fatalf("expected failed job when no session_id appears, got %+v", j)
+	}
+}
