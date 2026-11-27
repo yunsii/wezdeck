@@ -25,6 +25,26 @@ quotes a ticket, also look at commits since that ticket was filed
 child says what it reuses (name the existing function / file) so nobody
 writes a second copy.
 
+## Release and migration constraints (when applicable)
+
+If the goal touches database schema, data migrations, or stateful rollouts,
+read the target repo's migration and release/deployment docs **before**
+splitting (for example `docs/release*`, `docs/deploy*`,
+`prisma/*migrations*/README*`, or whatever `AGENTS.md` / `CLAUDE.md` links to).
+
+- **Respect multi-release rules in the split.** Never bundle changes that the
+  repo forbids shipping in the same release (such as adding a column to an
+  existing table vs. updating ORM schema/code when the repo requires two
+  separate releases) into one child or one inseparable merge batch. Give the
+  first-release change its own child, state the release batch order explicitly
+  in `summary.approach` and `contract` (which MR/release ships and applies
+  first, what waits until prod migration is confirmed applied), and call out
+  that batches that cannot ship together must be delivered as separate MRs
+  rather than merged into a single release.
+- **Surface operational gates in `risks`.** Include manual prod apply steps,
+  permission/escalation needs, long-running index/backfill windows, and
+  pre-conditions before switching traffic or queries.
+
 ## How to split
 
 1. **Parallel first.** Give each child a `scope` (path globs) that does not
@@ -58,13 +78,13 @@ End your reply with exactly one JSON object (fenced is fine):
 {
   "summary": {
     "problem": "plain sentences: what is wrong today",
-    "approach": "plain sentences: what runs first, what in parallel, and why"
+    "approach": "plain sentences: what runs first, what in parallel, release batches if any, and why"
   },
   "status_check": [
     {"item": "the goal item, short", "status": "missing" | "partial" | "done",
      "evidence": "path:line or sha subject", "reuse": "existing code a child must reuse (partial only)"}
   ],
-  "risks": ["optional: what may stop a child and need the user (migrations, credentials, …)"],
+  "risks": ["optional: what may stop a child or gate release (migrations, multi-release order, credentials, …)"],
   "contract": "markdown: interfaces, shared names/types, order, per-child scope, verification",
   "children": [
     {
