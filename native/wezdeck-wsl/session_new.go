@@ -738,23 +738,34 @@ func newSessionReuseArgs(path, agent string) []string {
 
 var shells = map[string]bool{"bash": true, "zsh": true, "sh": true, "fish": true, "dash": true}
 
-// waitAgentReady: the pane runs something other than a shell and its screen
-// has held still for 1.5 s — the agent TUI is drawn and takes input.
+// waitAgentReady waits until the agent has a drawable screen. Agent TUIs do
+// not all settle visually during startup. Grok streams a changing status
+// screen, while Agy and Codex can keep a spinner or trust prompt moving, so
+// requiring a fully static 1.5 s screen made Web 新会话 appear stuck and
+// delayed the first prompt. A live agent descendant plus a non-empty capture
+// is enough to proceed. Shell wrappers still use the old static-screen
+// fallback when the descendant is not visible yet.
 func waitAgentReady(socket, pane string, limit time.Duration) error {
 	deadline := time.Now().Add(limit)
 	last, stable := "", time.Time{}
 	for time.Now().Before(deadline) {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(250 * time.Millisecond)
 		cmd, err := tmuxCmd(socket, "display-message", "-p", "-t", pane, "#{pane_current_command}").Output()
 		if err != nil {
 			return errors.New("the agent pane closed while starting")
 		}
-		if shells[strings.TrimSpace(string(cmd))] && !paneHasAgentProcess(socket, pane) {
+		command := strings.TrimSpace(string(cmd))
+		hasAgent := paneHasAgentProcess(socket, pane)
+		if shells[command] && !hasAgent {
 			last, stable = "", time.Time{}
 			continue
 		}
 		screen, _ := tmuxCmd(socket, "capture-pane", "-p", "-t", pane).Output()
-		if s := strings.TrimSpace(string(screen)); s != "" && s == last {
+		s := strings.TrimSpace(string(screen))
+		if s != "" && hasAgent {
+			return nil
+		}
+		if s != "" && s == last {
 			if !stable.IsZero() && time.Since(stable) >= 1500*time.Millisecond {
 				return nil
 			}
@@ -765,5 +776,5 @@ func waitAgentReady(socket, pane string, limit time.Duration) error {
 			last, stable = s, time.Time{}
 		}
 	}
-	return errors.New("the agent did not come up within 90 s")
+	return fmt.Errorf("the agent did not come up within %s", limit.Round(time.Second))
 }
