@@ -209,7 +209,7 @@ def cmd_draft(argv: list[str]) -> dict[str, Any]:
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
         fh.write(str(plan["contract"]))
     try:
-        pid = collab.cmd_plan(["--from", src, "--title", title, "--contract", fh.name])["id"]
+        pid = collab.cmd_plan(["--from", src, "--repos", repos, "--title", title, "--contract", fh.name])["id"]
     finally:
         os.unlink(fh.name)
     backend = collab.opt(argv, "--backend") or "claude"
@@ -326,7 +326,7 @@ def cmd_reject(argv: list[str]) -> dict[str, Any]:
     save(pid, props)
     collab.event(pid, "proposal_rejected", proposal=prop["id"], origin=prop["origin"], reason=reason)
     if prop["origin"] == "draft":
-        collab.set_status(pid, "waiting_initiator", owner="human", phase="plan_rejected")
+        collab.set_status(pid, "rejected", owner="human", phase="plan_rejected")
     elif parked(pid) and not pending(pid):
         collab.set_status(pid, "in_progress", owner="initiator", phase="planning")
     return {"parent": pid, "proposal": prop["id"], "status": "rejected"}

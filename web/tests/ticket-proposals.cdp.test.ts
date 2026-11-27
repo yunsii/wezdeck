@@ -236,6 +236,9 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
       reason: '按层拆，不按模块',
     })
     expect(readFileSync(data(rejectMe, 'ticket.md'), 'utf8')).toMatch(
+      /status: rejected/,
+    )
+    expect(readFileSync(data(rejectMe, 'ticket.md'), 'utf8')).toMatch(
       /phase: plan_rejected/,
     )
 

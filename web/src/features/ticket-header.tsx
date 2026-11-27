@@ -10,7 +10,7 @@ import { Button } from '#/components/ui/button'
 import type { CollabShow } from '#/lib/runtime-contract'
 import { ticketTone } from './console-collab'
 import { TicketInfo } from './ticket-info'
-import { useStatusLabel } from './tickets-view'
+import { formatRepoRoute, useStatusLabel } from './tickets-view'
 
 export function TicketHeader({
   data,
@@ -26,7 +26,7 @@ export function TicketHeader({
   if (!ticket) return null
   const tone = ticketTone(ticket)
   const title = ticket.title || ticket.id
-  const route = `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`
+  const route = formatRepoRoute(ticket.from, ticket.to, ticket.repos)
   return (
     <header
       data-testid="ticket-header"

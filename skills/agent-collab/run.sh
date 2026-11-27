@@ -99,11 +99,10 @@ cmd_create() {
   ticket_ensure_tree
   local to_key from_key to_path from_path
   to_key="$(ticket_resolve_target_key "$to")"
-  from_key="$(ticket_resolve_target_key "$from")"
+  from_key="$(ticket_resolve_source_key "$from")"
   to_path="$(ticket_target_path "$to_key")"
-  from_path="$(ticket_target_path "$from_key")"
   [[ -d "$to_path" ]] || ticket_log "warn: target path missing: $to_path"
-  [[ -d "$from_path" ]] || ticket_log "warn: source path missing: $from_path"
+  if from_path="$(ticket_target_path "$from_key" 2>/dev/null)"; then [[ -d "$from_path" ]] || ticket_log "warn: source path missing: $from_path"; fi
 
   local id root lock create_json
   id="$(ticket_new_id)"
@@ -1420,7 +1419,7 @@ case "$cmd" in
   release|renew) "cmd_$cmd" "$@" ;;
   challenge) cmd_challenge "$@" ;;
   reply) cmd_reply "$@" ;;
-  set-status) cmd_set_status "$@" ;;
+  set-status|set-from) "cmd_${cmd//-/_}" "$@" ;;
   status) cmd_status "$@" ;;
   board) cmd_board "$@" ;;
   close) cmd_close "$@" ;;

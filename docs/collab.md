@@ -235,7 +235,12 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
     pending draft; overlapping scopes in one repo come back as `warnings`.
     The parent waits in `plan_review`; `fanout run` refuses until
     `fanout approve --parent P --proposal p1 [--only k1,k2]` creates the
-    children (deps mapped to real ids). `reject --reason` → `plan_rejected`.
+    children (deps mapped to real ids). `reject --reason` marks the parent
+    terminal `rejected` (`plan_rejected`) so abandoned drafts leave the inbox.
+    Parent tickets record their target `repos` (from `--repos` or child `to`s,
+    rather than `from → from`), and `ticket set-from --id ID --from SOURCE`
+    updates an initiator origin (including non-repo origins like `human` / `web`)
+    with a `from_changed` event.
   - A running child (phase view tells it how) may `fanout propose --by-child C`
     one sibling whose scope sits **inside C's scope**. One level: an approved
     split carries `split_from` and cannot split again; pending proposals count

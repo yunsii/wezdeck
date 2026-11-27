@@ -319,6 +319,19 @@ print(key)
 PY
 }
 
+# Resolve source (--from): allows non-repo origins (human/web/cli/cron/user)
+# directly, otherwise resolves via target allowlist/cwd.
+ticket_resolve_source_key() {
+  local hint=${1:-}
+  case "${hint,,}" in
+    human|web|cli|cron|user)
+      printf '%s' "${hint,,}"
+      return 0
+      ;;
+  esac
+  ticket_resolve_target_key "$hint"
+}
+
 ticket_target_path() {
   local key=$1
   local root cfg

@@ -146,11 +146,13 @@ def cmd_plan(argv: list[str]) -> dict[str, Any]:
     src = opt(argv, "--from")
     title = opt(argv, "--title")
     contract = opt(argv, "--contract")
+    target_repos = list(dict.fromkeys(csv(opt(argv, "--repos"))))
     if not (src and title and contract):
         raise CollabError("plan needs --from, --title, --contract")
+    to_repo = target_repos[0] if target_repos else src
     text = Path(contract).read_text(encoding="utf-8")
     created = run_sh(
-        "create", "--to", src, "--from", src, "--title", title,
+        "create", "--to", to_repo, "--from", src, "--title", title,
         "--observed", "cross-repo collab parent (children carry the per-repo work)",
         "--assumed", "contract.md is the shared interface; children stay inside their scope",
         "--summary", opt(argv, "--summary") or title,
@@ -159,18 +161,19 @@ def cmd_plan(argv: list[str]) -> dict[str, Any]:
     (ticket_fs.data_dir(pid) / "contract.md").write_text(text, encoding="utf-8")
     stored = observe.store_text(text)
     mj = ticket_fs.read_meta_json(pid)
-    mj.update({"kind": "parent", "contract_sha256": stored["sha256"]})
+    mj.update({"kind": "parent", "contract_sha256": stored["sha256"], "repos": target_repos})
     ticket_fs.write_meta_json(pid, mj)
     set_status(pid, "in_progress", owner="initiator", phase="planning")
     event(pid, "contract", sha256=stored["sha256"], bytes=stored["bytes"])
-    return {"id": pid, "contract_sha256": stored["sha256"]}
+    return {"id": pid, "contract_sha256": stored["sha256"], "repos": target_repos}
 
 
 def cmd_add(argv: list[str]) -> dict[str, Any]:
     parent = observe_tid(opt(argv, "--parent"))
-    if ticket_fs.read_meta_json(parent).get("kind") != "parent":
+    pmj = ticket_fs.read_meta_json(parent)
+    if pmj.get("kind") != "parent":
         raise CollabError(f"{parent} is not a collab parent (use ticket fanout plan)")
-    pmeta, _ = ticket_fs.read_ticket(parent)
+    pmeta, pbody = ticket_fs.read_ticket(parent)
     to = opt(argv, "--to")
     title = opt(argv, "--title")
     if not (to and title):
@@ -187,11 +190,22 @@ def cmd_add(argv: list[str]) -> dict[str, Any]:
         *(["--summary", opt(argv, "--summary") or ""] if opt(argv, "--summary") else []),
     )
     cid = created["id"]
-    scope = csv(opt(argv, "--scope"))
+    cmeta, _ = ticket_fs.read_ticket(cid)
+    resolved_to = str(cmeta.get("to") or to)
     mj = ticket_fs.read_meta_json(cid)
+    scope = csv(opt(argv, "--scope"))
     mj.update({"parent": parent, "depends_on": deps, "scope": scope})
     ticket_fs.write_meta_json(cid, mj)
-    event(parent, "child_added", child=cid, to=to, depends_on=deps, scope=scope)
+    prepos = list(dict.fromkeys([*(pmj.get("repos") or []), resolved_to]))
+    if prepos != (pmj.get("repos") or []):
+        pmj["repos"] = prepos
+        ticket_fs.write_meta_json(parent, pmj)
+    if pmeta.get("to") == pmeta.get("from") and resolved_to != pmeta.get("from"):
+        pmeta["to"] = resolved_to
+        pmeta["updated_at"] = ticket_fs.now_iso()
+        ticket_fs.write_ticket(parent, pmeta, pbody)
+        ticket_fs.reindex()
+    event(parent, "child_added", child=cid, to=resolved_to, depends_on=deps, scope=scope)
     return {"id": cid, "parent": parent, "depends_on": deps, "scope": scope}
 
 

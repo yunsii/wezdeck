@@ -1158,7 +1158,7 @@ msgstr "Copy raw line"
 #: src/features/session-info-actions.tsx:115
 #: src/features/ticket-info.tsx:174
 #: src/features/ticket-keys.tsx:149
-#: src/features/ticket-keys.tsx:224
+#: src/features/ticket-keys.tsx:228
 msgid "Copy reference"
 msgstr "Copy reference"
 
@@ -1497,7 +1497,7 @@ msgstr "Endpoint"
 msgid "Enter"
 msgstr "Enter"
 
-#: src/features/ticket-timeline.tsx:220
+#: src/features/ticket-timeline.tsx:225
 msgid "Error"
 msgstr "Error"
 
@@ -2538,7 +2538,7 @@ msgstr "Nothing is created until you confirm."
 #~ msgid "Nothing is waiting on you."
 #~ msgstr "Nothing is waiting on you."
 
-#: src/features/tickets-view.tsx:508
+#: src/features/tickets-view.tsx:529
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "Nothing is waiting on you. Replies and failed runs show up here."
 
@@ -3704,6 +3704,10 @@ msgstr "Sonnet tier"
 msgid "Source"
 msgstr "Source"
 
+#: src/features/ticket-timeline.tsx:219
+msgid "Source changed"
+msgstr "Source changed"
+
 #: src/features/me-devices.tsx:87
 msgid "Sources on this computer"
 msgstr "Sources on this computer"
@@ -4486,7 +4490,7 @@ msgstr "waiting on you"
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:397
-#: src/features/tickets-view.tsx:511
+#: src/features/tickets-view.tsx:532
 msgid "Waiting on you"
 msgstr "Waiting on you"
 
@@ -4511,7 +4515,7 @@ msgstr "Wall p50 / p95"
 msgid "Wall total"
 msgstr "Wall total"
 
-#: src/features/ticket-timeline.tsx:220
+#: src/features/ticket-timeline.tsx:225
 msgid "Warning"
 msgstr "Warning"
 
@@ -4646,8 +4650,8 @@ msgstr "Workers"
 msgid "Workflow progress"
 msgstr "Workflow progress"
 
-#: src/features/ticket-timeline.tsx:271
-#: src/features/ticket-timeline.tsx:289
+#: src/features/ticket-timeline.tsx:276
+#: src/features/ticket-timeline.tsx:294
 msgid "Workflow timeline"
 msgstr "Workflow timeline"
 

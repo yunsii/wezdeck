@@ -137,7 +137,7 @@ export function TicketInfo({
             >
               {fullTitle}
             </Button>
-            <RepoRoute from={ticket.from} to={ticket.to} />
+            <RepoRoute from={ticket.from} to={ticket.to} repos={ticket.repos} />
           </div>
         </div>
 

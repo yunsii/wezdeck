@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CollabShow } from '#/lib/runtime-contract'
 import { buildTicketSteps } from '#/features/ticket-pipeline'
 import { isLifecycleEvent } from '#/features/ticket-timeline'
+import { formatRepoRoute } from '#/features/tickets-view'
 
 function makeShow(overrides: {
   ticket?: Partial<NonNullable<CollabShow['ticket']>>
@@ -19,6 +20,7 @@ function makeShow(overrides: {
       title: 'Test ticket',
       from: 'fe1',
       to: 'repo-a',
+      repos: ['repo-a'],
       status: 'submitted',
       phase: null,
       owner: 'initiator',
@@ -240,5 +242,19 @@ describe('isLifecycleEvent', () => {
     expect(isLifecycleEvent({ kind: 'milestone' })).toBe(true)
     expect(isLifecycleEvent({ kind: 'merge' })).toBe(true)
     expect(isLifecycleEvent({ kind: 'verify' })).toBe(true)
+  })
+})
+
+describe('formatRepoRoute', () => {
+  it('suppresses self-arrows and joins multi-repo targets', () => {
+    expect(formatRepoRoute('fe1', 'fe1', ['fe1'])).toBe('fe1')
+    expect(formatRepoRoute('fe1', 'repo-a', ['repo-a'])).toBe('fe1 → repo-a')
+    expect(formatRepoRoute('fe1', 'repo-a', ['repo-a', 'repo-b'])).toBe(
+      'fe1 → repo-a, repo-b',
+    )
+    expect(formatRepoRoute('human', 'repo-a', ['repo-a'])).toBe(
+      'human → repo-a',
+    )
+    expect(formatRepoRoute(null, 'repo-a', ['repo-a'])).toBe('repo-a')
   })
 })

@@ -251,6 +251,10 @@ dr="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/plan.stream.j
 DP="$(jq -r .parent <<<"$dr")"
 check "draft: parent in plan_review, proposal pending, no children yet" \
   bash -c "jq -e '.ok and .proposal.status==\"pending\" and .proposal.origin==\"draft\" and (.proposal.items|length==3)' <<<'$dr' >/dev/null && grep -q 'phase: plan_review' '$TICKETS_ROOT/_data/$DP/ticket.md' && [ \"\$('$run' fanout status --parent '$DP' | jq '.children|length')\" = 0 ]"
+check "draft: parent records real target repos (not from→from) and matches api list --repo" \
+  bash -c "jq -e '.ticket.to==\"rx\" and .ticket.repos==[\"rx\",\"ry\"]' <<<\"\$('$run' api show --id '$DP')\" >/dev/null && jq -e --arg p '$DP' '.tickets|map(.id)|index(\$p)!=null' <<<\"\$('$run' api list --repo ry)\" >/dev/null"
+check "set-from: updates ticket source (incl. non-repo origin) and logs from_changed" \
+  bash -c "'$run' set-from --id '$DP' --from human | jq -e '.ok and .old_from==\"src\" and .from==\"human\"' >/dev/null && grep -q '^from: human$' '$TICKETS_ROOT/_data/$DP/ticket.md' && jq -e -s '[.[]|select(.kind==\"from_changed\")][0]|.old_from==\"src\" and .new_from==\"human\"' '$TICKETS_ROOT/_data/$DP/events.jsonl' >/dev/null"
 check "draft: overlapping scopes in one repo flagged as a warning" jq -e '.proposal.warnings|length==1 and (.[0]|test("serially"))' <<<"$dr"
 check "draft: brief stored (problem/approach, status check, risks, effect per child)" \
   jq -e '.proposal.summary.approach and (.proposal.status_check[0].status=="missing") and .proposal.risks==["需要迁移"] and (.proposal.items|all(.effect))' <<<"$dr"
@@ -279,8 +283,8 @@ check "draft without plain-words brief / status check / effect is rejected befor
   jq -e '.ok==false and (.error|test("summary.problem")) and (.error|test("status_check missing")) and (.error|test("missing effect"))' <<<"$nb"
 mkplan "$tmp/rej.stream.jsonl" '[{"key":"r","to":"rx","title":"t","observed":"o","assumed":"a"}]'
 RP="$(HOST_AGENT_INVOKE_MOCK=1 HOST_AGENT_INVOKE_MOCK_STREAM="$tmp/rej.stream.jsonl" "$run" fanout draft --from src --repos rx --title "rej" --goal-file "$tmp/goal.md" | jq -r .parent)"
-check "reject: draft rejected, parent plan_rejected, still no children" \
-  bash -c "'$run' fanout reject --parent '$RP' --proposal p1 --reason 'split by layer instead' | jq -e '.ok' >/dev/null && grep -q 'phase: plan_rejected' '$TICKETS_ROOT/_data/$RP/ticket.md' && [ \"\$('$run' fanout status --parent '$RP' | jq '.children|length')\" = 0 ]"
+check "reject: draft rejected, parent terminal rejected + plan_rejected, still no children" \
+  bash -c "'$run' fanout reject --parent '$RP' --proposal p1 --reason 'split by layer instead' | jq -e '.ok' >/dev/null && grep -q '^status: rejected$' '$TICKETS_ROOT/_data/$RP/ticket.md' && grep -q 'phase: plan_rejected' '$TICKETS_ROOT/_data/$RP/ticket.md' && [ \"\$('$run' fanout status --parent '$RP' | jq '.children|length')\" = 0 ]"
 
 # split: a running child proposes a sibling inside its own scope; the user confirms
 P11="$(c plan --from src --title "split" --contract "$tmp/contract.md" | jq -r .id)"

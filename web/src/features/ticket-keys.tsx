@@ -203,7 +203,11 @@ function TicketKey({
                 <span className={cn('text-meta font-medium', toneText[tone])}>
                   {statusLabel(ticket)}
                 </span>
-                <RepoRoute from={ticket.from} to={ticket.to} />
+                <RepoRoute
+                  from={ticket.from}
+                  to={ticket.to}
+                  repos={ticket.repos}
+                />
               </span>
             </Link>
             {/* desktop hover shortcut; phones use swipe-right or long-press menu */}

@@ -478,22 +478,43 @@ export function useOwnerLabel() {
   return (owner?: string | null) => (owner ? (owners[owner] ?? owner) : '—')
 }
 
+export function formatRepoRoute(
+  from?: string | null,
+  to?: string | null,
+  repos?: Array<string> | null,
+): string {
+  const targets = repos && repos.length > 0 ? repos : to ? [to] : []
+  const targetText = targets.join(', ')
+  if (!targetText) return from ?? '?'
+  if (!from || (targets.length === 1 && targets[0] === from)) return targetText
+  return `${from} → ${targetText}`
+}
+
 export function RepoRoute({
   from,
   to,
+  repos,
 }: {
   from?: string | null
   to?: string | null
+  repos?: Array<string> | null
 }) {
   const tag =
     'max-w-full truncate rounded-full border border-brand-edge px-2 py-0.5 text-meta text-brand-muted'
+  const targets = repos && repos.length > 0 ? repos : to ? [to] : []
+  const showFrom =
+    Boolean(from) && !(targets.length === 1 && targets[0] === from)
   return (
     <span className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1">
-      <span className={tag}>{from ?? '?'}</span>
-      <span aria-hidden className="text-brand-label">
-        →
-      </span>
-      <span className={tag}>{to ?? '?'}</span>
+      {showFrom ? (
+        <>
+          <span className={tag}>{from}</span>
+          <span aria-hidden className="text-brand-label">
+            →
+          </span>
+        </>
+      ) : null}
+      <span className={tag}>{targets.join(', ') || '?'}</span>
     </span>
   )
 }

@@ -471,5 +471,47 @@ PY
   fi
 }
 
+cmd_set_from() {
+  local id="" from=""
+  while (($#)); do
+    case "$1" in
+      --id) id=$2; shift 2 ;;
+      --from) from=$2; shift 2 ;;
+      *) ticket_die "unknown set-from arg: $1" ;;
+    esac
+  done
+  [[ -n "$id" && -n "$from" ]] || ticket_die "set-from requires --id --from"
+  ticket_ensure_tree
+  local from_key root lock
+  from_key="$(ticket_resolve_source_key "$from")"
+  root="$(ticket_store_root)"
+  lock="$root/.locks/tickets.lock"
+  ticket_with_lock "$lock" -- \
+    env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+      ID="$id" NEW_FROM="$from_key" python3 - <<'PY'
+import importlib.util, json, os, sys
+spec = importlib.util.spec_from_file_location(
+    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
+)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+tid = os.environ["ID"]
+try:
+    meta, body = mod.read_ticket(tid)
+except FileNotFoundError as e:
+    print(json.dumps({"ok": False, "error": str(e)}), file=sys.stderr)
+    sys.exit(2)
+old_from = meta.get("from")
+new_from = os.environ["NEW_FROM"]
+meta["from"] = new_from
+meta["updated_at"] = mod.now_iso()
+mod.write_ticket(tid, meta, body)
+mod.reindex()
+if old_from != new_from:
+    mod.append_event(tid, {"type": "from_changed", "old_from": old_from, "new_from": new_from})
+print(json.dumps({"ok": True, "id": tid, "old_from": old_from, "from": new_from}, ensure_ascii=False))
+PY
+}
+
 # Watch loop for a blocked initiator: poll ticket and auto-continue when the
 # ball returns to the worker (approved_to_implement / research_done accept).

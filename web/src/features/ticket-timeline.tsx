@@ -214,6 +214,11 @@ function useDescribeEvent(childTitle: (childId: string) => string | undefined) {
         return { label: t`Challenge`, detail: str('needs') || str('measured') }
       case 'reply':
         return { label: t`Reply`, detail: str('decision') }
+      case 'from_changed':
+        return {
+          label: t`Source changed`,
+          detail: `${str('old_from') || '?'} → ${str('new_from') || '?'}`,
+        }
       case 'error':
       case 'warning':
         return {

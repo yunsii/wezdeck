@@ -1158,7 +1158,7 @@ msgstr "复制原始日志"
 #: src/features/session-info-actions.tsx:115
 #: src/features/ticket-info.tsx:174
 #: src/features/ticket-keys.tsx:149
-#: src/features/ticket-keys.tsx:224
+#: src/features/ticket-keys.tsx:228
 msgid "Copy reference"
 msgstr "复制引用"
 
@@ -1497,7 +1497,7 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
-#: src/features/ticket-timeline.tsx:220
+#: src/features/ticket-timeline.tsx:225
 msgid "Error"
 msgstr "错误"
 
@@ -2538,7 +2538,7 @@ msgstr "确认之前不会建任何单。"
 #~ msgid "Nothing is waiting on you."
 #~ msgstr "没有等你处理的工单。"
 
-#: src/features/tickets-view.tsx:508
+#: src/features/tickets-view.tsx:529
 msgid "Nothing is waiting on you. Replies and failed runs show up here."
 msgstr "现在没有等你处理的工单。需要你回复或运行失败的会出现在这里。"
 
@@ -3704,6 +3704,10 @@ msgstr "Sonnet 档"
 msgid "Source"
 msgstr "来源"
 
+#: src/features/ticket-timeline.tsx:219
+msgid "Source changed"
+msgstr "来源变更"
+
 #: src/features/me-devices.tsx:87
 msgid "Sources on this computer"
 msgstr "本机来源"
@@ -4486,7 +4490,7 @@ msgstr "等你回复"
 #: src/features/session-chat-group.tsx:128
 #: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:397
-#: src/features/tickets-view.tsx:511
+#: src/features/tickets-view.tsx:532
 msgid "Waiting on you"
 msgstr "等你处理"
 
@@ -4511,7 +4515,7 @@ msgstr "耗时 p50 / p95"
 msgid "Wall total"
 msgstr "总耗时"
 
-#: src/features/ticket-timeline.tsx:220
+#: src/features/ticket-timeline.tsx:225
 msgid "Warning"
 msgstr "警告"
 
@@ -4646,8 +4650,8 @@ msgstr "子单执行"
 msgid "Workflow progress"
 msgstr "流程进度"
 
-#: src/features/ticket-timeline.tsx:271
-#: src/features/ticket-timeline.tsx:289
+#: src/features/ticket-timeline.tsx:276
+#: src/features/ticket-timeline.tsx:294
 msgid "Workflow timeline"
 msgstr "流程时间线"
 

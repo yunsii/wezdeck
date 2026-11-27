@@ -57,6 +57,12 @@
                   "null"
                 ]
               },
+              "repos": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
               "status": {
                 "type": [
                   "string",

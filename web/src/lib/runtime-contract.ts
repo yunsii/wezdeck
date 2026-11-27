@@ -258,6 +258,7 @@ export const collabTicketSchema = z
     title: nstr,
     from: nstr,
     to: nstr,
+    repos: z.array(z.string()).default([]),
     status: nstr,
     phase: nstr,
     owner: nstr,

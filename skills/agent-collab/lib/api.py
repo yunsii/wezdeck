@@ -131,15 +131,50 @@ def run_summary(rec: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _resolve_target_repos(tid: str, meta: dict[str, Any], mj: dict[str, Any]) -> list[str]:
+    repos = [str(r) for r in (mj.get("repos") or []) if r]
+    if not repos and mj.get("kind") == "parent":
+        seen: list[str] = []
+        for c in ticket_ids():
+            if ticket_fs.read_meta_json(c).get("parent") != tid:
+                continue
+            try:
+                cm, _ = ticket_fs.read_ticket(c)
+            except (OSError, ValueError):
+                continue
+            if cm.get("to") and cm["to"] not in seen:
+                seen.append(str(cm["to"]))
+        if not seen:
+            pp = root() / "_data" / tid / "proposals.json"
+            if pp.is_file():
+                try:
+                    for prop in json.loads(pp.read_text(encoding="utf-8")):
+                        for item in prop.get("items") or []:
+                            t = item.get("to")
+                            if t and t not in seen:
+                                seen.append(str(t))
+                except (OSError, ValueError):
+                    pass
+        repos = seen
+    if not repos and meta.get("to"):
+        repos = [str(meta["to"])]
+    return list(dict.fromkeys(repos))
+
+
 def summary(tid: str) -> dict[str, Any]:
     meta, _body, mj = load_meta(tid)
     prog = ticket_fs.read_progress(tid) or {}
     runs = run_records(tid)
+    repos = _resolve_target_repos(tid, meta, mj)
+    eff_to = meta.get("to")
+    if mj.get("kind") == "parent" and repos and eff_to == meta.get("from"):
+        eff_to = repos[0]
     return {
         "id": tid,
         "title": meta.get("title"),
         "from": meta.get("from"),
-        "to": meta.get("to"),
+        "to": eff_to,
+        "repos": repos,
         "status": meta.get("status"),
         "phase": meta.get("phase"),
         "owner": meta.get("owner"),
@@ -175,7 +210,7 @@ def cmd_health(argv: list[str]) -> dict[str, Any]:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
             continue
-        if repo and repo not in (meta.get("from"), meta.get("to")):
+        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m)):
             continue
         st = str(meta.get("status") or "submitted")
         by_status[st] = by_status.get(st, 0) + 1
@@ -212,7 +247,7 @@ def cmd_list(argv: list[str]) -> dict[str, Any]:
             continue
         if statuses and s["status"] not in statuses:
             continue
-        if repo and repo not in (s["to"], s["from"]):
+        if repo and repo not in (s["to"], s["from"], *(s.get("repos") or [])):
             continue
         if parent and s["parent"] != parent:
             continue
@@ -500,7 +535,7 @@ def cmd_metrics(argv: list[str]) -> dict[str, Any]:
             meta, _b, _m = load_meta(tid)
         except (OSError, ValueError):
             continue
-        if repo and repo not in (meta.get("from"), meta.get("to")):
+        if repo and repo not in (meta.get("from"), meta.get("to"), *_resolve_target_repos(tid, meta, _m)):
             continue
         d = root() / "_data" / tid / "runs"
         for rec in run_records(tid):
