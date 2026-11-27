@@ -16,6 +16,7 @@ import {
 
 import { SentAttachments, endsWithNote } from './chat-attachments'
 import { PendingBubbles } from './chat-pending'
+import type { Pending } from './chat-pending'
 import { TurnLine, revealingTurnState, turnState } from './chat-turn'
 import type { Activity } from './chat-turn'
 import { cn } from '#/lib/utils'
@@ -36,6 +37,8 @@ import {
 } from './chat-command'
 import { ArtifactCard } from './host-file-context'
 
+export type { Pending }
+
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
   role: 'user' | 'assistant' | 'tool' | 'system'
@@ -55,33 +58,6 @@ export type Message = {
   kind?: string
   /** refs to images embedded in the transcript (session.image) */
   images?: Array<string>
-}
-
-export type Pending = {
-  text: string
-  /** ms when sent; also the key */
-  at: number
-  note?: string
-  /** uploaded names sent with it: the bubble shows them as the message will */
-  attachments?: Array<string>
-  /** local object URLs shown inside the optimistic bubble while uploading */
-  localPreviews?: Array<string>
-  /** progress label while local image attachments are uploading */
-  uploading?: string
-  /** absolute transcript index where the transcript ended when it was sent */
-  after?: number
-  /** host outbox record id when backed by host sent-messages.json */
-  sentId?: string
-  /** client_op UUID used to deduplicate local optimistic bubbles against host outbox */
-  clientOp?: string
-  /** host paste error when state === 'failed' */
-  error?: string
-  /**
-   * sending: the host has not taken it yet; queued: in the pane, not yet in
-   * the transcript; lost: derived by settle() or host outbox — the agent went
-   * idle and the transcript never showed it (未送达); failed: host paste error
-   */
-  state?: 'sending' | 'queued' | 'lost' | 'failed'
 }
 
 /**
@@ -544,7 +520,6 @@ function CompactDivider({
  * delivered; now it stays as 未送达 until resent or removed, and a later
  * transcript line still settles it.
  */
-/** how long after sending an unmatched message counts as lost (agent idle) */
 export const LOST_AFTER_MS = 60_000
 
 export function settle(
@@ -584,11 +559,10 @@ export function settleMatches(
         : endsWithNote(text, '')
     )
       return true
-    if (attachments?.length) {
-      if (!attachments.every((name) => text.includes(name))) return false
-      return !typed || text.includes(typed)
-    }
-    return typed.length >= 4 && text.includes(typed)
+    return attachments?.length
+      ? attachments.every((name) => text.includes(name)) &&
+          (!typed || text.includes(typed))
+      : typed.length >= 4 && text.includes(typed)
   }
   const left: Array<Pending> = []
   for (const item of pending) {
@@ -611,9 +585,12 @@ export function settleMatches(
       left.push(item)
       continue
     }
+    const browserSentAt = item.sentId ? item.browserSentAt : item.at
     const waiting = item.state === 'sending' || busy
     left.push(
-      waiting || now - item.at < LOST_AFTER_MS
+      waiting ||
+        browserSentAt === undefined ||
+        now - browserSentAt < LOST_AFTER_MS
         ? item
         : { ...item, state: 'lost' },
     )

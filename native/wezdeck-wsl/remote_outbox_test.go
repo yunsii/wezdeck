@@ -206,3 +206,19 @@ func TestOutboxListAndActionsAndPruneProtection(t *testing.T) {
 		t.Fatalf("deleted record should no longer pin upload")
 	}
 }
+
+func TestPaneSubmitFailureReservesOperationID(t *testing.T) {
+	useTempOutbox(t)
+	op := "11111111-1111-4111-8111-111111111111"
+	first, _ := outboxRecordStart(sentRecord{ClientOp: op, SessionID: "sess-1"})
+	if _, ok := outboxUpdate(first.ID, func(rec *sentRecord) {
+		rec.Status = "failed"
+		rec.Error = paneSubmitErrorPrefix + "client is read-only"
+	}); !ok {
+		t.Fatal("failed to persist the partial send")
+	}
+	second, deduped := outboxRecordStart(sentRecord{ClientOp: op, SessionID: "sess-1"})
+	if !deduped || second.ID != first.ID || second.Status != "failed" {
+		t.Fatalf("partial send should keep its operation ID: %+v", second)
+	}
+}

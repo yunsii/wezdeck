@@ -17,6 +17,11 @@ export function mergeOutboxPending(
     ? hostOutbox?.filter((rec) => !dismissedIds.has(rec.id))
     : hostOutbox
   if (!visibleHost?.length) return local
+  const localTimes = new Map(
+    local
+      .filter((item) => item.clientOp)
+      .map((item) => [item.clientOp, item.at]),
+  )
   const hostOps = new Set<string>()
   const hostItems: Array<Pending> = visibleHost.map((rec) => {
     if (rec.client_op) hostOps.add(rec.client_op)
@@ -30,6 +35,7 @@ export function mergeOutboxPending(
       text: rec.text,
       attachments: rec.attachments ?? [],
       at: rec.created_at,
+      browserSentAt: rec.client_op ? localTimes.get(rec.client_op) : undefined,
       after: rec.transcript_end_at_send,
       sentId: rec.id,
       clientOp: rec.client_op,
@@ -68,7 +74,10 @@ export async function withDeskRetry<T>(
     try {
       return await attempt()
     } catch (error) {
-      const wait = /retry in (\d+)s/.exec((error as Error).message)
+      const wait =
+        /^(?:someone typed at the desk \d+s ago; )?retry in (\d+)s$/.exec(
+          (error as Error).message,
+        )
       if (!wait || round >= tries) throw error
       for (let left = Number(wait[1]); left > 0; left--) {
         onWait(left)

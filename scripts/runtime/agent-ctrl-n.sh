@@ -233,6 +233,16 @@ invalidate_typed_resume_after_new() {
       new_sid="pending-$pending_uuid"
       attention_mark_cleared "$tmux_socket" "$pane_id" "$new_sid" "${prev_sid:-}" "${tmux_session:-}" 2>/dev/null || true
     fi
+  elif [[ "$agent_for_pin" == "codex" ]] \
+    && declare -F agent_session_discover_latest_codex >/dev/null 2>&1 \
+    && declare -F attention_mark_cleared >/dev/null 2>&1 \
+    && [[ -n "$tmux_socket" && -n "$pane_id" ]]; then
+    sleep "${CODEX_NEW_SESSION_DISCOVER_GAP:-0.4}" 2>/dev/null || true
+    new_sid="$(agent_session_discover_latest_codex "$cwd" "${prev_sid:-}" 2>/dev/null || true)"
+    if agent_session_id_usable "${new_sid:-}"; then
+      attention_mark_cleared "$tmux_socket" "$pane_id" "$new_sid" "${prev_sid:-}" "${tmux_session:-}" 2>/dev/null || true
+      agent_session_pin_pane "$pane_id" "$new_sid" codex "$cwd" || true
+    fi
   fi
 
   runtime_log_info agent_cli "${hk_label} invalidated typed resume after /new" \

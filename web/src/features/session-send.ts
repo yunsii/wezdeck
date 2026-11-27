@@ -182,6 +182,7 @@ function createSendMessage({
   write,
   follow,
   commandSentToast,
+  submitFailedMessage,
 }: {
   target: string
   message: Outgoing
@@ -191,6 +192,7 @@ function createSendMessage({
   write: WriteRunner
   follow: (from: string, to: string) => void
   commandSentToast: (command: string) => void
+  submitFailedMessage: (opId: string) => string
 }): Promise<boolean> {
   const op_id = crypto.randomUUID()
   const command = commandOf(message.text)
@@ -264,7 +266,16 @@ function createSendMessage({
         rollbackSessionOptimistic(target, op_id, (error as Error).message)
       }
       void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
-      trace('web-write', { id: target, op_id, action: 'send', stage: 'failed' })
+      const partial = (error as Error).message.startsWith(
+        'tmux submit failed after paste: ',
+      )
+      trace('web-write', {
+        id: target,
+        op_id,
+        action: 'send',
+        stage: partial ? 'submit-failed' : 'failed',
+      })
+      if (partial) throw new Error(submitFailedMessage(op_id))
       throw error
     }
     trace('web-write', {
@@ -290,6 +301,25 @@ function createSendMessage({
     .then((res) => (res.ok ? res.value : false))
 }
 
+function usePromptTimeoutNotice(id: string) {
+  const { t } = useLingui()
+  useEffect(
+    () =>
+      onOptimisticTimeout((event) => {
+        if (
+          event.scope === 'session' &&
+          event.id === id &&
+          (event.kind === 'prompt-submit' || event.kind === 'prompt-cancel')
+        ) {
+          toast.warning(
+            t`The host did not confirm the action; please check and retry.`,
+          )
+        }
+      }),
+    [id, t],
+  )
+}
+
 /**
  * Per session, not per page: queued bubbles (above, page-wide), the sending
  * state, an error or a countdown are keyed by the session id the write was
@@ -310,21 +340,7 @@ export function useSessionWrites(
   const client = useQueryClient()
   const pendingRaw = usePending(id)
   useDismissedVersion()
-  useEffect(
-    () =>
-      onOptimisticTimeout((event) => {
-        if (
-          event.scope === 'session' &&
-          event.id === id &&
-          (event.kind === 'prompt-submit' || event.kind === 'prompt-cancel')
-        ) {
-          toast.warning(
-            t`The host did not confirm the action; please check and retry.`,
-          )
-        }
-      }),
-    [id, t],
-  )
+  usePromptTimeoutNotice(id)
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
   const state = stateBy[id] ?? IDLE
   const patch = (target: string, next: Partial<WriteState>) =>
@@ -466,6 +482,8 @@ export function useSessionWrites(
       write,
       follow,
       commandSentToast: (command) => toast(t`Command sent: ${command}`),
+      submitFailedMessage: (op_id) =>
+        t`The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: ${op_id}`,
     })
   /** drop a bubble (a lost or failed one the user gave up on) */
   const dismiss = (item: Pending) => {

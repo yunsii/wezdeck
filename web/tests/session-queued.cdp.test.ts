@@ -126,7 +126,8 @@ describe.runIf(attention && devicesFile)(
         locale: 'zh-CN',
       })
       const page = await context.newPage()
-      await page.clock.install()
+      // Stay within the relay's signed-write time window after both jumps.
+      await page.clock.install({ time: Date.now() - 65_000 })
       await approve(page)
       await page.goto(`${base}/zh/console/sessions/q-b`)
       const box = page.getByLabel('发给 Agent 的消息')
@@ -156,12 +157,14 @@ describe.runIf(attention && devicesFile)(
           .split('\n')
           .filter((line) => line.includes('不会进 transcript 的消息')).length
       const before = pane()
+      expect(before).toBe(2)
       await page.getByRole('button', { name: '重发' }).click()
-      await expect.poll(pane, { timeout: 10_000 }).toBeGreaterThan(before)
+      await expect.poll(pane, { timeout: 10_000 }).toBe(before + 2)
       await expect
         .poll(() => bubble.getAttribute('data-pending'), { timeout: 10_000 })
         .toBe('queued')
       expect(await notice.count()).toBe(0)
+      expect(pane()).toBe(before + 2)
 
       // 移除: lost again, then gone
       await page.clock.fastForward(65_000)

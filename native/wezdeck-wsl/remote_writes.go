@@ -110,11 +110,17 @@ func sendToSessionWithMeta(args json.RawMessage, via, device, clientOp string) (
 		if deduped {
 			relayLogf("outbox_record", "id=%s op_id=%s session=%s kind=message chars=%d attachments=%d status=%s deduped=true",
 				rec.ID, clientOp, a.ID, len([]rune(rawText)), len(rawAttachments), rec.Status)
+			if rec.Status == "failed" {
+				return nil, errors.New(rec.Error)
+			}
 			return map[string]any{"v": 1, "ok": true, "sent": len([]rune(a.Text)), "deduped": true, "sent_id": rec.ID}, nil
 		}
 		sentID = rec.ID
 	}
-	if err := pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text); err != nil {
+	started := time.Now()
+	err = pasteToPane(e.TmuxSocket, e.TmuxPane, a.Text)
+	logPaneWrite(e, clientOp, "send", started, err)
+	if err != nil {
 		if sentID != "" {
 			_, _ = outboxUpdate(sentID, func(r *sentRecord) {
 				r.Status = "failed"
@@ -226,14 +232,14 @@ func pasteToPane(socket, pane, text string) error {
 	load.Args = append(load.Args, "load-buffer", "-b", buffer, "-")
 	load.Stdin = strings.NewReader(text)
 	if out, err := load.CombinedOutput(); err != nil {
-		return fmt.Errorf("tmux load-buffer: %s", strings.TrimSpace(string(out)))
+		return &paneWriteError{stage: "load_buffer", detail: strings.TrimSpace(string(out))}
 	}
 	if out, err := tmuxCmd(socket, "paste-buffer", "-p", "-d", "-b", buffer, "-t", pane).CombinedOutput(); err != nil {
-		return fmt.Errorf("tmux paste-buffer: %s", strings.TrimSpace(string(out)))
+		return &paneWriteError{stage: "paste", detail: strings.TrimSpace(string(out))}
 	}
 	time.Sleep(150 * time.Millisecond)
 	if out, err := tmuxCmd(socket, "send-keys", "-t", pane, "Enter").CombinedOutput(); err != nil {
-		return fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
+		return &paneWriteError{stage: "submit", detail: strings.TrimSpace(string(out))}
 	}
 	return nil
 }
@@ -259,6 +265,10 @@ var allowedKeys = map[string]bool{
 }
 
 func keyToSession(args json.RawMessage) (any, error) {
+	return keyToSessionWithOp(args, "")
+}
+
+func keyToSessionWithOp(args json.RawMessage, clientOp string) (any, error) {
 	var a struct {
 		ID        string `json:"id"`
 		Key       string `json:"key"`
@@ -274,12 +284,15 @@ func keyToSession(args json.RawMessage) (any, error) {
 	if a.Key == "C-c" && a.Interrupt {
 		return interruptSession(e)
 	}
-	return sendSessionKey(e, a.Key)
+	started := time.Now()
+	reply, err := sendSessionKey(e, a.Key)
+	logPaneWrite(e, clientOp, "key", started, err)
+	return reply, err
 }
 
 func sendSessionKey(e attentionEntry, key string) (any, error) {
 	if out, err := tmuxCmd(e.TmuxSocket, "send-keys", "-t", e.TmuxPane, key).CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("tmux send-keys: %s", strings.TrimSpace(string(out)))
+		return nil, &paneWriteError{stage: "key", detail: strings.TrimSpace(string(out))}
 	}
 	return map[string]any{"v": 1, "ok": true}, nil
 }

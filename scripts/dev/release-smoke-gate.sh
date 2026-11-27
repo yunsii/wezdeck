@@ -30,6 +30,9 @@ fi
 echo "::phase:: L0 static checks (vet / architecture contract / dist assets)"
 if ((check_go)); then
   (cd native/wezdeck-wsl && PATH="$HOME/.local/go/bin:$PATH" go vet ./...)
+  echo "::phase:: L0 tmux read-only client and partial-send checks"
+  (cd native/wezdeck-wsl && PATH="$HOME/.local/go/bin:$PATH" go test -count=1 \
+    -run '^(TestReadOnlyTmuxWriteStages|TestPaneSubmitFailureReservesOperationID)$' ./...)
 fi
 if ((check_web)); then
   (cd web && corepack pnpm exec vitest run --config vitest.unit.config.ts tests/architecture.unit.test.ts)
