@@ -237,6 +237,21 @@ export const collabRunSummarySchema = z
   })
   .passthrough()
 
+export const collabMilestoneSchema = z
+  .object({
+    text: z.string(),
+    ts: nstr,
+  })
+  .passthrough()
+
+export const collabChildGateSchema = z
+  .object({
+    gate: nstr,
+    detail: nstr,
+    ts: nstr,
+  })
+  .passthrough()
+
 export const collabTicketSchema = z
   .object({
     id: z.string(),
@@ -247,6 +262,7 @@ export const collabTicketSchema = z
     phase: nstr,
     owner: nstr,
     parent: nstr,
+    kind: nstr,
     created_at: nstr,
     updated_at: nstr,
     worktree: nstr,
@@ -255,6 +271,7 @@ export const collabTicketSchema = z
       .object({ step: nstr, message: nstr, ts: nstr })
       .nullable()
       .optional(),
+    last_milestone: collabMilestoneSchema.nullable().optional(),
     runs: z.number().default(0),
     running: z.array(z.string()).default([]),
     last_run: collabRunSummarySchema.nullable().optional(),
@@ -334,6 +351,7 @@ export const collabShowSchema = collabEnvelope({
       collabTicketSchema.extend({
         depends_on: z.array(z.string()).default([]),
         scope: z.array(z.string()).default([]),
+        gate: collabChildGateSchema.nullable().optional(),
       }),
     )
     .default([]),
@@ -341,6 +359,14 @@ export const collabShowSchema = collabEnvelope({
     .object({
       kind: nstr,
       contract_sha256: nstr,
+      scheduler: z
+        .object({
+          alive: z.boolean().default(false),
+          pid: z.number().nullable().optional(),
+        })
+        .passthrough()
+        .nullable()
+        .optional(),
       integration: z
         .record(
           z.string(),

@@ -137,10 +137,15 @@ printf 'MemAvailable:   1000000 kB\n' >"$TICKET_MEMINFO_PATH"
 sleep 2
 check "mem gate queues while MemAvailable is low" \
   jq -e -s --arg m "$M" '[.[]|select(.kind=="queued" and .child==$m)|.gate]|index("mem")!=null' "$TICKETS_ROOT/_data/$P2/events.jsonl"
+shw_mem="$("$run" api show --id "$P2")"
+check "api show while queued exposes live scheduler + child mem gate (schema-valid)" \
+  bash -c "jq -e --arg m '$M' '.collab.scheduler.alive==true and (.children_detail[]|select(.id==\$m)|.gate.gate==\"mem\")' <<<'$shw_mem' >/dev/null && python3 '$here/lib/validate_api.py' show <<<'$shw_mem'"
 check "nothing dispatched under mem gate" bash -c "! grep -q 'start $M' '$log'"
 printf 'MemAvailable:   16000000 kB\n' >"$TICKET_MEMINFO_PATH"
 wait "$mpid"
 check "dispatch resumes after memory recovers" jq -e '.ok and .result=="done_unmerged"' "$tmp/mem.json"
+check "api show clears child gate and scheduler alive after completion" \
+  jq -e --arg m "$M" '.collab.scheduler.alive==false and (.children_detail[]|select(.id==$m)|.gate==null)' <<<"$("$run" api show --id "$P2")"
 
 # human gate: a challenged child blocks its dependents; parent waits on a human
 P3="$(c plan --from src --title "human gate" --contract "$tmp/contract.md" | jq -r .id)"
@@ -390,6 +395,8 @@ check "research launch: trigger fe1-flows, system+task parts, allow rules in arg
   jq -e '.trigger.source=="fe1-flows" and (.composition|map(.kind)|index("system")!=null and index("task")!=null) and (.invocation.argv|index("Bash(git -C yy log:*)")!=null) and (.invocation.argv|index("--max-turns")!=null) and .session.reason=="research_oneshot"' "$rl"
 check "research events: checkout per repo + research_done" \
   jq -e -s 'map(.kind) | (map(select(.=="checkout"))|length==2) and index("research_done")!=null and index("milestone")!=null' "$TICKETS_ROOT/_data/$RID/events.jsonl"
+check "api show surfaces latest milestone on ticket" \
+  jq -e '.ticket.last_milestone.text=="两个仓库都看过了"' <<<"$("$run" api show --id "$RID")"
 # fanout draft plan runs are research tickets too, so only membership + kind are fixed here
 check "api list --kind research" jq -e --arg r "$RID" '(.tickets|map(.id)|index($r)!=null) and all(.tickets[]; .kind=="research")' <<<"$("$run" api list --kind research)"
 check "research parse_json picks fenced or bare JSON" python3 -c "

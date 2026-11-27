@@ -88,6 +88,30 @@
                 "type": "string"
               }
             },
+            "last_milestone": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "text"
+                  ],
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "ts": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
             "last_run": {
               "anyOf": [
                 {
@@ -430,14 +454,89 @@
             "required": [
               "id",
               "status"
-            ]
+            ],
+            "properties": {
+              "gate": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "gate": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "detail": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "ts": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "last_milestone": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "text"
+                    ],
+                    "properties": {
+                      "text": {
+                        "type": "string"
+                      },
+                      "ts": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
           }
         },
         "collab": {
           "type": [
             "object",
             "null"
-          ]
+          ],
+          "properties": {
+            "scheduler": {
+              "type": "object",
+              "required": [
+                "alive"
+              ],
+              "properties": {
+                "alive": {
+                  "type": "boolean"
+                },
+                "pid": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
         },
         "questions": {
           "description": "Structured questions while status=waiting_initiator (challenge / need_input); null otherwise.",

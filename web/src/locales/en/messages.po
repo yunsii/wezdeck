@@ -82,6 +82,10 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
+#: src/features/ticket-timeline.tsx:142
+msgid "{files} file(s)"
+msgstr "{files} file(s)"
+
 #: src/features/session-commands.tsx:90
 msgid "{hours} h ago"
 msgstr "{hours} h ago"
@@ -119,6 +123,10 @@ msgstr "{name} is ready, no conversation yet."
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
+#: src/features/console-collab.tsx:205
+msgid "{queuedCount} queued"
+msgstr "{queuedCount} queued"
+
 #: src/features/session-new-direction.tsx:74
 #~ msgid "{reason} · opens one more"
 #~ msgstr "{reason} · opens one more"
@@ -126,6 +134,10 @@ msgstr "{off} need attention"
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "{requests} requests, {writes} writes"
+
+#: src/features/console-collab.tsx:203
+msgid "{runningCount} running"
+msgstr "{runningCount} running"
 
 #: src/features/session-subagents.tsx:122
 msgid "{runningCount} subagents running"
@@ -188,6 +200,10 @@ msgstr "{untracked} untracked"
 #: src/features/session-usage.tsx:91
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} tokens"
+
+#: src/features/console-collab.tsx:208
+msgid "{waitingCount} waiting"
+msgstr "{waitingCount} waiting"
 
 #: src/features/ticket-proposals.tsx:310
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
@@ -461,6 +477,10 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
+#: src/features/ticket-pipeline.tsx:329
+msgid "Approval"
+msgstr "Approval"
+
 #: src/features/me-devices.tsx:195
 msgid "Approve"
 msgstr "Approve"
@@ -491,6 +511,7 @@ msgid "Approve this device in Device access to use host controls."
 msgstr "Approve this device in Device access to use host controls."
 
 #: src/features/me-devices.tsx:273
+#: src/features/ticket-timeline.tsx:177
 msgid "Approved"
 msgstr "Approved"
 
@@ -570,7 +591,7 @@ msgid "Availability and note"
 msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:85
-#: src/features/console-collab.tsx:89
+#: src/features/console-collab.tsx:104
 #: src/features/console-me.tsx:449
 #: src/features/session-worktree-manager.tsx:443
 #: src/features/ticket-header.tsx:39
@@ -635,6 +656,10 @@ msgstr "Block"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 
+#: src/features/ticket-pipeline.tsx:312
+msgid "Blocked by dependency"
+msgstr "Blocked by dependency"
+
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:69
 #: src/features/session-worktree-detail.tsx:65
@@ -683,7 +708,7 @@ msgstr "Cache"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:170
+#: src/features/console-collab.tsx:225
 #: src/features/session-info.tsx:95
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -734,6 +759,10 @@ msgstr "Carry a brief"
 msgid "Category"
 msgstr "Category"
 
+#: src/features/ticket-timeline.tsx:214
+msgid "Challenge"
+msgstr "Challenge"
+
 #: src/features/chat-tools.tsx:202
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "changed {edited} files +{added} −{removed}"
@@ -763,11 +792,20 @@ msgstr "Check for updates"
 msgid "Checking…"
 msgstr "Checking…"
 
-#: src/features/console-collab.tsx:165
+#: src/features/ticket-pipeline.tsx:333
+msgid "Checkout"
+msgstr "Checkout"
+
+#: src/features/console-collab.tsx:220
 msgid "Child"
 msgstr "Child"
 
-#: src/features/console-collab.tsx:160
+#: src/features/ticket-timeline.tsx:124
+msgid "Child finished"
+msgstr "Child finished"
+
+#: src/features/console-collab.tsx:200
+#: src/features/console-collab.tsx:215
 msgid "Children"
 msgstr "Children"
 
@@ -947,7 +985,7 @@ msgstr "Confirm revoke"
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "Confirmed: {n} child ticket(s) created, scheduler started"
 
-#: src/features/console-collab.tsx:235
+#: src/features/console-collab.tsx:328
 msgid "conflict"
 msgstr "conflict"
 
@@ -1285,7 +1323,7 @@ msgstr "Deliver first message"
 msgid "Deny"
 msgstr "Deny"
 
-#: src/features/console-collab.tsx:168
+#: src/features/console-collab.tsx:223
 msgid "Depends on"
 msgstr "Depends on"
 
@@ -1349,10 +1387,15 @@ msgstr "Disconnected"
 msgid "Disconnecting…"
 msgstr "Disconnecting…"
 
+#: src/features/ticket-timeline.tsx:112
+msgid "Dispatched"
+msgstr "Dispatched"
+
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/session-chat-group.tsx:105
 #: src/features/session-list.tsx:61
+#: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "Done"
 
@@ -1431,6 +1474,10 @@ msgstr "Endpoint"
 #: src/features/session-elicitation.tsx:295
 msgid "Enter"
 msgstr "Enter"
+
+#: src/features/ticket-timeline.tsx:220
+msgid "Error"
+msgstr "Error"
 
 #: src/features/console-diagnostics.tsx:134
 msgid "Errors"
@@ -1631,6 +1678,10 @@ msgstr "Handoff failed"
 msgid "Headless worker"
 msgstr "Headless worker"
 
+#: src/features/ticket-pipeline.tsx:311
+msgid "Held by interactive session"
+msgstr "Held by interactive session"
+
 #: src/features/session-todos.tsx:193
 msgid "Hide done"
 msgstr "Hide done"
@@ -1718,6 +1769,15 @@ msgstr "Images"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "IME state is unavailable because Runtime is offline."
 
+#: src/features/ticket-pipeline.tsx:337
+#: src/features/ticket-timeline.tsx:207
+msgid "Implement"
+msgstr "Implement"
+
+#: src/features/ticket-timeline.tsx:210
+msgid "Implement done"
+msgstr "Implement done"
+
 #: src/features/tickets-view.tsx:132
 msgid "in progress"
 msgstr "in progress"
@@ -1768,8 +1828,8 @@ msgstr "Installed"
 msgid "Instance"
 msgstr "Instance"
 
-#: src/features/console-collab.tsx:228
-#: src/features/console-collab.tsx:229
+#: src/features/console-collab.tsx:321
+#: src/features/console-collab.tsx:322
 msgid "Integration"
 msgstr "Integration"
 
@@ -1937,7 +1997,7 @@ msgstr "Loading original…"
 #: src/features/chat-controls.tsx:65
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:210
-#: src/features/console-collab.tsx:96
+#: src/features/console-collab.tsx:111
 #: src/features/console-diagnostics.tsx:101
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
@@ -2037,7 +2097,12 @@ msgstr "Max context"
 msgid "May stop to ask you:"
 msgstr "May stop to ask you:"
 
-#: src/features/console-collab.tsx:240
+#: src/features/ticket-pipeline.tsx:331
+#: src/features/ticket-timeline.tsx:152
+msgid "Merge"
+msgstr "Merge"
+
+#: src/features/console-collab.tsx:333
 msgid "merged"
 msgstr "merged"
 
@@ -2354,7 +2419,7 @@ msgstr "No sessions match that search."
 msgid "No ticket selected"
 msgstr "No ticket selected"
 
-#: src/features/console-collab.tsx:51
+#: src/features/console-collab.tsx:55
 msgid "No tickets match this filter."
 msgstr "No tickets match this filter."
 
@@ -2688,6 +2753,7 @@ msgid "pick an earlier one"
 msgstr "pick an earlier one"
 
 #: src/features/session-statusbar.tsx:114
+#: src/features/ticket-pipeline.tsx:328
 msgid "Plan"
 msgstr "Plan"
 
@@ -2728,6 +2794,7 @@ msgid "Process"
 msgstr "Process"
 
 #: src/features/ticket-info.tsx:106
+#: src/features/ticket-timeline.tsx:136
 msgid "Progress"
 msgstr "Progress"
 
@@ -2738,6 +2805,10 @@ msgstr "Project config"
 #: src/features/console-collab-run.tsx:168
 msgid "Prompt composition"
 msgstr "Prompt composition"
+
+#: src/features/ticket-timeline.tsx:173
+msgid "Proposal"
+msgstr "Proposal"
 
 #: src/features/ticket-proposals.tsx:93
 msgid "Proposal rejected"
@@ -2766,6 +2837,11 @@ msgstr "Put into the message for this agent"
 #: src/features/console-keys.tsx:92
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
+
+#: src/features/ticket-pipeline.tsx:334
+#: src/features/ticket-timeline.tsx:101
+msgid "Queued"
+msgstr "Queued"
 
 #: src/features/chat-pending.tsx:36
 msgid "Queued messages"
@@ -2857,6 +2933,10 @@ msgstr "Reject…"
 msgid "rejected"
 msgstr "rejected"
 
+#: src/features/ticket-timeline.tsx:180
+msgid "Rejected"
+msgstr "Rejected"
+
 #: src/features/remote-badge.tsx:90
 msgid "Relay"
 msgstr "Relay"
@@ -2946,6 +3026,7 @@ msgid "replied: {body}"
 msgstr "replied: {body}"
 
 #: src/features/ticket-reply.tsx:222
+#: src/features/ticket-timeline.tsx:216
 msgid "Reply"
 msgstr "Reply"
 
@@ -2957,7 +3038,7 @@ msgstr "Reply and continue"
 #~ msgid "Replying…"
 #~ msgstr "Replying…"
 
-#: src/features/console-collab.tsx:166
+#: src/features/console-collab.tsx:221
 msgid "Repo"
 msgstr "Repo"
 
@@ -3005,9 +3086,17 @@ msgstr "Request changes"
 msgid "Requests (WebRTC / relay)"
 msgstr "Requests (WebRTC / relay)"
 
+#: src/features/ticket-pipeline.tsx:336
+msgid "Research"
+msgstr "Research"
+
 #: src/features/console-activity.tsx:98
 msgid "research done"
 msgstr "research done"
+
+#: src/features/ticket-timeline.tsx:203
+msgid "Research done"
+msgstr "Research done"
 
 #: src/features/console-activity.tsx:98
 msgid "research failed"
@@ -3075,6 +3164,7 @@ msgstr "Resume a conversation"
 #: src/features/console-shell.tsx:479
 #: src/features/me-host.tsx:109
 #: src/features/session-new-job.tsx:215
+#: src/features/ticket-timeline.tsx:131
 msgid "Retry"
 msgstr "Retry"
 
@@ -3132,6 +3222,10 @@ msgstr "Run"
 msgid "Run detail"
 msgstr "Run detail"
 
+#: src/features/ticket-timeline.tsx:197
+msgid "Run ended"
+msgstr "Run ended"
+
 #: src/features/console-activity.tsx:96
 msgid "run failed"
 msgstr "run failed"
@@ -3149,11 +3243,16 @@ msgstr "Run in background"
 msgid "Run metrics"
 msgstr "Run metrics"
 
+#: src/features/ticket-timeline.tsx:190
+msgid "Run started"
+msgstr "Run started"
+
 #: src/features/console-me.tsx:152
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
-#: src/features/console-collab.tsx:202
+#: src/features/console-collab.tsx:245
+#: src/features/console-collab.tsx:246
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "running"
@@ -3269,7 +3368,19 @@ msgstr "Saving…"
 msgid "Scan interval"
 msgstr "Scan interval"
 
-#: src/features/console-collab.tsx:169
+#: src/features/ticket-timeline.tsx:93
+msgid "Scheduler"
+msgstr "Scheduler"
+
+#: src/features/ticket-pipeline.tsx:391
+msgid "Scheduler active"
+msgstr "Scheduler active"
+
+#: src/features/ticket-timeline.tsx:168
+msgid "Scheduler ended"
+msgstr "Scheduler ended"
+
+#: src/features/console-collab.tsx:224
 msgid "Scope"
 msgstr "Scope"
 
@@ -3503,6 +3614,14 @@ msgstr "Skip to content"
 msgid "Slash commands for Claude"
 msgstr "Slash commands for Claude"
 
+#: src/features/ticket-timeline.tsx:115
+msgid "slot {slot}"
+msgstr "slot {slot}"
+
+#: src/features/ticket-timeline.tsx:141
+msgid "Snapshot"
+msgstr "Snapshot"
+
 #: src/features/me-host.tsx:154
 msgid "Socket"
 msgstr "Socket"
@@ -3598,6 +3717,10 @@ msgstr "Start without context"
 msgid "Start working on it now (a headless run on the host)"
 msgstr "Start working on it now (a headless run on the host)"
 
+#: src/features/ticket-timeline.tsx:94
+msgid "started ({kids} children, cap {cap})"
+msgstr "started ({kids} children, cap {cap})"
+
 #: src/features/console-activity.tsx:91
 msgid "started researching"
 msgstr "started researching"
@@ -3623,7 +3746,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/console-collab.tsx:167
+#: src/features/console-collab.tsx:222
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:60
@@ -3943,11 +4066,11 @@ msgstr "Ticket info"
 msgid "Ticket pages"
 msgstr "Ticket pages"
 
-#: src/features/console-collab.tsx:96
+#: src/features/console-collab.tsx:111
 msgid "Ticket unavailable"
 msgstr "Ticket unavailable"
 
-#: src/features/console-collab.tsx:91
+#: src/features/console-collab.tsx:106
 #: src/features/console-shell.tsx:90
 #: src/features/landing-page.tsx:88
 msgid "Tickets"
@@ -4204,6 +4327,11 @@ msgstr "User"
 msgid "Verification"
 msgstr "Verification"
 
+#: src/features/ticket-pipeline.tsx:332
+#: src/features/ticket-timeline.tsx:162
+msgid "Verify"
+msgstr "Verify"
+
 #: src/features/console-collab-run.tsx:174
 #: src/features/me-app.tsx:74
 msgid "Version"
@@ -4250,9 +4378,29 @@ msgstr "Waiting for your answer"
 msgid "waiting for your confirmation"
 msgstr "waiting for your confirmation"
 
+#: src/features/ticket-pipeline.tsx:306
+msgid "Waiting on dependencies"
+msgstr "Waiting on dependencies"
+
 #: src/features/collab-metrics.tsx:151
 msgid "Waiting on human"
 msgstr "Waiting on human"
+
+#: src/features/ticket-pipeline.tsx:308
+msgid "Waiting on memory gate"
+msgstr "Waiting on memory gate"
+
+#: src/features/ticket-pipeline.tsx:307
+msgid "Waiting on overlapping scope"
+msgstr "Waiting on overlapping scope"
+
+#: src/features/ticket-pipeline.tsx:309
+msgid "Waiting on parallel slot"
+msgstr "Waiting on parallel slot"
+
+#: src/features/ticket-pipeline.tsx:310
+msgid "Waiting on repo cap"
+msgstr "Waiting on repo cap"
 
 #: src/features/tickets-view.tsx:134
 msgid "waiting on target"
@@ -4289,6 +4437,10 @@ msgstr "Wall p50 / p95"
 #: src/features/collab-metrics.tsx:174
 msgid "Wall total"
 msgstr "Wall total"
+
+#: src/features/ticket-timeline.tsx:220
+msgid "Warning"
+msgstr "Warning"
 
 #: src/features/console-diagnostics.tsx:133
 msgid "Warnings"
@@ -4409,6 +4561,19 @@ msgstr "Worker question"
 msgid "Worker requests"
 msgstr "Worker requests"
 
+#: src/features/ticket-pipeline.tsx:330
+msgid "Workers"
+msgstr "Workers"
+
+#: src/features/ticket-pipeline.tsx:353
+msgid "Workflow progress"
+msgstr "Workflow progress"
+
+#: src/features/ticket-timeline.tsx:271
+#: src/features/ticket-timeline.tsx:289
+msgid "Workflow timeline"
+msgstr "Workflow timeline"
+
 #: src/features/landing-page.tsx:149
 #: src/features/session-status-text.ts:23
 msgid "working"
@@ -4435,6 +4600,8 @@ msgstr "Working"
 
 #: src/features/session-info.tsx:68
 #: src/features/ticket-info.tsx:107
+#: src/features/ticket-pipeline.tsx:335
+#: src/features/ticket-timeline.tsx:185
 msgid "Worktree"
 msgstr "Worktree"
 

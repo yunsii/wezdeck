@@ -1,4 +1,5 @@
 // covers: web/src/features/ticket-proposals.tsx web/src/features/console-collab.tsx
+// covers: web/src/features/ticket-pipeline.tsx web/src/features/ticket-timeline.tsx
 // covers: native/wezdeck-wsl/remote_writes.go skills/agent-collab/lib/split.py
 // covers: skills/agent-collab/lib/api.py
 import { execFileSync } from 'node:child_process'
@@ -172,6 +173,13 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
 
     // the card: heading, the four parts, contract one tap away, each child with its scope and order
     await page.goto(`${base}/zh/console/collab/${rejectMe}`)
+    const pipeline = page.getByTestId('ticket-pipeline')
+    await pipeline.waitFor({ timeout: 20_000 })
+    expect(
+      await pipeline
+        .locator('[data-step="review"]')
+        .getAttribute('data-step-tone'),
+    ).toBe('waiting')
     const card = page.getByRole('region', { name: '拆分提案 p1' })
     await card.waitFor({ timeout: 20_000 })
     await expect
@@ -253,6 +261,23 @@ describe.runIf(devicesFile && stack)('Split proposals on a parent', () => {
       // its own row, and 乙's 依赖 column names it too
       .first()
       .waitFor({ timeout: 20_000 })
+    // pipeline advances past approval and timeline unfolds scheduling events
+    await expect
+      .poll(() =>
+        page
+          .getByTestId('ticket-pipeline')
+          .locator('[data-step="review"]')
+          .getAttribute('data-step-tone'),
+      )
+      .toBe('done')
+    const timeline = page.getByTestId('ticket-timeline')
+    await timeline.waitFor({ timeout: 15_000 })
+    await timeline.getByRole('button').click()
+    await timeline
+      .getByRole('list', { name: '流程时间线' })
+      .locator('li')
+      .first()
+      .waitFor({ timeout: 10_000 })
     const runs = join(stack, 'ticket-runs')
     await expect
       .poll(() => (existsSync(runs) ? readFileSync(runs, 'utf8') : ''), {

@@ -370,7 +370,7 @@ nothing is stored twice:
 | --- | --- |
 | `api health` | `{v, store, tickets, running, queued, waiting_human, seq_head, capabilities[]}` |
 | `api list [--status] [--repo] [--parent] [--since] [--limit]` | ticket summaries + last progress + child counts |
-| `api show --id` | meta, sections (sans prompts), children, `contract.md` sha, runs (summaries), `questions` (structured challenge options while `waiting_initiator`, else null — see `SKILL.md` D), `reference` (below) |
+| `api show --id` | meta, sections (sans prompts), children (`children_detail` with live scheduler `gate` and `last_milestone`), `collab` (`scheduler` alive/pid + `integration`), `contract.md` sha, runs (summaries), `questions` (structured challenge options while `waiting_initiator`, else null — see `SKILL.md` D), `reference` (below) |
 | `api events --after <seq> [--ticket] [--limit 500]` | `{events[], next}`. This is the poll cursor |
 | `api run --run <run>` | launch record + run record |
 | `api prompt --sha <sha256>` | redacted prompt / continuation body |
@@ -420,8 +420,15 @@ commands that read the rest. The web console's ticket page copies it with
    /collab shows a subset of the same `api metrics` fields.
 4. A new `web/src/features/console-collab.tsx` plus a nav entry:
    - **Board:** columns by status; parents show child progress.
-   - **Parent swimlanes:** one lane per repo / worktree; run bars on a time
-     axis; queued segments coloured by gate.
+   - **Workflow progress & timeline (`ticket-pipeline.tsx`, `ticket-timeline.tsx`):**
+     top step strip across the full lifecycle (parent: Plan → Approval →
+     Workers → Merge → Verify → Done; child/ticket: Queued → Worktree →
+     Research → Implement → Done; research: Checkout → Research → Done) with
+     live `progress` / `last_milestone` banner and scheduler badge; `Children`
+     table surfaces each child's active phase, queue gate (`deps`,
+     `path_overlap`, `mem`, `slot`, `repo_cap`, `session`, `blocked`), and
+     latest milestone; foldable chronological timeline reads `api events
+     --ticket` (filtering out per-tool stream noise).
    - **Run inspector:** launch record (trigger chain, composition table,
      prompt viewer), live tool and milestone stream, run record.
    - **Metrics:** reuse mix, cache hit by backend, gate denials, cost.

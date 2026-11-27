@@ -225,6 +225,74 @@ def cmd_list(argv: list[str]) -> dict[str, Any]:
     return {"total": len(rows), "tickets": rows[: max(limit, 0)]}
 
 
+def _scheduler_state(tid: str) -> dict[str, Any]:
+    pid_file = root() / "_data" / tid / "scheduler.pid"
+    if not pid_file.is_file():
+        return {"alive": False, "pid": None}
+    try:
+        pid = int(pid_file.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return {"alive": False, "pid": None}
+    alive = False
+    if pid > 0:
+        try:
+            os.kill(pid, 0)
+            alive = True
+        except OSError:
+            alive = False
+    return {"alive": alive, "pid": pid if alive else None}
+
+
+def _latest_milestone(tid: str) -> dict[str, Any] | None:
+    path = root() / "_data" / tid / "events.jsonl"
+    if not path.is_file():
+        return None
+    hit: dict[str, Any] | None = None
+    try:
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                if '"milestone"' not in line:
+                    continue
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if ev.get("kind") == "milestone" and ev.get("text"):
+                    hit = {"text": str(ev["text"]), "ts": ev.get("ts")}
+    except OSError:
+        return None
+    return hit
+
+
+def _child_gates(tid: str) -> dict[str, dict[str, Any]]:
+    path = root() / "_data" / tid / "events.jsonl"
+    if not path.is_file():
+        return {}
+    gates: dict[str, dict[str, Any]] = {}
+    try:
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                child = ev.get("child")
+                if not isinstance(child, str) or not child:
+                    continue
+                kind = ev.get("kind")
+                if kind == "queued":
+                    gates[child] = {
+                        "gate": ev.get("gate"),
+                        "detail": ev.get("detail"),
+                        "ts": ev.get("ts"),
+                    }
+                elif kind in ("dispatched", "child_exit"):
+                    gates.pop(child, None)
+    except OSError:
+        return {}
+    return gates
+
+
 def cmd_show(argv: list[str]) -> dict[str, Any]:
     tid = check_tid(opt(argv, "--id"))
     if not tid:
@@ -255,11 +323,20 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
         r["prompt_sha256"] = (lj.get("prompt") or {}).get("store_sha256")
         runs.append(r)
     ticket = summary(tid)
-    children_detail = [
-        {**summary(c), "depends_on": ticket_fs.read_meta_json(c).get("depends_on") or [],
-         "scope": ticket_fs.read_meta_json(c).get("scope") or []}
-        for c in children
-    ]
+    ticket["last_milestone"] = _latest_milestone(tid)
+    gates = _child_gates(tid) if children else {}
+    children_detail = []
+    for c in children:
+        cs = summary(c)
+        cmj = ticket_fs.read_meta_json(c)
+        gate = gates.get(c) if (cs.get("status") not in TERMINAL and not cs.get("running")) else None
+        children_detail.append({
+            **cs,
+            "depends_on": cmj.get("depends_on") or [],
+            "scope": cmj.get("scope") or [],
+            "gate": gate,
+            "last_milestone": _latest_milestone(c),
+        })
     return {
         "ticket": ticket,
         # a block for another agent (the web console's 复制引用): reference.py
@@ -270,8 +347,12 @@ def cmd_show(argv: list[str]) -> dict[str, Any]:
         "sections": sections,
         "children": children,
         "children_detail": children_detail,
-        "collab": {"kind": mj.get("kind"), "contract_sha256": mj.get("contract_sha256"),
-                   "integration": mj.get("integration")} if mj.get("kind") == "parent" else None,
+        "collab": {
+            "kind": mj.get("kind"),
+            "contract_sha256": mj.get("contract_sha256"),
+            "integration": mj.get("integration"),
+            "scheduler": _scheduler_state(tid),
+        } if mj.get("kind") == "parent" else None,
         "runs": runs,
         "running": in_flight_runs(tid),
         # structured questions while the worker waits on the initiator

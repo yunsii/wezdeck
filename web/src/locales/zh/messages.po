@@ -82,6 +82,10 @@ msgstr "{days} 天前"
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
+#: src/features/ticket-timeline.tsx:142
+msgid "{files} file(s)"
+msgstr "{files} 个文件"
+
 #: src/features/session-commands.tsx:90
 msgid "{hours} h ago"
 msgstr "{hours} 小时前"
@@ -119,6 +123,10 @@ msgstr "{name} 已就绪，还没有对话。"
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
+#: src/features/console-collab.tsx:205
+msgid "{queuedCount} queued"
+msgstr "{queuedCount} 排队中"
+
 #: src/features/session-new-direction.tsx:74
 #~ msgid "{reason} · opens one more"
 #~ msgstr "{reason} · 将新开一个"
@@ -126,6 +134,10 @@ msgstr "{off} 项需要留意"
 #: src/features/me-devices.tsx:133
 msgid "{requests} requests, {writes} writes"
 msgstr "请求 {requests} 次，写入 {writes} 次"
+
+#: src/features/console-collab.tsx:203
+msgid "{runningCount} running"
+msgstr "{runningCount} 运行中"
 
 #: src/features/session-subagents.tsx:122
 msgid "{runningCount} subagents running"
@@ -188,6 +200,10 @@ msgstr "未跟踪 {untracked} 个"
 #: src/features/session-usage.tsx:91
 msgid "{usedTokens} / {limitTokens} tokens"
 msgstr "{usedTokens} / {limitTokens} token"
+
+#: src/features/console-collab.tsx:208
+msgid "{waitingCount} waiting"
+msgstr "{waitingCount} 待处理"
 
 #: src/features/ticket-proposals.tsx:310
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
@@ -461,6 +477,10 @@ msgstr "应用"
 msgid "Appearance"
 msgstr "外观"
 
+#: src/features/ticket-pipeline.tsx:329
+msgid "Approval"
+msgstr "审批"
+
 #: src/features/me-devices.tsx:195
 msgid "Approve"
 msgstr "批准"
@@ -491,6 +511,7 @@ msgid "Approve this device in Device access to use host controls."
 msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
 
 #: src/features/me-devices.tsx:273
+#: src/features/ticket-timeline.tsx:177
 msgid "Approved"
 msgstr "已批准"
 
@@ -570,7 +591,7 @@ msgid "Availability and note"
 msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:85
-#: src/features/console-collab.tsx:89
+#: src/features/console-collab.tsx:104
 #: src/features/console-me.tsx:449
 #: src/features/session-worktree-manager.tsx:443
 #: src/features/ticket-header.tsx:39
@@ -635,6 +656,10 @@ msgstr "方块"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
+#: src/features/ticket-pipeline.tsx:312
+msgid "Blocked by dependency"
+msgstr "被前置阻塞"
+
 #: src/features/session-empty.tsx:49
 #: src/features/session-info.tsx:69
 #: src/features/session-worktree-detail.tsx:65
@@ -683,7 +708,7 @@ msgstr "缓存"
 
 #: src/features/collab-metrics.tsx:157
 #: src/features/collab-metrics.tsx:252
-#: src/features/console-collab.tsx:170
+#: src/features/console-collab.tsx:225
 #: src/features/session-info.tsx:95
 #: src/features/ticket-runs.tsx:135
 msgid "Cache hit"
@@ -734,6 +759,10 @@ msgstr "携带简报"
 msgid "Category"
 msgstr "分类"
 
+#: src/features/ticket-timeline.tsx:214
+msgid "Challenge"
+msgstr "提出异议"
+
 #: src/features/chat-tools.tsx:202
 msgid "changed {edited} files +{added} −{removed}"
 msgstr "改了 {edited} 个文件 +{added} −{removed}"
@@ -763,11 +792,20 @@ msgstr "检查更新"
 msgid "Checking…"
 msgstr "检查中…"
 
-#: src/features/console-collab.tsx:165
+#: src/features/ticket-pipeline.tsx:333
+msgid "Checkout"
+msgstr "检出代码"
+
+#: src/features/console-collab.tsx:220
 msgid "Child"
 msgstr "子单"
 
-#: src/features/console-collab.tsx:160
+#: src/features/ticket-timeline.tsx:124
+msgid "Child finished"
+msgstr "子单结束"
+
+#: src/features/console-collab.tsx:200
+#: src/features/console-collab.tsx:215
 msgid "Children"
 msgstr "子单"
 
@@ -947,7 +985,7 @@ msgstr "确认撤销"
 msgid "Confirmed: {n} child ticket(s) created, scheduler started"
 msgstr "已确认：建了 {n} 张子单，调度已启动"
 
-#: src/features/console-collab.tsx:235
+#: src/features/console-collab.tsx:328
 msgid "conflict"
 msgstr "冲突"
 
@@ -1285,7 +1323,7 @@ msgstr "发送首条消息"
 msgid "Deny"
 msgstr "拒绝"
 
-#: src/features/console-collab.tsx:168
+#: src/features/console-collab.tsx:223
 msgid "Depends on"
 msgstr "依赖"
 
@@ -1349,10 +1387,15 @@ msgstr "已断开"
 msgid "Disconnecting…"
 msgstr "正在断开…"
 
+#: src/features/ticket-timeline.tsx:112
+msgid "Dispatched"
+msgstr "已派发"
+
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/session-chat-group.tsx:105
 #: src/features/session-list.tsx:61
+#: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "已完成"
 
@@ -1431,6 +1474,10 @@ msgstr "端点"
 #: src/features/session-elicitation.tsx:295
 msgid "Enter"
 msgstr "回车"
+
+#: src/features/ticket-timeline.tsx:220
+msgid "Error"
+msgstr "错误"
 
 #: src/features/console-diagnostics.tsx:134
 msgid "Errors"
@@ -1631,6 +1678,10 @@ msgstr "接力失败"
 msgid "Headless worker"
 msgstr "后台执行"
 
+#: src/features/ticket-pipeline.tsx:311
+msgid "Held by interactive session"
+msgstr "交互会话接管中"
+
 #: src/features/session-todos.tsx:193
 msgid "Hide done"
 msgstr "收起已完成"
@@ -1718,6 +1769,15 @@ msgstr "图片"
 msgid "IME state is unavailable because Runtime is offline."
 msgstr "Runtime 离线，暂时没有输入法状态。"
 
+#: src/features/ticket-pipeline.tsx:337
+#: src/features/ticket-timeline.tsx:207
+msgid "Implement"
+msgstr "实施"
+
+#: src/features/ticket-timeline.tsx:210
+msgid "Implement done"
+msgstr "实施完成"
+
 #: src/features/tickets-view.tsx:132
 msgid "in progress"
 msgstr "进行中"
@@ -1768,8 +1828,8 @@ msgstr "已安装"
 msgid "Instance"
 msgstr "实例"
 
-#: src/features/console-collab.tsx:228
-#: src/features/console-collab.tsx:229
+#: src/features/console-collab.tsx:321
+#: src/features/console-collab.tsx:322
 msgid "Integration"
 msgstr "集成"
 
@@ -1937,7 +1997,7 @@ msgstr "正在加载原图…"
 #: src/features/chat-controls.tsx:65
 #: src/features/console-activity.tsx:217
 #: src/features/console-collab-run.tsx:210
-#: src/features/console-collab.tsx:96
+#: src/features/console-collab.tsx:111
 #: src/features/console-diagnostics.tsx:101
 #: src/features/console-shared.tsx:210
 #: src/features/console-usage.tsx:106
@@ -2037,7 +2097,12 @@ msgstr "最大上下文"
 msgid "May stop to ask you:"
 msgstr "可能停下来问你："
 
-#: src/features/console-collab.tsx:240
+#: src/features/ticket-pipeline.tsx:331
+#: src/features/ticket-timeline.tsx:152
+msgid "Merge"
+msgstr "合并分支"
+
+#: src/features/console-collab.tsx:333
 msgid "merged"
 msgstr "已合并"
 
@@ -2354,7 +2419,7 @@ msgstr "没有匹配的会话。"
 msgid "No ticket selected"
 msgstr "未选中工单"
 
-#: src/features/console-collab.tsx:51
+#: src/features/console-collab.tsx:55
 msgid "No tickets match this filter."
 msgstr "没有符合这个筛选的工单。"
 
@@ -2688,6 +2753,7 @@ msgid "pick an earlier one"
 msgstr "选一个旧会话"
 
 #: src/features/session-statusbar.tsx:114
+#: src/features/ticket-pipeline.tsx:328
 msgid "Plan"
 msgstr "计划模式"
 
@@ -2728,6 +2794,7 @@ msgid "Process"
 msgstr "进程"
 
 #: src/features/ticket-info.tsx:106
+#: src/features/ticket-timeline.tsx:136
 msgid "Progress"
 msgstr "进展"
 
@@ -2738,6 +2805,10 @@ msgstr "项目配置"
 #: src/features/console-collab-run.tsx:168
 msgid "Prompt composition"
 msgstr "初始消息组成"
+
+#: src/features/ticket-timeline.tsx:173
+msgid "Proposal"
+msgstr "拆分提案"
 
 #: src/features/ticket-proposals.tsx:93
 msgid "Proposal rejected"
@@ -2766,6 +2837,11 @@ msgstr "填进消息，交给这个 agent"
 #: src/features/console-keys.tsx:92
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
+
+#: src/features/ticket-pipeline.tsx:334
+#: src/features/ticket-timeline.tsx:101
+msgid "Queued"
+msgstr "排队"
 
 #: src/features/chat-pending.tsx:36
 msgid "Queued messages"
@@ -2857,6 +2933,10 @@ msgstr "驳回…"
 msgid "rejected"
 msgstr "已拒绝"
 
+#: src/features/ticket-timeline.tsx:180
+msgid "Rejected"
+msgstr "已驳回"
+
 #: src/features/remote-badge.tsx:90
 msgid "Relay"
 msgstr "中转"
@@ -2946,6 +3026,7 @@ msgid "replied: {body}"
 msgstr "回复：{body}"
 
 #: src/features/ticket-reply.tsx:222
+#: src/features/ticket-timeline.tsx:216
 msgid "Reply"
 msgstr "回复"
 
@@ -2957,7 +3038,7 @@ msgstr "回复并继续"
 #~ msgid "Replying…"
 #~ msgstr "正在回复…"
 
-#: src/features/console-collab.tsx:166
+#: src/features/console-collab.tsx:221
 msgid "Repo"
 msgstr "仓库"
 
@@ -3005,8 +3086,16 @@ msgstr "请修改"
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
+#: src/features/ticket-pipeline.tsx:336
+msgid "Research"
+msgstr "调研"
+
 #: src/features/console-activity.tsx:98
 msgid "research done"
+msgstr "调研完成"
+
+#: src/features/ticket-timeline.tsx:203
+msgid "Research done"
 msgstr "调研完成"
 
 #: src/features/console-activity.tsx:98
@@ -3075,6 +3164,7 @@ msgstr "恢复会话"
 #: src/features/console-shell.tsx:479
 #: src/features/me-host.tsx:109
 #: src/features/session-new-job.tsx:215
+#: src/features/ticket-timeline.tsx:131
 msgid "Retry"
 msgstr "重试"
 
@@ -3132,6 +3222,10 @@ msgstr "运行"
 msgid "Run detail"
 msgstr "运行详情"
 
+#: src/features/ticket-timeline.tsx:197
+msgid "Run ended"
+msgstr "运行结束"
+
 #: src/features/console-activity.tsx:96
 msgid "run failed"
 msgstr "运行失败"
@@ -3149,11 +3243,16 @@ msgstr "转到后台"
 msgid "Run metrics"
 msgstr "运行指标"
 
+#: src/features/ticket-timeline.tsx:190
+msgid "Run started"
+msgstr "启动运行"
+
 #: src/features/console-me.tsx:152
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
-#: src/features/console-collab.tsx:202
+#: src/features/console-collab.tsx:245
+#: src/features/console-collab.tsx:246
 #: src/features/tickets-view.tsx:142
 msgid "running"
 msgstr "运行中"
@@ -3269,7 +3368,19 @@ msgstr "保存中…"
 msgid "Scan interval"
 msgstr "扫描周期"
 
-#: src/features/console-collab.tsx:169
+#: src/features/ticket-timeline.tsx:93
+msgid "Scheduler"
+msgstr "调度器"
+
+#: src/features/ticket-pipeline.tsx:391
+msgid "Scheduler active"
+msgstr "调度运行中"
+
+#: src/features/ticket-timeline.tsx:168
+msgid "Scheduler ended"
+msgstr "调度结束"
+
+#: src/features/console-collab.tsx:224
 msgid "Scope"
 msgstr "改动范围"
 
@@ -3503,6 +3614,14 @@ msgstr "跳到内容"
 msgid "Slash commands for Claude"
 msgstr "Claude 斜杠命令"
 
+#: src/features/ticket-timeline.tsx:115
+msgid "slot {slot}"
+msgstr "槽位 #{slot}"
+
+#: src/features/ticket-timeline.tsx:141
+msgid "Snapshot"
+msgstr "分支快照"
+
 #: src/features/me-host.tsx:154
 msgid "Socket"
 msgstr "套接字"
@@ -3598,6 +3717,10 @@ msgstr "不带上下文启动"
 msgid "Start working on it now (a headless run on the host)"
 msgstr "创建后立即开始处理（在电脑上后台运行）"
 
+#: src/features/ticket-timeline.tsx:94
+msgid "started ({kids} children, cap {cap})"
+msgstr "已启动（{kids} 个子单，上限 {cap}）"
+
 #: src/features/console-activity.tsx:91
 msgid "started researching"
 msgstr "开始调研"
@@ -3623,7 +3746,7 @@ msgstr "正在启动…"
 msgid "State"
 msgstr "状态"
 
-#: src/features/console-collab.tsx:167
+#: src/features/console-collab.tsx:222
 #: src/features/me-host.tsx:147
 #: src/features/session-info.tsx:84
 #: src/features/session-worktree-detail.tsx:60
@@ -3943,11 +4066,11 @@ msgstr "工单信息"
 msgid "Ticket pages"
 msgstr "工单"
 
-#: src/features/console-collab.tsx:96
+#: src/features/console-collab.tsx:111
 msgid "Ticket unavailable"
 msgstr "工单不可用"
 
-#: src/features/console-collab.tsx:91
+#: src/features/console-collab.tsx:106
 #: src/features/console-shell.tsx:90
 #: src/features/landing-page.tsx:88
 msgid "Tickets"
@@ -4204,6 +4327,11 @@ msgstr "用户级"
 msgid "Verification"
 msgstr "核实"
 
+#: src/features/ticket-pipeline.tsx:332
+#: src/features/ticket-timeline.tsx:162
+msgid "Verify"
+msgstr "独立验收"
+
 #: src/features/console-collab-run.tsx:174
 #: src/features/me-app.tsx:74
 msgid "Version"
@@ -4250,9 +4378,29 @@ msgstr "等你回答"
 msgid "waiting for your confirmation"
 msgstr "在等你确认"
 
+#: src/features/ticket-pipeline.tsx:306
+msgid "Waiting on dependencies"
+msgstr "等待依赖"
+
 #: src/features/collab-metrics.tsx:151
 msgid "Waiting on human"
 msgstr "等人处理"
+
+#: src/features/ticket-pipeline.tsx:308
+msgid "Waiting on memory gate"
+msgstr "等待内存释放"
+
+#: src/features/ticket-pipeline.tsx:307
+msgid "Waiting on overlapping scope"
+msgstr "等待重叠范围"
+
+#: src/features/ticket-pipeline.tsx:309
+msgid "Waiting on parallel slot"
+msgstr "等待并发槽位"
+
+#: src/features/ticket-pipeline.tsx:310
+msgid "Waiting on repo cap"
+msgstr "等待仓库上限"
 
 #: src/features/tickets-view.tsx:134
 msgid "waiting on target"
@@ -4289,6 +4437,10 @@ msgstr "耗时 p50 / p95"
 #: src/features/collab-metrics.tsx:174
 msgid "Wall total"
 msgstr "总耗时"
+
+#: src/features/ticket-timeline.tsx:220
+msgid "Warning"
+msgstr "警告"
 
 #: src/features/console-diagnostics.tsx:133
 msgid "Warnings"
@@ -4409,6 +4561,19 @@ msgstr "执行方提问"
 msgid "Worker requests"
 msgstr "Worker 请求"
 
+#: src/features/ticket-pipeline.tsx:330
+msgid "Workers"
+msgstr "子单执行"
+
+#: src/features/ticket-pipeline.tsx:353
+msgid "Workflow progress"
+msgstr "流程进度"
+
+#: src/features/ticket-timeline.tsx:271
+#: src/features/ticket-timeline.tsx:289
+msgid "Workflow timeline"
+msgstr "流程时间线"
+
 #: src/features/landing-page.tsx:149
 #: src/features/session-status-text.ts:23
 msgid "working"
@@ -4435,6 +4600,8 @@ msgstr "运行中"
 
 #: src/features/session-info.tsx:68
 #: src/features/ticket-info.tsx:107
+#: src/features/ticket-pipeline.tsx:335
+#: src/features/ticket-timeline.tsx:185
 msgid "Worktree"
 msgstr "工作树"
 
