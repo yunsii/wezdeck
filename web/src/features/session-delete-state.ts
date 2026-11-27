@@ -4,11 +4,13 @@ import { useCallback } from 'react'
 
 import { hostRead } from '#/lib/runtime-client'
 import type { SessionCard } from './session-card'
+import type { NewSessionJob } from './session-new-route'
 
 export const sessionDeleteKey = ['session.delete'] as const
 
 export type SessionsReply = {
   sessions: Array<SessionCard>
+  creating_jobs?: Array<NewSessionJob>
   redirects?: Array<{ from: string; to: string }>
 }
 

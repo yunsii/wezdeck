@@ -9,8 +9,8 @@ import { Disclosure } from '#/components/ui/disclosure'
 import { cn } from '#/lib/utils'
 import { ChatMarkdown } from './chat-markdown'
 import {
-  PromptActionSpinner,
   PromptActionStatus,
+  promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
 import { AskCard } from './session-ask-claude'
@@ -138,9 +138,8 @@ export function SessionElicitation({
                 onClick={() => void pick(oi)}
                 className={cn(
                   'grid min-h-12 gap-0.5 px-3 py-2.5 text-left disabled:opacity-40',
-                  pending && 'disabled:opacity-100',
                   isPicked && 'border-brand-running bg-brand-running/10',
-                  pending?.action === `opt-${oi}` && 'border-brand-running',
+                  promptButtonClass(pending, `opt-${oi}`),
                 )}
               >
                 <span className="text-body font-medium">
@@ -167,14 +166,10 @@ export function SessionElicitation({
             disabled={disabled || Boolean(pending)}
             onClick={() => void submit()}
             className={cn(
-              'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-              pending && 'disabled:opacity-100',
-              pending?.action === 'submit' && 'ring-2 ring-brand-running/50',
+              'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+              promptButtonClass(pending, 'submit', 'solid'),
             )}
           >
-            {pending?.action === 'submit' ? (
-              <PromptActionSpinner className="border-white/35 border-t-white" />
-            ) : null}
             {t`Enter`}
           </Button>
         ) : null}
@@ -186,12 +181,10 @@ export function SessionElicitation({
             void run('escape', () => sendKey('Escape'), { kind: 'cancel' })
           }
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'escape' && 'border-brand-running',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'escape'),
           )}
         >
-          {pending?.action === 'escape' ? <PromptActionSpinner /> : null}
           {t`Esc`}
         </Button>
         <Button
@@ -202,12 +195,10 @@ export function SessionElicitation({
             void run('ctrl-c', () => sendKey('C-c'), { kind: 'cancel' })
           }
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'ctrl-c' && 'border-brand-running',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'ctrl-c'),
           )}
         >
-          {pending?.action === 'ctrl-c' ? <PromptActionSpinner /> : null}
           {t`Ctrl+C`}
         </Button>
       </div>
@@ -316,12 +307,10 @@ export function SessionPermissionKeys({
               })
             }
             className={cn(
-              'flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-3 text-body disabled:opacity-40',
-              pending && 'disabled:opacity-100',
-              pending?.action === key && 'border-brand-running',
+              'flex min-h-11 min-w-11 items-center justify-center px-3 text-body disabled:opacity-40',
+              promptButtonClass(pending, key),
             )}
           >
-            {pending?.action === key ? <PromptActionSpinner /> : null}
             {label}
           </Button>
         ))}
@@ -373,14 +362,10 @@ export function SessionPlanReview({
           disabled={disabled || Boolean(pending)}
           onClick={() => void run('approve', () => onKey('a'))}
           className={cn(
-            'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'approve' && 'ring-2 ring-brand-running/50',
+            'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'approve', 'solid'),
           )}
         >
-          {pending?.action === 'approve' ? (
-            <PromptActionSpinner className="border-white/35 border-t-white" />
-          ) : null}
           {t`Approve plan`}
         </Button>
         <Button
@@ -389,12 +374,10 @@ export function SessionPlanReview({
           disabled={disabled || Boolean(pending)}
           onClick={() => void run('changes', () => onKey('s'))}
           className={cn(
-            'flex min-h-12 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'changes' && 'border-brand-running',
+            'flex min-h-12 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'changes'),
           )}
         >
-          {pending?.action === 'changes' ? <PromptActionSpinner /> : null}
           {t`Request changes`}
         </Button>
         <Button
@@ -403,12 +386,10 @@ export function SessionPlanReview({
           disabled={disabled || Boolean(pending)}
           onClick={() => void run('quit', () => onKey('q'), { kind: 'cancel' })}
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body text-brand-muted disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'quit' && 'border-brand-running',
+            'flex min-h-11 items-center justify-center px-3 text-body text-brand-muted disabled:opacity-40',
+            promptButtonClass(pending, 'quit'),
           )}
         >
-          {pending?.action === 'quit' ? <PromptActionSpinner /> : null}
           {t`Quit plan`}
         </Button>
       </div>

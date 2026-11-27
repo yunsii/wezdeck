@@ -9,7 +9,6 @@ import { useLingui } from '@lingui/react/macro'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
-import { RemoteBadge } from './remote-badge'
 
 import { Led } from '#/components/deck/led'
 import { Segmented } from '#/components/deck/segmented'
@@ -407,14 +406,13 @@ export function TicketsView({
   if (id) {
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
-        {/* the header of every pushed page: ‹, the page name, the link chip
+        {/* the header of every pushed page: ‹, the page name
             (it was a lone 「‹ 返回」 line above the ticket) */}
         <div className="-ml-2 flex items-center gap-1 pt-1">
           <BackButton onClick={back} label={t`Back`} />
           <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
             {t`Tickets`}
           </h1>
-          <RemoteBadge compact />
         </div>
         <TicketReading id={id} poll={poll} onOpen={open} />
       </div>

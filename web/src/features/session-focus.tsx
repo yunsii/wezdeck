@@ -29,7 +29,7 @@ export type FocusTarget = {
   tmux_session?: string
 }
 
-function useFocusInTerminal(focus: FocusTarget | undefined) {
+export function useFocusInTerminal(focus: FocusTarget | undefined) {
   const { t } = useLingui()
   const mode = useConsoleMode()
   const [busy, setBusy] = useState(false)

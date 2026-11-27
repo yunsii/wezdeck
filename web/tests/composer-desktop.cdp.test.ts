@@ -74,10 +74,7 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
     await page.goto(
       `${base}/zh/console/me/writing?remote=1${roomQuery}#pair=${token}`,
     )
-    await page
-      .locator('[data-testid=remote-badge-compact]')
-      .first()
-      .waitFor({ timeout: 20_000 })
+    await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
     await page.getByRole('button', { name: '申请授权' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })
@@ -216,20 +213,21 @@ describe.runIf(attention && devicesFile)('Composer on a desktop', () => {
 
     await shortcutsSheet(page)
 
-    // Ctrl+N from inside the composer opens 新会话
+    // Ctrl+N from inside the composer enters 新会话, Esc returns
     await box.click()
     await page.keyboard.press('Control+KeyN')
-    const newSheet = page.getByTestId('new-session-sheet')
-    await newSheet.waitFor({ timeout: 2_000 })
+    const newView = page.getByTestId('new-session-view')
+    await newView.waitFor({ timeout: 2_000 })
     await page.keyboard.press('Escape')
-    await newSheet.waitFor({ state: 'hidden', timeout: 2_000 })
+    await newView.waitFor({ state: 'hidden', timeout: 2_000 })
 
-    // Alt+/ (the desk's pending overlay) opens the session picker
+    // Alt+/ focuses the session list search box on wide screens
     await page.evaluate(() => (document.activeElement as HTMLElement).blur())
     await page.keyboard.press('Alt+Slash')
-    const picker = page.getByTestId('session-switcher')
-    await picker.waitFor({ timeout: 2_000 })
-    await page.keyboard.press('Escape')
+    const focused = () =>
+      page.evaluate(() => document.activeElement?.getAttribute('data-testid'))
+    await expect.poll(focused).toBe('chat-search')
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur())
 
     await caretFollowsPreference(page)
     await context.close()

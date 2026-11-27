@@ -1,9 +1,9 @@
 // Shared immediate loading → waiting feedback for every parsed special
 // interaction card (permission approval, Ask questions, plan review, and the
 // generic key strip). Clicking an action locks the card against double-taps,
-// shows a spinner while the key write is in flight ("sending"), then holds a
-// clear "waiting for the agent to continue…" status until the host poll
-// dismisses or replaces the prompt — or unlocks immediately on write failure.
+// highlights the chosen button (keeping its label readable and its dimensions
+// unchanged), and shows a single spinner in PromptActionStatus below until the
+// host poll dismisses or replaces the prompt — or unlocks on write failure.
 import { useLingui } from '@lingui/react/macro'
 import { useState } from 'react'
 
@@ -74,6 +74,35 @@ export function PromptActionSpinner({ className }: { className?: string }) {
   )
 }
 
+/**
+ * Shared pending button styling across all prompt cards: keeps the chosen
+ * action readable and highlighted, softly dims sibling actions during submit /
+ * cancel waits, and avoids flashing siblings on quick multi-select toggles.
+ * No in-button spinner is inserted, so the card shows one single spinner in
+ * PromptActionStatus below and button geometry never shifts.
+ */
+export function promptButtonClass(
+  pending: PromptPending | null,
+  action: string,
+  variant: 'key' | 'solid' = 'key',
+) {
+  if (!pending) return ''
+  if (pending.action === action) {
+    return variant === 'solid'
+      ? 'disabled:opacity-100 ring-2 ring-brand-running/60'
+      : 'disabled:opacity-100 border-brand-running bg-brand-running/10'
+  }
+  return pending.kind === 'toggle'
+    ? 'disabled:opacity-100'
+    : 'disabled:opacity-55'
+}
+
+/**
+ * Zero-shift status slot shared by every interactive prompt card. Stacks the
+ * idle hint, an invisible waiting-text sizer, and the active pending status
+ * inside the same CSS Grid cell so toggling idle → sending → waiting → idle
+ * keeps the card height strictly constant across all viewport widths.
+ */
 export function PromptActionStatus({
   pending,
   idle,
@@ -90,10 +119,11 @@ export function PromptActionStatus({
   className?: string
 }) {
   const { t } = useLingui()
-  if (!pending && !idle) return null
+  const resolvedWaiting =
+    waitingText ?? t`Action sent; waiting for the agent to continue…`
   const activeText = pending
     ? pending.phase === 'waiting'
-      ? (waitingText ?? t`Action sent; waiting for the agent to continue…`)
+      ? resolvedWaiting
       : pending.kind === 'toggle'
         ? t`Updating your selection…`
         : pending.kind === 'cancel'
@@ -101,25 +131,43 @@ export function PromptActionStatus({
           : (sendingText ?? t`Sending action…`)
     : ''
   return (
-    <p
-      role={pending ? 'status' : undefined}
-      aria-live={pending ? 'polite' : undefined}
-      data-testid={pending ? loadingTestId : undefined}
-      data-prompt-loading={pending ? pending.phase : undefined}
+    <div
       className={cn(
-        'flex min-h-5 items-center gap-2 text-meta leading-relaxed',
-        pending ? 'text-brand-running' : 'text-brand-label',
+        'grid min-h-5 items-start text-meta leading-relaxed',
         className,
       )}
     >
+      {/* Invisible sizer keeps the slot tall enough for the longest status line */}
+      <p
+        aria-hidden
+        className="pointer-events-none col-start-1 row-start-1 flex items-center gap-2 opacity-0 select-none"
+      >
+        <PromptActionSpinner className="animate-none" />
+        <span>{resolvedWaiting}</span>
+      </p>
+      {idle ? (
+        <p
+          aria-hidden={Boolean(pending)}
+          className={cn(
+            'col-start-1 row-start-1 text-brand-label transition-opacity duration-150',
+            pending && 'pointer-events-none opacity-0 select-none',
+          )}
+        >
+          {idle}
+        </p>
+      ) : null}
       {pending ? (
-        <>
+        <p
+          role="status"
+          aria-live="polite"
+          data-testid={loadingTestId}
+          data-prompt-loading={pending.phase}
+          className="col-start-1 row-start-1 flex items-center gap-2 text-brand-running"
+        >
           <PromptActionSpinner />
           <span>{activeText}</span>
-        </>
-      ) : (
-        idle
-      )}
-    </p>
+        </p>
+      ) : null}
+    </div>
   )
 }

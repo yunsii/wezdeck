@@ -44,7 +44,21 @@ func startGroupedSession(id, agent, prompt, groupName string) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	job := &newSessionJob{ID: newDiagID(), Stage: "creating", Repo: repo, Worktree: tree, Mode: "group", at: time.Now()}
+	now := time.Now()
+	job := &newSessionJob{
+		ID:           newDiagID(),
+		Stage:        "creating",
+		Repo:         repo,
+		RepoLabel:    repoLabelFor(repo),
+		AgentProfile: agent,
+		Prompt:       prompt,
+		GroupName:    groupName,
+		AnchorID:     id,
+		CreatedAt:    now.UnixMilli(),
+		Worktree:     tree,
+		Mode:         "group",
+		at:           now,
+	}
 	unlock, err := lockSessionWorktree(tree)
 	if err != nil {
 		return nil, err

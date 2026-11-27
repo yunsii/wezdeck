@@ -76,11 +76,8 @@ async function runsCell(metrics: Locator) {
 
 async function open(page: Page, path: string) {
   await page.goto(`${base}${path}?remote=1#pair=${token}`)
-  // the link badge renders after hydration: clicks after it land
-  await page
-    .locator('[data-testid=remote-badge], [data-testid=remote-badge-compact]')
-    .first()
-    .waitFor({ timeout: 20_000 })
+  // data-remote-mode appears after hydration: clicks after it land
+  await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
 }
 
 describe.runIf(stack)('工单 over the remote link', () => {

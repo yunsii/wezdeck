@@ -1,13 +1,14 @@
 import { useLingui } from '@lingui/react/macro'
-import { Check, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { Textarea } from '#/components/ui/textarea'
 import { Select } from '#/components/ui/select'
+import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
 import type { AgentProfile } from './agent-profiles'
+import type { NewSessionStage } from './session-new-route'
 
 type Repo = { root: string; label: string; visited?: number }
 export type PickerOption = { value: string; label: string; disabled?: boolean }
@@ -132,8 +133,7 @@ export function NewSessionPicker({
 }
 
 type StageJob = {
-  stage:
-    'creating' | 'starting' | 'waiting_trust' | 'sending' | 'done' | 'failed'
+  stage: NewSessionStage
   branch?: string
   error?: string
   mode?: 'new' | 'parallel' | 'reuse' | 'group'
@@ -161,58 +161,44 @@ export function useStageText() {
   }
 }
 
-export function ComposeLayer({
-  busy,
-  repoLabel,
+export function NewSessionSetupCard({
+  mobile,
+  sending,
+  picker,
+  onOpenPicker,
   repositories,
   repo,
+  repoLabel,
   onRepo,
   group,
-  groupName,
+  nameGroup,
+  resolvedGroupName,
   onGroupName,
-  prompt,
-  setPrompt,
-  current,
-  stageText,
-  error,
-  ready,
-  onSubmit,
-  onTrust,
-  trusting,
-  agentProfiles,
+  showAgents,
   agentOptions,
   agentProfile,
   onAgentProfile,
-  mobile,
-  onOpenPicker,
 }: {
-  busy: boolean
-  repoLabel: string
+  mobile: boolean
+  sending: boolean
+  picker: 'repo' | 'agent' | null
+  onOpenPicker: (next: 'repo' | 'agent') => void
   repositories: Array<Repo>
   repo: string
-  onRepo: (repo: string) => void
+  repoLabel: string
+  onRepo: (next: string) => void
   group?: string
-  groupName?: string
-  onGroupName: (name: string) => void
-  prompt: string
-  setPrompt: (next: string) => void
-  current?: StageJob
-  stageText: (job: StageJob) => string
-  error: string
-  ready: boolean
-  onSubmit: () => void
-  onTrust: () => void
-  trusting: boolean
-  agentProfiles: Array<AgentProfile>
+  nameGroup: boolean
+  resolvedGroupName: string
+  onGroupName: (next: string) => void
+  showAgents: boolean
   agentOptions: Array<PickerOption>
   agentProfile: string
   onAgentProfile: (next: string) => void
-  mobile: boolean
-  onOpenPicker: (picker: 'repo' | 'agent') => void
 }) {
   const { t } = useLingui()
   return (
-    <>
+    <section className="grid gap-3 rounded-2xl bg-brand-surface p-4">
       <div className="grid gap-1 text-caption text-brand-muted">
         <span>{t`Repository`}</span>
         {mobile ? (
@@ -223,10 +209,10 @@ export function ComposeLayer({
             data-new-session-picker-trigger="repo"
             aria-label={t`Repository`}
             aria-haspopup="listbox"
-            aria-expanded={false}
-            disabled={busy || Boolean(group) || repositories.length < 2}
+            aria-expanded={picker === 'repo'}
+            disabled={sending || Boolean(group) || repositories.length < 2}
             onClick={() => onOpenPicker('repo')}
-            className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-surface px-3 text-left text-body text-brand-text disabled:opacity-60"
+            className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
           >
             <span className="min-w-0 truncate">{repoLabel}</span>
             <ChevronRight
@@ -238,7 +224,7 @@ export function ComposeLayer({
         ) : (
           <Select
             value={repo}
-            disabled={busy || Boolean(group) || repositories.length < 2}
+            disabled={sending || Boolean(group) || repositories.length < 2}
             onValueChange={onRepo}
             size="lg"
             aria-label={t`Repository`}
@@ -253,24 +239,14 @@ export function ComposeLayer({
           />
         )}
       </div>
-      <label className="grid gap-1 text-caption text-brand-muted">
-        {t`What do you want to solve?`}
-        <Textarea
-          value={prompt}
-          disabled={busy}
-          rows={4}
-          autoFocus
-          onChange={(event) => setPrompt(event.target.value)}
-          placeholder={t`What should it work on?`}
-        />
-      </label>
-      {groupName !== undefined ? (
+
+      {nameGroup ? (
         <label className="grid gap-1 text-caption text-brand-muted">
           {t`Group name`}
           <Input
-            value={groupName}
+            value={resolvedGroupName}
             onChange={(event) => onGroupName(event.target.value)}
-            disabled={busy}
+            disabled={sending}
             maxLength={60}
             data-testid="new-session-group-name"
           />
@@ -278,7 +254,8 @@ export function ComposeLayer({
       ) : group ? (
         <p className="truncate text-caption text-brand-muted">{group}</p>
       ) : null}
-      {agentProfiles.length > 0 ? (
+
+      {showAgents ? (
         <div className="grid gap-1 text-caption text-brand-muted">
           <span>{t`Agent`}</span>
           {mobile ? (
@@ -289,10 +266,10 @@ export function ComposeLayer({
               data-new-session-picker-trigger="agent"
               aria-label={t`Agent`}
               aria-haspopup="listbox"
-              aria-expanded={false}
-              disabled={busy}
+              aria-expanded={picker === 'agent'}
+              disabled={sending}
               onClick={() => onOpenPicker('agent')}
-              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-surface px-3 text-left text-body text-brand-text disabled:opacity-60"
+              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
             >
               <span className="min-w-0 truncate">
                 {
@@ -309,7 +286,7 @@ export function ComposeLayer({
           ) : (
             <Select
               value={agentProfile}
-              disabled={busy}
+              disabled={sending}
               onValueChange={onAgentProfile}
               size="lg"
               aria-label={t`Agent`}
@@ -318,48 +295,61 @@ export function ComposeLayer({
           )}
         </div>
       ) : null}
-      {current ? (
-        <p
-          role="status"
-          data-testid="new-session-stage"
-          data-stage={current.stage}
-          className={
-            current.stage === 'failed'
-              ? 'rounded-xl bg-brand-error/10 px-3 py-2 text-caption text-brand-error'
-              : 'rounded-xl bg-brand-surface px-3 py-2 text-caption'
+    </section>
+  )
+}
+
+export function NewSessionPickerSheet({
+  picker,
+  repositories,
+  repo,
+  agentOptions,
+  agentProfile,
+  onPickRepo,
+  onPickAgent,
+  onBack,
+}: {
+  picker: 'repo' | 'agent' | null
+  repositories: Array<Repo>
+  repo: string
+  agentOptions: Array<PickerOption>
+  agentProfile: string
+  onPickRepo: (value: string) => void
+  onPickAgent: (value: string) => void
+  onBack: (action?: 'back' | 'pick') => void
+}) {
+  const { t } = useLingui()
+  const title = picker === 'repo' ? t`Repository` : t`Agent`
+  return (
+    <Sheet
+      open={Boolean(picker)}
+      onOpenChange={(next) => {
+        if (!next) onBack()
+      }}
+      title={title}
+      onBack={() => onBack()}
+      testId="new-session-picker-sheet"
+    >
+      {picker ? (
+        <NewSessionPicker
+          key={picker}
+          title={title}
+          options={
+            picker === 'repo'
+              ? repositories.map(({ root, label }) => ({
+                  value: root,
+                  label,
+                }))
+              : agentOptions
           }
-        >
-          {stageText(current)}
-        </p>
+          value={picker === 'repo' ? repo : agentProfile}
+          onPick={(value) => {
+            if (picker === 'repo') onPickRepo(value)
+            else onPickAgent(value)
+            onBack('pick')
+          }}
+        />
       ) : null}
-      {current?.stage === 'waiting_trust' ? (
-        <Button
-          type="button"
-          onClick={onTrust}
-          disabled={trusting}
-          className="min-h-11 justify-self-start gap-2 px-3"
-          data-testid="agy-trust-worktree"
-        >
-          <ShieldCheck size={16} aria-hidden />
-          {t`Trust this worktree and continue`}
-        </Button>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-caption text-brand-error">
-          {error}
-        </p>
-      ) : null}
-      {current?.stage !== 'waiting_trust' ? (
-        <Button
-          variant="solid"
-          type="button"
-          disabled={!ready || busy}
-          onClick={onSubmit}
-          className="min-h-12 px-3 text-body disabled:opacity-40"
-        >
-          {t`Create session`}
-        </Button>
-      ) : null}
-    </>
+    </Sheet>
   )
 }

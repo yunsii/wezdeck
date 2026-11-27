@@ -67,19 +67,21 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    with a CDP screencast). Pressing the open row adds no veil. In a
    session, wezdeck's session keys carry over (`session-switcher.tsx`):
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
-   session waiting on you / finished / running in the list's order — on the
-   phone the title opens the same grouped switcher sheet as `Alt+g` / `Alt+x`.
+   session waiting on you / finished / running in the list's order, and `Alt+g` / `Alt+x` / `Alt+/` focus the list search box (or return to the list on narrow screens). Tapping the conversation title opens 会话信息 directly (Telegram style; the separate switcher sheet was retired).
    Switching replaces the history entry, so back returns to
-   the list. The shell saves the list's scroll offset before navigation and
-   restores it on return, including the initial top before any scroll event.
+   the list. The shell restores its saved scroll offset after navigation and
+   suppresses scroll anchoring during return; touch ends the correction.
    Row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the
-   filter (`c` on a keyboard) is 新会话 — message first; location bar for
-   repo/direction (idle reuses; "+ New direction" deeper); on phones, repository
-   and agent fields open searchable lists within the same sheet, with a back
-   button and preserved form draft; wide screens keep anchored selects. Open,
-   back and pick emit `session-new-picker` events without search text or paths. The sheet
-   follows the job and opens the session once the agent has the message; managed worktrees are pre-trusted (with `session.new.trust` only as fallback), and 我的 › Agents shows every managed model. 工单 has the
+   filter (`c` / `Ctrl+N` on a keyboard) enters `/console/sessions/new` directly
+   (no blocking modal): repository and agent sit in a flat setup card above the
+   composer (searchable picker sheet on phones; anchored selects when wide);
+   sending starts the async job and replaces the URL with `/console/sessions/job-<id>`
+   at once, showing the first message, live steps, optional trust confirmation,
+   and retry/edit recovery before replacing into the real session id (while
+   `creating_jobs` keeps in-flight creations reachable from the list). Managed
+   worktrees are pre-trusted (`session.new.trust` fallback), and 我的 › Agents
+   lists every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The
    agent's own name (`agent_name`, usually Claude's derived peer address
@@ -145,8 +147,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    events head, counts or runs move, with a backstop of 10 s while running /
    5 min idle; pages read that cache without timers of their own, so going
    back to 工单 refetches nothing. A run opens in a bottom
-   sheet (transcript, prompt). Connection chip in the top bar opens a
-   sheet (mode, path, RTT, last direct failure, host since, mic grant).
+   sheet (transcript, prompt). Connection status lives in 我的 › 连接 (desktop
+   keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
 5. **Wide screens (≥ 768 px, 2026-11-23)**: no mobile layout blown up.
@@ -166,9 +168,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    back to its trigger, which kept Space pressing it), `/` filter,
    `g`+letter section jump; on a session page `Space` puts the caret in the composer
    (`composer-keys.ts`; not while typing, on a button / link, or with a
-   sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话;
-   the composer toolbar's 新对话 starts a blank conversation in the current
-   pane without opening a new worktree,
+   sheet open), `Ctrl/⌘+N` starts `/new` in the current agent and
+   `Ctrl/⌘+Shift+N` starts a blank agent process in the same pane; `c` opens
+   the full 新会话 flow for creating or reusing a worktree,
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
    `?` or the sidebar's 键盘快捷键 entry with the terminal's key for the same
@@ -251,8 +253,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   heading and its scroller, or sticky silently stops.
 - Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
   backs out with `components/deck/back-button.tsx` — a bare ‹ on a 44 px
-  target, then the page name (or the session title) and, on mobile, the
-  link chip; the ticket page had a lone 「‹ 返回」 line of its own.
+  target, then the page name (or the session title); the ticket page had a
+  lone 「‹ 返回」 line of its own.
 - Scale (2026-11-23): six named sizes with their line heights in
   `web/src/styles/tokens.css` — `text-meta` 12 · `caption` 13 · `body` 15 ·
   `title` 17 · `heading` 20 · `display` 26 — replaced ~20 pixel sizes
@@ -309,8 +311,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   browsers just don't get it, and every outcome is a `wake-lock` client
   trace event, so a diagnostics snapshot tells which happened.
 - Session header (`session-header.tsx`), pinned while the thread scrolls:
-  back, session title (opens the session switcher; `/rename` lives in
-  会话信息), and **ⓘ 会话信息** at the far right — no status/waiting chip in
+  back, agent avatar + session title (tapping opens 会话信息; `/rename` lives there), and **ⓘ 会话信息** at the far right — no status/waiting chip in
   the header, since running, done, and waiting prompts are already visible in
   the thread itself (while the session list and tab badges surface waiting
   sessions before entry). The composer agent row shows context used
@@ -382,12 +383,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   resolved location, so on back its title does not switch before the page
   (it used to end up in the leaving page's snapshot). Toasts sit in a
   `toast-layer` that never moves; toasts are the deck's ink card (`.deck-toast`, sonner unstyled, under the session bar via `--toast-top`; 交互调试 › 消息提示).
-- 会话信息 (`session-info.tsx`), a bottom sheet portalled to `<body>` (the
-  header's backdrop blur would trap a fixed sheet): 复制会话引用 (the
-  host-built `reference` block for another agent: id, transcript path, cwd,
-  tmux pane), then the host's `meta` groups — 会话, 运行位置, 会话记录, 状态 —
-  plus 用量 and 能力 (the adapter's `capabilities`); tap any row to copy its
-  value; Esc, the backdrop or × closes it.
+- 会话信息 (`session-info.tsx`), a 3-tier Telegram-profile bottom sheet portalled to `<body>` (the
+  header's backdrop blur would otherwise trap a fixed sheet): profile header with agent avatar, full tap-to-copy session title and tags; compact quick-action icon tiles (复制引用, 重命名, 仓库外链, local 终端 / VS Code) + 标为已读 when unread; first-screen 概览 (status · mode, model, cwd) & 用量 (context, output · rate · cache, 5h/7d limits); group management (在此组新建会话 + red-isolated 删除会话); and a default-collapsed 技术详情 `Disclosure` keeping all host `meta` groups, rate breakdown and `capabilities` tap-to-copy. Esc, the backdrop or × closes it.
 - Session chat (`chat-thread.tsx`, `chat-markdown.tsx`): replies rendered
   with Vercel's Streamdown (react-markdown replacement that renders
   half-written Markdown); new messages are revealed one at a time and a new

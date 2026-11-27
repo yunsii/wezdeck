@@ -1,4 +1,5 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
+// covers: web/src/features/session-new-job.tsx web/src/features/session-new-route.ts
 // covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
 // covers: web/src/features/session-info.tsx
 // covers: web/src/features/session-new-panels.tsx
@@ -67,10 +68,7 @@ describe.runIf(attention && devicesFile && stack)(
       const context = await browser.newContext({ ...options, locale: 'zh-CN' })
       const page = await context.newPage()
       await page.goto(`${base}/zh/console/me/writing?remote=1#pair=${token}`)
-      await page
-        .locator('[data-testid=remote-badge-compact]')
-        .first() // a wide window shows it twice
-        .waitFor({ timeout: 20_000 })
+      await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
       await page.getByRole('button', { name: '申请授权' }).click()
       const command = page.locator('code', { hasText: '--approve' })
       await command.waitFor({ timeout: 20_000 })
@@ -108,7 +106,9 @@ describe.runIf(attention && devicesFile && stack)(
     const createSession = async (page: Page, id: string) => {
       await page.goto(`${base}/zh/console/sessions`)
       await page.getByTestId('new-session').click()
-      const sheet = page.getByTestId('new-session-sheet')
+      await page.waitForURL('**/console/sessions/new', { timeout: 10_000 })
+      const view = page.getByTestId('new-session-view')
+      await view.waitFor({ timeout: 10_000 })
       const listSessions = () =>
         execFileSync('tmux', [
           '-S',
@@ -126,9 +126,9 @@ describe.runIf(attention && devicesFile && stack)(
       } catch {
         // The first creation starts the private tmux server.
       }
-      const repository = sheet.getByRole('combobox', { name: '仓库' })
+      const repository = view.getByRole('combobox', { name: '仓库' })
       await expect.poll(() => repository.textContent()).toContain('phone-repo')
-      const prompt = sheet.getByPlaceholder('要它做什么？')
+      const prompt = view.getByPlaceholder('要它做什么？')
       const promptElement = await prompt.elementHandle()
       expect(
         await repository.evaluate(
@@ -142,9 +142,12 @@ describe.runIf(attention && devicesFile && stack)(
       ).toBe(true)
       await prompt.fill('从手机开的新会话')
       if ((page.viewportSize()?.width ?? 0) < 768) await checkMobilePicker(page)
-      expect(await sheet.getByTestId('new-session-group-name').count()).toBe(0)
-      await sheet.getByRole('button', { name: '创建会话' }).click()
-      const stage = page.getByTestId('new-session-stage')
+      expect(await view.getByTestId('new-session-group-name').count()).toBe(0)
+      await view.getByRole('button', { name: '创建会话' }).click()
+      await page.waitForURL(/\/console\/sessions\/job-/, { timeout: 10_000 })
+      const jobView = page.getByTestId('new-session-job-view')
+      await jobView.getByTestId('new-session-first-prompt').waitFor()
+      const stage = jobView.getByTestId('new-session-stage')
       await expect
         .poll(() => stage.getAttribute('data-stage'), { timeout: 20_000 })
         .toBe('done')
@@ -244,7 +247,8 @@ describe.runIf(attention && devicesFile && stack)(
             'new-2': listEntry('new-2', pane, session),
             'other-1': {
               ...listEntry('other-1', other, session),
-              status: 'done',
+              // waiting (not done): useSeenAck archives a done `cat` stub pane
+              status: 'waiting',
               last_user_prompt: '另一个会话',
               ts: Date.now() - 60_000,
             },
@@ -281,17 +285,20 @@ function initTestRepo(repo: string) {
 }
 
 async function checkMobilePicker(page: Page) {
-  const sheet = page.getByTestId('new-session-sheet')
-  const repository = sheet.getByRole('combobox', { name: '仓库' })
-  const prompt = sheet.getByPlaceholder('要它做什么？')
+  const view = page.getByTestId('new-session-view')
+  const sheet = page.getByTestId('new-session-picker-sheet')
+  const repository = view.getByRole('combobox', { name: '仓库' })
+  const prompt = view.getByPlaceholder('要它做什么？')
   await repository.click()
   const picker = sheet.getByTestId('new-session-picker')
   await picker.waitFor()
   await picker.getByRole('searchbox').fill('phone-repo')
   await expect.poll(() => picker.getByRole('option').count()).toBe(1)
   await sheet.getByRole('button', { name: '返回' }).click()
+  await picker.waitFor({ state: 'hidden' })
   expect(await prompt.inputValue()).toBe('从手机开的新会话')
   await repository.click()
+  await picker.waitFor()
   await page.keyboard.press('Escape')
   await picker.waitFor({ state: 'hidden' })
   expect(await prompt.inputValue()).toBe('从手机开的新会话')
@@ -300,8 +307,9 @@ async function checkMobilePicker(page: Page) {
     .getByTestId('new-session-picker')
     .getByRole('option', { name: 'phone-repo' })
     .click()
+  await picker.waitFor({ state: 'hidden' })
   expect(await prompt.inputValue()).toBe('从手机开的新会话')
-  const agent = sheet.getByRole('combobox', { name: '智能体' })
+  const agent = view.getByRole('combobox', { name: '智能体' })
   if (await agent.count()) {
     await agent.click()
     const choices = sheet.getByTestId('new-session-picker').getByRole('option')

@@ -16,8 +16,8 @@ import { cn } from '#/lib/utils'
 import { ToolBody } from './chat-diff'
 import { ChatMarkdown } from './chat-markdown'
 import {
-  PromptActionSpinner,
   PromptActionStatus,
+  promptButtonClass,
   usePromptAction,
 } from './prompt-action-state'
 
@@ -304,14 +304,10 @@ export function PermissionCard({
           disabled={disabled || Boolean(pending)}
           onClick={() => void run('allow', () => onKey(allowKey))}
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'allow' && 'ring-2 ring-brand-running/50',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'allow', 'solid'),
           )}
         >
-          {pending?.action === 'allow' ? (
-            <PromptActionSpinner className="border-white/35 border-t-white" />
-          ) : null}
           {call.plan ? t`Approve the plan` : t`Allow`}
         </Button>
         <Button
@@ -324,12 +320,10 @@ export function PermissionCard({
             })
           }
           className={cn(
-            'flex min-h-11 items-center justify-center gap-2 px-3 text-body disabled:opacity-40',
-            pending && 'disabled:opacity-100',
-            pending?.action === 'deny' && 'border-brand-running',
+            'flex min-h-11 items-center justify-center px-3 text-body disabled:opacity-40',
+            promptButtonClass(pending, 'deny'),
           )}
         >
-          {pending?.action === 'deny' ? <PromptActionSpinner /> : null}
           {call.plan ? t`Keep planning` : t`Deny`}
         </Button>
       </div>

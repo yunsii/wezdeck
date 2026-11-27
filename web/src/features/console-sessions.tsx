@@ -489,6 +489,9 @@ export function SessionDetail({ id }: { id: string }) {
             keysDisabled={sending || device.state !== 'approved'}
             writable={device.state === 'approved'}
             onRun={run}
+            onNewConversation={() =>
+              send({ text: '/new', attachments: [], note: '' })
+            }
             commands={
               data?.agent === 'claude' || data?.agent === 'agy'
                 ? {

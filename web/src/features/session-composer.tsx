@@ -38,7 +38,7 @@ import { PickedImages } from './composer-picked'
 import { tokenKey } from './composer-tokens'
 import { useSkillCompletion } from './composer-complete'
 import { HandoffActions } from './session-handoff'
-import { QuickNewConversation, RestartActions } from './session-restart'
+import { RestartActions } from './session-restart'
 import { KeyPanel } from './session-key-panel'
 
 export type Outgoing = {
@@ -207,8 +207,6 @@ function Toolbar({
   commands,
   panel,
   onPanel,
-  agent,
-  onQuickNew,
   skills,
 }: {
   composer: Composer
@@ -217,8 +215,6 @@ function Toolbar({
   commands: boolean
   panel: Panel
   onPanel: (panel: Panel) => void
-  agent?: string
-  onQuickNew?: () => Promise<boolean>
   /** the 能力 chip */
   skills: React.ReactNode
 }) {
@@ -237,9 +233,6 @@ function Toolbar({
       data-testid="composer-tools"
       className="composer-toolbar flex min-w-0 max-w-full items-center gap-1 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]"
     >
-      {agent && onQuickNew ? (
-        <QuickNewConversation onStart={onQuickNew} />
-      ) : null}
       <Button
         variant="plain"
         type="button"
@@ -328,6 +321,7 @@ export function ComposerBox({
   keysDisabled,
   writable,
   onRun,
+  onNewConversation,
   commands,
   session,
 }: {
@@ -343,6 +337,7 @@ export function ComposerBox({
     action: 'key' | 'session.restart',
     args: Record<string, unknown>,
   ) => Promise<boolean>
+  onNewConversation: () => Promise<boolean>
   /** Claude sessions: send a slash command, open 恢复会话 */
   commands?: { send: (text: string) => void; resume: () => void }
   /** the session reply: its agent and `skills_rev` drive the 能力 chip and `/` completion */
@@ -359,6 +354,18 @@ export function ComposerBox({
   const canSend = !composer.progress && composer.ready && !blocked
 
   useSpaceToFocus()
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing) return
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+      if (event.code !== 'KeyN') return
+      event.preventDefault()
+      if (event.shiftKey) void onRun('session.restart', { fresh: true })
+      else void onNewConversation()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onNewConversation, onRun])
   return (
     <>
       {panel === 'keys' ? (
@@ -416,8 +423,6 @@ export function ComposerBox({
         commands={Boolean(commands)}
         panel={panel}
         onPanel={setPanel}
-        agent={session?.agent}
-        onQuickNew={() => onRun('session.restart', { fresh: true })}
         skills={complete.chip}
       />
       {complete.sheet}

@@ -18,6 +18,13 @@ import { useLocale } from '#/lib/locale-context'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { SessionDetail, prefetchSession } from './console-sessions'
 import { SessionList } from './session-list'
+import { NewSessionGuidedView } from './session-new'
+import { NewSessionJobView } from './session-new-job'
+import {
+  isNewSessionId,
+  isVirtualSessionId,
+  jobIdFromSessionId,
+} from './session-new-route'
 import { nextInCycle } from './session-order'
 import { useSessionNav } from './session-switcher'
 import { CopyKey, useCopySessionReference } from './copy-reference'
@@ -111,7 +118,12 @@ function DeskKeys({ id }: { id?: string }) {
   useListKeys(id ?? '')
   usePickDefault(id)
   const copyReference = useCopySessionReference()
-  return <CopyKey id={id ?? ''} copy={copyReference} />
+  return (
+    <CopyKey
+      id={isVirtualSessionId(id) ? '' : (id ?? '')}
+      copy={copyReference}
+    />
+  )
 }
 
 /**
@@ -163,7 +175,13 @@ function SessionsLayout({ id, wide }: { id?: string; wide: boolean }) {
               wide && switched.current && 'pane-enter',
             )}
           >
-            <SessionDetail id={id} />
+            {isNewSessionId(id) ? (
+              <NewSessionGuidedView />
+            ) : jobIdFromSessionId(id) ? (
+              <NewSessionJobView jobId={jobIdFromSessionId(id)!} />
+            ) : (
+              <SessionDetail id={id} />
+            )}
           </div>
         ) : (
           <p className="rounded-2xl bg-brand-surface px-6 py-16 text-center text-caption text-brand-muted">
@@ -179,7 +197,7 @@ export function ConsoleSessionsPage() {
   const { id } = useParams({ strict: false })
   const wide = useIsWidePhoneFirst()
   useEffect(() => {
-    if (id) rememberOpened(LAST_KEY, id)
+    if (id && !isVirtualSessionId(id)) rememberOpened(LAST_KEY, id)
   }, [id])
   return <SessionsLayout id={id} wide={wide} />
 }

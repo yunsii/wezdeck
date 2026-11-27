@@ -50,9 +50,13 @@ describe('PWA shell on phone and desktop', () => {
     await open(
       page,
       `${base}/zh/console/collab?remote=1#pair=${token}`,
-      '[data-testid=remote-badge-compact]',
+      'main[data-remote-mode]',
     )
-    // the badge only renders after hydration, so the segment click lands
+    // mobile no longer shows a persistent connection badge in page headers
+    expect(
+      await page.locator('[data-testid=remote-badge-compact]').count(),
+    ).toBe(0)
+    // data-remote-mode appears only after hydration, so the segment click lands
     await page.locator('[data-value=ended]').click()
     await page.locator('[data-ticket]').first().waitFor({ timeout: 15_000 })
     const tabs = page.getByRole('navigation', { name: '栏目' })
@@ -61,10 +65,28 @@ describe('PWA shell on phone and desktop', () => {
     const id = await first.getAttribute('data-ticket')
     await first.click()
     await page.waitForURL(`**/console/collab/${id}`)
+    expect(
+      await page.locator('[data-testid=remote-badge-compact]').count(),
+    ).toBe(0)
     await page.getByRole('button', { name: '返回' }).click()
     await page.waitForURL(/\/console\/collab(\?[^/]*)?$/)
     await tabs.getByRole('link', { name: /会话/ }).click()
     await page.waitForURL(/\/console\/sessions$/)
+    expect(
+      await page.locator('[data-testid=remote-badge-compact]').count(),
+    ).toBe(0)
+    await tabs.getByRole('link', { name: /我的/ }).click()
+    await page.waitForURL(/\/console\/me$/)
+    // connection status still lives on the 我的 › 连接 row, not in sub-page headers
+    await page
+      .locator('[data-me=connection] [data-testid=remote-badge-compact]')
+      .waitFor({ timeout: 5_000 })
+    await page.locator('[data-me=app]').click()
+    await page.waitForURL(/\/console\/me\/app$/)
+    await page.locator('[data-me-page=app]').waitFor({ timeout: 5_000 })
+    expect(
+      await page.locator('[data-testid=remote-badge-compact]').count(),
+    ).toBe(0)
     await tabs.getByRole('link', { name: /工单/ }).click()
     await page.waitForURL(/\/console\/collab$/)
     await page.getByRole('link', { name: '工单动态' }).click()

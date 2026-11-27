@@ -68,11 +68,19 @@ function useKeyGroups(): Array<Group> {
         },
         {
           keys: ['Alt+G', 'Alt+X', 'Alt+/'],
-          what: t`Pick a session (grouped by repository)`,
+          what: t`Focus session search or return to list`,
           host: true,
         },
         {
-          keys: ['Ctrl+N', 'c'],
+          keys: ['Ctrl+N'],
+          what: t`Start /new in the current agent`,
+        },
+        {
+          keys: ['Ctrl+Shift+N'],
+          what: t`Start a blank agent process in this pane`,
+        },
+        {
+          keys: ['c'],
           what: t`New session (a worktree and an agent)`,
           host: 'Ctrl+K g d / t',
         },

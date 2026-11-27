@@ -16,69 +16,6 @@ import { trace } from '#/lib/client-trace'
 
 const AGENTS = new Set(['claude', 'codex', 'grok', 'agy'])
 
-/** Compact same-pane fresh conversation action for the composer toolbar. */
-export function QuickNewConversation({
-  onStart,
-}: {
-  onStart: () => Promise<boolean>
-}) {
-  const { t } = useLingui()
-  const [asking, setAsking] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const chip =
-    'inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-2.5 text-caption text-brand-muted'
-  if (asking)
-    return (
-      <span className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-brand-surface px-1 text-caption">
-        <span className="px-1 text-brand-muted">{t`Start a blank conversation?`}</span>
-        <Button
-          variant="solid"
-          size="none"
-          type="button"
-          disabled={busy}
-          autoFocus
-          onClick={() => {
-            setBusy(true)
-            void onStart().then((ok) => {
-              setBusy(false)
-              if (ok) setAsking(false)
-            })
-          }}
-          className="h-7 rounded-full px-2 text-caption"
-        >
-          {t`Start`}
-        </Button>
-        <Button
-          variant="plain"
-          size="none"
-          type="button"
-          disabled={busy}
-          onClick={() => setAsking(false)}
-          className="h-7 rounded-full px-2 text-caption text-brand-muted"
-        >
-          {t`Cancel`}
-        </Button>
-      </span>
-    )
-  return (
-    <Button
-      variant="plain"
-      type="button"
-      title={t`Start a blank conversation in this pane`}
-      aria-label={t({
-        message: 'New conversation',
-        context: 'quick same-pane',
-      })}
-      onClick={() => setAsking(true)}
-      className={`${chip} text-brand-running`}
-      data-testid="quick-new-conversation"
-    >
-      <SquarePlus size={14} aria-hidden />
-      {t({ message: 'New conversation', context: 'quick same-pane' })}
-    </Button>
-  )
-}
-
 export function RestartActions({
   agent,
   disabled,

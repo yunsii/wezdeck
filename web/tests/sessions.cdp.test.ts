@@ -141,10 +141,8 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page.goto(
       `${base}/zh/console/me/writing?remote=1${roomQuery}#pair=${token}`,
     )
-    // the compact link badge renders only after hydration: clicks land
-    await page
-      .locator('[data-testid=remote-badge-compact]')
-      .waitFor({ timeout: 20_000 })
+    // data-remote-mode appears only after hydration: clicks land
+    await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
     await page.getByRole('button', { name: '申请授权' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })
@@ -197,17 +195,16 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       await page.waitForTimeout(200)
     }
 
-    // queued bubbles belong to their session: switch away and back
-    await page.getByTestId('session-title').click()
-    const sheet = page.getByTestId('session-switcher')
-    await sheet.getByRole('button', { name: /other-agent|另一个会话/ }).click()
+    // queued bubbles belong to their session: switch away via list and back
+    await page.getByRole('button', { name: '会话', exact: true }).click()
+    await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
+    await page.locator('[data-session=other-session]').click()
     await page.waitForURL('**/console/sessions/other-session')
     await page.waitForTimeout(500)
     expect(await page.locator('[data-pending]').count()).toBe(0)
-    await page.getByTestId('session-title').click()
-    await sheet
-      .getByRole('button', { name: /demo-agent|整理移动端交互/ })
-      .click()
+    await page.getByRole('button', { name: '会话', exact: true }).click()
+    await page.waitForURL(/\/console\/sessions(\?[^/]*)?$/)
+    await page.locator('[data-session=demo-session]').click()
     await page.waitForURL('**/console/sessions/demo-session')
     await bubble.waitFor({ timeout: 5_000 })
 

@@ -6,12 +6,14 @@
 // are. The header's height is shared
 // as --session-head so the sticky prompt (chat-sticky.tsx) sits under it.
 import { useLingui } from '@lingui/react/macro'
-import { ChevronDown, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BackButton } from '#/components/deck/back-button'
 
 import { cn } from '#/lib/utils'
+import { AgentAvatar } from './agent-avatar'
 import type { Detail } from './console-sessions'
+import { useSessions } from './console-sessions'
 import { useAgo } from './tickets-view'
 import { SessionInfo } from './session-info'
 import {
@@ -20,11 +22,7 @@ import {
   usagePercent,
   useUsageLabel,
 } from './session-usage'
-import {
-  SessionSwitcher,
-  useSessionKeys,
-  useSessionNav,
-} from './session-switcher'
+import { useSessionKeys, useSessionNav } from './session-switcher'
 import { Button } from '#/components/ui/button'
 
 const tokens = (n: number) =>
@@ -144,10 +142,23 @@ export function SessionHeader({
 }) {
   const { t } = useLingui()
   const [infoOpen, setInfoOpen] = useState(false)
-  const [switcherOpen, setSwitcherOpen] = useState(false)
-  const openSwitcher = useCallback(() => setSwitcherOpen(true), [])
+  const focusSearchOrList = useCallback(() => {
+    const search = document.querySelector<HTMLInputElement>(
+      '[data-testid=chat-search]',
+    )
+    if (search && search.offsetWidth > 0) {
+      search.focus()
+      search.select()
+      return
+    }
+    onBack()
+  }, [onBack])
   const nav = useSessionNav(id)
-  useSessionKeys(nav.jump, openSwitcher)
+  const sessions = useSessions()
+  const profile = sessions.data?.sessions.find(
+    (row) => row.id === id,
+  )?.agent_profile
+  useSessionKeys(nav.jump, focusSearchOrList)
   const head = useRef<HTMLElement>(null)
   useEffect(() => {
     const el = head.current
@@ -186,17 +197,21 @@ export function SessionHeader({
           className="-ml-2 md:hidden"
         />
         <div className="grid min-w-0 flex-1">
-          {/* Alt+g / Alt+x at the desk: pick another session */}
+          {/* Telegram style: tapping the conversation title opens Session info */}
           <Button
             variant="plain"
             type="button"
-            onClick={openSwitcher}
+            disabled={!data}
+            onClick={() => setInfoOpen(true)}
             aria-haspopup="dialog"
             data-testid="session-title"
             data-session-id={data?.id}
-            title={t`Switch session (Alt+g)`}
-            className="flex min-w-0 items-center gap-1 text-left text-title leading-tight font-semibold"
+            title={t`Session info`}
+            className="flex min-w-0 items-center gap-2 text-left text-title leading-tight font-semibold"
           >
+            {data ? (
+              <AgentAvatar agent={data.agent} profile={profile} size={28} />
+            ) : null}
             <span
               className={cn(
                 'truncate',
@@ -205,11 +220,6 @@ export function SessionHeader({
             >
               {title || t`Loading…`}
             </span>
-            <ChevronDown
-              size={15}
-              aria-hidden
-              className="shrink-0 text-brand-label"
-            />
           </Button>
           {/* agent, branch, git, node, worktrees and background tasks
               live in the status bar under the composer (session-statusbar) */}
@@ -238,11 +248,6 @@ export function SessionHeader({
           renameDisabled={renameDisabled}
         />
       ) : null}
-      <SessionSwitcher
-        current={id}
-        open={switcherOpen}
-        onClose={() => setSwitcherOpen(false)}
-      />
     </header>
   )
 }

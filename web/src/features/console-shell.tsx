@@ -6,7 +6,13 @@ import {
   MessagesSquare,
   UserRound,
 } from 'lucide-react'
-import { Component, useCallback, useEffect, useRef } from 'react'
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
@@ -23,7 +29,6 @@ import { resetSessionOrder } from './session-stable'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
 import { KeysEntry } from './console-keys'
-import { RemoteBadge } from './remote-badge'
 import { useSessions } from './console-sessions'
 import { useAutoSyncAttentionSessions } from './session-autosync'
 import { unreadChatCount } from './session-chats'
@@ -133,6 +138,14 @@ function useWarmSections(
   }, [router, locale, key])
 }
 
+function useRemoteMode() {
+  return useSyncExternalStore(
+    remoteLink.subscribe,
+    () => remoteLink.snapshot().mode,
+    () => 'unpaired' as const,
+  )
+}
+
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -193,6 +206,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
     localeParam,
   )
   const title = [...sidebar, ...tabs].find((item) => item.id === current)?.label
+  const remoteMode = useRemoteMode()
   // Start the remote link (adopts a #pair= token) on every console page, not
   // only when a collab read happens: settings and sessions need it too.
   useEffect(() => {
@@ -202,6 +216,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   return (
     <main
       data-deck
+      data-remote-mode={remoteMode === 'unpaired' ? undefined : remoteMode}
       // fixed inset-0, not h-dvh: after an update reload Chrome's installed
       // app kept a stale, 56 px taller 100dvh for the shell (770 vs a 714 px
       // viewport, measured by host diagnostics) and the bottom tab bar sat
@@ -325,7 +340,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             )}
           >
             {detail || subPage || sessionsIndex ? null : (
-              <MobileSectionHeader title={title} localeParam={localeParam} />
+              <MobileSectionHeader title={title} />
             )}
             <PageBoundary>{children}</PageBoundary>
           </div>
@@ -384,27 +399,13 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   )
 }
 
-function MobileSectionHeader({
-  title,
-  localeParam,
-}: {
-  title?: string
-  localeParam: 'en' | 'zh' | undefined
-}) {
+function MobileSectionHeader({ title }: { title?: string }) {
   const { t } = useLingui()
   return (
     <div className="mb-3 flex items-center justify-between gap-3 pt-2 md:hidden">
       <h1 className="min-w-0 truncate text-display leading-tight font-semibold tracking-tight">
         {title ?? t`WezDeck`}
       </h1>
-      <Link
-        to="/{-$locale}/console/me/$page"
-        params={{ locale: localeParam, page: 'connection' }}
-        aria-label={t`Connection details`}
-        className="shrink-0"
-      >
-        <RemoteBadge compact />
-      </Link>
     </div>
   )
 }

@@ -467,10 +467,6 @@ function MeSubPage({ page }: { page: MePage }) {
         <h1 className="min-w-0 flex-1 truncate text-heading font-semibold">
           {titles[page]}
         </h1>
-        {/* the same link chip as every first-level page, top right */}
-        <span className="md:hidden">
-          <RemoteBadge compact />
-        </span>
       </div>
       {/* 交互调试 brings its own cards (the real components): no card around them */}
       {page === 'interactions' || page === 'agents' ? (
