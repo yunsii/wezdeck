@@ -205,10 +205,9 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       ),
       c(
         'upload.get',
-        '已上传图片的原图分块',
-        'A chunk of an uploaded image’s original',
+        '已上传图片与工单附件的原图分块',
+        'A chunk of an uploaded image or ticket attachment original',
       ),
-      c('todos', '仓库待办', 'Repository to-dos'),
       c(
         'sent.list',
         '网页端已发送消息记录（含文本与附件、按会话 / 仓库 / 全部与未确认筛选）',
@@ -300,10 +299,9 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       ),
       c(
         'upload',
-        '分片上传文件（图片等），发消息时引用',
-        'Upload a file in chunks (an image, say) for a message to reference',
+        '分片上传文件（图片等），发消息或提工单时引用',
+        'Upload a file in chunks (an image, say) for a message or ticket to reference',
       ),
-      c('todo', '增改仓库待办', 'Add or change a to-do'),
       c(
         'sent.action',
         '管理已发送记录（忽略 / 手动确认 / 删除）',
@@ -374,7 +372,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '更新后台会话自动标题开关、指定本地 CLI 智能体、扫描周期，或手动重算/解锁单条会话标题',
         'Update background session auto-title settings (enabled, host CLI provider, interval), or trigger a refresh / unlock one session title',
       ),
-      c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
+      c(
+        'ticket.draft',
+        '调用主机本地 AI CLI 将自由文本与截图整理为结构化工单草稿',
+        'Structure raw text and screenshots into a ticket draft via a host AI CLI',
+      ),
+      c(
+        'ticket.new',
+        '快速或手动开一张本仓 / 跨仓工单（支持附件与后台 AI 整理）',
+        'File a quick or manual single-repo / cross-repo ticket (with attachments and background AI enrichment)',
+      ),
       c(
         'ticket.manager.start',
         '启动或唤醒工单的仓中立顶层管理会话（wezterm_collab_tickets）',

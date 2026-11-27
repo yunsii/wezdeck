@@ -76,6 +76,8 @@ cmd_init() {
 # --- create ---
 cmd_create() {
   local to="" from="" title="" observed="" assumed="" snippet="" summary="" source_pr=""
+  local original="" origin_session="" enrich_status=""
+  local -a attachments=()
   local do_run=0 backend="claude" mock=0
   while (($#)); do
     case "$1" in
@@ -87,6 +89,10 @@ cmd_create() {
       --snippet-ref) snippet=$2; shift 2 ;;
       --summary) summary=$2; shift 2 ;;
       --source-pr) source_pr=$2; shift 2 ;;
+      --original) original=$2; shift 2 ;;
+      --origin-session) origin_session=$2; shift 2 ;;
+      --enrich-status) enrich_status=$2; shift 2 ;;
+      --attachment) attachments+=("$2"); shift 2 ;;
       --run) do_run=1; shift ;;
       --backend) backend=$2; shift 2 ;;
       --mock) mock=1; shift ;;
@@ -104,10 +110,13 @@ cmd_create() {
   [[ -d "$to_path" ]] || ticket_log "warn: target path missing: $to_path"
   if from_path="$(ticket_target_path "$from_key" 2>/dev/null)"; then [[ -d "$from_path" ]] || ticket_log "warn: source path missing: $from_path"; fi
 
-  local id root lock create_json
+  local id root lock create_json attachments_json="[]"
   id="$(ticket_new_id)"
   root="$(ticket_store_root)"
   lock="$root/.locks/tickets.lock"
+  if ((${#attachments[@]} > 0)); then
+    attachments_json="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1:]))' "${attachments[@]}")"
+  fi
 
   create_json="$(
   ticket_with_lock "$lock" -- \
@@ -115,79 +124,9 @@ cmd_create() {
       ID="$id" TO="$to_key" FROM="$from_key" TITLE="$title" \
       OBSERVED="$observed" ASSUMED="$assumed" SNIPPET="$snippet" \
       SUMMARY="${summary:-$title}" SOURCE_PR="$source_pr" \
-      python3 - <<'PY'
-import importlib.util, json, os
-spec = importlib.util.spec_from_file_location(
-    "ticket_fs", os.path.join(os.environ["TOOL_ROOT"], "lib", "ticket_fs.py")
-)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-
-tid = os.environ["ID"]
-title = os.environ["TITLE"]
-summary = os.environ.get("SUMMARY") or title
-snippet = os.environ.get("SNIPPET") or "_none_"
-body = f"""# {title}
-
-## Summary
-
-{summary}
-
-## Assumptions
-
-### Observed
-
-{os.environ['OBSERVED']}
-
-### Assumed contract / behavior
-
-{os.environ['ASSUMED']}
-
-### Consumer snippet ref
-
-{snippet}
-
-## Verification
-
-_Fill when researching (required before implement):_
-
-- original_assumption:
-- measured_fact:
-- impact:
-- recommended:
-- needs_initiator_decision:
-
-## Thread
-
-<!-- append Q/A here -->
-
-## Decision
-
-_Empty until initiator replies to a challenge._
-"""
-meta = {
-    "id": tid,
-    "from": os.environ["FROM"],
-    "to": os.environ["TO"],
-    "title": title,
-    "status": "submitted",
-    "owner": "worker",
-    "phase": "intake",
-    "created_at": mod.now_iso(),
-    "updated_at": mod.now_iso(),
-    "lease_until": None,
-    "claimed_by": None,
-    "claim_gen": 0,
-    "source_pr": os.environ.get("SOURCE_PR") or None,
-    "solution_doc": None,
-    "summary": summary,
-}
-mod.write_ticket(tid, meta, body)
-mod.write_meta_json(tid, {"claim_gen": 0, "worktree": None, "lease_until_epoch": None})
-mod.append_event(tid, {"type": "created", "from": meta["from"], "to": meta["to"], "title": title})
-counts = mod.reindex()
-print(json.dumps({"ok": True, "id": tid, "to": meta["to"], "from": meta["from"], "status": "submitted", "path": str(mod.data_dir(tid)), "reindex": counts}, ensure_ascii=False))
-PY
+      ORIGINAL="$original" ORIGIN_SESSION="$origin_session" \
+      ENRICH_STATUS="$enrich_status" ATTACHMENTS_JSON="$attachments_json" \
+      python3 "$TOOL_ROOT/lib/ticket_create.py" create
   )"
   printf '%s\n' "$create_json"
 
@@ -196,6 +135,34 @@ PY
     ((mock)) && run_args+=(--mock)
     cmd_run "${run_args[@]}"
   fi
+}
+
+# --- enrich ---
+cmd_enrich() {
+  local id="" title="" summary="" observed="" assumed="" status="done" provider="" err_msg=""
+  while (($#)); do
+    case "$1" in
+      --id) id=$2; shift 2 ;;
+      --title) title=$2; shift 2 ;;
+      --summary) summary=$2; shift 2 ;;
+      --observed) observed=$2; shift 2 ;;
+      --assumed) assumed=$2; shift 2 ;;
+      --status) status=$2; shift 2 ;;
+      --provider) provider=$2; shift 2 ;;
+      --error) err_msg=$2; shift 2 ;;
+      *) ticket_die "unknown enrich arg: $1" ;;
+    esac
+  done
+  [[ -n "$id" ]] || ticket_die "enrich requires --id"
+  ticket_ensure_tree
+  local root lock
+  root="$(ticket_store_root)"
+  lock="$root/.locks/tickets.lock"
+  ticket_with_lock "$lock" -- \
+    env TICKETS_ROOT="$root" TOOL_ROOT="$TOOL_ROOT" \
+      ID="$id" TITLE="$title" SUMMARY="$summary" OBSERVED="$observed" \
+      ASSUMED="$assumed" STATUS="$status" PROVIDER="$provider" ERR_MSG="$err_msg" \
+      python3 "$TOOL_ROOT/lib/ticket_create.py" enrich
 }
 
 cmd_set_status() {
@@ -1407,6 +1374,7 @@ case "$cmd" in
   init) cmd_init "$@" ;;
   install-cli) cmd_install_cli "$@" ;;
   create) cmd_create "$@" ;;
+  enrich) cmd_enrich "$@" ;;
   run) cmd_run "$@" ;;
   watch) cmd_watch "$@" ;;
   progress) cmd_progress "$@" ;;

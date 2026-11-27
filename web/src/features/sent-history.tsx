@@ -1,80 +1,30 @@
 // Host-backed sent message history (Outbox): browse every web-sent message
 // (text + uploaded images) across the current session, repo, or all sessions,
-// filter unsettled / failed deliveries, and recall, resend, copy, or dismiss.
+// filter unsettled / failed deliveries, and recall, resend, turn into ticket,
+// copy, or dismiss.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  AlertTriangle,
-  Check,
-  Copy,
-  CornerDownLeft,
-  RotateCw,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Led } from '#/components/deck/led'
-import type { LedTone } from '#/components/deck/led'
+import { OverlayScroll } from '#/components/deck/overlay-scroll'
 import { Segmented } from '#/components/deck/segmented'
 import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { cn } from '#/lib/utils'
-import { MessagePayloadView } from './chat-attachments'
 import type { MessagePayload } from './composer-images'
 import { jumpPending } from './console-jump-keys'
 import { useSentHistory } from './sent-history-data'
 import type { SentListReply, SentRecord, SentScope } from './sent-history-data'
+import { SentHistoryRow } from './sent-history-row'
 
 export { sentListKey, useSentHistory } from './sent-history-data'
 export type { SentListReply, SentRecord, SentScope } from './sent-history-data'
 
-function statusMeta(
-  status: SentRecord['status'],
-  t: ReturnType<typeof useLingui>['t'],
-): { tone: LedTone; label: string; highlight?: string } {
-  switch (status) {
-    case 'confirmed':
-      return { tone: 'done', label: t`Delivered` }
-    case 'pasting':
-    case 'pending':
-      return { tone: 'running', label: t`Pending` }
-    case 'unconfirmed':
-      return {
-        tone: 'waiting',
-        label: t`Not delivered`,
-        highlight: 'text-brand-waiting',
-      }
-    case 'failed':
-      return {
-        tone: 'error',
-        label: t`Failed`,
-        highlight: 'text-brand-error',
-      }
-    default:
-      return { tone: 'muted', label: t`Dismissed` }
-  }
-}
-
-function formatSentTime(ms: number) {
-  const date = new Date(ms)
-  const now = new Date()
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
-  if (sameDay) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-  return date.toLocaleString([], {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+const SENT_SCOPES: Array<SentScope> = ['session', 'repo', 'all']
 
 /** Quiet banner shown above the composer only when this session has failed / unconfirmed sends. */
 export function OutboxNotice({
@@ -114,180 +64,40 @@ export function OutboxNotice({
   )
 }
 
-function SentHistoryRow({
-  rec,
-  scope,
-  selected,
-  writable,
-  busy,
-  copied,
-  onSelect,
-  onUse,
-  onResend,
-  onCopy,
-  onDismiss,
-}: {
-  rec: SentRecord
-  scope: SentScope
-  selected: boolean
-  writable: boolean
-  busy: boolean
-  copied: boolean
-  onSelect: () => void
-  onUse: () => void
-  onResend?: () => void
-  onCopy: () => void
-  onDismiss: () => void
-}) {
-  const { t } = useLingui()
-  const meta = statusMeta(rec.status, t)
-  const unsettled =
-    rec.status === 'pending' ||
-    rec.status === 'unconfirmed' ||
-    rec.status === 'failed' ||
-    rec.status === 'pasting'
-  return (
-    <li
-      data-testid="sent-history-item"
-      className={cn(
-        'grid min-w-0 gap-2 rounded-xl bg-brand-surface p-3',
-        selected && 'ring-1 ring-brand-running/40',
-      )}
-      onClick={onSelect}
-    >
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-brand-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <Led tone={meta.tone} />
-          <span className={cn('font-medium', meta.highlight)}>
-            {meta.label}
-          </span>
-        </span>
-        {rec.kind === 'session_new' ? (
-          <span className="rounded-full bg-brand-soft px-1.5 py-px text-brand-label">
-            {t`New session`}
-          </span>
-        ) : null}
-        {scope !== 'session' && rec.repo_label ? (
-          <span className="truncate text-brand-label">{rec.repo_label}</span>
-        ) : null}
-        <span className="ml-auto text-brand-label tabular-nums">
-          {formatSentTime(rec.created_at)}
-        </span>
-      </div>
-
-      <div className="min-w-0 text-body leading-relaxed break-words whitespace-pre-wrap text-brand-text">
-        <MessagePayloadView
-          text={rec.text}
-          attachments={rec.attachments}
-          tone="surface"
-        />
-      </div>
-
-      {rec.error ? (
-        <p className="text-meta break-words text-brand-error">{rec.error}</p>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-0.5 text-meta">
-        <Button
-          variant="link"
-          size="none"
-          type="button"
-          disabled={busy}
-          onClick={onUse}
-          className="inline-flex items-center gap-1 text-brand-text"
-        >
-          <CornerDownLeft size={13} aria-hidden />
-          {t`Put in input`}
-        </Button>
-        {writable && onResend ? (
-          <Button
-            variant="link"
-            size="none"
-            type="button"
-            disabled={busy}
-            onClick={onResend}
-            className="inline-flex items-center gap-1 text-brand-running"
-          >
-            <RotateCw size={13} aria-hidden />
-            {t`Resend`}
-          </Button>
-        ) : null}
-        {rec.text ? (
-          <Button
-            variant="link"
-            size="none"
-            type="button"
-            onClick={onCopy}
-            className="inline-flex items-center gap-1 text-brand-muted"
-          >
-            {copied ? (
-              <Check size={13} aria-hidden />
-            ) : (
-              <Copy size={13} aria-hidden />
-            )}
-            {copied ? t`Copied` : t`Copy`}
-          </Button>
-        ) : null}
-        {writable && unsettled ? (
-          <Button
-            variant="link"
-            size="none"
-            type="button"
-            disabled={busy}
-            onClick={onDismiss}
-            className="ml-auto inline-flex items-center gap-1 text-brand-muted"
-          >
-            <Trash2 size={13} aria-hidden />
-            {t`Dismiss`}
-          </Button>
-        ) : null}
-      </div>
-    </li>
-  )
-}
-
-export function SentHistorySheet({
-  session,
-  writable,
+function useSentSheetKeys({
   open,
-  initialUnsettled = false,
-  onOpenChange,
+  items,
+  selected,
+  scope,
+  setScope,
+  setSelected,
   onUse,
-  onResend,
+  onOpenChange,
 }: {
-  session: string
-  writable: boolean
   open: boolean
-  initialUnsettled?: boolean
-  onOpenChange: (open: boolean) => void
+  items: Array<SentRecord>
+  selected: number
+  scope: SentScope
+  setScope: (next: SentScope) => void
+  setSelected: React.Dispatch<React.SetStateAction<number>>
   onUse: (payload: MessagePayload) => void
-  onResend?: (payload: MessagePayload) => Promise<boolean>
+  onOpenChange: (open: boolean) => void
 }) {
-  const { t } = useLingui()
-  const client = useQueryClient()
-  const [scope, setScope] = useState<SentScope>('session')
-  const [onlyUnsettled, setOnlyUnsettled] = useState(initialUnsettled)
-  const [selected, setSelected] = useState(0)
-  const [busyId, setBusyId] = useState('')
-  const [copiedId, setCopiedId] = useState('')
-
-  useEffect(() => {
-    if (open) {
-      setOnlyUnsettled(initialUnsettled)
-      setSelected(0)
-    }
-  }, [open, initialUnsettled])
-
-  const list = useSentHistory({ scope, session, onlyUnsettled, enabled: open })
-  const items = list.data?.items ?? []
-  const unsettledCount = list.data?.unsettled_count ?? 0
-
   useEffect(() => {
     if (!open) return
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.closest('input, textarea, select')) return
-      if (event.key === 'j' || event.key === 'ArrowDown') {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault()
+        const idx = SENT_SCOPES.indexOf(scope)
+        const nextIdx =
+          event.key === 'ArrowRight'
+            ? (idx + 1) % SENT_SCOPES.length
+            : (idx - 1 + SENT_SCOPES.length) % SENT_SCOPES.length
+        setScope(SENT_SCOPES[nextIdx])
+        setSelected(0)
+      } else if (event.key === 'j' || event.key === 'ArrowDown') {
         if (!items.length) return
         event.preventDefault()
         setSelected((i) => Math.min(items.length - 1, i + 1))
@@ -310,7 +120,57 @@ export function SentHistorySheet({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, items, selected, scope, onUse, onOpenChange])
+  }, [open, items, selected, scope, setScope, setSelected, onUse, onOpenChange])
+}
+
+export function SentHistorySheet({
+  session,
+  writable,
+  open,
+  initialUnsettled = false,
+  onOpenChange,
+  onUse,
+  onResend,
+  onCreateTicket,
+}: {
+  session: string
+  writable: boolean
+  open: boolean
+  initialUnsettled?: boolean
+  onOpenChange: (open: boolean) => void
+  onUse: (payload: MessagePayload) => void
+  onResend?: (payload: MessagePayload) => Promise<boolean>
+  onCreateTicket?: (payload: MessagePayload) => void
+}) {
+  const { t } = useLingui()
+  const client = useQueryClient()
+  const [scope, setScope] = useState<SentScope>('session')
+  const [onlyUnsettled, setOnlyUnsettled] = useState(initialUnsettled)
+  const [selected, setSelected] = useState(0)
+  const [busyId, setBusyId] = useState('')
+  const [copiedId, setCopiedId] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setOnlyUnsettled(initialUnsettled)
+      setSelected(0)
+    }
+  }, [open, initialUnsettled])
+
+  const list = useSentHistory({ scope, session, onlyUnsettled, enabled: open })
+  const items = list.data?.items ?? []
+  const unsettledCount = list.data?.unsettled_count ?? 0
+
+  useSentSheetKeys({
+    open,
+    items,
+    selected,
+    scope,
+    setScope,
+    setSelected,
+    onUse,
+    onOpenChange,
+  })
 
   const dismissRec = async (rec: SentRecord) => {
     setBusyId(rec.id)
@@ -350,8 +210,8 @@ export function SentHistorySheet({
       testId="sent-history-sheet"
       write
     >
-      <div className="grid min-w-0 gap-3 px-4 pb-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="grid min-w-0 gap-3 px-4 pb-2">
+        <div className="flex h-9 shrink-0 items-center justify-between gap-2 overflow-x-auto">
           <Segmented<SentScope>
             label={t`Scope`}
             value={scope}
@@ -374,67 +234,95 @@ export function SentHistorySheet({
                 setOnlyUnsettled((v) => !v)
                 setSelected(0)
               }}
-              className="rounded-full text-meta"
+              className="shrink-0 rounded-full whitespace-nowrap text-meta"
             >
               {t`Unconfirmed (${unsettledCount})`}
             </Button>
           ) : null}
         </div>
 
-        {list.isError ? (
-          <p role="alert" className="py-2 text-meta text-brand-error">
-            {String(list.error.message)}
-          </p>
-        ) : null}
-
-        <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
-          {items.length === 0 && !list.isPending ? (
-            <li className="py-8 text-center text-caption text-brand-muted">
-              {onlyUnsettled
-                ? t`All sent messages have been confirmed.`
-                : t`No sent messages recorded yet.`}
-            </li>
+        {/* One fixed height across all three scopes (like session-git.tsx), so
+            switching session / repo / all never resizes or jumps the Sheet. */}
+        <OverlayScroll
+          data-testid="sent-history-body"
+          className="h-[min(52dvh,26rem)]"
+        >
+          {list.isError ? (
+            <p role="alert" className="py-2 text-meta text-brand-error">
+              {String(list.error.message)}
+            </p>
           ) : null}
-          {items.map((rec, index) => (
-            <SentHistoryRow
-              key={rec.id}
-              rec={rec}
-              scope={scope}
-              selected={index === selected}
-              writable={writable}
-              busy={busyId === rec.id}
-              copied={copiedId === rec.id}
-              onSelect={() => setSelected(index)}
-              onUse={() => {
-                trace('sent-history', {
-                  action: 'recall',
-                  scope,
-                  attachments: rec.attachments?.length ?? 0,
-                })
-                onUse({ text: rec.text, attachments: rec.attachments ?? [] })
-                onOpenChange(false)
-              }}
-              onResend={
-                onResend
-                  ? () => {
-                      trace('sent-history', {
-                        action: 'resend',
-                        scope,
-                        attachments: rec.attachments?.length ?? 0,
-                      })
-                      onOpenChange(false)
-                      void onResend({
-                        text: rec.text,
-                        attachments: rec.attachments ?? [],
-                      })
-                    }
-                  : undefined
-              }
-              onCopy={() => void copyText(rec)}
-              onDismiss={() => void dismissRec(rec)}
-            />
-          ))}
-        </ul>
+
+          <ul
+            className={cn(
+              'grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2 pr-0.5 transition-opacity duration-[var(--motion-short)]',
+              list.isPlaceholderData && 'opacity-60',
+            )}
+          >
+            {items.length === 0 && !list.isPending ? (
+              <li className="py-12 text-center text-caption text-brand-muted">
+                {onlyUnsettled
+                  ? t`All sent messages have been confirmed.`
+                  : t`No sent messages recorded yet.`}
+              </li>
+            ) : null}
+            {items.map((rec, index) => (
+              <SentHistoryRow
+                key={rec.id}
+                rec={rec}
+                scope={scope}
+                selected={index === selected}
+                writable={writable}
+                busy={busyId === rec.id}
+                copied={copiedId === rec.id}
+                onSelect={() => setSelected(index)}
+                onUse={() => {
+                  trace('sent-history', {
+                    action: 'recall',
+                    scope,
+                    attachments: rec.attachments?.length ?? 0,
+                  })
+                  onUse({ text: rec.text, attachments: rec.attachments ?? [] })
+                  onOpenChange(false)
+                }}
+                onResend={
+                  onResend
+                    ? () => {
+                        trace('sent-history', {
+                          action: 'resend',
+                          scope,
+                          attachments: rec.attachments?.length ?? 0,
+                        })
+                        onOpenChange(false)
+                        void onResend({
+                          text: rec.text,
+                          attachments: rec.attachments ?? [],
+                        })
+                      }
+                    : undefined
+                }
+                onCreateTicket={
+                  onCreateTicket
+                    ? () => {
+                        trace('sent-history', {
+                          action: 'to-ticket',
+                          scope,
+                          attachments: rec.attachments?.length ?? 0,
+                        })
+                        onOpenChange(false)
+                        onCreateTicket({
+                          text: rec.text,
+                          attachments: rec.attachments ?? [],
+                        })
+                      }
+                    : undefined
+                }
+                onCopy={() => void copyText(rec)}
+                onDismiss={() => void dismissRec(rec)}
+              />
+            ))}
+          </ul>
+        </OverlayScroll>
       </div>
     </Sheet>
   )
@@ -447,12 +335,14 @@ export function useSentHistoryControl({
   onFill,
   onReplace,
   onResend,
+  onCreateTicket,
 }: {
   session: string
   writable: boolean
   onFill: (payload: MessagePayload) => void
   onReplace: (payload: MessagePayload) => void
   onResend?: (payload: MessagePayload) => Promise<boolean>
+  onCreateTicket?: (payload: MessagePayload) => void
 }) {
   const [open, setOpen] = useState(false)
   const [initialUnsettled, setInitialUnsettled] = useState(false)
@@ -522,6 +412,7 @@ export function useSentHistoryControl({
         onOpenChange={setOpen}
         onUse={onFill}
         onResend={onResend}
+        onCreateTicket={onCreateTicket}
       />
     ),
   }

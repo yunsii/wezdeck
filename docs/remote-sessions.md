@@ -175,9 +175,7 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `session.handoff.job {job}` | read | handoff job stage: starting → sending → done / failed; carries `from_id`, `to_agent`, `pane`, `worktree`, optional `session_id` (Claude targets) |
 | `reply {id,text,continue}` | write | `ticket reply` with `TICKET_TRIGGER_SOURCE=mobile`. With `proposal` + `verdict` (`approve` / `reject`, `text` = the reason) it answers a fan-out split proposal instead: `ticket fanout approve --run` (children created, scheduler started) / `fanout reject` (`replyArgv`, `remote_writes.go`) — riding on `reply` keeps the Runtime's C# write allowlist unchanged. The ticket page shows pending `proposals` from `api show` as cards (`ticket-proposals.tsx`: four parts — 要解决什么 / 现状核对 (missing · partial · done with evidence) / 打算怎么做 (each child's `effect`, repo / scope / order) / 确认后会发生什么 (the computed `outcome`: workers, parallel, minutes, memory (no money), branch, no push, risks) — with contract and `assumed` under 技术细节, 确认并开始 / 驳回… with a required reason, Ctrl+Enter sends, Esc backs out) in place of the free-text reply box |
 | `attach {id}` | write | `ticket attach --id` (skills/agent-collab/lib/attach.py): the ticket's agent conversation opens in a new window of the target repo's tmux session through `agent-launcher.sh` with `WEZDECK_RESUME_SESSION_ID`, and an open ticket is session-claimed so headless runs stop writing to it — the web console's 接管到 tmux |
-| `todos {session? \| all}` | read | the repo to-dos of the session's repo, or every open one (`scripts/runtime/todo.py list --json`) |
-| `todo {op, session, text?, id?}` | write | `add` (to the session's repo, source `web`; rows from before 2026-11-24 were migrated from `phone` by `todo.py`) / `done` / `reopen` / `delete` a repo to-do |
-| `sent.list {scope?, session?, repo_key?, status?, limit?, before?}` | read | host-persisted outbox of web-sent messages (`remote_outbox.go`, `~/.local/state/wezdeck/sent-messages.json`, 0600, flock + atomic rename, capped at 500 records / 30 days, `WEZDECK_SENT_MESSAGES` overrides): every non-command `send` and `session.new` initial prompt is recorded before `pasteToPane` with `client_op` dedup, raw text + bare attachment names, and reconciled against the session's transcript on `session` polls (`outbox` carries unsettled `pasting` / `pending` / `unconfirmed` / `failed` rows so queued/lost bubbles survive reloads and device switches; `pruneUploads` preserves pinned attachments). Logs `outbox_record` / `outbox_reconcile` / `outbox_action` (never message text). Web UI: `SentHistorySheet` (`h` or Composer `＋` › 已发送记录, `↑` in empty composer recalls latest) + `OutboxNotice` + `MessageComposer` / `MessagePayloadView` zero-reupload image reuse |
+| `sent.list {scope?, session?, repo_key?, status?, limit?, before?}` | read | host-persisted outbox of web-sent messages (`remote_outbox.go`, `~/.local/state/wezdeck/sent-messages.json`, 0600, flock + atomic rename, capped at 500 records / 30 days, `WEZDECK_SENT_MESSAGES` overrides): every non-command `send` and `session.new` initial prompt is recorded before `pasteToPane` with `client_op` dedup, raw text + bare attachment names, and reconciled against the session's transcript on `session` polls (`outbox` carries unsettled `pasting` / `pending` / `unconfirmed` / `failed` rows so queued/lost bubbles survive reloads and device switches; `pruneUploads` preserves pinned attachments). Logs `outbox_record` / `outbox_reconcile` / `outbox_action` (never message text). Web UI: `SentHistorySheet` (fixed-height scroll body + `keepPreviousData` across session/repo/all tabs, `←`/`→` tab switch, `h` or Composer `＋` › 已发送记录, `↑` in empty composer recalls latest, `转工单` turns any record or failed bubble into a ticket with 0-reupload screenshots) + `OutboxNotice` + `MessageComposer` / `MessagePayloadView` |
 | `sent.action {op, id}` | write | `dismiss` / `confirm` / `delete` one host outbox record |
 | `repos` | read | repositories a remote web console may create a session in: main checkouts of visited worktrees (access ledger) and of running sessions, newest visit first (`session_new.go`) |
 | `repo.links {repo?, cwd?, refresh?}` | read | external links of a known repository / live checkout resolved by the host's `vscode-links` CLI (`repo_links.go`, same `VSCODE_LINKS_BIN` → `native/vscode-links/bin/vscode-links` → `PATH` order as `Ctrl+k l`, cached 60 s per checkout unless `refresh:true`, 4 s cap, http(s) URLs only, `repo_links` log row per read); opened from the session list's repo header, 会话信息 or key `l` (`repo-links.tsx`; 交互调试 › 仓库外链) |
@@ -194,8 +192,9 @@ tmux socket / session / pane, status `running|waiting|done` and
 | `worktree.describe {worktree, text}` | write | Edit a workstation purpose from the worktree detail or a session group. Save or Enter applies it; empty text clears it. Known primary checkouts use the current branch description. Linked workstations use `worktree-task describe`. Ticket and OpenClaw worktrees keep their own naming rules. The relay clears its description cache after a save. |
 | `worktree.recycle {worktree, expected_head, confirm}` | write | After an explicit Web confirmation, recheck the selected managed workstation, HEAD, agent activity, fresh default branch, clean status and delivery. Then run `worktree-task recycle --require-delivered --no-clean-files --keep-temp-branches --fresh-agent -y`; this resets to the default tip and restarts its idle agent. Dirty, undelivered, stale or busy workstations are refused. |
 | `worktree.remove {worktree, expected_head, confirm}` | write | Apply the same guards, then use the existing empty-worktree removal path, which refuses any process using the checkout. The worktree disappears; its branch and conversation history remain. Primary, ticket and OpenClaw worktrees are excluded. |
-| `ticket.targets` | read | the ticket config's targets `[{key, path}]` (`$TICKETS_ROOT/config.yml`, the subset the CLI parses) |
-| `ticket.new {from, to, title, observed, assumed, run}` | write | 新工单: `ticket create` between two configured targets (title one line ≤ 120; the assumption gate's observed / assumed 1–8000). `run` starts `ticket run --phase auto` in its own transient unit (`systemd-run --user --unit wezdeck-ticket-<id>`), so a relay restart does not kill it; `WEZDECK_TICKET_RUN_CMD` replaces that launch (`ticket_new.go`) |
+| `ticket.targets {session?}` | read | the ticket config's targets `[{key, path}]` (`$TICKETS_ROOT/config.yml`, the subset the CLI parses) plus optional `session_target` resolving the session's checkout/worktree to its configured target key |
+| `ticket.draft {to, text, attachments?, session?, include_context?}` | write | single-shot host AI structuring (`ticket_draft.go` → `scripts/runtime/ticket-draft.sh` → `adversarial-review/lib/provider.sh`) returning `{title, summary, observed, assumed, suggested_to, provider}` for editable preview before creating / running a ticket |
+| `ticket.new {mode?, from?, to, text?, attachments?, title?, summary?, observed?, assumed?, origin_session?, include_context?, run?}` | write | 新工单: supports single-repo (`from` defaults to `web`) and cross-repo tickets plus rich image attachments copied into `_data/<id>/attachments/` (served by `upload.get {name, ticket}` past 30-day upload pruning). `mode:"quick"` creates immediately (0-wait, preserves `## Original request` verbatim) and enriches `title`/`summary`/`observed`/`assumed` asynchronously via `ticket enrich`; `run:true` starts `ticket run --phase auto` in its own transient unit (`systemd-run --user --unit wezdeck-ticket-<id>`, `WEZDECK_TICKET_RUN_CMD` overrides) (`ticket_new.go`, `ticket_draft.go`) |
 | `clear {id}` | write | mark a session read — Ctrl+X in `Alt+/`: `attention-jump.sh --forget <id> --only-if-ts <ts>` archives the live entry into `recent[]` and nudges the counters; only a listed session, and only while its entry still has the ts just read (a fresh question is never swallowed). A relay with `WEZDECK_ATTENTION_FILE` clears there (`WEZDECK_ATTENTION_STATE_PATH`), never in the live state (`remote_clear.go`). The web console: swipe a running / waiting / done row left → 标为已读 (right → 新一轮 or 复制引用; right-click / long-press menu has all three), or the button in 会话信息 |
 | `device.register` | read-ish | records a remote web console's public key as pending |
 
@@ -232,11 +231,11 @@ way it already reads tickets: the loopback Runtime answers
 `GET /api/v1/remote/<action>?args=<json object>` (health capability
 `remote.read`; `RuntimeWebServer.Remote.cs`, fixed allowlist, args ≤ 4 KB)
 through the WSL bridge `remote.<action>`, which runs the relay's own read set
-(`readRPC` in `relay.go`): `sessions`, `session`, `upload.get`, `todos`,
+(`readRPC` in `relay.go`): `sessions`, `session`, `upload.get`, `sent.list`,
 `repos`, `repo.links`, `ticket.targets`, `session.new.job`, `session.image`, `session.file`. Writes go the
 same way as `POST /api/v1/remote/<action>` with a JSON object body
 (capability `remote.write`; `send`, `key`, `reply`, `attach`, `upload`,
-`todo`, `clear`, `session.new`, `ticket.new`) into `runWrite`
+`sent.action`, `clear`, `session.new`, `ticket.draft`, `ticket.new`) into `runWrite`
 (`remote_write.go`) — the very function the relay calls after
 `verifyWrite`, so every guard inside the actions applies — with no device
 key: the Runtime listens on loopback and answers only a loopback `Host`
@@ -392,19 +391,22 @@ read with `session.image {id, ref, offset}` (`remote_image.go`),
 which re-reads that one line and answers like `upload.get`; tool images load
 only once the call is opened.
 
-## Repo to-dos
+## Repo tickets & quick AI capture
 
-A big change gets a follow-up note that belongs to the **repository**, not to
-the conversation: a later session there (or another agent) picks it up after
-the original one is gone. Stored in SQLite (`~/.local/state/wezdeck/wezdeck.db`,
-table `todos`, `WEZDECK_TODO_DB` overrides) by `scripts/runtime/todo.py`,
-keyed by the git common dir so every worktree of a repo shares one list.
-Agents call it from the repo: `todo.py add [--session ID] -- TEXT`,
-`todo.py list [--open|--all] [--json]`, `todo.py done|reopen|delete ID`. On the
-web console, the session header's 待办 Sheet lists the session repo's to-dos — add,
-mark done, or put one into the composer to hand it to this agent — and the
-会话 list shows every open one under 待跟进 at the bottom. The relay only maps a session to its
-directory (`remote_todo.go`).
+Repository follow-ups live directly in the `agent-collab` ticket store
+(`~/.agent/tickets/`, replacing the legacy SQLite `todos` table). On the web
+console, the session header's `Repo tickets` button (shortcut `t`,
+`session-tickets.tsx`) lists open tickets targeting the current session's
+repository (`ticket.targets {session}` resolves linked worktrees to their
+target key), lets the user jump to a ticket or drop its reference + screenshots
+into the composer (`MessageComposer`), and embeds `QuickTicketForm` at the
+bottom — defaulting `to` to the current repo with 1-tap switching to any other
+configured target repo. Free-text + pasted screenshots create immediately
+(`mode:"quick"`, `## Original request` preserved verbatim, attachments copied to
+`_data/<id>/attachments/`) while `ticket-draft.sh` structures title/assumptions
+in the background; checking `Run now` or clicking `AI preview` runs `ticket.draft`
+first for review. Sent records (`SentHistorySheet`) and failed/unconfirmed
+bubbles (`PendingBubbles`) also offer 1-tap `To ticket` with zero re-upload.
 
 ## Diagnostics on demand
 

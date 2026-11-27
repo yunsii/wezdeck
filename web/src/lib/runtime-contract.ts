@@ -296,6 +296,8 @@ export const collabTicketSchema = z
     runs: z.number().default(0),
     running: z.array(z.string()).default([]),
     last_run: collabRunSummarySchema.nullable().optional(),
+    attachments_count: z.number().optional(),
+    enrich_status: nstr,
     manager_session: z
       .object({
         backend: nstr,
@@ -353,6 +355,9 @@ export const collabShowSchema = collabEnvelope({
   /** a text block for another agent (复制引用): skills/agent-collab/lib/reference.py */
   reference: z.string().optional(),
   sessions: z.record(z.string(), z.unknown()).default({}),
+  attachments: z.array(z.string()).optional(),
+  enrich_status: nstr,
+  origin_session: nstr,
   questions: ticketQuestionsSchema.nullable().optional(),
   sections: z
     .array(z.object({ title: z.string(), text: z.string() }))

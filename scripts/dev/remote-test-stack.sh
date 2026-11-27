@@ -113,7 +113,7 @@ start_relay() {
     WEZDECK_RELAY_CONTROL="$STATE/relay.sock" \
     WEZDECK_AGENT_PROFILE_SETTINGS_DIR="$STATE/agent-profiles" \
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
-    WEZDECK_TODO_DB="$STATE/todo.db" \
+    WEZDECK_SENT_MESSAGES="$STATE/sent-messages.json" \
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
     WEZDECK_SESSION_REUSE_CMD="$STATE/fake-reuse-workstation" \
     WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \

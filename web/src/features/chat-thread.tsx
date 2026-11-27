@@ -250,13 +250,15 @@ export function ChatThread({
   onBackground,
   onResend,
   onEdit,
+  onTicket,
   onDismiss,
   sessionId = '',
   syncing = false,
 }: {
-  /** a lost / failed bubble: send it again / edit in composer / drop it */
+  /** a lost / failed bubble: send it again / edit in composer / turn into ticket / drop it */
   onResend?: (item: Pending) => void
   onEdit?: (item: Pending) => void
+  onTicket?: (item: Pending) => void
   onDismiss?: (item: Pending) => void
   /** Claude, writable: Ctrl+B into the pane (shown while a foreground call runs) */
   onBackground?: () => void
@@ -441,6 +443,7 @@ export function ChatThread({
           pending={queue.left}
           onResend={onResend}
           onEdit={onEdit}
+          onTicket={onTicket}
           onDismiss={onDismiss}
         />
       </SmoothGrow>

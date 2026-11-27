@@ -131,10 +131,13 @@ function TypedWithTokens({
 export function SentAttachments({
   text,
   tone = 'ink',
+  ticketId,
 }: {
   text: string
   /** ink: dark user bubble; surface: light cards/sheets (sent history, tickets) */
   tone?: 'ink' | 'surface'
+  /** Optional ticket id so upload.get reads from _data/<ticket>/attachments/ even after 30d. */
+  ticketId?: string
 }) {
   const { typed, files } = splitAttachments(text)
   const images = files.filter((file) => isUploadedImage(file.name))
@@ -150,7 +153,11 @@ export function SentAttachments({
         onOpen={setOpen}
       />
       <ImageStrip
-        sources={images.map((file) => ({ kind: 'upload', name: file.name }))}
+        sources={images.map((file) => ({
+          kind: 'upload',
+          name: file.name,
+          ...(ticketId ? { ticket: ticketId } : {}),
+        }))}
         labels={labels}
         open={open}
         onOpenChange={setOpen}
@@ -181,12 +188,18 @@ export function MessagePayloadView({
   text,
   attachments = [],
   tone = 'surface',
+  ticketId,
 }: {
   text: string
   attachments?: Array<string>
   tone?: 'ink' | 'surface'
+  ticketId?: string
 }) {
   return (
-    <SentAttachments text={withAttachmentNote(text, attachments)} tone={tone} />
+    <SentAttachments
+      text={withAttachmentNote(text, attachments)}
+      tone={tone}
+      ticketId={ticketId}
+    />
   )
 }

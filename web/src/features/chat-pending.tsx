@@ -17,11 +17,13 @@ export function PendingBubbles({
   pending,
   onResend,
   onEdit,
+  onTicket,
   onDismiss,
 }: {
   pending: Array<Pending>
   onResend?: (item: Pending) => void
   onEdit?: (item: Pending) => void
+  onTicket?: (item: Pending) => void
   onDismiss?: (item: Pending) => void
 }) {
   const { t } = useLingui()
@@ -90,6 +92,16 @@ export function PendingBubbles({
                     onClick={() => onEdit(item)}
                   >
                     {t`Edit`}
+                  </Button>
+                ) : null}
+                {onTicket ? (
+                  <Button
+                    variant="link"
+                    size="none"
+                    className="text-brand-running"
+                    onClick={() => onTicket(item)}
+                  >
+                    {t`To ticket`}
                   </Button>
                 ) : null}
                 {onDismiss ? (
