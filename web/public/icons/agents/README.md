@@ -10,6 +10,7 @@ Brand marks used by the session chat list and 我的 → 智能体 (`AgentAvatar
 | `openai-mark.svg` | OpenAI logomark path (Simple Icons / OpenAI brand path)                              |
 | `grok.png`        | Grok mark (LobeHub / brand path), white on dark circle                               |
 | `grok-mark.svg`   | Grok vector mark (same source)                                                       |
+| `agy.png`         | [antigravity.google/press](https://antigravity.google/press) mark, padded for circle |
 | `kimi.png`        | [kimi.com](https://www.kimi.com) PWA icon (`pwa-192.png`), cropped to a circle       |
 | `gateway.png`     | Lucide `waypoints` on indigo circle (`claude_sub2api` badge)                         |
 | `agent.png`       | Neutral fallback                                                                     |
