@@ -166,7 +166,7 @@ _host_agent_cli_argv() {
         fi
         _HOST_AGENT_ARGV+=(--json)
       elif [ "$mode" = "write" ]; then
-        _HOST_AGENT_ARGV+=(--full-auto)
+        _HOST_AGENT_ARGV+=(--sandbox workspace-write -c 'approval_policy="never"')
         [ "$observe" = "1" ] && _HOST_AGENT_ARGV+=(--json)
       else
         _HOST_AGENT_ARGV+=(--json --sandbox read-only)

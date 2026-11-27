@@ -126,7 +126,7 @@ a_xw="$(argv_of codex write 0 '' 0)"; a_xr="$(argv_of codex read 0 '' 0)"; a_xwr
 a_gwo="$(argv_of grok write 1 g-1 1)"
 if has "$a_cw" bypassPermissions && has "$a_cw" text && has "$a_cr" plan && has "$a_cr" json \
   && has "$a_cwo" stream-json && has "$a_cwo" --verbose && has "$a_cwo" --resume && has "$a_cwo" sess-1 && has "$a_cwo" --fork-session \
-  && has "$a_xw" --full-auto && has "$a_xr" read-only && has "$a_xr" --json \
+  && has "$a_xw" workspace-write && has "$a_xw" 'approval_policy="never"' && ! has "$a_xw" --full-auto && has "$a_xr" read-only && has "$a_xr" --json \
   && has "$a_xwr" resume && has "$a_xwr" th-1 && has "$a_xwr" --json && has "$a_xwr" 'sandbox_mode="workspace-write"' && ! has "$a_xwr" --full-auto \
   && has "$a_gwo" streaming-json && has "$a_gwo" --resume && has "$a_gwo" --fork-session && has "$a_gwo" --always-approve; then
   ok "argv profiles: read/write, observe stream formats, resume/fork per backend"

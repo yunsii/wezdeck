@@ -23,7 +23,7 @@ host_agent_invoke_run \
 | Backend | `--mode read` (no writes, no side-effect commands) | `--mode write` |
 | --- | --- | --- |
 | claude | `--permission-mode plan --allowed-tools Read Grep Glob` | `--permission-mode bypassPermissions` |
-| codex | `exec --sandbox read-only` (OS sandbox) | `exec --full-auto` |
+| codex | `exec --sandbox read-only` (OS sandbox) | `exec --sandbox workspace-write -c approval_policy="never"` |
 | grok | `--permission-mode plan --disable-web-search` + `--allow` per read-only command (`HOST_AGENT_GROK_READ_ALLOW`: `git log/show/diff/status/blame/ls-files/grep/rev-parse`, `ls/cat/head/tail/wc/rg/grep`) | `--always-approve` |
 
 Grok: dropping `--always-approve` alone is **not** read-only headless (it still
