@@ -200,7 +200,15 @@ function useProgressiveFloor(items: Array<Item>, start: number) {
       ? start + items[items.length - FIRST_ITEMS].index
       : -Infinity
   const [floor, setFloor] = useState<number | null>(null)
-  const current = floor ?? first
+  const prevStart = useRef(start)
+  const prepended = start < prevStart.current
+  // Prepended history (start decreased) must render immediately so scroll
+  // anchor restoration measures the real height of the newly loaded messages.
+  if (prepended && floor !== -Infinity) {
+    setFloor(-Infinity)
+  }
+  prevStart.current = start
+  const current = prepended ? -Infinity : (floor ?? first)
   useEffect(() => {
     if (current === -Infinity) return
     const step = () =>

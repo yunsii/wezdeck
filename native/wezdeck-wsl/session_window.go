@@ -24,7 +24,10 @@ type sessionArgs struct {
 	MessagesRev *int   `json:"messages_rev"`
 }
 
-const sessionPendingLookback = 40
+const (
+	sessionPendingLookback    = 40
+	sessionLatestUserMaxExtra = 400
+)
 
 // Bump when an adapter's parser change alters historical messages so browsers
 // replace stale IndexedDB cache pages instead of merging by old indexes.
@@ -75,6 +78,43 @@ func sessionWindow(msgs []chatMessage, a sessionArgs) (start, end int, window st
 		return start, total, "since"
 	}
 	// first open, an old page, or a since past the end (the transcript was
-	// rewritten): the last `limit`, and the page replaces what it had
-	return max(total-limit, 0), total, "full"
+	// rewritten): the last `limit`, extended back when needed so the user's
+	// latest sent message is never truncated off a long tool-heavy turn.
+	base := max(total-limit, 0)
+	if base > 0 && !windowHasUser(msgs[base:total]) {
+		floor := max(base-sessionLatestUserMaxExtra, 0)
+		for i := base - 1; i >= floor; i-- {
+			if msgs[i].Role == "user" {
+				return i, total, "full"
+			}
+		}
+	}
+	return base, total, "full"
+}
+
+func windowHasUser(msgs []chatMessage) bool {
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if msgs[i].Role == "user" {
+			return true
+		}
+	}
+	return false
+}
+
+func sessionWindowLogged(id, agent string, msgs []chatMessage, a sessionArgs) (start, end int, window string) {
+	start, end, window = sessionWindow(msgs, a)
+	if window == "full" {
+		limit := a.Limit
+		if limit <= 0 {
+			limit = 60
+		}
+		if limit > 5000 {
+			limit = 5000
+		}
+		baseStart := max(len(msgs)-limit, 0)
+		if start < baseStart {
+			relayLogf("session_window", "id=%s agent=%s event=extend_latest_user base_start=%d start=%d total=%d", id, agent, baseStart, start, len(msgs))
+		}
+	}
+	return start, end, window
 }

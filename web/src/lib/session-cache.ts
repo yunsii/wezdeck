@@ -63,11 +63,25 @@ export function mergeReply<T extends Indexed>(
   return reply
 }
 
-/** a copy small enough for IndexedDB: the newest DISK_KEEP messages */
+/** a copy small enough for IndexedDB: the newest DISK_KEEP messages, keeping
+ * the latest user prompt when a single turn exceeds DISK_KEEP */
 export function trimForDisk<T extends Indexed>(detail: T): T {
   const messages = detail.messages ?? []
   if (messages.length <= DISK_KEEP) return detail
-  const cut = messages.length - DISK_KEEP
+  let cut = messages.length - DISK_KEEP
+  const isUser = (m: unknown) =>
+    typeof m === 'object' &&
+    m !== null &&
+    (m as { role?: unknown }).role === 'user'
+  if (!messages.slice(cut).some(isUser)) {
+    const floor = Math.max(0, cut - DISK_KEEP)
+    for (let i = cut - 1; i >= floor; i--) {
+      if (isUser(messages[i])) {
+        cut = i
+        break
+      }
+    }
+  }
   return {
     ...detail,
     start: (detail.start ?? 0) + cut,
