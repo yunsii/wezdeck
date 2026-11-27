@@ -5,6 +5,8 @@ import { useLingui } from '@lingui/react/macro'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Activity, ChevronRight, Network } from 'lucide-react'
 import { BackButton } from '#/components/deck/back-button'
+import { SplitColumn } from '#/components/deck/split-column'
+import { StickyBar } from '#/components/deck/sticky-bar'
 
 import { Button } from '#/components/ui/button'
 import { Field, FieldList } from '#/components/ui/field'
@@ -270,12 +272,9 @@ function MeIndex({ active }: { active?: MePage }) {
   const autoTitleSummary = useAutoTitleSummary()
   const theme =
     mode === 'light' ? t`Light` : mode === 'dark' ? t`Dark` : t`System`
-  const group = 'overflow-hidden rounded-2xl bg-brand-surface md:rounded-none'
+  const group = 'me-list border-b border-brand-edge bg-brand-surface'
   return (
-    <div className="grid max-w-2xl content-start gap-4 md:max-w-none md:gap-0">
-      <h1 className="hidden text-body font-semibold md:block md:border-b md:border-brand-edge md:px-[var(--page-x)] md:py-3">
-        {t`Settings`}
-      </h1>
+    <div className="grid content-start gap-2.5 bg-brand-deck pb-4 md:pb-0">
       <ul className={group}>
         <EntryRow
           page="agents"
@@ -320,7 +319,7 @@ function MeIndex({ active }: { active?: MePage }) {
           />
         )}
       </ul>
-      <ul className={cn(group, 'md:mt-3')}>
+      <ul className={cn(group, 'border-t border-brand-edge')}>
         <EntryRow
           page="appearance"
           active={active === 'appearance'}
@@ -342,12 +341,12 @@ function MeIndex({ active }: { active?: MePage }) {
         />
         {/* how it all works, device access included: the public page,
             with a ‹ back here */}
-        <li className="border-b border-brand-edge last:border-b-0">
+        <li>
           <Link
             to="/{-$locale}/architecture"
             params={{ locale: localeParam }}
             data-me="architecture"
-            className="key-press flex min-h-13 items-center gap-3 px-4 text-body"
+            className="list-row flex min-h-13 items-center gap-3 px-4 py-2.5 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-3"
           >
             <Network
               size={18}
@@ -364,7 +363,7 @@ function MeIndex({ active }: { active?: MePage }) {
         </li>
       </ul>
       {authorized ? (
-        <ul className={cn(group, 'md:mt-3')}>
+        <ul className={cn(group, 'border-t border-brand-edge')}>
           <EntryRow
             page="host"
             active={active === 'host'}
@@ -372,12 +371,12 @@ function MeIndex({ active }: { active?: MePage }) {
             value={consoleMode === 'local' ? hostSummary : undefined}
           />
           {consoleMode === 'local' ? (
-            <li className="border-b border-brand-edge last:border-b-0">
+            <li>
               <Link
                 to="/{-$locale}/console/diagnostics"
                 params={{ locale: localeParam }}
                 data-me="diagnostics"
-                className="key-press flex min-h-13 items-center gap-3 px-4 text-body"
+                className="list-row flex min-h-13 items-center gap-3 px-4 py-2.5 text-body outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset md:px-3"
               >
                 <Activity
                   size={18}
@@ -466,17 +465,26 @@ function MeSubPage({ page }: { page: MePage }) {
 }
 
 export function ConsoleMePage() {
+  const { t } = useLingui()
   const { page } = useParams({ strict: false })
   const known = ME_PAGES.find((name) => name === page)
   const wide = useIsWidePhoneFirst()
-  // a desk-sized window: the groups on the left, the chosen one beside them
+  // a desk-sized window: the groups on the left in a SplitColumn, the chosen one beside them
   if (wide)
     return (
       // the divider runs the window's height, as beside 会话 and 工单
-      <div className="grid grid-cols-[minmax(240px,300px)_minmax(0,1fr)] items-stretch">
-        <div className="vt-split-list self-start">
+      <div className="grid grid-cols-[minmax(260px,320px)_minmax(0,1fr)] items-stretch">
+        <SplitColumn
+          label={t`Settings`}
+          className="bg-brand-deck [--split-pad:0.75rem]"
+          head={
+            <div className="flex min-h-9 items-center">
+              <h1 className="text-body font-semibold">{t`Settings`}</h1>
+            </div>
+          }
+        >
           <MeIndex active={known ?? 'connection'} />
-        </div>
+        </SplitColumn>
         <div
           data-testid="me-pane"
           className={cn(
@@ -490,5 +498,15 @@ export function ConsoleMePage() {
         </div>
       </div>
     )
-  return known ? <MeSubPage page={known} /> : <MeIndex />
+  if (known) return <MeSubPage page={known} />
+  return (
+    <div className="flex min-h-full w-full flex-1 flex-col bg-brand-deck">
+      <StickyBar className="top-0 mx-0 my-0 border-b border-brand-edge bg-brand-surface/95 px-4 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2.5">
+        <div className="flex min-h-8 items-center justify-between gap-2">
+          <h1 className="truncate text-title font-semibold">{t`Settings`}</h1>
+        </div>
+      </StickyBar>
+      <MeIndex />
+    </div>
+  )
 }

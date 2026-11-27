@@ -259,14 +259,18 @@ export function KeysEntry() {
     <>
       <Button
         variant="plain"
+        size="none"
         type="button"
         onClick={show}
         data-testid="keys-entry"
-        className="m-2.5 mt-auto flex min-h-9 items-center gap-2.5 rounded-xl px-3 text-body text-brand-muted outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
+        title={`${t`Shortcuts`} (?)`}
+        aria-label={t`Shortcuts`}
+        className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-center text-brand-muted transition-colors outline-none hover:bg-brand-soft hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running"
       >
-        <Keyboard size={16} aria-hidden />
-        <span className="flex-1 text-left">{t`Shortcuts`}</span>
-        <kbd className="text-meta text-brand-label">?</kbd>
+        <Keyboard size={18} aria-hidden />
+        <span className="max-w-full truncate text-meta leading-tight">
+          {t`Shortcuts`}
+        </span>
       </Button>
       <KeysSheet open={open} onOpenChange={setOpen} />
     </>

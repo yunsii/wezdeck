@@ -219,17 +219,36 @@ html[data-theme='dark'] .list-row.row-selected::after {
   left: 4.75rem;
 }
 
-/* Telegram-style inset hairlines for the flat ticket rail: align with the
-   title column past the status LED. */
-.ticket-list > li {
+/* Telegram-style inset hairlines for the flat ticket / diagnostics rail:
+   align with the title column past the status LED. */
+.ticket-list > li,
+.diag-list > li {
   position: relative;
 }
-.ticket-list > li:not(:last-child)::after {
+.ticket-list > li:not(:last-child)::after,
+.diag-list > li:not(:last-child)::after {
   content: '';
   position: absolute;
   right: 0;
   bottom: 0;
   left: 2.375rem;
+  height: 1px;
+  background: var(--brand-edge);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Telegram-style inset hairlines for flat settings lists (我的): align with
+   the label column past the 18 px icon + gap. */
+.me-list > li {
+  position: relative;
+}
+.me-list > li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 2.875rem;
   height: 1px;
   background: var(--brand-edge);
   pointer-events: none;

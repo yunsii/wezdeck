@@ -7,9 +7,13 @@ import { useLingui } from '@lingui/react/macro'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 
+import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import type { LedTone } from '#/components/deck/led'
+import { StickyBar } from '#/components/deck/sticky-bar'
+import { SectionHeading } from '#/components/ui/section-heading'
 
+import { useGoBack } from '#/lib/go-back'
 import { useTicketList } from '#/lib/ticket-sync'
 import { getCollab } from '#/lib/runtime-client'
 import type { CollabTicket } from '#/lib/runtime-contract'
@@ -172,6 +176,10 @@ export function ConsoleActivityPage() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const localeParam = locale === 'en' ? undefined : locale
+  const back = useGoBack({
+    to: '/{-$locale}/console/collab',
+    params: { locale: localeParam },
+  })
   const events = useLatestEvents()
   const list = useTicketList()
   const sentence = useSentence()
@@ -199,79 +207,112 @@ export function ConsoleActivityPage() {
     (events.data?.events ?? []).filter((event) => SHOWN.has(event.kind)),
     dayOf,
   )
-  let lastDay = ''
+  const byDay: Array<{ day: string; items: Array<Card> }> = []
+  for (const group of groups) {
+    const last = byDay.at(-1)
+    if (last && last.day === group.day) last.items.push(group)
+    else byDay.push({ day: group.day, items: [group] })
+  }
   return (
-    <div className="grid content-start">
-      <h1 className="hidden text-body font-semibold md:flex md:min-h-14 md:items-center md:border-b md:border-brand-edge md:px-[var(--page-x)]">
-        {t`Ticket activity`}
-      </h1>
-      <div className="grid max-w-3xl content-start gap-3 md:px-[var(--page-x)] md:py-3">
+    <div className="flex min-h-full w-full flex-1 flex-col bg-brand-surface">
+      <StickyBar className="top-0 mx-0 my-0 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 md:px-4 md:py-2.5">
+        <div className="flex min-h-9 items-center gap-1">
+          <BackButton
+            onClick={back}
+            label={t`Tickets`}
+            className="-ml-2 md:hidden"
+          />
+          <h1 className="min-w-0 flex-1 truncate text-title font-semibold md:text-body">
+            {t`Ticket activity`}
+          </h1>
+          <Link
+            to="/{-$locale}/console/collab"
+            params={{ locale: localeParam }}
+            className="hidden rounded-xl px-2.5 py-1 text-caption text-brand-muted transition-colors hover:bg-brand-soft hover:text-brand-text md:inline-flex"
+          >
+            {t`Tickets`}
+          </Link>
+        </div>
+      </StickyBar>
+      <div className="grid max-w-3xl content-start">
         {events.isError ? (
-          <p role="status" className="text-meta text-brand-waiting">
+          <p
+            role="status"
+            className="border-b border-l-[3px] border-b-brand-edge border-l-brand-waiting bg-brand-waiting/10 px-4 py-2 text-meta text-brand-text"
+          >
             {t`Host unreachable right now`}，{t`showing the last copy`}
           </p>
         ) : null}
-        {groups.length === 0 ? (
-          <p className="py-8 text-center text-caption text-brand-muted">
+        {byDay.length === 0 ? (
+          <p className="px-4 py-12 text-center text-caption text-brand-muted">
             {events.isPending
               ? t`Loading…`
               : (events.data?.error ?? t`No activity yet`)}
           </p>
         ) : (
-          groups.map((group) => {
-            const ticket = tickets.get(group.ticket)
-            const origin = created.get(group.ticket)
-            const title =
-              ticket?.title || text(origin?.title) || group.ticket.slice(-6)
-            const from = ticket?.from ?? text(origin?.from)
-            const to = ticket?.to ?? text(origin?.to)
-            const heading = group.day !== lastDay ? group.day : ''
-            lastDay = group.day
-            return (
-              <section
-                key={`${group.ticket}-${group.events[0]?.seq ?? ''}`}
-                className="grid gap-2"
-              >
-                {heading ? (
-                  <h2 className="pt-2 text-body font-semibold">{heading}</h2>
-                ) : null}
-                <div className="rounded-2xl bg-brand-surface px-4 py-3 md:rounded-none md:border-b md:border-brand-edge md:bg-transparent md:px-0">
-                  <Link
-                    to="/{-$locale}/console/collab/$id"
-                    params={{ locale: localeParam, id: group.ticket }}
-                    className="grid gap-0.5"
-                  >
-                    <span className="line-clamp-2 text-body leading-snug font-semibold">
-                      {title}
-                    </span>
-                    {from || to ? (
-                      <span className="text-meta text-brand-label">
-                        {from || '?'} → {to || '?'}
-                      </span>
-                    ) : null}
-                  </Link>
-                  <ol className="mt-2 grid gap-1.5">
-                    {group.events.map((event) => (
-                      <li
-                        key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
-                        className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-body"
+          byDay.map((bucket) => (
+            <section key={bucket.day} className="grid content-start">
+              {bucket.day ? (
+                <SectionHeading
+                  as="h2"
+                  className="top-13 border-b border-brand-edge/80 bg-brand-deck px-3 py-1 text-meta font-semibold text-brand-label md:top-14 md:px-4"
+                >
+                  {bucket.day}
+                </SectionHeading>
+              ) : null}
+              <div className="bg-brand-surface">
+                {bucket.items.map((group) => {
+                  const ticket = tickets.get(group.ticket)
+                  const origin = created.get(group.ticket)
+                  const title =
+                    ticket?.title ||
+                    text(origin?.title) ||
+                    group.ticket.slice(-6)
+                  const from = ticket?.from ?? text(origin?.from)
+                  const to = ticket?.to ?? text(origin?.to)
+                  return (
+                    <div
+                      key={`${group.ticket}-${group.events[0]?.seq ?? ''}`}
+                      className="border-b border-brand-edge px-4 py-3"
+                    >
+                      <Link
+                        to="/{-$locale}/console/collab/$id"
+                        params={{ locale: localeParam, id: group.ticket }}
+                        className="grid gap-0.5 rounded-lg outline-none hover:text-brand-running focus-visible:ring-2 focus-visible:ring-brand-running"
                       >
-                        <span className="pt-1">
-                          <Led tone={toneOf(event)} size={9} />
+                        <span className="line-clamp-2 text-body leading-snug font-semibold">
+                          {title}
                         </span>
-                        <span className="line-clamp-3 text-brand-text">
-                          {sentence(event)}
-                        </span>
-                        <span className="text-meta text-brand-label tabular-nums">
-                          {clock(event.ts)}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </section>
-            )
-          })
+                        {from || to ? (
+                          <span className="font-mono text-meta text-brand-label">
+                            {from || '?'} → {to || '?'}
+                          </span>
+                        ) : null}
+                      </Link>
+                      <ol className="mt-2 grid gap-1.5">
+                        {group.events.map((event) => (
+                          <li
+                            key={`${event.seq ?? ''}-${event.kind}-${event.ts ?? ''}`}
+                            className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto] items-start gap-x-2 text-caption"
+                          >
+                            <span className="pt-1">
+                              <Led tone={toneOf(event)} size={9} />
+                            </span>
+                            <span className="line-clamp-3 text-brand-text">
+                              {sentence(event)}
+                            </span>
+                            <span className="text-meta text-brand-label tabular-nums">
+                              {clock(event.ts)}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          ))
         )}
       </div>
     </div>

@@ -86,7 +86,7 @@ function ChatSearch({
 }) {
   const { t } = useLingui()
   return (
-    <label className="relative min-w-0 flex-1">
+    <label className="relative min-w-0 flex-1" data-text-field>
       <Search
         size={16}
         aria-hidden
@@ -94,6 +94,7 @@ function ChatSearch({
       />
       <Input
         variant="field"
+        data-search
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
