@@ -166,7 +166,9 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    back to its trigger, which kept Space pressing it), `/` filter,
    `g`+letter section jump; on a session page `Space` puts the caret in the composer
    (`composer-keys.ts`; not while typing, on a button / link, or with a
-   sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话,
+   sheet open), `Ctrl/⌘+N` (even from the composer) or `c` opens 新会话;
+   the composer toolbar's 新对话 starts a blank conversation in the current
+   pane without opening a new worktree,
    `Alt+J/K/L` jump like the terminal and `Alt+G` / `Alt+X` / `Alt+/` open the
    picker. Every key is listed in one place, `console-keys.tsx`, shown by
    `?` or the sidebar's 键盘快捷键 entry with the terminal's key for the same
