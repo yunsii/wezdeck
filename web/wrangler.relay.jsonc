@@ -9,7 +9,13 @@
   // Hosts the HostRelay Durable Object independently of the `wezdeck` web
   // Worker so frontend deploys never evict live host/client WebSockets.
   "durable_objects": {
-    "bindings": [{ "name": "HOST_RELAY", "class_name": "HostRelay" }],
+    "bindings": [{ "name": "HOST_RELAY", "class_name": "HostRelayDO" }],
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HostRelay"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["HostRelay"] },
+    {
+      "tag": "v2",
+      "renamed_classes": [{ "from": "HostRelay", "to": "HostRelayDO" }],
+    },
+  ],
 }
