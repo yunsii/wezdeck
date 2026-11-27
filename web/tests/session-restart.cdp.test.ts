@@ -320,14 +320,17 @@ describe.runIf(attention && devicesFile && stack)(
         { timeout: 20_000 },
       )
 
-      // 新开会话: --fresh; the host archives the old entry cleared_to the
-      // new conversation and the page goes there
+      // The restart reply gives the destination before either read sees
+      // cleared_to. Follow the reply without waiting for a poll.
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
       await openKeys()
       await page.locator('[data-restart=fresh]').click()
       await page.locator('[data-restart-confirm]').click()
       await expect.poll(calls, { timeout: 10_000 }).toHaveLength(3)
       expect(calls()[2]).toBe(`--pane ${pane} --agent claude --fresh`)
+      await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
+        timeout: 5_000,
+      })
       writeFileSync(
         attention,
         JSON.stringify({
@@ -335,9 +338,6 @@ describe.runIf(attention && devicesFile && stack)(
           recent: [{ ...entry(), status: 'idle', cleared_to: NEW_ID }],
         }),
       )
-      await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
-        timeout: 20_000,
-      })
       // Codex / Grok cannot name their own fresh id at startup. The host
       // gives the empty pane a pending id, then follows the first prompt's id.
       const pending = 'pending-00000000-0000-4000-8000-000000000002'

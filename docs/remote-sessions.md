@@ -65,6 +65,9 @@ so a web page still on the fresh session switches back to the resumed one.
 The `sessions` poll also carries `redirects: [{from,to}]` (cleared_to and
 `ReplacedFrom` edges whose `to` is still listed) so a detail URL that missed
 `replaced_by` still follows on the next list tick (`useFollowSessionRedirect`).
+For Agy’s `/new` and a cold restart, the initiating page follows the
+`session_id` returned by the write as soon as the host acknowledges it.
+Older hosts and changes initiated from another client still use read-side redirects.
 If the host reports that a session has ended without a replacement, its
 detail route returns to the sessions list using a history replacement.
 The page breaks redirect cycles: once it has left a session id by following,
