@@ -7,7 +7,6 @@
 // /sessions/$id. Order: unread first within a repo, then activity time —
 // frozen while you work (session-stable).
 import { useLingui } from '@lingui/react/macro'
-import { Link } from '@tanstack/react-router'
 import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -15,7 +14,6 @@ import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { RemoteBadge } from './remote-badge'
 import { ChatGroupRow } from './session-chat-group'
 import { ChatRow } from './session-chat-row'
 import { useLocale } from '#/lib/locale-context'
@@ -114,8 +112,6 @@ export function SessionList({
   split = false,
 }: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
-  const { locale } = useLocale()
-  const localeParam = locale === 'en' ? undefined : locale
   const sessions = useSessions()
   const rows = sessions.data?.sessions ?? []
   useDraftRevision()
@@ -287,14 +283,6 @@ export function SessionList({
       <StickyBar className="top-0 mx-0 my-0 border-b border-brand-edge bg-brand-surface/95 px-3 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2">
         <div className="flex min-w-0 items-center gap-2">
           <ChatSearch value={query} onChange={setQuery} />
-          <Link
-            to="/{-$locale}/console/me/$page"
-            params={{ locale: localeParam, page: 'connection' }}
-            aria-label={t`Connection details`}
-            className="shrink-0 md:hidden"
-          >
-            <RemoteBadge compact className="bg-brand-deck" />
-          </Link>
           <NewSessionButton />
         </div>
       </StickyBar>

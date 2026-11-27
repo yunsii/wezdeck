@@ -60,10 +60,7 @@ describe.runIf(attention && devicesFile)('Session delete sheet layout', () => {
 
   const approveAndOpenDeleteSheet = async (page: Page) => {
     await page.goto(`${base}/zh/console/me/writing?remote=1#pair=${token}`)
-    await page
-      .locator('[data-testid=remote-badge-compact]')
-      .first()
-      .waitFor({ timeout: 20_000 })
+    await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
     await page.getByRole('button', { name: '申请授权' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })

@@ -141,10 +141,8 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     await page.goto(
       `${base}/zh/console/me/writing?remote=1${roomQuery}#pair=${token}`,
     )
-    // the compact link badge renders only after hydration: clicks land
-    await page
-      .locator('[data-testid=remote-badge-compact]')
-      .waitFor({ timeout: 20_000 })
+    // data-remote-mode appears only after hydration: clicks land
+    await page.locator('main[data-remote-mode]').waitFor({ timeout: 20_000 })
     await page.getByRole('button', { name: '申请授权' }).click()
     const command = page.locator('code', { hasText: '--approve' })
     await command.waitFor({ timeout: 20_000 })

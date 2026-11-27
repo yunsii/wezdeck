@@ -145,8 +145,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    events head, counts or runs move, with a backstop of 10 s while running /
    5 min idle; pages read that cache without timers of their own, so going
    back to 工单 refetches nothing. A run opens in a bottom
-   sheet (transcript, prompt). Connection chip in the top bar opens a
-   sheet (mode, path, RTT, last direct failure, host since, mic grant).
+   sheet (transcript, prompt). Connection status lives in 我的 › 连接 (desktop
+   keeps `RemoteBand`; `<main data-remote-mode>` exposes the mode to CDP).
    Re-tap active tab = scroll top + refresh; sheets swipe down / Android
    back closes. No pull-to-refresh (neither reference has it).
 5. **Wide screens (≥ 768 px, 2026-11-23)**: no mobile layout blown up.
@@ -251,8 +251,8 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   heading and its scroller, or sticky silently stops.
 - Back (2026-11-23): every pushed page (a session, a 我的 group, a ticket)
   backs out with `components/deck/back-button.tsx` — a bare ‹ on a 44 px
-  target, then the page name (or the session title) and, on mobile, the
-  link chip; the ticket page had a lone 「‹ 返回」 line of its own.
+  target, then the page name (or the session title); the ticket page had a
+  lone 「‹ 返回」 line of its own.
 - Scale (2026-11-23): six named sizes with their line heights in
   `web/src/styles/tokens.css` — `text-meta` 12 · `caption` 13 · `body` 15 ·
   `title` 17 · `heading` 20 · `display` 26 — replaced ~20 pixel sizes

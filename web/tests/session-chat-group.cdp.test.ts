@@ -121,7 +121,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
 
     await openList(page)
     // Telegram-style unified flat rail: full-bleed on mobile (no outer card gutter)
-    // and compact top bar carrying search + connection badge on one row.
+    // and compact top bar carrying search without a persistent connection badge.
     const listBox = await page.getByTestId('session-chats').boundingBox()
     const viewport = page.viewportSize()
     expect(
@@ -131,7 +131,10 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
         listBox.width === viewport.width,
     ).toBe(true)
     await page.getByTestId('chat-search').waitFor()
-    await page.getByTestId('remote-badge-compact').waitFor()
+    await page.locator('main[data-remote-mode]').waitFor()
+    expect(
+      await page.locator('[data-testid=remote-badge-compact]').count(),
+    ).toBe(0)
     // Waiting / done sessions auto-sync into the persisted query cache before clicking in
     await expect
       .poll(
