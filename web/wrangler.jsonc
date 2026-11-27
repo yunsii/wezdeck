@@ -21,8 +21,5 @@
       },
     ],
   },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["HostRelay"] },
-    { "tag": "v2", "deleted_classes": ["HostRelay"] },
-  ],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HostRelay"] }],
 }
