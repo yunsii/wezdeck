@@ -3,27 +3,48 @@
 //   · bottom-right — backend / profile badge (kimi, gateway, …)
 // Brand mark fills the circle; unknown agents and failed images use Bot.
 import { Bot } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import agyIcon from '#/assets/icons/agents/agy.png'
+import claudeIcon from '#/assets/icons/agents/claude.png'
+import codexIcon from '#/assets/icons/agents/codex.png'
+import gatewayIcon from '#/assets/icons/agents/gateway.png'
+import grokIcon from '#/assets/icons/agents/grok.png'
+import kimiIcon from '#/assets/icons/agents/kimi.png'
 import { Led } from '#/components/deck/led'
 import { cn } from '#/lib/utils'
 import type { ChatTone } from './session-chats'
-
-const ICONS = '/icons/agents'
 
 export type AgentFamily = 'claude' | 'codex' | 'grok' | 'agy' | 'agent'
 
 /** raster marks only for verified brands; Agy is from antigravity.google/press */
 const AVATAR_SRC: Partial<Record<AgentFamily, string>> = {
-  claude: `${ICONS}/claude.png`,
-  codex: `${ICONS}/codex.png`,
-  grok: `${ICONS}/grok.png`,
-  agy: `${ICONS}/agy.png`,
+  claude: claudeIcon,
+  codex: codexIcon,
+  grok: grokIcon,
+  agy: agyIcon,
 }
 
 const BADGE_SRC: Record<'kimi' | 'gateway', string> = {
-  kimi: `${ICONS}/kimi.png`,
-  gateway: `${ICONS}/gateway.png`,
+  kimi: kimiIcon,
+  gateway: gatewayIcon,
+}
+
+// Keep decoded avatar bitmaps pinned in memory across route unmounts so
+// returning to the session list never flashes a blank frame while re-decoding.
+let warmedIcons: Array<HTMLImageElement> | null = null
+
+function warmAvatarIcons() {
+  if (warmedIcons || typeof Image === 'undefined') return
+  warmedIcons = [...Object.values(AVATAR_SRC), ...Object.values(BADGE_SRC)]
+    .filter((src): src is string => Boolean(src))
+    .map((src) => {
+      const img = new Image()
+      img.decoding = 'sync'
+      img.src = src
+      void img.decode().catch(() => undefined)
+      return img
+    })
 }
 
 /** family for the main mark: prefer the live agent, else the profile prefix */
@@ -91,6 +112,9 @@ export function AgentAvatar({
   const statusPx = Math.max(12, Math.round(size * 0.35))
   const src = AVATAR_SRC[family]
   const [failedSrc, setFailedSrc] = useState('')
+  useEffect(() => {
+    warmAvatarIcons()
+  }, [])
   const statusLabel =
     tone === 'waiting'
       ? 'waiting'
@@ -122,6 +146,7 @@ export function AgentAvatar({
           alt=""
           width={size}
           height={size}
+          decoding="sync"
           draggable={false}
           onError={() => setFailedSrc(src)}
           className={cn(
@@ -160,6 +185,7 @@ export function AgentAvatar({
           alt=""
           width={badgePx}
           height={badgePx}
+          decoding="sync"
           draggable={false}
           data-testid="agent-avatar-badge"
           className="absolute -right-0.5 -bottom-0.5 rounded-full object-cover ring-2 ring-brand-surface"

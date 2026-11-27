@@ -172,7 +172,7 @@ describe('Agent settings layout', () => {
     expect(
       await page
         .locator('[data-agent-profile=agy]')
-        .locator('img[src="/icons/agents/agy.png"]')
+        .locator('[data-testid="agent-avatar"][data-agent="agy"] img')
         .evaluate(
           (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
         ),
@@ -242,7 +242,7 @@ describe('Agent settings layout', () => {
     expect(
       await page
         .locator('[data-agent-profile=agy]')
-        .locator('img[src="/icons/agents/agy.png"]')
+        .locator('[data-testid="agent-avatar"][data-agent="agy"] img')
         .evaluate(
           (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
         ),
