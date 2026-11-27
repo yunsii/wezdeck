@@ -18,15 +18,15 @@
 /* Single-container skeleton pulse (<SkeletonGroup>): animate opacity on ONE
    wrapper around static <Skeleton> bars rather than per-bar animate-pulse
    (which spawns N GPU layers) or background-color keyframes (which re-rasterize
-   the entire HiDPI scroller on CPU every vsync). Starting at 0.58 and rising to
-   1 lets the skeleton enter softly on a single GPU layer with 0 delay and no
-   parent/child layer handoff.
+   the entire HiDPI scroller on CPU every vsync). Starting at 0.32 and rising to
+   1 over 1.7 s gives a clear, smooth breath on a single GPU layer with 0 delay
+   and no parent/child layer handoff.
    `content-enter` settles resolved text/code from 0.35 → 1 inside a solid
    opacity-1 card surface so swapping skeleton → content never dips to dark. */
 @keyframes skeleton-pulse {
   0%,
   100% {
-    opacity: 0.58;
+    opacity: 0.32;
   }
   50% {
     opacity: 1;
@@ -42,8 +42,12 @@
   }
 }
 
+.skeleton-bar {
+  background: color-mix(in srgb, var(--brand-text) 13%, transparent);
+}
+
 .skeleton-pulse {
-  animation: skeleton-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: skeleton-pulse 1.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   contain: layout paint;
 }
 
