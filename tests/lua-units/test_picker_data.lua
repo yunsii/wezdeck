@@ -393,5 +393,55 @@ describe('label cross-checks workspace prefix on stored pane id', function()
   end)
 end)
 
+describe('persistent entries survive past 30 minutes (no TTL expiration)', function()
+  it('keeps multi-hour running/waiting/done entries in collect, picker, and tab_badge', function()
+    reset()
+    mock.set_mux({
+      windows = {
+        { workspace = 'work', tabs = {
+          { id = 100, title = 'ai-video-collection', active_pane = { id = 10 } },
+        }},
+      },
+    })
+    tab_visibility.set_pane_session(10, 'wezterm_work_ai-video-collection_aaaaaaaaaa')
+
+    -- 26 hours old — previously expired by 30-min TTL.
+    local old_ts = tostring((os.time() - 26 * 3600) * 1000)
+    load_state('{"version":1,"entries":{'
+      .. '"aged-run":{"session_id":"aged-run","wezterm_pane_id":"10",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@2","tmux_pane":"%3",'
+        .. '"status":"running","ts":' .. old_ts .. ',"reason":"bg task"},'
+      .. '"aged-wait":{"session_id":"aged-wait","wezterm_pane_id":"10",'
+        .. '"tmux_session":"wezterm_work_ai-video-collection_aaaaaaaaaa",'
+        .. '"tmux_socket":"/tmp/sock","tmux_window":"@3","tmux_pane":"%4",'
+        .. '"status":"waiting","ts":' .. old_ts .. ',"reason":"approve"}'
+      .. '}}')
+
+    local w, d, r = attention.collect()
+    assert_eq(#w, 1, 'aged waiting entry must persist in collect')
+    assert_eq(#r, 1, 'aged running entry must persist in collect')
+    assert_eq(#d, 0, 'unexpected done count')
+
+    local out = os.tmpname()
+    attention.write_live_snapshot(out, 'test-persist')
+    local fd = io.open(out, 'r')
+    local body = fd:read('*a')
+    fd:close()
+    os.remove(out)
+    local snapshot = require('json_mini').decode(body)
+    local row = find_row(snapshot.picker_rows, function(x) return x.id == 'aged-run' end)
+    assert_truthy(row, 'aged running row missing from picker')
+    assert_eq(row.age_text, '1d', 'expected day unit for 26h age')
+
+    local badge = attention.tab_badge({
+      is_active = false,
+      tab_title = 'ai-video-collection',
+      active_pane = { pane_id = 10 },
+    })
+    assert_truthy(badge, 'aged entry must still light tab_badge')
+  end)
+end)
+
 io.write(string.format('\n%d passed, %d failed\n', pass_count, fail_count))
 os.exit(fail_count == 0 and 0 or 1)

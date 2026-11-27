@@ -209,6 +209,7 @@ func agyPermissionOptions(screen string) []permissionOption {
 			hasNo = true
 			rawOpts = append(rawOpts, rawOpt{label: line, kind: "deny", selected: selected, alwaysNo: true})
 		case strings.HasPrefix(line, "No, deny"),
+			strings.HasPrefix(line, "No, cancel"),
 			numbered && line == "No":
 			hasNo = true
 			rawOpts = append(rawOpts, rawOpt{label: line, kind: "deny", selected: selected})

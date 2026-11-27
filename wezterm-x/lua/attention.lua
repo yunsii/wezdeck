@@ -35,13 +35,8 @@ local icons = {
   running = '●',
 }
 
--- Aligned with scripts/runtime/attention-state-lib.sh (attention_state_prune
--- default). The Lua-side filter hides entries that passed the TTL even
--- before the periodic shell prune physically removes them from state.json.
-M.TTL_MS = 1800000
--- Periodic prune pacing. update-status fires every `status_update_interval`
--- (250ms by default), but the actual shell spawn is self-throttled to at
--- most one every PRUNE_INTERVAL_MS.
+-- 0 disables TTL expiration (active entries persist until ack/evict/dead pane).
+M.TTL_MS = 0
 M.PRUNE_INTERVAL_MS = 60000
 -- Live-panes snapshot pacing. update-status fires every
 -- `status_update_interval` (250ms by default); the snapshot writer is
@@ -199,17 +194,10 @@ function M.note_jump(kind, entry)
 end
 
 local function entry_is_live(entry, now)
-  if type(entry) ~= 'table' then
-    return false
-  end
+  if type(entry) ~= 'table' then return false end
+  if not M.TTL_MS or M.TTL_MS <= 0 then return true end
   local ts = tonumber(entry.ts)
-  if not ts then
-    -- Missing ts: treat as live. The shell-side prune will eventually
-    -- normalize or drop the entry; we do not want a corrupt row to
-    -- silently hide a valid one.
-    return true
-  end
-  return (now - ts) <= M.TTL_MS
+  return (not ts) or ((now - ts) <= M.TTL_MS)
 end
 
 local function parse_json(text)
@@ -446,7 +434,9 @@ local function format_age(ms)
   if s < 60 then return s .. 's' end
   local m = math.floor(s / 60)
   if m < 60 then return m .. 'm' end
-  return math.floor(s / 3600) .. 'h'
+  local h = math.floor(s / 3600)
+  if h < 24 then return h .. 'h' end
+  return math.floor(h / 24) .. 'd'
 end
 
 local function sanitize(s)
@@ -2183,26 +2173,18 @@ function M.pick_next(kind, current_pane_id, opts)
   return pool[next_idx]
 end
 
--- Periodic shell-side prune. Called from titles.lua's update-status tick
--- (every `status_update_interval`, default 250ms). Self-throttles to one
--- background spawn per PRUNE_INTERVAL_MS so the wsl.exe → bash cold start
--- only happens at the configured cadence, not every frame. Does nothing
--- when no `prune_spawner` has been injected via register().
+-- Periodic dead-pane reachability prune + Agy permission probe (throttled to PRUNE_INTERVAL_MS).
 function M.maybe_prune()
-  if type(prune_spawner) ~= 'function' then
-    return
-  end
+  if type(prune_spawner) ~= 'function' then return end
   local now = now_ms()
-  if (now - last_prune_ms) < M.PRUNE_INTERVAL_MS then
-    return
-  end
+  if (now - last_prune_ms) < M.PRUNE_INTERVAL_MS then return end
   last_prune_ms = now
-  local args = prune_spawner({ '--prune', '--ttl', tostring(M.TTL_MS) })
+  local args = prune_spawner({ '--prune' })
   if type(args) == 'table' and #args > 0 then
     pcall(function() wezterm.background_child_process(args) end)
     if module_logger then
       module_logger.info('attention', 'periodic prune scheduled', {
-        ttl_ms = M.TTL_MS,
+        mode = 'reachability',
         interval_ms = M.PRUNE_INTERVAL_MS,
       })
     end

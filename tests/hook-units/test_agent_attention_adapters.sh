@@ -269,6 +269,43 @@ assert_eq "Agy repeat PreInvocation hits fast-path (no state rewrite)" "$rev_aft
 printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","toolCall":{"name":"run_command"}}' \
   | "$agy_adapter" resolved >/dev/null 2>&1 || true
 assert_eq "Agy PostToolUse resolved while running hits fast-path" "$rev_after_start" "$(jq -r '.rev // 0' "$(state_file_in "$sandbox")")"
+# Stale ts (> refresh_ms) must NOT short-circuit PostToolUse fast-path.
+stale_ts=$(( $(date +%s%3N) - 120000 ))
+jq --argjson ts "$stale_ts" '.entries["agy-session-1"].ts = $ts' "$(state_file_in "$sandbox")" \
+  >"$(state_file_in "$sandbox").tmp" && mv "$(state_file_in "$sandbox").tmp" "$(state_file_in "$sandbox")"
+: >"$WEZTERM_RUNTIME_LOG_FILE"
+printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PostToolUse","toolCall":{"name":"run_command"}}' \
+  | WEZDECK_AGY_RUNNING_REFRESH_MS=60000 "$agy_adapter" resolved >/dev/null 2>&1 || true
+if grep -q 'hook resolved no-op' "$WEZTERM_RUNTIME_LOG_FILE" 2>/dev/null; then
+  pass=$((pass+1)); echo "  ✓ Agy PostToolUse with stale ts bypasses fast-path"
+else
+  fail=$((fail+1)); echo "  ✗ Agy PostToolUse with stale ts unexpectedly stayed on fast-path" >&2
+fi
+# Screen-based Agy permission prompt detector (1.5.18 4-option prompt, trust/prose negatives).
+if bash -c '
+  . "$1"
+  agy_screen_has_permission_prompt "Run this command?
+> 1. Yes, run command
+  2. Yes, and always allow in this conversation
+  3. Yes, and always allow (Persist to settings.json)
+  4. No, cancel"
+' -- "$repo_root/scripts/runtime/agent-attention/lib/agy-permission-probe.sh"; then
+  pass=$((pass+1)); echo "  ✓ Agy permission probe matches 1.5.18 4-option Run this command? menu"
+else
+  fail=$((fail+1)); echo "  ✗ Agy permission probe missed 1.5.18 Run this command? menu" >&2
+fi
+if bash -c '
+  . "$1"
+  ! agy_screen_has_permission_prompt "Do you trust the contents of this project?
+> Yes, I trust this folder" \
+  && ! agy_screen_has_permission_prompt "确认项（Yes, run command）+ 拒绝项（No, cancel / Run this command?）
+>
+? for shortcuts"
+' -- "$repo_root/scripts/runtime/agent-attention/lib/agy-permission-probe.sh"; then
+  pass=$((pass+1)); echo "  ✓ Agy permission probe rejects trust prompt and quoted prose"
+else
+  fail=$((fail+1)); echo "  ✗ Agy permission probe false-positived on trust or prose" >&2
+fi
 printf '%s' '{"conversationId":"agy-session-1","hookEventName":"PreInvocation","lastUserInput":"<USER_REQUEST>\nfollow-up prompt\n</USER_REQUEST>"}' \
   | "$agy_adapter" running >/dev/null 2>&1 || true
 assert_eq "Agy PreInvocation with new prompt updates last_user_prompt" "follow-up prompt" "$(field_for "$sandbox" "agy-session-1" "last_user_prompt")"

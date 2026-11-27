@@ -21,8 +21,9 @@
 # fresher `done` that the same session_id produced during the grace window.
 #
 # Invoked periodically by attention.lua from WezTerm's update-status tick
-# to clean up entries that have aged past the TTL when no hook has fired:
-#   bash .../attention-jump.sh --prune [--ttl <ms>]
+# to archive entries whose tmux pane is gone and probe live Agy panes for
+# permission prompts (active entries persist without time-based TTL):
+#   bash .../attention-jump.sh --prune
 #
 # Invoked from the tmux `session-closed` hook to archive every active
 # entry on a tmux session that just died. Zero-latency replacement for
@@ -35,14 +36,13 @@
 #   bash .../attention-jump.sh --recent --session <id> --archived-ts <ms>
 #
 # Resolution (slow path):
-#   1. Prune stale entries (30 min TTL).
-#   2. Pick target — by explicit session id, or the next entry matching
+#   1. Pick target — by explicit session id, or the next entry matching
 #      the requested kind (preferring a wezterm pane different from the
 #      caller's so kind-based keys cycle).
-#   3. Run `tmux -S <socket> select-window/select-pane` against the
+#   2. Run `tmux -S <socket> select-window/select-pane` against the
 #      target's tmux (same socket path works cross-session as long as the
 #      tmux servers share $UID — /tmp/tmux-*).
-#   4. Run `wezterm.exe cli activate-pane --pane-id <N>` so WezTerm
+#   3. Run `wezterm.exe cli activate-pane --pane-id <N>` so WezTerm
 #      focuses the right pane. tmux-first ordering means the WezTerm pane
 #      already shows the correct tmux window when it becomes active.
 #
@@ -258,7 +258,6 @@ forget_if_ts=''
 forget_session_only=0
 forget_session_name=''
 prune_only=0
-prune_ttl=1800000
 recent_jump=0
 recent_archived_ts=''
 
@@ -294,7 +293,8 @@ case "${1:-next-waiting}" in
     shift
     while (( $# )); do
       case "$1" in
-        --ttl) prune_ttl="${2:-1800000}"; shift 2 ;;
+        # Rollout guard: accept & ignore legacy --ttl from an un-reloaded Lua.
+        --ttl) shift 2 ;;
         *) printf 'unknown --prune arg: %s\n' "$1" >&2; exit 1 ;;
       esac
     done
@@ -362,17 +362,23 @@ if (( clear_all )); then
 fi
 
 if (( prune_only )); then
-  # Periodic prune does both jobs: TTL sweep (entries idle past 30 min)
-  # plus reachability sweep (entries whose tmux pane is gone — pane
-  # killed, agent crashed, /clear didn't reach the right session, etc.
-  # Without this the entry sits in entries[] until the 30 min TTL even
-  # though the pane vanished minutes ago). The alive map is collected
-  # here, not in emit-agent-status.sh, so the hook hot path never pays
-  # the per-socket `tmux list-panes -a` fork cost — only the once-per-
-  # minute background prune that titles.lua schedules does.
+  # Periodic housekeeping (active entries persist with no TTL expiration):
+  #   1. Reachability sweep: archive entries whose tmux pane is positively gone.
+  #   2. Agy permission probe: Agy exposes no PermissionRequest hook, so scan
+  #      unfocused running Agy panes for a live confirmation dialog and escalate
+  #      them to waiting/permission_prompt.
+  rev_before="$(attention_state_read | jq -r '.rev // 0' 2>/dev/null || printf '0')"
   alive_panes_json="$(attention_state_collect_alive_panes 2>/dev/null || printf '{}')"
-  attention_state_prune "$prune_ttl" "$alive_panes_json" 2>/dev/null || true
-  nudge_wezterm_tick
+  attention_state_prune "$alive_panes_json" 2>/dev/null || true
+  if [[ -r "$script_dir/agent-attention/lib/agy-permission-probe.sh" ]]; then
+    # shellcheck disable=SC1091
+    . "$script_dir/agent-attention/lib/agy-permission-probe.sh"
+    agy_reconcile_permission_prompts "$(cd "$script_dir/../.." && pwd)" 2>/dev/null || true
+  fi
+  rev_after="$(attention_state_read | jq -r '.rev // 0' 2>/dev/null || printf '0')"
+  if [[ "$rev_after" != "$rev_before" ]]; then
+    nudge_wezterm_tick
+  fi
   exit 0
 fi
 
@@ -504,8 +510,6 @@ if (( recent_jump )); then
   fi
   exit 0
 fi
-
-attention_state_prune 1800000 2>/dev/null || true
 
 current_wezterm_pane="${WEZTERM_PANE:-}"
 state_json="$(attention_state_read)"

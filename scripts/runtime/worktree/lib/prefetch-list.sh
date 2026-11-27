@@ -114,19 +114,18 @@ worktree_prefetch_list() {
       fi
     done < <(jq -r \
       --arg sess "$session_name" \
-      --argjson now "$start_ms" \
-      --argjson ttl 1800000 '
+      --argjson now "$start_ms" '
         def age($ms): (($now - $ms) / 1000 | floor) as $s
           | if $s < 0 then "0s"
             elif $s < 60 then "\($s)s"
             elif $s < 3600 then "\(($s / 60) | floor)m"
-            else "\(($s / 3600) | floor)h" end;
+            elif $s < 86400 then "\(($s / 3600) | floor)h"
+            else "\(($s / 86400) | floor)d" end;
         def rank: if . == "waiting" then 0 elif . == "running" then 1
                   elif . == "done" then 2 else 3 end;
         def clean: (. // "") | gsub("[\t\r\n]"; " ");
         [ (.entries // {}) | to_entries[] | .value
           | select((.tmux_session // "") == $sess and (.tmux_window // "") != "")
-          | select(($now - (.ts // 0)) < $ttl)
           | { w: .tmux_window, s: (.status // ""), a: age(.ts // $now),
               r: (.reason | clean) } ]
         | sort_by(.s | rank)

@@ -1207,37 +1207,33 @@ attention_state_truncate() {
   ) 9>"$lock"
 }
 
-# Drop entries older than TTL (ms). Default 30 minutes. Pruned entries
-# are archived into .recent[] so a user who left an agent idle past TTL
-# can still find it under the recent band.
+# Archive entries whose tmux pane is positively gone (reachability sweep).
+# Live entries persist indefinitely — there is no time-based TTL reset.
 #
-# Optional second arg: a JSON map `{<tmux_socket>: ["<pane_id>", ...], ...}`
-# describing the live tmux pane set per socket. When provided, entries
-# whose `(tmux_socket, tmux_pane)` is missing from the corresponding
-# socket's pane list are also archived (reachability sweep). Sockets
-# absent from the map are treated as "unknown" — entries on those
-# sockets are kept (we only archive when we have positive evidence
-# that the pane is gone, never when the tmux server is just
-# unreachable). Empty / missing arg disables the sweep entirely.
+# Arg: a JSON map `{<tmux_socket>: ["<pane_id>", ...], ...}` describing the
+# live tmux pane set per socket. Entries whose `(tmux_socket, tmux_pane)`
+# is missing from the corresponding socket's pane list are archived into
+# .recent[]. Sockets absent from the map are treated as "unknown" — entries
+# on those sockets are kept (we only archive when we have positive evidence
+# that the pane is gone, never when the tmux server is just unreachable).
+# Empty / `{}` arg disables the sweep (no-op).
 #
-# This is what catches "agent crashed / pane killed without firing
-# Stop" cases that would otherwise sit in entries[] until the 30min
-# TTL: tmux already removed the pane from list-panes, so the
-# reachability check archives the dead row at the next periodic
-# prune. The TTL prune still runs for the conservative case (entry's
-# socket is unknown to us, e.g. tmux server died).
+# This catches "agent crashed / pane killed without firing Stop" cases:
+# tmux already removed the pane from list-panes, so the reachability check
+# archives the dead row at the next periodic prune.
 attention_state_prune() {
-  local ttl_ms="${1:-1800000}"
-  local alive_panes_json="${2:-}"
-  # Empty / missing arg → no-op for the reachability sweep. The empty-
-  # brace default has to come from a separate assignment because the
-  # `${2:-{}}` parameter-expansion form does not parse the closing `}`
-  # cleanly (bash treats it as the param-expansion terminator).
-  if [[ -z "$alive_panes_json" ]]; then
-    alive_panes_json='{}'
+  local alive_panes_json="${1:-}"
+  # Rollout guard: if a caller still passes legacy `<ttl_ms> <alive_json>`,
+  # ignore the TTL arg and run reachability-only on the second arg.
+  if (( $# >= 2 )); then
+    alive_panes_json="${2:-}"
+  elif [[ "$alive_panes_json" =~ ^[0-9]+$ ]]; then
+    alive_panes_json=''
+  fi
+  if [[ -z "$alive_panes_json" || "$alive_panes_json" == "{}" ]]; then
+    return 0
   fi
   local now; now="$(attention_state_now_ms)"
-  local cutoff=$((now - ttl_ms))
   attention_state_init
   local lock
   lock="$(attention_state_lock_path)"
@@ -1245,36 +1241,23 @@ attention_state_prune() {
     flock -x 9
     local current next
     current="$(attention_state_read)"
-    next="$(jq --argjson cutoff "$cutoff" \
-               --argjson now "$now" \
+    next="$(jq --argjson now "$now" \
                --argjson alive "$alive_panes_json" \
                --argjson cap "$ATTENTION_RECENT_CAP" \
                --argjson ttl "$ATTENTION_RECENT_TTL_MS" \
                "$__ATTENTION_RECENT_DEF"'
-      # TTL pass: anything older than $cutoff is unconditionally pruned.
-      # Reachability pass (after TTL): archive entries whose
-      # (tmux_socket, tmux_pane) is positively gone, i.e. the entry
-      # socket is a known key in $alive AND the entry pane is not
-      # listed under it. Sockets absent from $alive are treated as
-      # unknown and the entries on them are kept; without that branch a
-      # tmux server we cannot reach (started later, dropped, restarted)
-      # would falsely look like every pane is dead and we would archive
-      # the lot. Empty $alive ({}) makes the entire pass a no-op so the
-      # hot-path TTL-only callers keep their behavior. Field reads
-      # guard with `// ""` so an entry missing tmux_socket / tmux_pane
-      # never reaches has(null) (jq rejects null keys outright). Note:
-      # apostrophes are intentionally avoided in this comment block —
-      # the entire filter is single-quoted in bash, so a stray
-      # apostrophe would terminate the quote and let bash try to
-      # consume the in-filter `$alive` reference itself.
-      # The inner predicate binds $sock and $pane via `as $sock` / `as
-      # $pane` before referencing them, instead of reading
-      # `.value.tmux_socket` again inside an `or`-chain branch. jq does
-      # not always short-circuit `or` cleanly when the right operand
-      # re-pipes through `index(...)` on an array context — the inner
-      # `.value.tmux_pane` would re-evaluate on the array we just
-      # produced, error out, and the surrounding `or` would coerce it
-      # to true, keeping every entry alive in the reachability sweep.
+      # Reachability pass: archive entries whose (tmux_socket, tmux_pane) is
+      # positively gone, i.e. the entry socket is a known key in $alive AND
+      # the entry pane is not listed under it. Sockets absent from $alive are
+      # treated as unknown and the entries on them are kept; without that
+      # branch a tmux server we cannot reach (started later, dropped,
+      # restarted) would falsely look like every pane is dead and we would
+      # archive the lot. Field reads guard with `// ""` so an entry missing
+      # tmux_socket / tmux_pane never reaches has(null) (jq rejects null keys
+      # outright). Note: apostrophes are intentionally avoided in this comment
+      # block — the entire filter is single-quoted in bash, so a stray
+      # apostrophe would terminate the quote and let bash try to consume the
+      # in-filter `$alive` reference itself.
       def is_unreachable($alive):
         (.tmux_socket // "") as $sock
         | (.tmux_pane // "") as $pane
@@ -1282,12 +1265,11 @@ attention_state_prune() {
           and $pane != ""
           and ($alive | has($sock))
           and ((($alive[$sock]) // []) | index($pane)) == null;
-      . as $orig | ((.entries // {}) | to_entries | map(.value) | map(select(.ts < $cutoff))) as $pruned_ttl
-      | ((.entries // {}) | with_entries(select(.value.ts >= $cutoff))) as $kept_ttl
-      | ($kept_ttl | to_entries | map(.value)
+      . as $orig
+      | ((.entries // {}) | to_entries | map(.value)
          | map(select(is_unreachable($alive)))) as $pruned_dead
-      | .entries = ($kept_ttl | with_entries(select((.value | is_unreachable($alive)) | not)))
-      | archive_into_recent($pruned_ttl + $pruned_dead; $now; $cap; $ttl) | if . == $orig then empty else . end
+      | .entries = ((.entries // {}) | with_entries(select((.value | is_unreachable($alive)) | not)))
+      | archive_into_recent($pruned_dead; $now; $cap; $ttl) | if . == $orig then empty else . end
     ' <<<"$current")"
     [[ -z "$next" ]] || attention_state_write "$next"   # unchanged doc: no rev/9p/journal write
   ) 9>"$lock"

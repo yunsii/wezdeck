@@ -28,7 +28,7 @@ agy_attention_state_path() {
 }
 
 # True when attention.json already holds a live turn-running entry for this
-# session on this pane (and, when check_prompt=1, matching prompt + fresh ts).
+# session on this pane with a fresh ts (and matching prompt when check_prompt=1).
 agy_entry_is_fresh_running() {
   local sid="$1" pane="$2" prompt="$3" max_age_ms="$4" check_prompt="$5"
   local state_file now_ms
@@ -48,13 +48,12 @@ agy_entry_is_fresh_running() {
       and ($e.status // "") == "running"
       and (($e.running_kind // "") == "")
       and (($e.tmux_pane // "") == $pane)
+      and (($now - (($e.ts // 0) | tonumber)) >= 0)
+      and (($now - (($e.ts // 0) | tonumber)) < $max_age)
       and (
         $check_prompt == 0
-        or (
-          ($prompt == "" or ($e.last_user_prompt // "") == $prompt)
-          and (($now - (($e.ts // 0) | tonumber)) >= 0)
-          and (($now - (($e.ts // 0) | tonumber)) < $max_age)
-        )
+        or $prompt == ""
+        or ($e.last_user_prompt // "") == $prompt
       )
     ' "$state_file" >/dev/null 2>&1
 }

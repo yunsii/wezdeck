@@ -296,6 +296,21 @@ func TestAgyThinkingAndScreenPermissionCard(t *testing.T) {
 		perm.Options[2].Kind != "deny" || strings.Join(perm.Options[2].Keys, ",") != "Escape" {
 		t.Fatalf("parsed permission options: %+v", perm.Options)
 	}
+	// Agy 1.5.18 4-option command confirmation menu uses "4. No, cancel".
+	fourOpts := agyPermissionOptions(strings.Join([]string{
+		"Run this command?",
+		"> 1. Yes, run command",
+		"  2. Yes, and always allow in this conversation for commands that start with 'git push'",
+		"  3. Yes, and always allow for commands that start with 'git push' (Persist to settings.json)",
+		"  4. No, cancel",
+	}, "\n"))
+	if len(fourOpts) != 4 ||
+		fourOpts[0].Kind != "allow" || strings.Join(fourOpts[0].Keys, ",") != "Enter" ||
+		fourOpts[1].Kind != "always" || strings.Join(fourOpts[1].Keys, ",") != "Down,Enter" ||
+		fourOpts[2].Kind != "always" || strings.Join(fourOpts[2].Keys, ",") != "Down,Down,Enter" ||
+		fourOpts[3].Kind != "deny" || fourOpts[3].Label != "No, cancel" || strings.Join(fourOpts[3].Keys, ",") != "Escape" {
+		t.Fatalf("agy 1.5.18 4-option menu: %+v", fourOpts)
+	}
 	// If the cursor in tmux already moved to the 2nd row, keys adjust relative to it.
 	shifted := agyPermissionOptions("Do you want to proceed?\n  1. Yes\n> 2. Yes, and always allow 'git push'\n  3. No")
 	if len(shifted) != 3 ||
