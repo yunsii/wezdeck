@@ -219,12 +219,13 @@ function stabilityStack() {
         tmux_socket: socket,
         tmux_session: s.id,
         tmux_pane: tmux('display-message', '-p', '-t', s.id, '#{pane_id}'),
-        status: 'idle',
+        status: s.id === 'st-g1' ? 'running' : 'idle',
         agent_name: 'claude',
         tmux_window_name: s.id,
         session_title: s.title || undefined,
         last_user_prompt: s.prompt,
         ts: now - 3600_000 * (idx + 2),
+        turn_started: s.id === 'st-g1' ? now - 30_000 : undefined,
       }
     })
     writeFileSync(attention, JSON.stringify({ entries }))
@@ -236,6 +237,33 @@ function stabilityStack() {
     tmux('kill-server')
   })
   return ctx
+}
+
+type LayerInfo = { layerId: string; drawsContent: boolean }
+
+async function collectActiveAnimReasons(
+  cdp: Awaited<ReturnType<Browser['newContext']>> extends infer C
+    ? C extends { newCDPSession: (p: Page) => Promise<infer S> }
+      ? S
+      : never
+    : never,
+  layers: Array<LayerInfo>,
+) {
+  const bad: Array<string> = []
+  for (const layer of layers) {
+    if (!layer.drawsContent) continue
+    const res = await cdp
+      .send('LayerTree.compositingReasons', { layerId: layer.layerId })
+      .catch(() => ({ compositingReasonIds: [] as Array<string> }))
+    for (const reason of res.compositingReasonIds) {
+      if (
+        reason === 'ActiveOpacityAnimation' ||
+        reason === 'ActiveTransformAnimation'
+      )
+        bad.push(reason)
+    }
+  }
+  return bad
 }
 
 describe.runIf(attention)('Wide split: list stability', () => {
@@ -369,6 +397,18 @@ describe.runIf(attention)('Wide split: list stability', () => {
     const state = await page.evaluate(() => {
       const vtPage = document.querySelector<HTMLElement>('.vt-page')!
       const pane = document.querySelector<HTMLElement>('.vt-split-pane')!
+      const threadScroll = document.querySelector<HTMLElement>(
+        '[data-testid=session-thread-scroll]',
+      )!
+      const detail = document.querySelector<HTMLElement>(
+        '[data-testid=session-detail]',
+      )!
+      const header = document.querySelector<HTMLElement>(
+        '[data-testid=session-header]',
+      )!
+      const form = document
+        .querySelector('#session-composer')
+        ?.closest<HTMLElement>('form')
       const list = document.querySelector<HTMLElement>('.vt-split-list')!
       const swipeRow = document.querySelector<HTMLElement>(
         '.vt-split-list [data-swipe] > div',
@@ -377,10 +417,15 @@ describe.runIf(attention)('Wide split: list stability', () => {
         pageScrollTop: vtPage.scrollTop,
         pageRoom: vtPage.scrollHeight - vtPage.clientHeight,
         pageVtName: getComputedStyle(vtPage).viewTransitionName,
-        paneScrollTop: pane.scrollTop,
-        paneRoom: pane.scrollHeight - pane.clientHeight,
+        paneScrollTop: threadScroll.scrollTop,
+        paneRoom: threadScroll.scrollHeight - threadScroll.clientHeight,
+        detailHeight: Math.round(detail.getBoundingClientRect().height),
+        headerPosition: getComputedStyle(header).position,
+        formPosition: form ? getComputedStyle(form).position : 'none',
         listPosition: getComputedStyle(list).position,
         listWillChange: getComputedStyle(list).willChange,
+        listContain: getComputedStyle(list).contain,
+        paneContain: getComputedStyle(pane).contain,
         idleSwipeTransform: swipeRow
           ? getComputedStyle(swipeRow).transform
           : 'none',
@@ -394,8 +439,13 @@ describe.runIf(attention)('Wide split: list stability', () => {
     expect(state.pageVtName).toBe('none')
     expect(state.paneRoom).toBeGreaterThan(200)
     expect(state.paneScrollTop).toBeGreaterThan(200)
+    expect(state.detailHeight).toBeLessThanOrEqual(866)
+    expect(state.headerPosition).not.toBe('sticky')
+    expect(state.formPosition).not.toBe('sticky')
     expect(state.listPosition).not.toBe('sticky')
     expect(state.listWillChange).toBe('auto')
+    expect(state.listContain).toBe('strict')
+    expect(state.paneContain).toBe('strict')
     expect(state.idleSwipeTransform).toBe('none')
     expect(state.idleSwipeButtons).toBe(0)
 
@@ -436,6 +486,22 @@ describe.runIf(attention)('Wide split: list stability', () => {
     expect(frames.length).toBeGreaterThan(10)
 
     expect(await countWatchFlashes(page, frames, watchBox!)).toBe(0)
+
+    // LayerTree invariant: idle <-> running switches must spawn zero GPU opacity/transform layers.
+    await cdp.send('LayerTree.enable')
+    let layers: Array<LayerInfo> = []
+    cdp.on('LayerTree.layerTreeDidChange', (ev) => {
+      if (ev.layers) layers = ev.layers
+    })
+    await page.locator('[data-session=st-g3]').click()
+    await page.waitForTimeout(250)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+    await page.locator('[data-session=st-g1]').click()
+    await page.waitForTimeout(45)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+    await page.waitForTimeout(250)
+    expect(await collectActiveAnimReasons(cdp, layers)).toEqual([])
+
     await context.close()
-  }, 45_000)
+  }, 60_000)
 })

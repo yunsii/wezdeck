@@ -46,9 +46,13 @@ func worktreeGitStatus(cwd string) *gitStatus {
 		return nil
 	}
 	gitStatusMu.Lock()
-	if hit, ok := gitStatusCache[cwd]; ok && time.Since(hit.at) < gitStatusTTL {
-		gitStatusMu.Unlock()
-		return hit.status
+	var prev *gitStatus
+	if hit, ok := gitStatusCache[cwd]; ok {
+		if time.Since(hit.at) < gitStatusTTL {
+			gitStatusMu.Unlock()
+			return hit.status
+		}
+		prev = hit.status
 	}
 	gitStatusMu.Unlock()
 
@@ -60,9 +64,13 @@ func worktreeGitStatus(cwd string) *gitStatus {
 	var status *gitStatus
 	if err == nil {
 		status = parseGitStatus(string(out))
+	} else if ctx.Err() != nil && prev != nil {
+		// Transient timeout (heavy disk I/O or lock): keep last good status so
+		// the web statusbar git pill does not vanish for 5s and pop back.
+		status = prev
 	}
 	if took >= gitStatusSlow || ctx.Err() != nil {
-		relayLogf("git_status", "cwd=%q ms=%d ok=%t", cwd, took.Milliseconds(), status != nil)
+		relayLogf("git_status", "cwd=%q ms=%d ok=%t stale=%t", cwd, took.Milliseconds(), err == nil, err != nil && status != nil)
 	}
 	gitStatusMu.Lock()
 	gitStatusCache[cwd] = gitStatusEntry{at: time.Now(), status: status}

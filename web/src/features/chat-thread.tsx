@@ -34,6 +34,7 @@ import {
   TaskEventRow,
   ThoughtRow,
 } from './chat-command'
+import { ArtifactCard } from './host-file-context'
 
 export type Message = {
   /** system + kind "compact": context compaction marker (text = auto | manual, body = summary) */
@@ -373,6 +374,14 @@ export function ChatThread({
       if (item.message.kind === 'thought')
         return (
           <ThoughtRow
+            key={`m${at}`}
+            message={item.message}
+            onShown={stream ? () => advance(at + 1) : undefined}
+          />
+        )
+      if (item.message.kind === 'artifact')
+        return (
+          <ArtifactCard
             key={`m${at}`}
             message={item.message}
             onShown={stream ? () => advance(at + 1) : undefined}

@@ -1,14 +1,16 @@
 // Sticky top bar of a ticket page (mirroring SessionHeader): mobile back
-// button, status LED + tappable ticket title (opens TicketInfo sheet), and ⓘ.
+// button, status LED + tappable ticket title (opens TicketInfo sheet),
+// fullscreen Net Diff trigger (`d` shortcut), and ⓘ.
 import { useLingui } from '@lingui/react/macro'
-import { Info } from 'lucide-react'
-import { useState } from 'react'
+import { GitCompareArrows, Info } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { BackButton } from '#/components/deck/back-button'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import type { CollabShow } from '#/lib/runtime-contract'
 import { ticketTone } from './console-collab'
+import { TicketDiffSheet } from './ticket-diff'
 import { TicketInfo } from './ticket-info'
 import { formatRepoRoute, useStatusLabel } from './tickets-view'
 
@@ -22,7 +24,39 @@ export function TicketHeader({
   const { t } = useLingui()
   const statusLabel = useStatusLabel()
   const [infoOpen, setInfoOpen] = useState(false)
+  const [diffOpen, setDiffOpen] = useState(false)
   const ticket = data.ticket
+  const canInspectDiff = Boolean(
+    ticket &&
+    (ticket.worktree ||
+      ticket.branch ||
+      data.runs.length > 0 ||
+      data.children_detail.length > 0 ||
+      data.collab?.integration),
+  )
+
+  // Keyboard shortcut: `d` opens the fullscreen net Diff drawer.
+  useEffect(() => {
+    if (!canInspectDiff) return
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (
+        event.key !== 'd' ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        document.querySelector('[role="dialog"]')
+      ) {
+        return
+      }
+      event.preventDefault()
+      setDiffOpen(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [canInspectDiff])
+
   if (!ticket) return null
   const tone = ticketTone(ticket)
   const title = ticket.title || ticket.id
@@ -34,6 +68,7 @@ export function TicketHeader({
     Boolean(handlerRepo) &&
     handlerRepo !== ticket.from &&
     !targets.includes(handlerRepo)
+
   return (
     <header
       data-testid="ticket-header"
@@ -74,6 +109,22 @@ export function TicketHeader({
             </span>
           </div>
         </div>
+        {canInspectDiff ? (
+          <Button
+            variant="ghost"
+            size="none"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label={t`Net diff`}
+            title={t`Net diff (d)`}
+            data-testid="ticket-diff-button"
+            onClick={() => setDiffOpen(true)}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-caption text-brand-muted"
+          >
+            <GitCompareArrows size={16} aria-hidden />
+            <span className="hidden sm:inline">{t`Diff`}</span>
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           size="icon"
@@ -92,6 +143,13 @@ export function TicketHeader({
         data={data}
         open={infoOpen}
         onClose={() => setInfoOpen(false)}
+      />
+      <TicketDiffSheet
+        ticketId={ticket.id}
+        title={title}
+        hasManager={Boolean(ticket.manager_session)}
+        open={diffOpen}
+        onClose={() => setDiffOpen(false)}
       />
     </header>
   )

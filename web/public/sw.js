@@ -166,3 +166,67 @@ self.addEventListener('fetch', (event) => {
     })(),
   )
 })
+
+// Unified Web Push (sessions + collab tickets): shows low-noise notifications
+// without leaking source code or prompts, syncs App Badge, and deep-links on click.
+self.addEventListener('push', (event) => {
+  event.waitUntil(
+    (async () => {
+      let data = {}
+      try {
+        data = event.data ? event.data.json() : {}
+      } catch {
+        data = { title: 'WezDeck', body: event.data ? event.data.text() : '' }
+      }
+      if (typeof data.badge === 'number') {
+        try {
+          if (data.badge > 0 && 'setAppBadge' in self.navigator) {
+            await self.navigator.setAppBadge(data.badge)
+          } else if (data.badge === 0 && 'clearAppBadge' in self.navigator) {
+            await self.navigator.clearAppBadge()
+          }
+        } catch {
+          // badge API unsupported on this platform
+        }
+      }
+      if (data.silent) return
+      const title = String(data.title || 'WezDeck')
+      const options = {
+        body: String(data.body || ''),
+        tag: String(data.tag || 'wezdeck'),
+        renotify: true,
+        icon: '/brand-icon.svg',
+        badge: '/brand-icon.svg',
+        data: { url: String(data.url || '/console/sessions') },
+      }
+      await self.registration.showNotification(title, options)
+    })(),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const rawUrl =
+    (event.notification.data && event.notification.data.url) ||
+    '/console/sessions'
+  const targetUrl = new URL(rawUrl, self.location.origin).toString()
+  event.waitUntil(
+    (async () => {
+      const list = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+      for (const client of list) {
+        if (!client.url.startsWith(self.location.origin)) continue
+        try {
+          await client.focus()
+          if ('navigate' in client) await client.navigate(targetUrl)
+          return
+        } catch {
+          // fall through to openWindow
+        }
+      }
+      await self.clients.openWindow(targetUrl)
+    })(),
+  )
+})

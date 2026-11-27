@@ -5,10 +5,10 @@ function Skeleton({ className, ...props }: React.ComponentProps<'span'>) {
     <span
       aria-hidden="true"
       data-slot="skeleton"
-      className={cn(
-        'block animate-pulse rounded bg-brand-soft motion-reduce:animate-none',
-        className,
-      )}
+      // Static placeholder (0 fps repaint): animating opacity spawns per-bar GPU
+      // layers and animating background-color re-rasterizes the full HiDPI
+      // scroller layer every vsync, flickering bottom tiles on tablet GPUs.
+      className={cn('block rounded bg-brand-soft', className)}
       {...props}
     />
   )

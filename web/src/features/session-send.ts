@@ -12,6 +12,7 @@ import { trace } from '#/lib/client-trace'
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
 import type { SentRecord } from './sent-history'
+import { useNavigateToSession } from './session-follow'
 
 export { useFollowReplacement } from './session-follow'
 
@@ -186,6 +187,7 @@ function usePending(id: string) {
  */
 export function useSessionWrites(id: string, transcriptEnd = 0) {
   const { t } = useLingui()
+  const follow = useNavigateToSession()
   // where the transcript ended when a message was sent: only user lines
   // after it can be that message (an earlier identical "继续" is not)
   const endRef = useRef(transcriptEnd)
@@ -214,6 +216,17 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
       patch(target, { sending: false, retryIn: 0 })
     }
   }
+  const followReply = (target: string, reply: unknown) => {
+    if (
+      reply &&
+      typeof reply === 'object' &&
+      'session_id' in reply &&
+      typeof reply.session_id === 'string' &&
+      reply.session_id !== target
+    ) {
+      follow(target, reply.session_id)
+    }
+  }
   /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c), or
    * session.restart (重启会话 / 新开会话) */
   const run = (
@@ -225,7 +238,13 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
     return write(target, async () => {
       trace('web-write', { id: target, op_id, action, stage: 'requested' })
       try {
-        await hostWrite(action, { id: target, ...args, client_op: op_id })
+        const reply = await hostWrite(action, {
+          id: target,
+          ...args,
+          client_op: op_id,
+        })
+        if (action === 'session.restart' && args.fresh === true)
+          followReply(target, reply)
         void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
         trace('web-write', {
           id: target,
@@ -278,7 +297,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
         stage: 'requested',
       })
       try {
-        await withDeskRetry(
+        const reply = await withDeskRetry(
           () =>
             hostWrite('send', {
               id: target,
@@ -288,6 +307,7 @@ export function useSessionWrites(id: string, transcriptEnd = 0) {
             }),
           (seconds) => patch(target, { retryIn: seconds }),
         )
+        if (command === '/new') followReply(target, reply)
       } catch (error) {
         // refused: the text goes back to the composer with the error
         if (!command) mark()

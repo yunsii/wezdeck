@@ -117,6 +117,7 @@ LOG_KINDS = {
     "research_start", "research_done", "implement_start", "implement_done",
     "worktree_ready", "run_start", "run_end", "error", "queued", "dispatched", "child_joined", "merge",
     "proposal_created", "proposal_approved", "proposal_rejected",
+    "manager_started", "manager_resumed", "manager_parked", "dead_end_recorded",
     "legacy_compat",
 }
 VIA_KINDS = {"created", "claimed", "released", "reply", "challenge", "status", "closed"}
@@ -629,6 +630,16 @@ def cmd_finish_run(argv: list[str]) -> int:
         return 0
     rec = json.loads(p.read_text(encoding="utf-8"))
     record_session(tid, role, rec, worktree)
+    exit_code = rec.get("exit")
+    if isinstance(exit_code, int) and exit_code != 0:
+        try:
+            import dead_ends
+            reason = str(rec.get("error") or f"exit {exit_code}")
+            tried = f"{rec.get('phase') or 'run'} via {rec.get('backend') or 'agent'}"
+            dead_ends.record_dead_end(tid, role=role, source_id=run_id, tried=tried, reason=reason)
+            write_events(tid, [{"kind": "dead_end_recorded", "role": role, "run": run_id, "reason": reason}], run=run_id)
+        except Exception:
+            pass
     t = rec.get("tokens") or {}
     out = {
         "ok": True, "run": run_id, "exit": rec.get("exit"), "backend": rec.get("backend"),

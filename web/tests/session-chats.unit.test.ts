@@ -405,4 +405,29 @@ describe('unreadChatCount', () => {
     ]
     expect(unreadChatCount(rows)).toBe(2)
   })
+
+  it('omits ticket manager sessions from both chat groups and unread counts', () => {
+    const rows = [
+      card({
+        id: 'regular',
+        status: 'waiting',
+        waiting_kind: 'ask',
+        worktree: '/r/a/.worktrees/ux',
+      }),
+      card({
+        id: 'mgr-1',
+        status: 'waiting',
+        waiting_kind: 'ask',
+        worktree: '/home/u/.agent/tickets/workspaces/req-1',
+        cwd: '/home/u/.agent/tickets/workspaces/req-1',
+        ticket_id: 'req-1',
+      }),
+    ]
+    const groups = buildChatGroups(rows)
+    expect(groups).toHaveLength(1)
+    expect(groups[0].chats.flatMap((c) => c.sessions.map((s) => s.id))).toEqual(
+      ['regular'],
+    )
+    expect(unreadChatCount(rows)).toBe(1)
+  })
 })

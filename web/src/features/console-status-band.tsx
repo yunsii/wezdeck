@@ -1,21 +1,10 @@
-// Top desktop status band for the console shell (local Runtime health,
-// WakaTime and browser slot, or remote connection badge).
+// Desktop diagnostics strip for the console shell (local Runtime health,
+// WakaTime and browser slot).
 import { useLingui } from '@lingui/react/macro'
 
 import { runtimeQuery, useRuntimeData } from './console-data'
-import { StatusPill, formatDuration, formatTime } from './console-shared'
-import { RemoteBadge } from './remote-badge'
+import { formatDuration, formatTime } from './console-shared'
 import { RECENT_START_MS } from './runtime-restart'
-
-export function RemoteBand() {
-  const { t } = useLingui()
-  return (
-    <div className="flex h-full flex-nowrap items-center gap-x-3 overflow-hidden px-3 text-meta whitespace-nowrap">
-      <span className="text-brand-label">{t`Remote access`}</span>
-      <RemoteBadge className="min-h-5 bg-transparent px-0" />
-    </div>
-  )
-}
 
 /**
  * The browser slot, by its backend (docs/browser-debug.md): ego → whether Ego
@@ -76,13 +65,9 @@ function WakatimeStatus() {
 
 export function StatusBand() {
   const { t } = useLingui()
-  const { data, connected, loading } = useRuntimeData()
+  const { data, connected } = useRuntimeData()
   return (
     <div className="flex h-full flex-nowrap items-center gap-x-4 overflow-hidden px-3 text-meta whitespace-nowrap">
-      <StatusPill
-        compact
-        status={loading ? 'loading' : connected ? 'ready' : 'offline'}
-      />
       <span className="text-brand-label">
         {t`Last sample`}{' '}
         <strong className="font-mono font-medium text-brand-text">

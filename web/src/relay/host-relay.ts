@@ -16,10 +16,12 @@
 // frames are flushed straight to it so active browser actions never fail.
 import { DurableObject } from 'cloudflare:workers'
 import { logRelayEvent, tokenTag } from './auth'
+import { dispatchPushEmit, handlePushHttp } from './host-push'
+import type { PushEnv } from './host-push'
 
 export { relayFetch } from './relay-fetch'
 
-export interface RelayEnv {
+export interface RelayEnv extends PushEnv {
   HOST_RELAY: DurableObjectNamespace<HostRelay>
   RELAY_HOST_TOKEN: string
   RELAY_CLIENT_TOKEN: string
@@ -40,6 +42,9 @@ type ClientAttachment = {
   cid: string
   tag: string
   connectedAt?: number
+  deviceId?: string
+  visible?: boolean
+  path?: string
 }
 
 type Attachment = HostAttachment | ClientAttachment
@@ -162,6 +167,10 @@ export class HostRelay extends DurableObject<RelayEnv> {
   async fetch(request: Request): Promise<Response> {
     const role = request.headers.get('x-relay-role')
     if (request.headers.get('upgrade') !== 'websocket') {
+      const url = new URL(request.url)
+      if (url.pathname.startsWith('/push/')) {
+        return handlePushHttp(request, this.ctx.storage, this.env)
+      }
       return Response.json(await this.presence())
     }
     await this.evictRotatedClients()
@@ -241,6 +250,27 @@ export class HostRelay extends DurableObject<RelayEnv> {
     }
     if (meta?.role === 'host') {
       if (frame.t === 'hello') return
+      if (frame.t === 'push.emit') {
+        const focusedByDevice = new Map<string, Set<string>>()
+        for (const clientWs of this.openClients()) {
+          const cm = readAttachment(clientWs)
+          if (cm?.role === 'client' && cm.visible && cm.deviceId && cm.path) {
+            let set = focusedByDevice.get(cm.deviceId)
+            if (!set) {
+              set = new Set<string>()
+              focusedByDevice.set(cm.deviceId, set)
+            }
+            set.add(cm.path)
+          }
+        }
+        await dispatchPushEmit(
+          frame,
+          this.ctx.storage,
+          this.env,
+          focusedByDevice,
+        )
+        return
+      }
       const cid = typeof frame.cid === 'string' ? frame.cid : ''
       const target = this.ctx.getWebSockets(cid).find(isOpenSocket)
       if (!target) return
@@ -256,6 +286,22 @@ export class HostRelay extends DurableObject<RelayEnv> {
         // already closing/closed
       }
       this.sendToHost({ t: 'bye', cid: meta.cid }, 'client_rotated')
+      return
+    }
+    if (frame.t === 'focus') {
+      try {
+        ws.serializeAttachment({
+          ...meta,
+          deviceId:
+            typeof frame.device_id === 'string'
+              ? frame.device_id.slice(0, 128)
+              : meta.deviceId,
+          visible: frame.visible === true,
+          path: typeof frame.path === 'string' ? frame.path.slice(0, 200) : '',
+        } satisfies ClientAttachment)
+      } catch {
+        // ignore attachment update failure
+      }
       return
     }
     if (!['rpc', 'sig', 'ping'].includes(String(frame.t))) return

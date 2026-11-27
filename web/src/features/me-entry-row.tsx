@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import {
   AppWindow,
+  Bell,
   Bot,
   ChartNoAxesCombined,
   ChevronRight,
@@ -21,6 +22,7 @@ import type { MePage } from './console-me'
 const ICONS: Record<MePage, LucideIcon> = {
   agents: Bot,
   autotitle: Sparkles,
+  notifications: Bell,
   connection: Wifi,
   writing: ShieldCheck,
   usage: ChartNoAxesCombined,

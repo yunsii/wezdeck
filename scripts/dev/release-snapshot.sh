@@ -7,16 +7,21 @@ release_snapshot_prepare() {
   BATCH_TREE="$STATE/release/deploy-source"
   mkdir -p "$STATE/release" || return 1
   common_dir="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)" || return 1
+  # Reap orphaned temp clones from interrupted runs (safe under deploy.lock).
+  rm -rf "$STATE/release"/.deploy-source.* 2>/dev/null || true
   if [[ -e "$BATCH_TREE" && ! -d "$BATCH_TREE/.git" ]]; then
     echo "release: snapshot path exists but is not a Git checkout" >&2
     return 1
   fi
   if [[ ! -d "$BATCH_TREE/.git" ]]; then
     temporary="$(mktemp -d "$STATE/release/.deploy-source.XXXXXX")" || return 1
-    git clone -q --shared --no-checkout "$REPO" "$temporary" || return 1
-    printf '%s\n' "$common_dir" >"$temporary/.release-snapshot"
-    chmod 600 "$temporary/.release-snapshot"
-    mv "$temporary" "$BATCH_TREE" || return 1
+    if ! git clone -q --shared --no-checkout "$REPO" "$temporary" ||
+       ! printf '%s\n' "$common_dir" >"$temporary/.release-snapshot" ||
+       ! chmod 600 "$temporary/.release-snapshot" ||
+       ! mv "$temporary" "$BATCH_TREE"; then
+      rm -rf "$temporary"
+      return 1
+    fi
     created=1
   fi
   if [[ "$(cat "$BATCH_TREE/.release-snapshot" 2>/dev/null)" != "$common_dir" ]]; then

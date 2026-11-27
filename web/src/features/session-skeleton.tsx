@@ -17,7 +17,7 @@ export function SessionListSkeleton() {
         role="status"
         aria-label={t`Loading…`}
         data-testid="session-skeleton"
-        className="animate-pulse bg-brand-surface motion-reduce:animate-none"
+        className="bg-brand-surface"
       >
         <div className="border-b border-brand-edge bg-brand-deck px-3 py-2">
           <div className="h-3 w-24 rounded-full bg-brand-edge" />

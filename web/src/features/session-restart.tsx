@@ -154,12 +154,19 @@ export function RestartActions({
         type="button"
         disabled={disabled}
         data-restart="resume"
-        title={t`Respawn the pane; the agent resumes this conversation (F5)`}
+        aria-keyshortcuts="Alt+R Alt+F5"
+        title={t`Restart the agent in this pane (Alt+R or Alt+F5 on web, F5 at the desk)`}
         onClick={() => setAsking('resume')}
         className={action}
       >
         <RotateCcw size={14} aria-hidden />
         {t`Restart session`}
+        <kbd
+          aria-hidden
+          className="ml-auto hidden shrink-0 font-mono text-meta text-brand-label md:inline"
+        >
+          Alt+R
+        </kbd>
       </Button>
     </div>
   )

@@ -167,6 +167,7 @@ func (t *transcript) feedAgy(raw []byte) {
 		if text := strings.TrimSpace(row.Content); text != "" {
 			t.messages = append(t.messages, chatMessage{Role: "assistant", Text: clip(text, 8000), TS: row.CreatedAt})
 		}
+		var artifacts []chatMessage
 		for _, call := range row.ToolCalls {
 			args, err := json.Marshal(call.Args)
 			if err == nil {
@@ -175,6 +176,12 @@ func (t *transcript) feedAgy(raw []byte) {
 				t.messages[idx].Pending = true
 				t.agyPending = append(t.agyPending, idx)
 			}
+			if art, ok := agyArtifactMessage(call.Name, call.Args, row.CreatedAt); ok {
+				artifacts = append(artifacts, art)
+			}
+		}
+		if len(artifacts) > 0 {
+			t.messages = append(t.messages, artifacts...)
 		}
 		if row.Model != "" {
 			t.usage.Model = row.Model
@@ -198,6 +205,30 @@ func (t *transcript) feedAgy(raw []byte) {
 			}
 		}
 	}
+}
+
+func agyArtifactMessage(name string, input map[string]any, ts string) (chatMessage, bool) {
+	switch name {
+	case "write_file", "write_to_file", "edit_file", "replace_file_content", "multi_replace_file_content":
+	default:
+		return chatMessage{}, false
+	}
+	meta, ok := input["ArtifactMetadata"].(map[string]any)
+	if !ok || meta["UserFacing"] != true {
+		return chatMessage{}, false
+	}
+	path := toolFile(input)
+	if path == "" {
+		return chatMessage{}, false
+	}
+	return chatMessage{
+		Role: "system",
+		Kind: "artifact",
+		Text: filepath.Base(path),
+		Body: clip(inputString(meta, "Summary"), 600),
+		File: path,
+		TS:   ts,
+	}, true
 }
 
 func agyToolSummary(name string, input map[string]any) string {

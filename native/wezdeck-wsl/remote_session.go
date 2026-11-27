@@ -399,7 +399,7 @@ func listSessionsFor(includeArchived bool) (any, error) {
 			TimeSource:  "attention",
 			RunningKind: e.RunningKind, RestartPending: e.RestartPending, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
-			AgentProfile: profile}
+			AgentProfile: profile, TicketID: ticketIDForSession(e, cwd)}
 		if family := paneAgentFamily(e, cmd, profile); family != "" {
 			card.Agent = family
 		}

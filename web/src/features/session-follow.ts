@@ -7,7 +7,7 @@
 // auto-navigate back to it. Mutual cleared_to / replaced_by (A→B and B→A)
 // used to bounce the URL forever; toast dedupe alone still called navigate.
 import { useLingui } from '@lingui/react/macro'
-import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 
@@ -54,12 +54,14 @@ export function sessionIdFromPath(path: string) {
   return /\/console\/sessions\/([^/]+)\/?$/.exec(path)?.[1]
 }
 
-function useNavigateToSession() {
+export function useNavigateToSession() {
   const { t } = useLingui()
   const navigate = useNavigate()
+  const router = useRouter()
   const { locale } = useLocale()
   return useCallback(
     (from: string, to: string) => {
+      if (sessionIdFromPath(router.state.location.pathname) !== from) return
       if (!canFollowSession(from, to)) {
         trace('session-follow', {
           id: to,
@@ -84,7 +86,7 @@ function useNavigateToSession() {
         replace: true,
       })
     },
-    [navigate, locale, t],
+    [navigate, router, locale, t],
   )
 }
 

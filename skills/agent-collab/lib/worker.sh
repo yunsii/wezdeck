@@ -330,6 +330,11 @@ ticket_worker_prepare_prompt() {
 
   view="$(ticket_worker_phase_view "$ticket_id" "$phase")" \
     || ticket_die "failed to render phase view ($phase) for $ticket_id" 2
+  local dead_ends_text=""
+  dead_ends_text="$(python3 "$(ticket_tool_root)/lib/dead_ends.py" read "$ticket_id" 2>/dev/null || true)"
+  if [[ -n "$dead_ends_text" ]]; then
+    view="$(printf '%s\n\n---\n\n%s' "$dead_ends_text" "$view")"
+  fi
   printf '%s' "$view" >"$root/_data/${ticket_id}/ticket-view-${phase}.md"
 
   local_result=""

@@ -84,7 +84,7 @@ export function SplitColumn({
       ref={asideRef}
       aria-label={label}
       className={cn(
-        'vt-split-list flex h-full min-h-0 w-full flex-col [--split-pad:var(--page-x)]',
+        'vt-split-list flex h-full min-h-0 w-full flex-col contain-strict [--split-pad:var(--page-x)]',
         className,
       )}
     >

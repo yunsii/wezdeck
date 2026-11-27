@@ -26,6 +26,8 @@ export interface RelayFetchEnv<TId = unknown> {
   /** read-only Cloudflare analytics for /relay/usage (optional) */
   CF_ACCOUNT_ID?: string
   CF_ANALYTICS_TOKEN?: string
+  /** Web Push VAPID public key (base64url 65-byte EC point, optional) */
+  VAPID_PUBLIC_KEY?: string
 }
 
 /**
@@ -88,6 +90,52 @@ export async function relayFetch<TId = unknown>(
     const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
     const presence = await stub.fetch('https://relay/presence')
     return new Response(presence.body, {
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      },
+    })
+  }
+
+  if (url.pathname.startsWith('/relay/push/')) {
+    if (!hostAuthorized(auth, env.RELAY_CLIENT_TOKEN)) {
+      logRelayEvent('auth_failed', {
+        role: 'push',
+        via: 'http',
+        ...(await tokenFacts(bearerToken(auth))),
+      })
+      return new Response('unauthorized', {
+        status: 401,
+        headers: { 'cache-control': 'no-store' },
+      })
+    }
+    if (url.pathname === '/relay/push/config' && request.method === 'GET') {
+      const publicKey = env.VAPID_PUBLIC_KEY?.trim() ?? ''
+      return Response.json(
+        { enabled: Boolean(publicKey), vapid_public_key: publicKey },
+        { headers: { 'cache-control': 'no-store' } },
+      )
+    }
+    const action = url.pathname.slice('/relay/push/'.length)
+    if (
+      !['status', 'subscribe', 'unsubscribe', 'prefs', 'test'].includes(action)
+    ) {
+      return new Response('not found', { status: 404 })
+    }
+    const stub = env.HOST_RELAY.get(env.HOST_RELAY.idFromName(room))
+    const targetUrl = new URL(`https://relay/push/${action}${url.search}`)
+    const forward = new Request(targetUrl.toString(), {
+      method: request.method,
+      headers: {
+        'content-type':
+          request.headers.get('content-type') ?? 'application/json',
+        'user-agent': request.headers.get('user-agent') ?? '',
+      },
+      body: request.method === 'GET' ? undefined : request.body,
+    })
+    const res = await stub.fetch(forward)
+    return new Response(res.body, {
+      status: res.status,
       headers: {
         'content-type': 'application/json',
         'cache-control': 'no-store',

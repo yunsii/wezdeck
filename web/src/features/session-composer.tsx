@@ -2,6 +2,7 @@
 // session-specific slash commands, skill completion, diagnostics registration,
 // and the ＋ tools sheet (images, commands, skills, sent history, clear).
 import { useLingui } from '@lingui/react/macro'
+import { Link } from '@tanstack/react-router'
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -123,7 +124,25 @@ export function ComposerBox({
   useSpaceToFocus()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing) return
+      if (event.defaultPrevented || event.isComposing || event.repeat) return
+      if (
+        event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        (event.key === 'F5' ||
+          event.code === 'KeyR' ||
+          event.key.toLowerCase() === 'r')
+      ) {
+        if (
+          keysDisabled ||
+          document.querySelector('[role=dialog], [role=alertdialog]')
+        )
+          return
+        event.preventDefault()
+        void onRun('session.restart', { fresh: false })
+        return
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       if (event.code !== 'KeyN') return
       event.preventDefault()
@@ -132,8 +151,7 @@ export function ComposerBox({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onNewConversation, onRun])
-
+  }, [keysDisabled, onNewConversation, onRun])
   return (
     <>
       {commands ? (
@@ -179,6 +197,67 @@ export function ComposerBox({
           />
         }
       />
+    </>
+  )
+}
+
+export function SessionComposerNotice({
+  stale,
+  staleAt,
+  staleMessage,
+  retryIn,
+  error,
+  blocked,
+  readOnly,
+  approved,
+  locale,
+}: {
+  stale: boolean
+  staleAt: string
+  staleMessage?: string
+  retryIn: number
+  error: string
+  blocked: string
+  readOnly: boolean
+  approved: boolean
+  locale: 'en' | 'zh'
+}) {
+  const { t } = useLingui()
+  return (
+    <>
+      {stale ? (
+        <p
+          role="status"
+          data-testid="session-stale"
+          className="rounded-xl bg-brand-waiting/10 px-3 py-1.5 text-meta text-brand-text"
+        >
+          {t`Can't get the latest from the host, showing ${staleAt}:`}{' '}
+          {staleMessage ?? t`this device is offline`}
+        </p>
+      ) : null}
+      {retryIn && !readOnly ? (
+        <p role="status" className="text-meta text-brand-muted">
+          {t`Someone just used the desk; sending in ${retryIn}s…`}
+        </p>
+      ) : error ? (
+        <ErrorLine message={error} />
+      ) : blocked && !readOnly ? (
+        <p className="text-meta text-brand-muted">
+          {blocked}{' '}
+          {!approved ? (
+            <Link
+              to="/{-$locale}/console/me/$page"
+              params={{
+                locale: locale === 'en' ? undefined : locale,
+                page: 'writing',
+              }}
+              className="text-brand-running"
+            >
+              {t`Open settings`}
+            </Link>
+          ) : null}
+        </p>
+      ) : null}
     </>
   )
 }

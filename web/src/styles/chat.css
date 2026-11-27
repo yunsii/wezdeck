@@ -1,13 +1,17 @@
 /* Chat and lights: the running LED, arriving messages, the jump flash. */
 
-/* The one ambient motion: a running light breathes. */
+/* The one ambient motion: a running light breathes via paint-only SVG
+   fill-opacity (never CSS `opacity` on the svg). Animating CSS `opacity`
+   promotes every running LED into an ActiveOpacityAnimation GPU layer, which
+   slices the session list into multi-row Overlap squashing layers and promotes
+   the entire thread scroller when switching from idle → running (2026-11-27). */
 @keyframes led-breathe {
   50% {
-    opacity: 0.45;
+    fill-opacity: 0.45;
   }
 }
 
-.led-running {
+.led-running circle {
   animation: led-breathe 2.4s ease-in-out infinite;
 }
 
@@ -72,7 +76,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .led-running,
+  .led-running circle,
   .chat-in {
     animation: none;
   }

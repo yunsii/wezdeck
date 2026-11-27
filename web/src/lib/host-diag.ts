@@ -104,6 +104,9 @@ const pageId = () =>
   ).join(''))
 
 const scroller = () =>
+  document.querySelector<HTMLElement>(
+    '[data-testid=session-thread-scroll].overflow-y-auto',
+  ) ??
   document.querySelector<HTMLElement>('.vt-split-pane.overflow-y-auto') ??
   document.getElementById('console-main')?.parentElement ??
   null

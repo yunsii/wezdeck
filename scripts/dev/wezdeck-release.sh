@@ -233,11 +233,14 @@ land_stage() {
     else
       git merge --ff-only "$remote_head" >/dev/null || exit 1
     fi
-    if ! (cd web && corepack pnpm run -s i18n:check >/dev/null); then
-      echo "release: i18n catalogs are missing or out of sync on $(git rev-parse --short HEAD)" >&2
-      exit 1
-    fi
     landed_sha="$(git rev-parse HEAD)" || exit 1
+    if [[ "$remote_head" != "$landed_sha" ]] &&
+       [[ -n "$(git diff --name-only "$remote_head..$landed_sha" -- web/src/ web/lingui.config.ts)" ]]; then
+      if ! (cd web && corepack pnpm run -s i18n:check >/dev/null); then
+        echo "release: i18n catalogs are missing or out of sync on $(git rev-parse --short HEAD)" >&2
+        exit 1
+      fi
+    fi
     local source="${WEZDECK_RELEASE_LAND_SOURCE:-}"
     if [[ -n "$land_commit" && -n "$source" && $wait_deploy == 1 ]] &&
        { wanted relay || wanted web; }; then
@@ -425,7 +428,7 @@ job_web() {
   fi
   want="$("$BATCH_TREE/scripts/dev/source-fingerprint.sh" web)" || return 1
   [[ -n "$want" ]] || return 1
-  deployed="$(deployed_build)"
+  deployed="${live_web:-$(deployed_build)}"
   if [[ $force == 0 && "$deployed" == "$want" ]]; then
     echo "skip: $SITE already serves $want"
     return 0

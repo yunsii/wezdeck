@@ -184,6 +184,26 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'A transcript image: the original in chunks (the page makes the thumbnail)',
       ),
       c(
+        'session.file',
+        '读取会话作用域内的方案文档、Artifact 或仓库源码（脱敏、限大小，支持行号定位）',
+        'Read a plan doc, artifact, or checkout file within the session scope (redacted, bounded, with line targeting)',
+      ),
+      c(
+        'collab.run.chat',
+        '把工单无头运行（子单 / 独立工人 / 调研）解析为统一 ChatThread 对话流（优先原生转录，回退 stream.jsonl）',
+        'Parse a headless ticket run into unified ChatThread messages (native transcript first, stream.jsonl fallback)',
+      ),
+      c(
+        'collab.diff',
+        '读取工单或父单集成工作树相对基线的净变更 Diff（限文件数与大小、脱敏），供全屏 Diff 抽屉审阅',
+        'Read bounded, redacted net git diffs for ticket or integration worktrees against their base commit',
+      ),
+      c(
+        'collab.manager.chat',
+        '读取工单顶层管理会话的对话流（支持 live 实时与 parked 终态磁盘转录只读回放）',
+        'Read a ticket Manager Session conversation stream (both live panes and parked disk transcripts)',
+      ),
+      c(
         'upload.get',
         '已上传图片的原图分块',
         'A chunk of an uploaded image’s original',
@@ -356,6 +376,21 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       ),
       c('ticket.new', '开一张跨仓库工单', 'File a cross-repo ticket'),
       c(
+        'ticket.manager.start',
+        '启动或唤醒工单的仓中立顶层管理会话（wezterm_collab_tickets）',
+        'Start or resume a ticket’s repo-neutral top-level Manager Session',
+      ),
+      c(
+        'ticket.manager.park',
+        '安全休眠闲置的工单管理会话以回收内存（保留完整对话历史）',
+        'Safely park an idle ticket Manager Session to free memory while keeping history',
+      ),
+      c(
+        'ticket.manager.send',
+        '向工单管理会话发消息（若处于 parked 状态则自动唤醒再投递）',
+        'Send a message to a ticket Manager Session (auto-resuming when parked)',
+      ),
+      c(
         'host.warp.set',
         '切换 One Client 并回读状态',
         'Set and verify One Client status',
@@ -449,55 +484,5 @@ export const capabilityGroups: Array<CapabilityGroup> = [
   },
 ]
 
-export type Decision = { title: Text; body: Text }
-
-export const decisions: Array<Decision> = [
-  {
-    title: { zh: '直连优先，中转兜底', en: 'Direct first, relay as fallback' },
-    body: {
-      zh: 'WebRTC 直连延迟低、不经过 Cloudflare；但有的网络打不通，所以 WebSocket 中转一直在，切换对界面透明。',
-      en: 'A direct WebRTC link is faster and keeps traffic off Cloudflare, but some networks block it, so the WebSocket relay is always there and the switch is invisible.',
-    },
-  },
-  {
-    title: {
-      zh: '远程写入要签名，本机写入只认正式控制台',
-      en: 'Remote writes are signed; local writes only from the production console',
-    },
-    body: {
-      zh: '配对令牌只证明「能读」。能往终端里打字的权限要绑定到一台被主机批准过的设备。本机浏览器已经在主机上，签名不增加安全，所以不签名；但本机的「来源」不等于可信——localhost 上任何开发服务器都能发请求，因此本机写入只认正式站点来源，并校验 Host 防 DNS rebinding。',
-      en: 'The pairing token only proves the right to read. Typing into a terminal is bound to a device the host approved. A browser on the host gains nothing from a signature, so it does not sign; but being on the host is not trust — any dev server on localhost can send requests — so local writes accept the production origin only, and the Host is checked against DNS rebinding.',
-    },
-  },
-  {
-    title: {
-      zh: '增量同步，而不是每次全量',
-      en: 'Incremental sync, not full reloads',
-    },
-    body: {
-      zh: '长对话动辄几百 KB。客户端缓存 + since 增量，让空闲轮询只有一两 KB，打开会话不再等。',
-      en: 'Long conversations run to hundreds of KB. A client cache plus `since` keeps an idle poll to a kilobyte or two and makes opening instant.',
-    },
-  },
-  {
-    title: { zh: '一个窗格一个写者', en: 'One writer per pane' },
-    body: {
-      zh: '网页端不另起 Agent 进程，只往会话已有的窗格里粘贴。终端有人在打字时，网页端等一下再发，不会把两边的输入搅在一起。',
-      en: 'The web console never starts a second agent process; it pastes into the pane the session already has. While someone types at the desk, it waits rather than mixing the two.',
-    },
-  },
-  {
-    title: { zh: '浏览器槽二选一', en: 'One browser in the slot' },
-    body: {
-      zh: 'Ego 与调试 Chrome 都给 Agent 用，同时开着既费内存又让 Agent 不知道该用哪个。切换后端时，另一边会被停掉。',
-      en: 'Ego and the debug Chrome both serve agents; running both wastes memory and leaves agents guessing. Switching the backend stops the other one.',
-    },
-  },
-  {
-    title: { zh: '有变化才拉工单列表', en: 'Ticket lists refetch on change' },
-    body: {
-      zh: '先拉一份很小的健康摘要（事件序号、计数、运行中），只有它变了才重新拉列表。',
-      en: 'A small health summary (event head, counts, runs) is fetched first; the list is fetched again only when it changes.',
-    },
-  },
-]
+export { decisions } from './decisions'
+export type { Decision } from './decisions'

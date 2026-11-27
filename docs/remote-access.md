@@ -414,19 +414,23 @@ scripts/dev/wezdeck-release.sh rollback           # emergency rollback of Cloudf
 primary `master`. The pipeline splits into three stages:
 
 1. **Fast land (`wezdeck-land.lock`, ~2–5 s)**: merges onto primary `master`,
-   checks i18n catalogs on the merged commit, pushes `origin/master`, records
+   checks i18n catalogs when the landed diff touches `web/src/` or
+   `web/lingui.config.ts`, pushes `origin/master`, records
    the commit in `~/.local/state/wezdeck/release/state.json`, and releases the
    land lock immediately so concurrent worktrees never stall behind builds or
    tests.
 2. **Singleton coalesced deploy (`wezdeck-deploy.lock`)**: after a short
    debounce window (`WEZDECK_RELEASE_COALESCE_S=5`, `--now` to skip), fixes the
-   batch to an isolated local clone at its target commit, builds changed
+   batch to an isolated local clone at its target commit (reaping orphaned temp
+   clones), builds changed
    artifacts there, and runs the mandatory **L0 core availability smoke gate**
    (`scripts/dev/release-smoke-gate.sh` + `web/tests/smoke-core.cdp.test.ts` on
    an isolated `:3019` stack: connect, authorize, list/open session, send
    message, answer prompt — aborting before deploy if anything fails), deploys
    only changed `relay`/`web`, verifies the public site with a live canary
-   probe (auto-running `wrangler rollback --yes` on failure), and notifies
+   probe (`build.json` up to 20 s, HTML + entry JS up to 6×, `/relay/health`
+   up to 5× reading the on-disk token file first — auto-running
+   `wrangler rollback --yes` only on real failure), and notifies
    connected browsers non-disruptively via `wezdeck-wsl diag --notify-update`
    (shows a sticky "New version available · Reload" toast and waits for a safe
    idle window instead of interrupting active users; pass `--force-reload` for

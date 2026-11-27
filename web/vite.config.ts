@@ -45,8 +45,13 @@ function pwaBuildInfo(): Plugin {
     apply: 'build',
     writeBundle(options) {
       if (this.environment.name !== 'client' || !options.dir) return
+      const lazyMermaid =
+        /^(?:mermaid|elk|cytoscape|katex|cose-bilkent|dagre|graphlib|swimlanes|treemap|mindmap|timeline|sankey|quadrant|journey|gantt|pie|gitGraph|erDiagram|classDiagram|stateDiagram|sequenceDiagram|flowDiagram|c4Diagram|requirementDiagram|architectureDiagram|usecaseDiagram|block|kanban|packet|radar|xyChart|diagram-|chunk-)[.-]/i
       const assets = readdirSync(join(options.dir, 'assets'))
-        .filter((name) => /\.(js|css|png|svg|webp)$/.test(name))
+        .filter(
+          (name) =>
+            /\.(js|css|png|svg|webp)$/.test(name) && !lazyMermaid.test(name),
+        )
         .map((name) => `/assets/${name}`)
       // fail the build rather than ship an update check that never settles
       const baked = assets.some((url) =>

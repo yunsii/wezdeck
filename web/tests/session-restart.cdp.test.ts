@@ -60,9 +60,27 @@ async function checkDesktopShortcuts(page: Page) {
   expect(await page.locator('[data-restart=fresh] kbd').innerText()).toContain(
     'Ctrl/⌘+Shift+N',
   )
+  expect(await page.locator('[data-restart=resume] kbd').innerText()).toBe(
+    'Alt+R',
+  )
   expect(
     await page.locator('button[aria-label="发送"]').getAttribute('title'),
   ).toContain('Ctrl/⌘+Enter')
+}
+
+async function checkWebRestartKey(
+  page: Page,
+  calls: () => Array<string>,
+  pane: string,
+) {
+  const sheet = page.getByTestId('session-actions-sheet')
+  await sheet.getByRole('button', { name: '关闭' }).click()
+  await sheet.waitFor({ state: 'hidden' })
+  const url = page.url()
+  await page.keyboard.press('Alt+R')
+  await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
+  expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
+  expect(page.url()).toBe(url)
 }
 
 describe.runIf(attention && devicesFile && stack)(
@@ -254,11 +272,14 @@ describe.runIf(attention && devicesFile && stack)(
       await page.waitForTimeout(500)
       expect(calls()).toEqual([])
 
+      await checkWebRestartKey(page, calls, pane)
+
       // 重启会话: the pane, its agent, no --fresh
+      await openKeys()
       await page.locator('[data-restart=resume]').click()
       await page.locator('[data-restart-confirm]').click()
-      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(1)
-      expect(calls()[0]).toBe(`--pane ${pane} --agent claude`)
+      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(2)
+      expect(calls()[1]).toBe(`--pane ${pane} --agent claude`)
       await page.getByText('窗格正在重启').waitFor({ timeout: 5_000 })
 
       // 空白切换: same target-agent confirmation, no note or brief. The
@@ -299,14 +320,17 @@ describe.runIf(attention && devicesFile && stack)(
         { timeout: 20_000 },
       )
 
-      // 新开会话: --fresh; the host archives the old entry cleared_to the
-      // new conversation and the page goes there
+      // The restart reply gives the destination before either read sees
+      // cleared_to. Follow the reply without waiting for a poll.
       await page.goto(`${base}/zh/console/sessions/restart-s1`)
       await openKeys()
       await page.locator('[data-restart=fresh]').click()
       await page.locator('[data-restart-confirm]').click()
-      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(2)
-      expect(calls()[1]).toBe(`--pane ${pane} --agent claude --fresh`)
+      await expect.poll(calls, { timeout: 10_000 }).toHaveLength(3)
+      expect(calls()[2]).toBe(`--pane ${pane} --agent claude --fresh`)
+      await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
+        timeout: 5_000,
+      })
       writeFileSync(
         attention,
         JSON.stringify({
@@ -314,9 +338,6 @@ describe.runIf(attention && devicesFile && stack)(
           recent: [{ ...entry(), status: 'idle', cleared_to: NEW_ID }],
         }),
       )
-      await page.waitForURL(`**/console/sessions/${NEW_ID}`, {
-        timeout: 20_000,
-      })
       // Codex / Grok cannot name their own fresh id at startup. The host
       // gives the empty pane a pending id, then follows the first prompt's id.
       const pending = 'pending-00000000-0000-4000-8000-000000000002'

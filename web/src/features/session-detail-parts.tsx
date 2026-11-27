@@ -4,6 +4,7 @@ import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
 import type { RefObject } from 'react'
 
+import { cn } from '#/lib/utils'
 import { ThreadPagingBar } from './chat-controls'
 import { StickyPrompt } from './chat-sticky'
 import { ChatThread } from './chat-thread'
@@ -97,6 +98,7 @@ export function SessionComposerNotices({
 
 export function SessionThreadBody({
   id,
+  wide,
   data,
   detailError,
   messages,
@@ -120,6 +122,7 @@ export function SessionThreadBody({
   onRun,
 }: {
   id: string
+  wide: boolean
   data: Detail | undefined
   detailError: Error | null
   messages: Array<Message>
@@ -147,58 +150,66 @@ export function SessionThreadBody({
 }) {
   return (
     <div
-      className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2"
-      aria-live="polite"
+      data-testid="session-thread-scroll"
+      className={cn(
+        'max-md:contents md:min-h-0 md:min-w-0 md:overflow-x-hidden md:overscroll-contain',
+        wide && 'overflow-y-auto',
+      )}
     >
-      {detailError && !data ? (
-        <p
-          role="status"
-          className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
-        >
-          {String(detailError.message)}
-        </p>
-      ) : null}
-      {messages.length || pending.length ? (
-        <>
-          <StickyPrompt
-            end={end}
-            messages={messages}
-            start={start}
-            following={followPinned}
-          />
-          <ThreadPagingBar
-            total={total}
-            shown={shown}
-            start={start}
-            pagingIn={pagingIn}
-            atCompaction={atCompaction}
-            autoFailed={autoFailed}
-            onLoadEarlier={onLoadManual}
-          />
-          <ChatThread
-            messages={messages}
-            start={start}
-            busy={busy}
-            activity={busy ? activityOf(data) : undefined}
-            {...pendingProps}
-            pending={mergedPending}
-            status={data?.status}
-            statusTs={data?.ts}
-            onBackground={toBackground(data, approved, onRun)}
-            sessionId={id}
-            syncing={syncing}
-          />
-        </>
-      ) : data ? (
-        <EmptySession data={data} />
-      ) : null}
-      <PromptPanels
-        data={data}
-        sending={sending}
-        canWrite={!readOnly && approved}
-        onKey={(key) => onRun('key', { key })}
-      />
-      <div ref={end} />
+      <div
+        className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-end gap-2 md:min-h-full md:px-[var(--page-x)] md:py-3"
+        aria-live="polite"
+      >
+        {detailError && !data ? (
+          <p
+            role="status"
+            className="rounded-xl bg-brand-waiting/10 px-3 py-2 text-body"
+          >
+            {String(detailError.message)}
+          </p>
+        ) : null}
+        {messages.length || pending.length ? (
+          <>
+            <StickyPrompt
+              end={end}
+              messages={messages}
+              start={start}
+              following={followPinned}
+            />
+            <ThreadPagingBar
+              total={total}
+              shown={shown}
+              start={start}
+              pagingIn={pagingIn}
+              atCompaction={atCompaction}
+              autoFailed={autoFailed}
+              onLoadEarlier={onLoadManual}
+            />
+            <ChatThread
+              messages={messages}
+              start={start}
+              busy={busy}
+              activity={busy ? activityOf(data) : undefined}
+              {...pendingProps}
+              pending={mergedPending}
+              status={data?.status}
+              statusTs={data?.ts}
+              onBackground={toBackground(data, approved, onRun)}
+              sessionId={id}
+              syncing={syncing}
+            />
+          </>
+        ) : data ? (
+          <EmptySession data={data} />
+        ) : null}
+        <PromptPanels
+          data={data}
+          sending={sending}
+          canWrite={!readOnly && approved}
+          onKey={(key) => onRun('key', { key })}
+        />
+        <div ref={end} />
+      </div>
     </div>
   )
 }

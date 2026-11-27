@@ -13,6 +13,7 @@ import { useLocale } from '#/lib/locale-context'
 import { useGoBack } from '#/lib/go-back'
 import { trace } from '#/lib/client-trace'
 import { forgetOpened } from '#/lib/last-opened'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { useDeviceState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
@@ -21,6 +22,8 @@ import { shouldLandLatestTop } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
 import { useWhileShown } from './session-while-shown'
 import { settle } from './chat-thread'
+import { HostFileProvider } from './host-file-sheet'
+import { SessionInputUnavailable } from './session-detail-notices'
 import { ComposerBox, useComposer } from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
 import { hasPromptPanel } from './session-elicitation'
@@ -146,15 +149,6 @@ const chatDiag = (
 /** absolute index just past the newest message the page has */
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
-
-function SessionInputUnavailable() {
-  const { t } = useLingui()
-  return (
-    <p role="status" className="text-meta text-brand-label">
-      {t`Web sending is unavailable for this session.`}
-    </p>
-  )
-}
 
 function useComposerBlock(data: Detail | undefined, approved: boolean) {
   const { t } = useLingui()
@@ -296,20 +290,15 @@ export function SessionDetail({ id }: { id: string }) {
   const sentHistory = useSentHistoryControl({
     session: id,
     writable: canSendNow,
-    onFill: (payload) => {
-      if (composer.text.trim() || composer.images.length)
-        composer.appendPayload(payload)
-      else composer.replacePayload(payload)
-    },
+    onFill: (p) =>
+      composer.text.trim() || composer.images.length
+        ? composer.appendPayload(p)
+        : composer.replacePayload(p),
     onReplace: composer.replacePayload,
     onResend: canSendNow
-      ? (payload) => {
-          const count = payload.attachments.length
-          return send({
-            text: payload.text,
-            attachments: payload.attachments,
-            note: count ? t`${count} images` : '',
-          })
+      ? (p) => {
+          const count = p.attachments.length
+          return send({ ...p, note: count ? t`${count} images` : '' })
         }
       : undefined,
   })
@@ -329,113 +318,122 @@ export function SessionDetail({ id }: { id: string }) {
         toast(t`Loaded back into input`)
       }
     : undefined
+  const wide = useIsWidePhoneFirst()
   return (
-    <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3">
-      <SessionHeader
-        id={id}
-        data={data}
-        visibleUsage={visibleUsage}
-        onBack={back}
-        renameDisabled={readOnly || sending || device.state !== 'approved'}
-        canWrite={!readOnly && !sending && device.state === 'approved'}
-        onRun={run}
-        onNewConversation={() =>
-          send({ text: '/new', attachments: [], note: '' })
-        }
-        onTodoUse={!readOnly ? (text) => draftTodo(composer, text) : undefined}
-        onRename={(title) => renameSession(send, title)}
-      />
-
-      <SessionThreadBody
-        id={id}
-        data={data}
-        detailError={detail.isError ? detail.error : null}
-        messages={messages}
-        pending={pending}
-        mergedPending={mergedPending}
-        start={start}
-        total={total}
-        shown={shown}
-        busy={busy}
-        syncing={syncing}
-        readOnly={readOnly}
-        sending={sending}
-        approved={device.state === 'approved'}
-        end={end}
-        followPinned={follow.pinned}
-        pagingIn={pagingIn}
-        atCompaction={atCompaction}
-        autoFailed={paging.autoFailed}
-        onLoadManual={paging.loadManual}
-        pendingProps={writes.pendingProps(canSendNow, editPending)}
-        onRun={run}
-      />
-
-      <form
-        className="sticky bottom-0 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:-ml-2.5 md:mr-0 md:mb-0"
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (readOnly) return
-          setError('')
-          if (composer.ready) follow.jump()
-          composer
-            .submit()
-            .catch((e: unknown) => setError((e as Error).message))
-        }}
-      >
-        <JumpLatest
-          pinned={follow.pinned}
-          unread={follow.unread}
-          onJump={follow.jump}
-        />
-        <OutboxNotice
-          unconfirmed={unconfirmedCount}
-          failed={failedCount}
-          onOpen={() => sentHistory.openSheet(true)}
-        />
-        <SessionComposerNotices
-          stale={failed >= STALE_AFTER || detail.fetchStatus === 'paused'}
-          staleAt={staleAt}
-          detailError={detail.error}
+    <HostFileProvider
+      sessionId={id}
+      onQuote={!readOnly ? (text) => draftTodo(composer, text) : undefined}
+    >
+      <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto] gap-3 md:h-full md:min-h-0 md:gap-0 md:overflow-hidden">
+        <SessionHeader
+          id={id}
           data={data}
-          retryIn={retryIn}
-          readOnly={readOnly}
-          error={error}
-          blocked={blocked}
-          deviceState={device.state}
-          locale={locale}
+          visibleUsage={visibleUsage}
+          onBack={back}
+          renameDisabled={readOnly || sending || device.state !== 'approved'}
+          canWrite={!readOnly && !sending && device.state === 'approved'}
+          onRun={run}
+          onNewConversation={() =>
+            send({ text: '/new', attachments: [], note: '' })
+          }
+          onTodoUse={
+            !readOnly ? (text) => draftTodo(composer, text) : undefined
+          }
+          onRename={(title) => renameSession(send, title)}
         />
-        {readOnly ? (
-          <SessionInputUnavailable />
-        ) : (
-          <ComposerBox
-            composer={composer}
-            blocked={sending || Boolean(blocked)}
-            keysDisabled={sending || device.state !== 'approved'}
-            writable={device.state === 'approved'}
-            onRun={run}
-            onNewConversation={() =>
-              send({ text: '/new', attachments: [], note: '' })
-            }
-            onOpenSentHistory={() => sentHistory.openSheet(false)}
-            onRecallLatest={sentHistory.recallLatest}
-            unsettledCount={unsettledCount}
-            commands={
-              data?.agent === 'claude' || data?.agent === 'agy'
-                ? {
-                    send: (text) =>
-                      void send({ text, attachments: [], note: '' }),
-                    resume: resume.open,
-                  }
-                : undefined
-            }
-            session={data}
+
+        <SessionThreadBody
+          id={id}
+          wide={wide}
+          data={data}
+          detailError={detail.isError ? detail.error : null}
+          messages={messages}
+          pending={pending}
+          mergedPending={mergedPending}
+          start={start}
+          total={total}
+          shown={shown}
+          busy={busy}
+          syncing={syncing}
+          readOnly={readOnly}
+          sending={sending}
+          approved={device.state === 'approved'}
+          end={end}
+          followPinned={follow.pinned}
+          pagingIn={pagingIn}
+          atCompaction={atCompaction}
+          autoFailed={paging.autoFailed}
+          onLoadManual={paging.loadManual}
+          pendingProps={writes.pendingProps(canSendNow, editPending)}
+          onRun={run}
+        />
+
+        <form
+          className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:px-[var(--page-x)] md:shadow-none"
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (readOnly) return
+            setError('')
+            if (composer.ready) follow.jump()
+            composer
+              .submit()
+              .catch((e: unknown) => setError((e as Error).message))
+          }}
+        >
+          <JumpLatest
+            pinned={follow.pinned}
+            unread={follow.unread}
+            onJump={follow.jump}
           />
-        )}
-        <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
-        {!readOnly && resume.element}
-        {sentHistory.sheet}
-      </form>
-    </div>
+          <OutboxNotice
+            unconfirmed={unconfirmedCount}
+            failed={failedCount}
+            onOpen={() => sentHistory.openSheet(true)}
+          />
+          <SessionComposerNotices
+            stale={failed >= STALE_AFTER || detail.fetchStatus === 'paused'}
+            staleAt={staleAt}
+            detailError={detail.error}
+            data={data}
+            retryIn={retryIn}
+            readOnly={readOnly}
+            error={error}
+            blocked={blocked}
+            deviceState={device.state}
+            locale={locale}
+          />
+          {readOnly ? (
+            <SessionInputUnavailable />
+          ) : (
+            <ComposerBox
+              composer={composer}
+              blocked={sending || Boolean(blocked)}
+              keysDisabled={sending || device.state !== 'approved'}
+              writable={device.state === 'approved'}
+              onRun={run}
+              onNewConversation={() =>
+                send({ text: '/new', attachments: [], note: '' })
+              }
+              onOpenSentHistory={() => sentHistory.openSheet(false)}
+              onRecallLatest={sentHistory.recallLatest}
+              unsettledCount={unsettledCount}
+              commands={
+                data?.agent === 'claude' || data?.agent === 'agy'
+                  ? {
+                      send: (text) =>
+                        void send({ text, attachments: [], note: '' }),
+                      resume: resume.open,
+                    }
+                  : undefined
+              }
+              session={data}
+            />
+          )}
+          <SessionStatusBar data={data} onVisibleUsage={setVisibleUsage} />
+          {!readOnly && resume.element}
+          {sentHistory.sheet}
+        </form>
+      </div>
+    </HostFileProvider>
   )
 }

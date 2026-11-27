@@ -72,6 +72,12 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = updateAutoTitle(args)
 	case "ticket.new":
 		result, err = createTicket(args)
+	case "ticket.manager.start":
+		result, err = startTicketManager(args)
+	case "ticket.manager.park":
+		result, err = parkTicketManager(args)
+	case "ticket.manager.send":
+		result, err = sendTicketManager(args)
 	case "host.warp.set":
 		result, err = setWarp(args)
 	case "worktree.describe":

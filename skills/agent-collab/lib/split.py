@@ -327,6 +327,18 @@ def cmd_reject(argv: list[str]) -> dict[str, Any]:
     prop.update({"status": "rejected", "reason": reason, "decided_at": ticket_fs.now_iso()})
     save(pid, props)
     collab.event(pid, "proposal_rejected", proposal=prop["id"], origin=prop["origin"], reason=reason)
+    try:
+        import dead_ends
+        dead_ends.record_dead_end(
+            pid,
+            role="proposal",
+            source_id=str(prop.get("id") or "proposal"),
+            tried=str(prop.get("summary") or "fanout split proposal"),
+            reason=reason,
+        )
+        collab.event(pid, "dead_end_recorded", role="proposal", proposal=prop["id"], reason=reason)
+    except Exception:
+        pass
     if prop["origin"] == "draft":
         collab.set_status(pid, "rejected", owner="human", phase="plan_rejected")
     elif parked(pid) and not pending(pid):
