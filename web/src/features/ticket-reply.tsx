@@ -7,7 +7,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { hostWrite } from '#/lib/runtime-client'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, SquareTerminal } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -235,76 +235,6 @@ export function TicketReply({
           </kbd>
         </Button>
       </div>
-    </section>
-  )
-}
-
-/**
- * 接管到 tmux: the ticket's agent conversation opens as an ordinary agent in
- * a window of the target repo's tmux session (`ticket attach`), for when a
- * tap is not enough and you want to talk it through. An open ticket is
- * session-claimed, so headless runs stop writing to the same conversation.
- */
-export function TicketAttach({
-  id,
-  sessions,
-  running,
-}: {
-  id: string
-  sessions: Record<string, unknown>
-  running: boolean
-}) {
-  const { t } = useLingui()
-  const client = useQueryClient()
-  const device = useDeviceState()
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const has = Object.values(sessions).some(
-    (s) =>
-      s && typeof s === 'object' && 'id' in s && (s as { id?: unknown }).id,
-  )
-  if (!has) return null
-  const attach = async () => {
-    setBusy(true)
-    setError('')
-    try {
-      const result = (await hostWrite('attach', { id })) as {
-        tmux_session?: string
-        window_name?: string
-      }
-      const windowName = result.window_name ?? ''
-      const tmuxSession = result.tmux_session ?? ''
-      toast(t`Opened in tmux: ${windowName} (${tmuxSession})`)
-      await client.invalidateQueries({ queryKey: ['runtime', 'collab'] })
-      await client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <section data-write className="grid gap-2 rounded-2xl bg-brand-surface p-4">
-      <Button
-        variant="plain"
-        type="button"
-        disabled={busy || running || device.state !== 'approved'}
-        onClick={() => void attach()}
-        className="key-press flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-edge text-body disabled:opacity-40"
-      >
-        <SquareTerminal size={17} aria-hidden />
-        {busy ? t`Opening…` : t`Take over in tmux`}
-      </Button>
-      <p className="text-meta text-brand-muted">
-        {running
-          ? t`A headless run is still going; take over when it finishes.`
-          : t`Resumes this ticket's agent conversation in a window of the target repo's tmux session. Headless runs stop writing to it.`}
-      </p>
-      {error ? (
-        <p role="alert" className="text-meta text-brand-error">
-          {error}
-        </p>
-      ) : null}
     </section>
   )
 }

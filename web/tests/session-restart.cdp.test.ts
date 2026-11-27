@@ -31,6 +31,8 @@ const NEW_ID = '00000000-0000-4000-8000-000000000001'
 
 describe.runIf(attention && devicesFile && stack)(
   'Restart and new conversation',
+  // Restart and handoff cases share one tmux fixture.
+  // eslint-disable-next-line max-lines-per-function
   () => {
     let browser: Browser
     const dir = mkdtempSync(join(tmpdir(), 'wd-restart-'))
@@ -136,6 +138,40 @@ describe.runIf(attention && devicesFile && stack)(
       })
       await openKeys()
       const confirm = page.getByTestId('session-restart-confirm')
+      await page.setViewportSize({ width: 390, height: 844 })
+      const actions = page.getByTestId('session-restart')
+      await expect
+        .poll(() => actions.locator('[data-restart=new]').textContent())
+        .toContain('/new')
+      await expect
+        .poll(() => actions.locator('[data-restart=fresh]').textContent())
+        .toContain('新进程')
+      await expect
+        .poll(() => actions.evaluate((el) => el.scrollWidth <= el.clientWidth))
+        .toBe(true)
+      await expect
+        .poll(() =>
+          actions
+            .locator('button')
+            .evaluateAll((buttons) =>
+              buttons.every(
+                (button) => button.scrollWidth <= button.clientWidth,
+              ),
+            ),
+        )
+        .toBe(true)
+      await actions.locator('[data-restart=new]').click()
+      await confirm.waitFor()
+      expect(await confirm.innerText()).toContain('不重启')
+      await page.locator('[data-restart-cancel]').click()
+      await actions.waitFor()
+      await actions.locator('[data-restart=new]').click()
+      await page.locator('[data-restart-confirm]').click()
+      await expect
+        .poll(() => tmux('capture-pane', '-p', '-t', pane))
+        .toContain('/new')
+      await openKeys()
+      await page.setViewportSize({ width: 1280, height: 800 })
       // 取消 sends nothing and brings the pair back
       await page.locator('[data-restart=resume]').click()
       await confirm.waitFor({ timeout: 5_000 })
@@ -169,6 +205,18 @@ describe.runIf(attention && devicesFile && stack)(
         .getByTestId('session-handoff-mode')
         .getByRole('radio', { name: /空白切换/ })
         .waitFor()
+      expect(
+        await page
+          .getByTestId('session-handoff-mode')
+          .getByRole('radio')
+          .locator('svg')
+          .count(),
+      ).toBe(2)
+      expect(
+        await page
+          .locator('[data-handoff=grok] [data-testid=agent-avatar]')
+          .count(),
+      ).toBe(1)
       await page.locator('[data-handoff=grok]').click()
       const handoff = page.getByTestId('session-handoff-confirm')
       const blank = handoff.getByRole('radio', { name: /空白切换/ })

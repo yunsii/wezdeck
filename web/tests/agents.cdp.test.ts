@@ -126,6 +126,8 @@ async function pageWithProfiles(
   return { context, page, writes, settingsWrites }
 }
 
+// Agent settings cases share one mocked Runtime contract.
+// eslint-disable-next-line max-lines-per-function
 describe('Agent settings layout', () => {
   let browser: Browser
   beforeAll(async () => {
@@ -341,7 +343,17 @@ describe('Agent settings layout', () => {
       .toContain(
         'agent_profile: codex\nmodel: gpt-6.2-sol\ndisabled: true\nnote: 用于交互和队列',
       )
-    await page.getByRole('combobox', { name: '默认智能体' }).click()
+    const preferred = page.getByRole('combobox', { name: '默认智能体' })
+    expect(await preferred.getByTestId('agent-avatar').count()).toBe(1)
+    await preferred.click()
+    await expect
+      .poll(() =>
+        page
+          .getByRole('option', { name: 'Codex (已停用)' })
+          .getByTestId('agent-avatar')
+          .count(),
+      )
+      .toBe(1)
     expect(
       await page
         .getByRole('option', { name: 'Codex (已停用)' })

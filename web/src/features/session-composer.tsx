@@ -377,6 +377,7 @@ export function ComposerBox({
           <RestartActions
             agent={session?.agent}
             disabled={keysDisabled}
+            onNewConversation={onNewConversation}
             onRestart={(fresh) => onRun('session.restart', { fresh })}
             onDone={() => setPanel(null)}
           />

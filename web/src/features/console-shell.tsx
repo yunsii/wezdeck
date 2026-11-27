@@ -19,7 +19,7 @@ import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 
 import { Button } from '#/components/ui/button'
 import { OverlayScroll } from '#/components/deck/overlay-scroll'
-import { useTicketSync } from '#/lib/ticket-sync'
+import { useTicketList, useTicketSync } from '#/lib/ticket-sync'
 import { useGoToTab } from '#/lib/go-to-tab'
 import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
@@ -33,6 +33,7 @@ import { useSessions } from './console-sessions'
 import { useAutoSyncAttentionSessions } from './session-autosync'
 import { unreadChatCount } from './session-chats'
 import { useFollowSessionRedirect } from './session-follow'
+import { useAutoSyncTickets } from './ticket-autosync'
 import { installClientTrace } from '#/lib/client-trace'
 import { remoteLink } from '#/lib/remote-link'
 import { useSessionListScroll } from './session-list-scroll'
@@ -146,6 +147,26 @@ function useRemoteMode() {
   )
 }
 
+function useShellAutoSync(location: string) {
+  const health = useTicketSync()
+  const ticketList = useTicketList()
+  const sessions = useSessions()
+  const activeSessionRaw = location.match(/\/console\/sessions\/([^/]+)$/)?.[1]
+  useAutoSyncAttentionSessions(
+    sessions.data?.sessions,
+    activeSessionRaw ? decodeURIComponent(activeSessionRaw) : undefined,
+  )
+  const activeTicketRaw = location.match(
+    /\/console\/(?:collab|inbox)\/([^/]+)$/,
+  )?.[1]
+  useAutoSyncTickets(
+    ticketList.data?.ok ? ticketList.data.tickets : undefined,
+    activeTicketRaw ? decodeURIComponent(activeTicketRaw) : undefined,
+  )
+  useFollowSessionRedirect()
+  return { health, sessions }
+}
+
 function ConsoleShell({ children }: { children: React.ReactNode }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -159,26 +180,19 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
   const current = sectionOf(location)
   const localeParam = locale === 'en' ? undefined : locale
   const { mode, sidebar, tabs } = useSections()
-  // drives the ticket list for every console page (lib/ticket-sync)
-  const health = useTicketSync()
-  // what waits on you, on the tab that holds it
-  const sessions = useSessions()
+  const { health, sessions } = useShellAutoSync(location)
   // ticket / session detail pages bring their own back bar instead of a title
   const detail = /\/console\/(collab|inbox|sessions)\/[^/]+$/.test(location)
   // 我的 › … pages bring a back bar too, but keep the tab bar (settings tab)
   const subPage = /\/console\/me\/[^/]+$/.test(location)
   // a session chat runs closer to the edges (bubbles, like a messenger)
   const chat = /\/console\/sessions\/[^/]+$/.test(location)
-  // 会话 list uses a Telegram-style full-bleed rail + compact search top bar
-  const sessionsIndex = current === 'sessions' && !detail
-  const activeSessionRaw = location.match(/\/console\/sessions\/([^/]+)$/)?.[1]
-  useAutoSyncAttentionSessions(
-    sessions.data?.sessions,
-    activeSessionRaw ? decodeURIComponent(activeSessionRaw) : undefined,
-  )
-  // pane switched (/new, /resume…): follow from the sessions poll even when
-  // the detail never mounted — only while the URL is a session detail
-  useFollowSessionRedirect()
+  // ticket detail pins its own sticky header flush against the top edge
+  const ticketDetail = /\/console\/(collab|inbox)\/[^/]+$/.test(location)
+  // 会话 and 工单 lists share a Telegram-style full-bleed rail + compact sticky bar
+  const flatIndex =
+    (current === 'sessions' || current === 'collab' || current === 'inbox') &&
+    !detail
   const badges: Partial<Record<Section, number>> = {
     collab: health.data?.waiting_human ?? 0,
     sessions: unreadChatCount(sessions.data?.sessions ?? []),
@@ -332,14 +346,17 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
             id="console-main"
             className={cn(
               'flex min-h-full w-full flex-col md:min-h-full md:p-0',
-              sessionsIndex
+              flatIndex
                 ? 'p-0 [--page-x:0.75rem] md:[--page-x:0.75rem]'
-                : 'pt-[max(env(safe-area-inset-top),0.75rem)] pb-4',
-              !sessionsIndex &&
+                : ticketDetail
+                  ? 'px-3 pt-0 pb-4 [--page-x:0.75rem] md:[--page-x:1rem]'
+                  : 'pt-[max(env(safe-area-inset-top),0.75rem)] pb-4',
+              !flatIndex &&
+                !ticketDetail &&
                 (chat ? 'px-2.5 [--page-x:0.625rem]' : 'px-4 [--page-x:1rem]'),
             )}
           >
-            {detail || subPage || sessionsIndex ? null : (
+            {detail || subPage || flatIndex ? null : (
               <MobileSectionHeader title={title} />
             )}
             <PageBoundary>{children}</PageBoundary>

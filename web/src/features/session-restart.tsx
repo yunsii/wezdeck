@@ -19,11 +19,13 @@ const AGENTS = new Set(['claude', 'codex', 'grok', 'agy'])
 export function RestartActions({
   agent,
   disabled,
+  onNewConversation,
   onRestart,
   onDone,
 }: {
   agent?: string
   disabled: boolean
+  onNewConversation: () => Promise<boolean>
   /** send session.restart; true once the host took it */
   onRestart: (fresh: boolean) => Promise<boolean>
   /** close the panel */
@@ -31,27 +33,35 @@ export function RestartActions({
 }) {
   const { t } = useLingui()
   // which one is waiting for 确认
-  const [asking, setAsking] = useState<'resume' | 'fresh' | null>(null)
+  const [asking, setAsking] = useState<'new' | 'resume' | 'fresh' | null>(null)
   if (!agent || !AGENTS.has(agent)) return null
   const action =
-    'flex h-10 items-center justify-center gap-1.5 rounded-xl px-2 text-caption disabled:opacity-40'
+    'flex h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 text-center text-caption leading-tight whitespace-normal disabled:opacity-40'
   if (asking) {
     const fresh = asking === 'fresh'
     const run = async () => {
-      trace('session-restart', { fresh, agent })
+      trace('session-restart', { action: asking, agent })
       setAsking(null)
       onDone()
-      if (await onRestart(fresh))
+      if (await (asking === 'new' ? onNewConversation() : onRestart(fresh)))
         toast(
-          fresh
-            ? t`A fresh conversation is starting`
-            : t`The pane is restarting; the agent resumes in a moment`,
+          asking === 'new'
+            ? t`A new conversation is starting in this agent`
+            : fresh
+              ? t`A fresh conversation is starting`
+              : t`The pane is restarting; the agent resumes in a moment`,
         )
     }
     return (
       <div
         role="group"
-        aria-label={fresh ? t`New conversation` : t`Restart session`}
+        aria-label={
+          asking === 'new'
+            ? t`New conversation`
+            : fresh
+              ? t`New agent process`
+              : t`Restart session`
+        }
         data-testid="session-restart-confirm"
         data-restart-asking={asking}
         className="grid gap-1.5 rounded-xl bg-brand-deck p-2"
@@ -63,9 +73,11 @@ export function RestartActions({
         }}
       >
         <p className="px-1 text-caption text-brand-muted">
-          {fresh
-            ? t`End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it.`
-            : t`Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5).`}
+          {asking === 'new'
+            ? t`Start a new conversation in the current agent without restarting its process. The current conversation stays available in Resume.`
+            : fresh
+              ? t`End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it.`
+              : t`Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5).`}
         </p>
         <div className="grid grid-cols-2 gap-1.5">
           <Button
@@ -86,7 +98,7 @@ export function RestartActions({
             onClick={() => void run()}
             className={action}
           >
-            {fresh ? t`Start fresh` : t`Restart`}
+            {asking === 'new' ? t`Start` : fresh ? t`Start fresh` : t`Restart`}
           </Button>
         </div>
       </div>
@@ -103,13 +115,13 @@ export function RestartActions({
         variant="key"
         type="button"
         disabled={disabled}
-        data-restart="resume"
-        title={t`Respawn the pane; the agent resumes this conversation (F5)`}
-        onClick={() => setAsking('resume')}
+        data-restart="new"
+        title={t`Start /new in the current agent (Ctrl+N)`}
+        onClick={() => setAsking('new')}
         className={action}
       >
-        <RotateCcw size={14} aria-hidden />
-        {t`Restart session`}
+        <SquarePlus size={14} aria-hidden />
+        {t`New conversation (/new)`}
       </Button>
       <Button
         variant="key"
@@ -121,7 +133,19 @@ export function RestartActions({
         className={action}
       >
         <SquarePlus size={14} aria-hidden />
-        {t`New conversation`}
+        {t`New agent process`}
+      </Button>
+      <Button
+        variant="key"
+        type="button"
+        disabled={disabled}
+        data-restart="resume"
+        title={t`Respawn the pane; the agent resumes this conversation (F5)`}
+        onClick={() => setAsking('resume')}
+        className={action}
+      >
+        <RotateCcw size={14} aria-hidden />
+        {t`Restart session`}
       </Button>
     </div>
   )

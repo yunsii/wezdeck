@@ -219,6 +219,23 @@ html[data-theme='dark'] .list-row.row-selected::after {
   left: 4.75rem;
 }
 
+/* Telegram-style inset hairlines for the flat ticket rail: align with the
+   title column past the status LED. */
+.ticket-list > li {
+  position: relative;
+}
+.ticket-list > li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 2.375rem;
+  height: 1px;
+  background: var(--brand-edge);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* A session tag (components/deck/session-tags.tsx): a light fill of its
    tone and ink leaning to that tone, readable in both themes. Tones: an
    agent's own colour, the accent (主, running), waiting, done, neutral. */

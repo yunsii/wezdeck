@@ -108,7 +108,15 @@ export function useCopyAgentReference(profiles: Array<AgentProfile>): CopyFn {
  * `group/row relative`; the key sits in the status dot's column, under it
  * (the row's px-4 keeps that column empty below the dot).
  */
-export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
+export function RowCopyButton({
+  id,
+  copy,
+  className,
+}: {
+  id: string
+  copy: CopyFn
+  className?: string
+}) {
   const { t } = useLingui()
   const [copied, setCopied] = useState(false)
   return (
@@ -130,6 +138,7 @@ export function RowCopyButton({ id, copy }: { id: string; copy: CopyFn }) {
         'absolute bottom-1 left-0.5 grid size-10 place-items-center rounded-lg text-brand-label outline-none hover:text-brand-text focus-visible:ring-2 focus-visible:ring-brand-running md:bottom-1.5 md:left-2.5 md:size-6',
         !copied &&
           'md:opacity-0 md:group-hover/row:opacity-100 md:focus-visible:opacity-100',
+        className,
       )}
     >
       {copied ? (

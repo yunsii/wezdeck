@@ -3,7 +3,7 @@
 // back returns to the index, the tab bar stays). On the host, local links too.
 import { useLingui } from '@lingui/react/macro'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import { Activity, ChevronRight, Network } from 'lucide-react'
 import { BackButton } from '#/components/deck/back-button'
 
 import { Button } from '#/components/ui/button'
@@ -11,7 +11,7 @@ import { Field, FieldList } from '#/components/ui/field'
 import { rememberLocale } from '#/lib/locale-pref'
 import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
-import { useIsWide, useIsWidePhoneFirst } from '#/lib/use-media'
+import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { buildId } from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
@@ -27,6 +27,7 @@ import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
 import { usePreferredAgentProfile } from './agent-profiles'
 import { AgentsPage } from './me-agents'
+import { EntryRow } from './me-entry-row'
 
 function DeviceAccess() {
   const { t } = useLingui()
@@ -241,50 +242,6 @@ function AppearancePage() {
   )
 }
 
-/** one row of the index: what it is, how it stands now, › */
-function EntryRow({
-  page,
-  title,
-  value,
-  active,
-}: {
-  page: MePage
-  title: string
-  value?: React.ReactNode
-  /** the group shown beside the list (wide screens) */
-  active?: boolean
-}) {
-  const { locale } = useLocale()
-  const wide = useIsWide()
-  return (
-    <li className="border-b border-brand-edge last:border-b-0">
-      <Link
-        to="/{-$locale}/console/me/$page"
-        params={{ locale: locale === 'en' ? undefined : locale, page }}
-        // beside the list a group is a tab, not a page: no history pile-up
-        replace={wide}
-        aria-current={active ? 'page' : undefined}
-        data-me={page}
-        className={cn(
-          'key-press flex min-h-13 items-center gap-3 px-4 py-2.5',
-          wide && 'list-row',
-          active && (wide ? 'row-selected' : 'bg-brand-soft'),
-        )}
-      >
-        <span className="flex-1 text-body">{title}</span>
-        <span className="min-w-0 truncate text-caption text-brand-muted">
-          {value}
-        </span>
-        <ChevronRight
-          size={18}
-          aria-hidden
-          className="shrink-0 text-brand-label"
-        />
-      </Link>
-    </li>
-  )
-}
-
 function MeIndex({ active }: { active?: MePage }) {
   const { t } = useLingui()
   const { locale } = useLocale()
@@ -378,10 +335,19 @@ function MeIndex({ active }: { active?: MePage }) {
             to="/{-$locale}/architecture"
             params={{ locale: localeParam }}
             data-me="architecture"
-            className="key-press flex min-h-13 items-center justify-between px-4 text-body"
+            className="key-press flex min-h-13 items-center gap-3 px-4 text-body"
           >
-            {t`How it fits together`}
-            <ChevronRight size={18} aria-hidden className="text-brand-label" />
+            <Network
+              size={18}
+              aria-hidden
+              className="shrink-0 text-brand-label"
+            />
+            <span className="min-w-0 flex-1 truncate">{t`How it fits together`}</span>
+            <ChevronRight
+              size={18}
+              aria-hidden
+              className="shrink-0 text-brand-label"
+            />
           </Link>
         </li>
       </ul>
@@ -398,13 +364,19 @@ function MeIndex({ active }: { active?: MePage }) {
               <Link
                 to="/{-$locale}/console/diagnostics"
                 params={{ locale: localeParam }}
-                className="key-press flex min-h-13 items-center justify-between px-4 text-body"
+                data-me="diagnostics"
+                className="key-press flex min-h-13 items-center gap-3 px-4 text-body"
               >
-                {t`Diagnostics`}
+                <Activity
+                  size={18}
+                  aria-hidden
+                  className="shrink-0 text-brand-label"
+                />
+                <span className="min-w-0 flex-1 truncate">{t`Diagnostics`}</span>
                 <ChevronRight
                   size={18}
                   aria-hidden
-                  className="text-brand-label"
+                  className="shrink-0 text-brand-label"
                 />
               </Link>
             </li>

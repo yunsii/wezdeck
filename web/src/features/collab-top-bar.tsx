@@ -1,29 +1,28 @@
-// Top of 工单: the run / cache / cost band, folded — eleven cells, mostly —
-// between runs, held the list half a screen down. On a phone it is a text
-// link next to ticket activity (no sidebar there); on a wide screen a button
-// in the list column's head that opens it in a dialog (the sidebar links
-// activity).
+// Top of 工单: on a wide screen, title + 24 h metrics summary button + new
+// ticket in the split column head; on a phone, compact icon buttons (metrics
+// sheet, ticket activity link, new ticket) sharing row 1 with the search box.
 import { useLingui } from '@lingui/react/macro'
-import { ChartColumn } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { ChartColumn, ListTree } from 'lucide-react'
 import { useState } from 'react'
 
+import { Button } from '#/components/ui/button'
 import { Sheet } from '#/components/ui/sheet'
+import { useLocale } from '#/lib/locale-context'
 import { useIsWide } from '#/lib/use-media'
-import { ActivityLink } from './console-activity'
 import { useMetricsSummary } from './collab-metrics'
 import { NewTicketButton } from './ticket-new'
-import { Button } from '#/components/ui/button'
 
 export function CollabTopBar({
   band,
-  actions,
+  search,
 }: {
   band: React.ReactNode
-  /** phone: the list's search and new-ticket buttons, at the end of the link
-   * row (they crowded the filter row past a narrow screen's edge) */
-  actions?: React.ReactNode
+  /** phone: always-visible search box placed on the same compact top row */
+  search?: React.ReactNode
 }) {
   const { t } = useLingui()
+  const { locale } = useLocale()
   const [open, setOpen] = useState(false)
   const wide = useIsWide()
   const summary = useMetricsSummary()
@@ -61,29 +60,33 @@ export function CollabTopBar({
         </Sheet>
       </div>
     )
-  // phone: one quiet line of two text links, not two cards — the list
-  // starts higher (it held the first screen to three tickets). The band opens
-  // in a sheet like on a wide screen: unfolded inline it pushed the list down
-  const link =
-    'inline-flex min-h-9 items-center gap-1 text-caption text-brand-muted'
+  // phone: compact single row matching 会话 (search + metrics icon + activity
+  // icon + new ticket), sized to fit 320 px with zero horizontal overflow
   return (
-    <div className="-mt-2 flex items-center gap-5">
+    <div className="flex min-w-0 items-center gap-1.5">
+      {search}
       <Button
-        variant="plain"
+        variant="ghost"
+        size="icon"
         type="button"
         aria-haspopup="dialog"
+        aria-label={t`Runs and cost`}
+        title={t`Runs and cost`}
         onClick={() => setOpen(true)}
-        className={link}
+        className="size-9 shrink-0 rounded-xl text-brand-muted"
       >
-        {t`Runs and cost`}
-        <span aria-hidden>›</span>
+        <ChartColumn size={18} aria-hidden />
       </Button>
-      <ActivityLink className={link} />
-      {actions ? (
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          {actions}
-        </div>
-      ) : null}
+      <Link
+        to="/{-$locale}/console/activity"
+        params={{ locale: locale === 'en' ? undefined : locale }}
+        aria-label={t`Ticket activity`}
+        title={t`Ticket activity`}
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-brand-muted outline-none hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-brand-running"
+      >
+        <ListTree size={18} aria-hidden />
+      </Link>
+      <NewTicketButton />
       <Sheet
         open={open}
         onOpenChange={setOpen}

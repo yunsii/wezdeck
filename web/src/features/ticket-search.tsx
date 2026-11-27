@@ -1,40 +1,10 @@
-// 工单's search, split out of the list: the field (always shown on a wide
-// screen, opened from an icon on a phone) and the phone's list actions — the
-// search toggle and 新建 — which sit in the page head's link row
-// (collab-top-bar) so the status filter has a row of its own on a narrow
-// screen: four counted segments + two buttons ran past a 360 px phone.
+// 工单's search box: always visible in the compact top bar (matching 会话's
+// ChatSearch), with a clear button when text is entered.
 import { useLingui } from '@lingui/react/macro'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
-import { NewTicketButton } from './ticket-new'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-
-export function TicketListActions({
-  searching,
-  onSearching,
-}: {
-  searching: boolean
-  onSearching: (next: boolean) => void
-}) {
-  const { t } = useLingui()
-  return (
-    <>
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        aria-label={t`Filter tickets`}
-        aria-pressed={searching}
-        onClick={() => onSearching(!searching)}
-        className="size-11 shrink-0 rounded-xl"
-      >
-        <Search size={18} aria-hidden />
-      </Button>
-      <NewTicketButton />
-    </>
-  )
-}
 
 export function SearchBox({
   value,
@@ -47,13 +17,14 @@ export function SearchBox({
 }) {
   const { t } = useLingui()
   return (
-    <label
-      data-text-field
-      className="flex min-h-11 flex-1 items-center gap-2 rounded-xl bg-brand-deck px-3 text-body md:min-h-9 md:text-body"
-    >
-      <Search size={15} aria-hidden className="text-brand-label" />
+    <label className="relative min-w-0 flex-1" data-text-field>
+      <Search
+        size={16}
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-brand-label"
+      />
       <Input
-        variant="bare"
+        variant="field"
         data-search
         autoFocus={autoFocus}
         type="search"
@@ -61,8 +32,20 @@ export function SearchBox({
         onChange={(event) => onChange(event.target.value)}
         placeholder={t`Filter by title, repo or id`}
         aria-label={t`Filter tickets`}
-        className="min-w-0 flex-1 bg-transparent py-1.5 outline-none placeholder:text-brand-label"
+        className="h-9 min-h-9 w-full pl-8 pr-8 text-caption"
       />
+      {value ? (
+        <Button
+          type="button"
+          variant="plain"
+          size="none"
+          aria-label={t`Clear search`}
+          onClick={() => onChange('')}
+          className="absolute top-1/2 right-1 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-brand-muted"
+        >
+          <X size={14} aria-hidden />
+        </Button>
+      ) : null}
     </label>
   )
 }

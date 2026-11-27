@@ -1,32 +1,24 @@
+// Ticket detail reading view (aligned with SessionDetail): sticky TicketHeader
+// (mobile back + status LED + tappable title + ⓘ TicketInfo sheet), first-screen
+// decision/discussion body (proposals / reply, summary & thread, children,
+// integration), and compact flat run rows that open RunDetail in a sheet.
 import { useLingui } from '@lingui/react/macro'
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect } from 'react'
 
-import { Field, FieldList } from '#/components/ui/field'
-import { useCollab } from '#/lib/collab-query'
-import { useIsWide } from '#/lib/use-media'
-import type {
-  CollabShow,
-  CollabRunSummary,
-  CollabTicket,
-} from '#/lib/runtime-contract'
-import { cn } from '#/lib/utils'
-import { RunDetail } from './console-collab-run'
-import { CopyReference } from './ticket-copy-reference'
-import { TicketProposals } from './ticket-proposals'
-import { num, pct, secs, usd } from './console-collab-format'
-import { Reading } from './inspector'
+import { BackButton } from '#/components/deck/back-button'
 import type { LedTone } from '#/components/deck/led'
-import { TicketsView, useOwnerLabel, useStatusLabel } from './tickets-view'
-import { CollabTopBar } from './collab-top-bar'
+import { useCollab } from '#/lib/collab-query'
+import type { CollabShow, CollabTicket } from '#/lib/runtime-contract'
+import { cn } from '#/lib/utils'
 import { CollabMetricsBand } from './collab-metrics'
-import {
-  TicketAttach,
-  TicketReply,
-  TicketSections,
-  openQuestion,
-} from './ticket-reply'
-import { Led } from '#/components/deck/led'
-import { Button } from '#/components/ui/button'
+import { CollabTopBar } from './collab-top-bar'
+import { pct } from './console-collab-format'
+import { Reading } from './inspector'
+import { TicketHeader } from './ticket-header'
+import { TicketProposals } from './ticket-proposals'
+import { TicketReply, TicketSections, openQuestion } from './ticket-reply'
+import { TicketRuns } from './ticket-runs'
+import { TicketsView } from './tickets-view'
 
 export function ticketTone(ticket: CollabTicket): LedTone {
   if (ticket.running.length > 0) return 'running'
@@ -57,8 +49,8 @@ export function ConsoleCollabPage() {
     <TicketsView
       base="collab"
       empty={t`No tickets match this filter.`}
-      top={(actions) => (
-        <CollabTopBar band={<CollabMetricsBand />} actions={actions} />
+      top={(search) => (
+        <CollabTopBar band={<CollabMetricsBand />} search={search} />
       )}
     />
   )
@@ -68,10 +60,12 @@ export function TicketReading({
   id,
   poll,
   onOpen,
+  onBack,
 }: {
   id: string
   poll: number
   onOpen: (id: string) => void
+  onBack?: () => void
 }) {
   const { t } = useLingui()
   // switching tickets keeps the last one on screen until the next arrives:
@@ -81,51 +75,40 @@ export function TicketReading({
     { id },
     { refetchInterval: poll, keepPrevious: true },
   )
-  const statusLabel = useStatusLabel()
-  // every hook before the early returns below (it sat after them: the
-  // loading render and the loaded one ran a different number of hooks)
-  const ownerLabel = useOwnerLabel()
-  const [run, setRun] = useState('')
   // another ticket starts at its top, before it paints (the router no
   // longer restores a detail page's scroll: view-transition.ts)
   useLayoutEffect(() => {
     document.querySelector('.vt-page')?.scrollTo({ top: 0 })
   }, [id])
   const data = show.data
-  if (!data) return <Reading title={t`Loading…`} />
-  if (!data.ok || !data.ticket) {
+  if (!data || !data.ok || !data.ticket) {
     return (
-      <Reading title={t`Ticket unavailable`} body={data.error?.message ?? ''} />
+      <div className="grid content-start gap-3">
+        {onBack ? (
+          <div className="sticky top-0 z-30 -mx-[var(--page-x)] flex items-center gap-1 border-b border-brand-edge bg-brand-deck px-[var(--page-x)] pt-[max(env(safe-area-inset-top),0.375rem)] pb-2 md:hidden">
+            <BackButton onClick={onBack} label={t`Back`} className="-ml-2" />
+            <span className="truncate text-body font-semibold text-brand-text">
+              {t`Tickets`}
+            </span>
+          </div>
+        ) : null}
+        <Reading
+          title={!data ? t`Loading…` : t`Ticket unavailable`}
+          body={data ? (data.error?.message ?? '') : undefined}
+        />
+      </div>
     )
   }
   const ticket = data.ticket
-  const runs = data.runs
-  const currentRun = runs.find((item) => item.run === run) ?? runs.at(-1)
   return (
     // the previous ticket, held while this one loads: not actionable
-    <div inert={show.isPlaceholderData} aria-busy={show.isPlaceholderData}>
-      <Reading
-        kicker={
-          <span className="flex flex-wrap items-center gap-2">
-            <Led tone={ticketTone(ticket)} size={13} />
-            {/* the phase code (research_done …) only as a hint: the label says it */}
-            <span className="font-medium" title={ticket.phase ?? undefined}>
-              {statusLabel(ticket)}
-            </span>
-            {data.reference ? <CopyReference text={data.reference} /> : null}
-          </span>
-        }
-        title={ticket.title || ticket.id}
-      >
-        <TicketFields
-          fields={[
-            [t`Route`, `${ticket.from ?? '?'} → ${ticket.to ?? '?'}`],
-            [t`Owner`, ownerLabel(ticket.owner)],
-            [t`Progress`, ticket.progress?.message ?? ''],
-            [t`Worktree`, ticket.branch ?? ticket.worktree ?? ''],
-            [t`Ticket`, ticket.id],
-          ]}
-        />
+    <div
+      inert={show.isPlaceholderData}
+      aria-busy={show.isPlaceholderData}
+      className="grid content-start"
+    >
+      <TicketHeader data={data} onBack={onBack} />
+      <div className="grid max-w-4xl content-start gap-4 pt-3 pb-4">
         <TicketProposals
           id={ticket.id}
           proposals={data.proposals}
@@ -143,11 +126,6 @@ export function TicketReading({
             questions={data.questions}
           />
         ) : null}
-        <TicketAttach
-          id={ticket.id}
-          sessions={data.sessions}
-          running={ticket.running.length > 0}
-        />
         <TicketSections
           sections={data.sections}
           waiting={ticket.status === 'waiting_initiator'}
@@ -158,180 +136,8 @@ export function TicketReading({
         {data.collab?.integration ? (
           <IntegrationSummary integration={data.collab.integration} />
         ) : null}
-        <RunTable
-          runs={runs}
-          selected={currentRun?.run ?? ''}
-          onSelect={setRun}
-        />
-        {currentRun ? <RunDetail run={currentRun.run} poll={poll} /> : null}
-      </Reading>
-    </div>
-  )
-}
-
-/** the ticket's facts as Field rows (tap to copy, like 会话信息); empty ones say nothing */
-function TicketFields({ fields }: { fields: Array<[string, string]> }) {
-  const shown = fields.filter(([, value]) => value && value !== '—')
-  if (shown.length === 0) return null
-  return (
-    <FieldList>
-      {shown.map(([label, value]) => (
-        <Field key={label} label={label} value={value} />
-      ))}
-    </FieldList>
-  )
-}
-
-/** Phone: one key per run, the four numbers that matter, tap to open its record below. */
-function RunKeys({
-  runs,
-  selected,
-  onSelect,
-}: {
-  runs: Array<CollabRunSummary>
-  selected: string
-  onSelect: (run: string) => void
-}) {
-  const { t } = useLingui()
-  return (
-    <ul aria-label={t`Runs`} className="grid gap-2">
-      {runs.map((item) => {
-        const active = item.run === selected
-        const tone =
-          item.exit == null ? 'running' : item.exit === 0 ? 'done' : 'error'
-        return (
-          <li key={item.run}>
-            <Button
-              variant="plain"
-              type="button"
-              aria-pressed={active}
-              onClick={() => onSelect(item.run)}
-              className={cn(
-                'key-press grid w-full gap-2 rounded-xl border px-3.5 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-running',
-                active
-                  ? 'border-brand-edge bg-brand-deck shadow-[var(--key-pressed)]'
-                  : 'key',
-              )}
-            >
-              <span className="flex items-center gap-2 text-body">
-                <Led tone={tone} size={12} />
-                <span className="font-medium">{item.phase ?? '—'}</span>
-                <span className="text-brand-label">
-                  {item.session?.reuse ?? ''}
-                </span>
-                <span className="ml-auto font-mono text-meta text-brand-label">
-                  {item.run.slice(-6)}
-                </span>
-              </span>
-              <dl className="grid grid-cols-4 gap-2 text-meta">
-                {[
-                  [t`Turns`, num(item.turns)],
-                  [t`Cache hit`, pct(item.cache_hit_rate)],
-                  [t`Cost`, usd(item.cost_usd)],
-                  [t`Wall`, secs(item.wall_ms)],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <dt className="text-brand-label">{label}</dt>
-                    <dd className="mt-0.5 text-body text-brand-text">
-                      {value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </Button>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-function RunTable({
-  runs,
-  selected,
-  onSelect,
-}: {
-  runs: Array<CollabRunSummary>
-  selected: string
-  onSelect: (run: string) => void
-}) {
-  const { t } = useLingui()
-  const wide = useIsWide()
-  if (runs.length === 0) {
-    return (
-      <p className="text-caption text-brand-muted">{t`No headless runs recorded for this ticket.`}</p>
-    )
-  }
-  if (!wide)
-    return <RunKeys runs={runs} selected={selected} onSelect={onSelect} />
-  return (
-    <div className="overflow-x-auto rounded-xl border border-brand-edge">
-      <table
-        className="w-full text-left font-mono text-meta"
-        aria-label={t`Runs`}
-      >
-        <thead className="bg-brand-deck text-brand-label">
-          <tr>
-            {[
-              t`Run`,
-              t`Phase`,
-              t`Session`,
-              t`Turns`,
-              t`Cache hit`,
-              t`Cost`,
-              t`Wall`,
-              t`RSS`,
-              t`Exit`,
-            ].map((head) => (
-              <th key={head} className="px-2 py-1.5 font-normal">
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {runs.map((item) => (
-            <tr
-              key={item.run}
-              tabIndex={0}
-              aria-selected={item.run === selected}
-              onClick={() => onSelect(item.run)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  onSelect(item.run)
-                }
-              }}
-              className={cn(
-                'cursor-pointer border-t border-brand-border outline-none focus-visible:ring-2 focus-visible:ring-brand-running focus-visible:ring-inset',
-                item.run === selected
-                  ? 'bg-brand-soft'
-                  : 'hover:bg-brand-soft/60',
-              )}
-            >
-              <td className="px-2 py-1.5">{item.run.slice(-6)}</td>
-              <td className="px-2 py-1.5">{item.phase ?? '—'}</td>
-              <td className="px-2 py-1.5">
-                {item.session?.reuse ?? '—'}
-                {item.session?.reason ? ` · ${item.session.reason}` : ''}
-              </td>
-              <td className="px-2 py-1.5">{num(item.turns)}</td>
-              <td className="px-2 py-1.5">{pct(item.cache_hit_rate)}</td>
-              <td className="px-2 py-1.5">{usd(item.cost_usd)}</td>
-              <td className="px-2 py-1.5">{secs(item.wall_ms)}</td>
-              <td className="px-2 py-1.5">{num(item.rss_peak_mb)}</td>
-              <td
-                className={cn(
-                  'px-2 py-1.5',
-                  item.exit !== 0 && item.exit != null && 'text-brand-error',
-                )}
-              >
-                {item.exit ?? '…'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <TicketRuns runs={data.runs} poll={poll} />
+      </div>
     </div>
   )
 }
@@ -348,7 +154,7 @@ function ChildrenTable({
   const { t } = useLingui()
   const byId = new Map(children.map((child) => [child.id, child]))
   return (
-    <div className="overflow-x-auto border border-brand-border">
+    <div className="overflow-x-auto rounded-xl border border-brand-border bg-brand-surface">
       <table
         className="w-full text-left font-mono text-meta"
         aria-label={t`Children`}

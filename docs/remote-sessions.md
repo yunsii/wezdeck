@@ -20,6 +20,26 @@ The session list, header and metadata use Codex's latest saved
 and manual renames. The relay caches the index until its file changes and
 logs refreshes without recording the titles.
 
+### Background auto-titling (all agents)
+
+`wezdeck-wsl relay` runs a single-concurrency background auto-titler
+(`session_autotitle.go`) covering Claude, Codex, Grok and Agy sessions. Every
+20 s (`WEZDECK_AUTOTITLE_INTERVAL_S`, set `WEZDECK_AUTOTITLE=0` to disable),
+it scans active sessions (`liveSessions()`), extracts up to the last 5
+non-harness user turns plus the latest assistant reply snippet, and calls
+`scripts/runtime/session-autotitle.sh` (which routes single-shot host CLI
+invocation through `skills/adversarial-review/lib/provider.sh`, defaulting to
+`grok` → `claude` → `codex`, overridable via `WEZDECK_AUTOTITLE_PROVIDER`).
+The prompt asks for `UNCHANGED` when the topic has not shifted; otherwise it
+writes a concise title to `~/.local/state/wezdeck/session-titles.json` (0600,
+atomic rename, 30-day prune). Precedence: explicit manual `/rename` (Claude
+`custom-title` or locked web `/rename`) > auto-title > agent native title.
+Triggering is debounced (first substantive turn runs immediately; subsequent
+updates require a settled turn, ≥90 s cooldown, and either ≥2 new substantive
+turns or ≥4 min since the last update, ignoring trivial acks like "可以" /
+"ok"). Each attempt logs `category=relay event=session_title_auto` with
+`session_id`, `agent`, `provider`, `trigger`, `outcome` and `latency_ms`.
+
 When a provider starts a new rollout in the same pane without leaving the
 attention hook's `cleared_to` marker, the relay follows the handoff by
 matching the archived session to the live session on that pane. A web page

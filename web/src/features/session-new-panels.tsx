@@ -1,5 +1,5 @@
 import { useLingui } from '@lingui/react/macro'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, FolderGit2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -7,11 +7,17 @@ import { Input } from '#/components/ui/input'
 import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
+import { AgentAvatar } from './agent-avatar'
 import type { AgentProfile } from './agent-profiles'
 import type { NewSessionStage } from './session-new-route'
 
 type Repo = { root: string; label: string; visited?: number }
-export type PickerOption = { value: string; label: string; disabled?: boolean }
+export type PickerOption = {
+  value: string
+  label: string
+  disabled?: boolean
+  icon?: React.ReactNode
+}
 
 export function useAgentSelection(
   profiles: Array<AgentProfile>,
@@ -58,10 +64,16 @@ export function useNewSessionAgentOptions(
 ): Array<PickerOption> {
   const { t } = useLingui()
   return [
-    { value: '', label: t`Repository default`, disabled: defaultAgentDisabled },
+    {
+      value: '',
+      label: t`Repository default`,
+      disabled: defaultAgentDisabled,
+      icon: <AgentAvatar size={24} />,
+    },
     ...agentProfiles.map((profile) => ({
       value: profile.id,
       disabled: profile.disabled,
+      icon: <AgentAvatar profile={profile.id} size={24} />,
       label: profile.disabled
         ? `${profile.label} (${t`Disabled`})`
         : profile.id === 'claude_kimi' && !profile.configured
@@ -112,7 +124,14 @@ export function NewSessionPicker({
             onClick={() => onPick(option.value)}
             className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 text-left text-body text-brand-text hover:bg-brand-surface disabled:opacity-40 aria-selected:bg-brand-surface"
           >
-            <span className="min-w-0 break-words">{option.label}</span>
+            <span className="flex min-w-0 items-center gap-2.5">
+              {option.icon ? (
+                <span aria-hidden className="inline-flex shrink-0">
+                  {option.icon}
+                </span>
+              ) : null}
+              <span className="min-w-0 break-words">{option.label}</span>
+            </span>
             {option.value === value ? (
               <Check
                 size={18}
@@ -197,6 +216,9 @@ export function NewSessionSetupCard({
   onAgentProfile: (next: string) => void
 }) {
   const { t } = useLingui()
+  const selectedAgent = agentOptions.find(
+    (option) => option.value === agentProfile,
+  )
   return (
     <section className="grid gap-3 rounded-2xl bg-brand-surface p-4">
       <div className="grid gap-1 text-caption text-brand-muted">
@@ -214,7 +236,14 @@ export function NewSessionSetupCard({
             onClick={() => onOpenPicker('repo')}
             className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
           >
-            <span className="min-w-0 truncate">{repoLabel}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <FolderGit2
+                size={20}
+                aria-hidden
+                className="shrink-0 text-brand-label"
+              />
+              <span className="min-w-0 truncate">{repoLabel}</span>
+            </span>
             <ChevronRight
               size={16}
               aria-hidden
@@ -230,10 +259,17 @@ export function NewSessionSetupCard({
             aria-label={t`Repository`}
             options={
               group
-                ? [{ value: repo, label: repoLabel }]
+                ? [
+                    {
+                      value: repo,
+                      label: repoLabel,
+                      icon: <FolderGit2 size={20} />,
+                    },
+                  ]
                 : repositories.map(({ root, label }) => ({
                     value: root,
                     label,
+                    icon: <FolderGit2 size={20} />,
                   }))
             }
           />
@@ -271,11 +307,13 @@ export function NewSessionSetupCard({
               onClick={() => onOpenPicker('agent')}
               className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-brand-deck px-3 text-left text-body text-brand-text disabled:opacity-60"
             >
-              <span className="min-w-0 truncate">
-                {
-                  agentOptions.find((option) => option.value === agentProfile)
-                    ?.label
-                }
+              <span className="flex min-w-0 items-center gap-2">
+                {selectedAgent?.icon ? (
+                  <span aria-hidden className="inline-flex shrink-0">
+                    {selectedAgent.icon}
+                  </span>
+                ) : null}
+                <span className="min-w-0 truncate">{selectedAgent?.label}</span>
               </span>
               <ChevronRight
                 size={16}
@@ -339,6 +377,7 @@ export function NewSessionPickerSheet({
               ? repositories.map(({ root, label }) => ({
                   value: root,
                   label,
+                  icon: <FolderGit2 size={20} />,
                 }))
               : agentOptions
           }

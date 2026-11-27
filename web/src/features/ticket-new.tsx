@@ -60,7 +60,7 @@ export function NewTicketButton() {
         onClick={show}
         data-testid="new-ticket"
         title={t`New ticket (n)`}
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 px-3 text-body md:min-h-9"
+        className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 px-0 text-body md:w-auto md:px-3"
       >
         <Plus size={18} aria-hidden />
         <span className="sr-only md:not-sr-only">{t`New ticket`}</span>

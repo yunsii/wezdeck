@@ -25,14 +25,28 @@ import (
 // misleads — the card falls back to the worktree / cwd basename until the
 // session is renamed to something else (the terminal keeps the old name).
 func lastClaudeAITitle(path string) string {
+	title, _ := readClaudeTitle(path)
+	return title
+}
+
+// claudeCustomTitle returns a session's explicit /rename title (excluding one
+// inherited across /clear on line 1), or "" if the session was never manually renamed.
+func claudeCustomTitle(path string) string {
+	if title, manual := readClaudeTitle(path); manual {
+		return title
+	}
+	return ""
+}
+
+func readClaudeTitle(path string) (title string, manual bool) {
 	f, err := os.Open(path)
 	if err != nil {
-		return ""
+		return "", false
 	}
 	defer f.Close()
 	info, err := f.Stat()
 	if err != nil {
-		return ""
+		return "", false
 	}
 	const window = 512 << 10
 	start := info.Size() - window
@@ -40,11 +54,11 @@ func lastClaudeAITitle(path string) string {
 		start = 0
 	}
 	if _, err := f.Seek(start, io.SeekStart); err != nil {
-		return ""
+		return "", false
 	}
 	data, err := io.ReadAll(f)
 	if err != nil {
-		return ""
+		return "", false
 	}
 	text := string(data)
 	if start > 0 {
@@ -72,13 +86,13 @@ func lastClaudeAITitle(path string) string {
 			if row.CustomTitle == inherited {
 				continue
 			}
-			return row.CustomTitle
+			return row.CustomTitle, true
 		}
 		if row.Type == "ai-title" && row.AITitle != "" && aiTitle == "" {
 			aiTitle = row.AITitle
 		}
 	}
-	return aiTitle
+	return aiTitle, false
 }
 
 // inheritedClaudeTitle: the custom title carried in from the previous

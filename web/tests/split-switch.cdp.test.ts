@@ -202,11 +202,11 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
     async () => {
       const page = await (
         await split.browser.newContext({
-          viewport: { width: 1280, height: 700 },
+          viewport: { width: 1280, height: 340 },
         })
       ).newPage()
-      // a ticket with runs, taller than the window (the list's first one
-      // changes with the ticket store and may be short)
+      // a ticket taller than the window (RunDetail now lives in a sheet, so a
+      // shorter viewport gives plenty of scroll distance to verify top-reset)
       await page.goto(
         `${base}/console/collab/req-20261123-090146-a3af56?remote=1#pair=${token}`,
       )
@@ -218,8 +218,6 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
       await expect
         .poll(() => pane.locator('h1').first().textContent())
         .not.toMatch(/^Loading/)
-      // the ticket's runs load after its title: wait until the page is tall
-      // enough to stand 400 px down (scrolling early stopped at 7 px)
       await expect
         .poll(
           () =>
@@ -229,16 +227,16 @@ describe.runIf(attention)('Wide split: switching does not flash', () => {
             }),
           { timeout: 15_000 },
         )
-        .toBeGreaterThan(400)
+        .toBeGreaterThan(120)
       await page.waitForTimeout(800)
       await page.evaluate(() => {
         const el = document.querySelector('.vt-page')
-        if (el) el.scrollTop = 400
+        if (el) el.scrollTop = 120
       })
       const f = await frames(page, '[data-testid=ticket-pane] h1', () =>
         other.first().click(),
       )
-      const after = f.slice(f.findIndex((x) => x.scroll !== 400 || x.busy))
+      const after = f.slice(f.findIndex((x) => x.scroll !== 120 || x.busy))
       expect(f.some((x) => x.key.startsWith('Loading'))).toBe(false)
       expect(after.every((x) => x.scroll === 0)).toBe(true)
       expect(f.every((x) => x.vt === 0)).toBe(true)
