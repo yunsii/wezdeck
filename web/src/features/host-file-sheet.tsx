@@ -22,6 +22,7 @@ import { trace } from '#/lib/client-trace'
 import { copyText } from '#/lib/clipboard'
 import { formatLineRange } from '#/lib/host-file-link'
 import { hostRead } from '#/lib/runtime-client'
+import { useDelayedLoading } from '#/lib/use-delayed-loading'
 import {
   CodeFileBody,
   FileLoadingSkeleton,
@@ -183,17 +184,14 @@ function FileViewerSheet({
   })
 
   const data = fileQuery.data
-  // Delay the loading skeleton slightly so fast local/LAN file reads (<120 ms)
-  // paint the document straight away without flashing a placeholder frame.
-  const [showSkeleton, setShowSkeleton] = useState(false)
-  useEffect(() => {
-    if (!fileQuery.isPending) {
-      setShowSkeleton(false)
-      return
-    }
-    const timer = setTimeout(() => setShowSkeleton(true), 120)
-    return () => clearTimeout(timer)
-  }, [fileQuery.isPending, current?.path, current?.lineStart, current?.lineEnd])
+  const requestKey = `${current?.path ?? ''}:${current?.lineStart ?? 0}:${current?.lineEnd ?? 0}`
+  // Anti-flash loading gate: fast reads (<150 ms) paint content directly with
+  // no skeleton; once the skeleton fades in, hold >=240 ms before swapping to
+  // content so a 160 ms fetch never flashes a placeholder for 10 ms.
+  const showSkeleton = useDelayedLoading(fileQuery.isPending, requestKey)
+  const likelyCode = Boolean(
+    current?.path && !/\.(md|markdown|mdx)$/i.test(current.path),
+  )
   useEffect(() => {
     if (!data) return
     trace('host-file-open', {
@@ -284,9 +282,9 @@ function FileViewerSheet({
           </div>
         ) : null}
 
-        {fileQuery.isPending ? (
+        {fileQuery.isPending || showSkeleton ? (
           showSkeleton ? (
-            <FileLoadingSkeleton />
+            <FileLoadingSkeleton isCode={likelyCode} />
           ) : null
         ) : fileQuery.isError ? (
           <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6">

@@ -33,7 +33,7 @@ function useCodeTokens(content: string, lang: string | null) {
   return tokens
 }
 
-export function FileLoadingSkeleton() {
+export function FileLoadingSkeleton({ isCode = false }: { isCode?: boolean }) {
   const { t } = useLingui()
   return (
     <div
@@ -41,9 +41,12 @@ export function FileLoadingSkeleton() {
       role="status"
       aria-live="polite"
       aria-label={t`Loading…`}
-      className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-8"
+      className={cn(
+        'skeleton-enter mx-auto w-full min-w-0 px-3 py-4 sm:px-6 md:py-6',
+        isCode ? 'max-w-6xl' : 'max-w-4xl',
+      )}
     >
-      <div className="flex flex-1 flex-col rounded-2xl border border-brand-edge/70 bg-brand-surface p-5 sm:p-8">
+      <div className="rounded-2xl border border-brand-edge/70 bg-brand-surface px-4 py-5 sm:px-7 sm:py-7 md:px-9 md:py-8">
         <SkeletonGroup className="flex flex-col gap-5">
           <div className="border-b border-brand-edge pb-4">
             <Skeleton className="h-7 w-2/3 rounded-lg" />
@@ -96,7 +99,7 @@ export function CodeFileBody({
   }, [lineStart, path, content])
 
   return (
-    <div className="mx-auto w-full max-w-6xl min-w-0 px-3 py-4 sm:px-6 md:py-6">
+    <div className="content-enter mx-auto w-full max-w-6xl min-w-0 px-3 py-4 sm:px-6 md:py-6">
       <pre
         data-testid="host-file-code"
         data-lang={lang ?? undefined}
@@ -195,7 +198,7 @@ export function MarkdownFileBody({ content }: { content: string }) {
       ref={containerRef}
       data-testid="host-file-markdown"
       className={cn(
-        'mx-auto w-full min-w-0 px-3 py-4 sm:px-6 md:py-6',
+        'content-enter mx-auto w-full min-w-0 px-3 py-4 sm:px-6 md:py-6',
         hasToc ? 'max-w-6xl' : 'max-w-4xl',
       )}
     >
