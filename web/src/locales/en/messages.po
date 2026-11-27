@@ -870,7 +870,7 @@ msgstr "Clear input"
 msgid "Clear search"
 msgstr "Clear search"
 
-#: src/features/session-chat-group.tsx:151
+#: src/features/session-chat-group.tsx:155
 #: src/features/session-chat-row.tsx:71
 #: src/features/session-clear.tsx:114
 msgid "Clearing…"
@@ -932,7 +932,7 @@ msgstr "Collab metrics"
 msgid "Collab tickets"
 msgstr "Collab tickets"
 
-#: src/features/session-chat-group.tsx:406
+#: src/features/session-chat-group.tsx:410
 msgid "Collapse sessions"
 msgstr "Collapse sessions"
 
@@ -1160,8 +1160,8 @@ msgstr "Copy raw line"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:141
 #: src/features/me-agents.tsx:142
-#: src/features/session-chat-group.tsx:142
-#: src/features/session-chat-group.tsx:252
+#: src/features/session-chat-group.tsx:146
+#: src/features/session-chat-group.tsx:256
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
@@ -1338,8 +1338,8 @@ msgstr "Degraded"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
-#: src/features/session-chat-group.tsx:281
-#: src/features/session-chat-row.tsx:201
+#: src/features/session-chat-group.tsx:285
+#: src/features/session-chat-row.tsx:206
 #: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:391
 msgid "Delete session"
@@ -1425,7 +1425,7 @@ msgstr "Dispatched"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
-#: src/features/session-chat-group.tsx:129
+#: src/features/session-chat-group.tsx:127
 #: src/features/session-list.tsx:56
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
@@ -1439,7 +1439,7 @@ msgstr "Done ({doneCount})"
 msgid "done {when}"
 msgstr "done {when}"
 
-#: src/features/session-chat-group.tsx:63
+#: src/features/session-chat-group.tsx:65
 #: src/features/session-chat-row.tsx:132
 #: src/features/ticket-keys.tsx:200
 msgid "Draft"
@@ -1461,8 +1461,8 @@ msgstr "Earlier messages are left out here; the ticket file has them all."
 msgid "Edit and resend"
 msgstr "Edit and resend"
 
-#: src/features/session-chat-group.tsx:259
-#: src/features/session-chat-group.tsx:438
+#: src/features/session-chat-group.tsx:264
+#: src/features/session-chat-group.tsx:443
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "Edit group name"
@@ -1551,7 +1551,7 @@ msgstr "Execution mode: {mode}"
 msgid "Exit"
 msgstr "Exit"
 
-#: src/features/session-chat-group.tsx:343
+#: src/features/session-chat-group.tsx:347
 msgid "Expand sessions"
 msgstr "Expand sessions"
 
@@ -2115,10 +2115,10 @@ msgstr "Manual /rename"
 msgid "Mark done"
 msgstr "Mark done"
 
-#: src/features/session-chat-group.tsx:150
-#: src/features/session-chat-group.tsx:292
+#: src/features/session-chat-group.tsx:154
+#: src/features/session-chat-group.tsx:296
 #: src/features/session-chat-row.tsx:70
-#: src/features/session-chat-row.tsx:212
+#: src/features/session-chat-row.tsx:217
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 msgid "Mark read"
@@ -2279,7 +2279,7 @@ msgstr "New line"
 #~ msgid "New round"
 #~ msgstr "New round"
 
-#: src/features/session-chat-group.tsx:207
+#: src/features/session-chat-group.tsx:211
 #: src/features/session-list.tsx:153
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
@@ -2300,8 +2300,8 @@ msgstr "New session (c)"
 msgid "New session group"
 msgstr "New session group"
 
-#: src/features/session-chat-group.tsx:275
-#: src/features/session-chat-group.tsx:453
+#: src/features/session-chat-group.tsx:274
+#: src/features/session-chat-group.tsx:458
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:376
 #: src/features/session-new.tsx:437
@@ -3213,7 +3213,7 @@ msgstr "Restart this session's pane on the computer; the agent resumes this conv
 msgid "restarting"
 msgstr "restarting"
 
-#: src/features/session-chat-group.tsx:124
+#: src/features/session-chat-group.tsx:122
 msgid "Restarting…"
 msgstr "Restarting…"
 
@@ -4515,7 +4515,7 @@ msgid "waiting on you"
 msgstr "waiting on you"
 
 #: src/features/landing-page.tsx:215
-#: src/features/session-chat-group.tsx:128
+#: src/features/session-chat-group.tsx:126
 #: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:397
 #: src/features/tickets-view.tsx:511
@@ -4689,7 +4689,7 @@ msgstr "working"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
-#: src/features/session-chat-group.tsx:127
+#: src/features/session-chat-group.tsx:125
 #: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "Working"

@@ -143,4 +143,26 @@ describe.runIf(attention && devicesFile)('Session delete sheet layout', () => {
     expect(confirmBox!.height).toBeGreaterThanOrEqual(44)
     await context.close()
   })
+
+  it('phone: every session row menu action has a prefix icon', async () => {
+    const context = await browser.newContext({
+      ...devices['iPhone 13'],
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    const sheet = await approveAndOpenDeleteSheet(page)
+    await sheet.getByRole('button', { name: '取消' }).click()
+    await page.goto(`${base}/zh/console/sessions`)
+    await page.locator('[data-session=delete-layout]').waitFor()
+    await page.getByTestId('chat-row-menu').click({ button: 'right' })
+    const items = page
+      .getByTestId('chat-row-context-menu')
+      .getByRole('menuitem')
+    await expect.poll(() => items.count()).toBeGreaterThan(1)
+    const icons = await items.evaluateAll((rows) =>
+      rows.map((row) => row.querySelectorAll(':scope > svg').length),
+    )
+    expect(icons.every((count) => count === 1)).toBe(true)
+    await context.close()
+  })
 })

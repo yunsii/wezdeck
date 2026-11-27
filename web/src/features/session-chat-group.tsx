@@ -15,7 +15,9 @@ import {
   ChevronRight,
   GitFork,
   Hash,
+  Pencil,
   Plus,
+  Trash2,
 } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
@@ -115,11 +117,7 @@ function SessionSubRow({
   // Keep compact independent of `selected`: toggling selection on an empty
   // idle row with a draft must not collapse its second line and jump rows below.
   const compact =
-    tone === 'idle' &&
-    !title &&
-    !prompt &&
-    !rawDraft &&
-    !session.restart_pending
+    tone === 'idle' && !(title || prompt || rawDraft || session.restart_pending)
   const statusLabel = session.restart_pending
     ? t`Restarting…`
     : {
@@ -135,6 +133,12 @@ function SessionSubRow({
   const { ask: deleteSession, confirmation } = useDeleteSession()
   const canManage = device.state === 'approved' && Boolean(session.tmux_pane)
   const copy = () => copyReference(session.id)
+  const startSibling = () =>
+    requestNewSession({
+      repo: chat.repoKey,
+      anchor: session.id,
+      group: chat.purpose || chat.title,
+    })
   return (
     <SwipeActions
       id={session.id}
@@ -256,6 +260,7 @@ function SessionSubRow({
                   className={menuItemClass}
                   onClick={onEditGroupName}
                 >
+                  <Pencil size={14} aria-hidden />
                   {t`Edit group name`}
                 </ContextMenu.Item>
               ) : null}
@@ -263,13 +268,7 @@ function SessionSubRow({
                 <>
                   <ContextMenu.Item
                     className={menuItemClass}
-                    onClick={() =>
-                      requestNewSession({
-                        repo: chat.repoKey,
-                        anchor: session.id,
-                        group: chat.purpose || chat.title,
-                      })
-                    }
+                    onClick={startSibling}
                   >
                     <Plus size={14} aria-hidden />
                     {t`New session in this group`}
@@ -278,6 +277,11 @@ function SessionSubRow({
                     className={menuItemClass}
                     onClick={() => deleteSession(session, selected)}
                   >
+                    <Trash2
+                      size={14}
+                      aria-hidden
+                      className="text-brand-error"
+                    />
                     {t`Delete session`}
                   </ContextMenu.Item>
                 </>
@@ -435,6 +439,7 @@ export function ChatGroupRow({
               >
                 {canEditGroup ? (
                   <ContextMenu.Item className={menuItemClass} onClick={edit}>
+                    <Pencil size={14} aria-hidden />
                     {t`Edit group name`}
                   </ContextMenu.Item>
                 ) : null}

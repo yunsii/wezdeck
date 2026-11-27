@@ -870,7 +870,7 @@ msgstr "清空输入"
 msgid "Clear search"
 msgstr "清除搜索"
 
-#: src/features/session-chat-group.tsx:151
+#: src/features/session-chat-group.tsx:155
 #: src/features/session-chat-row.tsx:71
 #: src/features/session-clear.tsx:114
 msgid "Clearing…"
@@ -932,7 +932,7 @@ msgstr "协作指标"
 msgid "Collab tickets"
 msgstr "协作工单"
 
-#: src/features/session-chat-group.tsx:406
+#: src/features/session-chat-group.tsx:410
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
@@ -1160,8 +1160,8 @@ msgstr "复制原始日志"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:141
 #: src/features/me-agents.tsx:142
-#: src/features/session-chat-group.tsx:142
-#: src/features/session-chat-group.tsx:252
+#: src/features/session-chat-group.tsx:146
+#: src/features/session-chat-group.tsx:256
 #: src/features/session-chat-row.tsx:62
 #: src/features/session-chat-row.tsx:180
 #: src/features/session-info-actions.tsx:115
@@ -1338,8 +1338,8 @@ msgstr "受限"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
-#: src/features/session-chat-group.tsx:281
-#: src/features/session-chat-row.tsx:201
+#: src/features/session-chat-group.tsx:285
+#: src/features/session-chat-row.tsx:206
 #: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:391
 msgid "Delete session"
@@ -1425,7 +1425,7 @@ msgstr "已派发"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:160
 #: src/features/landing-page.tsx:345
-#: src/features/session-chat-group.tsx:129
+#: src/features/session-chat-group.tsx:127
 #: src/features/session-list.tsx:56
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
@@ -1439,7 +1439,7 @@ msgstr "已完成（{doneCount}）"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:63
+#: src/features/session-chat-group.tsx:65
 #: src/features/session-chat-row.tsx:132
 #: src/features/ticket-keys.tsx:200
 msgid "Draft"
@@ -1461,8 +1461,8 @@ msgstr "更早的讨论在这里省略了，工单文件里有完整记录。"
 msgid "Edit and resend"
 msgstr "修改重发"
 
-#: src/features/session-chat-group.tsx:259
-#: src/features/session-chat-group.tsx:438
+#: src/features/session-chat-group.tsx:264
+#: src/features/session-chat-group.tsx:443
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "修改组名"
@@ -1551,7 +1551,7 @@ msgstr "执行模式：{mode}"
 msgid "Exit"
 msgstr "退出码"
 
-#: src/features/session-chat-group.tsx:343
+#: src/features/session-chat-group.tsx:347
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -2115,10 +2115,10 @@ msgstr "手动 /rename"
 msgid "Mark done"
 msgstr "标为完成"
 
-#: src/features/session-chat-group.tsx:150
-#: src/features/session-chat-group.tsx:292
+#: src/features/session-chat-group.tsx:154
+#: src/features/session-chat-group.tsx:296
 #: src/features/session-chat-row.tsx:70
-#: src/features/session-chat-row.tsx:212
+#: src/features/session-chat-row.tsx:217
 #: src/features/session-clear.tsx:113
 #: src/features/session-clear.tsx:157
 msgid "Mark read"
@@ -2279,7 +2279,7 @@ msgstr "换行"
 #~ msgid "New round"
 #~ msgstr "新一轮"
 
-#: src/features/session-chat-group.tsx:207
+#: src/features/session-chat-group.tsx:211
 #: src/features/session-list.tsx:153
 #: src/features/session-new-job.tsx:386
 #: src/features/session-new-job.tsx:386
@@ -2300,8 +2300,8 @@ msgstr "新会话（c）"
 msgid "New session group"
 msgstr "新会话组"
 
-#: src/features/session-chat-group.tsx:275
-#: src/features/session-chat-group.tsx:453
+#: src/features/session-chat-group.tsx:274
+#: src/features/session-chat-group.tsx:458
 #: src/features/session-chat-row.tsx:195
 #: src/features/session-info.tsx:376
 #: src/features/session-new.tsx:437
@@ -3213,7 +3213,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/session-chat-group.tsx:124
+#: src/features/session-chat-group.tsx:122
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -4515,7 +4515,7 @@ msgid "waiting on you"
 msgstr "等你回复"
 
 #: src/features/landing-page.tsx:215
-#: src/features/session-chat-group.tsx:128
+#: src/features/session-chat-group.tsx:126
 #: src/features/session-list.tsx:54
 #: src/features/tickets-view.tsx:397
 #: src/features/tickets-view.tsx:511
@@ -4689,7 +4689,7 @@ msgstr "运行中"
 
 #: src/features/chat-turn.tsx:143
 #: src/features/landing-page.tsx:340
-#: src/features/session-chat-group.tsx:127
+#: src/features/session-chat-group.tsx:125
 #: src/features/session-list.tsx:57
 msgid "Working"
 msgstr "运行中"
