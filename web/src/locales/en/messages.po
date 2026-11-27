@@ -216,7 +216,7 @@ msgstr "7-day limit"
 msgid "A big change to follow up later…"
 msgstr "A big change to follow up later…"
 
-#: src/features/session-restart.tsx:182
+#: src/features/session-restart.tsx:192
 msgid "A blank agent process and conversation (Ctrl+Shift+n)"
 msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 
@@ -224,7 +224,7 @@ msgstr "A blank agent process and conversation (Ctrl+Shift+n)"
 msgid "A direct WebRTC link skips the relay entirely and costs nothing."
 msgstr "A direct WebRTC link skips the relay entirely and costs nothing."
 
-#: src/features/session-restart.tsx:110
+#: src/features/session-restart.tsx:120
 msgid "A fresh conversation is starting"
 msgstr "A fresh conversation is starting"
 
@@ -625,8 +625,8 @@ msgstr "cancel"
 #: src/features/session-delete.tsx:137
 #: src/features/session-handoff.tsx:274
 #: src/features/session-purpose.tsx:115
-#: src/features/session-restart.tsx:59
-#: src/features/session-restart.tsx:141
+#: src/features/session-restart.tsx:68
+#: src/features/session-restart.tsx:151
 #: src/features/ticket-proposals.tsx:231
 msgid "Cancel"
 msgstr "Cancel"
@@ -1275,7 +1275,7 @@ msgstr "Enabled on this computer"
 msgid "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 msgstr "Enabled on this computer: writes go through the local Runtime, with no device key to create or approve. Phones, tablets and other computers are enabled on their own."
 
-#: src/features/session-restart.tsx:130
+#: src/features/session-restart.tsx:140
 msgid "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 msgstr "End this agent process and start a blank conversation in the same pane (the desk's Ctrl+Shift+n). The current conversation is kept: Resume a conversation finds it."
 
@@ -1949,13 +1949,14 @@ msgstr "Needs a decision"
 #~ msgid "Needs you"
 #~ msgstr "Needs you"
 
-#: src/features/session-restart.tsx:117
-#: src/features/session-restart.tsx:187
+#: src/features/session-restart.tsx:127
+#: src/features/session-restart.tsx:197
 msgid "New conversation"
 msgstr "New conversation"
 
-#: src/features/session-restart.tsx:68
-#: src/features/session-restart.tsx:77
+#: src/features/session-restart.tsx:37
+#: src/features/session-restart.tsx:46
+#: src/features/session-restart.tsx:53
 msgctxt "quick same-pane"
 msgid "New conversation"
 msgstr "New conversation"
@@ -2765,21 +2766,21 @@ msgstr "Resets {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
-#: src/features/session-restart.tsx:170
+#: src/features/session-restart.tsx:180
 msgid "Respawn the pane; the agent resumes this conversation (F5)"
 msgstr "Respawn the pane; the agent resumes this conversation (F5)"
 
-#: src/features/session-restart.tsx:152
-#: src/features/session-restart.tsx:161
+#: src/features/session-restart.tsx:162
+#: src/features/session-restart.tsx:171
 msgid "Restart"
 msgstr "Restart"
 
-#: src/features/session-restart.tsx:117
-#: src/features/session-restart.tsx:175
+#: src/features/session-restart.tsx:127
+#: src/features/session-restart.tsx:185
 msgid "Restart session"
 msgstr "Restart session"
 
-#: src/features/session-restart.tsx:131
+#: src/features/session-restart.tsx:141
 msgid "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 msgstr "Restart this session's pane on the computer; the agent resumes this conversation (the desk's F5)."
 
@@ -3219,17 +3220,21 @@ msgctxt "git"
 msgid "Staged"
 msgstr "Staged"
 
-#: src/features/session-restart.tsx:49
+#: src/features/session-restart.tsx:83
 msgid "Start"
 msgstr "Start"
 
-#: src/features/session-restart.tsx:67
+#: src/features/session-restart.tsx:36
 msgid "Start a blank conversation in this pane"
 msgstr "Start a blank conversation in this pane"
 
+#: src/features/session-restart.tsx:59
+msgid "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
+msgstr "Start a blank conversation in this pane and keep the current worktree. The current conversation stays available in Resume."
+
 #: src/features/session-restart.tsx:33
-msgid "Start a blank conversation?"
-msgstr "Start a blank conversation?"
+#~ msgid "Start a blank conversation?"
+#~ msgstr "Start a blank conversation?"
 
 #: src/features/session-commands.tsx:214
 #: src/features/session-commands.tsx:251
@@ -3240,7 +3245,7 @@ msgstr "Start a blank conversation?"
 msgid "start a fresh conversation"
 msgstr "start a fresh conversation"
 
-#: src/features/session-restart.tsx:152
+#: src/features/session-restart.tsx:162
 msgid "Start fresh"
 msgstr "Start fresh"
 
@@ -3453,7 +3458,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-restart.tsx:111
+#: src/features/session-restart.tsx:121
 msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
