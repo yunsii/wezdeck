@@ -254,6 +254,7 @@ export function NewSessionButton() {
         !event.altKey &&
         event.code === 'KeyN'
       ) {
+        if (/\/console\/sessions\/[^/]+$/.test(window.location.pathname)) return
         event.preventDefault()
         show()
         return
