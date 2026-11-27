@@ -9,10 +9,12 @@ import { useEffect, useState } from 'react'
 
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
+import { ContentReveal } from '#/components/ui/content-reveal'
 import { Sheet } from '#/components/ui/sheet'
 import { Skeleton, SkeletonGroup } from '#/components/ui/skeleton'
 import { hostRead } from '#/lib/runtime-client'
 import type { CollabRunSummary } from '#/lib/runtime-contract'
+import { useDelayedLoading } from '#/lib/use-delayed-loading'
 import { cn } from '#/lib/utils'
 import { ChatThread } from './chat-thread'
 import type { Message } from './chat-thread'
@@ -86,6 +88,10 @@ export function TicketRunChat({
 
   const data = chat.data
   const messages = data?.messages ?? []
+  const showSkeleton = useDelayedLoading(
+    chat.isPending,
+    `${ticketId}:${activeRunId}`,
+  )
   const shownCount = messages.length
   const start = data?.start ?? 0
   const total = data?.total ?? shownCount
@@ -192,49 +198,56 @@ export function TicketRunChat({
         </div>
       ) : null}
 
-      {chat.isPending ? (
-        <div
-          data-testid="ticket-run-chat-loading"
-          className="rounded-xl border border-brand-edge bg-brand-surface p-4"
-        >
-          <SkeletonGroup className="grid gap-2.5">
-            <Skeleton className="h-4 w-2/3 rounded" />
-            <Skeleton className="h-16 w-full rounded-xl" />
-            <Skeleton className="h-4 w-1/2 rounded" />
-          </SkeletonGroup>
-        </div>
-      ) : chat.isError ? (
-        <p
-          role="alert"
-          className="rounded-xl bg-brand-error/10 px-3 py-2 text-caption text-brand-error"
-        >
-          {chat.error instanceof Error
-            ? chat.error.message
-            : String(chat.error)}
-        </p>
-      ) : messages.length === 0 ? (
-        <p className="rounded-xl border border-brand-edge bg-brand-surface px-4 py-6 text-center text-caption text-brand-muted">
-          {isLive
-            ? t`Waiting for worker output…`
-            : t`No conversation messages recorded for this run.`}
-        </p>
-      ) : (
-        <div className="min-w-0">
-          <ChatThread
-            key={`${ticketId}:${activeRunId}`}
-            messages={messages}
-            start={start}
-            busy={Boolean(data?.running || isLive)}
-            status={data?.running || isLive ? 'running' : 'done'}
-            sessionId={data?.session_id ?? ''}
-          />
-          {total > shownCount ? (
-            <p className="mt-1.5 text-center font-mono text-meta text-brand-label tabular-nums">
-              {t`Showing ${shownCount} of ${total} items`}
-            </p>
-          ) : null}
-        </div>
-      )}
+      <ContentReveal
+        key={`${ticketId}:${activeRunId}`}
+        loading={showSkeleton}
+        pending={chat.isPending}
+        skeleton={
+          <div
+            data-testid="ticket-run-chat-loading"
+            className="rounded-xl border border-brand-edge bg-brand-surface p-4"
+          >
+            <SkeletonGroup className="grid gap-2.5">
+              <Skeleton className="h-4 w-2/3 rounded" />
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-4 w-1/2 rounded" />
+            </SkeletonGroup>
+          </div>
+        }
+      >
+        {chat.isError ? (
+          <p
+            role="alert"
+            className="rounded-xl bg-brand-error/10 px-3 py-2 text-caption text-brand-error"
+          >
+            {chat.error instanceof Error
+              ? chat.error.message
+              : String(chat.error)}
+          </p>
+        ) : messages.length === 0 ? (
+          <p className="rounded-xl border border-brand-edge bg-brand-surface px-4 py-6 text-center text-caption text-brand-muted">
+            {isLive
+              ? t`Waiting for worker output…`
+              : t`No conversation messages recorded for this run.`}
+          </p>
+        ) : (
+          <div className="min-w-0">
+            <ChatThread
+              key={`${ticketId}:${activeRunId}`}
+              messages={messages}
+              start={start}
+              busy={Boolean(data?.running || isLive)}
+              status={data?.running || isLive ? 'running' : 'done'}
+              sessionId={data?.session_id ?? ''}
+            />
+            {total > shownCount ? (
+              <p className="mt-1.5 text-center font-mono text-meta text-brand-label tabular-nums">
+                {t`Showing ${shownCount} of ${total} items`}
+              </p>
+            ) : null}
+          </div>
+        )}
+      </ContentReveal>
 
       <Sheet
         open={detailsOpen}

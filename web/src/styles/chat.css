@@ -75,7 +75,7 @@
 }
 
 .content-enter {
-  animation: content-enter 140ms var(--ease-enter) both;
+  animation: content-enter 140ms var(--ease-enter) backwards;
 }
 
 .content-exit {
@@ -83,11 +83,11 @@
 }
 
 .content-slide-forward {
-  animation: content-slide-forward 150ms var(--ease-enter) both;
+  animation: content-slide-forward 150ms var(--ease-enter) backwards;
 }
 
 .content-slide-back {
-  animation: content-slide-back 150ms var(--ease-enter) both;
+  animation: content-slide-back 150ms var(--ease-enter) backwards;
 }
 
 /* Chunked code viewer slices: off-screen lines skip style/layout/paint until

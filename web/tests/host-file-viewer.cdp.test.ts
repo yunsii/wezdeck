@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium } from '@playwright/test'
-import type { Browser } from '@playwright/test'
+import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
@@ -155,6 +155,70 @@ function createSessionFixture() {
   }
 }
 
+async function collectAnimatedLayerReasons(page: Page) {
+  const cdp = await page.context().newCDPSession(page)
+  const layers = new Map<
+    string,
+    { width: number; height: number; backendNodeId?: number }
+  >()
+  cdp.on(
+    'LayerTree.layerTreeDidChange',
+    (ev: {
+      layers?: Array<{
+        layerId: string
+        width: number
+        height: number
+        backendNodeId?: number
+      }>
+    }) => {
+      layers.clear()
+      for (const l of ev.layers ?? []) layers.set(l.layerId, l)
+    },
+  )
+  await cdp.send('LayerTree.enable')
+  await page.waitForTimeout(80)
+  const animated: Array<{
+    layerId: string
+    node?: string
+    reasons: Array<string>
+  }> = []
+  for (const [layerId, info] of layers) {
+    try {
+      const { compositingReasonIds } = (await cdp.send(
+        'LayerTree.compositingReasons',
+        { layerId },
+      )) as { compositingReasonIds: Array<string> }
+      const hit = compositingReasonIds.filter(
+        (r) =>
+          r === 'ActiveOpacityAnimation' || r === 'ActiveTransformAnimation',
+      )
+      if (hit.length > 0) {
+        let node: string | undefined
+        if (info.backendNodeId) {
+          try {
+            const desc = (await cdp.send('DOM.describeNode', {
+              backendNodeId: info.backendNodeId,
+            })) as {
+              node: { nodeName: string; attributes?: Array<string> }
+            }
+            const attrs = desc.node.attributes ?? []
+            const clsIdx = attrs.indexOf('class')
+            const cls = clsIdx >= 0 ? attrs[clsIdx + 1] : ''
+            node = `${desc.node.nodeName.toLowerCase()}${cls ? `.${cls.slice(0, 60)}` : ''}`
+          } catch {
+            // Best-effort node description
+          }
+        }
+        animated.push({ layerId, node, reasons: hit })
+      }
+    } catch {
+      // Layer detached while iterating
+    }
+  }
+  await cdp.detach()
+  return animated
+}
+
 describe.runIf(attention && devicesFile)(
   'Host file / Artifact viewer over relay',
   () => {
@@ -191,6 +255,45 @@ describe.runIf(attention && devicesFile)(
         timeout: 10_000,
       })
 
+      // Track unexpected layout shifts and main-thread longtasks across the
+      // full modal lifecycle (open -> nested code hop -> back -> close).
+      await page.evaluate(() => {
+        const w = window as unknown as {
+          __wdCls?: number
+          __wdClsSources?: Array<string>
+          __wdMaxLongtask?: number
+        }
+        w.__wdCls = 0
+        w.__wdClsSources = []
+        w.__wdMaxLongtask = 0
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries() as Array<
+            PerformanceEntry & {
+              hadRecentInput?: boolean
+              value?: number
+              sources?: Array<{ node?: Element | null }>
+            }
+          >) {
+            if (!entry.hadRecentInput && entry.value) {
+              w.__wdCls = (w.__wdCls ?? 0) + entry.value
+              for (const s of entry.sources ?? []) {
+                const el = s.node
+                if (el) {
+                  w.__wdClsSources?.push(
+                    `${el.tagName.toLowerCase()}[${el.getAttribute('data-testid') || el.className.toString().slice(0, 40)}]`,
+                  )
+                }
+              }
+            }
+          }
+        }).observe({ type: 'layout-shift', buffered: false })
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            w.__wdMaxLongtask = Math.max(w.__wdMaxLongtask ?? 0, entry.duration)
+          }
+        }).observe({ type: 'longtask', buffered: false })
+      })
+
       await card.getByTestId('artifact-open').click()
       const sheet = page.getByTestId('host-file-sheet')
       await sheet.waitFor({ timeout: 10_000 })
@@ -204,6 +307,11 @@ describe.runIf(attention && devicesFile)(
       const mermaidBox = sheet.getByTestId('mermaid-svg')
       await mermaidBox.waitFor({ timeout: 15_000 })
       expect(await mermaidBox.locator('svg').count()).toBe(1)
+
+      // Allow the 200 ms enter glide to settle and assert zero lingering
+      // animated GPU layers remain on the viewer or title bar.
+      await page.waitForTimeout(260)
+      expect(await collectAnimatedLayerReasons(page)).toEqual([])
 
       const metrics = await page.evaluate(() => {
         const s = document.querySelector('[data-testid="host-file-sheet"]')!
@@ -231,6 +339,23 @@ describe.runIf(attention && devicesFile)(
       expect(metrics.h1Size).toBeGreaterThan(metrics.h2Size)
       expect(metrics.h2Size).toBeGreaterThan(metrics.h3Size)
 
+      const openStats = await page.evaluate(() => {
+        const w = window as unknown as {
+          __wdCls?: number
+          __wdClsSources?: Array<string>
+          __wdMaxLongtask?: number
+        }
+        const sheetShifted = (w.__wdClsSources ?? []).some((s) =>
+          s.includes('host-file-sheet'),
+        )
+        // Reset CLS window before the nested code file hop -> back -> close
+        // (Mermaid's intrinsic async SVG height only happens during markdown load).
+        w.__wdCls = 0
+        w.__wdClsSources = []
+        return { sheetShifted }
+      })
+      expect(openStats.sheetShifted).toBe(false)
+
       await sheet.getByTestId('host-file-link').click()
       const codeView = sheet.getByTestId('host-file-code')
       await codeView.waitFor({ timeout: 15_000 })
@@ -252,6 +377,22 @@ describe.runIf(attention && devicesFile)(
       await expect
         .poll(() => page.locator('#session-composer').inputValue())
         .toContain('design-plan.md')
+
+      const motionStats = await page.evaluate(() => {
+        const w = window as unknown as {
+          __wdCls?: number
+          __wdClsSources?: Array<string>
+          __wdMaxLongtask?: number
+        }
+        return {
+          cls: w.__wdCls ?? 0,
+          clsSources: w.__wdClsSources ?? [],
+          maxLongtask: w.__wdMaxLongtask ?? 0,
+        }
+      })
+      expect(motionStats.clsSources).toEqual([])
+      expect(motionStats.cls).toBeLessThan(0.001)
+      expect(motionStats.maxLongtask).toBeLessThan(180)
 
       await context.close()
     })

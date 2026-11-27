@@ -74,7 +74,7 @@ msgstr "{days} d ago"
 msgid "{earlier} earlier calls"
 msgstr "{earlier} earlier calls"
 
-#: src/features/ticket-diff.tsx:296
+#: src/features/ticket-diff.tsx:349
 msgid "{fileCount} files"
 msgstr "{fileCount} files"
 
@@ -223,7 +223,7 @@ msgstr "↓ {tokens} tokens"
 msgid "1 task"
 msgstr "1 task"
 
-#: src/features/mermaid-block.tsx:132
+#: src/features/mermaid-block.tsx:133
 msgid "1:1"
 msgstr "1:1"
 
@@ -686,7 +686,7 @@ msgstr "Base commit"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:197
+#: src/features/ticket-diff.tsx:199
 msgid "Binary file changed"
 msgstr "Binary file changed"
 
@@ -983,7 +983,7 @@ msgstr "Commands"
 msgid "Commands and skills"
 msgstr "Commands and skills"
 
-#: src/features/ticket-diff.tsx:177
+#: src/features/ticket-diff.tsx:179
 msgid "Comment"
 msgstr "Comment"
 
@@ -1451,11 +1451,11 @@ msgstr "Device access"
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
-#: src/features/mermaid-block.tsx:147
+#: src/features/mermaid-block.tsx:148
 msgid "Diagram"
 msgstr "Diagram"
 
-#: src/features/mermaid-block.tsx:162
+#: src/features/mermaid-block.tsx:163
 msgid "Diagram preview unavailable"
 msgstr "Diagram preview unavailable"
 
@@ -1463,7 +1463,7 @@ msgstr "Diagram preview unavailable"
 msgid "Diff"
 msgstr "Diff"
 
-#: src/features/ticket-diff.tsx:265
+#: src/features/ticket-diff.tsx:317
 msgid "Diff review feedback:"
 msgstr "Diff review feedback:"
 
@@ -1641,7 +1641,7 @@ msgstr "Every 20 messages the relay receives count as one request; messages it s
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 
-#: src/features/ticket-run-chat.tsx:97
+#: src/features/ticket-run-chat.tsx:103
 msgid "Execution conversation"
 msgstr "Execution conversation"
 
@@ -1722,7 +1722,7 @@ msgstr "finished its turn"
 msgid "First turn"
 msgstr "First turn"
 
-#: src/features/mermaid-block.tsx:127
+#: src/features/mermaid-block.tsx:128
 msgid "Fit"
 msgstr "Fit"
 
@@ -2076,7 +2076,7 @@ msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 msgid "Language"
 msgstr "Language"
 
-#: src/features/ticket-diff.tsx:376
+#: src/features/ticket-diff.tsx:409
 msgid "Large diff was capped for mobile viewing."
 msgstr "Large diff was capped for mobile viewing."
 
@@ -2168,7 +2168,7 @@ msgid "Load earlier"
 msgstr "Load earlier"
 
 #: src/features/ticket-manager-panel.tsx:315
-#: src/features/ticket-run-chat.tsx:190
+#: src/features/ticket-run-chat.tsx:196
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
 
@@ -2180,7 +2180,7 @@ msgstr "Loaded back into input"
 msgid "Loaded on this page"
 msgstr "Loaded on this page"
 
-#: src/features/ticket-diff.tsx:80
+#: src/features/ticket-diff.tsx:82
 msgid "Loading diff…"
 msgstr "Loading diff…"
 
@@ -2410,7 +2410,7 @@ msgstr "Native"
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
-#: src/features/ticket-diff.tsx:311
+#: src/features/ticket-diff.tsx:364
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "Net diff"
@@ -2525,7 +2525,7 @@ msgstr "no"
 msgid "No active session"
 msgstr "No active session"
 
-#: src/features/ticket-diff.tsx:366
+#: src/features/ticket-diff.tsx:399
 msgid "No active worktree diff is available for this ticket."
 msgstr "No active worktree diff is available for this ticket."
 
@@ -2546,7 +2546,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "No changes"
 
-#: src/features/ticket-run-chat.tsx:219
+#: src/features/ticket-run-chat.tsx:231
 msgid "No conversation messages recorded for this run."
 msgstr "No conversation messages recorded for this run."
 
@@ -2618,7 +2618,7 @@ msgstr "No session titles recorded yet."
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
-#: src/features/ticket-diff.tsx:208
+#: src/features/ticket-diff.tsx:210
 msgid "No text diff available"
 msgstr "No text diff available"
 
@@ -2702,7 +2702,7 @@ msgid "Not set"
 msgstr "Not set"
 
 #: src/features/me-agent-detail.tsx:278
-#: src/features/ticket-diff.tsx:177
+#: src/features/ticket-diff.tsx:179
 msgid "Note"
 msgstr "Note"
 
@@ -3184,8 +3184,8 @@ msgstr "Recycle worktree"
 #: src/features/host-file-sheet.tsx:80
 #: src/features/host-file-sheet.tsx:81
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:334
-#: src/features/ticket-diff.tsx:335
+#: src/features/ticket-diff.tsx:255
+#: src/features/ticket-diff.tsx:256
 msgid "Refresh"
 msgstr "Refresh"
 
@@ -3499,11 +3499,11 @@ msgstr "Review"
 msgid "Review net diff"
 msgstr "Review net diff"
 
-#: src/features/ticket-diff.tsx:188
+#: src/features/ticket-diff.tsx:190
 msgid "Review note for {repoName}/{filePath}…"
 msgstr "Review note for {repoName}/{filePath}…"
 
-#: src/features/ticket-diff.tsx:277
+#: src/features/ticket-diff.tsx:329
 msgid "Review notes sent"
 msgstr "Review notes sent"
 
@@ -3527,12 +3527,12 @@ msgstr "RSS"
 msgid "RSS p95 / peak"
 msgstr "RSS p95 / peak"
 
-#: src/features/ticket-run-chat.tsx:132
+#: src/features/ticket-run-chat.tsx:138
 msgid "run"
 msgstr "run"
 
-#: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:242
+#: src/features/ticket-run-chat.tsx:155
+#: src/features/ticket-run-chat.tsx:255
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3560,7 +3560,7 @@ msgstr "run finished"
 msgid "Run in background"
 msgstr "Run in background"
 
-#: src/features/ticket-run-chat.tsx:175
+#: src/features/ticket-run-chat.tsx:181
 msgid "Run log"
 msgstr "Run log"
 
@@ -3772,7 +3772,7 @@ msgstr "Send failed"
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
-#: src/features/ticket-diff.tsx:327
+#: src/features/ticket-diff.tsx:248
 msgid "Send review ({noteCount})"
 msgstr "Send review ({noteCount})"
 
@@ -3942,7 +3942,7 @@ msgstr "Show initial prompt"
 msgid "Show the call"
 msgstr "Show the call"
 
-#: src/features/ticket-run-chat.tsx:233
+#: src/features/ticket-run-chat.tsx:245
 msgid "Showing {shownCount} of {total} items"
 msgstr "Showing {shownCount} of {total} items"
 
@@ -4010,7 +4010,7 @@ msgstr "Sonnet tier"
 
 #: src/features/console-collab-run.tsx:173
 #: src/features/console-diagnostics.tsx:350
-#: src/features/mermaid-block.tsx:152
+#: src/features/mermaid-block.tsx:153
 #: src/features/public-header.tsx:96
 msgid "Source"
 msgstr "Source"
@@ -4616,7 +4616,7 @@ msgstr "Turn on write access in Settings to send commands"
 msgid "TURN relay"
 msgstr "TURN relay"
 
-#: src/features/ticket-run-chat.tsx:161
+#: src/features/ticket-run-chat.tsx:167
 msgid "turns"
 msgstr "turns"
 
@@ -4776,7 +4776,7 @@ msgstr "Waiting for the host"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
 
-#: src/features/ticket-run-chat.tsx:218
+#: src/features/ticket-run-chat.tsx:230
 msgid "Waiting for worker output…"
 msgstr "Waiting for worker output…"
 
@@ -5009,7 +5009,7 @@ msgstr "working"
 msgid "Working"
 msgstr "Working"
 
-#: src/features/ticket-diff.tsx:410
+#: src/features/ticket-diff.tsx:445
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
 

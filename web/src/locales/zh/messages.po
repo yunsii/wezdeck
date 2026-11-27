@@ -74,7 +74,7 @@ msgstr "{days} 天前"
 msgid "{earlier} earlier calls"
 msgstr "还有 {earlier} 个更早的调用"
 
-#: src/features/ticket-diff.tsx:296
+#: src/features/ticket-diff.tsx:349
 msgid "{fileCount} files"
 msgstr "{fileCount} 个文件"
 
@@ -223,7 +223,7 @@ msgstr "↓ {tokens} tokens"
 msgid "1 task"
 msgstr "1 项任务"
 
-#: src/features/mermaid-block.tsx:132
+#: src/features/mermaid-block.tsx:133
 msgid "1:1"
 msgstr "原尺寸"
 
@@ -686,7 +686,7 @@ msgstr "基线提交"
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/features/ticket-diff.tsx:197
+#: src/features/ticket-diff.tsx:199
 msgid "Binary file changed"
 msgstr "二进制文件已变更"
 
@@ -983,7 +983,7 @@ msgstr "命令"
 msgid "Commands and skills"
 msgstr "命令与能力"
 
-#: src/features/ticket-diff.tsx:177
+#: src/features/ticket-diff.tsx:179
 msgid "Comment"
 msgstr "批注"
 
@@ -1451,11 +1451,11 @@ msgstr "设备授权"
 msgid "Diagnostics"
 msgstr "诊断"
 
-#: src/features/mermaid-block.tsx:147
+#: src/features/mermaid-block.tsx:148
 msgid "Diagram"
 msgstr "图表"
 
-#: src/features/mermaid-block.tsx:162
+#: src/features/mermaid-block.tsx:163
 msgid "Diagram preview unavailable"
 msgstr "图表暂无法渲染"
 
@@ -1463,7 +1463,7 @@ msgstr "图表暂无法渲染"
 msgid "Diff"
 msgstr "变更"
 
-#: src/features/ticket-diff.tsx:265
+#: src/features/ticket-diff.tsx:317
 msgid "Diff review feedback:"
 msgstr "变更审阅修改意见："
 
@@ -1641,7 +1641,7 @@ msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协�
 msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
 msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
 
-#: src/features/ticket-run-chat.tsx:97
+#: src/features/ticket-run-chat.tsx:103
 msgid "Execution conversation"
 msgstr "执行过程"
 
@@ -1722,7 +1722,7 @@ msgstr "这一轮已结束"
 msgid "First turn"
 msgstr "第一轮"
 
-#: src/features/mermaid-block.tsx:127
+#: src/features/mermaid-block.tsx:128
 msgid "Fit"
 msgstr "适应宽度"
 
@@ -2076,7 +2076,7 @@ msgstr "改动落在 {where}；不推送、不提 MR"
 msgid "Language"
 msgstr "语言"
 
-#: src/features/ticket-diff.tsx:376
+#: src/features/ticket-diff.tsx:409
 msgid "Large diff was capped for mobile viewing."
 msgstr "变更较大，已截断以适应移动查看。"
 
@@ -2168,7 +2168,7 @@ msgid "Load earlier"
 msgstr "加载更早"
 
 #: src/features/ticket-manager-panel.tsx:315
-#: src/features/ticket-run-chat.tsx:190
+#: src/features/ticket-run-chat.tsx:196
 msgid "Load earlier ({start} more)"
 msgstr "加载更早（还有 {start} 条）"
 
@@ -2180,7 +2180,7 @@ msgstr "已回填到输入框"
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
-#: src/features/ticket-diff.tsx:80
+#: src/features/ticket-diff.tsx:82
 msgid "Loading diff…"
 msgstr "加载变更中…"
 
@@ -2410,7 +2410,7 @@ msgstr "原生"
 msgid "Needs a decision"
 msgstr "需要确认"
 
-#: src/features/ticket-diff.tsx:311
+#: src/features/ticket-diff.tsx:364
 #: src/features/ticket-header.tsx:118
 msgid "Net diff"
 msgstr "变更 Diff"
@@ -2525,7 +2525,7 @@ msgstr "否"
 msgid "No active session"
 msgstr "当前没有远控会话"
 
-#: src/features/ticket-diff.tsx:366
+#: src/features/ticket-diff.tsx:399
 msgid "No active worktree diff is available for this ticket."
 msgstr "当前工单没有可用的工作树变更。"
 
@@ -2546,7 +2546,7 @@ msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
 
-#: src/features/ticket-run-chat.tsx:219
+#: src/features/ticket-run-chat.tsx:231
 msgid "No conversation messages recorded for this run."
 msgstr "此次运行暂无对话记录。"
 
@@ -2618,7 +2618,7 @@ msgstr "暂无已记录的会话标题。"
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
-#: src/features/ticket-diff.tsx:208
+#: src/features/ticket-diff.tsx:210
 msgid "No text diff available"
 msgstr "无文本差异内容"
 
@@ -2702,7 +2702,7 @@ msgid "Not set"
 msgstr "未设置"
 
 #: src/features/me-agent-detail.tsx:278
-#: src/features/ticket-diff.tsx:177
+#: src/features/ticket-diff.tsx:179
 msgid "Note"
 msgstr "备注"
 
@@ -3184,8 +3184,8 @@ msgstr "回收工作树"
 #: src/features/host-file-sheet.tsx:80
 #: src/features/host-file-sheet.tsx:81
 #: src/features/me-devices.tsx:165
-#: src/features/ticket-diff.tsx:334
-#: src/features/ticket-diff.tsx:335
+#: src/features/ticket-diff.tsx:255
+#: src/features/ticket-diff.tsx:256
 msgid "Refresh"
 msgstr "刷新"
 
@@ -3499,11 +3499,11 @@ msgstr "查看"
 msgid "Review net diff"
 msgstr "审阅完整 Diff"
 
-#: src/features/ticket-diff.tsx:188
+#: src/features/ticket-diff.tsx:190
 msgid "Review note for {repoName}/{filePath}…"
 msgstr "对 {repoName}/{filePath} 添加修改批注…"
 
-#: src/features/ticket-diff.tsx:277
+#: src/features/ticket-diff.tsx:329
 msgid "Review notes sent"
 msgstr "修改批注已发送"
 
@@ -3527,12 +3527,12 @@ msgstr "内存"
 msgid "RSS p95 / peak"
 msgstr "内存 p95 / 峰值"
 
-#: src/features/ticket-run-chat.tsx:132
+#: src/features/ticket-run-chat.tsx:138
 msgid "run"
 msgstr "运行"
 
-#: src/features/ticket-run-chat.tsx:149
-#: src/features/ticket-run-chat.tsx:242
+#: src/features/ticket-run-chat.tsx:155
+#: src/features/ticket-run-chat.tsx:255
 #: src/features/ticket-runs.tsx:103
 #: src/features/ticket-runs.tsx:131
 msgid "Run"
@@ -3560,7 +3560,7 @@ msgstr "运行结束"
 msgid "Run in background"
 msgstr "转到后台"
 
-#: src/features/ticket-run-chat.tsx:175
+#: src/features/ticket-run-chat.tsx:181
 msgid "Run log"
 msgstr "原始日志"
 
@@ -3772,7 +3772,7 @@ msgstr "发送失败"
 msgid "Send failed: {errorText}"
 msgstr "发送失败：{errorText}"
 
-#: src/features/ticket-diff.tsx:327
+#: src/features/ticket-diff.tsx:248
 msgid "Send review ({noteCount})"
 msgstr "打包发送修改 ({noteCount})"
 
@@ -3942,7 +3942,7 @@ msgstr "查看初始消息"
 msgid "Show the call"
 msgstr "跳到发起的调用"
 
-#: src/features/ticket-run-chat.tsx:233
+#: src/features/ticket-run-chat.tsx:245
 msgid "Showing {shownCount} of {total} items"
 msgstr "已显示 {shownCount} / {total} 条"
 
@@ -4010,7 +4010,7 @@ msgstr "Sonnet 档"
 
 #: src/features/console-collab-run.tsx:173
 #: src/features/console-diagnostics.tsx:350
-#: src/features/mermaid-block.tsx:152
+#: src/features/mermaid-block.tsx:153
 #: src/features/public-header.tsx:96
 msgid "Source"
 msgstr "来源"
@@ -4616,7 +4616,7 @@ msgstr "在「我的」里启用写入后才能发送命令"
 msgid "TURN relay"
 msgstr "TURN 中继"
 
-#: src/features/ticket-run-chat.tsx:161
+#: src/features/ticket-run-chat.tsx:167
 msgid "turns"
 msgstr "轮"
 
@@ -4776,7 +4776,7 @@ msgstr "等电脑确认"
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "等待电脑确认这台设备。在电脑上运行："
 
-#: src/features/ticket-run-chat.tsx:218
+#: src/features/ticket-run-chat.tsx:230
 msgid "Waiting for worker output…"
 msgstr "等待工人输出…"
 
@@ -5009,7 +5009,7 @@ msgstr "运行中"
 msgid "Working"
 msgstr "运行中"
 
-#: src/features/ticket-diff.tsx:410
+#: src/features/ticket-diff.tsx:445
 msgid "Working tree matches base commit (no diff)."
 msgstr "工作树与基线一致（无变更）。"
 
