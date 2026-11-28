@@ -16,6 +16,12 @@ import (
 func newSessionFixture(t *testing.T) (repo, socket string) {
 	t.Helper()
 	dir := t.TempDir()
+	if os.Getenv("MANAGED_AGENT_PROFILE") == "" {
+		t.Setenv("MANAGED_AGENT_PROFILE", "codex")
+	}
+	if os.Getenv("WEZDECK_AGENT_PROFILE_SETTINGS_DIR") == "" {
+		t.Setenv("WEZDECK_AGENT_PROFILE_SETTINGS_DIR", filepath.Join(dir, "agent-profiles"))
+	}
 	repo = filepath.Join(dir, "repo")
 	if out, err := exec.Command("git", "init", "-q", repo).CombinedOutput(); err != nil {
 		t.Fatalf("git init: %s", out)
