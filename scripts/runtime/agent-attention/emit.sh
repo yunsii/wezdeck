@@ -723,13 +723,11 @@ elif [[ "$status" == "resolved" ]]; then
   fi
 else
   # Focus-skip: when this firing pane IS the currently-focused tmux
-  # pane in its session, suppress waiting / done upserts entirely.
-  # Per user spec ("如果 focus 了的 tmux pane 不触发 waiting 和 done
-  # 的加一操作"): the user is already looking at that pane, so the
-  # badge would be noise — better to never +1 than to +1 then
-  # immediately ack via the wezterm-side focus-ack mechanism.
+  # pane in its session, suppress waiting upserts. A focused completion
+  # still needs to be recorded so the current session can show its final
+  # state instead of silently dropping the done transition.
   # `running` is informational and always upserts.
-  if [[ ( "$status" == "waiting" || "$status" == "done" ) \
+  if [[ "$status" == "waiting" \
         && -n "$tmux_socket" && -n "$tmux_session" && -n "$tmux_pane" \
         && -n "${WEZTERM_PANE:-}" ]]; then
     attention_state_focus_path="$(attention_state_path)"
@@ -763,9 +761,7 @@ else
           && "$wezterm_focused_pane_id" == "${WEZTERM_PANE:-}" ]]; then
       # User is looking at this pane — do not raise waiting/done counters.
       #
-      # waiting vs done diverge on whether we remove the live entry:
-      #   done  → remove (focus is the ack; drop ✓ / clear stale running).
-      #   waiting → keep a live `running` entry. Permission /
+      # Keep a live `running` entry for focused waiting. Permission /
       #     elicitation while focused is still mid-turn; deleting
       #     running made the right-status drop the focused session
       #     from ⟳ N until the next UserPromptSubmit (2026-10-10:
@@ -783,8 +779,7 @@ else
         attention_audit_prepare "focus_skip" "$status" "$_prev_st" "" 1
         attention_state_remove "$session_id" 2>/dev/null || true
         _removed=1
-        # Tick so Lua drops the removed entry; without it the cache
-        # keeps a stale running/done until the next non-skipped hook.
+        # Tick so Lua drops the stale running entry before the next prompt.
         if [[ -e /dev/tty ]]; then
           # shellcheck disable=SC1091
           . "$script_dir/../wezterm-event-lib.sh"

@@ -118,7 +118,7 @@ function useFailedPolls(errorUpdateCount: number, dataUpdatedAt: number) {
   return base.data === dataUpdatedAt ? errorUpdateCount - base.errors : 0
 }
 export function prefetchSession(client: QueryClient, id: string) {
-  void client.prefetchQuery({
+  return client.prefetchQuery({
     queryKey: detailKey(id),
     queryFn: () => readDetail(client, id),
     staleTime: 10_000,

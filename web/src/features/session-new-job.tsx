@@ -254,7 +254,7 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
     retry: (count, failure) => !isUnknownNewSessionJob(failure) && count < 2,
     refetchInterval: (query) => {
       const stage = query.state.data?.job.stage
-      return stage === 'done' || stage === 'failed' ? false : 1_000
+      return stage === 'done' || stage === 'failed' ? false : 250
     },
     queryFn: async () =>
       (await hostRead('session.new.job', { job: jobId })) as {
@@ -292,14 +292,29 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
     clearJobSeed(jobId)
     if (visitPath) recordVisit(visitPath)
     if (current?.warning) toast.warning(current.warning)
-    prefetchSession(queryClient, targetId)
-    void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-    trace('session-new', { action: 'handoff', job: jobId, id: targetId })
-    void navigate({
-      to: '/{-$locale}/console/sessions/$id',
-      params: { locale: localeParam, id: targetId },
-      replace: true,
-    })
+    void (async () => {
+      // Warm the first detail snapshot before replacing the job route. The
+      // old fire-and-forget prefetch let the detail page paint once without
+      // the user's first message, then repaint as the transcript and outbox
+      // converged, which looked like several flashes on a fast new process.
+      try {
+        await Promise.race([
+          prefetchSession(queryClient, targetId),
+          new Promise<void>((resolve) => window.setTimeout(resolve, 200)),
+        ])
+      } catch {
+        // The detail route still owns retry and error rendering. Do not leave
+        // the user on the completed job page when the warm-up request races a
+        // transient relay failure.
+      }
+      void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+      trace('session-new', { action: 'handoff', job: jobId, id: targetId })
+      void navigate({
+        to: '/{-$locale}/console/sessions/$id',
+        params: { locale: localeParam, id: targetId },
+        replace: true,
+      })
+    })()
   }, [
     targetId,
     visitPath,

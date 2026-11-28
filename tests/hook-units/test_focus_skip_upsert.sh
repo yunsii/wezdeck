@@ -202,11 +202,11 @@ run_hook_in_sandbox "$sandbox" "waiting" "permission_prompt" \
 assert_no_entry_for_pane "waiting on focused pane is suppressed" "$sandbox" "%5"
 rm -rf "$sandbox"
 
-# Case 2: pane IS focused, status=done → entry MUST NOT appear.
+# Case 2: pane IS focused, status=done → completion remains observable.
 sandbox="$(mktemp -d)"
 run_hook_in_sandbox "$sandbox" "done" "" \
   "10" "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "%5" "%5"
-assert_no_entry_for_pane "done on focused pane is suppressed" "$sandbox" "%5"
+assert_has_entry_for_pane "done on focused pane remains observable" "$sandbox" "%5"
 rm -rf "$sandbox"
 
 # Case 3: pane is NOT focused (different tmux_pane), status=waiting → entry MUST appear.
@@ -217,27 +217,21 @@ assert_has_entry_for_pane "waiting on UNfocused pane still upserts" "$sandbox" "
 rm -rf "$sandbox"
 
 # Case 4: running upserts regardless of focus — informational counter,
-# always shown. The "stuck running" hazard is handled separately by
-# Case 5 below: when done fires on the focused pane, the focus-skip
-# path removes any prior entry (including a leftover running) for
-# that session_id.
+# always shown.
 sandbox="$(mktemp -d)"
 run_hook_in_sandbox "$sandbox" "running" "" \
   "10" "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "%5" "%5"
 assert_has_entry_for_pane "running on focused pane upserts (informational)" "$sandbox" "%5"
 rm -rf "$sandbox"
 
-# Case 5 (regression — coco-server stuck-running bug): a previously
-# upserted `running` entry must be REMOVED when the focused-pane done
-# fires, not just skipped. Otherwise the badge sits on `running`
-# forever after the user already saw the pane finish.
+# Case 5: a previously running entry transitions to observable done.
 sandbox="$(mktemp -d)"
 seed_running_entry "$sandbox" "ccdc-test-sid" "10" \
   "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "@1" "%5"
 MOCK_HOOK_STDIN='{"session_id":"ccdc-test-sid"}' \
   run_hook_in_sandbox "$sandbox" "done" "" \
   "10" "/tmp/tmux-1000/default" "wezterm_work_a_aaaaaaaaaa" "%5" "%5"
-assert_no_entry_for_session "focused done removes prior running entry" "$sandbox" "ccdc-test-sid"
+assert_has_entry_for_pane "focused done remains observable" "$sandbox" "%5"
 rm -rf "$sandbox"
 
 # Case 6: focused waiting skips the ▲ upsert but KEEPS the prior running
