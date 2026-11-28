@@ -2,13 +2,13 @@
 // text, not UI chrome).
 import type { LinkKind, Text } from './model'
 
-export const SOURCE = 'https://github.com/yunsii/wezterm-config'
+export const SOURCE = 'https://github.com/yunsii/wezdeck'
 
 export const COPY = {
   title: { zh: 'WezDeck 是怎么搭起来的', en: 'How WezDeck fits together' },
   lead: {
-    zh: 'AI Agent 跑在 WSL 的 tmux 里，终端由 WezTerm 承载；Windows 上的本地服务替它们做主机操作；网页端在别的设备上经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走五条最常用的流程，最后列出本地服务提供的全部能力。',
-    en: 'AI agents run in tmux inside WSL, hosted by WezTerm on the desktop; a local Windows service does the host work for them; the web console on another device finds the computer through Cloudflare and then connects directly when it can. First the whole picture, then the five flows you use most, then everything the local services offer.',
+    zh: 'AI Agent 跑在 WSL 的 tmux 里，日常在网页控制台查看和操作；需要真实 TUI 时再用 WezTerm 接入。Windows 上的本地服务处理主机操作，远程设备经 Cloudflare 找到这台电脑，再尽量直连。下面先看全景，再走五条常用流程，最后列出本地服务的能力。',
+    en: 'AI agents run in tmux inside WSL. The web console is the daily interface, with WezTerm attaching when you need the real TUI. A local Windows service handles host actions; remote devices find this computer through Cloudflare and connect directly when possible. First the whole picture, then five common flows, then the local services.',
   },
   concepts: { zh: '几个概念', en: 'A few concepts' },
   flows: { zh: '流程', en: 'Flows' },
@@ -73,8 +73,8 @@ export const CONCEPTS: Array<{ term: Text; body: Text }> = [
   {
     term: { zh: '终端', en: 'Terminal' },
     body: {
-      zh: '主机上的 WezTerm + tmux，你直接打字的地方：工作区、标签页、徽标、Alt+j 等快捷键。旧文字里叫「桌面」或「电脑前」。',
-      en: 'WezTerm + tmux on the host, where you type directly: workspaces, tabs, badges, Alt+j and the other keys. Older text calls it the desk.',
+      zh: '按需打开的 WezTerm 客户端，接入主机上持续运行的 tmux pane，供你直接操作真实 TUI。备用完整配置还包含工作区、标签页和徽标。',
+      en: 'An on-demand WezTerm client attached to a persistent tmux pane on the host for direct TUI use. The optional full configuration also has workspaces, tabs and badges.',
     },
   },
   {

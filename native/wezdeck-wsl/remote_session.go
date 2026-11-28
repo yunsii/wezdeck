@@ -736,9 +736,14 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 		out["meta"] = sessionMetaWithPane(e, path, agent, nil, cwd, cmd, paneIndex, paneAlive)
 	}
 	timing.add("transcript_ms", time.Since(tTranscript))
-	if outbox := reconcileSessionOutbox(a.ID, allMsgsForOutbox, e.busy(), time.Now().UnixMilli()); len(outbox) > 0 {
-		out["outbox"] = outbox
+	// Always include the outbox field once the detail is authoritative. An
+	// explicit empty list lets the browser discard optimistic bubbles left
+	// behind by a restarted process instead of treating them as live sends.
+	outbox := reconcileSessionOutbox(a.ID, allMsgsForOutbox, e.busy(), time.Now().UnixMilli())
+	if outbox == nil {
+		outbox = []sentRecord{}
 	}
+	out["outbox"] = outbox
 	if readOnly {
 		return out, nil
 	}

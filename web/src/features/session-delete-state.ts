@@ -1,6 +1,10 @@
-import { useMutationState, useQuery } from '@tanstack/react-query'
+import {
+  useMutationState,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import {
   applySessionsListOverlay,
@@ -9,6 +13,7 @@ import {
 } from '#/lib/optimistic-state'
 import { hostRead } from '#/lib/runtime-client'
 import type { SessionCard } from './session-card'
+import type { Detail } from './session-detail-types'
 import type { NewSessionJob } from './session-new-route'
 
 export const sessionDeleteKey = ['session.delete'] as const
@@ -77,8 +82,14 @@ export function useSessionDeleteReview(id: string) {
 }
 
 export function useSessions() {
+  const client = useQueryClient()
   const pending = usePendingSessionDeletes()
   const overlays = useAllSessionOptimistics()
+  const hasActiveListOverlay = [...overlays.values()].some(
+    (item) => !item.settledOn?.list,
+  )
+  const hasOverlaysRef = useRef(hasActiveListOverlay)
+  hasOverlaysRef.current = hasActiveListOverlay
   const select = useCallback(
     (data: SessionsReply) =>
       applySessionsListOverlay(
@@ -87,15 +98,21 @@ export function useSessions() {
       ),
     [pending, overlays],
   )
-  return useQuery({
+  const query = useQuery({
     queryKey: ['remote', 'sessions'],
     enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
-    queryFn: async () => {
-      const reply = (await hostRead('sessions', {})) as SessionsReply
-      reconcileSessionsList(reply.sessions)
-      return reply
-    },
+    refetchInterval: () => (hasOverlaysRef.current ? 1_500 : 5_000),
+    queryFn: () => hostRead('sessions', {}) as Promise<SessionsReply>,
     select,
   })
+  useEffect(() => {
+    if (overlays.size === 0) return
+    const raw = client.getQueryData<SessionsReply>(['remote', 'sessions'])
+    if (!raw?.sessions.length) return
+    reconcileSessionsList(raw.sessions, Date.now(), {
+      getDetail: (sid) =>
+        client.getQueryData<Detail>(['remote', 'session', sid]),
+    })
+  }, [client, query.dataUpdatedAt, overlays])
+  return query
 }

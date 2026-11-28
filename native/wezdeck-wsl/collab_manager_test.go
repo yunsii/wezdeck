@@ -4,8 +4,74 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestResolveManagerProfile(t *testing.T) {
+	settings := t.TempDir()
+	t.Setenv("WEZDECK_AGENT_PROFILE_SETTINGS_DIR", settings)
+	t.Setenv("MANAGED_AGENT_PROFILE", "codex")
+	profile, err := resolveManagerProfile("")
+	if err != nil || profile != "codex" {
+		t.Fatalf("default profile = %q, %v", profile, err)
+	}
+	if err := os.WriteFile(filepath.Join(settings, "claude.json"), []byte(`{"disabled":true}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolveManagerProfile("claude"); err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("disabled profile: %v", err)
+	}
+}
+
+func TestManagerPaneActiveRequiresTicketAndAgent(t *testing.T) {
+	dir := t.TempDir()
+	script := "#!/bin/sh\nprintf '%s\\t%s\\n' \"$TEST_TICKET\" \"$TEST_COMMAND\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "tmux"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("TEST_TICKET", "req-20261123-063230-90db23")
+	t.Setenv("TEST_COMMAND", "codex")
+	ms := &managerSessionMeta{State: "live", TmuxPane: "%195"}
+	if !managerPaneActive("req-20261123-063230-90db23", ms) {
+		t.Fatal("agent pane should be active")
+	}
+	if managerPaneActive("req-20261123-063230-other", ms) {
+		t.Fatal("pane for another ticket should not be active")
+	}
+	t.Setenv("TEST_COMMAND", "zsh")
+	if managerPaneActive("req-20261123-063230-90db23", ms) {
+		t.Fatal("shell pane should not be active")
+	}
+}
+
+func TestCollabManagerChatTreatsShellAsParked(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("TICKETS_ROOT", root)
+	id := "req-20261123-063230-90db23"
+	dataDir := filepath.Join(root, "_data", id)
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	meta := `{"manager_session":{"backend":"claude","profile":"claude","id":"","tmux_pane":"%195","state":"live"}}`
+	if err := os.WriteFile(filepath.Join(dataDir, "meta.json"), []byte(meta), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	script := "#!/bin/sh\nprintf '%s\\t%s\\n' '" + id + "' zsh\n"
+	if err := os.WriteFile(filepath.Join(dir, "tmux"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	res, err := collabManagerChat(json.RawMessage(`{"id":"` + id + `"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state := res.(map[string]any)["state"]; state != "parked" {
+		t.Fatalf("stale shell state = %v", state)
+	}
+}
 
 func TestCollabManagerChat_ParkedHistoryAndTicketIDDetection(t *testing.T) {
 	ticketsRoot := t.TempDir()

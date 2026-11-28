@@ -50,6 +50,28 @@ func TestOutboxRecordDedupAndSlashFilter(t *testing.T) {
 	}
 }
 
+func TestDismissSessionOutboxAtProcessBoundary(t *testing.T) {
+	useTempOutbox(t)
+	pending, _ := outboxRecordStart(sentRecord{SessionID: "codex-1", Text: "old draft", Status: "pending"})
+	confirmed, _ := outboxRecordStart(sentRecord{SessionID: "codex-1", Text: "already sent", Status: "confirmed"})
+	other, _ := outboxRecordStart(sentRecord{SessionID: "codex-2", Text: "keep", Status: "pending"})
+
+	if got := dismissSessionOutbox("codex-1", "discarded at process restart"); got != 1 {
+		t.Fatalf("expected one unsettled record dismissed, got %d", got)
+	}
+	items := readOutboxCached().Items
+	byID := map[string]sentRecord{}
+	for _, item := range items {
+		byID[item.ID] = item
+	}
+	if byID[pending.ID].Status != "dismissed" || byID[pending.ID].Error == "" {
+		t.Fatalf("pending record should be dismissed with a reason: %+v", byID[pending.ID])
+	}
+	if byID[confirmed.ID].Status != "confirmed" || byID[other.ID].Status != "pending" {
+		t.Fatalf("restart boundary changed unrelated records: confirmed=%+v other=%+v", byID[confirmed.ID], byID[other.ID])
+	}
+}
+
 func TestOutboxReconcileExactMergedAndUnconfirmed(t *testing.T) {
 	useTempOutbox(t)
 	now := time.Now().UnixMilli()

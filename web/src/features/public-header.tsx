@@ -12,7 +12,7 @@ import { useTheme } from '#/lib/theme-provider'
 import { cn } from '#/lib/utils'
 import { LanguageSwitcher, ThemeSwitcher } from './console-shared'
 
-export const SOURCE_URL = 'https://github.com/yunsii/wezterm-config'
+export const SOURCE_URL = 'https://github.com/yunsii/wezdeck'
 
 export function PublicHeader({
   active,

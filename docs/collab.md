@@ -296,6 +296,13 @@ records `{reuse, reason}`, where `reason` is one of `warm_cache`,
   .locks/{tickets.lock, scheduler.<id>.lock, slots/N.lock}
 ```
 
+The Web ticket manager uses the machine's active agent profile on start or
+wake, and refuses a disabled profile before opening a pane. It reports a live
+session only after the agent TUI is ready. A stale pane that fell back to a
+shell is shown as parked; wake replaces it, and send never pastes into that
+shell. Switching agent families starts a fresh conversation rather than
+passing the previous family's session id to the new CLI.
+
 - **Retention.** `ticket gc` removes the stream, launch and events files
   after 30 days (`TICKET_KEEP_DAYS`). Prompts that no remaining launch
   references are removed with them. Ticket `meta` and run records are kept

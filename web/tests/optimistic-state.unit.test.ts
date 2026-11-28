@@ -11,10 +11,12 @@ import {
   applySessionOptimistic,
   applySessionsListOverlay,
   createSerialQueue,
+  isSessionCardOverlaySettled,
   isSessionDetailOverlaySettled,
   onOptimisticTimeout,
   promptFingerprint,
   reconcileSessionDetail,
+  reconcileSessionsList,
   resetSessionOptimisticForTest,
   rollbackSessionOptimistic,
 } from '#/lib/optimistic-state'
@@ -202,6 +204,55 @@ describe('session optimistic overlays', () => {
         2_200 + SESSION_SEND_TTL_MS,
       ),
     ).toBe('timeout')
+  })
+
+  it('does NOT prematurely settle list running state when idle SessionCard.ts exceeds Detail.ts (window_activity / transcript clock)', () => {
+    // Reproduces real phone bug: archived/idle Detail.ts is older (e.g. 1000)
+    // than SessionCard.ts (e.g. 2100, bumped by tmux paste / transcript mtime),
+    // while the agent hook has not flipped status to `running` yet.
+    const idleCardAfterPaste = baseCard({
+      status: 'idle',
+      ts: 2_100,
+    })
+    applySessionOptimistic({
+      id: 's1',
+      opId: 'op-idle-send',
+      kind: 'send',
+      createdAt: 2_000,
+      promptText: 'check this',
+      baseline: { status: 'idle', ts: 1_000, transcriptEnd: 2 },
+    })
+    acceptSessionOptimistic('s1', 'op-idle-send', 2_050)
+
+    const settlingOverlay: SessionOptimistic = {
+      id: 's1',
+      opId: 'op-idle-send',
+      kind: 'send',
+      phase: 'settling',
+      createdAt: 2_000,
+      acceptedAt: 2_050,
+      ttlMs: SESSION_SEND_TTL_MS,
+      promptText: 'check this',
+      baseline: { status: 'idle', ts: 1_000, transcriptEnd: 2 },
+    }
+    expect(
+      isSessionCardOverlaySettled(settlingOverlay, idleCardAfterPaste, 2_500),
+    ).toBe('active')
+    // reconcileSessionsList must keep the overlay alive while host is still idle
+    reconcileSessionsList([idleCardAfterPaste], 2_500)
+    const listAfterPoll = applySessionsListOverlay(
+      { sessions: [idleCardAfterPaste] },
+      new Map([['s1', settlingOverlay]]),
+      2_500,
+    )
+    expect(listAfterPoll.sessions[0].status).toBe('running')
+    expect(listAfterPoll.sessions[0].last_prompt).toBe('check this')
+
+    // Once host actually flips to running -> settles cleanly
+    const runningCard = baseCard({ status: 'running', ts: 5_000 })
+    expect(
+      isSessionCardOverlaySettled(settlingOverlay, runningCard, 5_100),
+    ).toBe('settled')
   })
 
   it('prompt-submit hides baseline card and switches to running, but NEVER swallows a new prompt', () => {

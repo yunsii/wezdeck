@@ -185,3 +185,31 @@ ink + bolt; `--agent-*` per theme), 主 the accent and 副 neutral, a status its
 tone (running / waiting / done), a branch and a repo neutral with their git
 icons. The list rows and the session header share them.
 
+## Optimistic overlay settlement
+
+Read-time optimistic overlays (`optimistic-state.ts`, `optimistic-state-project.ts`,
+`optimistic-tickets.ts`) project state across separate TanStack Query caches (list
+and detail) via `useSyncExternalStore`. To prevent single-frame tearing and
+layout-shift flashes when the host confirms an action (2026-11-28):
+
+- **Never reconcile inside `queryFn`**: deleting an external-store overlay before
+  TanStack Query commits the fresh payload forces React to render a stale frame
+  (`overlay = undefined` + old cached `waiting` data), flashing prompt cards and
+  the `24 px` composer-blocked notice back onto screen. Run `reconcile*` only in
+  post-commit `useEffect` (reading raw cache data via `client.getQueryData` when
+  the hook uses `select`).
+- **Coordinate cross-query settlement (`settledOn`)**: when the list query settles
+  before the detail query (or vice versa), mark only that surface settled and keep
+  the overlay alive for the lagging surface until both caches catch up (or a
+  genuinely distinct new prompt arrives via `isDistinctNewPrompt`). Never fire a
+  timeout warning toast once any surface has confirmed settlement.
+- **Keep prompt fingerprints stable through teardown**: hash bare `waiting_kind`
+  without volatile terminal screen tails (`keys:<waiting_kind>`), and treat a
+  structured prompt downgrading to bare `keys:` with the same `waiting_kind` as
+  teardown rather than a new prompt.
+- **Verify the settlement window in CDP**: optimistic CDP tests
+  (`optimistic-ui.cdp.test.ts`) must not stop at the 0 ms click assertion — flip
+  host state to settled and guard the entire poll handoff with a
+  `MutationObserver` + `PerformanceObserver('layout-shift')` asserting zero prompt
+  remounts, zero list-tone bounces, and zero statusbar shifts.
+

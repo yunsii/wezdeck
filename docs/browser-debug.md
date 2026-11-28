@@ -142,6 +142,17 @@ Everyday browsers (`chrome` / `edge` / `brave`) are never touched.
 
 ### Unified hotkeys, badge, and WezTerm startup
 
+From WSL, `wezdeck-browser ensure` prepares the configured browser slot
+on demand. `wezdeck-browser focus` raises Ego or opens the CDP inspector.
+Both work without a WezTerm window. A Windows keyboard shortcut can run
+`wsl.exe --exec /absolute/wsl/path/to/scripts/runtime/cli/wezdeck-browser focus`
+using the primary WezDeck checkout path.
+
+The CDP MCP launcher `wezdeck-cdp-mcp` reads the installed Windows Runtime
+configuration and waits for its configured port before starting
+`chrome-devtools-mcp`. Applying the CDP backend registers this launcher in
+OpenClaw. The Runtime's single-instance mutex prevents duplicate managers.
+
 `Alt+b` / `Alt+Shift+b` and the right-status browser slot follow `backend`:
 
 | | `backend=ego` | `backend=cdp` |

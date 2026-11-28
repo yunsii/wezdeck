@@ -62,10 +62,10 @@ Detail: repo [`docs/browser-debug.md`](../../docs/browser-debug.md).
 ## Workflow
 
 1. Resolve backend from env (after managed env load if available).
-2. Probe:
+2. Run `wezdeck-browser ensure` from WSL, then probe:
    - `ego`: `ego-browser nodejs -e "console.log('ego-browser ready')"`
-   - `cdp`: `curl -sS -m 3 http://127.0.0.1:9222/json/version`
-3. If probe fails, report the fix (open Ego / Alt+b) — do not invent success.
+   - `cdp`: `curl -sS -m 3 "$(wezdeck-browser cdp-url)/json/version"`
+3. If probe fails, report the launcher or probe error and check the browser/Windows Runtime logs.
 4. **Pick the browser identity** before opening anything (see
    [Scenes and profiles](#scenes-and-profiles)); tell the human which one
    and why in one line.

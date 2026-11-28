@@ -6,6 +6,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
 
 #: src/features/session-git.tsx:57
 msgctxt "list separator"
@@ -46,8 +52,8 @@ msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
 #: src/features/console-sessions.tsx:312
-#: src/features/message-composer.tsx:134
-#: src/features/message-composer.tsx:164
+#: src/features/message-composer.tsx:136
+#: src/features/message-composer.tsx:166
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -265,8 +271,12 @@ msgid "A headless run is still going; wait until it finishes."
 msgstr "A headless run is still going; wait until it finishes."
 
 #: src/features/landing-page.tsx:54
-msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
-msgstr "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+msgid "A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI."
+msgstr "A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI."
+
+#: src/features/landing-page.tsx:54
+#~ msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+#~ msgstr "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
 
 #: src/features/session-info.tsx:104
 msgid "A message sent mid-turn"
@@ -359,7 +369,7 @@ msgstr "Agent"
 msgid "Agent CLI used to generate titles"
 msgstr "Agent CLI used to generate titles"
 
-#: src/features/console-me.tsx:224
+#: src/features/console-me.tsx:242
 msgid "Agent defaults"
 msgstr "Agent defaults"
 
@@ -378,7 +388,7 @@ msgstr "Agent sessions"
 msgid "agent settings and execution mode"
 msgstr "agent settings and execution mode"
 
-#: src/features/console-me.tsx:63
+#: src/features/console-me.tsx:64
 #: src/features/me-agents.tsx:176
 msgid "Agents"
 msgstr "Agents"
@@ -520,12 +530,12 @@ msgstr "API error"
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
-#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:61
 #: src/features/me-app.tsx:36
 msgid "App"
 msgstr "App"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:60
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -610,6 +620,7 @@ msgstr "Attached screenshots (kept with ticket)"
 msgid "Attachments"
 msgstr "Attachments"
 
+#: src/features/console-me.tsx:189
 #: src/features/me-autotitle.tsx:165
 #: src/features/me-autotitle.tsx:337
 #: src/features/session-statusbar.tsx:96
@@ -646,7 +657,11 @@ msgstr "Auto mode server"
 msgid "Auto off"
 msgstr "Auto off"
 
-#: src/features/console-me.tsx:65
+#: src/features/console-me.tsx:195
+msgid "Auto sends on desktop and tablet keyboards, and breaks lines on phones. Shift+Enter always breaks lines; Ctrl/⌘+Enter always sends."
+msgstr "Auto sends on desktop and tablet keyboards, and breaks lines on phones. Shift+Enter always breaks lines; Ctrl/⌘+Enter always sends."
+
+#: src/features/console-me.tsx:66
 msgid "Auto titles"
 msgstr "Auto titles"
 
@@ -668,7 +683,7 @@ msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:115
-#: src/features/console-me.tsx:397
+#: src/features/console-me.tsx:415
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:81
@@ -709,7 +724,7 @@ msgstr "Background auto-titling"
 msgid "Background tasks"
 msgstr "Background tasks"
 
-#: src/features/console-me.tsx:171
+#: src/features/console-me.tsx:173
 msgid "Bar"
 msgstr "Bar"
 
@@ -729,11 +744,11 @@ msgstr "Binary file changed"
 msgid "Blank switch"
 msgstr "Blank switch"
 
-#: src/features/console-me.tsx:172
+#: src/features/console-me.tsx:174
 msgid "Block"
 msgstr "Block"
 
-#: src/features/console-me.tsx:177
+#: src/features/console-me.tsx:179
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 
@@ -1023,7 +1038,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:484
+#: src/features/session-send.ts:450
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1121,7 +1136,7 @@ msgstr "Connected"
 msgid "Connecting…"
 msgstr "Connecting…"
 
-#: src/features/console-me.tsx:55
+#: src/features/console-me.tsx:56
 msgid "Connection"
 msgstr "Connection"
 
@@ -1415,8 +1430,8 @@ msgstr "Current sample is from the foreground WezTerm window."
 msgid "Daemon"
 msgstr "Daemon"
 
-#: src/features/console-me.tsx:160
-#: src/features/console-me.tsx:209
+#: src/features/console-me.tsx:162
+#: src/features/console-me.tsx:227
 #: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "Dark"
@@ -1507,13 +1522,13 @@ msgstr "Desk idle for"
 msgid "Detached"
 msgstr "Detached"
 
-#: src/features/console-me.tsx:56
+#: src/features/console-me.tsx:57
 msgid "Device access"
 msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
-#: src/features/console-me.tsx:333
+#: src/features/console-me.tsx:351
 #: src/features/console-shell.tsx:101
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -1637,11 +1652,11 @@ msgstr "Effort"
 msgid "Enable notifications"
 msgstr "Enable notifications"
 
-#: src/features/console-me.tsx:198
+#: src/features/console-me.tsx:216
 msgid "Enabled"
 msgstr "Enabled"
 
-#: src/features/console-me.tsx:197
+#: src/features/console-me.tsx:215
 msgid "Enabled on this computer"
 msgstr "Enabled on this computer"
 
@@ -1671,6 +1686,11 @@ msgstr "Endpoint"
 #: src/features/session-plan-keys.tsx:64
 msgid "Enter"
 msgstr "Enter"
+
+#: src/features/console-me.tsx:183
+#: src/features/console-me.tsx:185
+msgid "Enter key"
+msgstr "Enter key"
 
 #: src/features/session-new.tsx:271
 msgid "Enter to send · Shift+Enter for newline"
@@ -1702,8 +1722,12 @@ msgid "Every 20 messages the relay receives count as one request; messages it se
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
 #: src/features/landing-page.tsx:90
-msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
-msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+#~ msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+#~ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+
+#: src/features/landing-page.tsx:90
+msgid "Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone."
+msgstr "Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone."
 
 #: src/features/ticket-run-chat.tsx:155
 msgid "Execution conversation"
@@ -1938,11 +1962,11 @@ msgstr "Host signals"
 msgid "Host unreachable right now"
 msgstr "Host unreachable right now"
 
-#: src/features/console-me.tsx:109
+#: src/features/console-me.tsx:110
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/console-me.tsx:303
+#: src/features/console-me.tsx:321
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
 #: src/features/public-header.tsx:87
@@ -2021,7 +2045,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/message-composer.tsx:178
+#: src/features/message-composer.tsx:180
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -2062,7 +2086,7 @@ msgstr "Integration verification failed"
 msgid "Integration verification passed and awaits delivery confirmation."
 msgstr "Integration verification passed and awaits delivery confirmation."
 
-#: src/features/console-me.tsx:62
+#: src/features/console-me.tsx:63
 msgid "Interaction debugging"
 msgstr "Interaction debugging"
 
@@ -2078,7 +2102,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:409
+#: src/features/session-send.ts:399
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -2128,8 +2152,8 @@ msgstr "LAN"
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "Lands on {where}; nothing is pushed and no MR is opened"
 
-#: src/features/console-me.tsx:133
 #: src/features/console-me.tsx:135
+#: src/features/console-me.tsx:137
 #: src/features/console-shared.tsx:412
 #: src/features/console-shared.tsx:414
 msgid "Language"
@@ -2143,7 +2167,7 @@ msgstr "Large diff was capped for mobile viewing."
 msgid "last {lastSeen}"
 msgstr "last {lastSeen}"
 
-#: src/features/console-me.tsx:116
+#: src/features/console-me.tsx:117
 msgid "Last direct attempt"
 msgstr "Last direct attempt"
 
@@ -2195,8 +2219,8 @@ msgstr "Level"
 msgid "Level with upstream."
 msgstr "Level with upstream."
 
-#: src/features/console-me.tsx:159
-#: src/features/console-me.tsx:209
+#: src/features/console-me.tsx:161
+#: src/features/console-me.tsx:227
 #: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "Light"
@@ -2413,7 +2437,7 @@ msgstr "Metrics window"
 msgid "Minimum duration"
 msgstr "Minimum duration"
 
-#: src/features/console-me.tsx:79
+#: src/features/console-me.tsx:80
 msgid "Mode"
 msgstr "Mode"
 
@@ -2553,6 +2577,10 @@ msgstr "New version available"
 #: src/features/me-app.tsx:61
 msgid "New version ready, reload to use it"
 msgstr "New version ready, reload to use it"
+
+#: src/features/console-me.tsx:190
+msgid "Newline"
+msgstr "Newline"
 
 #: src/features/console-keys.tsx:66
 msgid "Next / previous running session"
@@ -2749,7 +2777,7 @@ msgstr "not done"
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
-#: src/features/console-me.tsx:243
+#: src/features/console-me.tsx:261
 msgid "Not paired"
 msgstr "Not paired"
 
@@ -2797,7 +2825,7 @@ msgstr "Nothing matches"
 msgid "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 msgstr "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 
-#: src/features/console-me.tsx:57
+#: src/features/console-me.tsx:58
 msgid "Notifications"
 msgstr "Notifications"
 
@@ -2817,7 +2845,7 @@ msgstr "Notify when a long agent turn finishes (off by default)."
 msgid "now {label}"
 msgstr "now {label}"
 
-#: src/features/console-me.tsx:202
+#: src/features/console-me.tsx:220
 #: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
 #: src/features/me-notifications.tsx:45
@@ -2859,7 +2887,7 @@ msgstr "Only reusable worktrees can be managed here"
 msgid "Only this trace"
 msgstr "Only this trace"
 
-#: src/features/message-composer.tsx:97
+#: src/features/message-composer.tsx:99
 msgid "Only up to {MAX_IMAGES} images fit in one message"
 msgstr "Only up to {MAX_IMAGES} images fit in one message"
 
@@ -3020,7 +3048,7 @@ msgstr "Pair first"
 msgid "Pair this device with your host first to enable remote push notifications."
 msgstr "Pair this device with your host first to enable remote push notifications."
 
-#: src/features/console-me.tsx:92
+#: src/features/console-me.tsx:93
 msgid "Pairing command"
 msgstr "Pairing command"
 
@@ -3076,7 +3104,7 @@ msgstr "Permission prompts, Ask questions, and plan approvals."
 msgid "Phase"
 msgstr "Phase"
 
-#: src/features/console-me.tsx:85
+#: src/features/console-me.tsx:86
 msgid "Phone or tablet"
 msgstr "Phone or tablet"
 
@@ -3437,7 +3465,7 @@ msgstr "Repo tickets (t)"
 msgid "Repo tickets & quick ticket"
 msgstr "Repo tickets & quick ticket"
 
-#: src/features/console-me.tsx:64
+#: src/features/console-me.tsx:65
 msgid "Repositories"
 msgstr "Repositories"
 
@@ -3458,7 +3486,7 @@ msgstr "Repository agent settings could not be read on the host. Workspace defau
 msgid "Repository agent settings could not be read. Select an agent explicitly."
 msgstr "Repository agent settings could not be read. Select an agent explicitly."
 
-#: src/features/console-me.tsx:218
+#: src/features/console-me.tsx:236
 #: src/features/me-agents.tsx:152
 #: src/features/session-new-panels.tsx:73
 #: src/features/session-new-panels.tsx:74
@@ -3486,7 +3514,7 @@ msgstr "Request access"
 msgid "Request changes"
 msgstr "Request changes"
 
-#: src/features/console-me.tsx:111
+#: src/features/console-me.tsx:112
 msgid "Requests (WebRTC / relay)"
 msgstr "Requests (WebRTC / relay)"
 
@@ -3693,7 +3721,7 @@ msgstr "Run now"
 msgid "Run started"
 msgstr "Run started"
 
-#: src/features/console-me.tsx:88
+#: src/features/console-me.tsx:89
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "Run this on the host, then open the link it prints on that device:"
 
@@ -3880,8 +3908,9 @@ msgid "Select a target repository first."
 msgstr "Select a target repository first."
 
 #: src/features/console-keys.tsx:109
-#: src/features/message-composer.tsx:373
-#: src/features/message-composer.tsx:375
+#: src/features/console-me.tsx:191
+#: src/features/message-composer.tsx:397
+#: src/features/message-composer.tsx:399
 #: src/features/ticket-manager-panel.tsx:132
 msgid "Send"
 msgstr "Send"
@@ -4027,9 +4056,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:432
-#: src/features/console-me.tsx:436
-#: src/features/console-me.tsx:460
+#: src/features/console-me.tsx:450
+#: src/features/console-me.tsx:454
+#: src/features/console-me.tsx:478
 #: src/features/console-shell.tsx:108
 msgid "Settings"
 msgstr "Settings"
@@ -4335,8 +4364,8 @@ msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
 
-#: src/features/console-me.tsx:158
-#: src/features/console-me.tsx:209
+#: src/features/console-me.tsx:160
+#: src/features/console-me.tsx:227
 #: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "System"
@@ -4394,8 +4423,8 @@ msgstr "Terminal screen"
 msgid "Test notification sent"
 msgstr "Test notification sent"
 
-#: src/features/console-me.tsx:165
 #: src/features/console-me.tsx:167
+#: src/features/console-me.tsx:169
 msgid "Text caret"
 msgstr "Text caret"
 
@@ -4438,7 +4467,7 @@ msgstr "The contract or behaviour you expect — the target checks this first"
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/session-send.ts:315
+#: src/features/session-send.ts:288
 msgid "The host did not confirm the action; please check and retry."
 msgstr "The host did not confirm the action; please check and retry."
 
@@ -4450,7 +4479,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-send.ts:486
+#: src/features/session-send.ts:452
 msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 
@@ -4472,8 +4501,8 @@ msgstr "The text after the command becomes the new session's name (\"{name}\"), 
 msgid "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 msgstr "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 
-#: src/features/console-me.tsx:152
 #: src/features/console-me.tsx:154
+#: src/features/console-me.tsx:156
 #: src/features/console-shared.tsx:385
 #: src/features/console-shared.tsx:387
 msgid "Theme"
@@ -4496,17 +4525,17 @@ msgstr "This browser"
 msgid "This browser does not support Web Push notifications."
 msgstr "This browser does not support Web Push notifications."
 
-#: src/features/console-me.tsx:61
-#: src/features/console-me.tsx:241
+#: src/features/console-me.tsx:62
+#: src/features/console-me.tsx:259
 #: src/features/console-shell.tsx:344
 msgid "This computer"
 msgstr "This computer"
 
-#: src/features/console-me.tsx:79
+#: src/features/console-me.tsx:80
 msgid "This computer (local Runtime)"
 msgstr "This computer (local Runtime)"
 
-#: src/features/console-me.tsx:81
+#: src/features/console-me.tsx:82
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 
@@ -4524,7 +4553,7 @@ msgstr "This device"
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "This device is not approved yet (Settings › Device access)."
 
-#: src/features/console-me.tsx:103
+#: src/features/console-me.tsx:104
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
@@ -4782,7 +4811,7 @@ msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
 #: src/features/session-detail-parts.tsx:90
-#: src/features/session-send.ts:405
+#: src/features/session-send.ts:395
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
@@ -4828,11 +4857,11 @@ msgstr "Unavailable agents ({disabledCount})"
 msgid "Unconfirmed ({unsettledCount})"
 msgstr "Unconfirmed ({unsettledCount})"
 
-#: src/features/console-me.tsx:173
+#: src/features/console-me.tsx:175
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/message-composer.tsx:180
+#: src/features/message-composer.tsx:182
 msgid "Undo"
 msgstr "Undo"
 
@@ -4876,8 +4905,8 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/message-composer.tsx:145
-#: src/features/message-composer.tsx:155
+#: src/features/message-composer.tsx:147
+#: src/features/message-composer.tsx:157
 msgid "Uploading {step}/{total}…"
 msgstr "Uploading {step}/{total}…"
 
@@ -4887,7 +4916,7 @@ msgstr "Uploading {step}/{total}…"
 msgid "Uptime"
 msgstr "Uptime"
 
-#: src/features/console-me.tsx:58
+#: src/features/console-me.tsx:59
 #: src/features/session-info.tsx:55
 msgid "Usage"
 msgstr "Usage"
@@ -4955,7 +4984,7 @@ msgstr "Waiting for"
 msgid "Waiting for approval or reply"
 msgstr "Waiting for approval or reply"
 
-#: src/features/console-me.tsx:200
+#: src/features/console-me.tsx:218
 msgid "Waiting for the host"
 msgstr "Waiting for the host"
 

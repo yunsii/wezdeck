@@ -341,6 +341,35 @@ func isUnsettledOutboxStatus(status string) bool {
 	return status == "pasting" || status == "pending" || status == "unconfirmed" || status == "failed"
 }
 
+// dismissSessionOutbox closes messages that were never written to the agent
+// transcript when its process is restarted. A new process is a delivery
+// boundary. Carrying these records across it makes an old web draft appear as
+// a live turn in the restarted session.
+func dismissSessionOutbox(sessionID, reason string) int {
+	if sessionID == "" {
+		return 0
+	}
+	unlock := lockOutbox()
+	defer unlock()
+	s := loadOutboxDisk()
+	changed := 0
+	for i := range s.Items {
+		if s.Items[i].SessionID != sessionID || !isUnsettledOutboxStatus(s.Items[i].Status) {
+			continue
+		}
+		s.Items[i].Status = "dismissed"
+		if reason != "" {
+			s.Items[i].Error = reason
+		}
+		changed++
+	}
+	if changed > 0 {
+		_ = saveOutboxLocked(s)
+		relayLogf("outbox_boundary", "session=%s action=dismiss count=%d reason=%q", sessionID, changed, reason)
+	}
+	return changed
+}
+
 // hasUnsettledOutbox is a cheap mtime-cached check so sessionDetailFor only
 // copies the full message slice when this session actually has unsettled sends.
 func hasUnsettledOutbox(sessionID string) bool {

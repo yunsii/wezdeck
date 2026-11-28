@@ -11,7 +11,6 @@ import {
   applySessionOptimistic,
   createSerialQueue,
   onOptimisticTimeout,
-  promptFingerprint,
   rollbackSessionOptimistic,
   transferSessionOptimistic,
 } from '#/lib/optimistic-state'
@@ -20,10 +19,14 @@ import { trace } from '#/lib/client-trace'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
+import type { SessionsReply } from './session-delete-state'
 import type { Detail } from './session-detail-types'
 import { useNavigateToSession } from './session-follow'
 import {
+  buildSessionBaseline,
   commandOf,
+  createResolvePrompt,
+  followSessionReply,
   mergeOutboxPending as mergeOutboxPendingRaw,
   withDeskRetry,
 } from './session-send-helpers'
@@ -140,38 +143,8 @@ function usePending(id: string) {
 type WriteRunner = (
   target: string,
   job: () => Promise<void>,
-  opts?: { lockComposer?: boolean },
+  opts?: { lockComposer?: boolean; invalidate?: boolean },
 ) => Promise<boolean>
-
-function followSessionReply(
-  follow: (from: string, to: string) => void,
-  target: string,
-  reply: unknown,
-) {
-  if (
-    reply &&
-    typeof reply === 'object' &&
-    'session_id' in reply &&
-    typeof reply.session_id === 'string' &&
-    reply.session_id !== target
-  ) {
-    follow(target, reply.session_id)
-  }
-}
-
-function buildBaseline(
-  snapshot: Detail | undefined,
-  transcriptEnd: number,
-  promptKey?: string,
-) {
-  return {
-    status: snapshot?.status,
-    ts: snapshot?.ts,
-    waitingKind: snapshot?.waiting_kind,
-    promptKey: promptKey ?? promptFingerprint(snapshot),
-    transcriptEnd,
-  }
-}
 
 function createSendMessage({
   target,
@@ -186,7 +159,7 @@ function createSendMessage({
 }: {
   target: string
   message: Outgoing
-  baseline: ReturnType<typeof buildBaseline>
+  baseline: ReturnType<typeof buildSessionBaseline>
   client: ReturnType<typeof useQueryClient>
   patch: (target: string, next: Partial<WriteState>) => void
   write: WriteRunner
@@ -337,7 +310,19 @@ export function useSessionWrites(
   endRef.current = transcriptEnd
   const snapshotRef = useRef(snapshot)
   snapshotRef.current = snapshot
+  const resolvingRef = useRef(0)
   const client = useQueryClient()
+  const currentBaseline = (promptKey?: string) => {
+    const listTs = client
+      .getQueryData<SessionsReply>(['remote', 'sessions'])
+      ?.sessions.find((row) => row.id === id)?.ts
+    return buildSessionBaseline(
+      snapshotRef.current,
+      endRef.current,
+      listTs,
+      promptKey,
+    )
+  }
   const pendingRaw = usePending(id)
   useDismissedVersion()
   usePromptTimeoutNotice(id)
@@ -354,7 +339,11 @@ export function useSessionWrites(
     patch(target, lock ? { sending: true, error: '' } : { error: '' })
     try {
       await job()
-      void client.invalidateQueries({ queryKey: ['remote', 'session', target] })
+      if (opts?.invalidate !== false) {
+        void client.invalidateQueries({
+          queryKey: ['remote', 'session', target],
+        })
+      }
       return true
     } catch (e) {
       patch(target, { error: (e as Error).message })
@@ -373,12 +362,13 @@ export function useSessionWrites(
     const target = id
     const op_id = crypto.randomUUID()
     const isInterrupt = action === 'key' && args.interrupt === true
+    const invalidate = action !== 'key' || resolvingRef.current === 0
     if (isInterrupt) {
       applySessionOptimistic({
         id: target,
         opId: op_id,
         kind: 'interrupt',
-        baseline: buildBaseline(snapshotRef.current, endRef.current),
+        baseline: currentBaseline(),
       })
     }
     return write(
@@ -412,7 +402,9 @@ export function useSessionWrites(
           } else if (isInterrupt) {
             acceptSessionOptimistic(target, op_id)
           }
-          void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+          if (invalidate) {
+            void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+          }
           trace('web-write', {
             id: target,
             op_id,
@@ -427,7 +419,7 @@ export function useSessionWrites(
           throw error
         }
       },
-      { lockComposer: action === 'session.restart' },
+      { lockComposer: action === 'session.restart', invalidate },
     )
   }
 
@@ -436,47 +428,21 @@ export function useSessionWrites(
     kind: 'prompt-submit' | 'prompt-cancel'
     promptKey: string
     execute: () => Promise<boolean>
-  }): Promise<boolean> => {
-    const target = id
-    const op_id = crypto.randomUUID()
-    applySessionOptimistic({
-      id: target,
-      opId: op_id,
-      kind: opts.kind,
-      suppressedPromptKey: opts.promptKey,
-      baseline: buildBaseline(
-        snapshotRef.current,
-        endRef.current,
-        opts.promptKey,
-      ),
+  }) =>
+    createResolvePrompt({
+      target: id,
+      baseline: currentBaseline(opts.promptKey),
+      client,
+      onError: (message) => patch(id, { error: message }),
+      resolvingRef,
+      opts,
     })
-    patch(target, { error: '' })
-    return opts
-      .execute()
-      .then((ok) => {
-        if (!ok) {
-          rollbackSessionOptimistic(target, op_id, 'key-failed')
-          return false
-        }
-        acceptSessionOptimistic(target, op_id)
-        void client.invalidateQueries({
-          queryKey: ['remote', 'session', target],
-        })
-        void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-        return true
-      })
-      .catch((error: unknown) => {
-        rollbackSessionOptimistic(target, op_id, (error as Error).message)
-        patch(target, { error: (error as Error).message })
-        return false
-      })
-  }
 
   const send = (message: Outgoing) =>
     createSendMessage({
       target: id,
       message,
-      baseline: buildBaseline(snapshotRef.current, endRef.current),
+      baseline: currentBaseline(),
       client,
       patch,
       write,

@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import {
   applyCollabHealthOverlay,
@@ -51,11 +51,6 @@ export function useCollab<TCommand extends CollabCommand>(
       if (!result.ok && client.getQueryData(key)) {
         throw new Error(result.error?.message ?? 'unavailable')
       }
-      if (command === 'show' && showId) {
-        reconcileTicketShow(showId, result as CollabShow)
-      } else if (command === 'list') {
-        reconcileTicketList(result as CollabList)
-      }
       return result
     },
     enabled: options.enabled ?? typeof window !== 'undefined',
@@ -63,6 +58,23 @@ export function useCollab<TCommand extends CollabCommand>(
     staleTime: options.staleTime,
     placeholderData: options.keepPrevious ? keepPreviousData : undefined,
   })
+
+  useEffect(() => {
+    if (!query.data || overlays.size === 0) return
+    if (command === 'show' && showId) {
+      const listRow = client
+        .getQueryData<CollabList>(collabKey('list', {}))
+        ?.tickets.find((row) => row.id === showId)
+      reconcileTicketShow(showId, query.data as CollabShow, Date.now(), {
+        listRow,
+      })
+    } else if (command === 'list') {
+      reconcileTicketList(query.data as CollabList, Date.now(), {
+        getShow: (tid) =>
+          client.getQueryData<CollabShow>(collabKey('show', { id: tid })),
+      })
+    }
+  }, [client, command, showId, query.data, overlays])
 
   const projected = useMemo(() => {
     const raw = query.data

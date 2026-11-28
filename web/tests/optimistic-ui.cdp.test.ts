@@ -22,6 +22,130 @@ const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
 const repo = join(import.meta.dirname, '..', '..')
 
+async function installPermissionSettleWatch(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as Record<string, unknown>
+    const stats = {
+      promptFlashes: 0,
+      listWaitingBounces: 0,
+      statusbarShifts: 0,
+    }
+    w.__permSettleStats = stats
+    const observer = new MutationObserver(() => {
+      if (
+        document.querySelector(
+          '[data-testid="session-permission-keys"], [data-testid="permission-card"]',
+        )
+      ) {
+        stats.promptFlashes += 1
+      }
+      const tone = document
+        .querySelector(
+          '[data-session="opt-allow"] [data-testid="chat-preview"]',
+        )
+        ?.getAttribute('data-tone')
+      if (tone === 'waiting') {
+        stats.listWaitingBounces += 1
+      }
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-tone'],
+    })
+    const po = new PerformanceObserver((list) => {
+      for (const raw of list.getEntries()) {
+        const entry = raw as PerformanceEntry & {
+          value: number
+          hadRecentInput: boolean
+          sources?: Array<{ node?: Node | null }>
+        }
+        if (entry.hadRecentInput || entry.value < 0.001) continue
+        const hit = (entry.sources ?? []).some(
+          (src) =>
+            src.node instanceof HTMLElement &&
+            Boolean(src.node.closest('[data-testid="session-statusbar"]')),
+        )
+        if (hit) stats.statusbarShifts += 1
+      }
+    })
+    po.observe({ type: 'layout-shift', buffered: false })
+    w.__stopPermSettleWatch = () => {
+      observer.disconnect()
+      po.disconnect()
+    }
+  })
+}
+
+async function readPermissionSettleWatch(page: Page) {
+  return page.evaluate(() => {
+    const w = window as unknown as Record<string, unknown>
+    ;(w.__stopPermSettleWatch as (() => void) | undefined)?.()
+    return w.__permSettleStats as {
+      promptFlashes: number
+      listWaitingBounces: number
+      statusbarShifts: number
+    }
+  })
+}
+
+function buildFixtureEntries(
+  socket: string,
+  panes: Record<string, string>,
+  now: number,
+  allowRunning = false,
+): Record<string, unknown> {
+  return {
+    'opt-send': {
+      session_id: 'opt-send',
+      tmux_socket: socket,
+      tmux_session: 'opt-send',
+      tmux_pane: panes['opt-send'],
+      status: 'done',
+      agent_name: 'claude',
+      tmux_window_name: 'opt-send',
+      last_user_prompt: 'earlier task',
+      ts: now - 60_000,
+    },
+    'opt-idle': {
+      session_id: 'opt-idle',
+      tmux_socket: socket,
+      tmux_session: 'opt-idle',
+      tmux_pane: panes['opt-idle'],
+      status: 'idle',
+      agent_name: 'claude',
+      tmux_window_name: 'opt-idle',
+      last_user_prompt: 'idle task',
+      ts: now - 120_000,
+    },
+    'opt-allow': {
+      session_id: 'opt-allow',
+      tmux_socket: socket,
+      tmux_session: 'opt-allow',
+      tmux_pane: panes['opt-allow'],
+      status: allowRunning ? 'running' : 'waiting',
+      ...(allowRunning ? {} : { waiting_kind: 'permission_prompt' }),
+      agent_name: 'claude',
+      tmux_window_name: 'opt-allow',
+      last_user_prompt: 'run tests',
+      ts: allowRunning ? now : now - 30_000,
+    },
+    'opt-deny': {
+      session_id: 'opt-deny',
+      tmux_socket: socket,
+      tmux_session: 'opt-deny',
+      tmux_pane: panes['opt-deny'],
+      status: 'waiting',
+      waiting_kind: 'permission_prompt',
+      agent_name: 'claude',
+      tmux_window_name: 'opt-deny',
+      last_user_prompt: 'delete files',
+      ts: now - 20_000,
+    },
+  }
+}
+
 describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-opt-')), 'sock')
@@ -38,8 +162,7 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
   beforeAll(async () => {
     const agent = join(dirname(socket), 'claude')
     symlinkSync(execFileSync('which', ['cat']).toString().trim(), agent)
-    const entries: Record<string, unknown> = {}
-    for (const id of ['opt-send', 'opt-allow', 'opt-deny']) {
+    for (const id of ['opt-send', 'opt-allow', 'opt-deny', 'opt-idle']) {
       const cwd = join(dirname(socket), id)
       mkdirSync(cwd)
       tmux(
@@ -57,43 +180,7 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
       )
       panes[id] = tmux('display-message', '-p', '-t', id, '#{pane_id}')
     }
-    const now = Date.now()
-    entries['opt-send'] = {
-      session_id: 'opt-send',
-      tmux_socket: socket,
-      tmux_session: 'opt-send',
-      tmux_pane: panes['opt-send'],
-      status: 'done',
-      agent_name: 'claude',
-      tmux_window_name: 'opt-send',
-      last_user_prompt: 'earlier task',
-      ts: now - 60_000,
-    }
-    entries['opt-allow'] = {
-      session_id: 'opt-allow',
-      tmux_socket: socket,
-      tmux_session: 'opt-allow',
-      tmux_pane: panes['opt-allow'],
-      status: 'waiting',
-      waiting_kind: 'permission_prompt',
-      agent_name: 'claude',
-      tmux_window_name: 'opt-allow',
-      last_user_prompt: 'run tests',
-      ts: now - 30_000,
-    }
-    entries['opt-deny'] = {
-      session_id: 'opt-deny',
-      tmux_socket: socket,
-      tmux_session: 'opt-deny',
-      tmux_pane: panes['opt-deny'],
-      status: 'waiting',
-      waiting_kind: 'permission_prompt',
-      agent_name: 'claude',
-      tmux_window_name: 'opt-deny',
-      last_user_prompt: 'delete files',
-      ts: now - 20_000,
-    }
-    writeEntries(entries)
+    writeEntries(buildFixtureEntries(socket, panes, Date.now(), false))
     writeFileSync(devicesFile, JSON.stringify({ approved: [], pending: [] }))
     browser = await chromium.launch()
   })
@@ -176,6 +263,19 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
       .toBe('running')
     expect(await allowRow.getByTestId('chat-unread').count()).toBe(0)
 
+    // 2b. Host confirms Allow (waiting → running) across staggered detail/list polls:
+    //     permission card and composer-blocked notice must NEVER flash back in,
+    //     TurnLine must stay mounted, and list tone must never bounce back to waiting.
+    await installPermissionSettleWatch(page)
+    writeEntries(buildFixtureEntries(socket, panes, Date.now(), true))
+    // Wait through both detail (1s) and list settlement polls
+    await page.waitForTimeout(2_500)
+    expect(await readPermissionSettleWatch(page)).toEqual({
+      promptFlashes: 0,
+      listWaitingBounces: 0,
+      statusbarShifts: 0,
+    })
+
     // 3. Waiting prompt Deny (`Esc`) -> card dismisses AND composer unlocks immediately
     await page.locator('[data-session=opt-deny]').click()
     await page.waitForURL('**/console/sessions/opt-deny')
@@ -199,6 +299,36 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
         { timeout: 2_000 },
       )
       .toBe('idle')
+
+    // 4. Phone flow: send on an idle session, immediately navigate back to the
+    //    list, and verify the row stays `running` even across list polls where
+    //    tmux window_activity bumped card.ts while host status is still `idle`.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${base}/zh/console/sessions/opt-idle`)
+    const phoneBox = page.getByLabel('发给 Agent 的消息')
+    await phoneBox.waitFor({ timeout: 15_000 })
+    await phoneBox.click()
+    await phoneBox.fill('手机发完立刻回列表')
+    await page.getByRole('button', { name: '发送' }).click()
+    // Navigate back to the session list right after send
+    await page.getByRole('button', { name: '会话', exact: true }).click()
+    await page.waitForURL('**/console/sessions')
+    const phoneRow = page.locator('[data-session=opt-idle]')
+    await phoneRow.waitFor({ timeout: 10_000 })
+    await expect
+      .poll(
+        () => phoneRow.getByTestId('chat-preview').getAttribute('data-tone'),
+        { timeout: 3_000 },
+      )
+      .toBe('running')
+    // Hold across a 1.5s list refetch while host still reports idle
+    await page.waitForTimeout(2_000)
+    expect(
+      await phoneRow.getByTestId('chat-preview').getAttribute('data-tone'),
+    ).toBe('running')
+    expect(await phoneRow.getByTestId('chat-preview').textContent()).toContain(
+      '手机发完立刻回列表',
+    )
 
     await context.close()
   }, 90_000)

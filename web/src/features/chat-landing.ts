@@ -64,11 +64,14 @@ export function useLatchedPreferLatestTop(target: boolean | LandingTarget) {
     typeof target === 'boolean' ? target : target.preferLatestTop
   const forceBottom =
     typeof target === 'boolean' ? false : Boolean(target.forceBottom)
+  const lockedBottomRef = useRef(forceBottom)
+  if (forceBottom) lockedBottomRef.current = true
   const preferRef = useRef(preferLatestTop && !forceBottom)
   preferRef.current = resolveLandingPreference({
     wasLatched: preferRef.current,
     preferLatestTop,
     forceBottom,
+    lockedBottom: lockedBottomRef.current,
   })
   return preferRef
 }
@@ -158,12 +161,14 @@ export function resolveLandingPreference({
   wasLatched,
   preferLatestTop,
   forceBottom,
+  lockedBottom = false,
 }: {
   wasLatched: boolean
   preferLatestTop: boolean
   forceBottom: boolean
+  lockedBottom?: boolean
 }): boolean {
-  if (forceBottom) return false
+  if (forceBottom || lockedBottom) return false
   if (preferLatestTop) return true
   return wasLatched
 }

@@ -35,6 +35,7 @@ export type TicketOptimistic = {
   continueRun?: boolean
   proposalId?: string
   replyText?: string
+  settledOn?: { show?: boolean; list?: boolean }
   baseline: {
     status?: string | null
     updated?: string | null
@@ -86,6 +87,9 @@ function scheduleTicketTimeout(id: string, opId: string, ttlMs: number) {
     setTimeout(() => {
       const current = ticketOverlays.get(id)
       if (!current || current.opId !== opId) return
+      const alreadyConfirmed = Boolean(
+        current.settledOn?.show || current.settledOn?.list,
+      )
       ticketOverlays.delete(id)
       ticketTimers.delete(id)
       trace('optimistic', {
@@ -93,16 +97,18 @@ function scheduleTicketTimeout(id: string, opId: string, ttlMs: number) {
         id,
         op_id: opId,
         action: current.kind,
-        event: 'timeout',
+        event: alreadyConfirmed ? 'settle' : 'timeout',
         latency_ms: Date.now() - current.createdAt,
       })
       emit()
-      notifyOptimisticTimeout({
-        scope: 'ticket',
-        id,
-        opId,
-        kind: current.kind,
-      })
+      if (!alreadyConfirmed) {
+        notifyOptimisticTimeout({
+          scope: 'ticket',
+          id,
+          opId,
+          kind: current.kind,
+        })
+      }
     }, ttlMs),
   )
 }
@@ -247,12 +253,32 @@ export function reconcileTicketShow(
   id: string,
   server: CollabShow | undefined,
   now = Date.now(),
+  other?: { listRow?: CollabTicket },
 ) {
   if (!server) return
   const overlay = ticketOverlays.get(id)
   if (!overlay) return
   const state = isTicketShowOverlaySettled(overlay, server, now)
   if (state === 'active') return
+  if (
+    state === 'settled' &&
+    other?.listRow &&
+    !overlay.settledOn?.list &&
+    isTicketRowOverlaySettled(overlay, other.listRow, now) === 'active'
+  ) {
+    if (!overlay.settledOn?.show) {
+      ticketOverlays.set(id, {
+        ...overlay,
+        settledOn: { ...overlay.settledOn, show: true },
+      })
+      emit()
+    }
+    return
+  }
+  const alreadyConfirmed = Boolean(
+    overlay.settledOn?.show || overlay.settledOn?.list,
+  )
+  const isTimeout = state === 'timeout' && !alreadyConfirmed
   clearTicketTimer(id)
   ticketOverlays.delete(id)
   trace('optimistic', {
@@ -260,11 +286,11 @@ export function reconcileTicketShow(
     id,
     op_id: overlay.opId,
     action: overlay.kind,
-    event: state === 'settled' ? 'settle' : 'timeout',
+    event: isTimeout ? 'timeout' : 'settle',
     latency_ms: now - overlay.createdAt,
   })
   emit()
-  if (state === 'timeout') {
+  if (isTimeout) {
     notifyOptimisticTimeout({
       scope: 'ticket',
       id,
@@ -277,6 +303,7 @@ export function reconcileTicketShow(
 export function reconcileTicketList(
   list: CollabList | undefined,
   now = Date.now(),
+  other?: { getShow?: (id: string) => CollabShow | undefined },
 ) {
   if (!list?.ok || ticketOverlays.size === 0) return
   let changed = false
@@ -285,6 +312,26 @@ export function reconcileTicketList(
     if (!overlay) continue
     const state = isTicketRowOverlaySettled(overlay, row, now)
     if (state === 'active') continue
+    const cachedShow = other?.getShow?.(row.id)
+    if (
+      state === 'settled' &&
+      cachedShow &&
+      !overlay.settledOn?.show &&
+      isTicketShowOverlaySettled(overlay, cachedShow, now) === 'active'
+    ) {
+      if (!overlay.settledOn?.list) {
+        ticketOverlays.set(row.id, {
+          ...overlay,
+          settledOn: { ...overlay.settledOn, list: true },
+        })
+        changed = true
+      }
+      continue
+    }
+    const alreadyConfirmed = Boolean(
+      overlay.settledOn?.show || overlay.settledOn?.list,
+    )
+    const isTimeout = state === 'timeout' && !alreadyConfirmed
     clearTicketTimer(row.id)
     ticketOverlays.delete(row.id)
     changed = true
@@ -293,7 +340,7 @@ export function reconcileTicketList(
       id: row.id,
       op_id: overlay.opId,
       action: overlay.kind,
-      event: state === 'settled' ? 'settle' : 'timeout',
+      event: isTimeout ? 'timeout' : 'settle',
       via: 'list',
       latency_ms: now - overlay.createdAt,
     })
@@ -346,7 +393,8 @@ export function applyCollabShowOverlay(
   overlay: TicketOptimistic | undefined,
   now = Date.now(),
 ): CollabShow | undefined {
-  if (!show || !show.ok || !show.ticket || !overlay) return show
+  if (!show || !show.ok || !show.ticket || !overlay || overlay.settledOn?.show)
+    return show
   if (isTicketShowOverlaySettled(overlay, show, now) !== 'active') return show
   const nextTicket = projectTicketStatus(show.ticket, overlay)
   const nextProposals =
@@ -374,7 +422,11 @@ export function applyCollabListOverlay(
   const tickets: Array<CollabTicket> = []
   for (const row of list.tickets) {
     const overlay = overlays.get(row.id)
-    if (!overlay || isTicketRowOverlaySettled(overlay, row, now) !== 'active') {
+    if (
+      !overlay ||
+      overlay.settledOn?.list ||
+      isTicketRowOverlaySettled(overlay, row, now) !== 'active'
+    ) {
       tickets.push(row)
       continue
     }
@@ -392,6 +444,7 @@ export function applyCollabHealthOverlay(
   if (!health || !health.ok || overlays.size === 0) return health
   let waitingDelta = 0
   for (const overlay of overlays.values()) {
+    if (overlay.settledOn?.list) continue
     if (
       overlay.phase === 'settling' &&
       overlay.acceptedAt !== undefined &&

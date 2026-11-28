@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
 import { trace } from '#/lib/client-trace'
+import { reconcileSessionDetail } from '#/lib/optimistic-state'
 import type { Detail } from './console-sessions'
 import { isDoneUnread, needsAttention, needsYou } from './console-sessions'
 import type { SessionCard } from './session-card'
@@ -136,7 +137,7 @@ export function pickAutoSyncTargets({
         cached?.status === 'running' &&
         (!row.transcript || (cached.messages?.length ?? 0) > 0)
       if (
-        warmRunning &&
+        (warmRunning || synced.get(row.id) === sig) &&
         lastAt !== undefined &&
         now - lastAt < runningIntervalMs
       ) {
@@ -261,7 +262,11 @@ export function useAutoSyncAttentionSessions(
             queryFn: () => readDetail(client, target.id),
             staleTime: 0,
           })
-          .then(() => {
+          .then((merged) => {
+            const listRow = latestRef.current.sessions?.find(
+              (row) => row.id === target.id,
+            )
+            reconcileSessionDetail(target.id, merged, Date.now(), { listRow })
             syncedRef.current.set(target.id, target.sig)
             syncedAtRef.current.set(target.id, Date.now())
             failedAtRef.current.delete(`${target.id}|${target.sig}`)

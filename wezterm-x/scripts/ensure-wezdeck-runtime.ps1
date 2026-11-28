@@ -302,6 +302,7 @@ function Write-ManagerConfig {
     $fgMode = 'allowlist'
   }
 
+  $terminalClientEnabled = Test-Path -LiteralPath (Join-Path $ManagerPaths.Root 'state\helper\terminal-client.enabled') -PathType Leaf
   $config = [ordered]@{
     runtimeDir = $RuntimeDir
     statePath = $StatePath
@@ -327,7 +328,7 @@ function Write-ManagerConfig {
     browserAgentStatusPath = Join-Path $ManagerPaths.Root 'state\browser-agent\status.json'
     clipboardOutputDir = $ClipboardOutputDir
     clipboardWslDistro = $ClipboardWslDistro
-    useTerminalClient = (Test-Path -LiteralPath (Join-Path $ManagerPaths.Root 'state\helper\terminal-client.enabled') -PathType Leaf)
+    useTerminalClient = $terminalClientEnabled
     clipboardImageReadRetryCount = $ClipboardImageReadRetryCount
     clipboardImageReadRetryDelayMs = $ClipboardImageReadRetryDelayMs
     clipboardCleanupMaxAgeHours = $ClipboardCleanupMaxAgeHours
@@ -337,8 +338,8 @@ function Write-ManagerConfig {
       mode = $fgMode
       allowlist = @($fgAllowlist)
     }
-    # WSL package-upgrade heal: relaunch WezTerm only when Windows Update/MSI
-    # evidence says the outage was an upgrade, not a user stop. Audit trail:
+    # WSL package-upgrade heal: relaunch WezTerm only with upgrade evidence
+    # and the full GUI mode enabled. Audit trail:
     # state/wsl-heal/status.json + history.ndjson. Docs:
     # docs/development-environment-troubleshooting.md#wsl-upgrade-heal
     wslHeal = [ordered]@{
@@ -347,7 +348,7 @@ function Write-ManagerConfig {
       statusPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\status.json'
       historyPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\history.ndjson'
       suppressUntilPath = Join-Path $ManagerPaths.Root 'state\wsl-heal\suppress-until'
-      relaunchWezTerm = $true
+      relaunchWezTerm = -not $terminalClientEnabled
       reconnectVscode = $true
       vscodeMaxWindows = 5
       vscodeCommand = 'code'

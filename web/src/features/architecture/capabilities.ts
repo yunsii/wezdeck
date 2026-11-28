@@ -133,8 +133,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('vscode/close', '关闭 VS Code 窗口', 'Close a VS Code window'),
       c(
         'sessions/focus',
-        '把 WezTerm 切到某个会话的窗格',
-        'Bring WezTerm to a session’s pane',
+        '按需打开或聚焦会话的终端窗格',
+        'Open or focus a session’s terminal pane on demand',
       ),
       c(
         'chrome/focus_or_start',

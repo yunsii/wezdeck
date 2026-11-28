@@ -287,4 +287,31 @@ describe('running session autosync throttling', () => {
       },
     ])
   })
+
+  it('does not tight-loop refetch when detail already observed waiting while list still says running', () => {
+    const now = 300_000
+    const msg = { role: 'assistant' as const, text: 'waiting on screen' }
+    const row = card({ id: 'agy-perm', status: 'running', ts: 5_000 })
+    const cache = new Map([
+      [
+        'agy-perm',
+        {
+          status: 'waiting',
+          waiting_kind: 'permission_prompt',
+          ts: 5_000,
+          messages: [msg],
+        },
+      ],
+    ])
+    const { targets } = pickAutoSyncTargets({
+      sessions: [row],
+      synced: new Map([['agy-perm', syncSignature(row)]]),
+      syncedAt: new Map([['agy-perm', now - 500]]),
+      inFlight: new Set(),
+      failedAt: new Map(),
+      getCached: (id) => cache.get(id),
+      now,
+    })
+    expect(targets).toEqual([])
+  })
 })

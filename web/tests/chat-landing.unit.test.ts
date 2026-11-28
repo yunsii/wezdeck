@@ -112,6 +112,36 @@ describe('resolveLandingPreference (auto seen-ack done→idle never snaps to bot
       }),
     ).toBe(false)
   })
+
+  it('never flips from bottom to latest-top after dismissing a permission prompt', () => {
+    const waiting = landingPolicy({
+      status: 'waiting',
+      pendingCount: 0,
+      hasPrompt: true,
+    })
+    const onOpen = resolveLandingPreference({
+      wasLatched: false,
+      preferLatestTop: waiting.preferLatestTop,
+      forceBottom: Boolean(waiting.forceBottom),
+      lockedBottom: Boolean(waiting.forceBottom),
+    })
+    expect(onOpen).toBe(false)
+    // User clicks Allow within the landing window -> status flips waiting → running, hasPrompt → false
+    const afterAllow = landingPolicy({
+      status: 'running',
+      pendingCount: 0,
+      hasPrompt: false,
+    })
+    expect(afterAllow.preferLatestTop).toBe(true)
+    expect(
+      resolveLandingPreference({
+        wasLatched: onOpen,
+        preferLatestTop: afterAllow.preferLatestTop,
+        forceBottom: Boolean(afterAllow.forceBottom),
+        lockedBottom: true,
+      }),
+    ).toBe(false)
+  })
 })
 
 describe('nextBaseline (no streaming animation for initial post-mount catch-up)', () => {
