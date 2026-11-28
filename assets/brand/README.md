@@ -6,7 +6,8 @@ Brand SVGs share a single visual language: dark deck plate with a diagonal `#2e3
 |---|---|---|
 | [`icon.svg`](icon.svg) | 512×512 | Primary app icon — full 3×3 deck grid with three lit slots showing `●` / `▲` / `✓` |
 | [`favicon.svg`](favicon.svg) | 32×32 | Simplified version of `icon.svg` — keeps only deck plate + three diagonal status dots |
-| [`banner.svg`](banner.svg) | 1280×320 | README banner — embeds the deck icon plus wordmark, tagline, and `▲ N waiting · ✓ N done · ● N running` counter |
+| [`banner.svg`](banner.svg) | 1280×320 | Original wordmark and terminal-status illustration |
+| [`readme-console.png`](readme-console.png) | 1076×473 | README image cropped from the public web console preview with example sessions |
 
 ## Geometric construction
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brand/banner.svg" alt="WezDeck — 本地优先的 AI 编程会话网页控制台" width="960">
+  <img src="assets/brand/readme-console.png" alt="WezDeck 网页控制台中的示例 Agent 会话与对话" width="960">
 </p>
 
 <h1 align="center">WezDeck</h1>

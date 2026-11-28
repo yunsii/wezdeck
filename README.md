@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brand/banner.svg" alt="WezDeck — a local-first web console for AI coding agents" width="960">
+  <img src="assets/brand/readme-console.png" alt="WezDeck web console showing example agent sessions and a conversation" width="960">
 </p>
 
 <h1 align="center">WezDeck</h1>
