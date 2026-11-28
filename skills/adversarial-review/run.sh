@@ -182,10 +182,11 @@ _repro_verdict() {
   printf '%s\n' "$script" > "$sand/.adv-repro.sh"
   # drop write to .git inside sandbox (best-effort hardening)
   chmod -R a-w "$sand/.git" 2>/dev/null || true
-  set +e
-  ( cd "$sand" && timeout 60 bash .adv-repro.sh >/dev/null 2>&1 )
-  rc=$?
-  set -e
+  if ( cd "$sand" && timeout 60 bash .adv-repro.sh >/dev/null 2>&1 ); then
+    rc=0
+  else
+    rc=$?
+  fi
   _sandbox_cleanup
 
   case "$rc" in
@@ -269,7 +270,11 @@ _emit() {
         "• [\(.severity)] \(.file):\(.line) — \(.summary)\n    note: \(.repro.note // .verdict // "n/a")"'
     fi
   fi
-  [ "$nd" -gt 0 ] && echo && echo "($nd 条非阻塞 finding 已 drop — 详见 --json)"
+  if [ "$nd" -gt 0 ]; then
+    echo
+    echo "($nd 条非阻塞 finding 已 drop — 详见 --json)"
+  fi
+  return 0
 }
 
 # --- selfcheck / dogfood passthrough ----------------------------------------

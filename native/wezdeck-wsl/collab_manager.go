@@ -150,21 +150,26 @@ func collabManagerChat(args json.RawMessage) (any, error) {
 	state := ms.State
 	if state == "" {
 		state = "parked"
+	} else if state == "live" && !managerPaneActive(a.ID, ms) {
+		state = "parked"
 	}
 
 	// Cross-reference live attention entries by tmux_pane or cwd to get live status & session_id.
-	if live, lerr := liveSessions(); lerr == nil {
-		for sid, e := range live {
-			if ms.TmuxPane != "" && e.TmuxPane == ms.TmuxPane {
-				sessionID = sid
-				status = e.Status
-				waitingKind = e.WaitingKind
-				runningKind = e.RunningKind
-				state = "live"
-				if ms.ID != sid {
-					backfillManagerSessionID(a.ID, sid)
+	if state == "live" {
+		live, lerr := liveSessions()
+		if lerr == nil {
+			for sid, e := range live {
+				if ms.TmuxPane != "" && e.TmuxPane == ms.TmuxPane {
+					sessionID = sid
+					status = e.Status
+					waitingKind = e.WaitingKind
+					runningKind = e.RunningKind
+					state = "live"
+					if ms.ID != sid {
+						backfillManagerSessionID(a.ID, sid)
+					}
+					break
 				}
-				break
 			}
 		}
 	}
@@ -254,6 +259,58 @@ func runManagerCLI(subcmd string, extraArgs ...string) (map[string]any, error) {
 	return res, nil
 }
 
+func managerPaneActive(id string, ms *managerSessionMeta) bool {
+	if ms == nil || ms.State != "live" || ms.TmuxPane == "" {
+		return false
+	}
+	out, err := tmuxCmd("", "display-message", "-p", "-t", ms.TmuxPane,
+		"#{@wezdeck_ticket_id}\t#{pane_current_command}").Output()
+	if err != nil {
+		return false
+	}
+	parts := strings.SplitN(strings.TrimSpace(string(out)), "\t", 2)
+	return len(parts) == 2 && parts[0] == id &&
+		(agentCommands[parts[1]] || paneHasAgentProcess("", ms.TmuxPane))
+}
+
+func resolveManagerProfile(requested string) (string, error) {
+	profile := requested
+	if profile == "" {
+		profile = activeAgentProfile()
+	}
+	if !collabValue.MatchString(profile) || !registeredAgentProfile(profile) {
+		return "", errors.New("invalid manager agent profile")
+	}
+	disabled, err := agentProfileDisabled(profile)
+	if err != nil {
+		return "", errors.New("cannot read manager agent settings")
+	}
+	if disabled {
+		return "", fmt.Errorf("manager agent %s is disabled", profile)
+	}
+	return profile, nil
+}
+
+func startManagerAndWait(id, profile, sub string) (any, error) {
+	res, err := runManagerCLI(sub, "--id", id, "--profile", profile)
+	if err != nil {
+		return nil, err
+	}
+	ms, err := readManagerMeta(id)
+	if err != nil || ms == nil || ms.TmuxPane == "" {
+		return nil, errors.New("manager session did not create a pane")
+	}
+	info, readyErr := waitAgentReadyDetailed("", ms.TmuxPane, 30*time.Second)
+	if readyErr == nil && info.HasAgent && managerPaneActive(id, ms) {
+		return res, nil
+	}
+	_, _ = runManagerCLI("park", "--id", id, "--force")
+	if readyErr != nil {
+		return nil, fmt.Errorf("manager agent failed to start: %w", readyErr)
+	}
+	return nil, errors.New("manager agent failed to start")
+}
+
 func startTicketManager(args json.RawMessage) (any, error) {
 	var a struct {
 		ID      string `json:"id"`
@@ -263,12 +320,17 @@ func startTicketManager(args json.RawMessage) (any, error) {
 	if json.Unmarshal(args, &a) != nil || !collabTicketIDRe.MatchString(a.ID) {
 		return nil, errors.New("invalid ticket id")
 	}
-	cliArgs := []string{"--id", a.ID}
-	if a.Profile != "" {
-		if !collabValue.MatchString(a.Profile) {
-			return nil, errors.New("invalid profile")
+	profile, err := resolveManagerProfile(a.Profile)
+	if err != nil {
+		return nil, err
+	}
+	if ms, err := readManagerMeta(a.ID); err == nil && ms != nil && ms.State == "live" {
+		if managerPaneActive(a.ID, ms) {
+			return map[string]any{"ok": true, "id": a.ID, "action": "already_live", "manager_session": ms}, nil
 		}
-		cliArgs = append(cliArgs, "--profile", a.Profile)
+		if _, err := runManagerCLI("park", "--id", a.ID, "--force"); err != nil {
+			return nil, err
+		}
 	}
 	sub := "start"
 	if a.Resume {
@@ -276,7 +338,7 @@ func startTicketManager(args json.RawMessage) (any, error) {
 	} else if ms, err := readManagerMeta(a.ID); err == nil && ms != nil && ms.State == "parked" {
 		sub = "resume"
 	}
-	return runManagerCLI(sub, cliArgs...)
+	return startManagerAndWait(a.ID, profile, sub)
 }
 
 func parkTicketManager(args json.RawMessage) (any, error) {
@@ -313,20 +375,24 @@ func sendTicketManager(args json.RawMessage) (any, error) {
 		return nil, errors.New("ticket not found")
 	}
 	woke := false
-	if ms == nil || ms.State != "live" || ms.TmuxPane == "" {
-		cliArgs := []string{"--id", a.ID}
-		if a.Profile != "" && collabValue.MatchString(a.Profile) {
-			cliArgs = append(cliArgs, "--profile", a.Profile)
+	if !managerPaneActive(a.ID, ms) {
+		profile, err := resolveManagerProfile(a.Profile)
+		if err != nil {
+			return nil, err
+		}
+		if ms != nil && ms.State == "live" {
+			if _, err := runManagerCLI("park", "--id", a.ID, "--force"); err != nil {
+				return nil, err
+			}
 		}
 		sub := "start"
-		if ms != nil && ms.State == "parked" {
+		if ms != nil {
 			sub = "resume"
 		}
-		if _, err := runManagerCLI(sub, cliArgs...); err != nil {
+		if _, err := startManagerAndWait(a.ID, profile, sub); err != nil {
 			return nil, err
 		}
 		woke = true
-		time.Sleep(1500 * time.Millisecond)
 		ms, err = readManagerMeta(a.ID)
 		if err != nil || ms == nil || ms.TmuxPane == "" {
 			return nil, errors.New("manager session failed to expose tmux pane")
@@ -358,6 +424,9 @@ func sendTicketManager(args json.RawMessage) (any, error) {
 		return nil, fmt.Errorf("tmux load-buffer: %s", strings.TrimSpace(string(out)))
 	}
 	defer func() { _ = tmuxCmd("", "delete-buffer", "-b", bufName).Run() }()
+	if !managerPaneActive(a.ID, ms) {
+		return nil, errors.New("manager agent exited before the message was sent")
+	}
 	if out, err := tmuxCmd("", "paste-buffer", "-p", "-b", bufName, "-t", ms.TmuxPane).CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("tmux paste-buffer: %s", strings.TrimSpace(string(out)))
 	}

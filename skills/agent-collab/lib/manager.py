@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -138,12 +139,49 @@ def pane_alive(pane_id: str | None) -> bool:
     return res.returncode == 0 and res.stdout.strip() == pane_id
 
 
+def pane_owned_by_ticket(pane_id: str | None, tid: str) -> bool:
+    if not pane_alive(pane_id):
+        return False
+    res = tmux_cmd("display-message", "-p", "-t", str(pane_id), "#{@wezdeck_ticket_id}")
+    return res.returncode == 0 and res.stdout.strip() == tid
+
+
 def profile_family(profile: str) -> str:
     low = profile.lower()
     for fam in ("claude", "codex", "grok", "agy"):
         if low == fam or low.startswith(f"{fam}_") or low.startswith(f"{fam}-"):
             return fam
     return low
+
+
+def default_profile() -> str:
+    value = os.environ.get("MANAGED_AGENT_PROFILE", "").strip()
+    if value:
+        return value.removesuffix("-resume").removesuffix("_resume")
+    path = REPO / "wezterm-x" / "local" / "shared.env"
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("MANAGED_AGENT_PROFILE="):
+                parts = shlex.split(line.partition("=")[2], comments=True)
+                if parts:
+                    return parts[0].removesuffix("-resume").removesuffix("_resume")
+    return "claude"
+
+
+def check_profile_enabled(profile: str) -> None:
+    settings_dir = Path(os.environ.get("WEZDECK_AGENT_PROFILE_SETTINGS_DIR") or
+                        Path.home() / ".config/wezdeck/agent-profiles")
+    path = settings_dir / f"{profile.replace('-', '_')}.json"
+    if not path.exists():
+        return
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        fail(2, f"cannot read manager agent settings: {profile}")
+    if not isinstance(settings, dict) or not isinstance(settings.get("disabled", False), bool):
+        fail(2, f"invalid manager agent settings: {profile}")
+    if settings.get("disabled"):
+        fail(3, f"manager agent {profile} is disabled")
 
 
 def launcher_script() -> Path:
@@ -220,14 +258,16 @@ def cmd_start(argv: list[str], *, resume_mode: bool = False) -> dict[str, Any]:
     ws, _meta, mj = prepare_workspace(tid)
     existing = mj.get("manager_session") if isinstance(mj.get("manager_session"), dict) else {}
 
-    profile = opt(argv, "--profile") or str(existing.get("profile") or "claude")
+    profile = opt(argv, "--profile") or str(existing.get("profile") or default_profile())
     if not PROFILE_RE.fullmatch(profile):
         fail(1, f"invalid profile: {profile}")
+    check_profile_enabled(profile)
     backend = profile_family(profile)
-    resume_id = str(existing.get("id") or "") if resume_mode else ""
+    same_backend = not existing or backend == str(existing.get("backend") or profile_family(str(existing.get("profile") or "")))
+    resume_id = str(existing.get("id") or "") if resume_mode and same_backend else ""
 
     # Idempotent: if already live and pane still exists, return existing record.
-    if existing.get("state") == "live" and pane_alive(existing.get("tmux_pane")):
+    if existing.get("state") == "live" and pane_owned_by_ticket(existing.get("tmux_pane"), tid):
         return {"ok": True, "id": tid, "action": "already_live", "manager_session": existing}
 
     win_name = f"ticket-{tid[-6:]}"
@@ -238,7 +278,7 @@ def cmd_start(argv: list[str], *, resume_mode: bool = False) -> dict[str, Any]:
     record = {
         "backend": backend,
         "profile": profile,
-        "id": str(existing.get("id") or ""),
+        "id": str(existing.get("id") or "") if same_backend else "",
         "cwd": str(ws),
         "tmux_session": MANAGER_TMUX_SESSION,
         "tmux_window": win_name,
@@ -276,7 +316,7 @@ def cmd_park(argv: list[str]) -> dict[str, Any]:
         return {"ok": True, "id": tid, "action": "none", "reason": "no manager session"}
 
     pane = ms.get("tmux_pane")
-    alive = pane_alive(pane)
+    alive = pane_owned_by_ticket(pane, tid)
     if alive and not force:
         st = attention_status_for_pane(pane)
         if st == "running":
@@ -306,7 +346,7 @@ def cmd_status(argv: list[str]) -> dict[str, Any]:
         fail(1, "--id is required")
     mj = ticket_fs.read_meta_json(tid)
     ms = mj.get("manager_session") if isinstance(mj.get("manager_session"), dict) else None
-    alive = bool(ms and pane_alive(ms.get("tmux_pane")))
+    alive = bool(ms and pane_owned_by_ticket(ms.get("tmux_pane"), tid))
     return {"ok": True, "id": tid, "manager_session": ms, "pane_alive": alive}
 
 
