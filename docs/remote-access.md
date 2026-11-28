@@ -474,7 +474,11 @@ primary `master`. The pipeline splits into three stages:
    through a transient user systemd service, and automatically cancels stale
    runs when a newer batch ships. The launcher waits for a startup marker;
    launch failures and test failures appear in `wezdeck-release.sh status` and
-   `verify-*.log` instead of silently retaining an older success result.
+   `verify-*.log` instead of silently retaining an older success result. The
+   test subprocess closes the verifier's lock FD before it can spawn tmux or
+   browser daemons; a lock timeout is recorded as `FAIL`. The isolated relay
+   build uses the existing source-fingerprint stamp and disables Go's redundant
+   automatic VCS stamp, which can fail in a detached verification worktree.
 `WEZDECK_RELEASE_LOCK_WAIT` sets the wait in seconds (300 by default).
 The script fetches `origin/master` before integrating. A merge conflict
 returns to the task worktree for resolution. If the remote advances during

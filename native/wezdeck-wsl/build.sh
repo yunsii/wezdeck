@@ -62,7 +62,7 @@ fi
 
 (
   cd "$script_dir"
-  CGO_ENABLED=0 GOOS=linux "$go_bin" build -trimpath \
+  CGO_ENABLED=0 GOOS=linux "$go_bin" build -buildvcs=false -trimpath \
     -ldflags="-s -w -X main.buildVersion=$version" -o "$out_path" .
 )
 printf '%s\n' "$version" >"$stamp_path"

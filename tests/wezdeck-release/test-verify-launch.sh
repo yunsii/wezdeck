@@ -71,4 +71,16 @@ if WEZDECK_VERIFY_LOG="$tmp/worker-fail.log" \
 fi
 [[ -s "$tmp/worker.started" ]]
 [[ "$(jq -r '.verified_sha + ":" + .verify_status' "$state_file")" == "$target:FAIL" ]]
+
+exec 8>>"$XDG_STATE_HOME/wezdeck/release/verify.lock"
+flock -x 8
+target=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+if WEZDECK_VERIFY_LOCK_WAIT=0.1 WEZDECK_VERIFY_LOG="$tmp/worker-lock.log" \
+  bash "$repo/scripts/dev/release-async-verify.sh" '' "$target" 8>&-; then
+  echo 'expected occupied verify lock to fail' >&2
+  exit 1
+fi
+flock -u 8
+[[ "$(jq -r '.verified_sha + ":" + .verify_status' "$state_file")" == "$target:FAIL" ]]
+[[ "$(cat "$tmp/worker-lock.log")" == *'timed out waiting'* ]]
 echo 'verify launch: ok'

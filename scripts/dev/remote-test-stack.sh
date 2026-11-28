@@ -271,7 +271,10 @@ FAKE
   chmod 700 "$STATE/tickets"
   printf '#!/usr/bin/env bash\necho "$1" >>"%s/ticket-runs"\n' "$STATE" >"$STATE/fake-ticket-run"
   chmod +x "$STATE/fake-ticket-run"
-  PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >/dev/null 2>&1
+  if ! PATH="$HOME/.local/go/bin:$PATH" "$REPO/native/wezdeck-wsl/build.sh" >"$STATE/relay-build.log" 2>&1; then
+    echo "test relay build failed; see $STATE/relay-build.log" >&2
+    return 1
+  fi
   # build id = web/ source fingerprint: the cdp tests compare it with the
   # sources they test (web/tests/version.setup.ts) and refuse a stale stack
   local web_id

@@ -23,8 +23,15 @@ lock_file="$STATE/release/verify.lock"
 wt_dir="$STATE/release/verify-worktree"
 log_file="${WEZDECK_VERIFY_LOG:-$STATE/release/verify-$(date +%Y%m%d-%H%M%S)-${target_sha:0:8}.log}"
 
+release_state_update verifying "sha=$target_sha" "unit=${WEZDECK_VERIFY_UNIT:-}" "log=$log_file"
 exec 7>>"$lock_file"
-flock -w 30 7 || exit 0
+if ! flock -w "${WEZDECK_VERIFY_LOCK_WAIT:-30}" 7; then
+  printf 'verify: timed out waiting for %s\n' "$lock_file" >"$log_file"
+  release_state_update verify_lost "sha=$target_sha" "log=$log_file"
+  printf '%s event=verify_done head=%s status=FAIL reason=lock_timeout log=%s\n' \
+    "$(date -Iseconds)" "${target_sha:0:8}" "$log_file" >>"$STATE/release.log"
+  exit 1
+fi
 echo "$$" >"$pid_file"
 cleanup() {
   local rc=$?
@@ -42,7 +49,6 @@ trap cleanup EXIT
 trap 'exit 143' TERM
 
 completed=0
-release_state_update verifying "sha=$target_sha" "unit=${WEZDECK_VERIFY_UNIT:-}" "log=$log_file"
 if [[ -n "${WEZDECK_VERIFY_ACK:-}" ]]; then
   printf '%s\n' "$$" >"$WEZDECK_VERIFY_ACK"
 fi
@@ -69,7 +75,7 @@ fi
   rc=0
   (cd "$wt_dir" && WEZDECK_TEST_STACK_DIR="${TMPDIR:-/tmp}/wezdeck-async-verify-stack" \
     WEZDECK_TEST_STACK_PORT="${WEZDECK_VERIFY_STACK_PORT:-3020}" \
-    scripts/dev/web-affected-tests.sh "${args[@]}") || rc=$?
+    scripts/dev/web-affected-tests.sh "${args[@]}") 7>&- || rc=$?
   WEZDECK_TEST_STACK_DIR="${TMPDIR:-/tmp}/wezdeck-async-verify-stack" \
     WEZDECK_TEST_STACK_PORT="${WEZDECK_VERIFY_STACK_PORT:-3020}" \
     "$wt_dir/scripts/dev/remote-test-stack.sh" stop >/dev/null 2>&1 || true
