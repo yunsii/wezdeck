@@ -138,7 +138,7 @@ func TestLiveSessionNeverRedirectsToPaneLessZombieAndRebindsOutbox(t *testing.T)
 	if dm["replaced_by"] != nil {
 		t.Fatalf("live session must not answer replaced_by: %+v", dm)
 	}
-	if dm["outbox"] != nil {
+	if outbox, ok := dm["outbox"].([]sentRecord); !ok || len(outbox) != 0 {
 		t.Fatalf("expected rebound outbox record to confirm against transcript, got %+v", dm["outbox"])
 	}
 	store := readOutboxCached()
