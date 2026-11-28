@@ -864,7 +864,7 @@ else
     "$waiting_kind" \
     "$last_user_prompt" \
     "$agent_name" \
-    "$tmux_window_name" \
+    "$tmux_window_name" "$(attention_prompt_interrupt_marker)" \
     2>/dev/null || true
 
   # Durable + pane pin so primary/secondary F5 and kill-server reopen can

@@ -84,6 +84,38 @@ function clearSessionTimer(id: string) {
   }
 }
 
+function finishSessionOverlay(
+  id: string,
+  overlay: SessionOptimistic,
+  state: 'settled' | 'timeout',
+  now: number,
+  via?: 'list',
+) {
+  const alreadyConfirmed = Boolean(
+    overlay.settledOn?.detail || overlay.settledOn?.list,
+  )
+  const isTimeout = state === 'timeout' && !alreadyConfirmed
+  clearSessionTimer(id)
+  sessionOverlays.delete(id)
+  trace('optimistic', {
+    scope: 'session',
+    id,
+    op_id: overlay.opId,
+    action: overlay.kind,
+    event: isTimeout ? 'timeout' : 'settle',
+    ...(via ? { via } : {}),
+    latency_ms: now - overlay.createdAt,
+  })
+  if (isTimeout) {
+    notifyOptimisticTimeout({
+      scope: 'session',
+      id,
+      opId: overlay.opId,
+      kind: overlay.kind,
+    })
+  }
+}
+
 function scheduleSessionTimeout(id: string, opId: string, ttlMs: number) {
   clearSessionTimer(id)
   sessionTimers.set(
@@ -91,28 +123,8 @@ function scheduleSessionTimeout(id: string, opId: string, ttlMs: number) {
     setTimeout(() => {
       const current = sessionOverlays.get(id)
       if (!current || current.opId !== opId) return
-      const alreadyConfirmed = Boolean(
-        current.settledOn?.detail || current.settledOn?.list,
-      )
-      sessionOverlays.delete(id)
-      sessionTimers.delete(id)
-      trace('optimistic', {
-        scope: 'session',
-        id,
-        op_id: opId,
-        action: current.kind,
-        event: alreadyConfirmed ? 'settle' : 'timeout',
-        latency_ms: Date.now() - current.createdAt,
-      })
+      finishSessionOverlay(id, current, 'timeout', Date.now())
       emit()
-      if (!alreadyConfirmed) {
-        notifyOptimisticTimeout({
-          scope: 'session',
-          id,
-          opId,
-          kind: current.kind,
-        })
-      }
     }, ttlMs),
   )
 }
@@ -239,29 +251,8 @@ export function reconcileSessionDetail(
     }
     return
   }
-  const alreadyConfirmed = Boolean(
-    overlay.settledOn?.detail || overlay.settledOn?.list,
-  )
-  const isTimeout = state === 'timeout' && !alreadyConfirmed
-  clearSessionTimer(id)
-  sessionOverlays.delete(id)
-  trace('optimistic', {
-    scope: 'session',
-    id,
-    op_id: overlay.opId,
-    action: overlay.kind,
-    event: isTimeout ? 'timeout' : 'settle',
-    latency_ms: now - overlay.createdAt,
-  })
+  finishSessionOverlay(id, overlay, state, now)
   emit()
-  if (isTimeout) {
-    notifyOptimisticTimeout({
-      scope: 'session',
-      id,
-      opId: overlay.opId,
-      kind: overlay.kind,
-    })
-  }
 }
 
 export function reconcileSessionsList(
@@ -292,30 +283,8 @@ export function reconcileSessionsList(
       }
       continue
     }
-    const alreadyConfirmed = Boolean(
-      overlay.settledOn?.detail || overlay.settledOn?.list,
-    )
-    const isTimeout = state === 'timeout' && !alreadyConfirmed
-    clearSessionTimer(row.id)
-    sessionOverlays.delete(row.id)
+    finishSessionOverlay(row.id, overlay, state, now, 'list')
     changed = true
-    trace('optimistic', {
-      scope: 'session',
-      id: row.id,
-      op_id: overlay.opId,
-      action: overlay.kind,
-      event: isTimeout ? 'timeout' : 'settle',
-      via: 'list',
-      latency_ms: now - overlay.createdAt,
-    })
-    if (isTimeout) {
-      notifyOptimisticTimeout({
-        scope: 'session',
-        id: row.id,
-        opId: overlay.opId,
-        kind: overlay.kind,
-      })
-    }
   }
   if (changed) emit()
 }

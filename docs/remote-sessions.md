@@ -233,6 +233,11 @@ pane gets a 4 s `网页端发来一条消息` notice.
 
 The web console's working line (运行中… 4m 39s · ↓ 19.1k tokens / 正在压缩上下文… 36s) comes from these fields, not from reading the TUI's screen — its status-line format is not a contract.
 
+A user prompt after a confirmed interrupt starts a new turn even if the Stop
+hook was missed. The hook compares the pane's interrupt marker with the previous
+turn under the attention state lock, so later prompts queued in the new turn
+keep its start time.
+
 - Attention fields (`scripts/runtime/agent-attention/turn-lib.sh`, hooks in `docs/agent-attention.md`): `turn_started` (ms) is set while an entry is `running` or `waiting`: the first `running` after `done`, after a background-only stretch (`running_kind=background`) or with no entry starts the turn now; later `running` / `waiting` upserts of the same turn (queued prompts, permission prompts) keep it; `done` drops it. `transition_to_running` keeps it from `waiting` and starts it from `done` / no entry; the background → turn-running promote starts it.
 - `PreCompact → compacting` upserts `status=running`, `running_kind=compacting`, `compact_started` (ms) and `compact_from` (the status before: `running` for an auto compaction mid-turn, `done` / empty for a manual `/compact`). `turn_started` follows the rule above (kept mid-turn).
 - `SessionStart compact → compacted` goes back by `compact_from`: `running` / `waiting` → `running` (the turn goes on), `done` → `done`, empty → removed. Without a matching `compacting` it is a no-op. A tool call (`resolved`) while `running_kind=compacting` also ends it, keeping `turn_started`, in case the tool call comes before SessionStart.

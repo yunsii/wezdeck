@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cli_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+browser_url="$("$cli_dir/wezdeck-browser" cdp-url)"
+exec chrome-devtools-mcp --browser-url="$browser_url" "$@"

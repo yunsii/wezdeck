@@ -4,7 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import {
   applySessionsListOverlay,
@@ -85,6 +85,11 @@ export function useSessions() {
   const client = useQueryClient()
   const pending = usePendingSessionDeletes()
   const overlays = useAllSessionOptimistics()
+  const hasActiveListOverlay = [...overlays.values()].some(
+    (item) => !item.settledOn?.list,
+  )
+  const hasOverlaysRef = useRef(hasActiveListOverlay)
+  hasOverlaysRef.current = hasActiveListOverlay
   const select = useCallback(
     (data: SessionsReply) =>
       applySessionsListOverlay(
@@ -96,7 +101,7 @@ export function useSessions() {
   const query = useQuery({
     queryKey: ['remote', 'sessions'],
     enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
+    refetchInterval: () => (hasOverlaysRef.current ? 1_500 : 5_000),
     queryFn: () => hostRead('sessions', {}) as Promise<SessionsReply>,
     select,
   })

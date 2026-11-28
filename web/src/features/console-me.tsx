@@ -17,6 +17,7 @@ import { cn } from '#/lib/utils'
 import { buildId } from '#/lib/pwa'
 import { useTheme } from '#/lib/theme-provider'
 import { useCaretShape } from '#/lib/caret-pref'
+import { useEnterMode } from '#/lib/enter-pref'
 import { useConsoleMode, useRemoteState } from './console-mode'
 import { Segmented } from '#/components/deck/segmented'
 import { useDeviceState } from './device-state'
@@ -122,6 +123,7 @@ function AppearancePage() {
   const { locale } = useLocale()
   const { mode, setMode } = useTheme()
   const [caret, setCaret] = useCaretShape()
+  const [enterMode, setEnterMode] = useEnterMode()
   const navigate = useNavigate()
   const params = useParams({ strict: false })
   return (
@@ -172,6 +174,22 @@ function AppearancePage() {
         />
         <span className="text-meta text-brand-label">
           {t`Block and underscore need Chrome 144 or later; other browsers keep the bar.`}
+        </span>
+      </div>
+      <div className="grid gap-1.5">
+        <span className="text-caption text-brand-muted">{t`Enter key`}</span>
+        <Segmented
+          label={t`Enter key`}
+          value={enterMode}
+          onChange={setEnterMode}
+          options={[
+            { value: 'auto', label: t`Auto` },
+            { value: 'newline', label: t`Newline` },
+            { value: 'send', label: t`Send` },
+          ]}
+        />
+        <span className="text-meta text-brand-label">
+          {t`Auto sends on desktop and tablet keyboards, and breaks lines on phones. Shift+Enter always breaks lines; Ctrl/⌘+Enter always sends.`}
         </span>
       </div>
     </div>
