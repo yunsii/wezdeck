@@ -72,4 +72,36 @@ tmux_test_assert_eq "$new_pane" "$(jq -r '.entries["sid-cold"].tmux_pane' "$WEZD
 bash "$persist" restore
 tmux_test_assert_eq 3 "$(tmux list-windows -t "$session" -F '#{window_id}' | wc -l)" 'repeated restore must be idempotent'
 
+# A dirty worktree's live Grok wrapper can have no attention hook after a
+# restart. Reconcile imports the cwd-scoped conversation without a prompt.
+DIRTY_ROOT="$TEST_ROOT/dirty"
+mkdir -p "$DIRTY_ROOT"
+git -C "$DIRTY_ROOT" init -q
+git -C "$DIRTY_ROOT" config user.email test@example.com
+git -C "$DIRTY_ROOT" config user.name test
+printf 'seed\n' > "$DIRTY_ROOT/README"
+git -C "$DIRTY_ROOT" add README
+git -C "$DIRTY_ROOT" commit -qm seed
+printf 'changed\n' >> "$DIRTY_ROOT/README"
+cp /bin/sleep "$TEST_SHIM_DIR/grok.real"
+dirty_pane="$(tmux new-session -d -P -F '#{pane_id}' -s wezterm_work_dirty -n dirty -c "$DIRTY_ROOT" \
+  "bash -c '$TEST_SHIM_DIR/grok.real 300 & wait'")"
+tmux set-option -p -t "$dirty_pane" @wezterm_pane_role agent-cli:grok
+dirty_sid=11111111-2222-3333-4444-555555555555
+encoded_root="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1],safe=""))' "$DIRTY_ROOT")"
+mkdir -p "$HOME/.grok/sessions/$encoded_root/$dirty_sid"
+bash "$persist" reconcile
+tmux_test_assert_eq idle "$(jq -r --arg sid "$dirty_sid" '.entries[$sid].status' "$WEZDECK_ATTENTION_STATE_PATH")" \
+  'dirty untracked agent must appear as idle in attention'
+tmux_test_assert_eq "$dirty_sid" "$(tmux show-options -p -v -t "$dirty_pane" @wezterm_agent_session_id)" \
+  'imported agent must pin its conversation to the pane'
+clean_pane="$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n clean-grok -c "$TEST_ROOT/main" \
+  "bash -c '$TEST_SHIM_DIR/grok.real 300 & wait'")"
+tmux set-option -p -t "$clean_pane" @wezterm_pane_role agent-cli:grok
+clean_root="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1],safe=""))' "$TEST_ROOT/main")"
+mkdir -p "$HOME/.grok/sessions/$clean_root/22222222-3333-4444-5555-666666666666"
+tmux_test_assert_eq imported=0 "$(bash "$persist" reconcile)" 'reconcile must not duplicate the imported entry'
+tmux_test_assert_eq 0 "$(jq '[.entries // {} | .[] | select(.tmux_pane == "'$clean_pane'")] | length' "$WEZDECK_ATTENTION_STATE_PATH")" \
+  'clean untracked agent must not be imported'
+
 printf 'PASS cold-restore-managed-sessions\n'

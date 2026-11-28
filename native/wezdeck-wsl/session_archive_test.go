@@ -122,10 +122,11 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(transcripts, "rollout-2026-11-26T09-49-10-"+id+".jsonl"), []byte(content), 0600); err != nil {
 		t.Fatal(err)
 	}
-	doc, err := json.Marshal(map[string]any{"entries": map[string]any{id: map[string]string{
+	doc, err := json.Marshal(map[string]any{"entries": map[string]any{id: map[string]any{
 		"session_id": id, "status": "waiting", "waiting_kind": "permission_prompt",
 		"agent_name": "codex", "tmux_pane": pane, "tmux_socket": socket,
 		"tmux_session": run("display-message", "-p", "-t", pane, "#{session_name}"),
+		"ts":           time.Now().UnixMilli(),
 	}}})
 	if err != nil {
 		t.Fatal(err)
@@ -176,6 +177,28 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	check(false)
 	run("respawn-pane", "-k", "-t", pane, "exec "+bin)
 	check(true)
+	var aged map[string]any
+	if err := json.Unmarshal(doc, &aged); err != nil {
+		t.Fatal(err)
+	}
+	aged["entries"].(map[string]any)[id].(map[string]any)["ts"] = time.Now().Add(-4 * time.Minute).UnixMilli()
+	oldDoc, err := json.Marshal(aged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(state, oldDoc, 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldList, err := listSessionsFor(true)
+	if err != nil || len(oldList.(map[string]any)["sessions"].([]sessionCard)) != 0 {
+		t.Fatalf("stale Codex pane must leave current list after grace: %v, %v", oldList, err)
+	}
+	if _, err := sessionDetailFor(json.RawMessage(`{"id":"codex-tracked"}`), true); err != nil {
+		t.Fatalf("stale conversation URL must remain readable: %v", err)
+	}
+	if err := os.WriteFile(state, doc, 0600); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := guardSession(id); err == nil {
 		t.Fatal("unavailable Codex must reject writes")
 	}

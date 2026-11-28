@@ -193,7 +193,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	}
 	entry, repo, tree, err := sessionGroupTarget(request.ID)
 	if err != nil {
-		return closeOrphanedSession(request.ID, err)
+		return closeAbandonedSession(request.ID, err)
 	}
 	unlock, err := lockSessionWorktree(tree)
 	if err != nil {
@@ -212,20 +212,19 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	if err := rememberSessionRepo(repo); err != nil {
 		relayLogf("session_repo_remember", "repo=%q outcome=failed err=%q", repo, err)
 	}
-	// An archived row may still point to a pane that now hosts a different
-	// conversation. Close only that record, even while the pane is in use.
-	if !request.Force && entry.archivedID == request.ID {
-		pinned, err := sessionPanePin(entry)
-		if err != nil {
+	// A pane can now host a different conversation even while the old row
+	// remains active in attention.json. Never kill the new conversation.
+	pinned, err := sessionPanePin(entry)
+	if err != nil {
+		return nil, err
+	}
+	if pinned != "" && pinned != request.ID && pinned != entry.ReplacedFrom {
+		if err := markSessionClosed(request.ID); err != nil {
 			return nil, err
 		}
-		if pinned != "" && pinned != request.ID && pinned != entry.ReplacedFrom {
-			if err := markSessionClosed(request.ID); err != nil {
-				return nil, err
-			}
-			relayLogf("session_delete", "id=%s worktree=%q outcome=archive_only", request.ID, tree)
-			return map[string]any{"v": 1, "ok": true, "worktree_outcome": "archive_only"}, nil
-		}
+		forgetClosedAttention(entry)
+		relayLogf("session_delete", "id=%s worktree=%q outcome=archive_only reason=pane_reused", request.ID, tree)
+		return map[string]any{"v": 1, "ok": true, "worktree_outcome": "archive_only"}, nil
 	}
 
 	if _, err := guardSession(request.ID); err != nil {
@@ -261,7 +260,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	} else if request.Force {
 		return nil, errors.New("the primary checkout cannot be removed")
 	}
-	pinned, err := sessionPanePin(entry)
+	pinned, err = sessionPanePin(entry)
 	if err != nil {
 		return nil, err
 	}
@@ -287,10 +286,9 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	return map[string]any{"v": 1, "ok": true, "worktree_outcome": outcome}, nil
 }
 
-// A crashed temporary tmux server can leave a transcript-backed session card
-// after both its pane and checkout are gone. There is nothing left to kill or
-// reclaim; close only the card and retain the transcript for history.
-func closeOrphanedSession(id string, originalErr error) (any, error) {
+// Crashes can leave a card on a vanished socket; an exited agent can leave a
+// shell pane pinned to its old conversation. Neither case has an agent to kill.
+func closeAbandonedSession(id string, originalErr error) (any, error) {
 	active, recent, err := readAttentionDoc()
 	if err != nil {
 		return nil, originalErr
@@ -310,29 +308,47 @@ func closeOrphanedSession(id string, originalErr error) (any, error) {
 	if entry.TmuxSocket == "" {
 		return nil, originalErr
 	}
+	closedReason := "orphaned_pane"
 	if _, err := os.Stat(entry.TmuxSocket); !os.IsNotExist(err) {
-		return nil, originalErr
-	}
-	if _, _, _, _, _, alive := paneState(entry); alive {
-		return nil, originalErr
+		_, cwd, command, _, _, alive := paneState(entry)
+		if !alive {
+			return nil, originalErr
+		}
+		pinned, err := sessionPanePin(entry)
+		if err != nil || (isAgentPane(command, entry) && (pinned == id || pinned == "")) {
+			return nil, originalErr
+		}
+		if pinned == id {
+			cmd := exec.Command("bash", "-c", `source "$1"; agent_session_forget_typed_id "$2" "$3" "$4"`,
+				"bash", filepath.Join(repoRoot(), "scripts/runtime/agent-session-resolve.sh"), id, entry.TmuxPane, cwd)
+			cmd.Env = append(os.Environ(), "TMUX="+entry.TmuxSocket+",0,0")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return nil, fmt.Errorf("clear abandoned session pin: %v: %s", err, clip(strings.TrimSpace(string(out)), 160))
+			}
+		}
+		closedReason = "pane_reused"
 	}
 	if err := markSessionClosed(id); err != nil {
 		return nil, err
 	}
 	if _, live := active[id]; live {
-		cmd := exec.Command("bash", filepath.Join(repoRoot(), "scripts/runtime/attention-jump.sh"),
-			"--forget", id, "--only-if-ts", strconv.FormatInt(entry.TS, 10))
-		cmd.Env = os.Environ()
-		if path := os.Getenv("WEZDECK_ATTENTION_FILE"); path != "" {
-			cmd.Env = append(cmd.Env, "WEZDECK_ATTENTION_STATE_PATH="+path,
-				"WEZTERM_ATTENTION_LOCK_FILE="+path+".lock")
-		}
-		if out, err := cmd.CombinedOutput(); err != nil {
-			relayLogf("session_delete", "id=%s outcome=archive_only attention_forget_error=%q", id, clip(strings.TrimSpace(string(out)), 160))
-		}
+		forgetClosedAttention(entry)
 	}
-	relayLogf("session_delete", "id=%s outcome=archive_only reason=orphaned_pane", id)
+	relayLogf("session_delete", "id=%s outcome=archive_only reason=%s", id, closedReason)
 	return map[string]any{"v": 1, "ok": true, "worktree_outcome": "archive_only"}, nil
+}
+
+func forgetClosedAttention(entry attentionEntry) {
+	cmd := exec.Command("bash", filepath.Join(repoRoot(), "scripts/runtime/attention-jump.sh"),
+		"--forget", entry.SessionID, "--only-if-ts", strconv.FormatInt(entry.TS, 10))
+	cmd.Env = os.Environ()
+	if path := os.Getenv("WEZDECK_ATTENTION_FILE"); path != "" {
+		cmd.Env = append(cmd.Env, "WEZDECK_ATTENTION_STATE_PATH="+path,
+			"WEZTERM_ATTENTION_LOCK_FILE="+path+".lock")
+	}
+	if out, err := cmd.CombinedOutput(); err != nil {
+		relayLogf("session_delete", "id=%s outcome=archive_only attention_forget_error=%q", entry.SessionID, clip(strings.TrimSpace(string(out)), 160))
+	}
 }
 
 func sessionPanePin(entry attentionEntry) (string, error) {

@@ -381,6 +381,9 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		}
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
 		readOnly := archived || codexPaneUnavailable(e.AgentName, cmd)
+		if readOnly && e.TS > 0 && now.Sub(time.UnixMilli(e.TS)) >= recentFinishedSession {
+			continue
+		}
 		if readOnly {
 			if path, _ := findTranscript(e.SessionID); path != "" {
 				if recordedCwd := transcriptCwd(path); recordedCwd != "" {

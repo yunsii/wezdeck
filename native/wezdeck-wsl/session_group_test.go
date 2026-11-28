@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDeleteOrphanedSessionKeepsTranscript(t *testing.T) {
@@ -35,8 +36,8 @@ func TestDeleteOrphanedSessionKeepsTranscript(t *testing.T) {
 		t.Fatal(err)
 	}
 	before, err := listSessionsFor(true)
-	if err != nil || len(before.(map[string]any)["sessions"].([]sessionCard)) != 1 {
-		t.Fatalf("orphaned transcript must be visible before deletion: %v, %v", before, err)
+	if err != nil || len(before.(map[string]any)["sessions"].([]sessionCard)) != 0 {
+		t.Fatalf("old orphan must not occupy the current session list: %v, %v", before, err)
 	}
 	result, err := deleteGroupedSession(json.RawMessage(`{"id":"s1","confirm":true}`))
 	if err != nil || result.(map[string]any)["worktree_outcome"] != "archive_only" {
@@ -61,6 +62,81 @@ func TestDeleteOrphanedSessionKeepsTranscript(t *testing.T) {
 	}
 	if _, err := deleteGroupedSession(json.RawMessage(`{"id":"s2","confirm":true}`)); err == nil || sessionWasClosed("s2") {
 		t.Fatal("an existing but unavailable socket must not be treated as an orphan")
+	}
+}
+
+func TestDeleteSessionAfterAgentExitsToShell(t *testing.T) {
+	dir, socket, pane, attention := restartFixture(t)
+	t.Setenv("HOME", dir)
+	t.Setenv("WEZDECK_AGENT_SESSION_PINS_PATH", filepath.Join(dir, "pins.json"))
+	repo, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", repo)
+	if out, err := tmuxCmd(socket, "respawn-pane", "-k", "-t", pane, "-c", dir,
+		"bash --noprofile --norc -i").CombinedOutput(); err != nil {
+		t.Fatalf("respawn shell: %v: %s", err, out)
+	}
+	if out, err := tmuxCmd(socket, "set-option", "-p", "-t", pane,
+		"@wezterm_agent_session_id", "s1").CombinedOutput(); err != nil {
+		t.Fatalf("set stale pin: %v: %s", err, out)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		_, _, command, _, _, alive := paneState(attentionEntry{TmuxSocket: socket, TmuxPane: pane})
+		if alive && command == "bash" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("pane did not settle on a shell")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	result, err := deleteGroupedSession(json.RawMessage(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "archive_only" {
+		t.Fatalf("delete exited agent: %v, %v", result, err)
+	}
+	if !sessionWasClosed("s1") {
+		t.Fatal("exited agent record was not closed")
+	}
+	if out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane,
+		"#{pane_current_command}|#{@wezterm_agent_session_id}").Output(); err != nil || strings.TrimSpace(string(out)) != "bash|" {
+		t.Fatalf("shell must survive without the old pin: %v, %q", err, out)
+	}
+	active, _, err := readAttentionDoc()
+	if err != nil || active["s1"].SessionID != "" {
+		t.Fatalf("exited agent attention remains in %s: %v, %v", attention, active["s1"], err)
+	}
+}
+
+func TestDeleteOldSessionAfterPaneStartsAnotherAgent(t *testing.T) {
+	dir, socket, pane, _ := restartFixture(t)
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "config"))
+	repo, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", repo)
+	if out, err := tmuxCmd(socket, "set-option", "-p", "-t", pane,
+		"@wezterm_agent_session_id", "new-session").CombinedOutput(); err != nil {
+		t.Fatalf("set new conversation pin: %v: %s", err, out)
+	}
+	result, err := deleteGroupedSession(json.RawMessage(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "archive_only" {
+		t.Fatalf("delete old session: %v, %v", result, err)
+	}
+	if !sessionWasClosed("s1") {
+		t.Fatal("old session was not closed")
+	}
+	if out, err := tmuxCmd(socket, "display-message", "-p", "-t", pane,
+		"#{pane_current_command}|#{@wezterm_agent_session_id}").Output(); err != nil || strings.TrimSpace(string(out)) != "claude|new-session" {
+		t.Fatalf("new agent must keep its pane and pin: %v, %q", err, out)
+	}
+	active, _, err := readAttentionDoc()
+	if err != nil || active["s1"].SessionID != "" {
+		t.Fatalf("old attention entry remains: %v, %v", active["s1"], err)
 	}
 }
 
