@@ -51,9 +51,9 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/console-sessions.tsx:308
-#: src/features/message-composer.tsx:136
-#: src/features/message-composer.tsx:166
+#: src/features/console-sessions.tsx:309
+#: src/features/message-composer.tsx:139
+#: src/features/message-composer.tsx:169
 msgid "{count} images"
 msgstr "{count} images"
 
@@ -818,9 +818,9 @@ msgstr "Cache hit"
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
-#: src/features/session-composer.tsx:268
+#: src/features/session-composer.tsx:328
 #: src/features/session-detail-notices.tsx:19
-#: src/features/session-detail-parts.tsx:73
+#: src/features/session-detail-parts.tsx:74
 msgid "Can't get the latest from the host, showing {staleAt}:"
 msgstr "Can't get the latest from the host, showing {staleAt}:"
 
@@ -866,6 +866,10 @@ msgstr "Category"
 #: src/features/ticket-timeline.tsx:214
 msgid "Challenge"
 msgstr "Challenge"
+
+#: src/features/session-composer.tsx:225
+msgid "Change send timing"
+msgstr "Change send timing"
 
 #: src/features/chat-tools.tsx:202
 msgid "changed {edited} files +{added} −{removed}"
@@ -941,7 +945,7 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer-tools.tsx:161
+#: src/features/session-composer-tools.tsx:232
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -1038,12 +1042,12 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:465
+#: src/features/session-send.ts:412
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:290
-#: src/features/session-composer-tools.tsx:108
+#: src/features/session-composer-tools.tsx:122
 msgid "Commands"
 msgstr "Commands"
 
@@ -1189,7 +1193,7 @@ msgstr "context usage"
 
 #: src/features/doc-code-block.tsx:103
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:61
+#: src/features/session-composer.tsx:62
 #: src/features/session-info-actions.tsx:115
 #: src/features/session-permission.tsx:346
 #: src/features/ticket-info.tsx:147
@@ -1229,7 +1233,7 @@ msgstr "Copied: {shown}"
 #: src/features/host-file-sheet.tsx:127
 #: src/features/inspector.tsx:87
 #: src/features/sent-history-row.tsx:190
-#: src/features/session-composer.tsx:61
+#: src/features/session-composer.tsx:62
 #: src/features/session-permission.tsx:138
 #: src/features/session-permission.tsx:383
 #: src/features/session-permission.tsx:424
@@ -1249,7 +1253,7 @@ msgstr "Copy command"
 msgid "Copy document"
 msgstr "Copy document"
 
-#: src/features/session-composer.tsx:53
+#: src/features/session-composer.tsx:54
 msgid "Copy error"
 msgstr "Copy error"
 
@@ -1630,7 +1634,7 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/chat-pending.tsx:146
+#: src/features/chat-pending.tsx:168
 msgid "Edit"
 msgstr "Edit"
 
@@ -2003,7 +2007,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer-tools.tsx:82
+#: src/features/session-composer-tools.tsx:96
 msgid "Images"
 msgstr "Images"
 
@@ -2049,7 +2053,7 @@ msgstr "Initial prompt by phase (est. tokens)"
 msgid "Initiator"
 msgstr "Initiator"
 
-#: src/features/message-composer.tsx:180
+#: src/features/message-composer.tsx:183
 msgid "Input cleared"
 msgstr "Input cleared"
 
@@ -2106,7 +2110,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:414
+#: src/features/session-send.ts:386
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -2259,7 +2263,7 @@ msgstr "Load earlier"
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
 
-#: src/features/console-sessions.tsx:270
+#: src/features/console-sessions.tsx:271
 msgid "Loaded back into input"
 msgstr "Loaded back into input"
 
@@ -2410,13 +2414,13 @@ msgstr "Mention an open repo ticket"
 msgid "Merge"
 msgstr "Merge"
 
-#: src/features/session-composer.tsx:185
+#: src/features/session-composer.tsx:241
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer-tools.tsx:54
-#: src/features/session-composer-tools.tsx:56
-#: src/features/session-composer-tools.tsx:74
+#: src/features/session-composer-tools.tsx:68
+#: src/features/session-composer-tools.tsx:70
+#: src/features/session-composer-tools.tsx:88
 msgid "Message actions"
 msgstr "Message actions"
 
@@ -2424,7 +2428,7 @@ msgstr "Message actions"
 msgid "Message the ticket manager (Ctrl+Enter to send)…"
 msgstr "Message the ticket manager (Ctrl+Enter to send)…"
 
-#: src/features/session-composer.tsx:184
+#: src/features/session-composer.tsx:240
 msgid "Message to the agent"
 msgstr "Message to the agent"
 
@@ -2769,7 +2773,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered"
 msgstr "Not delivered"
 
-#: src/features/chat-pending.tsx:128
+#: src/features/chat-pending.tsx:147
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
@@ -2891,7 +2895,7 @@ msgstr "Only reusable worktrees can be managed here"
 msgid "Only this trace"
 msgstr "Only this trace"
 
-#: src/features/message-composer.tsx:99
+#: src/features/message-composer.tsx:102
 msgid "Only up to {MAX_IMAGES} images fit in one message"
 msgstr "Only up to {MAX_IMAGES} images fit in one message"
 
@@ -2945,9 +2949,9 @@ msgstr "Open repository links (key: l)"
 msgid "Open session"
 msgstr "Open session"
 
-#: src/features/session-composer.tsx:290
+#: src/features/session-composer.tsx:350
 #: src/features/session-detail-notices.tsx:71
-#: src/features/session-detail-parts.tsx:111
+#: src/features/session-detail-parts.tsx:117
 msgid "Open settings"
 msgstr "Open settings"
 
@@ -3098,6 +3102,14 @@ msgctxt "filter"
 msgid "Pending"
 msgstr "Pending"
 
+#: src/features/session-deferred-menu-item.tsx:23
+msgid "Pending messages"
+msgstr "Pending messages"
+
+#: src/features/session-detail-parts.tsx:81
+msgid "Pending messages unavailable: {deferredError}"
+msgstr "Pending messages unavailable: {deferredError}"
+
 #: src/features/me-notifications.tsx:100
 msgid "Permission prompts, Ask questions, and plan approvals."
 msgstr "Permission prompts, Ask questions, and plan approvals."
@@ -3226,7 +3238,7 @@ msgctxt "ticket bucket"
 msgid "Queued"
 msgstr "Queued"
 
-#: src/features/chat-pending.tsx:73
+#: src/features/chat-pending.tsx:79
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -3384,7 +3396,7 @@ msgstr "Remote devices"
 msgid "Remote project"
 msgstr "Remote project"
 
-#: src/features/chat-pending.tsx:166
+#: src/features/chat-pending.tsx:188
 msgid "Remove"
 msgstr "Remove"
 
@@ -3543,7 +3555,7 @@ msgstr "Research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/chat-pending.tsx:136
+#: src/features/chat-pending.tsx:158
 #: src/features/sent-history-row.tsx:161
 msgid "Resend"
 msgstr "Resend"
@@ -3918,8 +3930,8 @@ msgstr "Select a target repository first."
 
 #: src/features/console-keys.tsx:109
 #: src/features/console-me.tsx:191
-#: src/features/message-composer.tsx:397
-#: src/features/message-composer.tsx:399
+#: src/features/message-composer.tsx:400
+#: src/features/message-composer.tsx:402
 #: src/features/ticket-manager-panel.tsx:132
 msgid "Send"
 msgstr "Send"
@@ -3928,17 +3940,26 @@ msgstr "Send"
 msgid "Send (also on a touch screen, where Enter is a new line)"
 msgstr "Send (also on a touch screen, where Enter is a new line)"
 
+#: src/features/session-composer.tsx:233
+msgid "Send after this turn"
+msgstr "Send after this turn"
+
 #: src/features/chat-tools.tsx:48
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/chat-pending.tsx:127
+#: src/features/chat-pending.tsx:146
 msgid "Send failed"
 msgstr "Send failed"
 
-#: src/features/chat-pending.tsx:126
+#: src/features/chat-pending.tsx:145
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
+
+#: src/features/chat-pending.tsx:158
+#: src/features/session-composer-tools.tsx:144
+msgid "Send now"
+msgstr "Send now"
 
 #: src/features/ticket-diff.tsx:248
 msgid "Send review ({noteCount})"
@@ -3952,6 +3973,14 @@ msgstr "Send test notification"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
+#: src/features/session-composer-tools.tsx:140
+msgid "Send timing"
+msgstr "Send timing"
+
+#: src/features/session-composer-tools.tsx:145
+msgid "Send when this turn ends"
+msgstr "Send when this turn ends"
+
 #: src/features/prompt-action-state.tsx:131
 msgid "Sending action…"
 msgstr "Sending action…"
@@ -3964,6 +3993,7 @@ msgstr "Sending the first message…"
 msgid "Sending the handoff brief…"
 msgstr "Sending the handoff brief…"
 
+#: src/features/chat-pending.tsx:134
 #: src/features/me-notifications.tsx:378
 #: src/features/ticket-manager-panel.tsx:132
 msgid "Sending…"
@@ -3974,7 +4004,7 @@ msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
 
 #: src/features/sent-history.tsx:209
-#: src/features/session-composer-tools.tsx:138
+#: src/features/session-composer-tools.tsx:199
 msgid "Sent messages"
 msgstr "Sent messages"
 
@@ -4128,7 +4158,7 @@ msgstr "Site navigation"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/session-composer-tools.tsx:123
+#: src/features/session-composer-tools.tsx:184
 #: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "Skills"
@@ -4165,8 +4195,8 @@ msgstr "Solution"
 msgid "Some numbers are missing: {missing}"
 msgstr "Some numbers are missing: {missing}"
 
-#: src/features/session-composer.tsx:274
-#: src/features/session-detail-parts.tsx:95
+#: src/features/session-composer.tsx:334
+#: src/features/session-detail-parts.tsx:101
 msgid "Someone just used the desk; sending in {retryIn}s…"
 msgstr "Someone just used the desk; sending in {retryIn}s…"
 
@@ -4449,7 +4479,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:157
+#: src/features/console-sessions.tsx:158
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4484,7 +4514,7 @@ msgstr "The contract or behaviour you expect — the target checks this first"
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/session-send.ts:303
+#: src/features/session-prompt-timeout.ts:17
 msgid "The host did not confirm the action; please check and retry."
 msgstr "The host did not confirm the action; please check and retry."
 
@@ -4496,7 +4526,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-send.ts:467
+#: src/features/session-send.ts:414
 msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 
@@ -4564,7 +4594,7 @@ msgstr "This conversation is read-only."
 msgid "This device"
 msgstr "This device"
 
-#: src/features/console-sessions.tsx:153
+#: src/features/console-sessions.tsx:154
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4574,9 +4604,9 @@ msgstr "This device is not approved yet (Settings › Device access)."
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 
-#: src/features/session-composer.tsx:269
+#: src/features/session-composer.tsx:329
 #: src/features/session-detail-notices.tsx:20
-#: src/features/session-detail-parts.tsx:74
+#: src/features/session-detail-parts.tsx:75
 msgid "this device is offline"
 msgstr "this device is offline"
 
@@ -4734,7 +4764,7 @@ msgstr "Title source"
 msgid "Title unlocked; auto-titling will resume."
 msgstr "Title unlocked; auto-titling will resume."
 
-#: src/features/session-composer.tsx:29
+#: src/features/session-composer.tsx:30
 msgid "tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying."
 msgstr "tmux blocked keyboard input because its client is read-only. If your message is already in the terminal input, check it before retrying."
 
@@ -4755,7 +4785,7 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/chat-pending.tsx:156
+#: src/features/chat-pending.tsx:178
 #: src/features/sent-history-row.tsx:174
 msgid "To ticket"
 msgstr "To ticket"
@@ -4827,12 +4857,16 @@ msgstr "Trust this worktree and continue"
 msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
-#: src/features/session-detail-parts.tsx:90
-#: src/features/session-send.ts:410
+#: src/features/chat-pending.tsx:142
+msgid "Turn finished: review before sending"
+msgstr "Turn finished: review before sending"
+
+#: src/features/session-detail-parts.tsx:96
+#: src/features/session-send.ts:384
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
-#: src/features/console-sessions.tsx:227
+#: src/features/console-sessions.tsx:228
 msgid "Turn message into ticket"
 msgstr "Turn message into ticket"
 
@@ -4886,7 +4920,7 @@ msgstr "Unconfirmed ({unsettledCount})"
 msgid "Underscore"
 msgstr "Underscore"
 
-#: src/features/message-composer.tsx:182
+#: src/features/message-composer.tsx:185
 msgid "Undo"
 msgstr "Undo"
 
@@ -4930,8 +4964,8 @@ msgstr "Updating shell rail, sticky public header and architecture TOC…"
 msgid "Updating your selection…"
 msgstr "Updating your selection…"
 
-#: src/features/message-composer.tsx:147
-#: src/features/message-composer.tsx:157
+#: src/features/message-composer.tsx:150
+#: src/features/message-composer.tsx:160
 msgid "Uploading {step}/{total}…"
 msgstr "Uploading {step}/{total}…"
 
@@ -5001,6 +5035,11 @@ msgstr "VS Code window focused"
 msgid "vscode-links is not installed on the host."
 msgstr "vscode-links is not installed on the host."
 
+#: src/features/session-composer-tools.tsx:146
+#: src/features/session-composer.tsx:234
+msgid "Wait for my confirmation"
+msgstr "Wait for my confirmation"
+
 #: src/features/session-info.tsx:89
 msgid "Waiting for"
 msgstr "Waiting for"
@@ -5016,6 +5055,14 @@ msgstr "Waiting for the host"
 #: src/features/me-device-access.tsx:51
 msgid "Waiting for the host to approve this device. On the host run:"
 msgstr "Waiting for the host to approve this device. On the host run:"
+
+#: src/features/chat-pending.tsx:140
+msgid "Waiting for the next turn to finish"
+msgstr "Waiting for the next turn to finish"
+
+#: src/features/chat-pending.tsx:139
+msgid "Waiting for this turn to finish"
+msgstr "Waiting for this turn to finish"
 
 #: src/features/ticket-run-chat.tsx:282
 msgid "Waiting for worker output…"
@@ -5077,6 +5124,10 @@ msgstr "waiting on you"
 #: src/features/tickets-view.tsx:538
 msgid "Waiting on you"
 msgstr "Waiting on you"
+
+#: src/features/chat-pending.tsx:137
+msgid "Waiting to retry"
+msgstr "Waiting to retry"
 
 #: src/features/console-status-band.tsx:51
 msgid "WakaTime"

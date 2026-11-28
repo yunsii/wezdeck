@@ -3,6 +3,9 @@ import {
   History,
   ImagePlus,
   Plus,
+  Send,
+  Timer,
+  UserRoundCheck,
   Sparkles,
   SquareSlash,
   Trash2,
@@ -13,6 +16,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Sheet } from '#/components/ui/sheet'
 import { trace } from '#/lib/client-trace'
+import { DeferredMenuItem } from './session-deferred-menu-item'
 
 const row =
   'flex min-h-12 w-full items-center gap-3 border-b border-brand-edge px-2 text-left text-body text-brand-text last:border-b-0'
@@ -24,11 +28,15 @@ export function ComposerTools({
   hasSkills,
   hasDraft,
   unsettledCount = 0,
+  deferredCount = 0,
+  onOpenDeferred,
   onPickImage,
   onCommands,
   onSkills,
   onSentHistory,
   onClear,
+  deliveryPolicy = 'immediate',
+  onDeliveryPolicy,
 }: {
   writable: boolean
   canPickImage: boolean
@@ -36,11 +44,17 @@ export function ComposerTools({
   hasSkills: boolean
   hasDraft: boolean
   unsettledCount?: number
+  deferredCount?: number
+  onOpenDeferred?: () => void
   onPickImage: (files: FileList | null) => void
   onCommands: () => void
   onSkills: () => void
   onSentHistory?: () => void
   onClear: () => void
+  deliveryPolicy?: 'immediate' | 'after_turn' | 'after_review'
+  onDeliveryPolicy?: (
+    policy: 'immediate' | 'after_turn' | 'after_review',
+  ) => void
 }) {
   const { t } = useLingui()
   const [open, setOpen] = useState(false)
@@ -61,7 +75,7 @@ export function ComposerTools({
         className="relative absolute bottom-1.5 left-1.5 inline-flex size-10 items-center justify-center rounded-full text-brand-muted"
       >
         <Plus size={19} aria-hidden />
-        {unsettledCount > 0 ? (
+        {unsettledCount + deferredCount > 0 ? (
           <span
             aria-hidden
             className="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-waiting"
@@ -108,6 +122,53 @@ export function ComposerTools({
               {t`Commands`}
             </Button>
           ) : null}
+          {onDeliveryPolicy ? (
+            <div
+              className={`${row} grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1`}
+            >
+              {deliveryPolicy === 'immediate' ? (
+                <Send size={19} aria-hidden className="text-brand-muted" />
+              ) : deliveryPolicy === 'after_turn' ? (
+                <Timer size={19} aria-hidden className="text-brand-waiting" />
+              ) : (
+                <UserRoundCheck
+                  size={19}
+                  aria-hidden
+                  className="text-brand-running"
+                />
+              )}
+              <span>{t`Send timing`}</span>
+              <div className="col-start-2 grid gap-1 text-meta text-brand-muted">
+                {(
+                  [
+                    ['immediate', t`Send now`],
+                    ['after_turn', t`Send when this turn ends`],
+                    ['after_review', t`Wait for my confirmation`],
+                  ] as const
+                ).map(([policy, label]) => (
+                  <Button
+                    key={policy}
+                    variant="plain"
+                    type="button"
+                    aria-pressed={deliveryPolicy === policy}
+                    onClick={() => onDeliveryPolicy(policy)}
+                    className="min-h-8 justify-start px-0 text-left text-meta"
+                  >
+                    <span
+                      className={
+                        deliveryPolicy === policy
+                          ? 'text-brand-text'
+                          : undefined
+                      }
+                    >
+                      {deliveryPolicy === policy ? '● ' : '○ '}
+                      {label}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {hasSkills ? (
             <Button
               variant="plain"
@@ -145,6 +206,16 @@ export function ComposerTools({
                 h
               </kbd>
             </Button>
+          ) : null}
+          {deferredCount > 0 && onOpenDeferred ? (
+            <DeferredMenuItem
+              count={deferredCount}
+              className={row}
+              onOpen={() => {
+                close()
+                onOpenDeferred()
+              }}
+            />
           ) : null}
           {hasDraft ? (
             <Button

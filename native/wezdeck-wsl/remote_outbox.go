@@ -576,6 +576,16 @@ func outboxPinnedUploads() map[string]bool {
 			}
 		}
 	}
+	if deferred, err := readDeferredStore(); err == nil {
+		for _, rec := range deferred.Items {
+			if rec.Status == "sent" || rec.Status == "canceled" {
+				continue
+			}
+			for _, name := range rec.Attachments {
+				pinned[filepath.Base(name)] = true
+			}
+		}
+	}
 	return pinned
 }
 

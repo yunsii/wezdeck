@@ -34,6 +34,12 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 	switch action {
 	case "send":
 		result, err = sendToSessionWithMeta(args, via, device, meta.ClientOp)
+	case "deferred.enqueue":
+		result, err = enqueueDeferredMessage(args, via, device, meta.ClientOp)
+	case "deferred.release":
+		result, err = changeDeferredMessage(args, "release")
+	case "deferred.cancel":
+		result, err = changeDeferredMessage(args, "cancel")
 	case "key":
 		result, err = keyToSessionWithOp(args, meta.ClientOp)
 	case "sent.action":

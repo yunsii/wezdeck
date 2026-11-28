@@ -20,6 +20,7 @@ import { useChatScroll } from './chat-scroll'
 import { JumpLatest } from './chat-controls'
 import { landingPolicy } from './chat-landing'
 import { useSessionPaging } from './chat-preload'
+import { countPendingFailures } from './session-pending-counts'
 import { useWhileShown } from './session-while-shown'
 import { settle } from './chat-thread'
 import { HostFileProvider } from './host-file-sheet'
@@ -338,9 +339,8 @@ export function SessionDetail({ id }: { id: string }) {
   const busy = Boolean(data && isBusy(data))
   const readOnly = data?.read_only === true
   const pending = settle(mergedPending, messages, data?.start ?? 0, busy)
-  const unconfirmedCount = pending.filter((p) => p.state === 'lost').length
-  const failedCount = pending.filter((p) => p.state === 'failed').length
-  const unsettledCount = unconfirmedCount + failedCount
+  const { unconfirmedCount, failedCount, unsettledCount } =
+    countPendingFailures(pending)
   const start = data?.start ?? 0
   const syncing = detail.isFetching && !detail.isFetchedAfterMount
   const follow = useChatScroll(
@@ -355,7 +355,6 @@ export function SessionDetail({ id }: { id: string }) {
   )
   const staleAt = formatStaleAt(detail.dataUpdatedAt)
   const total = data?.total ?? messages.length
-  const shown = messages.length
   const compactedAt = data?.compacted_at
   const atCompaction =
     compactedAt !== undefined && start <= compactedAt && start > 0
@@ -442,7 +441,7 @@ export function SessionDetail({ id }: { id: string }) {
           mergedPending={mergedPending}
           start={start}
           total={total}
-          shown={shown}
+          shown={messages.length}
           busy={busy}
           syncing={syncing}
           readOnly={readOnly}
@@ -512,6 +511,8 @@ export function SessionDetail({ id }: { id: string }) {
               onOpenSentHistory={() => sentHistory.openSheet(false)}
               onRecallLatest={sentHistory.recallLatest}
               unsettledCount={unsettledCount}
+              deferredCount={data?.deferred?.length ?? 0}
+              onOpenDeferred={follow.jump}
               commands={
                 data?.agent === 'claude' || data?.agent === 'agy'
                   ? {

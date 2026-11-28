@@ -30,6 +30,11 @@ export type Pending = {
   after?: number
   /** host outbox record id when backed by host sent-messages.json */
   sentId?: string
+  /** host deferred queue record id */
+  deferredId?: string
+  deferredStatus?:
+    'queued' | 'waiting_review' | 'releasing' | 'failed' | 'stale'
+  deferredArmedAt?: number
   /** client_op UUID used to deduplicate local optimistic bubbles against host outbox */
   clientOp?: string
   /** host paste error when state === 'failed' */
@@ -39,7 +44,8 @@ export type Pending = {
    * the transcript; lost: derived by settle() or host outbox — the agent went
    * idle and the transcript never showed it (未送达); failed: host paste error
    */
-  state?: 'sending' | 'queued' | 'lost' | 'failed'
+  state?:
+    'sending' | 'queued' | 'deferred' | 'waiting_review' | 'lost' | 'failed'
 }
 
 export function pendingKey(
@@ -72,6 +78,9 @@ export function PendingBubbles({
   return (
     <div aria-label={t`Queued messages`} className="grid gap-1.5">
       {pending.map((item) => {
+        const review = item.state === 'waiting_review'
+        const deferred = item.state === 'deferred'
+        const releasing = item.deferredStatus === 'releasing'
         const lost = item.state === 'lost'
         const failed = item.state === 'failed'
         const errorText = item.error
@@ -112,7 +121,7 @@ export function PendingBubbles({
                 </span>
               ) : null}
             </div>
-            {lost || failed ? (
+            {lost || failed || review || deferred ? (
               <div
                 role="status"
                 className={cn(
@@ -121,22 +130,35 @@ export function PendingBubbles({
                 )}
               >
                 <span className="min-w-0 break-words">
-                  {failed
-                    ? errorText
-                      ? t`Send failed: ${errorText}`
-                      : t`Send failed`
-                    : t`Not delivered: the agent went idle without it`}
+                  {releasing
+                    ? t`Sending…`
+                    : deferred
+                      ? errorText
+                        ? t`Waiting to retry`
+                        : item.deferredArmedAt
+                          ? t`Waiting for this turn to finish`
+                          : t`Waiting for the next turn to finish`
+                      : review
+                        ? t`Turn finished: review before sending`
+                        : failed
+                          ? errorText
+                            ? t`Send failed: ${errorText}`
+                            : t`Send failed`
+                          : t`Not delivered: the agent went idle without it`}
                 </span>
-                {onResend ? (
+                {onResend &&
+                !releasing &&
+                item.deferredStatus !== 'stale' &&
+                (review || deferred || lost || failed) ? (
                   <Button
                     variant="link"
                     size="none"
                     onClick={() => onResend(item)}
                   >
-                    {t`Resend`}
+                    {review || deferred ? t`Send now` : t`Resend`}
                   </Button>
                 ) : null}
-                {onEdit ? (
+                {onEdit && !releasing ? (
                   <Button
                     variant="link"
                     size="none"
@@ -146,7 +168,7 @@ export function PendingBubbles({
                     {t`Edit`}
                   </Button>
                 ) : null}
-                {onTicket ? (
+                {onTicket && !releasing ? (
                   <Button
                     variant="link"
                     size="none"
@@ -156,7 +178,7 @@ export function PendingBubbles({
                     {t`To ticket`}
                   </Button>
                 ) : null}
-                {onDismiss ? (
+                {onDismiss && !releasing ? (
                   <Button
                     variant="link"
                     size="none"

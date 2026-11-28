@@ -41,6 +41,9 @@ export type Outgoing = MessagePayload & {
   localPreviews?: Array<string>
   /** when deferUpload is enabled, resolves uploaded attachment names inside send() */
   materialize?: (onProgress: (label: string) => void) => Promise<Array<string>>
+  /** How this message should reach the agent. */
+  deliveryPolicy?: 'immediate' | 'after_turn' | 'after_review'
+  clientOp?: string
 }
 
 export function useRichDraft({

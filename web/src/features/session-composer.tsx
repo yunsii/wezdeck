@@ -3,7 +3,7 @@
 // and the ＋ tools sheet (images, commands, skills, sent history, clear).
 import { useLingui } from '@lingui/react/macro'
 import { Link } from '@tanstack/react-router'
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, Timer, UserRoundCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -20,6 +20,7 @@ import { ComposerTools } from './session-composer-tools'
 export type { Outgoing }
 
 const draftKey = (id: string) => `wezdeck.draft.${id}`
+const deliveryKey = (id: string) => `wezdeck.delivery.${id}`
 
 /** An error line with a one-tap copy, for pasting it elsewhere. */
 export function ErrorLine({ message }: { message: string }) {
@@ -75,10 +76,34 @@ export function useComposer({
   /** page state merged into the diagnostics snapshot */
   diagnostics: () => Record<string, unknown>
 }) {
+  const [deliveryPolicy, setDeliveryPolicyState] =
+    useState<NonNullable<Outgoing['deliveryPolicy']>>('immediate')
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(deliveryKey(id))
+      setDeliveryPolicyState(
+        saved === 'after_turn' || saved === 'after_review'
+          ? saved
+          : 'immediate',
+      )
+    } catch {
+      setDeliveryPolicyState('immediate')
+    }
+  }, [id])
+  const setDeliveryPolicy = (
+    policy: NonNullable<Outgoing['deliveryPolicy']>,
+  ) => {
+    setDeliveryPolicyState(policy)
+    try {
+      localStorage.setItem(deliveryKey(id), policy)
+    } catch {
+      // The selection remains active for this page.
+    }
+  }
   const draft = useRichDraft({
     storageKey: draftKey(id),
     imageKey: id,
-    onSend,
+    onSend: (message) => onSend({ ...message, deliveryPolicy }),
     deferUpload: true,
   })
   const pageState = useRef(diagnostics)
@@ -88,6 +113,8 @@ export function useComposer({
   return {
     id,
     ...draft,
+    deliveryPolicy,
+    setDeliveryPolicy,
   }
 }
 
@@ -103,6 +130,8 @@ export function ComposerBox({
   onOpenSentHistory,
   onRecallLatest,
   unsettledCount = 0,
+  deferredCount = 0,
+  onOpenDeferred,
   commands,
   session,
 }: {
@@ -120,6 +149,8 @@ export function ComposerBox({
   onOpenSentHistory?: () => void
   onRecallLatest?: () => void
   unsettledCount?: number
+  deferredCount?: number
+  onOpenDeferred?: () => void
   /** Claude / Agy sessions: send a slash command, open 恢复会话 */
   commands?: { send: (text: string) => void; resume: () => void }
   /** the session reply: its agent and `skills_rev` drive the 能力 chip and `/` completion */
@@ -178,6 +209,31 @@ export function ComposerBox({
         />
       ) : null}
       {complete.sheet}
+      {composer.deliveryPolicy !== 'immediate' ? (
+        <Button
+          variant="plain"
+          size="none"
+          type="button"
+          className="mb-1 inline-flex min-h-7 items-center gap-1.5 self-start px-1 text-meta text-brand-waiting"
+          onClick={() =>
+            composer.setDeliveryPolicy(
+              composer.deliveryPolicy === 'after_turn'
+                ? 'after_review'
+                : 'immediate',
+            )
+          }
+          title={t`Change send timing`}
+        >
+          {composer.deliveryPolicy === 'after_turn' ? (
+            <Timer size={14} aria-hidden />
+          ) : (
+            <UserRoundCheck size={14} aria-hidden />
+          )}
+          {composer.deliveryPolicy === 'after_turn'
+            ? t`Send after this turn`
+            : t`Wait for my confirmation`}
+        </Button>
+      ) : null}
       <MessageComposer
         draft={composer}
         inputId="session-composer"
@@ -223,11 +279,15 @@ export function ComposerBox({
             hasSkills={complete.hasSkills}
             hasDraft={Boolean(composer.text || composer.images.length)}
             unsettledCount={unsettledCount}
+            deferredCount={deferredCount}
+            onOpenDeferred={onOpenDeferred}
             onPickImage={composer.pick}
             onCommands={() => setCommandsOpen(true)}
             onSkills={complete.openSkills}
             onSentHistory={onOpenSentHistory}
             onClear={() => composer.clear('menu')}
+            deliveryPolicy={composer.deliveryPolicy}
+            onDeliveryPolicy={composer.setDeliveryPolicy}
           />
         }
       />

@@ -90,7 +90,11 @@ export function settleMatches(
   }
   const left: Array<Pending> = []
   for (const item of pending) {
-    if (item.state === 'failed') {
+    if (
+      item.state === 'failed' ||
+      item.state === 'deferred' ||
+      item.state === 'waiting_review'
+    ) {
       left.push(item)
       continue
     }

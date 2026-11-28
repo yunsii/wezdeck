@@ -62,6 +62,7 @@ export function SessionComposerNotices({
   onRecover: () => void
 }) {
   const { t } = useLingui()
+  const deferredError = data?.deferred_error
   return (
     <>
       {stale && data ? (
@@ -75,6 +76,11 @@ export function SessionComposerNotices({
         </p>
       ) : null}
       <SessionSubagents agents={data?.subagents} />
+      {deferredError ? (
+        <ErrorLine
+          message={t`Pending messages unavailable: ${deferredError}`}
+        />
+      ) : null}
       {readOnly ? (
         <SessionInputUnavailable
           recovering={recovering}

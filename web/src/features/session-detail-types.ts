@@ -3,6 +3,7 @@ import type { GitStatus } from '#/components/deck/session-tags'
 import type { TokenRate } from '#/lib/turn-progress'
 import type { Message } from './chat-thread'
 import type { SentRecord } from './sent-history-data'
+import type { DeferredRecord } from './session-deferred'
 import type { BgTask } from './session-background'
 import type { Elicitation } from './session-elicitation'
 import type { PendingCall } from './session-permission'
@@ -108,4 +109,6 @@ export type Detail = StatusFields & {
   outbox?: Array<SentRecord>
   /** Browser time when the detail request carrying this outbox began. */
   outboxReadStartedAt?: number
+  deferred?: Array<DeferredRecord>
+  deferred_error?: string
 }

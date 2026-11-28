@@ -351,6 +351,11 @@ seen-acked, as at the terminal. One send per `id:ts`; a failed one is retried
 the next time the session is on screen. Signals: `event=write
 action="clear"` in `relay.log`, `session-seen-ack` in the client trace.
 
+## Deferred Session Messages
+
+Host queue storage, turn gating, actions, retry and diagnostics:
+[`deferred-session-messages.md`](./deferred-session-messages.md).
+
 ## Attachments
 
 Composer keys (`session-composer.tsx`): with a mouse and keyboard Enter

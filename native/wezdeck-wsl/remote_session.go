@@ -744,6 +744,12 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 		outbox = []sentRecord{}
 	}
 	out["outbox"] = outbox
+	if deferred, deferredErr := deferredSnapshotWithReplaced(a.ID, deferredPredecessors(a.ID, e, recent)); deferredErr == nil {
+		out["deferred"] = deferred
+	} else {
+		out["deferred"] = []deferredMessage{}
+		out["deferred_error"] = deferredErr.Error()
+	}
 	if readOnly {
 		return out, nil
 	}

@@ -12,6 +12,7 @@ func useTempOutbox(t *testing.T) string {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "sent-messages.json")
 	t.Setenv("WEZDECK_SENT_MESSAGES", p)
+	t.Setenv("WEZDECK_DEFERRED_MESSAGES", filepath.Join(t.TempDir(), "deferred-messages.json"))
 	return p
 }
 

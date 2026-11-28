@@ -3,14 +3,13 @@
 // countdown when the host asks to wait for the desk to go quiet.
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
   acceptSessionOptimistic,
   applySessionOptimistic,
   createSerialQueue,
-  onOptimisticTimeout,
   rollbackSessionOptimistic,
   transferSessionOptimistic,
 } from '#/lib/optimistic-state'
@@ -19,17 +18,24 @@ import { trace } from '#/lib/client-trace'
 
 import type { Pending } from './chat-thread'
 import type { Outgoing } from './session-composer'
-import type { SessionsReply } from './session-delete-state'
 import type { Detail } from './session-detail-types'
+import { mergeDeferredPending } from './session-deferred'
+import type { DeferredRecord } from './session-deferred'
+import { usePromptTimeoutNotice } from './session-prompt-timeout'
+import { createRunSessionAction } from './session-run-action'
+import type { WriteRunner } from './session-run-action'
+import { createPendingBubbleProps } from './session-pending-props'
+import { usePendingBubbles, usePendingVersion } from './session-pending-store'
 import { useNavigateToSession } from './session-follow'
 import {
-  buildSessionBaseline,
   commandOf,
   createResolvePrompt,
+  currentSessionBaseline,
   followSessionReply,
   mergeOutboxPending as mergeOutboxPendingRaw,
   withDeskRetry,
 } from './session-send-helpers'
+import type { buildSessionBaseline } from './session-send-helpers'
 import type { SentRecord } from './sent-history'
 
 export { useFollowReplacement } from './session-follow'
@@ -48,32 +54,28 @@ const NONE: Array<Pending> = []
  */
 const pendingStore = new Map<string, Array<Pending>>()
 const dismissedOutboxIds = new Set<string>()
+const dismissedDeferredIds = new Set<string>()
 let dismissedVersion = 0
 const pendingListeners = new Set<() => void>()
 const PENDING_KEEP_MS = 6 * 60 * 60_000
 const sendQueue = createSerialQueue()
-
-function useDismissedVersion() {
-  return useSyncExternalStore(
-    (listener) => {
-      pendingListeners.add(listener)
-      return () => pendingListeners.delete(listener)
-    },
-    () => dismissedVersion,
-    () => 0,
-  )
-}
 
 /** Merge local pending bubbles with host outbox, hiding optimistically dismissed records. */
 export function mergeOutboxPending(
   local: Array<Pending>,
   hostOutbox?: Array<SentRecord>,
   outboxReadStartedAt?: number,
+  hostDeferred?: Array<DeferredRecord>,
 ): Array<Pending> {
-  return mergeOutboxPendingRaw(
-    local,
-    hostOutbox,
-    dismissedOutboxIds,
+  return mergeDeferredPending(
+    mergeOutboxPendingRaw(
+      local,
+      hostOutbox,
+      dismissedOutboxIds,
+      outboxReadStartedAt,
+    ),
+    hostDeferred,
+    dismissedDeferredIds,
     outboxReadStartedAt,
   )
 }
@@ -135,23 +137,6 @@ export function getPendingForTest(id: string): ReadonlyArray<Pending> {
   return pendingStore.get(id) ?? NONE
 }
 
-function usePending(id: string) {
-  return useSyncExternalStore(
-    (listener) => {
-      pendingListeners.add(listener)
-      return () => pendingListeners.delete(listener)
-    },
-    () => pendingStore.get(id) ?? NONE,
-    () => NONE,
-  )
-}
-
-type WriteRunner = (
-  target: string,
-  job: () => Promise<void>,
-  opts?: { lockComposer?: boolean; invalidate?: boolean },
-) => Promise<boolean>
-
 function createSendMessage({
   target,
   message,
@@ -173,8 +158,9 @@ function createSendMessage({
   commandSentToast: (command: string) => void
   submitFailedMessage: (opId: string) => string
 }): Promise<boolean> {
-  const op_id = crypto.randomUUID()
+  const op_id = message.clientOp ?? crypto.randomUUID()
   const command = commandOf(message.text)
+  const policy = message.deliveryPolicy ?? 'immediate'
   const at = Date.now()
   const updateItem = (patchItem: Partial<Pending> | null) => {
     // A pending session may resolve while its write is still in flight.
@@ -205,14 +191,16 @@ function createSendMessage({
         state: 'sending',
       },
     ])
-    applySessionOptimistic({
-      id: target,
-      opId: op_id,
-      kind: 'send',
-      createdAt: at,
-      promptText: message.text || message.note,
-      baseline,
-    })
+    if (policy === 'immediate') {
+      applySessionOptimistic({
+        id: target,
+        opId: op_id,
+        kind: 'send',
+        createdAt: at,
+        promptText: message.text || message.note,
+        baseline,
+      })
+    }
   }
   const execute = async () => {
     trace('web-write', {
@@ -232,6 +220,48 @@ function createSendMessage({
           uploading: undefined,
           localPreviews: undefined,
         })
+      }
+      if (!command && policy !== 'immediate') {
+        const reply = (await hostWrite('deferred.enqueue', {
+          id: target,
+          text: message.text,
+          attachments,
+          policy,
+          client_op: op_id,
+        })) as { item: DeferredRecord }
+        client.setQueryData<Detail>(['remote', 'session', target], (old) =>
+          old
+            ? {
+                ...old,
+                deferred: [
+                  ...(old.deferred ?? []).filter(
+                    (item) => item.id !== reply.item.id,
+                  ),
+                  reply.item,
+                ],
+              }
+            : old,
+        )
+        updateItem({
+          text: message.text,
+          note: message.note,
+          attachments,
+          at,
+          after: baseline.transcriptEnd,
+          clientOp: op_id,
+          state: 'deferred',
+          deferredId: reply.item.id,
+          deferredArmedAt: reply.item.armed_at,
+          acceptedAt: Date.now(),
+        })
+        trace('web-write', {
+          id: target,
+          op_id,
+          action: 'deferred-enqueue',
+          policy,
+          stage: 'accepted',
+        })
+        return
       }
       const reply = await withDeskRetry(
         () =>
@@ -289,25 +319,6 @@ function createSendMessage({
     .then((res) => (res.ok ? res.value : false))
 }
 
-function usePromptTimeoutNotice(id: string) {
-  const { t } = useLingui()
-  useEffect(
-    () =>
-      onOptimisticTimeout((event) => {
-        if (
-          event.scope === 'session' &&
-          event.id === id &&
-          (event.kind === 'prompt-submit' || event.kind === 'prompt-cancel')
-        ) {
-          toast.warning(
-            t`The host did not confirm the action; please check and retry.`,
-          )
-        }
-      }),
-    [id, t],
-  )
-}
-
 /**
  * Per session, not per page: queued bubbles (above, page-wide), the sending
  * state, an error or a countdown are keyed by the session id the write was
@@ -327,19 +338,16 @@ export function useSessionWrites(
   snapshotRef.current = snapshot
   const resolvingRef = useRef(0)
   const client = useQueryClient()
-  const currentBaseline = (promptKey?: string) => {
-    const listTs = client
-      .getQueryData<SessionsReply>(['remote', 'sessions'])
-      ?.sessions.find((row) => row.id === id)?.ts
-    return buildSessionBaseline(
+  const currentBaseline = (promptKey?: string) =>
+    currentSessionBaseline(
+      client,
+      id,
       snapshotRef.current,
       endRef.current,
-      listTs,
       promptKey,
     )
-  }
-  const pendingRaw = usePending(id)
-  useDismissedVersion()
+  const pendingRaw = usePendingBubbles(id, pendingStore, pendingListeners, NONE)
+  usePendingVersion(pendingListeners, () => dismissedVersion)
   usePromptTimeoutNotice(id)
   const [stateBy, setStateBy] = useState<Record<string, WriteState>>({})
   const state = stateBy[id] ?? IDLE
@@ -348,7 +356,6 @@ export function useSessionWrites(
       ...all,
       [target]: { ...(all[target] ?? IDLE), ...next },
     }))
-
   const write: WriteRunner = async (target, job, opts) => {
     const lock = opts?.lockComposer ?? true
     patch(target, lock ? { sending: true, error: '' } : { error: '' })
@@ -367,77 +374,17 @@ export function useSessionWrites(
       patch(target, lock ? { sending: false, retryIn: 0 } : { retryIn: 0 })
     }
   }
-
-  /** an allowlisted pane key (1/2/3/4, Enter, Esc, Up/Down/Tab, C-c), or
-   * session.restart (重启会话 / 新开会话) */
-  const run = (
-    action: 'key' | 'session.restart',
-    args: Record<string, unknown>,
-  ) => {
-    const target = id
-    const op_id = crypto.randomUUID()
-    const isInterrupt = action === 'key' && args.interrupt === true
-    const invalidate = action !== 'key' || resolvingRef.current === 0
-    if (isInterrupt) {
-      applySessionOptimistic({
-        id: target,
-        opId: op_id,
-        kind: 'interrupt',
-        baseline: currentBaseline(),
-      })
-    }
-    return write(
-      target,
-      async () => {
-        trace('web-write', { id: target, op_id, action, stage: 'requested' })
-        try {
-          const reply = await hostWrite(action, {
-            id: target,
-            ...args,
-            client_op: op_id,
-          })
-          if (action === 'session.restart' && args.fresh === true)
-            followSessionReply(follow, target, reply)
-          if (
-            isInterrupt &&
-            reply &&
-            typeof reply === 'object' &&
-            'interrupted' in reply &&
-            typeof reply.interrupted === 'boolean'
-          ) {
-            if (reply.interrupted) {
-              acceptSessionOptimistic(target, op_id)
-              toast(t`Turn interrupted`)
-            } else {
-              rollbackSessionOptimistic(target, op_id, 'not-confirmed')
-              throw new Error(
-                t`Interrupt sent, but the agent has not confirmed it.`,
-              )
-            }
-          } else if (isInterrupt) {
-            acceptSessionOptimistic(target, op_id)
-          }
-          if (invalidate) {
-            void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-          }
-          trace('web-write', {
-            id: target,
-            op_id,
-            action,
-            stage: 'host-accepted',
-          })
-        } catch (error) {
-          if (isInterrupt) {
-            rollbackSessionOptimistic(target, op_id, (error as Error).message)
-          }
-          trace('web-write', { id: target, op_id, action, stage: 'failed' })
-          throw error
-        }
-      },
-      { lockComposer: action === 'session.restart', invalidate },
-    )
-  }
-
+  const run = createRunSessionAction({
+    target: id,
+    baseline: currentBaseline,
+    client,
+    follow,
+    resolvingRef,
+    write,
+    onInterrupted: () => toast(t`Turn interrupted`),
+    interruptNotConfirmed: () =>
+      t`Interrupt sent, but the agent has not confirmed it.`,
+  })
   /** Optimistically dismiss an interactive prompt card and send its keys in the background. */
   const resolvePrompt = (opts: {
     kind: 'prompt-submit' | 'prompt-cancel'
@@ -468,6 +415,19 @@ export function useSessionWrites(
     })
   /** drop a bubble (a lost or failed one the user gave up on) */
   const dismiss = (item: Pending) => {
+    if (item.deferredId) {
+      dismissedDeferredIds.add(item.deferredId)
+      dismissedVersion += 1
+      void hostWrite('deferred.cancel', { id: item.deferredId })
+        .then(() =>
+          client.invalidateQueries({ queryKey: ['remote', 'session', id] }),
+        )
+        .catch((error: unknown) => {
+          dismissedDeferredIds.delete(item.deferredId!)
+          dismissedVersion += 1
+          patch(id, { error: (error as Error).message })
+        })
+    }
     if (item.sentId) {
       dismissedOutboxIds.add(item.sentId)
       dismissedVersion += 1
@@ -492,6 +452,22 @@ export function useSessionWrites(
   }
   /** a lost / failed bubble, sent again as a new message (new time, new anchor) */
   const resend = (item: Pending) => {
+    if (item.deferredId) {
+      return hostWrite('deferred.release', { id: item.deferredId })
+        .then(() => {
+          updatePending(id, (list) =>
+            list.filter((one) => one.deferredId !== item.deferredId),
+          )
+          void client.invalidateQueries({ queryKey: ['remote', 'session', id] })
+          void client.invalidateQueries({ queryKey: ['remote', 'sent'] })
+          return true
+        })
+        .catch((error: unknown) => {
+          patch(id, { error: (error as Error).message })
+          void client.invalidateQueries({ queryKey: ['remote', 'session', id] })
+          return false
+        })
+    }
     dismiss(item)
     return send({
       text: item.text,
@@ -509,25 +485,16 @@ export function useSessionWrites(
       pendingRaw,
       snapshot?.outbox,
       snapshot?.outboxReadStartedAt,
+      snapshot?.deferred,
     ),
     send,
     run,
     resolvePrompt,
     dismiss,
-    /**
-     * ChatThread's bubble props: the queue, and resend / edit / remove on a
-     * lost (未送达) or failed one — resend only while this device may write
-     */
-    pendingProps: (
-      canWrite: boolean,
-      onEdit?: (item: Pending) => void,
-      onTicket?: (item: Pending) => void,
-    ) => ({
-      pending: pendingRaw,
-      onResend: canWrite ? (item: Pending) => void resend(item) : undefined,
-      onEdit,
-      onTicket: canWrite ? onTicket : undefined,
-      onDismiss: dismiss,
-    }),
+    pendingProps: createPendingBubbleProps(
+      pendingRaw,
+      (item) => void resend(item),
+      dismiss,
+    ),
   }
 }

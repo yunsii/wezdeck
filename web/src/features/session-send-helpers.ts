@@ -9,6 +9,7 @@ import {
 import type { Pending } from './chat-thread'
 import type { SentRecord } from './sent-history'
 import type { Detail } from './session-detail-types'
+import type { SessionsReply } from './session-delete-state'
 
 /**
  * Merge local optimistic bubbles (sending / just-sent) with host-persisted
@@ -144,6 +145,19 @@ export function buildSessionBaseline(
     promptKey: promptKey ?? promptFingerprint(snapshot),
     transcriptEnd,
   }
+}
+
+export function currentSessionBaseline(
+  client: QueryClient,
+  id: string,
+  snapshot: Detail | undefined,
+  transcriptEnd: number,
+  promptKey?: string,
+) {
+  const listTs = client
+    .getQueryData<SessionsReply>(['remote', 'sessions'])
+    ?.sessions.find((row) => row.id === id)?.ts
+  return buildSessionBaseline(snapshot, transcriptEnd, listTs, promptKey)
 }
 
 export function createResolvePrompt({

@@ -457,6 +457,10 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
 
 ### Edges (2026-11-24, flat)
 
+The composer `＋` sheet selects immediate, automatic-after-turn, or
+review-after-turn delivery. The host queue and cross-device behavior are in
+[`deferred-session-messages.md`](./deferred-session-messages.md).
+
 Flat: cards and text fields draw no lines of their own; the page tone and
 the surface fill tell them apart. Lines stay only between functional
 regions: the split pages' list / detail divider (sized in `cqh` of the page
