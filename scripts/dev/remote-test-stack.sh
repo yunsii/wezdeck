@@ -177,7 +177,11 @@ start() {
   cat >"$STATE/fake-open-task-window" <<FAKE
 #!/usr/bin/env bash
 set -euo pipefail
-[[ "\$1" == --no-attach && "\$2" == --description && "\$4" == -- ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+[[ "\$1" == --no-attach && "\$2" == --description ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+if [[ "\$4" == --agent-profile ]]; then
+  set -- "\$1" "\$2" "\$3" "\${@:6}"
+fi
+[[ "\$4" == -- ]] || { echo "fake: bad args \$*" >&2; exit 2; }
 description="\$3"; name="\$5"
 path="\$PWD/.worktrees/\$name"
 git worktree add -q -b "dev/\$name" "\$path" >&2
@@ -194,7 +198,11 @@ FAKE
   cat >"$STATE/fake-reuse-workstation" <<FAKE
 #!/usr/bin/env bash
 set -euo pipefail
-[[ "\$1" == --no-attach && -d "\$2" ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+[[ "\$1" == --no-attach ]] || { echo "fake: bad args \$*" >&2; exit 2; }
+if [[ "\$2" == --agent-profile ]]; then
+  set -- "\$1" "\${@:4}"
+fi
+[[ -d "\$2" ]] || { echo "fake: bad args \$*" >&2; exit 2; }
 path="\$2"; s="reuse-\$RANDOM"
 echo "\$path" >>"$STATE/reused"
 tmux -S "$STATE/new.sock" new-session -d -s "\$s" -c "\$path" -x 100 -y 20 "sh -c 'echo ready; exec cat'"
