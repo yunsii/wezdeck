@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -192,7 +193,7 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	}
 	entry, repo, tree, err := sessionGroupTarget(request.ID)
 	if err != nil {
-		return nil, err
+		return closeOrphanedSession(request.ID, err)
 	}
 	unlock, err := lockSessionWorktree(tree)
 	if err != nil {
@@ -284,6 +285,54 @@ func deleteGroupedSession(args json.RawMessage) (any, error) {
 	}
 	relayLogf("session_delete", "id=%s worktree=%q outcome=%s", request.ID, tree, outcome)
 	return map[string]any{"v": 1, "ok": true, "worktree_outcome": outcome}, nil
+}
+
+// A crashed temporary tmux server can leave a transcript-backed session card
+// after both its pane and checkout are gone. There is nothing left to kill or
+// reclaim; close only the card and retain the transcript for history.
+func closeOrphanedSession(id string, originalErr error) (any, error) {
+	active, recent, err := readAttentionDoc()
+	if err != nil {
+		return nil, originalErr
+	}
+	entry, ok := active[id]
+	if !ok {
+		for _, item := range recent {
+			if item.SessionID == id {
+				entry, ok = item.attentionEntry, true
+				break
+			}
+		}
+	}
+	if !ok || entry.TmuxPane == "" {
+		return nil, originalErr
+	}
+	if entry.TmuxSocket == "" {
+		return nil, originalErr
+	}
+	if _, err := os.Stat(entry.TmuxSocket); !os.IsNotExist(err) {
+		return nil, originalErr
+	}
+	if _, _, _, _, _, alive := paneState(entry); alive {
+		return nil, originalErr
+	}
+	if err := markSessionClosed(id); err != nil {
+		return nil, err
+	}
+	if _, live := active[id]; live {
+		cmd := exec.Command("bash", filepath.Join(repoRoot(), "scripts/runtime/attention-jump.sh"),
+			"--forget", id, "--only-if-ts", strconv.FormatInt(entry.TS, 10))
+		cmd.Env = os.Environ()
+		if path := os.Getenv("WEZDECK_ATTENTION_FILE"); path != "" {
+			cmd.Env = append(cmd.Env, "WEZDECK_ATTENTION_STATE_PATH="+path,
+				"WEZTERM_ATTENTION_LOCK_FILE="+path+".lock")
+		}
+		if out, err := cmd.CombinedOutput(); err != nil {
+			relayLogf("session_delete", "id=%s outcome=archive_only attention_forget_error=%q", id, clip(strings.TrimSpace(string(out)), 160))
+		}
+	}
+	relayLogf("session_delete", "id=%s outcome=archive_only reason=orphaned_pane", id)
+	return map[string]any{"v": 1, "ok": true, "worktree_outcome": "archive_only"}, nil
 }
 
 func sessionPanePin(entry attentionEntry) (string, error) {

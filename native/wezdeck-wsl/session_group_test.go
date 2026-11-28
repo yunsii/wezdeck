@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,6 +9,60 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestDeleteOrphanedSessionKeepsTranscript(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_STATE_HOME", filepath.Join(dir, "state"))
+	state := filepath.Join(dir, "attention.json")
+	t.Setenv("WEZDECK_ATTENTION_FILE", state)
+	repo, err := filepath.Abs("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", repo)
+	transcripts := filepath.Join(dir, ".codex", "sessions", "2026", "11", "27")
+	if err := os.MkdirAll(transcripts, 0700); err != nil {
+		t.Fatal(err)
+	}
+	transcript := filepath.Join(transcripts, "rollout-2026-11-27T19-09-54-s1.jsonl")
+	content := fmt.Sprintf("{\"type\":\"session_meta\",\"payload\":{\"cwd\":%q}}\n", filepath.Join(dir, "removed-checkout"))
+	if err := os.WriteFile(transcript, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	doc := fmt.Sprintf(`{"version":1,"rev":1,"entries":{"s1":{"session_id":"s1","status":"running","ts":1234,"agent_name":"codex","tmux_socket":"/tmp/missing-tmux-socket","tmux_pane":"%%1"},"s2":{"session_id":"s2","status":"running","ts":1234,"agent_name":"codex","tmux_socket":%q,"tmux_pane":"%%2"}},"recent":[]}`, state)
+	if err := os.WriteFile(state, []byte(doc), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before, err := listSessionsFor(true)
+	if err != nil || len(before.(map[string]any)["sessions"].([]sessionCard)) != 1 {
+		t.Fatalf("orphaned transcript must be visible before deletion: %v, %v", before, err)
+	}
+	result, err := deleteGroupedSession(json.RawMessage(`{"id":"s1","confirm":true}`))
+	if err != nil || result.(map[string]any)["worktree_outcome"] != "archive_only" {
+		t.Fatalf("orphan delete: %v, %v", result, err)
+	}
+	if !sessionWasClosed("s1") {
+		t.Fatal("orphaned session was not closed")
+	}
+	active, _, err := readAttentionDoc()
+	if err != nil || active["s1"].SessionID != "" {
+		t.Fatalf("orphaned attention entry was not cleared: %v, %v", active["s1"], err)
+	}
+	after, err := listSessionsFor(true)
+	if err != nil || len(after.(map[string]any)["sessions"].([]sessionCard)) != 0 {
+		t.Fatalf("closed orphan must disappear from session list: %v, %v", after, err)
+	}
+	if _, err := sessionDetailFor(json.RawMessage(`{"id":"s1"}`), true); err == nil {
+		t.Fatal("closed orphan detail is still readable")
+	}
+	if _, err := os.Stat(transcript); err != nil {
+		t.Fatalf("delete removed transcript: %v", err)
+	}
+	if _, err := deleteGroupedSession(json.RawMessage(`{"id":"s2","confirm":true}`)); err == nil || sessionWasClosed("s2") {
+		t.Fatal("an existing but unavailable socket must not be treated as an orphan")
+	}
+}
 
 func TestGroupedSessionStartsInSameCheckoutAndDeletesOnlyItsPane(t *testing.T) {
 	dir, socket, original, _ := restartFixture(t)

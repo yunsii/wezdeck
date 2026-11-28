@@ -204,8 +204,12 @@ func liveSessionsWithContext(entries map[string]attentionEntry, recent []recentE
 	out := map[string]attentionEntry{}
 	panes := map[string]bool{}
 	sockets := map[string]bool{}
+	closed := closedSessionsSet()
 	var missingPaneIDs []string
 	for id, e := range entries {
+		if closed[id] {
+			continue
+		}
 		if e.TmuxPane == "" {
 			missingPaneIDs = append(missingPaneIDs, id)
 			continue
@@ -221,7 +225,6 @@ func liveSessionsWithContext(entries map[string]attentionEntry, recent []recentE
 		}
 	}
 	snap := snapshotTmuxPanes(sockets)
-	closed := closedSessionsSet()
 	// session_id → pane still advertising that pin (another window may keep
 	// running a session this pane's cleared_to replaced).
 	pins := agentSessionPinsFromSnap(snap)
@@ -533,6 +536,9 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 	var a sessionArgs
 	if json.Unmarshal(args, &a) != nil || !sessionIDPattern.MatchString(a.ID) {
 		return nil, errors.New("invalid session id")
+	}
+	if sessionWasClosed(a.ID) {
+		return nil, errors.New("session not found (ended or not tracked)")
 	}
 	if a.Limit <= 0 {
 		a.Limit = 60
