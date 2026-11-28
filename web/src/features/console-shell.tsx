@@ -25,6 +25,7 @@ import { cn } from '#/lib/utils'
 import { useLocale } from '#/lib/locale-context'
 import { RuntimeDataProvider } from './console-data'
 import { StatusBand } from './console-status-band'
+import { ForegroundSync } from './foreground-sync'
 import { resetSessionOrder } from './session-stable'
 import { useLayoutMode } from './console-mode'
 import { JUMP_KEYS, useJumpKeys } from './console-jump-keys'
@@ -329,7 +330,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
       // viewport, measured by host diagnostics) and the bottom tab bar sat
       // below the screen until restart. The fixed box follows the real layout
       // viewport, keyboard included (interactive-widget=resizes-content).
-      className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-brand-deck text-brand-text"
+      className="fixed inset-0 grid grid-rows-[minmax(0,1fr)_auto_auto] overflow-hidden bg-brand-deck text-brand-text"
     >
       <div className="grid min-h-0 md:grid-cols-[calc(var(--spacing)*18)_minmax(0,1fr)] md:items-stretch">
         <aside className="vt-sidebar hidden min-h-0 flex-col items-stretch overflow-hidden border-r border-brand-edge bg-brand-deck px-1 py-2 md:flex">
@@ -421,6 +422,7 @@ function ConsoleShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      <ForegroundSync key={location} pathname={location} />
       {/* bottom: mobile tab bar (<768px) or slim 32px diagnostics strip (≥768px) */}
       {mode === 'local' ? (
         <div className="vt-band hidden h-8 overflow-hidden border-t border-brand-edge bg-brand-deck md:block">

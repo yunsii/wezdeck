@@ -1152,7 +1152,7 @@ msgstr "Console"
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
-#: src/features/console-shell.tsx:355
+#: src/features/console-shell.tsx:356
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -1529,7 +1529,7 @@ msgstr "Device access"
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
 #: src/features/console-me.tsx:351
-#: src/features/console-shell.tsx:101
+#: src/features/console-shell.tsx:102
 msgid "Diagnostics"
 msgstr "Diagnostics"
 
@@ -1777,6 +1777,10 @@ msgstr "Failed to refresh links"
 #: src/features/me-notifications.tsx:155
 msgid "Failure or merge conflict"
 msgstr "Failure or merge conflict"
+
+#: src/features/foreground-sync.tsx:124
+msgid "Fetching latest status…"
+msgstr "Fetching latest status…"
 
 #: src/features/session-info.tsx:77
 msgid "File"
@@ -3368,7 +3372,7 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:346
+#: src/features/console-shell.tsx:347
 msgid "Remote"
 msgstr "Remote"
 
@@ -3612,7 +3616,7 @@ msgstr "Resuming conversation…"
 
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
-#: src/features/console-shell.tsx:549
+#: src/features/console-shell.tsx:551
 #: src/features/host-file-sheet.tsx:359
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:216
@@ -3623,6 +3627,11 @@ msgstr "Retry"
 #: src/features/chat-controls.tsx:75
 msgid "Retry loading earlier"
 msgstr "Retry loading earlier"
+
+#: src/features/foreground-sync.tsx:148
+#: src/features/foreground-sync.tsx:149
+msgid "Retry sync"
+msgstr "Retry sync"
 
 #: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
@@ -3894,7 +3903,7 @@ msgstr "Search skills"
 msgid "Search worktrees"
 msgstr "Search worktrees"
 
-#: src/features/console-shell.tsx:431
+#: src/features/console-shell.tsx:433
 msgid "Sections"
 msgstr "Sections"
 
@@ -4040,7 +4049,7 @@ msgstr "Session titles"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/console-shell.tsx:86
+#: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:251
 #: src/features/session-list.tsx:282
@@ -4059,7 +4068,7 @@ msgstr "Sessions come over the remote link, and this device is not paired yet. O
 #: src/features/console-me.tsx:450
 #: src/features/console-me.tsx:454
 #: src/features/console-me.tsx:478
-#: src/features/console-shell.tsx:108
+#: src/features/console-shell.tsx:109
 msgid "Settings"
 msgstr "Settings"
 
@@ -4132,7 +4141,7 @@ msgstr "Skills · {count}"
 msgid "Skills this agent was given"
 msgstr "Skills this agent was given"
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:402
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -4364,6 +4373,14 @@ msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
 
+#: src/features/foreground-sync.tsx:129
+msgid "Synced {time}"
+msgstr "Synced {time}"
+
+#: src/features/foreground-sync.tsx:123
+msgid "Syncing · last synced {time}"
+msgstr "Syncing · last synced {time}"
+
 #: src/features/console-me.tsx:160
 #: src/features/console-me.tsx:227
 #: src/features/console-shared.tsx:392
@@ -4527,7 +4544,7 @@ msgstr "This browser does not support Web Push notifications."
 
 #: src/features/console-me.tsx:62
 #: src/features/console-me.tsx:259
-#: src/features/console-shell.tsx:344
+#: src/features/console-shell.tsx:345
 msgid "This computer"
 msgstr "This computer"
 
@@ -4575,7 +4592,7 @@ msgstr "This is the last session and the worktree has local changes. Inspect Git
 msgid "This list of shortcuts"
 msgstr "This list of shortcuts"
 
-#: src/features/console-shell.tsx:544
+#: src/features/console-shell.tsx:546
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "This page hit a rendering error. The rest of the console is still available."
 
@@ -4626,7 +4643,7 @@ msgstr "Ticket {ticketId} created (AI structuring in background)"
 #: src/features/collab-top-bar.tsx:93
 #: src/features/collab-top-bar.tsx:94
 #: src/features/console-activity.tsx:226
-#: src/features/console-shell.tsx:96
+#: src/features/console-shell.tsx:97
 msgid "Ticket activity"
 msgstr "Ticket activity"
 
@@ -4668,7 +4685,7 @@ msgstr "Ticket waiting on you"
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
 #: src/features/console-collab.tsx:117
-#: src/features/console-shell.tsx:91
+#: src/features/console-shell.tsx:92
 #: src/features/landing-page.tsx:106
 msgid "Tickets"
 msgstr "Tickets"
@@ -4843,6 +4860,14 @@ msgstr "Turns"
 #: src/features/ticket-manager-panel.tsx:119
 msgid "Type a message to wake and steer the ticket manager…"
 msgstr "Type a message to wake and steer the ticket manager…"
+
+#: src/features/foreground-sync.tsx:128
+msgid "Unable to sync"
+msgstr "Unable to sync"
+
+#: src/features/foreground-sync.tsx:127
+msgid "Unable to sync · last synced {time}"
+msgstr "Unable to sync · last synced {time}"
 
 #: src/features/me-autotitle.tsx:398
 #: src/features/me-host.tsx:90
@@ -5110,11 +5135,11 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:341
-#: src/features/console-shell.tsx:344
-#: src/features/console-shell.tsx:346
+#: src/features/console-shell.tsx:342
+#: src/features/console-shell.tsx:345
 #: src/features/console-shell.tsx:347
-#: src/features/console-shell.tsx:494
+#: src/features/console-shell.tsx:348
+#: src/features/console-shell.tsx:496
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"

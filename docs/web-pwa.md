@@ -203,6 +203,8 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
   shows 「暂时拿不到最新内容，显示的是 HH:MM 的内容」 above the composer only
   after 3 polls in a row failed (`useFailedPolls`; one flaky poll on a phone
   link stays quiet) or at once when the device is offline.
+- The shell's fixed sync line uses the oldest successful session, ticket,
+  and open-detail read. Foreground return refreshes them in parallel, shows the prior time while loading, and keeps failure plus retry visible without treating cache as fresh.
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
 ## Visual language (2026-11-22, revised)

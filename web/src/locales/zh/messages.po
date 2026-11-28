@@ -1152,7 +1152,7 @@ msgstr "控制台"
 msgid "Console ({origin})"
 msgstr "控制台（{origin}）"
 
-#: src/features/console-shell.tsx:355
+#: src/features/console-shell.tsx:356
 msgid "Console navigation"
 msgstr "控制台导航"
 
@@ -1529,7 +1529,7 @@ msgstr "设备授权"
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
 #: src/features/console-me.tsx:351
-#: src/features/console-shell.tsx:101
+#: src/features/console-shell.tsx:102
 msgid "Diagnostics"
 msgstr "诊断"
 
@@ -1777,6 +1777,10 @@ msgstr "刷新外链失败"
 #: src/features/me-notifications.tsx:155
 msgid "Failure or merge conflict"
 msgstr "异常或合并冲突"
+
+#: src/features/foreground-sync.tsx:124
+msgid "Fetching latest status…"
+msgstr "正在获取最新状态…"
 
 #: src/features/session-info.tsx:77
 msgid "File"
@@ -3368,7 +3372,7 @@ msgstr "中转请求（Durable Object）"
 msgid "Reload"
 msgstr "刷新"
 
-#: src/features/console-shell.tsx:346
+#: src/features/console-shell.tsx:347
 msgid "Remote"
 msgstr "远程"
 
@@ -3612,7 +3616,7 @@ msgstr "正在恢复会话…"
 
 #: src/features/chat-images.tsx:58
 #: src/features/composer-picked.tsx:34
-#: src/features/console-shell.tsx:549
+#: src/features/console-shell.tsx:551
 #: src/features/host-file-sheet.tsx:359
 #: src/features/me-host.tsx:114
 #: src/features/session-new-job.tsx:216
@@ -3623,6 +3627,11 @@ msgstr "重试"
 #: src/features/chat-controls.tsx:75
 msgid "Retry loading earlier"
 msgstr "重试加载更早"
+
+#: src/features/foreground-sync.tsx:148
+#: src/features/foreground-sync.tsx:149
+msgid "Retry sync"
+msgstr "重试同步"
 
 #: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
@@ -3894,7 +3903,7 @@ msgstr "搜索能力"
 msgid "Search worktrees"
 msgstr "搜索工作树"
 
-#: src/features/console-shell.tsx:431
+#: src/features/console-shell.tsx:433
 msgid "Sections"
 msgstr "栏目"
 
@@ -4040,7 +4049,7 @@ msgstr "会话标题列表"
 msgid "Sessions"
 msgstr "会话数"
 
-#: src/features/console-shell.tsx:86
+#: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:251
 #: src/features/session-list.tsx:282
@@ -4059,7 +4068,7 @@ msgstr "会话通过远程链接读取，这台设备还没配对。在主机上
 #: src/features/console-me.tsx:450
 #: src/features/console-me.tsx:454
 #: src/features/console-me.tsx:478
-#: src/features/console-shell.tsx:108
+#: src/features/console-shell.tsx:109
 msgid "Settings"
 msgstr "我的"
 
@@ -4132,7 +4141,7 @@ msgstr "能力 · {count}"
 msgid "Skills this agent was given"
 msgstr "这个 agent 加载的能力"
 
-#: src/features/console-shell.tsx:401
+#: src/features/console-shell.tsx:402
 msgid "Skip to content"
 msgstr "跳到内容"
 
@@ -4364,6 +4373,14 @@ msgctxt "git"
 msgid "Synced"
 msgstr "已同步"
 
+#: src/features/foreground-sync.tsx:129
+msgid "Synced {time}"
+msgstr "已同步 {time}"
+
+#: src/features/foreground-sync.tsx:123
+msgid "Syncing · last synced {time}"
+msgstr "正在同步 · 上次成功 {time}"
+
 #: src/features/console-me.tsx:160
 #: src/features/console-me.tsx:227
 #: src/features/console-shared.tsx:392
@@ -4527,7 +4544,7 @@ msgstr "当前浏览器不支持 Web Push 通知。"
 
 #: src/features/console-me.tsx:62
 #: src/features/console-me.tsx:259
-#: src/features/console-shell.tsx:344
+#: src/features/console-shell.tsx:345
 msgid "This computer"
 msgstr "本机"
 
@@ -4575,7 +4592,7 @@ msgstr "这是最后一条会话，工作树还有本地改动。可以点击上
 msgid "This list of shortcuts"
 msgstr "打开这份快捷键说明"
 
-#: src/features/console-shell.tsx:544
+#: src/features/console-shell.tsx:546
 msgid "This page hit a rendering error. The rest of the console is still available."
 msgstr "这一页渲染出错了。控制台的其余部分仍然可用。"
 
@@ -4626,7 +4643,7 @@ msgstr "已创建工单 {ticketId}（AI 正在后台整理）"
 #: src/features/collab-top-bar.tsx:93
 #: src/features/collab-top-bar.tsx:94
 #: src/features/console-activity.tsx:226
-#: src/features/console-shell.tsx:96
+#: src/features/console-shell.tsx:97
 msgid "Ticket activity"
 msgstr "工单动态"
 
@@ -4668,7 +4685,7 @@ msgstr "工单等你回复"
 #: src/features/console-activity.tsx:222
 #: src/features/console-activity.tsx:233
 #: src/features/console-collab.tsx:117
-#: src/features/console-shell.tsx:91
+#: src/features/console-shell.tsx:92
 #: src/features/landing-page.tsx:106
 msgid "Tickets"
 msgstr "工单"
@@ -4843,6 +4860,14 @@ msgstr "轮数"
 #: src/features/ticket-manager-panel.tsx:119
 msgid "Type a message to wake and steer the ticket manager…"
 msgstr "输入消息以自动唤醒并指导工单管理者…"
+
+#: src/features/foreground-sync.tsx:128
+msgid "Unable to sync"
+msgstr "暂时无法同步"
+
+#: src/features/foreground-sync.tsx:127
+msgid "Unable to sync · last synced {time}"
+msgstr "暂时无法同步 · 上次成功 {time}"
 
 #: src/features/me-autotitle.tsx:398
 #: src/features/me-host.tsx:90
@@ -5110,11 +5135,11 @@ msgstr "WebRTC：{note}"
 msgid "WebSocket relay"
 msgstr "WebSocket 中转"
 
-#: src/features/console-shell.tsx:341
-#: src/features/console-shell.tsx:344
-#: src/features/console-shell.tsx:346
+#: src/features/console-shell.tsx:342
+#: src/features/console-shell.tsx:345
 #: src/features/console-shell.tsx:347
-#: src/features/console-shell.tsx:494
+#: src/features/console-shell.tsx:348
+#: src/features/console-shell.tsx:496
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
 msgstr "WezDeck"
