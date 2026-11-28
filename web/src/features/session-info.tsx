@@ -364,43 +364,56 @@ export function SessionInfo({
             </section>
           ) : null}
 
-          {card?.tmux_pane && device.state === 'approved' ? (
+          {(card?.tmux_pane || data.read_only) &&
+          device.state === 'approved' ? (
             <section className="grid gap-2">
               <div className="divide-y divide-brand-edge overflow-hidden rounded-xl bg-brand-surface">
+                {card?.tmux_pane ? (
+                  <Button
+                    type="button"
+                    variant="plain"
+                    size="none"
+                    onClick={() => {
+                      onClose()
+                      requestNewSession({
+                        repo: card.repo_root || card.cwd,
+                        anchor: card.id,
+                        group:
+                          card.worktree_description ||
+                          worktreeKey(card).split('/').at(-1) ||
+                          card.cwd,
+                      })
+                    }}
+                    className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left text-body font-medium text-brand-text transition-colors hover:bg-brand-soft active:bg-brand-soft"
+                  >
+                    <Plus
+                      size={16}
+                      aria-hidden
+                      className="shrink-0 text-brand-muted"
+                    />
+                    <span className="flex-1">{t`New session in this group`}</span>
+                    <ChevronRight
+                      size={16}
+                      aria-hidden
+                      className="shrink-0 text-brand-label"
+                    />
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="plain"
                   size="none"
-                  onClick={() => {
-                    onClose()
-                    requestNewSession({
-                      repo: card.repo_root || card.cwd,
-                      anchor: card.id,
-                      group:
-                        card.worktree_description ||
-                        worktreeKey(card).split('/').at(-1) ||
-                        card.cwd,
-                    })
-                  }}
-                  className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left text-body font-medium text-brand-text transition-colors hover:bg-brand-soft active:bg-brand-soft"
-                >
-                  <Plus
-                    size={16}
-                    aria-hidden
-                    className="shrink-0 text-brand-muted"
-                  />
-                  <span className="flex-1">{t`New session in this group`}</span>
-                  <ChevronRight
-                    size={16}
-                    aria-hidden
-                    className="shrink-0 text-brand-label"
-                  />
-                </Button>
-                <Button
-                  type="button"
-                  variant="plain"
-                  size="none"
-                  onClick={() => deleteSession(card, true)}
+                  onClick={() =>
+                    deleteSession(
+                      card ?? {
+                        id: data.id,
+                        title: data.title || data.name || data.id,
+                        agent: data.agent || 'agent',
+                        readOnly: true,
+                      },
+                      true,
+                    )
+                  }
                   className="flex min-h-12 w-full items-center gap-2.5 px-3 text-left text-body font-medium text-brand-error transition-colors hover:bg-brand-error/10 active:bg-brand-error/10"
                 >
                   <Trash2 size={16} aria-hidden className="shrink-0" />
@@ -412,7 +425,7 @@ export function SessionInfo({
                   />
                 </Button>
               </div>
-              {reviewRequired ? (
+              {reviewRequired && card ? (
                 <div className="grid gap-2 rounded-xl bg-brand-surface p-3">
                   <p role="status" className="text-caption text-brand-muted">
                     {t`This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes.`}

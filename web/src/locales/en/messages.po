@@ -855,7 +855,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
-#: src/features/session-delete.tsx:143
+#: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
@@ -1512,14 +1512,18 @@ msgstr "Default mode: auto mode is off"
 msgid "Degraded"
 msgstr "Degraded"
 
-#: src/features/session-delete.tsx:133
+#: src/features/session-delete.tsx:138
+msgid "Delete “{title}”? The conversation history is kept."
+msgstr "Delete “{title}”? The conversation history is kept."
+
+#: src/features/session-delete.tsx:139
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 
 #: src/features/session-chat-group.tsx:297
 #: src/features/session-chat-row.tsx:215
-#: src/features/session-delete.tsx:109
-#: src/features/session-info.tsx:407
+#: src/features/session-delete.tsx:113
+#: src/features/session-info.tsx:420
 msgid "Delete session"
 msgstr "Delete session"
 
@@ -1906,12 +1910,12 @@ msgstr "Focus session search or return to list"
 #~ msgid "Follow workspace setting"
 #~ msgstr "Follow workspace setting"
 
-#: src/features/session-delete.tsx:132
+#: src/features/session-delete.tsx:136
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 msgstr "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 
-#: src/features/session-delete.tsx:108
-#: src/features/session-info.tsx:426
+#: src/features/session-delete.tsx:112
+#: src/features/session-info.tsx:439
 msgid "Force delete session and worktree"
 msgstr "Force delete session and worktree"
 
@@ -2691,7 +2695,7 @@ msgstr "New session group"
 #: src/features/session-chat-group.tsx:286
 #: src/features/session-chat-group.tsx:470
 #: src/features/session-chat-row.tsx:204
-#: src/features/session-info.tsx:392
+#: src/features/session-info.tsx:394
 #: src/features/session-new-header.tsx:35
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
@@ -3094,8 +3098,8 @@ msgstr "Open repository links"
 msgid "Open repository links (key: l)"
 msgstr "Open repository links (key: l)"
 
-#: src/features/session-delete.tsx:54
-#: src/features/session-delete.tsx:76
+#: src/features/session-delete.tsx:58
+#: src/features/session-delete.tsx:80
 #: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "Open session"
@@ -4242,27 +4246,27 @@ msgstr "Session actions"
 msgid "Session active"
 msgstr "Session active"
 
-#: src/features/session-delete.tsx:72
+#: src/features/session-delete.tsx:76
 msgid "Session deleted"
 msgstr "Session deleted"
 
-#: src/features/session-delete.tsx:66
+#: src/features/session-delete.tsx:70
 msgid "Session deleted and worktree removed"
 msgstr "Session deleted and worktree removed"
 
-#: src/features/session-delete.tsx:68
+#: src/features/session-delete.tsx:72
 msgid "Session deleted. Another process is using the worktree."
 msgstr "Session deleted. Another process is using the worktree."
 
-#: src/features/session-delete.tsx:69
+#: src/features/session-delete.tsx:73
 msgid "Session deleted. The worktree could not be removed."
 msgstr "Session deleted. The worktree could not be removed."
 
-#: src/features/session-delete.tsx:70
+#: src/features/session-delete.tsx:74
 msgid "Session deleted. The worktree has changes outside the default branch."
 msgstr "Session deleted. The worktree has changes outside the default branch."
 
-#: src/features/session-delete.tsx:67
+#: src/features/session-delete.tsx:71
 msgid "Session deleted. The worktree has local changes."
 msgstr "Session deleted. The worktree has local changes."
 
@@ -4848,7 +4852,7 @@ msgstr "this device is offline"
 msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 msgstr "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 
-#: src/features/session-info.tsx:418
+#: src/features/session-info.tsx:431
 msgid "This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes."
 msgstr "This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes."
 
@@ -4885,7 +4889,7 @@ msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so
 msgid "This week"
 msgstr "This week"
 
-#: src/features/session-delete.tsx:52
+#: src/features/session-delete.tsx:56
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "This worktree has local changes. Review them in the session before deleting."
 

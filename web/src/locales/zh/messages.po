@@ -855,7 +855,7 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/session-delete.tsx:143
+#: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
 #: src/features/session-restart.tsx:90
@@ -1512,14 +1512,18 @@ msgstr "默认模式：未开启 Auto 模式"
 msgid "Degraded"
 msgstr "受限"
 
-#: src/features/session-delete.tsx:133
+#: src/features/session-delete.tsx:138
+msgid "Delete “{title}”? The conversation history is kept."
+msgstr "删除“{title}”？对话记录会保留。"
+
+#: src/features/session-delete.tsx:139
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
 #: src/features/session-chat-group.tsx:297
 #: src/features/session-chat-row.tsx:215
-#: src/features/session-delete.tsx:109
-#: src/features/session-info.tsx:407
+#: src/features/session-delete.tsx:113
+#: src/features/session-info.tsx:420
 msgid "Delete session"
 msgstr "删除会话"
 
@@ -1906,12 +1910,12 @@ msgstr "聚焦会话搜索或返回列表"
 #~ msgid "Follow workspace setting"
 #~ msgstr "跟随工作区设置"
 
-#: src/features/session-delete.tsx:132
+#: src/features/session-delete.tsx:136
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
 msgstr "强制删除「{title}」及其工作树？未提交的改动和本地文件将丢失。分支和会话记录会保留。"
 
-#: src/features/session-delete.tsx:108
-#: src/features/session-info.tsx:426
+#: src/features/session-delete.tsx:112
+#: src/features/session-info.tsx:439
 msgid "Force delete session and worktree"
 msgstr "强制删除会话和工作树"
 
@@ -2691,7 +2695,7 @@ msgstr "新会话组"
 #: src/features/session-chat-group.tsx:286
 #: src/features/session-chat-group.tsx:470
 #: src/features/session-chat-row.tsx:204
-#: src/features/session-info.tsx:392
+#: src/features/session-info.tsx:394
 #: src/features/session-new-header.tsx:35
 #: src/features/session-worktree-detail.tsx:172
 msgid "New session in this group"
@@ -3094,8 +3098,8 @@ msgstr "打开仓库外链"
 msgid "Open repository links (key: l)"
 msgstr "打开仓库外链（快捷键：l）"
 
-#: src/features/session-delete.tsx:54
-#: src/features/session-delete.tsx:76
+#: src/features/session-delete.tsx:58
+#: src/features/session-delete.tsx:80
 #: src/features/session-worktree-detail.tsx:157
 msgid "Open session"
 msgstr "打开会话"
@@ -4242,27 +4246,27 @@ msgstr "会话操作"
 msgid "Session active"
 msgstr "远控会话进行中"
 
-#: src/features/session-delete.tsx:72
+#: src/features/session-delete.tsx:76
 msgid "Session deleted"
 msgstr "会话已删除"
 
-#: src/features/session-delete.tsx:66
+#: src/features/session-delete.tsx:70
 msgid "Session deleted and worktree removed"
 msgstr "会话已删除，工作树已移除"
 
-#: src/features/session-delete.tsx:68
+#: src/features/session-delete.tsx:72
 msgid "Session deleted. Another process is using the worktree."
 msgstr "会话已删除，仍有进程正在使用此工作树。"
 
-#: src/features/session-delete.tsx:69
+#: src/features/session-delete.tsx:73
 msgid "Session deleted. The worktree could not be removed."
 msgstr "会话已删除，工作树移除失败。"
 
-#: src/features/session-delete.tsx:70
+#: src/features/session-delete.tsx:74
 msgid "Session deleted. The worktree has changes outside the default branch."
 msgstr "会话已删除，工作树还有未合入默认分支的提交。"
 
-#: src/features/session-delete.tsx:67
+#: src/features/session-delete.tsx:71
 msgid "Session deleted. The worktree has local changes."
 msgstr "会话已删除，工作树还有本地改动。"
 
@@ -4848,7 +4852,7 @@ msgstr "这台设备当前离线"
 msgid "This device sees nothing from the host until it is approved — the pairing link alone is not enough. A key is created in this browser and stays here; the host approves each device once, for reading and writing."
 msgstr "这台设备获批之前看不到电脑上的任何内容，只有配对链接还不够。会在这个浏览器里生成一把密钥，只存在本机；电脑对每台设备批准一次，同时开通读取和写入。"
 
-#: src/features/session-info.tsx:418
+#: src/features/session-info.tsx:431
 msgid "This is the last session and the worktree has local changes. Inspect Git status above or return to the conversation and ask the agent to review the changes."
 msgstr "这是最后一条会话，工作树还有本地改动。可以点击上方的 Git 状态查看，或回到会话请智能体检查。"
 
@@ -4885,7 +4889,7 @@ msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTe
 msgid "This week"
 msgstr "本周"
 
-#: src/features/session-delete.tsx:52
+#: src/features/session-delete.tsx:56
 msgid "This worktree has local changes. Review them in the session before deleting."
 msgstr "工作树还有本地改动，请进入会话检查后再删除。"
 

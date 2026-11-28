@@ -21,13 +21,17 @@ import type {
 } from './session-delete-state'
 import type { SessionCard } from './session-card'
 
+type DeleteTarget = Pick<SessionCard, 'id' | 'title' | 'agent'> & {
+  readOnly?: boolean
+}
+
 export function useDeleteSession() {
   const { t } = useLingui()
   const { locale } = useLocale()
   const client = useQueryClient()
   const navigate = useNavigate()
   const [request, setRequest] = useState<{
-    session: SessionCard
+    session: DeleteTarget
     selected: boolean
     options?: { force?: boolean }
   }>()
@@ -109,7 +113,7 @@ export function useDeleteSession() {
     : t`Delete session`
   return {
     ask: (
-      session: SessionCard,
+      session: DeleteTarget,
       selected: boolean,
       options?: { force?: boolean },
     ) => {
@@ -130,7 +134,9 @@ export function useDeleteSession() {
           <p className="text-body text-brand-muted">
             {force
               ? t`Force delete “${title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept.`
-              : t`Delete “${title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept.`}
+              : request.session.readOnly
+                ? t`Delete “${title}”? The conversation history is kept.`
+                : t`Delete “${title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept.`}
           </p>
           <div className="flex flex-col-reverse gap-2.5 md:flex-row md:justify-end">
             <Button
