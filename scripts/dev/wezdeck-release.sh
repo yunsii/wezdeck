@@ -14,7 +14,7 @@
 #                                  worktree; newer deploys cancel stale runs.
 #
 #   scripts/dev/wezdeck-release.sh [status | rollback]
-#   scripts/dev/wezdeck-release.sh [--land COMMIT | --commit MSGFILE]
+#   scripts/dev/wezdeck-release.sh [--land COMMIT [--squash] | --commit MSGFILE]
 #                                  [--only push|relay|web]... [--force]
 #                                  [--now] [--no-wait] [--skip-smoke]
 #                                  [--gate | --no-test]
@@ -42,6 +42,7 @@ test_mode=async # async | gate | off
 notify_mode=soft # soft (--notify-update) | force (--reload) | off
 commit_msg=''
 land_commit=''
+squash_land=0
 subcmd=''
 release_args=()
 
@@ -75,6 +76,7 @@ while (($#)); do
     --gate) test_mode=gate; release_args+=("$1"); shift ;;
     --no-reload) notify_mode=off; release_args+=("$1"); shift ;;
     --force-reload) notify_mode=force; release_args+=("$1"); shift ;;
+    --squash) squash_land=1; release_args+=("$1"); shift ;;
     -h | --help) sed -n '2,22p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -83,6 +85,10 @@ wanted() { ((${#only[@]} == 0)) || [[ " ${only[*]} " == *" $1 "* ]]; }
 
 cd "$REPO" || exit 1
 mkdir -p "$STATE/release" || exit 1
+if ((squash_land)) && [[ -z "$land_commit" ]]; then
+  echo 'release: --squash requires --land COMMIT' >&2
+  exit 2
+fi
 
 relay_running_version() {
   local pid
@@ -199,6 +205,43 @@ fast_forward_release_input() {
   return 1
 }
 
+prepare_squash_land() {
+  local base="$1" source="$2" temp result
+  temp="$(mktemp -d "$STATE/release/squash.XXXXXX")" || return 1
+  if ! git worktree add -q --detach "$temp" "$base"; then
+    rmdir "$temp"
+    return 1
+  fi
+  # Commit hooks run in the isolated checkout, so give Web checks the same
+  # installed dependencies as the primary checkout without copying them.
+  if [[ -d "$REPO/web/node_modules" ]]; then
+    ln -s "$REPO/web/node_modules" "$temp/web/node_modules"
+  fi
+  if ! git -C "$temp" -c merge.ff=true merge --squash "$source" >/dev/null; then
+    git worktree remove --force "$temp"
+    echo "release: squash preparation failed for $source; resolve conflicts in the source worktree" >&2
+    return 1
+  fi
+  if git -C "$temp" diff --cached --quiet; then
+    result="$base"
+  elif ! git -C "$temp" commit -q -C "$source" 1>&2; then
+    git worktree remove --force "$temp"
+    echo "release: squash commit failed for $source; source remains unchanged" >&2
+    return 1
+  else
+    result="$(git -C "$temp" rev-parse HEAD)"
+  fi
+  if [[ "$base" != "$result" ]] &&
+     [[ -n "$(git -C "$temp" diff --name-only "$base..$result" -- web/src/ web/lingui.config.ts)" ]] &&
+     ! (cd "$temp/web" && corepack pnpm run -s i18n:check >/dev/null); then
+    git worktree remove --force "$temp"
+    echo "release: squash i18n catalogs are out of sync for $source" >&2
+    return 1
+  fi
+  git worktree remove --force "$temp" || return 1
+  printf '%s\n' "$result"
+}
+
 # --- Stage 1: Fast Land Lock (~2-5 s) ----------------------------------------
 landed_sha=''
 land_stage() {
@@ -225,13 +268,21 @@ land_stage() {
     if wanted push; then
       fast_forward_release_input "$remote_head" || exit 1
       if [[ -n "$land_commit" ]]; then
-        fast_forward_release_input "$land_commit" || exit 1
+        if ((squash_land)); then
+          if ! git merge-base --is-ancestor HEAD "$remote_head"; then
+            echo 'release: primary master has unpublished commits; resolve them before squash land' >&2
+            exit 1
+          fi
+          landed_sha="$(prepare_squash_land "$remote_head" "$land_commit")" || exit 1
+        else
+          fast_forward_release_input "$land_commit" || exit 1
+        fi
       fi
     else
       git merge --ff-only "$remote_head" >/dev/null || exit 1
     fi
-    landed_sha="$(git rev-parse HEAD)" || exit 1
-    if [[ "$remote_head" != "$landed_sha" ]] &&
+    if ((!squash_land)); then landed_sha="$(git rev-parse HEAD)" || exit 1; fi
+    if ((!squash_land)) && [[ "$remote_head" != "$landed_sha" ]] &&
        [[ -n "$(git diff --name-only "$remote_head..$landed_sha" -- web/src/ web/lingui.config.ts)" ]]; then
       if ! (cd web && corepack pnpm run -s i18n:check >/dev/null); then
         echo "release: i18n catalogs are missing or out of sync on $(git rev-parse --short HEAD)" >&2
@@ -241,11 +292,12 @@ land_stage() {
     local source="${WEZDECK_RELEASE_LAND_SOURCE:-}"
     if [[ -n "$land_commit" && -n "$source" && $wait_deploy == 1 ]] &&
        { wanted relay || wanted web; }; then
-      recycle_cli record --source "$source" --expected "$land_commit" || exit 1
+      recycle_cli record --source "$source" --expected "$land_commit" --landed "$landed_sha" || exit 1
       start_recycle_watch
     fi
     if wanted push && [[ "$remote_head" != "$landed_sha" ]]; then
       if git push -q origin "$landed_sha:refs/heads/master"; then
+        if ((squash_land)); then fast_forward_release_input "$landed_sha" || exit 1; fi
         break
       fi
       if ((attempt == 1)); then
@@ -267,7 +319,12 @@ land_stage() {
   short="$(git rev-parse --short "$landed_sha")"
   subject="$(git log -1 --format='%s' "$landed_sha")"
   release_state_update enqueue "$landed_sha" "$short" "$subject"
-  printf '%s event=land_enqueued head=%s subject=%q\n' "$(date -Iseconds)" "$short" "$subject" >>"$STATE/release.log"
+  printf '%s event=land_enqueued head=%s mode=%s source=%s subject=%q\n' \
+    "$(date -Iseconds)" "$short" "$([[ $squash_land == 1 ]] && echo squash || echo ff)" \
+    "${land_commit:0:8}" "$subject" >>"$STATE/release.log"
+  if ((squash_land)); then
+    say '·' land "squashed ${land_commit:0:8} into $short"
+  fi
   say '✓' land "origin/master at $short ($subject)"
 
   flock -u 8

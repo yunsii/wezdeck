@@ -89,7 +89,8 @@ def reconcile_one(path: Path, record: dict, repo: Path, deployed: str) -> None:
         return
     source = Path(record["source"])
     expected = record["expected_head"]
-    if not deployed or not is_ancestor(repo, expected, deployed):
+    landed = record.get("landed_head", expected)
+    if not deployed or not is_ancestor(repo, landed, deployed):
         return
     if not same_repo(repo, source):
         transition(path, record, "skipped", "source checkout is missing or changed")
@@ -167,6 +168,7 @@ def main() -> int:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--source", type=Path)
     parser.add_argument("--expected")
+    parser.add_argument("--landed")
     args = parser.parse_args()
     state = args.state.resolve()
     repo = args.repo.resolve()
@@ -180,9 +182,14 @@ def main() -> int:
         if not selected.exists():
             write_record(selected, {
                 "source": str(source), "expected_head": args.expected,
+                "landed_head": args.landed or args.expected,
                 "status": "pending", "reason": "", "attempts": 0,
                 "created_at": int(time.time()),
             })
+        elif read_record(selected).get("status") == "pending":
+            record = read_record(selected)
+            record["landed_head"] = args.landed or args.expected
+            write_record(selected, record)
         print(f"recycle recorded: {selected.stem}")
         return 0
     if args.action == "cancel":

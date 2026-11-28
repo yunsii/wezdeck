@@ -28,6 +28,7 @@ git init -q -b master "$primary"
 cd "$primary"
 git config user.name 'Release test'
 git config user.email 'test@example.invalid'
+git config merge.ff only
 git remote add origin "$origin"
 mkdir -p scripts/dev scripts/runtime/worktree native/wezdeck-wsl/bin web/node_modules "$fixture/bin"
 cp "$source_repo/scripts/dev/"{wezdeck-release,source-fingerprint,release-queue-lib,release-snapshot}.sh scripts/dev/
@@ -124,6 +125,9 @@ make_worktree() {
 }
 land() {
   (cd "$fixture/$1" && scripts/dev/wezdeck-release.sh --land HEAD --only push --only web --now --skip-smoke --no-test --no-reload)
+}
+land_squash() {
+  (cd "$fixture/$1" && scripts/dev/wezdeck-release.sh --land HEAD --squash --only push --only web --now --skip-smoke --no-test --no-reload)
 }
 land_relay() {
   (cd "$fixture/$1" && scripts/dev/wezdeck-release.sh --land HEAD --only push --only relay --now --skip-smoke --no-test --no-reload)
@@ -235,6 +239,53 @@ grep -q 'Rebase the source worktree' "$fixture/parallel-b-stale.log"
 git -C "$fixture/parallel_b" rebase -q origin/master
 land parallel_b >"$fixture/parallel-b.log" 2>&1 || { tail -40 "$fixture/parallel-b.log"; exit 1; }
 [[ "$(git rev-list --merges --count master)" == 0 ]]
+
+# A stale workstation can explicitly squash several local commits into one
+# linear commit; source ancestry changes, but its delivered content recycles.
+make_worktree squash_a
+make_worktree squash_b
+printf '%s\n' extra >"$fixture/squash_b/web/squash_b-extra.txt"
+git -C "$fixture/squash_b" add web/squash_b-extra.txt
+git -C "$fixture/squash_b" commit -qm 'squash_b extra'
+squash_source="$(git -C "$fixture/squash_b" rev-parse HEAD)"
+land squash_a >"$fixture/squash-a.log" 2>&1 || { tail -40 "$fixture/squash-a.log"; exit 1; }
+squash_base="$(git rev-parse HEAD)"
+cat >"$primary/.git/hooks/pre-commit" <<'STUB'
+#!/usr/bin/env bash
+[[ "$PWD" == "$XDG_STATE_HOME"/wezdeck/release/squash.* ]] || exit 1
+[[ -d web/node_modules ]] || exit 1
+printf 'squash hook ran\n' >>"$RELEASE_TRACE.squash-hook"
+STUB
+chmod +x "$primary/.git/hooks/pre-commit"
+land_squash squash_b >"$fixture/squash-b.log" 2>&1 || { tail -40 "$fixture/squash-b.log"; exit 1; }
+rm "$primary/.git/hooks/pre-commit"
+grep -q 'squashed .* into' "$fixture/squash-b.log"
+[[ "$(wc -l <"$RELEASE_TRACE.squash-hook")" == 1 ]]
+[[ "$(git rev-list --count "$squash_base..master")" == 1 ]]
+[[ "$(git rev-list --merges --count master)" == 0 ]]
+[[ "$(git log -1 --format=%s master)" == 'squash_b extra' ]]
+! git merge-base --is-ancestor "$squash_source" master
+git diff --quiet "$squash_source" master -- web/squash_b.txt web/squash_b-extra.txt
+
+# A conflict is confined to the temporary checkout; master remains clean.
+make_worktree conflict_a
+make_worktree conflict_b
+printf '%s\n' alpha >"$fixture/conflict_a/web/.keep"
+git -C "$fixture/conflict_a" add web/.keep
+git -C "$fixture/conflict_a" commit -qm 'conflict alpha'
+printf '%s\n' beta >"$fixture/conflict_b/web/.keep"
+git -C "$fixture/conflict_b" add web/.keep
+git -C "$fixture/conflict_b" commit -qm 'conflict beta'
+land conflict_a >"$fixture/conflict-a.log" 2>&1 || { tail -40 "$fixture/conflict-a.log"; exit 1; }
+conflict_base="$(git rev-parse HEAD)"
+if land_squash conflict_b >"$fixture/conflict-b.log" 2>&1; then
+  echo 'expected squash conflict to be rejected' >&2
+  exit 1
+fi
+grep -q 'squash preparation failed' "$fixture/conflict-b.log"
+[[ "$(git rev-parse HEAD)" == "$conflict_base" ]]
+[[ -z "$(git status --porcelain)" ]]
+[[ -z "$(find "$XDG_STATE_HOME/wezdeck/release" -maxdepth 1 -name 'squash.*' -print -quit)" ]]
 
 # A concurrent land may move the primary checkout, but the batch's build ID
 # and deployed artifact must stay pinned to its own commit.
