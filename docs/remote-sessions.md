@@ -238,7 +238,7 @@ pane gets a 4 s `网页端发来一条消息` notice.
 
 ## Turn progress
 
-The web console's working line (运行中… 4m 39s · ↓ 19.1k tokens / 正在压缩上下文… 36s) comes from these fields, not from reading the TUI's screen — its status-line format is not a contract.
+The web console's working line (运行中… 4m 39s · ↓ 19.1k tokens / 正在压缩上下文… 36s) follows host status, not the TUI screen or deferred queue. Pending bubbles bridge only the first 15 s before host status arrives; then the host and bounded optimistic overlay own the turn state.
 
 A user prompt after a confirmed interrupt starts a new turn even if the Stop
 hook was missed. The hook compares the pane's interrupt marker with the previous

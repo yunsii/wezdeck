@@ -16,6 +16,7 @@ import {
   formatTokens,
   useNow,
 } from '#/lib/turn-progress'
+import { SESSION_SEND_TTL_MS } from '#/lib/optimistic-state-project'
 import { cn } from '#/lib/utils'
 import type { Message, Pending } from './chat-thread'
 
@@ -44,11 +45,9 @@ const parse = (ts?: string) => {
 }
 
 /**
- * busy (the host says running) → working with its activity; a message just
- * sent, or the newest transcript line a prompt the host has not flipped to
- * running yet → working from the send; a waiting session → nothing (its
- * question shows below); else the last turn done: from its prompt to its
- * last line, or the entry's last change when the transcript has no times.
+ * Host status (including the short optimistic overlay) owns the turn line.
+ * Pending bubbles only fill the initial gap before any host status arrives;
+ * a newer transcript prompt can also bridge a delayed attention hook.
  */
 export function turnState({
   messages,
@@ -70,11 +69,16 @@ export function turnState({
 }): TurnState | null {
   if (busy) return { kind: 'working', activity }
   if (status === 'waiting') return null
-  const activePending = left.find(
-    (item) => item.state !== 'lost' && item.state !== 'failed',
-  )
-  const sent = activePending?.at
-  if (sent !== undefined) return { kind: 'working', activity: { since: sent } }
+  if (status === undefined) {
+    const sent = left.find(
+      (item) =>
+        item.state === undefined ||
+        item.state === 'sending' ||
+        item.state === 'queued',
+    )?.at
+    if (sent !== undefined && now >= sent && now - sent < SESSION_SEND_TTL_MS)
+      return { kind: 'working', activity: { since: sent } }
+  }
   let lastUser = -1
   for (let i = messages.length - 1; i >= 0; i -= 1)
     if (messages[i]?.role === 'user') {

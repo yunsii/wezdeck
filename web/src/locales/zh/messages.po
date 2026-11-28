@@ -222,7 +222,7 @@ msgstr "{waitingCount} 待处理"
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 msgstr "起 {workers} 个后台工人，最多同时 {parallel} 个，分 {stages} 批"
 
-#: src/features/chat-turn.tsx:153
+#: src/features/chat-turn.tsx:157
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -1113,7 +1113,7 @@ msgstr "提交"
 msgid "Compact and restart WSL"
 msgstr "压缩磁盘并重启 WSL"
 
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
 
@@ -1708,7 +1708,7 @@ msgid "Documents"
 msgstr "文档"
 
 #: src/features/chat-tools.tsx:100
-#: src/features/chat-turn.tsx:163
+#: src/features/chat-turn.tsx:167
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:96
 #: src/features/session-list.tsx:63
@@ -1716,7 +1716,7 @@ msgstr "文档"
 msgid "Done"
 msgstr "已完成"
 
-#: src/features/chat-turn.tsx:164
+#: src/features/chat-turn.tsx:168
 msgid "done {when}"
 msgstr "{when} 完成"
 
@@ -5116,7 +5116,7 @@ msgstr "token 总量"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "输入 / 缓存读 / 缓存写 / 输出 token"
 
-#: src/features/chat-turn.tsx:163
+#: src/features/chat-turn.tsx:167
 msgid "Took {took}"
 msgstr "用时 {took}"
 
@@ -5630,7 +5630,7 @@ msgstr "流程时间线"
 msgid "working"
 msgstr "运行中"
 
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:94
 #: src/features/session-list.tsx:64

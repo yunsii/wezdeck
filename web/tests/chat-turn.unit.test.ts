@@ -26,15 +26,32 @@ describe('turn line', () => {
     ).toEqual({ kind: 'working', activity: { since: t0 } })
   })
 
-  it('works at once after a send, timed from the send (optimistic)', () => {
+  it('uses a short pending fallback only before host state is known', () => {
     expect(
       turnState({
         messages: [user(0), reply(30)],
         left: [{ text: 'next', at: t0 + 60_000 }],
         busy: false,
-        status: 'done',
+        now: t0 + 61_000,
       }),
     ).toEqual({ kind: 'working', activity: { since: t0 + 60_000 } })
+    expect(
+      turnState({
+        messages: [user(0), reply(30)],
+        left: [{ text: 'next', at: t0 + 60_000 }],
+        busy: false,
+        status: 'idle',
+        now: t0 + 61_000,
+      }),
+    ).toEqual({ kind: 'done', took: 30_000, at: t0 + 30_000 })
+    expect(
+      turnState({
+        messages: [user(0), reply(30)],
+        left: [{ text: 'next', at: t0 + 60_000 }],
+        busy: false,
+        now: t0 + 80_000,
+      }),
+    ).toEqual({ kind: 'done', took: 30_000, at: t0 + 30_000 })
   })
 
   it('never shows working for lost or failed outbox bubbles', () => {
@@ -59,7 +76,36 @@ describe('turn line', () => {
         busy: false,
         status: 'idle',
       }),
-    ).toEqual({ kind: 'working', activity: { since: t0 + 60_000 } })
+    ).toBeNull()
+  })
+
+  it('does not time a deferred message as an agent turn', () => {
+    expect(
+      turnState({
+        messages: [user(0), reply(30)],
+        left: [
+          { text: 'after review', at: t0 + 60_000, state: 'deferred' },
+          {
+            text: 'waiting for review',
+            at: t0 + 70_000,
+            state: 'waiting_review',
+          },
+        ],
+        busy: false,
+        status: 'idle',
+      }),
+    ).toEqual({ kind: 'done', took: 30_000, at: t0 + 30_000 })
+    expect(
+      turnState({
+        messages: [user(0), reply(30)],
+        left: [
+          { text: 'after review', at: t0 + 60_000, state: 'deferred' },
+          { text: 'sent now', at: t0 + 80_000, state: 'queued' },
+        ],
+        busy: false,
+        status: 'idle',
+      }),
+    ).toEqual({ kind: 'done', took: 30_000, at: t0 + 30_000 })
   })
 
   it('keeps working while the prompt is in the transcript but not running yet', () => {

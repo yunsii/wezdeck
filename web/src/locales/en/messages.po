@@ -222,7 +222,7 @@ msgstr "{waitingCount} waiting"
 msgid "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 msgstr "{workers} background worker(s), at most {parallel} at once, in {stages} stage(s)"
 
-#: src/features/chat-turn.tsx:153
+#: src/features/chat-turn.tsx:157
 msgid "↓ {tokens} tokens"
 msgstr "↓ {tokens} tokens"
 
@@ -1113,7 +1113,7 @@ msgstr "Commits"
 msgid "Compact and restart WSL"
 msgstr "Compact and restart WSL"
 
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
 
@@ -1708,7 +1708,7 @@ msgid "Documents"
 msgstr "Documents"
 
 #: src/features/chat-tools.tsx:100
-#: src/features/chat-turn.tsx:163
+#: src/features/chat-turn.tsx:167
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:96
 #: src/features/session-list.tsx:63
@@ -1716,7 +1716,7 @@ msgstr "Documents"
 msgid "Done"
 msgstr "Done"
 
-#: src/features/chat-turn.tsx:164
+#: src/features/chat-turn.tsx:168
 msgid "done {when}"
 msgstr "done {when}"
 
@@ -5116,7 +5116,7 @@ msgstr "Tokens"
 msgid "Tokens in / cache r / cache w / out"
 msgstr "Tokens in / cache r / cache w / out"
 
-#: src/features/chat-turn.tsx:163
+#: src/features/chat-turn.tsx:167
 msgid "Took {took}"
 msgstr "Took {took}"
 
@@ -5630,7 +5630,7 @@ msgstr "Workflow timeline"
 msgid "working"
 msgstr "working"
 
-#: src/features/chat-turn.tsx:146
+#: src/features/chat-turn.tsx:150
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:94
 #: src/features/session-list.tsx:64
