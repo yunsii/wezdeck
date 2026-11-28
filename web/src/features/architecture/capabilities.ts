@@ -3,6 +3,7 @@
 // and action table, the bridge's switch, the relay's readRPC / runWrite), so
 // a new endpoint fails the test until it is described here.
 import type { Text } from './model'
+import { deferredWriteCapabilities } from './deferred-capabilities'
 
 export type Capability = { name: string; what: Text }
 
@@ -282,6 +283,7 @@ export const capabilityGroups: Array<CapabilityGroup> = [
     source: 'native/wezdeck-wsl/remote_write.go (runWrite)',
     items: [
       c('send', '往会话窗格发一条消息', 'Send a message to a session’s pane'),
+      ...deferredWriteCapabilities,
       c(
         'key',
         '发一个按键（Enter、Esc、方向键、选项数字）',
