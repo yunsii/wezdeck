@@ -357,6 +357,7 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			continue
 		}
 		p, alive := paneSnap[e.TmuxSocket+"|"+e.TmuxPane]
+		archived := false
 		if !alive {
 			if !includeArchived {
 				continue
@@ -369,10 +370,11 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			if agent == "" {
 				agent = e.AgentName
 			}
-			p = tmuxPaneSnap{cwd: cwd, cmd: agent, profile: agent, attached: false}
+			p = tmuxPaneSnap{cwd: cwd, cmd: "archived", profile: agent, attached: false}
+			archived = true
 		}
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
-		readOnly := codexPaneUnavailable(e.AgentName, cmd)
+		readOnly := archived || codexPaneUnavailable(e.AgentName, cmd)
 		if readOnly {
 			e = e.asReadOnly()
 		} else if e.interrupted(interrupt) {
