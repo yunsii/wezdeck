@@ -265,6 +265,31 @@ export function flattenChats(groups: Array<ChatRepoGroup>): Array<SessionChat> {
   return groups.flatMap((repo) => repo.chats)
 }
 
+/** Keep common rows in their painted order while a cached snapshot refreshes. */
+export function stabilizeChatGroups(
+  groups: Array<ChatRepoGroup>,
+  previousKeys: ReadonlyArray<string>,
+): Array<ChatRepoGroup> {
+  if (previousKeys.length === 0) return groups
+  const rank = new Map(previousKeys.map((key, index) => [key, index]))
+  const keyOf = (repo: ChatRepoGroup, chat: SessionChat) =>
+    `${repo.key}\u0000${chat.key}`
+  const rowRank = (repo: ChatRepoGroup, chat: SessionChat) =>
+    rank.get(keyOf(repo, chat)) ?? Infinity
+  return groups
+    .map((repo) => ({
+      ...repo,
+      chats: [...repo.chats].sort(
+        (a, b) => b.unread - a.unread || rowRank(repo, a) - rowRank(repo, b),
+      ),
+    }))
+    .sort((a, b) => {
+      const ar = Math.min(...a.chats.map((chat) => rowRank(a, chat)))
+      const br = Math.min(...b.chats.map((chat) => rowRank(b, chat)))
+      return ar - br
+    })
+}
+
 /** tab badge: how many chats actually wait on your input */
 export function unreadChatCount(rows: Array<SessionCard>): number {
   const keys = new Set<string>()

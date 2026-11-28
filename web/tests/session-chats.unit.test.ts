@@ -6,6 +6,7 @@ import {
   chatPreview,
   chatTone,
   resolveChatFocus,
+  stabilizeChatGroups,
   unreadChatCount,
 } from '#/features/session-chats'
 import {
@@ -204,6 +205,27 @@ describe('buildChatGroups', () => {
       'alpha',
       'beta',
     ])
+  })
+})
+
+describe('stabilizeChatGroups', () => {
+  it('keeps cached rows in their painted order while a fresh snapshot reorders them', () => {
+    const old = buildChatGroups([
+      card({ id: 'a', worktree: '/r/a/.worktrees/a', order_at: 100 }),
+      card({ id: 'b', worktree: '/r/a/.worktrees/b', order_at: 200 }),
+    ])
+    const fresh = buildChatGroups([
+      card({ id: 'a', worktree: '/r/a/.worktrees/a', order_at: 300 }),
+      card({ id: 'b', worktree: '/r/a/.worktrees/b', order_at: 200 }),
+    ])
+    const keys = old.flatMap((repo) =>
+      repo.chats.map((chat) => `${chat.repoKey}\u0000${chat.key}`),
+    )
+    expect(
+      stabilizeChatGroups(fresh, keys).flatMap((repo) =>
+        repo.chats.map((chat) => chat.key),
+      ),
+    ).toEqual(old.flatMap((repo) => repo.chats.map((chat) => chat.key)))
   })
 })
 

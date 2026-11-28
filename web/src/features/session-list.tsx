@@ -42,7 +42,7 @@ import {
   formatChatDate,
   formatChatWeekday,
 } from './chat-time'
-import { useStickyMembers } from './session-stable'
+import { useStableChatOrder, useStickyMembers } from './session-stable'
 import { useSessionListTrace } from './session-list-trace'
 import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
@@ -216,7 +216,7 @@ export function SessionList({
     ...row,
     draft: readDraft(sessionDraftKey(row.id)).trim(),
   }))
-  const groups = buildChatGroups(rowsWithDrafts)
+  const groups = useStableChatOrder(buildChatGroups(rowsWithDrafts))
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')

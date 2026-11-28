@@ -114,7 +114,9 @@ each worktree's focus. Browser-local unsent composer text appears as a 草稿
 marker on the second line of each session row and collapsed group, while the
 status preview remains visible. Chat groups order by the latest stable turn
 start or completion in the group, with unread first within each repo;
-opening a chat and transcript output do not reorder rows. Rows carry known brand avatars (including
+the painted order is held while a cached list is replaced by a poll, and an
+explicit re-tap of 会话 is the refresh point for a new order. Opening a chat
+and transcript output do not reorder rows. Rows carry known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /
