@@ -1,7 +1,13 @@
 // covers: web/src/features/me-habits.tsx web/src/features/me-schedule.tsx
 // covers: native/wezdeck-wsl/habit_report.go native/wezdeck-wsl/habit_schedule.go
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { chromium } from '@playwright/test'
 import type { Browser } from '@playwright/test'
@@ -54,6 +60,17 @@ describe.runIf(stack && devicesFile && habitDir)(
 
     beforeAll(async () => {
       if (screenshotDir) mkdirSync(screenshotDir, { recursive: true })
+      rmSync(
+        join(
+          stack,
+          'systemd-user',
+          'wezdeck-habit-snapshot.timer.d',
+          'schedule.conf',
+        ),
+        { force: true },
+      )
+      rmSync(join(stack, 'habit-refresh.log'), { force: true })
+      writeFileSync(join(stack, 'habit-enabled'), '')
       mkdirSync(habitDir, { recursive: true })
       for (const period of ['this', 'last', '14d'])
         writeFileSync(
@@ -109,7 +126,7 @@ describe.runIf(stack && devicesFile && habitDir)(
       await expect
         .poll(() => page.getByTestId('habit-page').textContent())
         .toContain('2026-11-15')
-      await page.getByRole('radio', { name: '完整周报' }).click()
+      await page.getByRole('radio', { name: '完整报告' }).click()
       await page.getByText('Web 相关提交 8/10。').waitFor({ timeout: 10_000 })
 
       await page.goto(base + '/zh/console/me/schedule?remote=1#pair=' + token)
@@ -119,7 +136,7 @@ describe.runIf(stack && devicesFile && habitDir)(
           path: join(screenshotDir, 'schedule-desktop.png'),
           fullPage: true,
         })
-      await page.getByLabel('中午').fill('13:15')
+      await page.getByLabel('午间').fill('13:15')
       await page.getByRole('button', { name: '保存时间' }).click()
       await expect
         .poll(() =>
@@ -134,7 +151,7 @@ describe.runIf(stack && devicesFile && habitDir)(
           ),
         )
         .toContain('13:15:00 Asia/Singapore')
-      await page.getByRole('button', { name: '立即生成周报' }).click()
+      await page.getByRole('button', { name: '立即生成报告' }).click()
       await expect
         .poll(() => readFileSync(join(stack, 'habit-refresh.log'), 'utf8'))
         .toContain('started')

@@ -34,6 +34,30 @@ async function snapshotRows(page: Page): Promise<Record<string, RowRect>> {
   })
 }
 
+async function afterPaint(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  )
+}
+
+async function listScrollTop(page: Page) {
+  return page.evaluate(
+    () =>
+      document.querySelector<HTMLElement>(
+        '.vt-split-list [data-overlayscrollbars-viewport], .vt-split-list .overflow-y-auto',
+      )?.scrollTop,
+  )
+}
+
+async function scrolledRowState(page: Page, id: string) {
+  const box = await page.locator(`[data-session=${id}]`).boundingBox()
+  if (!box) throw new Error(`row ${id} is not visible`)
+  return { box, scrollTop: await listScrollTop(page) }
+}
+
 async function countPixelDiff(page: Page, a: Buffer, b: Buffer) {
   return page.evaluate(
     async ([s1, s2]) => {
@@ -359,14 +383,16 @@ describe.runIf(attention)('Wide split: list stability', () => {
         if (vp) vp.scrollTop = 128
       })
       await page.waitForTimeout(150)
-      const scrolledBox = await page
-        .locator('[data-session=st-g3]')
-        .boundingBox()
-      expect(scrolledBox).toBeTruthy()
-      const sBefore = await page.screenshot({ clip: scrolledBox! })
+      await afterPaint(page)
+      const beforeState = await scrolledRowState(page, 'st-g3')
+      expect(beforeState.scrollTop).toBeGreaterThan(0)
+      const sBefore = await page.screenshot({ clip: beforeState.box })
       await page.keyboard.press('j') // st-short -> st-tall
       await page.waitForTimeout(350)
-      const sAfter = await page.screenshot({ clip: scrolledBox! })
+      await afterPaint(page)
+      const afterState = await scrolledRowState(page, 'st-g3')
+      expect(afterState).toEqual(beforeState)
+      const sAfter = await page.screenshot({ clip: beforeState.box })
       expect(await countPixelDiff(page, sBefore, sAfter)).toBe(0)
 
       await context.close()
