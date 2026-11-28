@@ -51,7 +51,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/console-sessions.tsx:309
+#: src/features/console-sessions.tsx:314
 #: src/features/message-composer.tsx:139
 #: src/features/message-composer.tsx:169
 msgid "{count} images"
@@ -2270,7 +2270,7 @@ msgstr "Load earlier"
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
 
-#: src/features/console-sessions.tsx:271
+#: src/features/console-sessions.tsx:276
 msgid "Loaded back into input"
 msgstr "Loaded back into input"
 
@@ -4498,7 +4498,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:158
+#: src/features/console-sessions.tsx:163
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4613,7 +4613,7 @@ msgstr "This conversation is read-only."
 msgid "This device"
 msgstr "This device"
 
-#: src/features/console-sessions.tsx:154
+#: src/features/console-sessions.tsx:159
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4885,7 +4885,7 @@ msgstr "Turn finished: review before sending"
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
-#: src/features/console-sessions.tsx:228
+#: src/features/console-sessions.tsx:233
 msgid "Turn message into ticket"
 msgstr "Turn message into ticket"
 

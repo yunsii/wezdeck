@@ -200,7 +200,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
   after 3 polls in a row failed (`useFailedPolls`; one flaky poll on a phone
   link stays quiet) or at once when the device is offline.
 - Foreground return refreshes active data. Session list and detail show a
-  short sync hint under their own headers; the detail hint overlays the thread without changing its height. Existing error notices remain for lasting failures.
+  short sync hint under their own headers; the detail hint overlays the thread without changing its height. During device approval checks, sending stays disabled without a premature "not approved" notice; confirmed denials and lasting errors remain visible.
 - `viewport-fit=cover`, safe-area padding, 44 px targets on coarse pointers.
 
 ## Visual language (2026-11-22, revised)

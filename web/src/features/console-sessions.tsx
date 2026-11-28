@@ -15,6 +15,7 @@ import { trace } from '#/lib/client-trace'
 import { forgetOpened } from '#/lib/last-opened'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { useDeviceState } from './device-state'
+import type { DeviceWriteState } from './device-state'
 import { SessionHeader } from './session-header'
 import { useChatScroll } from './chat-scroll'
 import { JumpLatest } from './chat-controls'
@@ -148,9 +149,13 @@ const chatDiag = (
 const transcriptEnd = (data?: Detail) =>
   (data?.start ?? 0) + (data?.messages?.length ?? 0)
 
-function useComposerBlock(data: Detail | undefined, approved: boolean) {
+function useComposerBlock(
+  data: Detail | undefined,
+  deviceState: DeviceWriteState,
+) {
   const { t } = useLingui()
-  return !approved
+  if (deviceState === 'checking') return ''
+  return deviceState !== 'approved'
     ? t`This device is not approved yet (Settings › Device access).`
     : data?.waiting_kind &&
         !data.elicitation?.questions.length &&
@@ -381,7 +386,7 @@ export function SessionDetail({ id }: { id: string }) {
     if (data && !gone) clearSessionMissing(id)
   }, [data, gone, id])
   useLeaveMissingSession(id, gone)
-  const blocked = useComposerBlock(data, device.state === 'approved')
+  const blocked = useComposerBlock(data, device.state)
   const resume = useResumeSheet(id, send, data?.agent)
   const composer = useComposer({
     id,
@@ -466,7 +471,7 @@ export function SessionDetail({ id }: { id: string }) {
           className="sticky bottom-0 z-20 -mx-2.5 -mb-4 grid grid-cols-[minmax(0,1fr)] gap-1.5 border-t border-brand-edge bg-brand-deck px-2.5 pt-2 pb-[max(calc(env(safe-area-inset-bottom)+0.25rem),0.75rem)] shadow-[0_-12px_24px_-16px_rgb(0_0_0/0.22)] md:relative md:z-20 md:mx-0 md:mb-0 md:shrink-0 md:gap-2 md:px-[var(--page-x)] md:pt-2 md:pb-4 md:shadow-none"
           onSubmit={(event) => {
             event.preventDefault()
-            if (readOnly) return
+            if (!canSendNow) return
             setError('')
             if (composer.ready) follow.jump()
             composer
@@ -501,7 +506,7 @@ export function SessionDetail({ id }: { id: string }) {
           {!readOnly ? (
             <ComposerBox
               composer={composer}
-              blocked={sending || Boolean(blocked)}
+              blocked={sending || !canSendNow}
               keysDisabled={sending || device.state !== 'approved'}
               writable={device.state === 'approved'}
               onRun={run}

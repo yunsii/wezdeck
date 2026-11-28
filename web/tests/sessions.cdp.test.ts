@@ -344,6 +344,11 @@ async function followsNewSession(
     }),
   )
   await page.waitForURL('**/console/sessions/demo-next', { timeout: 20_000 })
+  await expect
+    .poll(() =>
+      page.getByTestId('session-title').getAttribute('data-session-id'),
+    )
+    .toBe('demo-next')
 }
 
 /**

@@ -19,6 +19,8 @@ let state: { state: DeviceWriteState; id?: string; error?: string } = {
 }
 const listeners = new Set<() => void>()
 const set = (next: typeof state) => {
+  if (state.state !== next.state)
+    trace('device-state', { from: state.state, to: next.state })
   state = next
   listeners.forEach((listener) => listener())
 }

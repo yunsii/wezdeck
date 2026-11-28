@@ -51,7 +51,7 @@ msgstr "{bg} 个后台任务在跑"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} 提议拆出一张单"
 
-#: src/features/console-sessions.tsx:309
+#: src/features/console-sessions.tsx:314
 #: src/features/message-composer.tsx:139
 #: src/features/message-composer.tsx:169
 msgid "{count} images"
@@ -2270,7 +2270,7 @@ msgstr "加载更早"
 msgid "Load earlier ({start} more)"
 msgstr "加载更早（还有 {start} 条）"
 
-#: src/features/console-sessions.tsx:271
+#: src/features/console-sessions.tsx:276
 msgid "Loaded back into input"
 msgstr "已回填到输入框"
 
@@ -4498,7 +4498,7 @@ msgstr "输入光标"
 msgid "The agent asks:"
 msgstr "Agent 在问："
 
-#: src/features/console-sessions.tsx:158
+#: src/features/console-sessions.tsx:163
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "Agent 正在等你确认，先用上面的按键回答。"
 
@@ -4613,7 +4613,7 @@ msgstr "此会话仅供查看。"
 msgid "This device"
 msgstr "当前设备"
 
-#: src/features/console-sessions.tsx:154
+#: src/features/console-sessions.tsx:159
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4885,7 +4885,7 @@ msgstr "本轮已完成，请确认后发送"
 msgid "Turn interrupted"
 msgstr "已中断"
 
-#: src/features/console-sessions.tsx:228
+#: src/features/console-sessions.tsx:233
 msgid "Turn message into ticket"
 msgstr "将消息转为工单"
 

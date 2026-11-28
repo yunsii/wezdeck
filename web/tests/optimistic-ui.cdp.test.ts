@@ -206,6 +206,59 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
     await page.getByText(/^已获批。/).waitFor({ timeout: 15_000 })
   }
 
+  it('keeps the authorization notice out of an approved session refresh', async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+      locale: 'zh-CN',
+    })
+    const page = await context.newPage()
+    await approve(page)
+    await page.goto(`${base}/zh/console/sessions/opt-idle`)
+    await page.getByLabel('发给 Agent 的消息').fill('刷新时保留草稿')
+    await page.addInitScript(() => {
+      const stats = { samples: 0, unapproved: false }
+      ;(
+        window as Window & { __approvalRefresh?: typeof stats }
+      ).__approvalRefresh = stats
+      const sample = () => {
+        const form = document
+          .querySelector('#session-composer')
+          ?.closest('form')
+        if (!form) return
+        stats.samples++
+        if (form.textContent.includes('这台设备还没获批'))
+          stats.unapproved = true
+      }
+      const observer = new MutationObserver(sample)
+      observer.observe(document, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      })
+      document.addEventListener('DOMContentLoaded', sample)
+    })
+    await page.reload()
+    await expect
+      .poll(() => page.getByLabel('发给 Agent 的消息').inputValue())
+      .toBe('刷新时保留草稿')
+    await expect
+      .poll(() =>
+        page.getByRole('button', { name: '发送', exact: true }).isDisabled(),
+      )
+      .toBe(false)
+    const refresh = await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __approvalRefresh?: { samples: number; unapproved: boolean }
+          }
+        ).__approvalRefresh,
+    )
+    expect(refresh?.samples).toBeGreaterThan(0)
+    expect(refresh?.unapproved).toBe(false)
+    await context.close()
+  }, 60_000)
+
   it('switches list tone and thread working state optimistically on send, allow, and deny', async () => {
     const context = await browser.newContext({
       viewport: { width: 1280, height: 720 },
