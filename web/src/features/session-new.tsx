@@ -5,7 +5,7 @@
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { Plus, SendHorizontal } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import {
   useCallback,
   useEffect,
@@ -15,7 +15,6 @@ import {
 } from 'react'
 
 import { Button } from '#/components/ui/button'
-import { Textarea } from '#/components/ui/textarea'
 import { trace } from '#/lib/client-trace'
 import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
@@ -29,6 +28,7 @@ import {
 } from './agent-profiles'
 import { useRepositories } from './repo-agent-settings'
 import { NewSessionHeader } from './session-new-header'
+import { NewSessionComposer } from './session-new-composer'
 import { jumpPending } from './console-jump-keys'
 import { useSessions } from './console-sessions'
 import { useDeviceState } from './device-state'
@@ -108,10 +108,6 @@ function rememberSessionChoices(repo: string | undefined) {
     // Creating a session still works if the browser blocks local storage.
   }
 }
-
-const desktopEnterSends = () =>
-  typeof window !== 'undefined' &&
-  !window.matchMedia('(pointer: coarse)').matches
 
 export function NewSessionButton() {
   const { t } = useLingui()
@@ -218,75 +214,6 @@ function useEscapeToBack(blocked: boolean, back: () => void) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [blocked, back])
-}
-
-function NewSessionComposer({
-  prompt,
-  onPrompt,
-  sending,
-  ready,
-  onSubmit,
-}: {
-  prompt: string
-  onPrompt: (next: string) => void
-  sending: boolean
-  ready: boolean
-  onSubmit: () => void
-}) {
-  const { t } = useLingui()
-  return (
-    <form
-      data-testid="new-session-composer"
-      onSubmit={(event) => {
-        event.preventDefault()
-        onSubmit()
-      }}
-      className="grid min-w-0 grid-cols-[minmax(0,1fr)]"
-    >
-      <div
-        data-text-field
-        className="grid min-w-0 rounded-2xl bg-brand-surface"
-      >
-        <Textarea
-          variant="bare"
-          value={prompt}
-          disabled={sending}
-          rows={4}
-          autoFocus
-          aria-label={t`What do you want to solve?`}
-          onChange={(event) => onPrompt(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing) return
-            if (
-              event.key === 'Enter' &&
-              (event.metaKey ||
-                event.ctrlKey ||
-                (!event.shiftKey && desktopEnterSends()))
-            ) {
-              event.preventDefault()
-              onSubmit()
-            }
-          }}
-          placeholder={t`What should it work on?`}
-          className="min-h-28 max-h-60 w-full resize-none bg-transparent px-3.5 pt-3 pb-2 text-body text-brand-text outline-none [field-sizing:content] placeholder:text-brand-label disabled:opacity-60"
-        />
-        <div className="flex items-center justify-between gap-3 px-3 pt-1 pb-2.5">
-          <span className="hidden text-meta text-brand-label md:inline">
-            {t`Enter to send · Shift+Enter for newline`}
-          </span>
-          <Button
-            variant="solid"
-            type="submit"
-            disabled={!ready || sending}
-            className="ml-auto inline-flex min-h-10 items-center justify-center gap-1.5 px-4 text-body whitespace-nowrap disabled:opacity-40 md:min-h-9"
-          >
-            <SendHorizontal size={16} aria-hidden />
-            {t`Create session`}
-          </Button>
-        </div>
-      </div>
-    </form>
-  )
 }
 
 export function NewSessionGuidedView() {

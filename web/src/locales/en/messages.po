@@ -916,7 +916,7 @@ msgstr "Child tickets"
 msgid "Children"
 msgstr "Children"
 
-#: src/features/session-new.tsx:372
+#: src/features/session-new.tsx:299
 msgid "Choose an agent"
 msgstr "Choose an agent"
 
@@ -1381,7 +1381,7 @@ msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {
 msgid "Create & start headless run"
 msgstr "Create & start headless run"
 
-#: src/features/session-new.tsx:284
+#: src/features/session-new-composer.tsx:122
 msgid "Create session"
 msgstr "Create session"
 
@@ -1410,6 +1410,10 @@ msgstr "Creating…"
 #: src/features/session-new-job.tsx:453
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
+
+#: src/features/session-new-composer.tsx:113
+msgid "Ctrl/⌘+Enter to send"
+msgstr "Ctrl/⌘+Enter to send"
 
 #: src/features/session-elicitation.tsx:339
 #: src/features/session-plan-keys.tsx:66
@@ -1699,7 +1703,7 @@ msgstr "Enter"
 msgid "Enter key"
 msgstr "Enter key"
 
-#: src/features/session-new.tsx:275
+#: src/features/session-new-composer.tsx:112
 msgid "Enter to send · Shift+Enter for newline"
 msgstr "Enter to send · Shift+Enter for newline"
 
@@ -2542,7 +2546,7 @@ msgstr "New line"
 #: src/features/session-new-header.tsx:35
 #: src/features/session-new-job.tsx:391
 #: src/features/session-new-job.tsx:391
-#: src/features/session-new.tsx:197
+#: src/features/session-new.tsx:193
 msgid "New session"
 msgstr "New session"
 
@@ -2550,11 +2554,11 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:190
+#: src/features/session-new.tsx:186
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:394
+#: src/features/session-new.tsx:321
 msgid "New session group"
 msgstr "New session group"
 
@@ -3509,7 +3513,7 @@ msgstr "Repository"
 msgid "Repository agent settings could not be read on the host. Workspace defaults are shown; saving is unavailable."
 msgstr "Repository agent settings could not be read on the host. Workspace defaults are shown; saving is unavailable."
 
-#: src/features/session-new.tsx:491
+#: src/features/session-new.tsx:418
 msgid "Repository agent settings could not be read. Select an agent explicitly."
 msgstr "Repository agent settings could not be read. Select an agent explicitly."
 
@@ -5218,7 +5222,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new.tsx:256
+#: src/features/session-new-composer.tsx:65
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -5226,7 +5230,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new.tsx:270
+#: src/features/session-new-composer.tsx:106
 msgid "What should it work on?"
 msgstr "What should it work on?"
 

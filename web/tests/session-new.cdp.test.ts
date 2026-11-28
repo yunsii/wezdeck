@@ -1,4 +1,5 @@
 // covers: web/src/features/session-new.tsx web/src/features/session-list.tsx
+// covers: web/src/features/session-new-composer.tsx
 // covers: web/src/features/session-new-job.tsx web/src/features/session-new-route.ts
 // covers: web/src/features/session-order.ts web/src/features/session-purpose.tsx
 // covers: web/src/features/session-info.tsx
@@ -27,6 +28,7 @@ const repoRoot = join(import.meta.dirname, '..', '..')
 
 describe.runIf(attention && devicesFile && stack)(
   'New session from the phone',
+  // eslint-disable-next-line max-lines-per-function
   () => {
     let browser: Browser
     const repo = join(mkdtempSync(join(tmpdir(), 'wd-newrepo-')), 'phone-repo')
@@ -97,6 +99,47 @@ describe.runIf(attention && devicesFile && stack)(
       last_user_prompt: '从手机开的新会话',
       ts: Date.now(),
     })
+
+    it('uses the device Enter mode and shows a matching hint on a touch tablet', async () => {
+      const { context, page } = await approvedPage(devices['iPad Pro 11'])
+      await page.goto(`${base}/zh/console/sessions/new`)
+      const composer = page.getByTestId('new-session-composer')
+      const input = composer.getByPlaceholder('要它做什么？')
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => matchMedia('(hover: none) and (pointer: coarse)').matches,
+          ),
+        )
+        .toBe(true)
+      await composer.getByText('Ctrl/⌘+Enter 发送').waitFor()
+      const softEnterPrevented = () =>
+        input.evaluate((element) => {
+          const event = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: '',
+            bubbles: true,
+            cancelable: true,
+          })
+          element.dispatchEvent(event)
+          return event.defaultPrevented
+        })
+      expect(await softEnterPrevented()).toBe(false)
+      await page.evaluate(() =>
+        localStorage.setItem('wezdeck-enter-mode', 'send'),
+      )
+      await page.reload()
+      await composer.getByText('Enter 发送 · Shift+Enter 换行').waitFor()
+      expect(await softEnterPrevented()).toBe(true)
+      expect(await input.inputValue()).toBe('')
+      await page.evaluate(() =>
+        localStorage.setItem('wezdeck-enter-mode', 'newline'),
+      )
+      await page.reload()
+      await composer.getByText('Ctrl/⌘+Enter 发送').waitFor()
+      expect(await softEnterPrevented()).toBe(false)
+      await context.close()
+    }, 45_000)
 
     /**
      * 新会话 › a new session without a group name; once the pane

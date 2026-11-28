@@ -73,18 +73,14 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    at once, showing the first message, live steps, optional trust confirmation,
    and retry/edit recovery before replacing into the real session id (while
    `creating_jobs` keeps in-flight creations reachable from the list). The
-   agent avatar and name follow the selected profile through creation; repository
-   defaults are managed in 我的 › 仓库 ([details](./workspaces.md#web-created-session-defaults)).
-   Managed worktrees are pre-trusted
-   (`session.new.trust` fallback), and 我的 › Agents
-   lists every managed model. 工单 has the
-   same + (`n`): 新工单 — from / to repository, title, what you saw, what you
-   assume, optionally start the run now. The
-   agent's own name (`agent_name`, usually Claude's derived peer address
-   such as `wezterm-config-93`) is only a 会话信息 metadata row, not a
-   header or list tag. Rename (`/rename`) moved into
-   会话信息 (ⓘ). What
-   waits on you badges its own tab: 会话 counts sessions waiting on you,
+   agent avatar and name follow the selected profile; new-session Enter follows
+   我的 › 外观 (Ctrl/⌘+Enter always sends), and repository defaults live in 我的 › 仓库 ([details](./workspaces.md#web-created-session-defaults)).
+   Managed worktrees are pre-trusted (`session.new.trust` fallback), and 我的 › Agents lists every managed model. 工单 has the same + (`n`): 新工单 — from / to
+   repository, title, observations, assumptions, and optional immediate run.
+   The agent's own name (`agent_name`, usually Claude's derived peer address
+   such as `wezterm-config-93`) is only a 会话信息 metadata row, not a header
+   or list tag. Rename (`/rename`) is in 会话信息 (ⓘ). What waits on you badges
+   its own tab: 会话 counts sessions waiting on you,
    工单 the tickets (`waiting_human`). `/console/now` stays as a redirect
    to 会话 for installed apps whose manifest still starts there. 工单
    links 工单动态 (lights as in the ticket list: ▲ only 等你, opening a

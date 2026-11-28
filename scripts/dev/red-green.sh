@@ -83,6 +83,11 @@ if run_tests; then red=pass; fi
 
 restore
 trap - EXIT INT TERM
+# A source change changes the test stack fingerprint. Only stop an explicitly
+# isolated stack; the default shared stack may belong to another test run.
+if [[ -n "${WEZDECK_TEST_STACK_DIR:-}" && ${#tests[@]} -gt 0 ]]; then
+  scripts/dev/remote-test-stack.sh stop >/dev/null
+fi
 keep="$(mktemp -d)" # run_tests writes its logs here
 trap 'rm -rf "$keep"' EXIT
 
