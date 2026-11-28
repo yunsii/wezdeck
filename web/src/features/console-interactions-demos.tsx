@@ -19,10 +19,12 @@ import type { Message } from './chat-thread'
 import { SessionSubagents } from './session-subagents'
 import { SessionUsageAlerts } from './session-header'
 import { SessionStatusBar } from './session-statusbar'
+import { WorktreeManager } from './session-worktree-manager'
 import type { Detail } from './console-sessions'
 import {
   BACKGROUND,
   STATUS_WORKTREE_PATHS,
+  STATUS_WORKSTATIONS,
 } from './console-interactions-samples'
 import type { Subagent } from './session-subagents'
 
@@ -456,11 +458,7 @@ const STATUS_SAMPLE: Detail = {
   background: BACKGROUND.slice(0, 2),
 }
 
-/**
- * The status bar under the composer, as on a phone: agent, git, model,
- * background tasks and usage. Branch and worktree identity live in technical
- * details rather than competing with actionable state here.
- */
+/** The composer status bar and the worktree entry in session information. */
 export function StatusBarDemo() {
   const [visibleUsage, setVisibleUsage] = useState('')
   return (
@@ -472,6 +470,14 @@ export function StatusBarDemo() {
         </span>
       </div>
       <SessionStatusBar data={STATUS_SAMPLE} onVisibleUsage={setVisibleUsage} />
+      <div className="flex items-center gap-2 px-2 text-meta text-brand-label">
+        <span>会话信息 · 技术详情</span>
+        <WorktreeManager
+          list={STATUS_SAMPLE.worktrees ?? []}
+          repoPath={STATUS_WORKTREE_PATHS.primary}
+          sample={STATUS_WORKSTATIONS}
+        />
+      </div>
     </div>
   )
 }

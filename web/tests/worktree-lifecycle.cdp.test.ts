@@ -21,12 +21,7 @@ describe('Worktree lifecycle controls', () => {
         await page.goto(`${base}/zh/console/me/interactions#status-bar`)
         const trigger = page.getByTestId('status-worktrees')
         await trigger.waitFor()
-        if (
-          !(await trigger.first().isVisible()) ||
-          (await trigger.first().getAttribute('inert')) !== null
-        )
-          await page.getByTestId('statusbar-custom-more').click()
-        await trigger.last().click()
+        await trigger.click()
         const sheet = page.getByTestId('worktree-manager')
         await sheet
           .getByRole('button', { name: '管理工作树: dev-agent' })

@@ -230,11 +230,7 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '某仓库按方向分组的工作站与是否空闲，供新会话选方向复用',
         'A repository’s workstations by direction and whether each is idle, for 新会话 to reuse one',
       ),
-      c(
-        'ticket.targets',
-        '可以开单的目标仓库',
-        'Repositories a ticket can go to',
-      ),
+      c('ticket.targets', '开单目标仓库', 'Ticket target repositories'),
       c(
         'session.new.job',
         '新开会话任务的进度',
