@@ -187,7 +187,9 @@ cardinality silently fell until fair baseline comparison exposed it.
 ## Adversarial review (platform capability)
 
 Multi-role defect review is a **shared platform capability**, not a human homework script.
-When the user asks for 对抗审查 / adversarial review, or acceptance recommends it for runtime changes:
+Run this capability only when the user explicitly requests adversarial code
+review or approves it for the current task. A runtime diff, merge, or acceptance
+recommendation alone does not trigger it:
 
 - [validation-50] The **agent** loads the skill and runs the runner; do **not** make the human the primary operator of `run.sh`.
 - [validation-51] 「对抗审查」requires at least **find + refute** (repro recommended). A solo monologue is **设计批判** only — never label it 对抗审查.
@@ -219,7 +221,7 @@ separate design-review skill by default — route and critique in-process.
   | --- | --- | --- |
   | Evaluate this proposal (accept / revise / reject) | **Design review** — main agent structured challenge (checklist below); no runner required | 设计评审 / 设计批判 — **not** 对抗审查 |
   | Still need alternatives relative to the proposal | **brainstorm** with problem + hard constraints extracted from the doc (challenge-first; full diverge only if the problem is still open) | 头脑风暴（披露 multi-persona） |
-  | Implementation / diff already exists | **adversarial-review** | 对抗审查 |
+  | User explicitly asks to adversarially review an implementation / diff | **adversarial-review** | 对抗审查 |
 
 - [validation-60] **Design-review checklist** (Design Doc / RFC / ADR practice). Cover each item; skip only with an explicit reason:
 

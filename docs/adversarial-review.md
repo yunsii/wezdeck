@@ -7,9 +7,10 @@
 
 ## Agent skill (not for humans to run by hand)
 
-Agents load the platform skill and execute `run.sh` themselves.
-Humans only state intent (e.g. 审一下 / 对抗审查). Do not make the user the primary
-operator of this script.
+Agents load the platform skill and execute `run.sh` themselves only after the
+user explicitly requests or approves adversarial review for the current task.
+Humans only state intent (e.g. 审一下 / 对抗审查). Runtime edits and merge plans do
+not trigger it. Do not make the user the primary operator of this script.
 
 | Surface | Discovery |
 | --- | --- |

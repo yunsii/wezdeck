@@ -4,8 +4,8 @@ description: >
   Multi-role adversarial code review (platform skill). Agent loads this skill and
   runs the co-located runner (find → refute → sandbox repro); humans only state
   intent (审一下 / 对抗审查). Works for OpenClaw Main and host TUI agents via
-  user-level skill links. Use when user asks for adversarial review, acceptance
-  recommends review, or runtime code changed before merge.
+  user-level skill links. Use only when the user explicitly requests this
+  review or approves it for the current task.
 ---
 
 # Adversarial review (platform skill — single source)
@@ -27,10 +27,16 @@ This directory is the **only** skill + runner unit. Other paths are **symlinks**
 
 ## When to load / run
 
-- User asks for 对抗审查 / adversarial review / multi-role review
-- Write-task checklist: acceptance suggests review
-- Runtime code/scripts changed (any git TARGET the agent may review)
-- After editing this toolkit itself → `dogfood`
+- User explicitly asks for 对抗审查 / adversarial review / multi-role code review
+  (including 「审一下」 when the code change is the object), or approves a
+  specific proposal to run it for the current task.
+- After editing this toolkit, run local self-checks. Run external find/refute
+  backends only when the user authorized review of this task's code.
+
+Runtime edits, upcoming merges, and acceptance recommendations alone are not
+review requests. Ordinary code changes use the task's normal validation path.
+Authorization to review one task does not authorize sending a different task's
+code to external backends.
 
 **Skip / redirect:**
 
