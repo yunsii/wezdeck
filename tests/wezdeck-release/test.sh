@@ -92,7 +92,7 @@ case "$*" in
   *build.json*) [[ -f "$RELEASE_LIVE_BUILD_FILE" ]] && cat "$RELEASE_LIVE_BUILD_FILE" ;;
   *'/zh/console/sessions'*) printf '<script src="/assets/main.js"></script>\n' ;;
   *'/relay/health'*) printf 200 ;;
-  *'/assets/main.js'*) exit 0 ;;
+  *'/assets/main.js'*) printf 200 ;;
   *) exit 1 ;;
 esac
 STUB
@@ -183,7 +183,7 @@ python3 scripts/dev/release-recycle.py record --state "$XDG_STATE_HOME/wezdeck" 
 python3 scripts/dev/release-recycle.py watch --state "$XDG_STATE_HOME/wezdeck" \
   --repo "$primary" >"$fixture/recycle-watch.log" 2>&1 &
 watch_pid=$!
-git merge -q --no-edit replay
+git merge -q --ff-only replay
 git push -q origin master
 STATE="$XDG_STATE_HOME/wezdeck"
 source scripts/dev/release-queue-lib.sh
@@ -200,7 +200,7 @@ expected="$(git -C "$fixture/stale" rev-parse HEAD)"
 python3 scripts/dev/release-recycle.py record --state "$XDG_STATE_HOME/wezdeck" \
   --repo "$primary" --source "$fixture/stale" --expected "$expected" >/dev/null
 git -C "$fixture/stale" commit -qm changed --allow-empty
-git merge -q --no-edit stale
+git merge -q --ff-only stale
 git push -q origin master
 release_state_update deployed "sha=$(git rev-parse HEAD)"
 if python3 scripts/dev/release-recycle.py reconcile --state "$XDG_STATE_HOME/wezdeck" \
@@ -211,6 +211,23 @@ else
   [[ $? == 4 ]]
 fi
 [[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 3 ]]
+
+# Parallel workstations cannot introduce a merge commit into master. The
+# lagging source stays intact until it is rebased and retried.
+make_worktree parallel_a
+make_worktree parallel_b
+land parallel_a >"$fixture/parallel-a.log" 2>&1 || { tail -40 "$fixture/parallel-a.log"; exit 1; }
+tip_before="$(git rev-parse HEAD)"
+if land parallel_b >"$fixture/parallel-b-stale.log" 2>&1; then
+  echo 'expected a stale worktree to be rejected' >&2
+  exit 1
+fi
+grep -q 'Rebase the source worktree' "$fixture/parallel-b-stale.log"
+[[ "$(git rev-parse HEAD)" == "$tip_before" ]]
+! git rev-parse --verify -q MERGE_HEAD >/dev/null
+git -C "$fixture/parallel_b" rebase -q origin/master
+land parallel_b >"$fixture/parallel-b.log" 2>&1 || { tail -40 "$fixture/parallel-b.log"; exit 1; }
+[[ "$(git rev-list --merges --count master)" == 0 ]]
 
 # A concurrent land may move the primary checkout, but the batch's build ID
 # and deployed artifact must stay pinned to its own commit.

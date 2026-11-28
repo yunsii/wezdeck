@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Zero-disruption, coalesced release pipeline for WezDeck:
 #
-#   Stage 1 (land.lock, ~2-5 s):   merge --land COMMIT onto primary master,
+#   Stage 1 (land.lock, ~2-5 s):   fast-forward --land COMMIT onto master,
 #                                  verify i18n, push origin/master, enqueue SHA.
 #   Stage 2 (deploy.lock, single): short coalesce debounce (default 5 s), build,
 #                                  MANDATORY L0 core smoke gate (abort before
@@ -192,13 +192,10 @@ fetch_master() {
   git fetch -q origin refs/heads/master:refs/remotes/origin/master
 }
 
-merge_release_input() {
+fast_forward_release_input() {
   local input="$1"
-  if git merge --no-edit "$input" >/dev/null; then return 0; fi
-  if git rev-parse --verify -q MERGE_HEAD >/dev/null; then
-    git merge --abort || return 1
-  fi
-  echo "release: merge failed for $input. Resolve against origin/master in the task worktree." >&2
+  if git merge --ff-only "$input" >/dev/null 2>&1; then return 0; fi
+  echo "release: cannot fast-forward master to $input. Rebase the source worktree onto origin/master, then retry --land; no merge commit was made." >&2
   return 1
 }
 
@@ -226,9 +223,9 @@ land_stage() {
   for attempt in 1 2; do
     remote_head="$(git rev-parse refs/remotes/origin/master)" || exit 1
     if wanted push; then
-      merge_release_input "$remote_head" || exit 1
+      fast_forward_release_input "$remote_head" || exit 1
       if [[ -n "$land_commit" ]]; then
-        merge_release_input "$land_commit" || exit 1
+        fast_forward_release_input "$land_commit" || exit 1
       fi
     else
       git merge --ff-only "$remote_head" >/dev/null || exit 1
