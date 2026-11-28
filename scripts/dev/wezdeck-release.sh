@@ -423,7 +423,7 @@ job_smoke() {
 }
 
 job_gate_full() {
-  (cd "$BATCH_TREE" && scripts/dev/web-affected-tests.sh --base "$batch_base" --run)
+  (cd "$BATCH_TREE" && WEZDECK_REPO="$BATCH_TREE" scripts/dev/web-affected-tests.sh --base "$batch_base" --run)
 }
 
 copy_relay_build_stamps() {
