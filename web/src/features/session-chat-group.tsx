@@ -39,6 +39,7 @@ import { clearable, useClearSession } from './session-clear'
 import type { ChatTone, SessionChat } from './session-chats'
 import { chatTone } from './session-chats'
 import { useChatCollapsed } from './session-collapse'
+import { openSessionRowMenu, SessionPinMenuItem } from './session-pin'
 import { requestNewSession } from './session-new'
 import { hasEditableGroupName } from './session-order'
 import { useGroupNameEditor } from './session-purpose'
@@ -84,6 +85,18 @@ function UnreadBadge({ tone, n }: { tone: string; n: number }) {
   )
 }
 
+function useSubRowStatusLabel(session: SessionCard, tone: ChatTone) {
+  const { t } = useLingui()
+  return session.restart_pending
+    ? t`Restarting…`
+    : {
+        idle: '',
+        running: t`Working`,
+        waiting: t`Waiting on you`,
+        done: t`Done`,
+      }[tone]
+}
+
 function SessionSubRow({
   chat,
   session,
@@ -120,14 +133,7 @@ function SessionSubRow({
   // idle row with a draft must not collapse its second line and jump rows below.
   const compact =
     tone === 'idle' && !(title || prompt || rawDraft || session.restart_pending)
-  const statusLabel = session.restart_pending
-    ? t`Restarting…`
-    : {
-        idle: '',
-        running: t`Working`,
-        waiting: t`Waiting on you`,
-        done: t`Done`,
-      }[tone]
+  const statusLabel = useSubRowStatusLabel(session, tone)
   const warm = () => prefetchSession(client, session.id)
   const canClear =
     device.state === 'approved' &&
@@ -184,6 +190,7 @@ function SessionSubRow({
             onPointerEnter={warm}
             onPointerDown={warm}
             onFocus={warm}
+            onKeyDown={openSessionRowMenu}
             className={cn(
               'list-row flex items-center gap-3 pr-3 pl-7 py-2',
               compact ? 'min-h-14' : 'min-h-16',
@@ -265,6 +272,9 @@ function SessionSubRow({
                   <Pencil size={14} aria-hidden />
                   {t`Edit group name`}
                 </ContextMenu.Item>
+              ) : null}
+              {device.state === 'approved' ? (
+                <SessionPinMenuItem row={session} className={menuItemClass} />
               ) : null}
               {canManage ? (
                 <>

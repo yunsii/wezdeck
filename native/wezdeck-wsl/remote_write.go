@@ -68,6 +68,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = configureAgentProfileSettings(args)
 	case "repo.agent.set":
 		result, err = setRepoAgentProfile(args)
+	case "session.pin":
+		result, err = writeSessionPin(args)
 	case "session.delete":
 		result, err = deleteGroupedSession(args)
 	case "session.restart":

@@ -3,6 +3,7 @@ package main
 // sessionCard is the host's flat session-list contract. The web groups these
 // cards by repo and worktree, then orders groups by OrderAt.
 type sessionCard struct {
+	PinnedAt            int64    `json:"pinned_at,omitempty"`
 	ID                  string   `json:"id"`
 	Agent               string   `json:"agent"`
 	Name                string   `json:"name"`

@@ -32,7 +32,7 @@ export function listRowSignatures(
   for (const repo of painted) {
     for (const chat of repo.chats) {
       out.push({
-        key: chat.key,
+        key: chat.focus.pinned_at ? `pin:${chat.focus.id}` : chat.key,
         status: chat.focus.status,
         unread: chat.unread,
         count: chat.sessions.length,

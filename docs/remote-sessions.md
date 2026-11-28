@@ -116,7 +116,7 @@ status preview remains visible. Chat groups order by the latest stable turn
 start or completion in the group, with unread first within each repo;
 the painted order is held while a cached list is replaced by a poll, and an
 explicit re-tap of 会话 is the refresh point for a new order. Opening a chat
-and transcript output do not reorder rows. Rows carry known brand avatars (including
+and transcript output do not reorder rows. A session can be pinned from its row menu (right-click, long press, or Shift+F10). Pins appear once, before regular rows in the owning repository, newest pin first. The host shares pins across devices via `session.pin {id,pinned}`. A temporary session ID carries its pin to the real ID. Rows carry known brand avatars (including
 [Antigravity's official icon](https://antigravity.google/press)) or a generic
 Bot glyph for unknown agents. Avatar corners are fixed: **top-left** = turn
 status LED (waiting / done / running; idle empty), **bottom-right** = backend /

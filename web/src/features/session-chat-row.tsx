@@ -6,7 +6,7 @@ import { ContextMenu } from '@base-ui/react/context-menu'
 import { useLingui } from '@lingui/react/macro'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CheckCheck, Hash, Plus, Trash2 } from 'lucide-react'
+import { CheckCheck, Hash, Pin, Plus, Trash2 } from 'lucide-react'
 
 import { useLocale } from '#/lib/locale-context'
 import { recordVisit } from '#/lib/session-visits'
@@ -20,6 +20,7 @@ import type { SessionChat } from './session-chats'
 import { chatTone } from './session-chats'
 import { clearable, useClearSession } from './session-clear'
 import { useDeleteSession } from './session-delete'
+import { openSessionRowMenu, SessionPinMenuItem } from './session-pin'
 import { requestNewSession } from './session-new'
 import { SwipeActions } from './session-row-swipe'
 
@@ -88,6 +89,7 @@ export function ChatRow({
             to="/{-$locale}/console/sessions/$id"
             params={{ locale: localeParam, id: row.id }}
             data-session={row.id}
+            data-pinned={row.pinned_at ? true : undefined}
             data-chat={chat.key}
             replace={replace}
             aria-current={selected ? 'page' : undefined}
@@ -95,6 +97,7 @@ export function ChatRow({
             onPointerEnter={warm}
             onPointerDown={warm}
             onFocus={warm}
+            onKeyDown={openSessionRowMenu}
             className={cn(
               'list-row flex min-h-16 items-center gap-3 px-3 py-2',
               selected && 'row-selected',
@@ -118,7 +121,10 @@ export function ChatRow({
                   {row.title?.trim() ||
                     agentLabel(row.agent, row.agent_profile)}
                 </span>
-                <span className="shrink-0 text-meta text-brand-label tabular-nums">
+                <span className="flex shrink-0 items-center gap-1.5 text-meta text-brand-label tabular-nums">
+                  {row.pinned_at ? (
+                    <Pin size={12} aria-label={t`Pinned session`} />
+                  ) : null}
                   {timeLabel}
                 </span>
               </span>
@@ -179,6 +185,9 @@ export function ChatRow({
                 <Hash size={14} aria-hidden />
                 {t`Copy reference`}
               </ContextMenu.Item>
+              {device.state === 'approved' ? (
+                <SessionPinMenuItem row={row} className={menuItemClass} />
+              ) : null}
               {canManage ? (
                 <>
                   <ContextMenu.Item

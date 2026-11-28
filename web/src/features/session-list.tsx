@@ -34,6 +34,7 @@ import {
   chatMatchesQuery,
   chatPreview,
   flattenChats,
+  promoteSessionPins,
 } from './session-chats'
 import type { SessionChat } from './session-chats'
 import {
@@ -43,6 +44,7 @@ import {
   formatChatWeekday,
 } from './chat-time'
 import { useStableChatOrder, useStickyMembers } from './session-stable'
+import { useSessionPinRows } from './session-pin'
 import { useSessionListTrace } from './session-list-trace'
 import {
   ForegroundSyncNotice,
@@ -210,7 +212,7 @@ export function SessionList({
   const { t } = useLingui()
   const sessions = useSessions()
   const syncNotice = useForegroundSyncNotice('list')
-  const rows = sessions.data?.sessions ?? []
+  const rows = useSessionPinRows(sessions.data?.sessions ?? [])
   const rowsWithReplies = useReplyPreviews(rows)
   const creatingJobs = sessions.data?.creating_jobs ?? []
   useDraftRevision()
@@ -241,20 +243,15 @@ export function SessionList({
   const painted = useMemo(() => {
     return groups
       .map((repo) => {
-        const chats = repo.chats
-          .filter((chat) =>
-            chatMatchesQuery(
-              chat,
-              query,
-              chatPreview(chat.focus, previewLabels),
-            ),
-          )
-          .sort((a, b) => {
-            const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
-            const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
-            if (au !== bu) return bu - au
-            return b.activity - a.activity || a.title.localeCompare(b.title)
-          })
+        const ordered = [...repo.chats].sort((a, b) => {
+          const au = keptUnread.has(a.key) || a.unread > 0 ? 1 : 0
+          const bu = keptUnread.has(b.key) || b.unread > 0 ? 1 : 0
+          if (au !== bu) return bu - au
+          return b.activity - a.activity || a.title.localeCompare(b.title)
+        })
+        const chats = promoteSessionPins(ordered).filter((chat) =>
+          chatMatchesQuery(chat, query, chatPreview(chat.focus, previewLabels)),
+        )
         return { ...repo, chats }
       })
       .filter((repo) => repo.chats.length > 0)
@@ -338,6 +335,7 @@ export function SessionList({
               key={repo.key}
               className="group/repo-section bg-brand-surface"
               data-repo={repo.label}
+              data-repo-key={repo.key}
             >
               <RepoSectionHeader
                 label={repo.label}
@@ -351,11 +349,17 @@ export function SessionList({
               <ul className="chat-list">
                 {repo.chats.map((chat) => (
                   <li
-                    key={chat.key}
+                    key={
+                      chat.grouped || chat.sessions.length > 1
+                        ? chat.key
+                        : `session:${chat.focus.id}`
+                    }
                     data-worktree={chat.title}
-                    data-group={chat.sessions.length > 1 ? '' : undefined}
+                    data-group={
+                      chat.grouped || chat.sessions.length > 1 ? '' : undefined
+                    }
                   >
-                    {chat.sessions.length > 1 ? (
+                    {chat.grouped || chat.sessions.length > 1 ? (
                       <ChatGroupRow
                         chat={chat}
                         selectedId={selected}

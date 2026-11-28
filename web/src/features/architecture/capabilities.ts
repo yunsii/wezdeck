@@ -359,6 +359,7 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '确认后移除无人使用的工作树，保留分支与对话记录',
         'After confirmation, remove an unused checkout while keeping its branch and conversations',
       ),
+      c('session.pin', '在仓库内管理会话置顶', 'Manage session pins per repo'),
       c(
         'session.delete',
         '停止并删除一条会话，检查是否可回收空工作树',

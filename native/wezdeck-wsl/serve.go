@@ -163,7 +163,7 @@ func dispatch(req request) response {
 		// …and handing its snapshot back, chunk by chunk
 		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
 	case "remote.send", "remote.deferred.enqueue", "remote.deferred.release", "remote.deferred.cancel", "remote.key", "remote.reply", "remote.attach", "remote.upload",
-		"remote.sent.action", "remote.clear", "remote.session.new", "remote.session.new.trust", "remote.agent.profile.configure", "remote.agent.profile.model", "remote.agent.profile.settings", "remote.repo.agent.set", "remote.session.restart", "remote.session.delete",
+		"remote.sent.action", "remote.clear", "remote.session.new", "remote.session.new.trust", "remote.agent.profile.configure", "remote.agent.profile.model", "remote.agent.profile.settings", "remote.repo.agent.set", "remote.session.restart", "remote.session.pin", "remote.session.delete",
 		"remote.session.handoff", "remote.session.autotitle.update", "remote.ticket.draft", "remote.ticket.new", "remote.ticket.close", "remote.ticket.manager.start", "remote.ticket.manager.park", "remote.ticket.manager.send", "remote.worktree.describe", "remote.worktree.recycle", "remote.worktree.remove", "remote.host.warp.set":
 		// a browser on this computer through the local Runtime (remote_write.go)
 		payload := req.Payload

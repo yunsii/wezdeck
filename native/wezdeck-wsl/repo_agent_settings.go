@@ -73,8 +73,8 @@ func repoAgentProfile(repo string) (profile, source string, err error) {
 	return workspaceAgentProfiles([]string{repo})[0], "workspace", nil
 }
 
-func lockRepoAgentSettings() (func(), error) {
-	path := repoAgentSettingsPath() + ".lock"
+func lockPrivateStateFile(path string) (func(), error) {
+	path += ".lock"
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func setRepoAgentProfile(args json.RawMessage) (any, error) {
 			return nil, errors.New("repo.agent.set: configure the Kimi API key first")
 		}
 	}
-	unlock, err := lockRepoAgentSettings()
+	unlock, err := lockPrivateStateFile(repoAgentSettingsPath())
 	if err != nil {
 		return nil, errors.New("repo.agent.set: cannot lock settings")
 	}

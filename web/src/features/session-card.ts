@@ -6,6 +6,7 @@ import type { BgTask } from './session-background'
 
 export type SessionCard = {
   id: string
+  pinned_at?: number
   agent: string
   name: string
   /** Auto or /rename title from Claude aiTitle / Grok summary. */

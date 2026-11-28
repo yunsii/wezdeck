@@ -156,13 +156,13 @@ func TestNewSessionDistinguishesUnreadableAgentSettings(t *testing.T) {
 
 func TestRepositoryAgentSettingsLockBlocksConcurrentWriter(t *testing.T) {
 	_, _ = newSessionFixture(t)
-	unlock, err := lockRepoAgentSettings()
+	unlock, err := lockPrivateStateFile(repoAgentSettingsPath())
 	if err != nil {
 		t.Fatal(err)
 	}
 	acquired := make(chan error, 1)
 	go func() {
-		release, err := lockRepoAgentSettings()
+		release, err := lockPrivateStateFile(repoAgentSettingsPath())
 		if err == nil {
 			release()
 		}

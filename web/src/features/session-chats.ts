@@ -112,6 +112,8 @@ export type SessionChat = {
   repoLabel: string
   /** sessions in this worktree (pane order kept for switcher) */
   sessions: Array<SessionCard>
+  /** Keep the workspace group when some members are pinned above it. */
+  grouped?: boolean
   /** the session the row preview / open target uses */
   focus: SessionCard
   unread: number
@@ -258,6 +260,49 @@ export function buildChatGroups(
   return groups.sort(
     (a, b) => b.activity - a.activity || a.label.localeCompare(b.label),
   )
+}
+
+/** Promote individual sessions inside their repository, keeping their worktree identity. */
+export function promoteSessionPins(
+  chats: Array<SessionChat>,
+): Array<SessionChat> {
+  const pinned: Array<SessionChat> = []
+  const ordinary: Array<SessionChat> = []
+  for (const chat of chats) {
+    const remaining: Array<SessionCard> = []
+    for (const row of chat.sessions) {
+      if (row.pinned_at) {
+        pinned.push({
+          ...chat,
+          sessions: [row],
+          focus: row,
+          unread: Number(needsYou(row)),
+        })
+      } else {
+        remaining.push(row)
+      }
+    }
+    if (remaining.length === chat.sessions.length) {
+      ordinary.push(chat)
+      continue
+    }
+    const focus = resolveChatFocus(remaining)
+    if (focus) {
+      ordinary.push({
+        ...chat,
+        sessions: remaining,
+        focus,
+        unread: remaining.filter(needsYou).length,
+        grouped: chat.sessions.length > 1,
+      })
+    }
+  }
+  pinned.sort(
+    (a, b) =>
+      (b.focus.pinned_at ?? 0) - (a.focus.pinned_at ?? 0) ||
+      a.focus.id.localeCompare(b.focus.id),
+  )
+  return [...pinned, ...ordinary]
 }
 
 /** flat chat order as the list paints them (j / k, default pick) */

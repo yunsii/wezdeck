@@ -23,6 +23,7 @@ export const OPEN_ACTIONS = new Set([
   'repo.agent.set',
   'session.restart',
   'session.delete',
+  'session.pin',
   'session.handoff',
   'session.autotitle.update',
   'ticket.draft',

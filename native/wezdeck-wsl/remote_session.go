@@ -450,6 +450,10 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		listed[c.ID] = true
 	}
 	redirects := sessionRedirectsFromSnap(recent, entries, paneSnap, listed)
+	pins := sessionPinsForList(redirects)
+	for i := range cards {
+		cards[i].PinnedAt = pins[cards[i].ID]
+	}
 	jobs := activeNewSessionJobsFor(cards)
 	timing.add("post_ms", time.Since(tPost))
 	return map[string]any{

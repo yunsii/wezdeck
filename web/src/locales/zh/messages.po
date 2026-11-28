@@ -378,8 +378,8 @@ msgid "Agent name"
 msgstr "Agent 名"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:326
-#: src/features/session-list.tsx:392
+#: src/features/session-list.tsx:323
+#: src/features/session-list.tsx:396
 msgid "Agent sessions"
 msgstr "Agent 会话"
 
@@ -951,14 +951,14 @@ msgstr "清空输入"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:300
-#: src/features/session-list.tsx:111
-#: src/features/session-list.tsx:316
+#: src/features/session-list.tsx:113
+#: src/features/session-list.tsx:313
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "清除搜索"
 
-#: src/features/session-chat-group.tsx:157
-#: src/features/session-chat-row.tsx:71
+#: src/features/session-chat-group.tsx:163
+#: src/features/session-chat-row.tsx:72
 #: src/features/session-clear.tsx:148
 msgid "Clearing…"
 msgstr "处理中…"
@@ -1029,7 +1029,7 @@ msgstr "协作工单"
 msgid "Collapse child tickets"
 msgstr "折叠子工单"
 
-#: src/features/session-chat-group.tsx:412
+#: src/features/session-chat-group.tsx:422
 msgid "Collapse sessions"
 msgstr "折叠会话列表"
 
@@ -1289,10 +1289,10 @@ msgstr "复制引用"
 #: src/features/me-agent-detail.tsx:347
 #: src/features/me-agents.tsx:83
 #: src/features/me-agents.tsx:84
-#: src/features/session-chat-group.tsx:148
-#: src/features/session-chat-group.tsx:258
-#: src/features/session-chat-row.tsx:62
-#: src/features/session-chat-row.tsx:180
+#: src/features/session-chat-group.tsx:154
+#: src/features/session-chat-group.tsx:265
+#: src/features/session-chat-row.tsx:63
+#: src/features/session-chat-row.tsx:186
 #: src/features/session-info-actions.tsx:115
 #: src/features/ticket-info.tsx:147
 #: src/features/ticket-keys.tsx:327
@@ -1370,6 +1370,10 @@ msgstr "读不到设备列表：{errorText}"
 msgid "Could not read the sources: {errorText}"
 msgstr "读不到本机来源：{errorText}"
 
+#: src/features/session-pin.tsx:98
+msgid "Could not save session pin"
+msgstr "无法保存会话置顶状态"
+
 #: src/features/console-usage.tsx:147
 msgid "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {billable}); {wsOut} outgoing messages are free."
 msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} 条 ÷ 20（≈ {billable}）；发出的 {wsOut} 条免费。"
@@ -1391,7 +1395,7 @@ msgstr "创建工单"
 msgid "Create workspace"
 msgstr "创建工作区"
 
-#: src/features/session-list.tsx:141
+#: src/features/session-list.tsx:143
 msgid "Creating sessions"
 msgstr "创建中的会话"
 
@@ -1473,8 +1477,8 @@ msgstr "受限"
 msgid "Delete “{title}”? This stops its agent. An empty, clean worktree may be removed. The conversation history is kept."
 msgstr "删除「{title}」？此操作会停止 Agent。符合条件的空工作树也会被移除，聊天记录会保留。"
 
-#: src/features/session-chat-group.tsx:287
-#: src/features/session-chat-row.tsx:206
+#: src/features/session-chat-group.tsx:297
+#: src/features/session-chat-row.tsx:215
 #: src/features/session-delete.tsx:109
 #: src/features/session-info.tsx:397
 msgid "Delete session"
@@ -1610,8 +1614,8 @@ msgstr "文档"
 #: src/features/chat-tools.tsx:100
 #: src/features/chat-turn.tsx:163
 #: src/features/landing-page.tsx:345
-#: src/features/session-chat-group.tsx:129
-#: src/features/session-list.tsx:61
+#: src/features/session-chat-group.tsx:96
+#: src/features/session-list.tsx:63
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "已完成"
@@ -1620,8 +1624,8 @@ msgstr "已完成"
 msgid "done {when}"
 msgstr "{when} 完成"
 
-#: src/features/session-chat-group.tsx:65
-#: src/features/session-chat-row.tsx:132
+#: src/features/session-chat-group.tsx:66
+#: src/features/session-chat-row.tsx:138
 #: src/features/ticket-keys.tsx:384
 msgid "Draft"
 msgstr "草稿"
@@ -1642,8 +1646,8 @@ msgstr "回填编辑"
 msgid "Edit and resend"
 msgstr "修改重发"
 
-#: src/features/session-chat-group.tsx:266
-#: src/features/session-chat-group.tsx:445
+#: src/features/session-chat-group.tsx:273
+#: src/features/session-chat-group.tsx:455
 #: src/features/session-purpose.tsx:59
 msgid "Edit group name"
 msgstr "修改组名"
@@ -1753,7 +1757,7 @@ msgstr "退出码"
 msgid "Expand child tickets"
 msgstr "展开子工单"
 
-#: src/features/session-chat-group.tsx:349
+#: src/features/session-chat-group.tsx:359
 msgid "Expand sessions"
 msgstr "展开会话列表"
 
@@ -2384,10 +2388,10 @@ msgstr "手动 /rename"
 msgid "Manual fields"
 msgstr "手动填写"
 
-#: src/features/session-chat-group.tsx:156
-#: src/features/session-chat-group.tsx:298
-#: src/features/session-chat-row.tsx:70
-#: src/features/session-chat-row.tsx:217
+#: src/features/session-chat-group.tsx:162
+#: src/features/session-chat-group.tsx:308
+#: src/features/session-chat-row.tsx:71
+#: src/features/session-chat-row.tsx:226
 #: src/features/session-clear.tsx:147
 #: src/features/session-clear.tsx:191
 msgid "Mark read"
@@ -2498,7 +2502,7 @@ msgstr "自动命名会话"
 msgid "Native"
 msgstr "原生"
 
-#: src/features/session-list.tsx:60
+#: src/features/session-list.tsx:62
 msgid "Needs a decision"
 msgstr "需要确认"
 
@@ -2534,8 +2538,8 @@ msgid "New line"
 msgstr "换行"
 
 #: src/features/sent-history-row.tsx:116
-#: src/features/session-chat-group.tsx:213
-#: src/features/session-list.tsx:158
+#: src/features/session-chat-group.tsx:220
+#: src/features/session-list.tsx:160
 #: src/features/session-new-header.tsx:35
 #: src/features/session-new-job.tsx:391
 #: src/features/session-new-job.tsx:391
@@ -2555,9 +2559,9 @@ msgstr "新会话（c）"
 msgid "New session group"
 msgstr "新会话组"
 
-#: src/features/session-chat-group.tsx:276
-#: src/features/session-chat-group.tsx:460
-#: src/features/session-chat-row.tsx:195
+#: src/features/session-chat-group.tsx:286
+#: src/features/session-chat-group.tsx:470
+#: src/features/session-chat-row.tsx:204
 #: src/features/session-info.tsx:382
 #: src/features/session-new-header.tsx:35
 #: src/features/session-worktree-detail.tsx:172
@@ -2634,7 +2638,7 @@ msgstr "有一阵子没动静了"
 msgid "No activity yet"
 msgstr "还没有动态"
 
-#: src/features/session-list.tsx:321
+#: src/features/session-list.tsx:318
 msgid "No agent sessions are running."
 msgstr "现在没有正在运行的 Agent 会话。"
 
@@ -2663,7 +2667,7 @@ msgstr "Runtime 采样输入法时没有可用的前台窗口。"
 msgid "No headless runs recorded for this ticket."
 msgstr "这张工单还没有后台运行记录。"
 
-#: src/features/session-list.tsx:63
+#: src/features/session-list.tsx:65
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
@@ -2719,7 +2723,7 @@ msgstr "暂无已发送消息记录。"
 msgid "No session titles recorded yet."
 msgstr "暂无已记录的会话标题。"
 
-#: src/features/session-list.tsx:308
+#: src/features/session-list.tsx:305
 msgid "No sessions match that search."
 msgstr "没有匹配的会话。"
 
@@ -3132,6 +3136,14 @@ msgstr "从左边选一个对话。j / k 在列表里上下切换。"
 #: src/features/session-skills.tsx:62
 msgid "pick an earlier one"
 msgstr "选一个旧会话"
+
+#: src/features/session-pin.tsx:114
+msgid "Pin in this repository"
+msgstr "在此仓库置顶"
+
+#: src/features/session-chat-row.tsx:126
+msgid "Pinned session"
+msgstr "已置顶会话"
 
 #: src/features/session-statusbar.tsx:114
 #: src/features/ticket-pipeline.tsx:328
@@ -3602,7 +3614,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/session-chat-group.tsx:124
+#: src/features/session-chat-group.tsx:91
 msgid "Restarting…"
 msgstr "正在重启…"
 
@@ -3901,8 +3913,8 @@ msgstr "搜索名称或描述"
 msgid "Search or filter the list"
 msgstr "搜索或筛选列表"
 
-#: src/features/session-list.tsx:101
-#: src/features/session-list.tsx:102
+#: src/features/session-list.tsx:103
+#: src/features/session-list.tsx:104
 msgid "Search sessions"
 msgstr "搜索会话"
 
@@ -4082,15 +4094,15 @@ msgstr "会话数"
 #: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:256
-#: src/features/session-list.tsx:287
-#: src/features/session-list.tsx:414
+#: src/features/session-list.tsx:284
+#: src/features/session-list.tsx:418
 #: src/features/session-new-header.tsx:23
 #: src/features/session-new-job.tsx:404
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
 
-#: src/features/session-list.tsx:298
+#: src/features/session-list.tsx:295
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
@@ -4936,6 +4948,10 @@ msgstr "解锁"
 msgid "Unlock to resume auto-titling"
 msgstr "解除锁定并恢复自动更新"
 
+#: src/features/session-pin.tsx:114
+msgid "Unpin session"
+msgstr "取消置顶"
+
 #: src/features/session-commands.tsx:160
 #: src/features/session-header.tsx:240
 #: src/features/session-header.tsx:242
@@ -5118,8 +5134,8 @@ msgid "waiting on you"
 msgstr "等你回复"
 
 #: src/features/landing-page.tsx:215
-#: src/features/session-chat-group.tsx:128
-#: src/features/session-list.tsx:59
+#: src/features/session-chat-group.tsx:95
+#: src/features/session-list.tsx:61
 #: src/features/tickets-view.tsx:391
 #: src/features/tickets-view.tsx:538
 msgid "Waiting on you"
@@ -5301,8 +5317,8 @@ msgstr "运行中"
 
 #: src/features/chat-turn.tsx:146
 #: src/features/landing-page.tsx:340
-#: src/features/session-chat-group.tsx:127
-#: src/features/session-list.tsx:62
+#: src/features/session-chat-group.tsx:94
+#: src/features/session-list.tsx:64
 msgid "Working"
 msgstr "运行中"
 
@@ -5353,7 +5369,7 @@ msgid "yes"
 msgstr "是"
 
 #: src/features/console-activity.tsx:170
-#: src/features/session-list.tsx:74
+#: src/features/session-list.tsx:76
 msgid "Yesterday"
 msgstr "昨天"
 
