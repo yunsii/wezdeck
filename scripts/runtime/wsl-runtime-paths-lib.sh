@@ -44,6 +44,9 @@ WSL_ACCESS_LEDGER_FILE="$WSL_RUNTIME_STATE_DIR/access-ledger.json"
 # Pane-bound agent session pins (worktree cwd + primary|secondary → session id).
 # Survives tmux kill-server; WSL-only ext4. See agent-session-resolve.sh.
 WSL_AGENT_SESSION_PINS_FILE="$WSL_RUNTIME_STATE_DIR/agent-session-pins.json"
+# Managed tmux window inventory for cold WSL startup. Commands are resolved
+# from current launcher configuration at restore time, never stored here.
+WSL_TMUX_SESSIONS_FILE="$WSL_RUNTIME_STATE_DIR/tmux-sessions.json"
 # Alt+x overflow menu base TSV — WSL-only consumer (bash menu + builder).
 # Lives on ext4 so press-time reads avoid /mnt/c (~5× slower). Builder still
 # reads items/stats from the Windows tab-stats dir for Lua co-consumers.

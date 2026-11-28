@@ -37,6 +37,7 @@ Stay non-sparse and compact periodically instead. That is also where the communi
 Order matters — compacting before trimming reclaims nothing, and every step after the first requires the distro to be fully stopped.
 
 1. **Delete inside the guest** (see inventory below).
+   Before intentionally stopping WSL for compaction, run `scripts/runtime/tmux-session-persist.sh save` when tmux session persistence is installed. The WSL startup service will rebuild managed windows from that snapshot; in-flight agent work still needs review.
 2. **`sudo fstrim -av`** — marks freed blocks as discardable. **This is the step that determines how much compaction reclaims**, not a precaution: the host cannot read the guest's ext4, so the TRIM record is its only evidence of which blocks are dead (see the mode note in step 4). The root mount already carries `discard` so most of it happens continuously, but run it anyway — it is cheap and idempotent. It reports *all* free space on each run, not a delta, so a large number is not evidence that continuous discard was broken.
 3. **Stop the distro** from Windows. Prefer `wsl --manage <Distro> --compact` on WSL 3.0.1+ (it force-terminates, discard-checks, then compacts in one shot). Otherwise `wsl --shutdown` then step 4. Either path kills every tmux session, every agent pane, and the OpenClaw gateway — an agent inside the distro cannot perform it.
 4. **Compact** (only if you used `wsl --shutdown` instead of `--compact`), in an elevated PowerShell:
