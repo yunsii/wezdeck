@@ -131,7 +131,7 @@ export function HostResources() {
   const vhdxSize = gib(data?.vhdx_bytes ?? 0)
   const reusable = gib(data?.gap_bytes ?? 0)
   return (
-    <section className="grid gap-2">
+    <section className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
       <SectionHeading
         as="h2"
         className="bg-brand-deck"
