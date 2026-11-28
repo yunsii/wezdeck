@@ -34,6 +34,27 @@ Stay non-sparse and compact periodically instead. That is also where the communi
 
 ### Reclaim procedure
 
+For this workstation, `scripts/dev/wsl-reclaim-restart.sh --dry-run` reports
+the resolved distro, VHDX path, Windows user, keepalive task, Web origin and
+active agent turns. `--smoke` stages and launches the real Windows worker,
+tests its NTFS status handshake, snapshots tmux and runs the same service/Web
+health checks while WSL stays up; it skips cache cleanup, TRIM and compaction.
+The actual command refuses to stop WSL while any turn is
+running or waiting; `--force-stop` explicitly permits interrupting them. The
+actual command needs a real terminal for `sudo fstrim` and must be approved
+with the understanding that all WSL processes, including this caller, stop.
+The script clears only the Go build cache, snapshots tmux, runs `sudo fstrim`, and
+hands compaction to a Windows PowerShell worker. The worker checks that the
+VHDX matches the distro's Windows registry path before WSL stops, then
+compacts, starts `WezDeck WSL Keepalive`, and waits for the tmux restore,
+systemd relay and authenticated `/relay/health` host connection. Its progress
+and before/after byte counts stay on NTFS at
+`%LOCALAPPDATA%\wezterm-runtime\state\disk-reclaim\status.json`, readable
+after WSL restarts. Override machine-specific targets with `--distro`,
+`--vhdx`, `--keepalive-task`, `--wsl-user` or `--web-origin`. The browser
+reconnects through its existing retry path once the host relay is back; the
+worker verifies host connectivity, not each individual browser tab.
+
 Order matters — compacting before trimming reclaims nothing, and every step after the first requires the distro to be fully stopped.
 
 1. **Delete inside the guest** (see inventory below).
