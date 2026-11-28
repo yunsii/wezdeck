@@ -14,11 +14,13 @@ const USER_SCROLL_WINDOW_MS = 600
 export function SplitColumn({
   label,
   head,
+  headClassName,
   className,
   children,
 }: {
   label: string
   head: React.ReactNode
+  headClassName?: string
   className?: string
   children: React.ReactNode
 }) {
@@ -90,7 +92,10 @@ export function SplitColumn({
     >
       <div
         data-testid="split-head"
-        className="grid shrink-0 gap-3 overflow-hidden px-[var(--split-pad)] py-2.5 shadow-[inset_0_-1px_0_var(--brand-edge)]"
+        className={cn(
+          'grid shrink-0 gap-3 overflow-hidden px-[var(--split-pad)] py-2.5 shadow-[inset_0_-1px_0_var(--brand-edge)]',
+          headClassName,
+        )}
       >
         {head}
       </div>

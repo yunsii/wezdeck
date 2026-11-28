@@ -378,8 +378,8 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:321
-#: src/features/session-list.tsx:387
+#: src/features/session-list.tsx:326
+#: src/features/session-list.tsx:392
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -814,7 +814,7 @@ msgstr "Cache"
 msgid "Cache hit"
 msgstr "Cache hit"
 
-#: src/features/session-header.tsx:124
+#: src/features/session-header.tsx:128
 msgid "cache hit {hit}%"
 msgstr "cache hit {hit}%"
 
@@ -947,8 +947,8 @@ msgstr "Clear input"
 
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:300
-#: src/features/session-list.tsx:107
-#: src/features/session-list.tsx:311
+#: src/features/session-list.tsx:111
+#: src/features/session-list.tsx:316
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "Clear search"
@@ -1152,7 +1152,7 @@ msgstr "Console"
 msgid "Console ({origin})"
 msgstr "Console ({origin})"
 
-#: src/features/console-shell.tsx:356
+#: src/features/console-shell.tsx:357
 msgid "Console navigation"
 msgstr "Console navigation"
 
@@ -1166,7 +1166,7 @@ msgstr "Contents"
 msgid "Context"
 msgstr "Context"
 
-#: src/features/session-header.tsx:121
+#: src/features/session-header.tsx:125
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
@@ -1387,7 +1387,7 @@ msgstr "Create ticket"
 msgid "Create workspace"
 msgstr "Create workspace"
 
-#: src/features/session-list.tsx:137
+#: src/features/session-list.tsx:141
 msgid "Creating sessions"
 msgstr "Creating sessions"
 
@@ -1607,7 +1607,7 @@ msgstr "Documents"
 #: src/features/chat-turn.tsx:163
 #: src/features/landing-page.tsx:345
 #: src/features/session-chat-group.tsx:129
-#: src/features/session-list.tsx:57
+#: src/features/session-list.tsx:61
 #: src/features/ticket-pipeline.tsx:338
 msgid "Done"
 msgstr "Done"
@@ -1778,7 +1778,7 @@ msgstr "Failed to refresh links"
 msgid "Failure or merge conflict"
 msgstr "Failure or merge conflict"
 
-#: src/features/foreground-sync.tsx:124
+#: src/features/foreground-sync.tsx:169
 msgid "Fetching latest status…"
 msgstr "Fetching latest status…"
 
@@ -2233,7 +2233,7 @@ msgstr "Light"
 msgid "Limits"
 msgstr "Limits"
 
-#: src/features/session-header.tsx:125
+#: src/features/session-header.tsx:129
 msgid "limits as of {limitsAt}"
 msgstr "limits as of {limitsAt}"
 
@@ -2289,7 +2289,7 @@ msgstr "Loading original…"
 #: src/features/repo-links.tsx:146
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
-#: src/features/session-header.tsx:278
+#: src/features/session-header.tsx:283
 #: src/features/session-skeleton.tsx:20
 #: src/features/session-skills.tsx:233
 #: src/features/session-worktree-manager.tsx:382
@@ -2494,7 +2494,7 @@ msgstr "Names sessions"
 msgid "Native"
 msgstr "Native"
 
-#: src/features/session-list.tsx:56
+#: src/features/session-list.tsx:60
 msgid "Needs a decision"
 msgstr "Needs a decision"
 
@@ -2531,7 +2531,7 @@ msgstr "New line"
 
 #: src/features/sent-history-row.tsx:116
 #: src/features/session-chat-group.tsx:213
-#: src/features/session-list.tsx:154
+#: src/features/session-list.tsx:158
 #: src/features/session-new-header.tsx:35
 #: src/features/session-new-job.tsx:402
 #: src/features/session-new-job.tsx:402
@@ -2630,7 +2630,7 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:316
+#: src/features/session-list.tsx:321
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2659,7 +2659,7 @@ msgstr "No foreground window was available when Runtime sampled the IME."
 msgid "No headless runs recorded for this ticket."
 msgstr "No headless runs recorded for this ticket."
 
-#: src/features/session-list.tsx:59
+#: src/features/session-list.tsx:63
 msgid "No human message yet"
 msgstr "No human message yet"
 
@@ -2715,7 +2715,7 @@ msgstr "No sent messages recorded yet."
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
-#: src/features/session-list.tsx:303
+#: src/features/session-list.tsx:308
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -3018,7 +3018,7 @@ msgstr "outline a plan before editing"
 msgid "Output"
 msgstr "Output"
 
-#: src/features/session-header.tsx:123
+#: src/features/session-header.tsx:127
 msgid "output {outputTokens}"
 msgstr "output {outputTokens}"
 
@@ -3372,7 +3372,7 @@ msgstr "Relay requests (Durable Object)"
 msgid "Reload"
 msgstr "Reload"
 
-#: src/features/console-shell.tsx:347
+#: src/features/console-shell.tsx:348
 msgid "Remote"
 msgstr "Remote"
 
@@ -3456,12 +3456,12 @@ msgid "Repo filter"
 msgstr "Repo filter"
 
 #: src/features/composer-suggest-list.tsx:39
-#: src/features/session-header.tsx:296
+#: src/features/session-header.tsx:301
 #: src/features/session-tickets.tsx:218
 msgid "Repo tickets"
 msgstr "Repo tickets"
 
-#: src/features/session-header.tsx:297
+#: src/features/session-header.tsx:302
 msgid "Repo tickets (t)"
 msgstr "Repo tickets (t)"
 
@@ -3552,7 +3552,7 @@ msgstr "Resend"
 msgid "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
 msgstr "Reset this worktree to the latest default branch and restart its agent? Undelivered or local changes block the reset."
 
-#: src/features/session-header.tsx:112
+#: src/features/session-header.tsx:116
 msgid "resets {reset}"
 msgstr "resets {reset}"
 
@@ -3630,8 +3630,8 @@ msgstr "Retry loading earlier"
 
 #: src/features/foreground-sync.tsx:148
 #: src/features/foreground-sync.tsx:149
-msgid "Retry sync"
-msgstr "Retry sync"
+#~ msgid "Retry sync"
+#~ msgstr "Retry sync"
 
 #: src/features/session-worktree-manager.tsx:118
 msgid "Reusable"
@@ -3889,8 +3889,8 @@ msgstr "Search name or description"
 msgid "Search or filter the list"
 msgstr "Search or filter the list"
 
-#: src/features/session-list.tsx:97
-#: src/features/session-list.tsx:98
+#: src/features/session-list.tsx:101
+#: src/features/session-list.tsx:102
 msgid "Search sessions"
 msgstr "Search sessions"
 
@@ -3990,7 +3990,7 @@ msgid "Session"
 msgstr "Session"
 
 #: src/features/session-actions.tsx:40
-#: src/features/session-header.tsx:320
+#: src/features/session-header.tsx:325
 msgid "Session actions"
 msgstr "Session actions"
 
@@ -4030,8 +4030,8 @@ msgstr "Session id"
 msgid "Session ID, tmux, transcript file and capabilities"
 msgstr "Session ID, tmux, transcript file and capabilities"
 
-#: src/features/session-header.tsx:264
-#: src/features/session-header.tsx:335
+#: src/features/session-header.tsx:269
+#: src/features/session-header.tsx:340
 #: src/features/session-info.tsx:290
 msgid "Session info"
 msgstr "Session info"
@@ -4051,16 +4051,16 @@ msgstr "Sessions"
 
 #: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:89
-#: src/features/session-header.tsx:251
-#: src/features/session-list.tsx:282
-#: src/features/session-list.tsx:402
+#: src/features/session-header.tsx:256
+#: src/features/session-list.tsx:287
+#: src/features/session-list.tsx:414
 #: src/features/session-new-header.tsx:23
 #: src/features/session-new-job.tsx:415
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:293
+#: src/features/session-list.tsx:298
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
@@ -4141,7 +4141,7 @@ msgstr "Skills · {count}"
 msgid "Skills this agent was given"
 msgstr "Skills this agent was given"
 
-#: src/features/console-shell.tsx:402
+#: src/features/console-shell.tsx:403
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -4373,11 +4373,11 @@ msgctxt "git"
 msgid "Synced"
 msgstr "Synced"
 
-#: src/features/foreground-sync.tsx:129
+#: src/features/foreground-sync.tsx:174
 msgid "Synced {time}"
 msgstr "Synced {time}"
 
-#: src/features/foreground-sync.tsx:123
+#: src/features/foreground-sync.tsx:168
 msgid "Syncing · last synced {time}"
 msgstr "Syncing · last synced {time}"
 
@@ -4544,7 +4544,7 @@ msgstr "This browser does not support Web Push notifications."
 
 #: src/features/console-me.tsx:62
 #: src/features/console-me.tsx:259
-#: src/features/console-shell.tsx:345
+#: src/features/console-shell.tsx:346
 msgid "This computer"
 msgstr "This computer"
 
@@ -4861,11 +4861,11 @@ msgstr "Turns"
 msgid "Type a message to wake and steer the ticket manager…"
 msgstr "Type a message to wake and steer the ticket manager…"
 
-#: src/features/foreground-sync.tsx:128
+#: src/features/foreground-sync.tsx:173
 msgid "Unable to sync"
 msgstr "Unable to sync"
 
-#: src/features/foreground-sync.tsx:127
+#: src/features/foreground-sync.tsx:172
 msgid "Unable to sync · last synced {time}"
 msgstr "Unable to sync · last synced {time}"
 
@@ -4903,8 +4903,8 @@ msgid "Unlock to resume auto-titling"
 msgstr "Unlock to resume auto-titling"
 
 #: src/features/session-commands.tsx:160
-#: src/features/session-header.tsx:235
-#: src/features/session-header.tsx:237
+#: src/features/session-header.tsx:240
+#: src/features/session-header.tsx:242
 #: src/features/session-info.tsx:218
 msgid "Untitled session"
 msgstr "Untitled session"
@@ -5072,7 +5072,7 @@ msgstr "waiting on you"
 
 #: src/features/landing-page.tsx:215
 #: src/features/session-chat-group.tsx:128
-#: src/features/session-list.tsx:55
+#: src/features/session-list.tsx:59
 #: src/features/tickets-view.tsx:391
 #: src/features/tickets-view.tsx:538
 msgid "Waiting on you"
@@ -5135,10 +5135,10 @@ msgstr "WebRTC: {note}"
 msgid "WebSocket relay"
 msgstr "WebSocket relay"
 
-#: src/features/console-shell.tsx:342
-#: src/features/console-shell.tsx:345
-#: src/features/console-shell.tsx:347
+#: src/features/console-shell.tsx:343
+#: src/features/console-shell.tsx:346
 #: src/features/console-shell.tsx:348
+#: src/features/console-shell.tsx:349
 #: src/features/console-shell.tsx:496
 #: src/features/session-skills.tsx:45
 msgid "WezDeck"
@@ -5251,7 +5251,7 @@ msgstr "working"
 #: src/features/chat-turn.tsx:146
 #: src/features/landing-page.tsx:340
 #: src/features/session-chat-group.tsx:127
-#: src/features/session-list.tsx:58
+#: src/features/session-list.tsx:62
 msgid "Working"
 msgstr "Working"
 
@@ -5295,7 +5295,7 @@ msgid "yes"
 msgstr "yes"
 
 #: src/features/console-activity.tsx:170
-#: src/features/session-list.tsx:70
+#: src/features/session-list.tsx:74
 msgid "Yesterday"
 msgstr "Yesterday"
 

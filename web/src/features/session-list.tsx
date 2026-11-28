@@ -44,6 +44,10 @@ import {
 } from './chat-time'
 import { useStickyMembers } from './session-stable'
 import { useSessionListTrace } from './session-list-trace'
+import {
+  ForegroundSyncNotice,
+  useForegroundSyncNotice,
+} from './foreground-sync'
 import { useSessions } from './console-sessions'
 import type { SessionCard } from './console-sessions'
 import { useReplyPreviews } from './session-reply-preview'
@@ -205,6 +209,7 @@ export function SessionList({
 }: { selected?: string; split?: boolean } = {}) {
   const { t } = useLingui()
   const sessions = useSessions()
+  const syncNotice = useForegroundSyncNotice('list')
   const rows = sessions.data?.sessions ?? []
   const rowsWithReplies = useReplyPreviews(rows)
   const creatingJobs = sessions.data?.creating_jobs ?? []
@@ -386,12 +391,19 @@ export function SessionList({
       <SplitColumn
         label={t`Agent sessions`}
         className="bg-brand-surface [--split-pad:0.75rem]"
+        headClassName="relative z-20 overflow-visible"
         head={
-          <div className="flex min-w-0 items-center gap-2">
-            {title}
-            <ChatSearch value={query} onChange={setQuery} />
-            <NewSessionButton />
-          </div>
+          <>
+            <div className="flex min-w-0 items-center gap-2">
+              {title}
+              <ChatSearch value={query} onChange={setQuery} />
+              <NewSessionButton />
+            </div>
+            <ForegroundSyncNotice
+              kind="list"
+              notice={selected ? null : syncNotice}
+            />
+          </>
         }
       >
         {body}
@@ -405,6 +417,10 @@ export function SessionList({
           <ChatSearch value={query} onChange={setQuery} />
           <NewSessionButton />
         </div>
+        <ForegroundSyncNotice
+          kind="list"
+          notice={selected ? null : syncNotice}
+        />
       </StickyBar>
       {body}
     </div>
