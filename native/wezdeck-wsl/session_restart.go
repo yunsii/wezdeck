@@ -43,6 +43,10 @@ func restartSession(args json.RawMessage) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Anything still outside the transcript belongs to the old process. Do
+	// this before both resume and fresh respawns so the restarted pane cannot
+	// resurrect an old web send as an active turn.
+	dismissSessionOutbox(a.ID, "discarded at process restart")
 	agent := sessionAgentFamily(e)
 	cmdPath := os.Getenv("WEZDECK_SESSION_RESTART_CMD")
 	if cmdPath == "" {
