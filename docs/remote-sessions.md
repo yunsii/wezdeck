@@ -167,16 +167,16 @@ tmux socket / session / pane, status `running|waiting|done` and
 `waiting_kind`), the only place that already knows every hooked agent
 (Claude, codex, grok) and its pane. `wezdeck-wsl relay` answers:
 
-For a tracked Codex conversation, detail polls check the pane command with the
-same predicate as message writes. When Codex exits, `session` returns
-`read_only: true` with the transcript and clears the displayed live prompt.
-The session list also clears the stale live status. A tracked Codex session
-with its transcript and original pinned shell exposes `can_recover`. An
-approved device can call `session.restart {id, recover:true}` to resume the
-same conversation in that pane. The relay verifies the target again before
-launch and records the outcome as `session_recover`.
-The Web composer returns when the pane runs Codex again. The browser records
-the transition in the `session-sync` trace.
+For tracked Codex sessions, detail polls check the pane command with the write guard.
+When Codex exits, `session` returns `read_only: true` with the transcript and
+clears the live prompt; the list also clears stale live status. Read-only list
+and detail location use the transcript's recorded cwd, since the exited pane
+may return to a shell in another directory. Pane coordinates stay available
+for recovery. A session with its transcript and original pinned shell exposes
+`can_recover`; an approved device can call `session.restart {id, recover:true}`
+to resume it. The relay checks the target again and logs `session_recover`.
+Once Codex runs, the Web composer returns and the browser traces the change
+as `session-sync`.
 
 | Action | Kind | What it does |
 | --- | --- | --- |

@@ -116,7 +116,9 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 		t.Fatal(err)
 	}
 	const id = "codex-tracked"
-	content := `{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"text":"done"}]}}` + "\n"
+	recordedCwd := filepath.Join(dir, "recorded-checkout")
+	content := fmt.Sprintf(`{"type":"session_meta","payload":{"cwd":%q}}`, recordedCwd) + "\n" +
+		`{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"text":"done"}]}}` + "\n"
 	if err := os.WriteFile(filepath.Join(transcripts, "rollout-2026-11-26T09-49-10-"+id+".jsonl"), []byte(content), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -144,6 +146,21 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 		if readOnly && (detail["status"] != "idle" || detail["waiting_kind"] != "" || detail["focus"] != nil || detail["screen"] != nil) {
 			t.Fatalf("expected read-only history, got %#v", detail)
 		}
+		if readOnly {
+			locationCwd := ""
+			for _, group := range detail["meta"].([]metaGroup) {
+				if group.Name == "location" {
+					for _, row := range group.Rows {
+						if row.Key == "cwd" {
+							locationCwd = row.Value
+						}
+					}
+				}
+			}
+			if locationCwd != recordedCwd {
+				t.Fatalf("read-only detail should use transcript cwd, got %q", locationCwd)
+			}
+		}
 		list, err := listSessions()
 		if err != nil {
 			t.Fatal(err)
@@ -151,6 +168,9 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 		cards := list.(map[string]any)["sessions"].([]sessionCard)
 		if len(cards) != 1 || cards[0].ID != id || cards[0].Status != detail["status"] || cards[0].WaitingKind != detail["waiting_kind"] {
 			t.Fatalf("list and detail must agree on status, got %+v", cards)
+		}
+		if readOnly && cards[0].Cwd != recordedCwd {
+			t.Fatalf("read-only list should use transcript cwd, got %q", cards[0].Cwd)
 		}
 	}
 	check(false)

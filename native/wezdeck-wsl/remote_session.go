@@ -16,6 +16,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"os"
 	"regexp"
 	"sort"
@@ -158,12 +159,14 @@ func transcriptCwd(path string) string {
 	if path == "" {
 		return ""
 	}
-	b, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return ""
 	}
-	if len(b) > 128*1024 {
-		b = b[:128*1024]
+	defer f.Close()
+	b, err := io.ReadAll(io.LimitReader(f, 128*1024))
+	if err != nil {
+		return ""
 	}
 	m := transcriptCwdPattern.FindSubmatch(b)
 	if len(m) != 2 {
@@ -376,6 +379,11 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
 		readOnly := archived || codexPaneUnavailable(e.AgentName, cmd)
 		if readOnly {
+			if path, _ := findTranscript(e.SessionID); path != "" {
+				if recordedCwd := transcriptCwd(path); recordedCwd != "" {
+					cwd = recordedCwd
+				}
+			}
 			e = e.asReadOnly()
 		} else if e.interrupted(interrupt) {
 			e.Status = "idle"
@@ -591,6 +599,11 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 		}
 		if !readOnly && path != "" && paneAlive && !paneOwnsSessionAgent(cmd, profile, agent) {
 			path, agent = "", ""
+		}
+	}
+	if readOnly && path != "" {
+		if recordedCwd := transcriptCwd(path); recordedCwd != "" {
+			cwd = recordedCwd
 		}
 	}
 	// ts: the entry's last change, so the page's seen-ack (clear with ts)
