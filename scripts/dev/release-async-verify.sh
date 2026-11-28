@@ -73,7 +73,8 @@ fi
     args=(--base "$base_sha" --run)
   fi
   rc=0
-  (cd "$wt_dir" && WEZDECK_TEST_STACK_DIR="${TMPDIR:-/tmp}/wezdeck-async-verify-stack" \
+  (cd "$wt_dir" && WEZDECK_REPO="$wt_dir" \
+    WEZDECK_TEST_STACK_DIR="${TMPDIR:-/tmp}/wezdeck-async-verify-stack" \
     WEZDECK_TEST_STACK_PORT="${WEZDECK_VERIFY_STACK_PORT:-3020}" \
     scripts/dev/web-affected-tests.sh "${args[@]}") 7>&- || rc=$?
   WEZDECK_TEST_STACK_DIR="${TMPDIR:-/tmp}/wezdeck-async-verify-stack" \
