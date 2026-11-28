@@ -235,19 +235,49 @@ export function transferSessionOptimistic(fromId: string, toId: string) {
   emit()
 }
 
+function isSettlingTimedOut(overlay: SessionOptimistic, now: number): boolean {
+  return (
+    overlay.phase === 'settling' &&
+    overlay.acceptedAt !== undefined &&
+    now - overlay.acceptedAt >= overlay.ttlMs
+  )
+}
+
+function finishSessionOverlay(
+  id: string,
+  overlay: SessionOptimistic,
+  state: 'settled' | 'timeout',
+  now: number,
+  via?: 'list',
+) {
+  clearSessionTimer(id)
+  sessionOverlays.delete(id)
+  trace('optimistic', {
+    scope: 'session',
+    id,
+    op_id: overlay.opId,
+    action: overlay.kind,
+    event: state === 'settled' ? 'settle' : 'timeout',
+    ...(via ? { via } : {}),
+    latency_ms: now - overlay.createdAt,
+  })
+  if (state === 'timeout') {
+    notifyOptimisticTimeout({
+      scope: 'session',
+      id,
+      opId: overlay.opId,
+      kind: overlay.kind,
+    })
+  }
+}
+
 export function isSessionDetailOverlaySettled(
   overlay: SessionOptimistic,
   server: Detail,
   now = Date.now(),
 ): 'active' | 'settled' | 'timeout' {
   if (server.read_only) return 'settled'
-  if (
-    overlay.phase === 'settling' &&
-    overlay.acceptedAt !== undefined &&
-    now - overlay.acceptedAt >= overlay.ttlMs
-  ) {
-    return 'timeout'
-  }
+  if (isSettlingTimedOut(overlay, now)) return 'timeout'
   const serverPrompt = promptFingerprint(server)
   if (
     overlay.suppressedPromptKey &&
@@ -273,17 +303,18 @@ export function isSessionDetailOverlaySettled(
         return 'active'
       }
       if (overlay.baseline.status !== 'running') {
-        return serverBusy || serverTs > baseTs ? 'settled' : 'active'
+        const done =
+          serverBusy ||
+          (server.status === 'waiting' &&
+            overlay.baseline.status !== 'waiting') ||
+          (server.status === 'done' && serverTs > baseTs)
+        return done ? 'settled' : 'active'
       }
-      if (
-        serverTs > baseTs ||
+      const advanced =
         !serverBusy ||
         (overlay.baseline.transcriptEnd !== undefined &&
           serverEnd > overlay.baseline.transcriptEnd)
-      ) {
-        return 'settled'
-      }
-      return 'active'
+      return advanced ? 'settled' : 'active'
     }
     case 'prompt-submit':
     case 'prompt-cancel':
@@ -294,13 +325,11 @@ export function isSessionDetailOverlaySettled(
         : 'active'
     case 'clear':
       return (server.status === 'idle' && !server.waiting_kind) ||
-        serverTs > baseTs
+        (serverTs > baseTs && server.status !== overlay.baseline.status)
         ? 'settled'
         : 'active'
     case 'interrupt':
-      return !serverBusy || server.interrupted === true || serverTs > baseTs
-        ? 'settled'
-        : 'active'
+      return !serverBusy || server.interrupted === true ? 'settled' : 'active'
   }
 }
 
@@ -309,36 +338,32 @@ export function isSessionCardOverlaySettled(
   row: SessionCard,
   now = Date.now(),
 ): 'active' | 'settled' | 'timeout' {
-  if (
-    overlay.phase === 'settling' &&
-    overlay.acceptedAt !== undefined &&
-    now - overlay.acceptedAt >= overlay.ttlMs
-  ) {
-    return 'timeout'
-  }
+  if (isSettlingTimedOut(overlay, now)) return 'timeout'
   if (overlay.phase === 'in-flight') return 'active'
 
-  const baseTs = overlay.baseline.ts ?? 0
-  const rowTs = row.ts
+  // SessionCard.ts comes from transcript/window_activity while Detail.ts
+  // comes from attention.json e.TS — never compare row.ts vs baseline.ts.
   const rowBusy = row.status === 'running' && row.running_kind !== 'background'
 
   switch (overlay.kind) {
     case 'send':
       if (overlay.baseline.status !== 'running') {
-        return rowBusy || rowTs > baseTs ? 'settled' : 'active'
+        const done =
+          rowBusy ||
+          (row.status === 'waiting' && overlay.baseline.status !== 'waiting') ||
+          (row.status === 'done' && row.ts >= overlay.createdAt)
+        return done ? 'settled' : 'active'
       }
-      return rowTs > baseTs || !rowBusy ? 'settled' : 'active'
+      return !rowBusy ? 'settled' : 'active'
     case 'prompt-submit':
     case 'prompt-cancel':
-      return (row.status !== 'waiting' && !row.waiting_kind) || rowTs > baseTs
+      return row.status !== 'waiting' && !row.waiting_kind
         ? 'settled'
         : 'active'
     case 'clear':
-      return (row.status === 'idle' && !row.waiting_kind) || rowTs > baseTs
-        ? 'settled'
-        : 'active'
+      return row.status === 'idle' && !row.waiting_kind ? 'settled' : 'active'
     case 'interrupt':
-      return !rowBusy || rowTs > baseTs ? 'settled' : 'active'
+      return !rowBusy ? 'settled' : 'active'
   }
 }
 
@@ -352,25 +377,8 @@ export function reconcileSessionDetail(
   if (!overlay) return
   const state = isSessionDetailOverlaySettled(overlay, server, now)
   if (state === 'active') return
-  clearSessionTimer(id)
-  sessionOverlays.delete(id)
-  trace('optimistic', {
-    scope: 'session',
-    id,
-    op_id: overlay.opId,
-    action: overlay.kind,
-    event: state === 'settled' ? 'settle' : 'timeout',
-    latency_ms: now - overlay.createdAt,
-  })
+  finishSessionOverlay(id, overlay, state, now)
   emit()
-  if (state === 'timeout') {
-    notifyOptimisticTimeout({
-      scope: 'session',
-      id,
-      opId: overlay.opId,
-      kind: overlay.kind,
-    })
-  }
 }
 
 export function reconcileSessionsList(
@@ -384,26 +392,8 @@ export function reconcileSessionsList(
     if (!overlay) continue
     const state = isSessionCardOverlaySettled(overlay, row, now)
     if (state === 'active') continue
-    clearSessionTimer(row.id)
-    sessionOverlays.delete(row.id)
+    finishSessionOverlay(row.id, overlay, state, now, 'list')
     changed = true
-    trace('optimistic', {
-      scope: 'session',
-      id: row.id,
-      op_id: overlay.opId,
-      action: overlay.kind,
-      event: state === 'settled' ? 'settle' : 'timeout',
-      via: 'list',
-      latency_ms: now - overlay.createdAt,
-    })
-    if (state === 'timeout') {
-      notifyOptimisticTimeout({
-        scope: 'session',
-        id: row.id,
-        opId: overlay.opId,
-        kind: overlay.kind,
-      })
-    }
   }
   if (changed) emit()
 }

@@ -39,7 +39,7 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
     const agent = join(dirname(socket), 'claude')
     symlinkSync(execFileSync('which', ['cat']).toString().trim(), agent)
     const entries: Record<string, unknown> = {}
-    for (const id of ['opt-send', 'opt-allow', 'opt-deny']) {
+    for (const id of ['opt-send', 'opt-allow', 'opt-deny', 'opt-idle']) {
       const cwd = join(dirname(socket), id)
       mkdirSync(cwd)
       tmux(
@@ -68,6 +68,17 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
       tmux_window_name: 'opt-send',
       last_user_prompt: 'earlier task',
       ts: now - 60_000,
+    }
+    entries['opt-idle'] = {
+      session_id: 'opt-idle',
+      tmux_socket: socket,
+      tmux_session: 'opt-idle',
+      tmux_pane: panes['opt-idle'],
+      status: 'idle',
+      agent_name: 'claude',
+      tmux_window_name: 'opt-idle',
+      last_user_prompt: 'idle task',
+      ts: now - 120_000,
     }
     entries['opt-allow'] = {
       session_id: 'opt-allow',
@@ -199,6 +210,36 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
         { timeout: 2_000 },
       )
       .toBe('idle')
+
+    // 4. Phone flow: send on an idle session, immediately navigate back to the
+    //    list, and verify the row stays `running` even across list polls where
+    //    tmux window_activity bumped card.ts while host status is still `idle`.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${base}/zh/console/sessions/opt-idle`)
+    const phoneBox = page.getByLabel('发给 Agent 的消息')
+    await phoneBox.waitFor({ timeout: 15_000 })
+    await phoneBox.click()
+    await phoneBox.fill('手机发完立刻回列表')
+    await page.getByRole('button', { name: '发送' }).click()
+    // Navigate back to the session list right after send
+    await page.getByRole('button', { name: '会话', exact: true }).click()
+    await page.waitForURL('**/console/sessions')
+    const phoneRow = page.locator('[data-session=opt-idle]')
+    await phoneRow.waitFor({ timeout: 10_000 })
+    await expect
+      .poll(
+        () => phoneRow.getByTestId('chat-preview').getAttribute('data-tone'),
+        { timeout: 3_000 },
+      )
+      .toBe('running')
+    // Hold across a 1.5s list refetch while host still reports idle
+    await page.waitForTimeout(2_000)
+    expect(
+      await phoneRow.getByTestId('chat-preview').getAttribute('data-tone'),
+    ).toBe('running')
+    expect(await phoneRow.getByTestId('chat-preview').textContent()).toContain(
+      '手机发完立刻回列表',
+    )
 
     await context.close()
   }, 90_000)

@@ -1,6 +1,6 @@
 import { useMutationState, useQuery } from '@tanstack/react-query'
 
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 
 import {
   applySessionsListOverlay,
@@ -79,6 +79,8 @@ export function useSessionDeleteReview(id: string) {
 export function useSessions() {
   const pending = usePendingSessionDeletes()
   const overlays = useAllSessionOptimistics()
+  const hasOverlaysRef = useRef(overlays.size > 0)
+  hasOverlaysRef.current = overlays.size > 0
   const select = useCallback(
     (data: SessionsReply) =>
       applySessionsListOverlay(
@@ -90,7 +92,7 @@ export function useSessions() {
   return useQuery({
     queryKey: ['remote', 'sessions'],
     enabled: typeof window !== 'undefined',
-    refetchInterval: 5_000,
+    refetchInterval: () => (hasOverlaysRef.current ? 1_500 : 5_000),
     queryFn: async () => {
       const reply = (await hostRead('sessions', {})) as SessionsReply
       reconcileSessionsList(reply.sessions)
