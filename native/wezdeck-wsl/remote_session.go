@@ -150,6 +150,32 @@ func readAttentionDoc() (map[string]attentionEntry, []recentEntry, error) {
 	return doc.Entries, doc.Recent, nil
 }
 
+var transcriptCwdPattern = regexp.MustCompile(`"cwd"\s*:\s*"((?:\\.|[^"\\])*)"`)
+
+// transcriptCwd keeps archived sessions visible after a WSL restart removed
+// their tmux panes. Codex and Claude both record cwd near the transcript head.
+func transcriptCwd(path string) string {
+	if path == "" {
+		return ""
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	if len(b) > 128*1024 {
+		b = b[:128*1024]
+	}
+	m := transcriptCwdPattern.FindSubmatch(b)
+	if len(m) != 2 {
+		return ""
+	}
+	value, err := strconv.Unquote(`"` + string(m[1]) + `"`)
+	if err != nil {
+		return ""
+	}
+	return value
+}
+
 // agentCommands: what an agent TUI pane runs (pane_current_command).
 var agentCommands = map[string]bool{"claude": true, "codex": true, "grok": true, "grok.real": true, "agy": true}
 
@@ -332,7 +358,18 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		}
 		p, alive := paneSnap[e.TmuxSocket+"|"+e.TmuxPane]
 		if !alive {
-			continue
+			if !includeArchived {
+				continue
+			}
+			path, agent := findTranscript(id)
+			cwd := transcriptCwd(path)
+			if path == "" || cwd == "" {
+				continue
+			}
+			if agent == "" {
+				agent = e.AgentName
+			}
+			p = tmuxPaneSnap{cwd: cwd, cmd: agent, profile: agent, attached: false}
 		}
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
 		readOnly := codexPaneUnavailable(e.AgentName, cmd)
