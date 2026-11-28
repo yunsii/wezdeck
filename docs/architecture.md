@@ -403,6 +403,9 @@ A running `serve` closes its socket within 30 s once sync rewrites
 `native/wezdeck-wsl/bin/wezdeck-wsl` (`upgrade.go`, bridge log line
 `exit: binary replaced`); the next `attach` starts the new build, so new
 bridge actions never hit a stale dispatch table.
+`native/wezdeck-wsl/build.sh` checks the source digest and binary digest as
+well as the version stamp before skipping a build. A matching version stamp
+alone does not prove the executable contains the current bridge actions.
 `collab.<command>` (`GET /api/v1/collab/<command>`, capability `collab.read`)
 runs the read-only `ticket api` (`skills/agent-collab/lib/api.py`);
 commands and forwarded query keys are allowlisted on both sides

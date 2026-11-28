@@ -90,7 +90,10 @@ and then the global default through
 `resume-command.sh::resume_command_active_profile`.
 
 The `repos` response includes resolved `agent_profile`, `agent_source`
-(`workspace` or `override`), and `settings_error`. A damaged settings file
+(`workspace` or `override`), `workspace_agent_profile`, and `settings_error`.
+The new-session form shows the workspace profile beside the selectors; the
+repository settings list names it in the selected default option and shows it
+beside any Web override. A damaged settings file
 leaves the repository list visible with workspace defaults, but new-session
 requires an explicit agent selection until the file is repaired. `session.new`
 validates and records the resolved profile before queueing; the form, progress

@@ -358,10 +358,10 @@ msgstr "依赖"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "拒绝后可以在下面输入框里告诉 Claude 该怎么做。「不再询问」等其他选项请在电脑上选。"
 
-#: src/features/session-new-panels.tsx:294
-#: src/features/session-new-panels.tsx:301
-#: src/features/session-new-panels.tsx:330
-#: src/features/session-new-panels.tsx:377
+#: src/features/session-new-panels.tsx:298
+#: src/features/session-new-panels.tsx:305
+#: src/features/session-new-panels.tsx:334
+#: src/features/session-new-panels.tsx:388
 msgid "Agent"
 msgstr "智能体"
 
@@ -913,7 +913,7 @@ msgstr "子工单"
 msgid "Children"
 msgstr "子单"
 
-#: src/features/session-new.tsx:364
+#: src/features/session-new.tsx:372
 msgid "Choose an agent"
 msgstr "选择智能体"
 
@@ -1354,7 +1354,7 @@ msgstr "无法读取智能体配置。"
 msgid "Could not read auto-title status."
 msgstr "无法读取自动标题状态。"
 
-#: src/features/me-repositories.tsx:131
+#: src/features/me-repositories.tsx:137
 msgid "Could not read repositories."
 msgstr "无法读取仓库列表。"
 
@@ -1374,7 +1374,7 @@ msgstr "计费：普通请求 {other} 次 + 收到的 WebSocket 消息 {wsIn} �
 msgid "Create & start headless run"
 msgstr "创建并后台执行"
 
-#: src/features/session-new.tsx:280
+#: src/features/session-new.tsx:284
 msgid "Create session"
 msgstr "创建会话"
 
@@ -1449,7 +1449,7 @@ msgid "Default ({defaultBackend})"
 msgstr "默认 ({defaultBackend})"
 
 #: src/features/me-agents.tsx:136
-#: src/features/me-repositories.tsx:87
+#: src/features/me-repositories.tsx:99
 msgid "Default agent"
 msgstr "默认智能体"
 
@@ -1692,7 +1692,7 @@ msgstr "回车"
 msgid "Enter key"
 msgstr "回车键"
 
-#: src/features/session-new.tsx:271
+#: src/features/session-new.tsx:275
 msgid "Enter to send · Shift+Enter for newline"
 msgstr "Enter 发送 · Shift+Enter 换行"
 
@@ -1830,9 +1830,9 @@ msgstr "修复请求已发送，等待 Agent 处理…"
 msgid "Focus session search or return to list"
 msgstr "聚焦会话搜索或返回列表"
 
-#: src/features/me-repositories.tsx:95
-msgid "Follow workspace setting"
-msgstr "跟随工作区设置"
+#: src/features/me-repositories.tsx:108
+#~ msgid "Follow workspace setting"
+#~ msgstr "跟随工作区设置"
 
 #: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
@@ -1881,7 +1881,7 @@ msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我�
 msgid "Grant failed ({micError}) — retry"
 msgstr "授权失败（{micError}），点此重试"
 
-#: src/features/session-new-panels.tsx:340
+#: src/features/session-new-panels.tsx:351
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "组名"
@@ -2285,7 +2285,7 @@ msgstr "正在加载原图…"
 #: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
-#: src/features/me-repositories.tsx:159
+#: src/features/me-repositories.tsx:165
 #: src/features/repo-links.tsx:146
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
@@ -2535,7 +2535,7 @@ msgstr "换行"
 #: src/features/session-new-header.tsx:35
 #: src/features/session-new-job.tsx:402
 #: src/features/session-new-job.tsx:402
-#: src/features/session-new.tsx:193
+#: src/features/session-new.tsx:197
 msgid "New session"
 msgstr "新会话"
 
@@ -2543,11 +2543,11 @@ msgstr "新会话"
 msgid "New session (a worktree and an agent)"
 msgstr "新会话（新建工作树并启动 agent）"
 
-#: src/features/session-new.tsx:186
+#: src/features/session-new.tsx:190
 msgid "New session (c)"
 msgstr "新会话（c）"
 
-#: src/features/session-new.tsx:386
+#: src/features/session-new.tsx:394
 msgid "New session group"
 msgstr "新会话组"
 
@@ -2703,7 +2703,7 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
-#: src/features/me-repositories.tsx:162
+#: src/features/me-repositories.tsx:168
 msgid "No repositories yet"
 msgstr "暂无仓库"
 
@@ -3475,18 +3475,18 @@ msgstr "仓库"
 
 #: src/features/repo-links.tsx:49
 #: src/features/session-info.tsx:67
-#: src/features/session-new-panels.tsx:234
-#: src/features/session-new-panels.tsx:241
-#: src/features/session-new-panels.tsx:268
-#: src/features/session-new-panels.tsx:377
+#: src/features/session-new-panels.tsx:238
+#: src/features/session-new-panels.tsx:245
+#: src/features/session-new-panels.tsx:272
+#: src/features/session-new-panels.tsx:388
 msgid "Repository"
 msgstr "仓库"
 
-#: src/features/me-repositories.tsx:137
+#: src/features/me-repositories.tsx:143
 msgid "Repository agent settings could not be read on the host. Workspace defaults are shown; saving is unavailable."
 msgstr "无法读取主机上的仓库智能体设置。这里显示工作区默认值，暂时无法保存。"
 
-#: src/features/session-new.tsx:481
+#: src/features/session-new.tsx:491
 msgid "Repository agent settings could not be read. Select an agent explicitly."
 msgstr "仓库智能体设置无法读取，请明确选择智能体。"
 
@@ -4514,7 +4514,7 @@ msgstr "上一个会话请求已过期，请重新开始。"
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "命令后面的文字会成为新会话的名字（「{name}」），之后每次 /clear 都会沿用，Claude 也不再自动生成标题。仍要发送吗？"
 
-#: src/features/me-repositories.tsx:141
+#: src/features/me-repositories.tsx:147
 msgid "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 msgstr "网页默认值用于从控制台新建的会话。跟随工作区设置时，会使用主机为该仓库配置的智能体。"
 
@@ -5110,7 +5110,7 @@ msgstr "警告"
 msgid "Web (this console)"
 msgstr "网页端（当前控制台）"
 
-#: src/features/me-repositories.tsx:79
+#: src/features/me-repositories.tsx:83
 msgid "Web default"
 msgstr "网页默认"
 
@@ -5152,7 +5152,7 @@ msgstr "现状核对"
 msgid "What confirming starts"
 msgstr "确认后会发生什么"
 
-#: src/features/session-new.tsx:252
+#: src/features/session-new.tsx:256
 msgid "What do you want to solve?"
 msgstr "你想解决什么问题？"
 
@@ -5160,7 +5160,7 @@ msgstr "你想解决什么问题？"
 msgid "What it solves"
 msgstr "要解决什么"
 
-#: src/features/session-new.tsx:266
+#: src/features/session-new.tsx:270
 msgid "What should it work on?"
 msgstr "要它做什么？"
 
@@ -5259,9 +5259,16 @@ msgstr "运行中"
 msgid "Working tree matches base commit (no diff)."
 msgstr "工作树与基线一致（无变更）。"
 
-#: src/features/me-repositories.tsx:80
+#: src/features/me-repositories.tsx:84
+#: src/features/me-repositories.tsx:91
+#: src/features/me-repositories.tsx:108
+#: src/features/session-new-panels.tsx:345
 msgid "Workspace default"
 msgstr "工作区默认"
+
+#: src/features/me-repositories.tsx:109
+msgid "Workspace default unavailable"
+msgstr "工作区默认暂不可用"
 
 #: src/features/session-info.tsx:69
 #: src/features/ticket-info.tsx:286

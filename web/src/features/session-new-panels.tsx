@@ -194,6 +194,8 @@ export function NewSessionSetupCard({
   repositories,
   repo,
   repoLabel,
+  workspaceAgentProfile,
+  workspaceAgentLabel,
   onRepo,
   group,
   nameGroup,
@@ -211,6 +213,8 @@ export function NewSessionSetupCard({
   repositories: Array<Repo>
   repo: string
   repoLabel: string
+  workspaceAgentProfile: string
+  workspaceAgentLabel: string
   onRepo: (next: string) => void
   group?: string
   nameGroup: boolean
@@ -334,6 +338,13 @@ export function NewSessionSetupCard({
           </div>
         ) : null}
       </div>
+
+      {workspaceAgentProfile ? (
+        <p className="flex items-center gap-1.5 px-0.5 text-meta text-brand-muted">
+          <AgentAvatar profile={workspaceAgentProfile} size={18} />
+          {t`Workspace default`}: {workspaceAgentLabel}
+        </p>
+      ) : null}
 
       {nameGroup ? (
         <label className="grid min-w-0 gap-1.5 text-caption text-brand-muted">

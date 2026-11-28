@@ -12,6 +12,7 @@ import (
 func TestRepositoryAgentSettingResolvesAndPersists(t *testing.T) {
 	wd, _ := os.Getwd()
 	t.Setenv("WEZDECK_REPO", filepath.Clean(filepath.Join(wd, "../..")))
+	t.Setenv("MANAGED_AGENT_PROFILE", "claude")
 	repo, _ := newSessionFixture(t)
 	settingsPath := os.Getenv("WEZDECK_REPO_AGENT_SETTINGS_FILE")
 	profile, source, err := repoAgentProfile(repo)
@@ -31,7 +32,7 @@ func TestRepositoryAgentSettingResolvesAndPersists(t *testing.T) {
 		t.Fatal(err)
 	}
 	choices := listed.(map[string]any)["repos"].([]repoChoice)
-	if len(choices) != 1 || choices[0].AgentProfile != "codex" || choices[0].AgentSource != "override" {
+	if len(choices) != 1 || choices[0].AgentProfile != "codex" || choices[0].AgentSource != "override" || choices[0].WorkspaceAgentProfile != "claude" {
 		t.Fatalf("repo list: %+v", choices)
 	}
 	if info, err := os.Stat(settingsPath); err != nil || info.Mode().Perm() != 0o600 {

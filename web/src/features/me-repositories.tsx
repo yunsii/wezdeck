@@ -5,8 +5,8 @@ import { useState } from 'react'
 
 import { Select } from '#/components/ui/select'
 import { hostWrite } from '#/lib/runtime-client'
-import { AgentAvatar, agentLabel } from './agent-avatar'
-import { useAgentProfiles } from './agent-profiles'
+import { AgentAvatar } from './agent-avatar'
+import { agentProfileLabel, useAgentProfiles } from './agent-profiles'
 import type { AgentProfile } from './agent-profiles'
 import { useDeviceState } from './device-state'
 import { useRepositories } from './repo-agent-settings'
@@ -40,6 +40,10 @@ function RepositoryRow({
     }))
   const selected =
     repo.agent_source === 'override' ? repo.agent_profile || '' : ''
+  const workspaceProfile =
+    repo.workspace_agent_profile ||
+    (repo.agent_source === 'workspace' ? repo.agent_profile || '' : '')
+  const profileName = (id: string) => agentProfileLabel(profiles, id)
   const save = async (profile: string) => {
     setSaving(true)
     setError('')
@@ -72,7 +76,7 @@ function RepositoryRow({
           </div>
           <div className="mt-0.5 flex items-center gap-1.5 text-caption text-brand-muted">
             <AgentAvatar profile={repo.agent_profile} size={18} />
-            <span>{agentLabel('', repo.agent_profile)}</span>
+            <span>{profileName(repo.agent_profile || '')}</span>
             <span>
               ·{' '}
               {repo.agent_source === 'override'
@@ -80,6 +84,14 @@ function RepositoryRow({
                 : t`Workspace default`}
             </span>
           </div>
+          {repo.agent_source === 'override' && workspaceProfile ? (
+            <div className="mt-1 flex items-center gap-1.5 text-caption text-brand-muted">
+              <AgentAvatar profile={workspaceProfile} size={18} />
+              <span>
+                {t`Workspace default`}: {profileName(workspaceProfile)}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="grid gap-1">
@@ -92,17 +104,11 @@ function RepositoryRow({
           options={[
             {
               value: '',
-              label: t`Follow workspace setting`,
-              icon: (
-                <AgentAvatar
-                  profile={
-                    repo.agent_source === 'workspace'
-                      ? repo.agent_profile
-                      : undefined
-                  }
-                  size={24}
-                />
-              ),
+              label: workspaceProfile
+                ? `${t`Workspace default`} · ${profileName(workspaceProfile)}`
+                : t`Workspace default unavailable`,
+              disabled: !workspaceProfile,
+              icon: <AgentAvatar profile={workspaceProfile} size={24} />,
             },
             ...options,
           ]}

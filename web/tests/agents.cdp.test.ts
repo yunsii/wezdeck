@@ -14,6 +14,7 @@ async function pageWithProfiles(
   width: number,
   kimiConfigured = false,
   repoSettingsError = false,
+  oldBridge = false,
 ) {
   const context: BrowserContext = await browser.newContext({
     viewport: { width, height: 850 },
@@ -103,6 +104,7 @@ async function pageWithProfiles(
             root: '/home/test/example',
             label: 'example',
             agent_profile: repoProfile,
+            ...(!oldBridge ? { workspace_agent_profile: 'codex' } : {}),
             agent_source: repoWrites.length ? 'override' : 'workspace',
           },
         ],
@@ -173,6 +175,11 @@ describe('Agent settings layout', () => {
     expect(
       await row.getByTestId('agent-avatar').first().getAttribute('data-agent'),
     ).toBe('codex')
+    expect(
+      await row
+        .getByRole('combobox', { name: /example.*默认智能体/ })
+        .textContent(),
+    ).toContain('Codex')
     await row.getByRole('combobox', { name: /example.*默认智能体/ }).click()
     await page.getByRole('option', { name: 'Grok' }).click()
     await expect.poll(() => repoWrites.length).toBe(1)
@@ -185,9 +192,11 @@ describe('Agent settings layout', () => {
         row.getByTestId('agent-avatar').first().getAttribute('data-agent'),
       )
       .toBe('grok')
+    expect(await row.getByText('工作区默认: Codex').count()).toBe(1)
     await page.goto(`${base}/zh/console/sessions/new`)
     const view = page.getByTestId('new-session-view')
     await view.waitFor()
+    await expect.poll(() => view.getByText('工作区默认: Codex').count()).toBe(1)
     await expect
       .poll(() =>
         view
@@ -224,6 +233,32 @@ describe('Agent settings layout', () => {
       () => document.documentElement.scrollWidth - window.innerWidth,
     )
     expect(overflow).toBeLessThanOrEqual(1)
+    await context.close()
+  }, 45_000)
+
+  it('does not mislabel an override as the workspace default on an old bridge', async () => {
+    const setup = await pageWithProfiles(browser, 390, false, false, true)
+    const { context, page, repoWrites } = setup
+    await page.goto(`${base}/zh/console/me/repositories`)
+    const row = page.getByTestId('repositories-page').getByRole('listitem')
+    await row.waitFor()
+    await row.getByRole('combobox', { name: /example.*默认智能体/ }).click()
+    await page.getByRole('option', { name: 'Grok' }).click()
+    await expect.poll(() => repoWrites.length).toBe(1)
+    await row.getByRole('combobox', { name: /example.*默认智能体/ }).click()
+    const unavailable = page.getByRole('option', { name: '工作区默认暂不可用' })
+    expect(await unavailable.isDisabled()).toBe(true)
+    await page.goto(`${base}/zh/console/sessions/new`)
+    const view = page.getByTestId('new-session-view')
+    await view.waitFor()
+    await expect
+      .poll(() =>
+        view
+          .locator('[data-testid="new-session-header"] [data-agent]')
+          .getAttribute('data-agent'),
+      )
+      .toBe('grok')
+    expect(await view.getByText('工作区默认: Grok').count()).toBe(0)
     await context.close()
   }, 45_000)
 

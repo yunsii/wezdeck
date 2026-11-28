@@ -22,7 +22,11 @@ import { useLocale } from '#/lib/locale-context'
 import { hostWrite } from '#/lib/runtime-client'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
-import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
+import {
+  agentProfileLabel,
+  useAgentProfiles,
+  usePreferredAgentProfile,
+} from './agent-profiles'
 import { useRepositories } from './repo-agent-settings'
 import { NewSessionHeader } from './session-new-header'
 import { jumpPending } from './console-jump-keys'
@@ -339,12 +343,16 @@ function NewSessionGuidedForm({
     (repositories.some(({ root }) => root === repo)
       ? repo
       : repositories[0]?.root || '')
-  const repoLabel =
-    repositories.find((r) => r.root === chosen)?.label ||
-    chosen.split('/').pop() ||
-    ''
-  const repoDefault =
-    repositories.find((r) => r.root === chosen)?.agent_profile || ''
+  const selectedRepo = repositories.find((r) => r.root === chosen)
+  const repoLabel = selectedRepo?.label || chosen.split('/').pop() || ''
+  const repoDefault = selectedRepo?.agent_profile || ''
+  const workspaceAgent =
+    selectedRepo?.workspace_agent_profile ||
+    (selectedRepo?.agent_source === 'workspace' ? repoDefault : '')
+  const workspaceAgentLabel = agentProfileLabel(
+    agentProfiles.data?.profiles ?? [],
+    workspaceAgent,
+  )
   const settingsError = Boolean(repos.data?.settings_error)
   const defaultDisabled = Boolean(
     agentProfiles.data?.profiles.some(
@@ -465,6 +473,8 @@ function NewSessionGuidedForm({
             repositories={repositories}
             repo={chosen}
             repoLabel={repoLabel}
+            workspaceAgentProfile={workspaceAgent}
+            workspaceAgentLabel={workspaceAgentLabel}
             onRepo={setRepo}
             group={preset?.group}
             nameGroup={nameGroup}

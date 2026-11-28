@@ -6,6 +6,7 @@ export type Repository = {
   label: string
   visited?: number
   agent_profile?: string
+  workspace_agent_profile?: string
   agent_source?: 'workspace' | 'override'
 }
 

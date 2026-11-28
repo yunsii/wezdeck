@@ -44,8 +44,18 @@ mkdir -p "$script_dir/bin"
 # tests / release can compare it with what the relay reports
 version="$("$script_dir/../../scripts/dev/source-fingerprint.sh" native/wezdeck-wsl 2>/dev/null || echo dev)"
 stamp_path="$script_dir/bin/.version"
+source_stamp="$script_dir/bin/.source-sha256"
+binary_stamp="$script_dir/bin/.binary-sha256"
+source_hash="$(
+  cd "$script_dir"
+  find . -maxdepth 1 -type f \( -name '*.go' -o -name 'go.mod' -o -name 'go.sum' \) -print0 |
+    LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1
+)"
 
-if [[ -x "$out_path" && "$version" != dev && "$(cat "$stamp_path" 2>/dev/null)" == "$version" ]]; then
+if [[ -x "$out_path" && "$version" != dev &&
+      "$(cat "$stamp_path" 2>/dev/null)" == "$version" &&
+      "$(cat "$source_stamp" 2>/dev/null)" == "$source_hash" &&
+      "$(cat "$binary_stamp" 2>/dev/null)" == "$(sha256sum "$out_path" | cut -d' ' -f1)" ]]; then
   printf 'build-wezdeck-wsl: up-to-date %s (version %s) — skipping go build\n' "$out_path" "$version"
   exit 0
 fi
@@ -56,6 +66,8 @@ fi
     -ldflags="-s -w -X main.buildVersion=$version" -o "$out_path" .
 )
 printf '%s\n' "$version" >"$stamp_path"
+printf '%s\n' "$source_hash" >"$source_stamp"
+sha256sum "$out_path" | cut -d' ' -f1 >"$binary_stamp"
 printf 'build-wezdeck-wsl: wrote %s (%s) via local go build using %s\n' \
   "$out_path" \
   "$(stat -c '%s bytes' "$out_path" 2>/dev/null || echo 'unknown size')" \

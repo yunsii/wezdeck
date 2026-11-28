@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
 import { hostRead } from '#/lib/runtime-client'
+import { agentLabel } from './agent-avatar'
 
 export type AgentProfile = {
   id: string
@@ -25,6 +26,12 @@ export type AgentProfile = {
   haiku_model?: string
   fable_model?: string
   subagent_model?: string
+}
+
+export function agentProfileLabel(profiles: Array<AgentProfile>, id: string) {
+  return (
+    profiles.find((profile) => profile.id === id)?.label || agentLabel('', id)
+  )
 }
 
 export function useAgentProfiles() {

@@ -39,11 +39,12 @@ import (
 )
 
 type repoChoice struct {
-	Root         string `json:"root"`
-	Label        string `json:"label"`
-	Visited      int64  `json:"visited,omitempty"`
-	AgentProfile string `json:"agent_profile,omitempty"`
-	AgentSource  string `json:"agent_source,omitempty"`
+	Root                  string `json:"root"`
+	Label                 string `json:"label"`
+	Visited               int64  `json:"visited,omitempty"`
+	AgentProfile          string `json:"agent_profile,omitempty"`
+	AgentSource           string `json:"agent_source,omitempty"`
+	WorkspaceAgentProfile string `json:"workspace_agent_profile,omitempty"`
 }
 
 // knownRepos includes remembered repositories even after their last session closes.
@@ -104,6 +105,7 @@ func listRepos() (any, error) {
 	}
 	defaults := workspaceAgentProfiles(roots)
 	for i := range repos {
+		repos[i].WorkspaceAgentProfile = defaults[i]
 		repos[i].AgentProfile, repos[i].AgentSource = defaults[i], "workspace"
 		if settingsErr == nil && settings[repos[i].Root] != "" {
 			repos[i].AgentProfile, repos[i].AgentSource = settings[repos[i].Root], "override"

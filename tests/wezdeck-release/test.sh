@@ -167,6 +167,13 @@ git -C "$fixture/relaytest" commit -qm relaytest
 land_relay relaytest >"$fixture/relaytest.log" 2>&1 || { tail -40 "$fixture/relaytest.log"; exit 1; }
 [[ "$(wc -l <"$RELEASE_TRACE.relay")" == 1 ]] || { echo 'relay restart count mismatch' >&2; exit 1; }
 [[ "$(cat native/wezdeck-wsl/bin/.version)" == "$(git -C "$fixture/relaytest" log -1 --format=%h -- native/wezdeck-wsl)" ]] || { echo 'primary relay binary version mismatch' >&2; exit 1; }
+# A matching version stamp cannot conceal an outdated primary executable.
+printf '#!/usr/bin/env bash\necho stale\n' >native/wezdeck-wsl/bin/wezdeck-wsl
+chmod +x native/wezdeck-wsl/bin/wezdeck-wsl
+make_worktree relayrepair
+land_relay relayrepair >"$fixture/relayrepair.log" 2>&1 || { tail -40 "$fixture/relayrepair.log"; exit 1; }
+[[ "$(wc -l <"$RELEASE_TRACE.relay")" == 2 ]] || { echo 'same-version stale relay was not restarted' >&2; exit 1; }
+[[ "$(native/wezdeck-wsl/bin/wezdeck-wsl)" == relay ]] || { echo 'stale primary binary was not replaced' >&2; exit 1; }
 mkdir -p "$fixture/home/.config/shell-env.d"
 printf 'WEZDECK_RELAY_HOST_TOKEN=test-host\nWEZDECK_RELAY_CLIENT_TOKEN=test-client\n' >"$fixture/home/.config/shell-env.d/wezdeck-remote.env"
 builds_before="$(wc -l <"$RELEASE_TRACE.build")"
@@ -193,7 +200,7 @@ python3 scripts/dev/release-recycle.py reconcile --state "$XDG_STATE_HOME/wezdec
   --repo "$primary" --source "$fixture/replay" --expected "$expected" >/dev/null
 python3 scripts/dev/release-recycle.py reconcile --state "$XDG_STATE_HOME/wezdeck" \
   --repo "$primary" --source "$fixture/replay" --expected "$expected" >/dev/null
-[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 3 ]]
+[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 4 ]]
 
 make_worktree stale
 expected="$(git -C "$fixture/stale" rev-parse HEAD)"
@@ -210,7 +217,7 @@ if python3 scripts/dev/release-recycle.py reconcile --state "$XDG_STATE_HOME/wez
 else
   [[ $? == 4 ]]
 fi
-[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 3 ]]
+[[ "$(wc -l <"$RELEASE_TRACE.recycle")" == 4 ]]
 
 # Parallel workstations cannot introduce a merge commit into master. The
 # lagging source stays intact until it is rebased and retried.

@@ -358,10 +358,10 @@ msgstr "after"
 msgid "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 msgstr "After deny, say in the box below what to do instead. \"Don't ask again\" and other options are at the desk."
 
-#: src/features/session-new-panels.tsx:294
-#: src/features/session-new-panels.tsx:301
-#: src/features/session-new-panels.tsx:330
-#: src/features/session-new-panels.tsx:377
+#: src/features/session-new-panels.tsx:298
+#: src/features/session-new-panels.tsx:305
+#: src/features/session-new-panels.tsx:334
+#: src/features/session-new-panels.tsx:388
 msgid "Agent"
 msgstr "Agent"
 
@@ -913,7 +913,7 @@ msgstr "Child tickets"
 msgid "Children"
 msgstr "Children"
 
-#: src/features/session-new.tsx:364
+#: src/features/session-new.tsx:372
 msgid "Choose an agent"
 msgstr "Choose an agent"
 
@@ -1354,7 +1354,7 @@ msgstr "Could not read agent profiles."
 msgid "Could not read auto-title status."
 msgstr "Could not read auto-title status."
 
-#: src/features/me-repositories.tsx:131
+#: src/features/me-repositories.tsx:137
 msgid "Could not read repositories."
 msgstr "Could not read repositories."
 
@@ -1374,7 +1374,7 @@ msgstr "Counted: {other} calls + {wsIn} incoming WebSocket messages ÷ 20 (≈ {
 msgid "Create & start headless run"
 msgstr "Create & start headless run"
 
-#: src/features/session-new.tsx:280
+#: src/features/session-new.tsx:284
 msgid "Create session"
 msgstr "Create session"
 
@@ -1449,7 +1449,7 @@ msgid "Default ({defaultBackend})"
 msgstr "Default ({defaultBackend})"
 
 #: src/features/me-agents.tsx:136
-#: src/features/me-repositories.tsx:87
+#: src/features/me-repositories.tsx:99
 msgid "Default agent"
 msgstr "Default agent"
 
@@ -1692,7 +1692,7 @@ msgstr "Enter"
 msgid "Enter key"
 msgstr "Enter key"
 
-#: src/features/session-new.tsx:271
+#: src/features/session-new.tsx:275
 msgid "Enter to send · Shift+Enter for newline"
 msgstr "Enter to send · Shift+Enter for newline"
 
@@ -1830,9 +1830,9 @@ msgstr "Fix request sent; waiting for the agent…"
 msgid "Focus session search or return to list"
 msgstr "Focus session search or return to list"
 
-#: src/features/me-repositories.tsx:95
-msgid "Follow workspace setting"
-msgstr "Follow workspace setting"
+#: src/features/me-repositories.tsx:108
+#~ msgid "Follow workspace setting"
+#~ msgstr "Follow workspace setting"
 
 #: src/features/session-delete.tsx:132
 msgid "Force delete “{title}” and its worktree? This discards uncommitted changes and local files. The branch and conversation history are kept."
@@ -1881,7 +1881,7 @@ msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgid "Grant failed ({micError}) — retry"
 msgstr "Grant failed ({micError}) — retry"
 
-#: src/features/session-new-panels.tsx:340
+#: src/features/session-new-panels.tsx:351
 #: src/features/session-purpose.tsx:89
 msgid "Group name"
 msgstr "Group name"
@@ -2285,7 +2285,7 @@ msgstr "Loading original…"
 #: src/features/host-file-body.tsx:43
 #: src/features/me-agents.tsx:174
 #: src/features/me-autotitle.tsx:331
-#: src/features/me-repositories.tsx:159
+#: src/features/me-repositories.tsx:165
 #: src/features/repo-links.tsx:146
 #: src/features/session-commands.tsx:132
 #: src/features/session-git.tsx:372
@@ -2535,7 +2535,7 @@ msgstr "New line"
 #: src/features/session-new-header.tsx:35
 #: src/features/session-new-job.tsx:402
 #: src/features/session-new-job.tsx:402
-#: src/features/session-new.tsx:193
+#: src/features/session-new.tsx:197
 msgid "New session"
 msgstr "New session"
 
@@ -2543,11 +2543,11 @@ msgstr "New session"
 msgid "New session (a worktree and an agent)"
 msgstr "New session (a worktree and an agent)"
 
-#: src/features/session-new.tsx:186
+#: src/features/session-new.tsx:190
 msgid "New session (c)"
 msgstr "New session (c)"
 
-#: src/features/session-new.tsx:386
+#: src/features/session-new.tsx:394
 msgid "New session group"
 msgstr "New session group"
 
@@ -2703,7 +2703,7 @@ msgstr "No plan written yet"
 msgid "No recent result"
 msgstr "No recent result"
 
-#: src/features/me-repositories.tsx:162
+#: src/features/me-repositories.tsx:168
 msgid "No repositories yet"
 msgstr "No repositories yet"
 
@@ -3475,18 +3475,18 @@ msgstr "Repositories"
 
 #: src/features/repo-links.tsx:49
 #: src/features/session-info.tsx:67
-#: src/features/session-new-panels.tsx:234
-#: src/features/session-new-panels.tsx:241
-#: src/features/session-new-panels.tsx:268
-#: src/features/session-new-panels.tsx:377
+#: src/features/session-new-panels.tsx:238
+#: src/features/session-new-panels.tsx:245
+#: src/features/session-new-panels.tsx:272
+#: src/features/session-new-panels.tsx:388
 msgid "Repository"
 msgstr "Repository"
 
-#: src/features/me-repositories.tsx:137
+#: src/features/me-repositories.tsx:143
 msgid "Repository agent settings could not be read on the host. Workspace defaults are shown; saving is unavailable."
 msgstr "Repository agent settings could not be read on the host. Workspace defaults are shown; saving is unavailable."
 
-#: src/features/session-new.tsx:481
+#: src/features/session-new.tsx:491
 msgid "Repository agent settings could not be read. Select an agent explicitly."
 msgstr "Repository agent settings could not be read. Select an agent explicitly."
 
@@ -4514,7 +4514,7 @@ msgstr "The previous session request expired. Start a new one."
 msgid "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 msgstr "The text after the command becomes the new session's name (\"{name}\"), carried across every later /clear, and Claude stops generating titles. Send anyway?"
 
-#: src/features/me-repositories.tsx:141
+#: src/features/me-repositories.tsx:147
 msgid "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 msgstr "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 
@@ -5110,7 +5110,7 @@ msgstr "Warnings"
 msgid "Web (this console)"
 msgstr "Web (this console)"
 
-#: src/features/me-repositories.tsx:79
+#: src/features/me-repositories.tsx:83
 msgid "Web default"
 msgstr "Web default"
 
@@ -5152,7 +5152,7 @@ msgstr "What already exists"
 msgid "What confirming starts"
 msgstr "What confirming starts"
 
-#: src/features/session-new.tsx:252
+#: src/features/session-new.tsx:256
 msgid "What do you want to solve?"
 msgstr "What do you want to solve?"
 
@@ -5160,7 +5160,7 @@ msgstr "What do you want to solve?"
 msgid "What it solves"
 msgstr "What it solves"
 
-#: src/features/session-new.tsx:266
+#: src/features/session-new.tsx:270
 msgid "What should it work on?"
 msgstr "What should it work on?"
 
@@ -5259,9 +5259,16 @@ msgstr "Working"
 msgid "Working tree matches base commit (no diff)."
 msgstr "Working tree matches base commit (no diff)."
 
-#: src/features/me-repositories.tsx:80
+#: src/features/me-repositories.tsx:84
+#: src/features/me-repositories.tsx:91
+#: src/features/me-repositories.tsx:108
+#: src/features/session-new-panels.tsx:345
 msgid "Workspace default"
 msgstr "Workspace default"
+
+#: src/features/me-repositories.tsx:109
+msgid "Workspace default unavailable"
+msgstr "Workspace default unavailable"
 
 #: src/features/session-info.tsx:69
 #: src/features/ticket-info.tsx:286

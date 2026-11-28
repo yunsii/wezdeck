@@ -368,20 +368,34 @@ job_gate_full() {
   (cd "$BATCH_TREE" && scripts/dev/web-affected-tests.sh --base "$batch_base" --run)
 }
 
+copy_relay_build_stamps() {
+  local stamp
+  for stamp in .source-sha256 .binary-sha256; do
+    if [[ -f "$BATCH_TREE/native/wezdeck-wsl/bin/$stamp" ]]; then
+      cp -f "$BATCH_TREE/native/wezdeck-wsl/bin/$stamp" "$REPO/native/wezdeck-wsl/bin/$stamp" || return 1
+    else
+      rm -f "$REPO/native/wezdeck-wsl/bin/$stamp"
+    fi
+  done
+}
+
 job_relay() {
-  local want running installed expected seen i staged
+  local want running installed expected seen i staged binary_same=0
   want="$(cat "$BATCH_TREE/native/wezdeck-wsl/bin/.version")" || return 1
   [[ -n "$want" ]] || return 1
   running="$(relay_running_version)"
   expected="$REPO/native/wezdeck-wsl/bin/wezdeck-wsl relay"
   installed="$(systemctl --user cat "$UNIT" 2>/dev/null | sed -n 's/^ExecStart=//p' | tail -1)"
+  cmp -s "$BATCH_TREE/native/wezdeck-wsl/bin/wezdeck-wsl" "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" && binary_same=1
   if [[ "$running" == "$want" && "$installed" == "$expected" &&
-        "$(cat "$REPO/native/wezdeck-wsl/bin/.version" 2>/dev/null)" == "$want" && $force == 0 ]]; then
+        "$(cat "$REPO/native/wezdeck-wsl/bin/.version" 2>/dev/null)" == "$want" &&
+        $binary_same == 1 && $force == 0 ]]; then
+    copy_relay_build_stamps || return 1
     echo "skip: relay already runs $want"
     return 0
   fi
   # Keep a backup of the previously deployed binary for emergency rollback.
-  if [[ -x "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" && "$running" != "$want" ]]; then
+  if [[ -x "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" && ( "$running" != "$want" || $binary_same == 0 ) ]]; then
     cp -f "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" "$STATE/release/wezdeck-wsl.last-known" 2>/dev/null || true
   fi
   staged="$REPO/native/wezdeck-wsl/bin/.wezdeck-wsl-release.$$"
@@ -389,7 +403,8 @@ job_relay() {
   install -m 755 "$BATCH_TREE/native/wezdeck-wsl/bin/wezdeck-wsl" "$staged" || return 1
   mv -f "$staged" "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl" || return 1
   printf '%s\n' "$want" >"$REPO/native/wezdeck-wsl/bin/.version"
-  if [[ "$running" == "$want" && "$installed" == "$expected" && $force == 0 ]]; then
+  copy_relay_build_stamps || return 1
+  if [[ "$running" == "$want" && "$installed" == "$expected" && $binary_same == 1 && $force == 0 ]]; then
     echo "skip: relay already runs $want (primary binary refreshed)"
     return 0
   fi
@@ -621,7 +636,8 @@ run_coordinator_loop() {
     live_relay="$(relay_running_version || true)"
     web_changed=0; relay_changed=0
     if wanted web && [[ "$live_web" != "$web_fp" || $force == 1 ]]; then web_changed=1; fi
-    if wanted relay && [[ "$live_relay" != "$relay_fp" || $force == 1 ]]; then relay_changed=1; fi
+    if wanted relay && { [[ "$live_relay" != "$relay_fp" || $force == 1 ]] ||
+      ! cmp -s "$BATCH_TREE/native/wezdeck-wsl/bin/wezdeck-wsl" "$REPO/native/wezdeck-wsl/bin/wezdeck-wsl"; }; then relay_changed=1; fi
 
     # 4. Mandatory L0 pre-deploy core availability smoke gate.
     if ((skip_smoke == 0 && (web_changed || relay_changed))); then
