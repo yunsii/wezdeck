@@ -65,6 +65,9 @@ Override machine-specific targets with `--distro`,
 `--vhdx`, `--keepalive-task`, `--wsl-user` or `--web-origin`. The browser
 reconnects through its existing retry path once the host relay is back; the
 worker verifies host connectivity, not each individual browser tab.
+The Windows worker changes to a Windows-native working directory before
+stopping WSL; otherwise the inherited `\\wsl.localhost` directory disappears
+and even a successful compact cannot launch `wsl.exe` for verification.
 
 An approved WezDeck Web device can also start this fixed job from
 **我的 → 快捷控制 → WSL 磁盘**. The confirmation states that every WSL session

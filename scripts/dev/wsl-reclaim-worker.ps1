@@ -17,11 +17,15 @@ param(
   [switch]$PreflightOnly
 )
 $ErrorActionPreference = 'Stop'
+# Start-Process inherits the WSL caller's \\wsl.localhost cwd. That path
+# vanishes during --compact, so every later wsl.exe launch needs a native cwd.
+Set-Location -LiteralPath $env:SystemRoot
 $status = [ordered]@{
   phase = 'preflight'; started_at = (Get-Date).ToString('o'); distro = $Distro; vhdx = $Vhdx
   active_attention = $ActiveAttention; snapshot_windows = $SnapshotWindows
   task_id = $TaskId; target_device = $TargetDevice
   history = @(); last_phase = ''
+  windows_cwd = (Get-Location).Path
 }
 $stopAttempted = $false
 function Assert-Preflight {

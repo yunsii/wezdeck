@@ -21,6 +21,7 @@ Before=wezdeck-relay.service
 
 [Service]
 Type=oneshot
+Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/bash $PERSIST restore
 TimeoutStartSec=3min
 
@@ -38,6 +39,7 @@ ConditionVirtualization=wsl
 
 [Service]
 Type=oneshot
+Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/bash $PERSIST save
 EOF
 }

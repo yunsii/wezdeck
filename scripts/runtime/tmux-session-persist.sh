@@ -2,6 +2,13 @@
 # Save managed tmux windows and rebuild them after a WSL restart.
 set -euo pipefail
 
+# systemd user units inherit a minimal PATH and otherwise pick /usr/bin/tmux
+# (3.4 here), which cannot load the managed tmux 3.8 mouse bindings.
+if [[ -x "$HOME/.local/bin/tmux" ]]; then
+  PATH="$HOME/.local/bin:$PATH"
+  export PATH
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${WEZDECK_REPO:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 # shellcheck disable=SC1091

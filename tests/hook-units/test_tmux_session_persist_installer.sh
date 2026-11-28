@@ -17,6 +17,10 @@ systemd-analyze verify "$SYSTEMD_USER_UNIT_DIR"/*.service "$SYSTEMD_USER_UNIT_DI
 grep -Fq 'ExecStart=/usr/bin/bash '"$WEZDECK_REPO"'/scripts/runtime/tmux-session-persist.sh restore' \
   "$SYSTEMD_USER_UNIT_DIR/wezdeck-tmux-restore.service"
 grep -Fq 'Before=wezdeck-relay.service' "$SYSTEMD_USER_UNIT_DIR/wezdeck-tmux-restore.service"
+grep -Fq "Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+  "$SYSTEMD_USER_UNIT_DIR/wezdeck-tmux-restore.service"
+grep -Fq "Environment=PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+  "$SYSTEMD_USER_UNIT_DIR/wezdeck-tmux-save.service"
 grep -Fq 'OnUnitActiveSec=1min' "$SYSTEMD_USER_UNIT_DIR/wezdeck-tmux-save.timer"
 grep -Fq 'enable wezdeck-tmux-restore.service wezdeck-tmux-save.timer' "$TEST_ROOT/systemctl.log"
 printf 'PASS tmux-session-persist-installer\n'
