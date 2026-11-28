@@ -104,6 +104,7 @@ deployed_build() {
 }
 
 if [[ "$subcmd" == status ]]; then
+  release_reconcile_verify
   release_print_status
   python3 "$RECYCLE" status --state "$STATE" --repo "$REPO"
   exit 0
@@ -754,9 +755,11 @@ run_coordinator_loop() {
     say '✓' batch "batch #$batch_num deployed $head (${batch_count} commit(s), ${summary[*]})"
 
     if [[ $test_mode == async ]]; then
-      nohup bash "$REPO/scripts/dev/release-async-verify.sh" "$batch_base" "$target_sha" >/dev/null 2>&1 &
-      disown 2>/dev/null || true
-      say '·' verify "async regression started for $head (detached; never blocks next release)"
+      if verify_launch="$(bash "$REPO/scripts/dev/release-verify-launch.sh" "$batch_base" "$target_sha" 2>&1)"; then
+        say '·' verify "$verify_launch"
+      else
+        say '!' verify "$verify_launch"
+      fi
     fi
 
     # 8. In-flight coalescing: did more commits land while we shipped this batch?

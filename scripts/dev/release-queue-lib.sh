@@ -89,11 +89,31 @@ elif mode == "failed":
         st["last_run_dir"] = kv["run_dir"]
 elif mode == "verified":
     kv = parse_kv(args)
-    st["verified_sha"] = kv.get("sha", "")
-    st["verify_status"] = kv.get("status", "")
-    st["verified_at"] = now
-    if kv.get("log"):
-        st["verify_log"] = kv["log"]
+    sha = kv.get("sha", "")
+    current = st.get("verifying_sha") or st.get("verified_sha")
+    if not current or current == sha:
+        st["verified_sha"] = sha
+        st["verify_status"] = kv.get("status", "")
+        st["verified_at"] = now
+        st["verify_log"] = kv.get("log", "")
+        st["verifying_sha"] = ""
+        st["verify_unit"] = ""
+elif mode == "verifying":
+    kv = parse_kv(args)
+    st["verifying_sha"] = kv.get("sha", "")
+    st["verify_unit"] = kv.get("unit", "")
+    st["verify_log"] = kv.get("log", "")
+    st["verify_started_at"] = now
+elif mode == "verify_lost":
+    kv = parse_kv(args)
+    sha = kv.get("sha", "")
+    if st.get("verifying_sha") == sha:
+        st["verified_sha"] = sha
+        st["verify_status"] = "FAIL"
+        st["verified_at"] = now
+        st["verify_log"] = kv.get("log", "")
+        st["verifying_sha"] = ""
+        st["verify_unit"] = ""
 
 st["updated_at"] = now
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".state-", suffix=".tmp")
@@ -151,12 +171,39 @@ if st.get("failed_sha"):
     print(f"failed_sha:     {st['failed_sha'][:12]} ({st.get('last_error') or 'failed'})")
 if st.get("verify_status"):
     print(f"last_verify:    {st['verify_status']} @ {(st.get('verified_sha') or '-')[:12]} ({st.get('verified_at') or '-'})")
+if st.get("verifying_sha"):
+    print(f"verifying:      {st['verifying_sha'][:12]} ({st.get('verify_started_at') or '-'})")
+    print(f"verify_log:     {st.get('verify_log') or '-'}")
 pending = st.get("pending_commits") or []
 if pending:
     print(f"pending ({len(pending)}):")
     for c in pending:
         print(f"  - {c.get('short', c.get('sha', '')[:8])} {c.get('subject', '')}")
 PY
+}
+
+release_reconcile_verify() {
+  local sha unit log started now active
+  sha="$(release_state_get verifying_sha)"
+  unit="$(release_state_get verify_unit)"
+  [[ -n "$sha" && -n "$unit" ]] || return 0
+  if active="$(systemctl --user show "$unit" -p ActiveState --value 2>/dev/null)"; then
+    case "$active" in
+      inactive|failed) ;;
+      *) return 0 ;;
+    esac
+  else
+    systemctl --user show-environment >/dev/null 2>&1 || return 0
+  fi
+  started="$(date -d "$(release_state_get verify_started_at)" +%s 2>/dev/null || echo 0)"
+  now="$(date +%s)"
+  ((now - started >= 15)) || return 0
+  log="$(release_state_get verify_log)"
+  release_state_update verify_lost "sha=$sha" "log=$log"
+  if [[ "$(release_state_get verified_sha)" == "$sha" && "$(release_state_get verify_status)" == FAIL ]]; then
+    printf '%s event=verify_done head=%s status=FAIL reason=service_exited log=%s\n' \
+      "$(date -Iseconds)" "${sha:0:8}" "$log" >>"$STATE/release.log"
+  fi
 }
 
 # Read the HostRelay client token, preferring the on-disk env file over

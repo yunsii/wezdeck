@@ -42,6 +42,20 @@ release_state_update verified "sha=cccccccccccccccccccccccccccccccccccccccc" "st
 assert_eq "$(release_state_get verify_status)" "ok" "verify ok"
 assert_eq "$(release_state_get deployed_sha)" "cccccccccccccccccccccccccccccccccccccccc" "deployed preserved"
 
+release_state_update verifying "sha=dddddddddddddddddddddddddddddddddddddddd" "unit=verify-d.service" "log=/tmp/d.log"
+assert_eq "$(release_state_get verifying_sha)" "dddddddddddddddddddddddddddddddddddddddd" "verify running"
+release_state_update verified "sha=cccccccccccccccccccccccccccccccccccccccc" "status=FAIL" "log=/tmp/stale.log"
+assert_eq "$(release_state_get verify_status)" "ok" "stale verifier cannot overwrite newer run"
+release_state_update verified "sha=dddddddddddddddddddddddddddddddddddddddd" "status=FAIL" "log=/tmp/d.log"
+assert_eq "$(release_state_get verifying_sha)" "" "verify completed"
+assert_eq "$(release_state_get verify_status)" "FAIL" "verify failure recorded"
+release_state_update verified "sha=cccccccccccccccccccccccccccccccccccccccc" "status=ok" "log=/tmp/late.log"
+assert_eq "$(release_state_get verified_sha)" "dddddddddddddddddddddddddddddddddddddddd" "late old verdict ignored"
+release_state_update verifying "sha=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" "unit=verify-e.service" "log=/tmp/e.log"
+release_state_update verified "sha=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" "status=ok" "log=/tmp/e.log"
+release_state_update verify_lost "sha=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" "log=/tmp/e.log"
+assert_eq "$(release_state_get verify_status)" "ok" "lost probe cannot overwrite completed result"
+
 # Land and deploy update the same state from different locks/processes.
 for i in $(seq 1 12); do
   release_state_update enqueue "$(printf '%040d' "$i")" "$(printf '%08d' "$i")" "feat: $i" &

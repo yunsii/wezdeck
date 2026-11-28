@@ -6,7 +6,7 @@
 # cancelled and superseded automatically.
 #
 #   scripts/dev/release-async-verify.sh <base_sha> <target_sha>
-set -uo pipefail
+set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/wezdeck"
@@ -21,26 +21,31 @@ mkdir -p "$STATE/release"
 pid_file="$STATE/release/verify.pid"
 lock_file="$STATE/release/verify.lock"
 wt_dir="$STATE/release/verify-worktree"
-log_file="$STATE/release/verify-$(date +%Y%m%d-%H%M%S)-${target_sha:0:8}.log"
-
-# Cancel any older running verifier before acquiring verify.lock.
-if [[ -f "$pid_file" ]]; then
-  old_pid="$(cat "$pid_file" 2>/dev/null || true)"
-  if [[ -n "$old_pid" && "$old_pid" != "$$" ]] && kill -0 "$old_pid" 2>/dev/null; then
-    pkill -P "$old_pid" 2>/dev/null || true
-    kill "$old_pid" 2>/dev/null || true
-  fi
-fi
+log_file="${WEZDECK_VERIFY_LOG:-$STATE/release/verify-$(date +%Y%m%d-%H%M%S)-${target_sha:0:8}.log}"
 
 exec 7>>"$lock_file"
 flock -w 30 7 || exit 0
 echo "$$" >"$pid_file"
 cleanup() {
+  local rc=$?
+  if [[ "${completed:-0}" != 1 ]]; then
+    release_state_update verified "sha=$target_sha" 'status=FAIL' "log=$log_file" || true
+    printf '%s event=verify_done head=%s status=FAIL reason=aborted log=%s\n' \
+      "$(date -Iseconds)" "${target_sha:0:8}" "$log_file" >>"$STATE/release.log" || true
+  fi
   if [[ "$(cat "$pid_file" 2>/dev/null || true)" == "$$" ]]; then
     rm -f "$pid_file"
   fi
+  return "$rc"
 }
 trap cleanup EXIT
+trap 'exit 143' TERM
+
+completed=0
+release_state_update verifying "sha=$target_sha" "unit=${WEZDECK_VERIFY_UNIT:-}" "log=$log_file"
+if [[ -n "${WEZDECK_VERIFY_ACK:-}" ]]; then
+  printf '%s\n' "$$" >"$WEZDECK_VERIFY_ACK"
+fi
 
 {
   echo "verify: target=$target_sha base=${base_sha:-HEAD~1}"
@@ -73,4 +78,6 @@ trap cleanup EXIT
   release_state_update verified "sha=$target_sha" "status=$status" "log=$log_file"
   printf '%s event=verify_done head=%s status=%s log=%s\n' \
     "$(date -Iseconds)" "${target_sha:0:8}" "$status" "$log_file" >>"$STATE/release.log"
+  completed=1
+  exit "$rc"
 } >"$log_file" 2>&1

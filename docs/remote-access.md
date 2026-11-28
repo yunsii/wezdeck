@@ -471,7 +471,10 @@ primary `master`. The pipeline splits into three stages:
    does not follow later `master` updates during a batch.
 3. **Detached async regression (`scripts/dev/release-async-verify.sh`)**: runs
    `web-affected-tests.sh` outside all locks in a dedicated detached worktree
-   and automatically cancels stale runs when a newer batch ships.
+   through a transient user systemd service, and automatically cancels stale
+   runs when a newer batch ships. The launcher waits for a startup marker;
+   launch failures and test failures appear in `wezdeck-release.sh status` and
+   `verify-*.log` instead of silently retaining an older success result.
 `WEZDECK_RELEASE_LOCK_WAIT` sets the wait in seconds (300 by default).
 The script fetches `origin/master` before integrating. A merge conflict
 returns to the task worktree for resolution. If the remote advances during

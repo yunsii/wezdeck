@@ -2,6 +2,7 @@
 # Exercise land, deployment, and source recycle with real Git worktrees.
 set -euo pipefail
 source_repo="$(cd "$(dirname "$0")/../.." && pwd)"
+bash "$source_repo/tests/wezdeck-release/test-verify-launch.sh"
 fixture="$(mktemp -d)"
 cleanup() {
   local rc=$?
