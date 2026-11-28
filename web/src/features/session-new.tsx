@@ -3,7 +3,7 @@
 // Picking repo + agent and sending the first message starts the async host job
 // and replaces the URL with /console/sessions/job-<id> right away.
 import { useLingui } from '@lingui/react/macro'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { Plus, SendHorizontal } from 'lucide-react'
 import {
@@ -14,16 +14,17 @@ import {
   useSyncExternalStore,
 } from 'react'
 
-import { BackButton } from '#/components/deck/back-button'
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
 import { trace } from '#/lib/client-trace'
 import { useGoBack } from '#/lib/go-back'
 import { useLocale } from '#/lib/locale-context'
-import { hostRead, hostWrite } from '#/lib/runtime-client'
+import { hostWrite } from '#/lib/runtime-client'
 import { useIsWidePhoneFirst } from '#/lib/use-media'
 import { cn } from '#/lib/utils'
 import { useAgentProfiles, usePreferredAgentProfile } from './agent-profiles'
+import { useRepositories } from './repo-agent-settings'
+import { NewSessionHeader } from './session-new-header'
 import { jumpPending } from './console-jump-keys'
 import { useSessions } from './console-sessions'
 import { useDeviceState } from './device-state'
@@ -46,8 +47,6 @@ import type { NewSessionPreset } from './session-new-route'
 import { worktreeKey } from './session-order'
 
 export type { NewSessionPreset }
-
-type Repo = { root: string; label: string; visited?: number }
 
 type NewSessionRequest = { round: number; preset?: NewSessionPreset }
 let newSessionReq: NewSessionRequest = { round: 0 }
@@ -88,10 +87,7 @@ export function suggestGroupName(prompt: string): string {
     : characters.slice(0, 31).join('') + '…'
 }
 
-const preferenceKeys = {
-  repo: 'wezdeck.new-session.repo',
-  agent: 'wezdeck.new-session.agent',
-}
+const preferenceKeys = { repo: 'wezdeck.new-session.repo' }
 
 function readPreference(key: string) {
   try {
@@ -101,10 +97,9 @@ function readPreference(key: string) {
   }
 }
 
-function rememberSessionChoices(repo: string | undefined, agent: string) {
+function rememberSessionChoices(repo: string | undefined) {
   try {
     if (repo) localStorage.setItem(preferenceKeys.repo, repo)
-    localStorage.setItem(preferenceKeys.agent, agent)
   } catch {
     // Creating a session still works if the browser blocks local storage.
   }
@@ -313,23 +308,17 @@ function NewSessionGuidedForm({
   const { picker, openPicker, backToForm } = useNewSessionPicker()
   const preset = seed.preset
   const anchor = preset?.anchor
-  const repos = useQuery({
-    queryKey: ['remote', 'repos'],
-    queryFn: async () =>
-      (await hostRead('repos', {})) as { repos: Array<Repo> },
-  })
+  const repos = useRepositories()
   const sessions = useSessions()
   const agentProfiles = useAgentProfiles()
   const [preferredAgent] = usePreferredAgentProfile()
-  const [lastAgent] = useState(() => readPreference(preferenceKeys.agent))
   const {
     available: availableProfiles,
-    defaultDisabled,
     selected: selectedAgent,
     setPicked: setAgentProfile,
   } = useAgentSelection(
     agentProfiles.data?.profiles ?? [],
-    seed.agent ?? lastAgent ?? preferredAgent,
+    seed.agent ?? preferredAgent,
   )
   const [repo, setRepo] = useState(
     () => seed.repo ?? readPreference(preferenceKeys.repo) ?? '',
@@ -345,10 +334,6 @@ function NewSessionGuidedForm({
   useEscapeToBack(Boolean(picker), back)
 
   const repositories = repos.data?.repos ?? []
-  const agentOptions = useNewSessionAgentOptions(
-    agentProfiles.data?.profiles ?? [],
-    defaultDisabled,
-  )
   const chosen =
     preset?.repo ??
     (repositories.some(({ root }) => root === repo)
@@ -358,6 +343,32 @@ function NewSessionGuidedForm({
     repositories.find((r) => r.root === chosen)?.label ||
     chosen.split('/').pop() ||
     ''
+  const repoDefault =
+    repositories.find((r) => r.root === chosen)?.agent_profile || ''
+  const settingsError = Boolean(repos.data?.settings_error)
+  const defaultDisabled = Boolean(
+    agentProfiles.data?.profiles.some(
+      (profile) =>
+        profile.id === repoDefault &&
+        (profile.disabled ||
+          (profile.id === 'claude_kimi' && !profile.configured)),
+    ),
+  )
+  const selectableAgentOptions = useNewSessionAgentOptions(
+    agentProfiles.data?.profiles ?? [],
+    defaultDisabled || settingsError,
+    repoDefault,
+  )
+  const agentOptions = settingsError
+    ? [
+        { value: '', label: t`Choose an agent`, disabled: true },
+        ...selectableAgentOptions,
+      ]
+    : selectableAgentOptions
+  const chosenAgent =
+    selectedAgent ||
+    (defaultDisabled && !settingsError ? availableProfiles[0]?.id || '' : '')
+  const effectiveAgent = chosenAgent || (settingsError ? '' : repoDefault)
   const sessionRows = sessions.data?.sessions ?? []
   const source = sessionRows.find((row) => row.id === anchor)
   const firstSibling =
@@ -380,7 +391,9 @@ function NewSessionGuidedForm({
       prompt.trim() &&
       (!nameGroup || resolvedGroupName.trim()),
     ) &&
-    (!agentProfiles.data || availableProfiles.length > 0)
+    (!agentProfiles.data || availableProfiles.length > 0) &&
+    (!defaultDisabled || Boolean(chosenAgent)) &&
+    (!settingsError || Boolean(selectedAgent))
 
   const submit = async () => {
     if (submitting.current || sending || !ready) return
@@ -403,13 +416,13 @@ function NewSessionGuidedForm({
             }
           : { repo: chosen, new_group: true }),
         prompt: trimmed,
-        agent_profile: selectedAgent || undefined,
+        agent_profile: chosenAgent || undefined,
       })) as { job: string }
-      rememberSessionChoices(anchor ? undefined : chosen, selectedAgent)
+      rememberSessionChoices(anchor ? undefined : chosen)
       rememberJobSeed(res.job, {
         repo: chosen,
         repoLabel,
-        agentProfile: selectedAgent,
+        agentProfile: effectiveAgent,
         prompt: trimmed,
         groupName: nameGroup ? resolvedGroupName.trim() : preset?.group,
         anchor,
@@ -440,19 +453,7 @@ function NewSessionGuidedForm({
       data-testid="new-session-view"
       className="flex min-h-full w-full flex-1 flex-col md:h-full md:min-h-0"
     >
-      <header
-        data-testid="new-session-header"
-        className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 flex min-h-13 items-center gap-1 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:static md:mx-0 md:mt-0 md:shrink-0 md:px-4"
-      >
-        <BackButton
-          onClick={back}
-          label={t({ message: 'Sessions', context: 'nav' })}
-          className="-ml-2 md:hidden"
-        />
-        <h1 className="min-w-0 flex-1 truncate text-title leading-tight font-semibold">
-          {anchor ? t`New session in this group` : t`New session`}
-        </h1>
-      </header>
+      <NewSessionHeader back={back} anchor={anchor} agent={effectiveAgent} />
 
       <div className="flex flex-1 flex-col py-4 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:px-6 md:py-10">
         <div className="mx-auto grid w-full max-w-2xl gap-4 md:my-auto md:pb-12">
@@ -471,9 +472,15 @@ function NewSessionGuidedForm({
             onGroupName={setGroupName}
             showAgents={Boolean(agentProfiles.data?.profiles.length)}
             agentOptions={agentOptions}
-            agentProfile={selectedAgent}
+            agentProfile={chosenAgent}
             onAgentProfile={setAgentProfile}
           />
+
+          {settingsError ? (
+            <p role="alert" className="px-1 text-caption text-brand-error">
+              {t`Repository agent settings could not be read. Select an agent explicitly.`}
+            </p>
+          ) : null}
 
           <NewSessionComposer
             prompt={prompt}
@@ -496,7 +503,7 @@ function NewSessionGuidedForm({
         repositories={repositories}
         repo={chosen}
         agentOptions={agentOptions}
-        agentProfile={selectedAgent}
+        agentProfile={chosenAgent}
         onPickRepo={setRepo}
         onPickAgent={setAgentProfile}
         onBack={backToForm}

@@ -242,7 +242,7 @@ export function AgentAvatar({
   className?: string
   title?: string
   /** turn status for the top-left LED; idle hides it */
-  tone?: ChatTone
+  tone?: ChatTone | 'error'
 }) {
   const family = agentFamily(agent, profile)
   const badge = agentProfileBadge(profile, family)
@@ -261,13 +261,21 @@ export function AgentAvatar({
   const statusLabel =
     tone === 'waiting'
       ? 'waiting'
-      : tone === 'done'
-        ? 'done'
-        : tone === 'running'
-          ? 'running'
-          : ''
+      : tone === 'error'
+        ? 'error'
+        : tone === 'done'
+          ? 'done'
+          : tone === 'running'
+            ? 'running'
+            : ''
   const ledTone =
-    tone === 'waiting' ? 'waiting' : tone === 'done' ? 'done' : 'running'
+    tone === 'waiting'
+      ? 'waiting'
+      : tone === 'error'
+        ? 'error'
+        : tone === 'done'
+          ? 'done'
+          : 'running'
   const aria = [label, badge || null, statusLabel || null]
     .filter(Boolean)
     .join(' · ')

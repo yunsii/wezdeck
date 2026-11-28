@@ -29,6 +29,7 @@ import { InstallEntry, Row, UpdateCheck } from './me-app'
 import { InteractionsPage, useInteractionsBack } from './console-interactions'
 import { usePreferredAgentProfile } from './agent-profiles'
 import { AgentsPage } from './me-agents'
+import { RepositoriesPage } from './me-repositories'
 import { AutoTitlePage, useAutoTitleSummary } from './me-autotitle'
 import { EntryRow } from './me-entry-row'
 import { NotificationsPage, useNotificationsSummary } from './me-notifications'
@@ -44,6 +45,7 @@ export const ME_PAGES = [
   'host',
   'interactions',
   'agents',
+  'repositories',
   'autotitle',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
@@ -60,6 +62,7 @@ function useMeTitles(): Record<MePage, string> {
     host: t`This computer`,
     interactions: t`Interaction debugging`,
     agents: t`Agents`,
+    repositories: t`Repositories`,
     autotitle: t`Auto titles`,
   }
 }
@@ -232,6 +235,12 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.agents}
           value={preferredAgent || t`Repository default`}
         />
+        <EntryRow
+          page="repositories"
+          active={active === 'repositories'}
+          title={titles.repositories}
+          value={t`Agent defaults`}
+        />
         {authorized ? (
           <EntryRow
             page="autotitle"
@@ -379,6 +388,7 @@ function MeSubPage({ page }: { page: MePage }) {
     host: <HostPage />,
     interactions: <InteractionsPage />,
     agents: <AgentsPage />,
+    repositories: <RepositoriesPage />,
     autotitle: <AutoTitlePage />,
   }[page]
   return (

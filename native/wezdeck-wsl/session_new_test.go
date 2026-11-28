@@ -21,6 +21,7 @@ func newSessionFixture(t *testing.T) (repo, socket string) {
 		t.Fatalf("git init: %s", out)
 	}
 	ledger := filepath.Join(dir, "ledger.json")
+	t.Setenv("WEZDECK_REPO_AGENT_SETTINGS_FILE", filepath.Join(dir, "repo-agents.json"))
 	os.WriteFile(ledger, []byte(fmt.Sprintf(`{"worktrees":{%q:{"last_access_ms":5}}}`, repo)), 0o600)
 	t.Setenv("WEZDECK_ACCESS_LEDGER", ledger)
 	os.WriteFile(filepath.Join(dir, "attention.json"), []byte(`{"entries":{}}`), 0o600)
@@ -30,7 +31,11 @@ func newSessionFixture(t *testing.T) (repo, socket string) {
 	fake := filepath.Join(dir, "fake-open-task-window")
 	os.WriteFile(fake, []byte(`#!/usr/bin/env bash
 set -e
-[[ "$1" == --no-attach && "$2" == --description && "$4" == -- ]] || { echo "bad args: $*" >&2; exit 2; }
+[[ "$1" == --no-attach && "$2" == --description ]] || { echo "bad args: $*" >&2; exit 2; }
+if [[ "$4" == --agent-profile ]]; then
+  set -- "$1" "$2" "$3" "${@:6}"
+fi
+[[ "$4" == -- ]] || { echo "bad args: $*" >&2; exit 2; }
 echo "$3" >"$PWD/.fake-description"
 tmux -S `+socket+` new-session -d -s fake -x 100 -y 20 "sh -c 'echo ready; exec cat'"
 echo "branch_name=dev/${5}"

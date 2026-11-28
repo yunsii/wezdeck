@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { BackButton } from '#/components/deck/back-button'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import { Led } from '#/components/deck/led'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
@@ -169,7 +170,7 @@ function JobProgressCard({
           <StepRow
             state={stageStepState(effectiveStage, 'agent')}
             label={t`Start agent`}
-            detail={agentProfile || undefined}
+            detail={agentProfile ? agentLabel('', agentProfile) : undefined}
           />
           <StepRow
             state={stageStepState(effectiveStage, 'send')}
@@ -399,6 +400,7 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
           label={t({ message: 'Sessions', context: 'nav' })}
           className="-ml-2 md:hidden"
         />
+        <AgentAvatar profile={agentProfile} size={32} />
         <div className="grid min-w-0 flex-1">
           <h1 className="truncate text-title leading-tight font-semibold">
             {headerTitle}

@@ -116,8 +116,9 @@ echo "tmux_socket=`+socket+`"
 		return waitJob(t, res.(map[string]any)["job"].(string))
 	}
 	ux := filepath.Join(filepath.Dir(repo), ".worktrees", "repo", "ux")
-	if j := start("ux"); j.Stage != "done" || j.Mode != "reuse" {
-		t.Fatalf("ux: %+v", j)
+	first := start("ux")
+	if first.Stage != "done" || first.Mode != "reuse" {
+		t.Fatalf("ux: %+v", first)
 	}
 	// ux busy too (dirty) now: one more slot
 	os.WriteFile(filepath.Join(ux, "wip.txt"), []byte("wip"), 0o600)
@@ -129,9 +130,10 @@ echo "tmux_socket=`+socket+`"
 	}
 	log, _ := os.ReadFile(calls)
 	lines := strings.Split(strings.TrimSpace(string(log)), "\n")
-	if len(lines) != 3 || lines[0] != "reuse --no-attach "+ux ||
-		!strings.HasPrefix(lines[1], "new --no-attach --description  -- ux") ||
-		!strings.HasPrefix(lines[2], "new --no-attach --description  -- docs") {
+	profileArg := " --agent-profile " + first.AgentProfile
+	if len(lines) != 3 || lines[0] != "reuse --no-attach"+profileArg+" "+ux ||
+		!strings.HasPrefix(lines[1], "new --no-attach --description "+profileArg+" -- ux") ||
+		!strings.HasPrefix(lines[2], "new --no-attach --description "+profileArg+" -- docs") {
 		t.Fatalf("calls:\n%s", log)
 	}
 }

@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   ChevronRight,
   FlaskConical,
+  FolderGit2,
   Monitor,
   Palette,
   ShieldCheck,
@@ -21,6 +22,7 @@ import type { MePage } from './console-me'
 
 const ICONS: Record<MePage, LucideIcon> = {
   agents: Bot,
+  repositories: FolderGit2,
   autotitle: Sparkles,
   notifications: Bell,
   connection: Wifi,

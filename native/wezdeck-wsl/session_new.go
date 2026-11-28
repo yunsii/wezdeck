@@ -39,9 +39,11 @@ import (
 )
 
 type repoChoice struct {
-	Root    string `json:"root"`
-	Label   string `json:"label"`
-	Visited int64  `json:"visited,omitempty"`
+	Root         string `json:"root"`
+	Label        string `json:"label"`
+	Visited      int64  `json:"visited,omitempty"`
+	AgentProfile string `json:"agent_profile,omitempty"`
+	AgentSource  string `json:"agent_source,omitempty"`
 }
 
 // knownRepos includes remembered repositories even after their last session closes.
@@ -91,7 +93,40 @@ func knownRepos() []repoChoice {
 }
 
 func listRepos() (any, error) {
-	return map[string]any{"v": 1, "ok": true, "repos": knownRepos()}, nil
+	repos := knownRepos()
+	settings, settingsErr := readRepoAgentSettings()
+	if settingsErr != nil {
+		relayLogf("repo_agent", "outcome=read_error err=%q", settingsErr.Error())
+	}
+	roots := make([]string, len(repos))
+	for i := range repos {
+		roots[i] = repos[i].Root
+	}
+	defaults := workspaceAgentProfiles(roots)
+	for i := range repos {
+		repos[i].AgentProfile, repos[i].AgentSource = defaults[i], "workspace"
+		if settingsErr == nil && settings[repos[i].Root] != "" {
+			repos[i].AgentProfile, repos[i].AgentSource = settings[repos[i].Root], "override"
+		}
+	}
+	return map[string]any{"v": 1, "ok": true, "repos": repos, "settings_error": settingsErr != nil}, nil
+}
+
+func validateNewSessionAgent(profile string) error {
+	if !registeredAgentProfile(profile) {
+		return errors.New("session.new: unknown agent profile")
+	}
+	disabled, err := agentProfileDisabled(profile)
+	if err != nil {
+		return fmt.Errorf("session.new: cannot read %s agent settings: %w", profile, err)
+	}
+	if disabled {
+		return errors.New("session.new: agent profile is disabled")
+	}
+	if profile == "claude_kimi" && !kimiConfigured() {
+		return errors.New("session.new: configure the Kimi API key in Agents first")
+	}
+	return nil
 }
 
 type newSessionJob struct {
@@ -252,35 +287,8 @@ func startNewSession(args json.RawMessage) (any, error) {
 	a.Prompt = strings.TrimSpace(a.Prompt)
 	a.Agent = strings.ToLower(strings.TrimSpace(a.Agent))
 	if a.Agent != "" {
-		profiles, err := listAgentProfiles()
-		if err != nil {
-			return nil, errors.New("session.new: agent profiles unavailable")
-		}
-		valid := false
-		if rows, ok := profiles.(map[string]any)["profiles"].([]agentProfile); ok {
-			for _, profile := range rows {
-				if profile.ID == a.Agent {
-					if profile.Disabled {
-						return nil, errors.New("session.new: agent profile is disabled")
-					}
-					valid = true
-					break
-				}
-			}
-		}
-		if !valid {
-			return nil, errors.New("session.new: unknown agent profile")
-		}
-		if a.Agent == "claude_kimi" && !kimiConfigured() {
-			return nil, errors.New("session.new: configure the Kimi API key in Agents first")
-		}
-	} else {
-		disabled, err := agentProfileDisabled(activeAgentProfile())
-		if err != nil {
-			return nil, errors.New("session.new: cannot read default agent settings")
-		}
-		if disabled {
-			return nil, errors.New("session.new: default agent is disabled; select another agent")
+		if err := validateNewSessionAgent(a.Agent); err != nil {
+			return nil, err
 		}
 	}
 	groupName := ""
@@ -312,10 +320,25 @@ func startNewSession(args json.RawMessage) (any, error) {
 	if a.Prompt == "" || utf8.RuneCountInString(a.Prompt) > promptMax {
 		return nil, fmt.Errorf("session.new: the first message needs 1–%d characters", promptMax)
 	}
-	if a.Anchor != "" {
-		if a.Agent == "" {
-			a.Agent = activeAgentProfile()
+	if a.Agent == "" {
+		repo := a.Repo
+		if a.Anchor != "" {
+			_, targetRepo, _, err := sessionGroupTarget(a.Anchor)
+			if err != nil {
+				return nil, err
+			}
+			repo = targetRepo
 		}
+		var err error
+		a.Agent, _, err = repoAgentProfile(repo)
+		if err != nil {
+			return nil, err
+		}
+		if err := validateNewSessionAgent(a.Agent); err != nil {
+			return nil, err
+		}
+	}
+	if a.Anchor != "" {
 		return startGroupedSession(a.Anchor, a.Agent, a.Prompt, groupName)
 	}
 	allowed := false

@@ -20,6 +20,7 @@ export const OPEN_ACTIONS = new Set([
   'agent.profile.configure',
   'agent.profile.model',
   'agent.profile.settings',
+  'repo.agent.set',
   'session.restart',
   'session.delete',
   'session.handoff',

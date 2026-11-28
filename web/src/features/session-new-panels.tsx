@@ -8,7 +8,7 @@ import { Select } from '#/components/ui/select'
 import { Sheet } from '#/components/ui/sheet'
 import { cn } from '#/lib/utils'
 import { trace } from '#/lib/client-trace'
-import { AgentAvatar } from './agent-avatar'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import type { AgentProfile } from './agent-profiles'
 import type { NewSessionStage } from './session-new-route'
 
@@ -25,17 +25,15 @@ export function useAgentSelection(
   preferred: string,
 ) {
   const [picked, setPicked] = useState<string | null>(null)
-  const available = profiles.filter((profile) => !profile.disabled)
-  const defaultDisabled = profiles.some(
-    (profile) => profile.default && profile.disabled,
+  const available = profiles.filter(
+    (profile) =>
+      !profile.disabled && (profile.id !== 'claude_kimi' || profile.configured),
   )
   const requested = picked ?? preferred
   const selected = available.some((profile) => profile.id === requested)
     ? requested
-    : defaultDisabled
-      ? available[0]?.id || ''
-      : ''
-  return { available, defaultDisabled, selected, setPicked }
+    : ''
+  return { available, selected, setPicked }
 }
 
 export function useNewSessionPicker() {
@@ -62,6 +60,7 @@ export function useNewSessionPicker() {
 export function useNewSessionAgentOptions(
   agentProfiles: Array<AgentProfile>,
   defaultAgentDisabled: boolean,
+  defaultAgentProfile = '',
 ): Array<PickerOption> {
   const { t } = useLingui()
   return [
@@ -70,14 +69,17 @@ export function useNewSessionAgentOptions(
       : [
           {
             value: '',
-            label: t`Repository default`,
-            icon: <AgentAvatar size={24} />,
+            label: defaultAgentProfile
+              ? `${t`Repository default`} · ${agentProfiles.find((profile) => profile.id === defaultAgentProfile)?.label || agentLabel('', defaultAgentProfile)}`
+              : t`Repository default`,
+            icon: <AgentAvatar profile={defaultAgentProfile} size={24} />,
           },
         ]),
     ...agentProfiles
       .filter((profile) => !profile.disabled)
       .map((profile) => ({
         value: profile.id,
+        disabled: profile.id === 'claude_kimi' && !profile.configured,
         icon: <AgentAvatar profile={profile.id} size={24} />,
         label:
           profile.id === 'claude_kimi' && !profile.configured

@@ -11,7 +11,7 @@ import { Link } from '@tanstack/react-router'
 import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Led } from '#/components/deck/led'
+import { AgentAvatar, agentLabel } from './agent-avatar'
 import { StickyBar } from '#/components/deck/sticky-bar'
 import { SplitColumn } from '#/components/deck/split-column'
 import { Button } from '#/components/ui/button'
@@ -170,13 +170,15 @@ function CreatingSessionsList({
                   active && 'row-selected',
                 )}
               >
-                <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-deck">
-                  <Led tone={tone} size={10} />
-                </span>
+                <AgentAvatar
+                  profile={job.agent_profile}
+                  size={40}
+                  tone={tone}
+                />
                 <span className="grid min-w-0 flex-1 gap-0.5">
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-body font-semibold text-brand-text">
-                      {title}
+                      {title} · {agentLabel('', job.agent_profile)}
                     </span>
                     {job.created_at ? (
                       <span className="shrink-0 text-meta text-brand-label tabular-nums">
