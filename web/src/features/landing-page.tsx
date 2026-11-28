@@ -51,7 +51,7 @@ export function LandingPage() {
             WezDeck
           </h1>
           <p className="max-w-xl text-title leading-relaxed text-brand-muted md:text-heading md:font-normal">
-            {t`A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone.`}
+            {t`A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI.`}
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
@@ -87,11 +87,11 @@ export function LandingPage() {
         <div className="mx-auto grid max-w-5xl gap-5 px-4 py-12 sm:px-5 md:grid-cols-3 md:py-16">
           <FeatureSlice
             title={t({ message: 'Sessions', context: 'nav' })}
-            body={t`Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone.`}
+            body={t`Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone.`}
             preview={
               <div className="flex flex-wrap items-center gap-1.5 text-meta text-brand-muted">
                 <Keyboard size={14} aria-hidden className="text-brand-label" />
-                {['Alt+j', 'Alt+k', 'j / k', '/'].map((key) => (
+                {['j / k', '/', 'Alt+J', '?'].map((key) => (
                   <kbd
                     key={key}
                     className="rounded-md bg-brand-surface px-1.5 py-0.5 font-mono text-meta text-brand-text"
