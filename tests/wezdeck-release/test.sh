@@ -18,6 +18,7 @@ cleanup() {
 }
 trap cleanup EXIT
 export XDG_STATE_HOME="$fixture/state"
+export CLOUDFLARE_API_TOKEN=fixture-token
 export RELEASE_TRACE="$fixture/trace"
 export RELEASE_LIVE_BUILD_FILE="$fixture/live-build"
 export WEZDECK_RELEASE_RECYCLE_NO_WATCH=1

@@ -484,6 +484,19 @@ job_relay() {
   echo "ok: running relay $want (was ${running:-?})"
 }
 
+ensure_web_deploy_auth() {
+  [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] && return 0
+  # The release may be started by a non-interactive WSL service after a
+  # reboot. Use the same managed env loader as agent launchers.
+  # shellcheck disable=SC1091
+  source "$REPO/scripts/runtime/runtime-env-lib.sh"
+  runtime_env_load_managed
+  [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]] || {
+    printf 'web deploy: CLOUDFLARE_API_TOKEN is not configured in shell-env.d\n' >&2
+    return 1
+  }
+}
+
 job_web() {
   local deployed want built reused='' relay_do_want relay_do_deployed
   # Deploy standalone HostRelay DO Worker ONLY when web/src/relay or
@@ -493,6 +506,7 @@ job_web() {
   relay_do_deployed="$(release_state_get deployed_relay_do_fp)"
   if [[ $force == 1 || "$relay_do_deployed" != "$relay_do_want" ]]; then
     phase "wrangler deploy wezdeck-relay-do ($relay_do_want)"
+    ensure_web_deploy_auth || return 1
     (cd "$BATCH_TREE/web" && corepack pnpm exec wrangler deploy -c wrangler.relay.jsonc) || return 1
     echo "ok: deployed relay-do $relay_do_want (was ${relay_do_deployed:-none})"
   fi
@@ -511,6 +525,7 @@ job_web() {
     (cd "$BATCH_TREE/web" && WEZDECK_BUILD_ID="$want" corepack pnpm exec vite build) || return 1
   fi
   phase "wrangler deploy wezdeck (assets + worker; HostRelay DO untouched)"
+  ensure_web_deploy_auth || return 1
   (cd "$BATCH_TREE/web" && corepack pnpm exec wrangler deploy -c dist/server/wrangler.json) || return 1
   phase "live canary probe ($SITE)"
   if ! release_live_canary "$SITE" "$want"; then
