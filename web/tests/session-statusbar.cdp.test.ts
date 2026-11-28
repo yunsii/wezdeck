@@ -5,11 +5,11 @@
 // covers: native/wezdeck-wsl/workstations.go
 // covers: web/src/features/console-interactions-demos.tsx
 import { chromium } from '@playwright/test'
-import type { Browser, Locator, Page } from '@playwright/test'
+import type { Browser } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 // The status bar under the composer (交互调试 › 底部状态栏): one line like
-// the terminal's; worktrees and background tasks open upward.
+// the terminal's; background tasks open upward, Git details open in a sheet.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
 
 describe('Status bar', () => {
@@ -22,7 +22,7 @@ describe('Status bar', () => {
   })
 
   it(
-    'one line; worktrees and background tasks open upward',
+    'one line; background tasks open upward',
     { timeout: 45_000 },
     async () => {
       const context = await browser.newContext({
@@ -58,30 +58,7 @@ describe('Status bar', () => {
       expect(agent).toContain('monitor 1')
       const all = (await bar.innerText()).replace(/\s+/g, ' ')
       expect(all).not.toContain('auto')
-      const worktrees = page.getByTestId('status-worktrees')
-      if (
-        !(await worktrees.first().isVisible()) ||
-        (await worktrees.first().getAttribute('inert')) !== null
-      ) {
-        await page.getByTestId('statusbar-custom-more').click()
-      }
-      await worktrees.last().click()
-      const sheet = page.getByTestId('worktree-manager')
-      await sheet.waitFor()
-      await sheet.getByTestId('status-worktree-list').waitFor()
-      expect(await sheet.getByRole('alert').count()).toBe(0)
-      expect(await sheet.getByText('Agent 工具与注意力').count()).toBe(1)
-      const sheetBox = await sheet.boundingBox()
-      expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeGreaterThan(840)
-      expect(
-        await sheet.getByRole('button', { name: '复制路径' }).count(),
-      ).toBe(4)
-      await checkCopyPath(page, sheet)
-      if (process.env.WEZDECK_VISUAL_SHOTS)
-        await captureThemePair(page, 'phone')
-      await exerciseMobileWorktreeActions(page, sheet)
-      await sheet.waitFor({ state: 'hidden' })
-      await page.keyboard.press('Escape')
+      expect(await bar.getByTestId('status-worktrees').count()).toBe(0)
       const opensUp = async (testId: string, list: string) => {
         const button = page.getByTestId(testId)
         if (
@@ -89,11 +66,7 @@ describe('Status bar', () => {
           (await button.first().getAttribute('inert')) !== null
         ) {
           // folded away: it lives in the +N panel
-          await page
-            .getByTestId(
-              `${testId === 'status-worktrees' ? 'statusbar-custom' : 'statusbar-agent'}-more`,
-            )
-            .click()
+          await page.getByTestId('statusbar-agent-more').click()
         }
         const top =
           (await page.getByTestId(testId).last().boundingBox())?.y ?? 0
@@ -108,36 +81,27 @@ describe('Status bar', () => {
       }
       await opensUp('status-shell', 'background-tasks')
       await opensUp('status-monitor', 'background-tasks')
-      expect(await page.getByTestId('worktree-manager').count()).toBe(0)
+      expect(await page.getByTestId('background-tasks').count()).toBe(0)
       await context.close()
     },
   )
 
-  it('opens the worktree overview as one anchored list on wide screens', async () => {
+  it('opens Git status from the wide status bar', async () => {
     const page = await browser.newPage({
       viewport: { width: 1100, height: 850 },
       locale: 'zh-CN',
     })
     try {
       await page.goto(`${base}/zh/console/me/interactions#status-bar`)
-      const button = page.getByTestId('status-worktrees')
+      const button = page.getByTestId('git-status-button')
       await button.waitFor()
-      if ((await button.getAttribute('inert')) !== null)
-        await page.getByTestId('statusbar-custom-more').click()
-      await button.last().click()
-      const panel = page.getByTestId('worktree-manager')
+      await button.click()
+      const panel = page.getByTestId('git-sheet')
       await panel.waitFor()
-      await expect
-        .poll(() => panel.evaluate((el) => getComputedStyle(el).opacity))
-        .toBe('1')
-      expect(await panel.getAttribute('data-slot')).toBe('popover-content')
-      expect(await panel.getByRole('alert').count()).toBe(0)
       expect(
-        await panel.getByTestId('status-worktree-list').locator('li').count(),
-      ).toBe(4)
-      if (process.env.WEZDECK_VISUAL_SHOTS)
-        await captureThemePair(page, 'desktop')
-      await exerciseDesktopWorktreeActions(page, panel)
+        await panel.getByRole('heading', { name: 'Git 状态' }).count(),
+      ).toBe(1)
+      await page.keyboard.press('Escape')
       await panel.waitFor({ state: 'hidden' })
     } finally {
       await page.close()
@@ -292,94 +256,4 @@ async function assertAgyStatusbarGeometry(browser: Browser) {
     expect(h).toBe(24)
   }
   await context.close()
-}
-
-async function checkCopyPath(page: Page, sheet: Locator) {
-  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
-  const firstRow = sheet
-    .getByTestId('status-worktree-list')
-    .locator('li')
-    .first()
-  const path = await firstRow
-    .locator('p[title^="/"]')
-    .last()
-    .getAttribute('title')
-  await firstRow.getByRole('button', { name: '复制路径' }).click()
-  await expect
-    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(path)
-}
-
-async function exerciseMobileWorktreeActions(page: Page, sheet: Locator) {
-  await sheet.getByRole('button', { name: '管理工作树: dev-agent' }).click()
-  const detail = sheet.getByTestId('worktree-detail')
-  await detail.waitFor()
-  await expectDetailFits(detail)
-  if (process.env.WEZDECK_VISUAL_SHOTS)
-    await captureThemePair(page, 'phone-detail')
-  const purpose = detail.getByRole('textbox', { name: '用途' })
-  expect(await purpose.inputValue()).toBe('Agent 工具与注意力')
-  await purpose.fill('新的用途')
-  await detail.getByRole('button', { name: '保存' }).click()
-  await expect
-    .poll(() => detail.getByRole('button', { name: '保存' }).isDisabled())
-    .toBe(true)
-  await sheet.getByRole('button', { name: '返回' }).click()
-  await sheet.getByText('新的用途').waitFor()
-  await sheet.getByRole('button', { name: '管理工作树: wezdeck' }).click()
-  expect(
-    await sheet
-      .getByTestId('worktree-detail')
-      .getByRole('textbox', { name: '用途' })
-      .count(),
-  ).toBe(0)
-  await sheet.getByRole('button', { name: '返回' }).click()
-  await sheet.getByRole('button', { name: '管理工作树: dev-agent' }).click()
-  await detail.getByRole('button', { name: '在此组新建会话' }).click()
-  await sheet.waitFor({ state: 'hidden' })
-  expect(page.url()).toContain('/me/interactions')
-}
-
-async function exerciseDesktopWorktreeActions(page: Page, panel: Locator) {
-  await panel.getByRole('button', { name: '管理工作树: dev-agent' }).click()
-  const detail = panel.getByTestId('worktree-detail')
-  await detail.waitFor()
-  await expectDetailFits(detail)
-  if (process.env.WEZDECK_VISUAL_SHOTS)
-    await captureThemePair(page, 'desktop-detail')
-  await detail.getByRole('button', { name: '打开会话' }).waitFor()
-  await detail.getByRole('button', { name: '在此组新建会话' }).waitFor()
-  await panel.getByRole('button', { name: '返回' }).click()
-  await panel.getByRole('button', { name: '管理工作树: dev-agent' }).click()
-  await detail.getByRole('button', { name: '打开会话' }).click()
-}
-
-async function captureThemePair(
-  page: Page,
-  viewport: 'phone' | 'desktop' | 'phone-detail' | 'desktop-detail',
-) {
-  const original = await page.evaluate(() =>
-    document.documentElement.getAttribute('data-theme'),
-  )
-  await page.screenshot({ path: `/tmp/wezdeck-worktrees-${viewport}.png` })
-  await page.evaluate(() =>
-    document.documentElement.setAttribute('data-theme', 'dark'),
-  )
-  await page.waitForTimeout(200)
-  await page.screenshot({ path: `/tmp/wezdeck-worktrees-${viewport}-dark.png` })
-  await page.evaluate((theme) => {
-    if (theme === null) document.documentElement.removeAttribute('data-theme')
-    else document.documentElement.setAttribute('data-theme', theme)
-  }, original)
-}
-
-async function expectDetailFits(detail: Locator) {
-  const geometry = await detail.evaluate((element) => ({
-    content: element.scrollWidth,
-    available: element.clientWidth,
-    right: element.getBoundingClientRect().right,
-    viewport: window.innerWidth,
-  }))
-  expect(geometry.content).toBeLessThanOrEqual(geometry.available + 1)
-  expect(geometry.right).toBeLessThanOrEqual(geometry.viewport + 1)
 }
