@@ -235,10 +235,58 @@ describe.runIf(attention)('A session list that holds still', () => {
     await page.evaluate(() => {
       const el = document.querySelector('.vt-page')
       if (el) el.scrollTop = 900
+      const samples: Array<{ top: number; transitioning: boolean }> = []
+      ;(
+        window as Window & { __listReturnFrames?: typeof samples }
+      ).__listReturnFrames = samples
+      const sample = () => {
+        if (
+          /\/console\/sessions\/?$/.test(location.pathname) &&
+          document.querySelector('[data-testid=session-chats]') &&
+          getComputedStyle(
+            document.querySelector('[data-testid=session-list-column]')!,
+          ).display !== 'none'
+        ) {
+          samples.push({
+            top: document.querySelector('.vt-page')?.scrollTop ?? -1,
+            transitioning: document.documentElement.matches(
+              ':active-view-transition-type(back)',
+            ),
+          })
+        }
+        if (samples.length < 12) requestAnimationFrame(sample)
+      }
+      requestAnimationFrame(sample)
     })
     await page.goBack()
     await page.waitForURL('**/console/sessions?remote=1')
     await expect.poll(scrollTop).toBe(80)
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { __listReturnFrames?: Array<unknown> })
+              .__listReturnFrames?.length ?? 0,
+        ),
+      )
+      .toBeGreaterThanOrEqual(3)
+    expect(
+      await page.evaluate(() =>
+        (
+          window as Window & { __listReturnFrames?: Array<{ top: number }> }
+        ).__listReturnFrames?.map((frame) => frame.top),
+      ),
+    ).toEqual(expect.arrayContaining([80]))
+    const returnFrames = await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __listReturnFrames?: Array<{ top: number; transitioning: boolean }>
+          }
+        ).__listReturnFrames ?? [],
+    )
+    expect(returnFrames.every((frame) => frame.top === 80)).toBe(true)
+    expect(returnFrames.some((frame) => frame.transitioning)).toBe(false)
 
     await page.evaluate(() => {
       const el = document.querySelector<HTMLElement>('.vt-page')!

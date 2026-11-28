@@ -66,13 +66,13 @@ describe('page levels', () => {
 })
 
 describe('transition direction', () => {
-  it('into a detail is forward, out of it back, both within the section', () => {
+  it('pushes a session detail but returns to the list without a snapshot', () => {
     expect(
       transitionTypes(nav('/zh/console/sessions', '/zh/console/sessions/s1')),
     ).toEqual(['forward', 'within'])
     expect(
       transitionTypes(nav('/zh/console/sessions/s1', '/zh/console/sessions')),
-    ).toEqual(['back', 'within'])
+    ).toBe(false)
   })
   it('switching sections (sidebar / tabs) is instant: no transition', () => {
     expect(
@@ -96,7 +96,7 @@ describe('transition direction', () => {
   it('the history position wins over depth', () => {
     expect(
       transitionTypes(navAt('/console/sessions/s1', 1, '/console/sessions', 0)),
-    ).toEqual(['back', 'within'])
+    ).toBe(false)
     // another section is instant, back in history or not
     expect(
       transitionTypes(

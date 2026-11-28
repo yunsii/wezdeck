@@ -169,6 +169,9 @@ start() {
     exit 1
   fi
   mkdir -p "$STATE/uploads" "$STATE/claude-status" "$STATE/relaylog"
+  # Each stack owns a fresh outbox. Fixed session ids in CDP fixtures must not
+  # inherit failed/pending records from an earlier run or a release retry.
+  rm -f "$STATE/sent-messages.json" "$STATE/sent-messages.json.lock"
   printf '%s' "$home" >"$STATE/home"
   printf '%s' "${WEZDECK_TEST_GATED_READS:-}" >"$STATE/gated"
   [[ -f "$STATE/attention.json" ]] || echo '{"entries":{}}' >"$STATE/attention.json"
@@ -257,14 +260,14 @@ FAKE
     (cd "$REPO/web" && WEZDECK_BUILD_ID="$web_id" \
       corepack pnpm exec vite build >"$STATE/build.log" 2>&1)
   fi
-  if [[ -f "$REPO/web/.dev.vars" ]]; then
-    for d in "$REPO/web/dist/server" "$REPO/web/dist/wezdeck_relay_do"; do
-      [[ -d "$d" && ! -f "$d/.dev.vars" ]] && cp -f "$REPO/web/.dev.vars" "$d/.dev.vars"
-    done
-  fi
+  for d in "$REPO/web/dist/server" "$REPO/web/dist/wezdeck_relay_do"; do
+    [[ -d "$d" ]] || continue
+    printf 'RELAY_HOST_TOKEN=dev-host-token\nRELAY_CLIENT_TOKEN=dev-client-token\n' >"$d/.dev.vars"
+  done
   # the whole subshell is redirected and backgrounded: an un-redirected
   # backgrounded `cd && cmd` keeps $(…) callers' pipe open forever
   (cd "$REPO/web" && exec env VITE_WEZDECK_RUNTIME_URL=http://127.0.0.1:9 \
+    RELAY_HOST_TOKEN=dev-host-token RELAY_CLIENT_TOKEN=dev-client-token \
     corepack pnpm exec vite preview --port "$PORT" --strictPort) \
     >"$STATE/vite.log" 2>&1 </dev/null &
   echo $! >"$STATE/vite.pid"

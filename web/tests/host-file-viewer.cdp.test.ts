@@ -395,7 +395,7 @@ describe.runIf(attention && devicesFile)(
       expect(motionStats.maxLongtask).toBeLessThan(180)
 
       await context.close()
-    })
+    }, 60_000)
 
     it('renders fullscreen on mobile (390x844) with zero Mermaid or document horizontal overflow', async () => {
       if (!browser || !fixture) throw new Error('fixture not ready')

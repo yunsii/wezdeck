@@ -8,6 +8,7 @@ export default defineConfig({
     // the files share one test stack (attention file, device approvals):
     // run them one after another so none rewrites another's fixtures
     fileParallelism: false,
+    maxWorkers: 1,
     testTimeout: 15_000,
     hookTimeout: 15_000,
   },

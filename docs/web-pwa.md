@@ -64,7 +64,7 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    `Alt+j` / `Alt+k` / `Alt+l` (`Alt+Shift+l` back) jump to the next
    session waiting on you / finished / running in the list's order, and `Alt+g` / `Alt+x` / `Alt+/` focus the list search box (or return to the list on narrow screens). Tapping the conversation title opens 会话信息 directly (Telegram style; the separate switcher sheet was retired).
    Switching replaces the history entry, so back returns to
-   the list. The shell restores its saved scroll offset after navigation and
+   the list. Returning from a session detail has no View Transition snapshot: the shared scroller could expose the detail's offset before the shell restores its saved scroll position after navigation and
    suppresses scroll anchoring during return; touch ends the correction.
    Icon-prefixed row menu (right-click / long-press): 复制引用 / 新一轮 / 标为已读;
    phone swipe left → 标为已读, right → 新一轮 or 复制引用. The + beside the

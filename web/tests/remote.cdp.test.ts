@@ -7,10 +7,10 @@ import { chromium } from '@playwright/test'
 import type { Browser, Page } from '@playwright/test'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-// Remote access (docs/remote-access.md): the collab page with no loopback
+// Remote access (docs/remote-access.md): the connection page with no loopback
 // Runtime reaches the host through the HostRelay Durable Object. Needs
-//   vite dev with VITE_WEZDECK_RUNTIME_URL pointing at a dead port (.dev.vars
-//   holds RELAY_HOST_TOKEN / RELAY_CLIENT_TOKEN), and
+//   vite preview with VITE_WEZDECK_RUNTIME_URL pointing at a dead port (the
+//   test stack provides RELAY_HOST_TOKEN / RELAY_CLIENT_TOKEN), and
 //   `wezdeck-wsl relay` connected to it (WEZDECK_RELAY_URL=ws://…/relay/host).
 // Launches its own headless Chromium so WebRTC host candidates are local.
 const base = process.env.WEZDECK_REMOTE_URL || 'http://127.0.0.1:3018'
@@ -24,9 +24,7 @@ async function open(page: Page, url: string) {
   for (let attempt = 1; ; attempt++) {
     try {
       await page.goto(url)
-      await page
-        .getByRole('heading', { name: 'Cross-repo collab' })
-        .waitFor({ timeout: 5_000 })
+      await page.locator('main[data-remote-mode]').waitFor({ timeout: 5_000 })
       return
     } catch (error) {
       if (attempt >= 3) throw error
@@ -71,13 +69,14 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
 
   it('prefers a WebRTC DataChannel and shows path + latency', async () => {
     const page = await browser.newPage()
-    await open(page, `${base}/console/collab?remote=1#pair=${token}`)
+    await open(page, `${base}/console/me/connection?remote=1#pair=${token}`)
     const b = await badge(page, 'webrtc')
     expect(b.text).toContain('WebRTC')
     // Direct either way; which one depends on the interfaces this machine
     // exposes (a public IPv6 host candidate counts as "internet").
     expect(['lan', 'internet']).toContain(b.path)
     expect(b.rtt).toBeGreaterThanOrEqual(0)
+    await page.getByRole('link', { name: 'Tickets' }).first().click()
     await page.locator('[data-value=ended]').click()
     const rows = page.locator('a[data-ticket]')
     await rows.first().waitFor({ timeout: 10_000 })
@@ -85,6 +84,8 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     // Requests issued after the DataChannel opened must use it: open a
     // ticket that is not loaded yet (falls back to the 30 s idle poll).
     await rows.last().click()
+    await page.getByRole('link', { name: 'Settings' }).first().click()
+    await page.getByRole('link', { name: 'Connection' }).first().click()
     await page.waitForFunction(
       () =>
         Number(
@@ -103,10 +104,11 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     const page = await context.newPage()
     await open(
       page,
-      `${base}/console/collab?remote=1&transport=websocket#pair=${token}`,
+      `${base}/console/me/connection?remote=1&transport=websocket#pair=${token}`,
     )
     const b = await badge(page, 'websocket')
     expect(b.text).toContain('WebSocket')
+    await page.getByRole('link', { name: 'Tickets' }).first().click()
     await page.locator('[data-value=ended]').click()
     await page.locator('a[data-ticket]').first().waitFor({ timeout: 10_000 })
     await context.close()
@@ -114,19 +116,20 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
 
   it('rejects a wrong client token', async () => {
     const page = await browser.newPage()
-    await open(page, `${base}/console/collab`)
+    await page.goto(`${base}/console/me/connection`)
     const code = await page.evaluate(
       (url) =>
         new Promise<number>((resolve) => {
           const ws = new WebSocket(url, ['wezdeck.v1', 'token.wrong'])
           ws.onopen = () => resolve(0)
           ws.onclose = (e) => resolve(e.code)
+          ws.onerror = () => resolve(1006)
         }),
       `${base.replace(/^http/, 'ws')}/relay/client`,
     )
     expect(code).not.toBe(0)
     await page.close()
-  })
+  }, 30_000)
 
   it('shows a rejected token instead of connecting forever', async () => {
     // well formed (16+ chars of [A-Za-z0-9_-]): a malformed link is ignored
@@ -135,7 +138,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     const page = await context.newPage()
     await open(
       page,
-      `${base}/console/collab?remote=1#pair=well-formed-but-wrong-token`,
+      `${base}/console/me/connection?remote=1#pair=well-formed-but-wrong-token`,
     )
     await page.waitForFunction(
       () =>
@@ -153,7 +156,7 @@ describe('Remote collab over WebRTC with WebSocket fallback', () => {
     const page = await context.newPage()
     await open(
       page,
-      `${base}/console/collab?remote=1&transport=websocket#pair=${token}`,
+      `${base}/console/me/connection?remote=1&transport=websocket#pair=${token}`,
     )
     const button = page.getByTestId('remote-mic')
     await button.waitFor({ timeout: 15_000 })

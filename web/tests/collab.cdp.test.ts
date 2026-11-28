@@ -101,10 +101,7 @@ describe.runIf(stack)('工单 over the remote link', () => {
     })
     const page = await context.newPage()
     await open(page, '/console/collab')
-    await page
-      .getByRole('heading', { name: 'Cross-repo collab' })
-      .first()
-      .waitFor()
+    await page.getByRole('heading', { name: 'Tickets' }).first().waitFor()
     // folded by default; one tap shows the numbers
     const metrics = page.getByRole('region', { name: 'Collab metrics' })
     expect(await metrics.count()).toBe(0)

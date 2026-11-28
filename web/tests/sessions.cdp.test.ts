@@ -176,12 +176,17 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       })
       .toBe('还没发的草稿')
     await box.fill('来自手机的消息')
-    await page.getByRole('button', { name: '发送' }).click()
+    await page.getByRole('button', { name: '发送', exact: true }).click()
     // the composer empties as the message goes out, not after a refetch
     await expect.poll(() => box.inputValue(), { timeout: 1_000 }).toBe('')
     // optimistic: the dashed bubble is in the thread at once, then turns
     // queued once the host took it (normal bubble when the transcript has it)
-    const bubble = page.locator('[data-pending]', { hasText: '来自手机的消息' })
+    const bubble = page.locator(
+      '[data-pending="sending"], [data-pending="queued"]',
+      {
+        hasText: '来自手机的消息',
+      },
+    )
     await bubble.waitFor({ timeout: 1_000 })
     await expect
       .poll(() => bubble.getAttribute('data-pending'), { timeout: 15_000 })
@@ -225,7 +230,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
     setStatus('running')
     await page.waitForTimeout(3_000) // let the page poll the new status
     await box.fill('运行中也能发')
-    await page.getByRole('button', { name: '发送' }).click()
+    await page.getByRole('button', { name: '发送', exact: true }).click()
     const busyDeadline = Date.now() + 8_000
     while (!tmux('capture-pane', '-p', '-t', 'demo').includes('运行中也能发')) {
       if (Date.now() > busyDeadline)
@@ -267,7 +272,7 @@ describe.runIf(attention && devicesFile)('Phone writes into a session', () => {
       await expect.poll(() => page.getByTestId('image-viewer').count()).toBe(0)
       expect(page.url()).toBe(here)
       await box.fill('键盘弹出时消息没跟上')
-      await page.getByRole('button', { name: '发送' }).click()
+      await page.getByRole('button', { name: '发送', exact: true }).click()
       const fileDeadline = Date.now() + 20_000
       let screen = ''
       while (
@@ -317,7 +322,7 @@ async function followsNewSession(
       .catch(() => '')
   const before = await queued()
   await page.getByLabel('发给 Agent 的消息').fill('/new')
-  await page.getByRole('button', { name: '发送' }).click()
+  await page.getByRole('button', { name: '发送', exact: true }).click()
   await page.getByText('已发送命令 /new').waitFor({ timeout: 10_000 })
   expect(await queued()).toBe(before)
   const pane = tmux('display-message', '-p', '-t', 'demo', '#{pane_id}').trim()
@@ -367,7 +372,7 @@ async function commandsAndResume(
     await page.waitForTimeout(200)
   }
   await page.getByLabel('发给 Agent 的消息').fill('/resume')
-  await page.getByRole('button', { name: '发送' }).click()
+  await page.getByRole('button', { name: '发送', exact: true }).click()
   await page.getByTestId('resume-sheet').waitFor({ timeout: 10_000 })
   expect(tmux('capture-pane', '-p', '-t', 'demo')).not.toMatch(/^\/resume$/m)
   await page.keyboard.press('Escape')

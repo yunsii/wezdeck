@@ -80,6 +80,16 @@ export function transitionTypes(
   // another section (sidebar, tabs, palette): instant, whatever the depths
   if (sectionOf(fromLocation.pathname) !== sectionOf(toLocation.pathname))
     return false
+  // The list and detail share .vt-page as a scroll container on phones.
+  // A back snapshot can expose the detail's old scroll position before the
+  // list's saved position is restored, so show the restored list directly.
+  if (
+    /^\/console\/sessions\/[^/]+$/.test(
+      consolePath(fromLocation.pathname) ?? '',
+    ) &&
+    consolePath(toLocation.pathname) === '/console/sessions'
+  )
+    return false
   // a wide split: the list stays and the pane swaps at once — the fade
   // through blanked the pane for ~100 ms on every switch (a flash with j / k
   // and every click), and the snapshot held the re-render back meanwhile

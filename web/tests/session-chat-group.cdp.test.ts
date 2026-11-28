@@ -6,7 +6,7 @@
 // longer takes turns repainting one shared row. Runs against
 // remote-test-stack.sh only (throwaway attention file, tmux panes made here).
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { chromium, devices } from '@playwright/test'
@@ -26,6 +26,13 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
       .trim()
 
   beforeAll(async () => {
+    const bin = join(dirname(socket), 'bin')
+    mkdirSync(bin)
+    for (const agent of ['grok', 'codex', 'claude'])
+      symlinkSync(
+        execFileSync('which', ['cat']).toString().trim(),
+        join(bin, agent),
+      )
     const shared = join(dirname(socket), 'main')
     mkdirSync(shared)
     const solo = join(dirname(socket), 'ux')
@@ -56,7 +63,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
         '100',
         '-y',
         '20',
-        'cat',
+        join(bin, s.agent),
       )
       entries[id] = {
         session_id: id,
@@ -102,8 +109,7 @@ describe.runIf(attention)('Multi-session worktree rows', () => {
     const toggle = page.getByTestId('chat-group-toggle')
     await expect.poll(() => toggle.getAttribute('aria-expanded')).toBe('true')
     const emptyRow = page.locator('[data-session=grp-grok]')
-    // A cat fixture has no verified agent process or profile; its name is metadata.
-    await expect.poll(() => emptyRow.textContent()).toContain('Agent')
+    await expect.poll(() => emptyRow.textContent()).toContain('Grok')
     expect(await emptyRow.getByTestId('session-preview').count()).toBe(0)
     expect(await toggle.getByTestId('chat-unread').count()).toBe(0)
     // the waiting session is the unread one, on its own sub-row
