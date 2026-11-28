@@ -376,9 +376,9 @@ describe('PWA shell on phone and desktop', () => {
     await open(
       page,
       `${base}/console/collab?remote=1#pair=${token}`,
-      '[data-testid=remote-badge]',
+      'main[data-remote-mode]',
     )
-    // the badge only renders after hydration, so the segment click lands
+    // The main mode appears after hydration, so the segment click lands.
     await page.locator('[data-value=ended]').click()
     // a split like 会话: link rows beside the ticket, j moves on (global)
     const rows = page.locator('a[data-ticket]')
