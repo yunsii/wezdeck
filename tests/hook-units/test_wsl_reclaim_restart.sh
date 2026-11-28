@@ -24,9 +24,28 @@ set -e
   printf 'active-session gate failed: rc=%s\n%s\n' "$rc" "$output" >&2
   exit 1
 }
+set +e
+output="$(bash "$SCRIPT" 2>&1)"
+rc=$?
+set -e
+[[ "$rc" == 20 && "$output" == *'refusing to stop WSL'* ]]
+jq -e '.phase == "blocked" and .stage == "preflight" and .active_attention == 1' \
+  "$TEST_ROOT/windows/state/disk-reclaim/status.json" >/dev/null
+[[ "$(bash "$SCRIPT" --status | jq -r '.phase')" == blocked ]]
 output="$(bash "$SCRIPT" --dry-run --force-stop)"
 [[ "$output" == *'dry-run: no files deleted and WSL not stopped'* ]]
-[[ ! -e "$TEST_ROOT/windows/state/disk-reclaim/status.json" ]]
+
+printf '%s\n' '{"entries":{}}' > "$attention"
+printf '#!/usr/bin/env bash\nexit 1\n' > "$TEST_ROOT/bin/systemctl"
+chmod +x "$TEST_ROOT/bin/systemctl"
+set +e
+output="$(bash "$SCRIPT" 2>&1)"
+rc=$?
+set -e
+[[ "$rc" == 1 && "$output" == *'distro=Ubuntu-24.04'* ]]
+jq -e '.phase == "failed" and .stage == "service_preflight"
+  and .error == "wezdeck-tmux-restore.service is not enabled"' \
+  "$TEST_ROOT/windows/state/disk-reclaim/status.json" >/dev/null
 
 printf '%s\n' '{"phase":"compacting"}' > "$TEST_ROOT/windows/state/disk-reclaim-status.json"
 mkdir -p "$TEST_ROOT/windows/state/disk-reclaim"

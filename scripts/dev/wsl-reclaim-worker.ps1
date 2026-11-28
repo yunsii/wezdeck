@@ -8,11 +8,16 @@ param(
   [Parameter(Mandatory)][string]$WebOrigin,
   [Parameter(Mandatory)][string]$StatusPath,
   [string]$StartSignalPath,
+  [int]$ActiveAttention = 0,
+  [int]$SnapshotWindows = 0,
   [switch]$Simulate,
   [switch]$PreflightOnly
 )
 $ErrorActionPreference = 'Stop'
-$status = [ordered]@{ phase = 'preflight'; started_at = (Get-Date).ToString('o'); distro = $Distro; vhdx = $Vhdx }
+$status = [ordered]@{
+  phase = 'preflight'; started_at = (Get-Date).ToString('o'); distro = $Distro; vhdx = $Vhdx
+  active_attention = $ActiveAttention; snapshot_windows = $SnapshotWindows
+}
 $stopAttempted = $false
 function Assert-Preflight {
   if (-not (Test-Path -LiteralPath $Vhdx -PathType Leaf)) { throw "VHDX not found: $Vhdx" }
@@ -30,9 +35,23 @@ function Assert-Preflight {
 }
 function Publish {
   $status.updated_at = (Get-Date).ToString('o')
+  $status.duration_seconds = [math]::Round(((Get-Date) - [datetime]$status.started_at).TotalSeconds, 1)
   $temp = "$StatusPath.tmp.$PID"
   [System.IO.File]::WriteAllText($temp, ($status | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
   Move-Item -LiteralPath $temp -Destination $StatusPath -Force
+}
+function Invoke-Wsl([string[]]$Arguments) {
+  # PowerShell 5.1 turns native stderr into terminating ErrorRecords under
+  # Stop. Capture both streams and the native exit code before restoring it.
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $output = & wsl.exe @Arguments 2>&1 | Out-String
+    $exitCode = $LASTEXITCODE
+    return [pscustomobject]@{ Output = $output.Trim(); Exit = $exitCode }
+  } finally {
+    $ErrorActionPreference = $previous
+  }
 }
 if ($PreflightOnly) {
   Assert-Preflight
@@ -55,12 +74,14 @@ try {
   Remove-Item -LiteralPath $StartSignalPath -Force
   if ($Simulate) {
     $status.phase = 'verifying'; Publish
-    $verify = & wsl.exe --distribution $Distro --user $WslUser --exec /bin/bash $VerifyScript $WebOrigin 2>&1 | Out-String
-    $status.verify_output = $verify.Trim()
-    $status.verify_exit = $LASTEXITCODE
-    if ($LASTEXITCODE -ne 0) { throw 'smoke verification failed' }
+    $verify = Invoke-Wsl @('--distribution', $Distro, '--user', $WslUser, '--exec', '/bin/bash', $VerifyScript, $WebOrigin)
+    $status.verify_output = $verify.Output
+    $status.verify_exit = $verify.Exit
+    if ($verify.Exit -ne 0) { throw 'smoke verification failed' }
     $status.after_free_bytes = (Get-PSDrive -Name $drive).Free
     $status.after_vhdx_bytes = (Get-Item -LiteralPath $Vhdx).Length
+    $status.reclaimed_bytes = $status.after_free_bytes - $status.before_free_bytes
+    $status.vhdx_reduced_bytes = $status.before_vhdx_bytes - $status.after_vhdx_bytes
     $status.phase = 'complete'; Publish
     exit 0
   }
@@ -68,27 +89,31 @@ try {
   Start-Sleep -Seconds 5
   $status.phase = 'compacting'; Publish
   $stopAttempted = $true
-  $output = & wsl.exe --manage $Distro --compact 2>&1 | Out-String
-  $status.compact_output = $output.Trim()
-  $status.compact_exit = $LASTEXITCODE
+  $compact = Invoke-Wsl @('--manage', $Distro, '--compact')
+  $status.compact_output = $compact.Output
+  $status.compact_exit = $compact.Exit
   $status.after_free_bytes = (Get-PSDrive -Name $drive).Free
   $status.after_vhdx_bytes = (Get-Item -LiteralPath $Vhdx).Length
-  if ($LASTEXITCODE -ne 0) { throw "WSL compact failed: $LASTEXITCODE" }
+  $status.reclaimed_bytes = $status.after_free_bytes - $status.before_free_bytes
+  $status.vhdx_reduced_bytes = $status.before_vhdx_bytes - $status.after_vhdx_bytes
+  if ($compact.Exit -ne 0) { throw "WSL compact failed: $($compact.Exit)" }
   $status.phase = 'restarting'; Publish
 
   $task = Get-ScheduledTask -TaskName $KeepaliveTask -ErrorAction SilentlyContinue
   if (-not $task) { throw "Keepalive task missing: $KeepaliveTask" }
   if ($task.State -ne 'Running') { Start-ScheduledTask -TaskName $KeepaliveTask }
 
+  $status.phase = 'verifying'; Publish
   $deadline = (Get-Date).AddMinutes(4)
   do {
     Start-Sleep -Seconds 5
-    $verify = & wsl.exe --distribution $Distro --user $WslUser --exec /bin/bash $VerifyScript $WebOrigin 2>&1 | Out-String
-    $verifyExit = $LASTEXITCODE
-  } until ($verifyExit -eq 0 -or (Get-Date) -ge $deadline)
-  $status.verify_output = $verify.Trim()
-  $status.verify_exit = $verifyExit
-  if ($verifyExit -ne 0) { throw 'WSL services or web relay did not recover within 4 minutes' }
+    $verify = Invoke-Wsl @('--distribution', $Distro, '--user', $WslUser, '--exec', '/bin/bash', $VerifyScript, $WebOrigin)
+  } until ($verify.Exit -eq 0 -or (Get-Date) -ge $deadline)
+  $status.verify_output = $verify.Output
+  $status.verify_exit = $verify.Exit
+  if ($verify.Exit -ne 0) { throw 'WSL services or web relay did not recover within 4 minutes' }
+  $status.keepalive_state = (Get-ScheduledTask -TaskName $KeepaliveTask).State.ToString()
+  if ($status.keepalive_state -ne 'Running') { throw 'WSL keepalive task did not remain running' }
   $status.phase = 'complete'; Publish
 } catch {
   $originalError = $_.Exception.Message
@@ -96,14 +121,25 @@ try {
     try {
       $task = Get-ScheduledTask -TaskName $KeepaliveTask -ErrorAction SilentlyContinue
       if ($task -and $task.State -ne 'Running') { Start-ScheduledTask -TaskName $KeepaliveTask }
-      & wsl.exe --distribution $Distro --user $WslUser --exec /bin/true 2>&1 | Out-Null
-      $status.restart_attempt_exit = $LASTEXITCODE
+      $restart = Invoke-Wsl @('--distribution', $Distro, '--user', $WslUser, '--exec', '/bin/true')
+      $status.restart_attempt_exit = $restart.Exit
     } catch {
       $status.restart_error = $_.Exception.Message
     }
   }
+  $status.failed_stage = $status.phase
   $status.phase = 'failed'
   $status.error = $originalError
+  if ($status.before_free_bytes -ne $null) {
+    try {
+      $status.after_free_bytes = (Get-PSDrive -Name $drive).Free
+      $status.after_vhdx_bytes = (Get-Item -LiteralPath $Vhdx).Length
+      $status.reclaimed_bytes = $status.after_free_bytes - $status.before_free_bytes
+      $status.vhdx_reduced_bytes = $status.before_vhdx_bytes - $status.after_vhdx_bytes
+    } catch {
+      $status.measure_error = $_.Exception.Message
+    }
+  }
   Publish
   exit 1
 }

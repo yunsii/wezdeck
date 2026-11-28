@@ -50,7 +50,15 @@ compacts, starts `WezDeck WSL Keepalive`, and waits for the tmux restore,
 systemd relay and authenticated `/relay/health` host connection. Its progress
 and before/after byte counts stay on NTFS at
 `%LOCALAPPDATA%\wezterm-runtime\state\disk-reclaim\status.json`, readable
-after WSL restarts. Override machine-specific targets with `--distro`,
+after WSL restarts. `scripts/dev/wsl-reclaim-restart.sh --status` reads it:
+success includes start/update time, duration, active-turn count, snapshot
+window count, D-drive free bytes and VHDX size before/after, reclaimed bytes,
+compact exit code, Keepalive task state and each recovery check. Failure
+includes its stage, reason, exit code, available before/after measurements
+and any attempted WSL restart result. A preflight refusal is recorded there
+once the Windows runtime state directory has been resolved; malformed CLI
+arguments that cannot reach that directory report only in the terminal.
+Override machine-specific targets with `--distro`,
 `--vhdx`, `--keepalive-task`, `--wsl-user` or `--web-origin`. The browser
 reconnects through its existing retry path once the host relay is back; the
 worker verifies host connectivity, not each individual browser tab.
