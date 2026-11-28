@@ -189,6 +189,15 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
     expect(mergeOutboxPending([queued], undefined)).toEqual([queued])
   })
 
+  it('preserves a just-accepted bubble through empty reads started before acceptance', () => {
+    const queued = sent('new message', 3, { acceptedAt: NOW })
+    const stale = sent('old message', 0, { acceptedAt: NOW - 2_000 })
+    const local = [stale, queued]
+    expect(mergeOutboxPending(local, [], NOW - 1)).toEqual([queued])
+    expect(mergeOutboxPending(local, [], NOW)).toEqual([queued])
+    expect(mergeOutboxPending(local, [], NOW + 1)).toEqual([])
+  })
+
   it('keeps pendingKey stable when host outbox attaches sentId to a clientOp bubble', () => {
     const local = sent('hello', 3, { clientOp: 'op-1', at: NOW - 1_000 })
     const hostMerged = sent('hello', 3, {

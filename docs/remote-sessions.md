@@ -454,6 +454,11 @@ the draft and skips automatic retry. Check the terminal input before a
 manual retry. At `stage=dispatched` tmux accepted the command, and the
 outbox still waits for transcript confirmation.
 
+After a send is acknowledged, the web console keeps its local message bubble
+while the latest empty outbox comes from a detail request started before that
+acknowledgment. A newer empty outbox can clear stale bubbles after a restart.
+The `chat-render` trace records the number of visible pending bubbles.
+
 No 诊断 button: the host pulls what it needs. `wezdeck-wsl diag [--wait 15]
 [--reason TEXT] [--steps JSON | --steps-file F]` asks the running relay over
 its control socket (`~/.local/state/wezdeck/relay.sock`, 0600;

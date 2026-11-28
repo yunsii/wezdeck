@@ -20,15 +20,21 @@ export function mergeOutboxPending(
   local: Array<Pending>,
   hostOutbox?: Array<SentRecord>,
   dismissedIds?: ReadonlySet<string>,
+  outboxReadStartedAt?: number,
 ): Array<Pending> {
   const visibleHost = dismissedIds?.size
     ? hostOutbox?.filter((rec) => !dismissedIds.has(rec.id))
     : hostOutbox
-  // Once the host has answered with an explicit empty outbox, queued bubbles
-  // from before a process restart are stale. Keep only a currently submitting
-  // browser write, which may not have reached the host record yet.
-  if (visibleHost && visibleHost.length === 0)
-    return local.filter((item) => item.state === 'sending')
+  // An empty snapshot can clear queued bubbles left by a restart only if its
+  // request started after the write was acknowledged. A poll already in
+  // flight can return a pre-send outbox even after the write reply arrives.
+  if (hostOutbox?.length === 0)
+    return local.filter(
+      (item) =>
+        item.state === 'sending' ||
+        (item.acceptedAt !== undefined &&
+          (outboxReadStartedAt ?? 0) <= item.acceptedAt),
+    )
   if (!visibleHost?.length) return local
   const localTimes = new Map(
     local

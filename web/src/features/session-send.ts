@@ -68,8 +68,14 @@ function useDismissedVersion() {
 export function mergeOutboxPending(
   local: Array<Pending>,
   hostOutbox?: Array<SentRecord>,
+  outboxReadStartedAt?: number,
 ): Array<Pending> {
-  return mergeOutboxPendingRaw(local, hostOutbox, dismissedOutboxIds)
+  return mergeOutboxPendingRaw(
+    local,
+    hostOutbox,
+    dismissedOutboxIds,
+    outboxReadStartedAt,
+  )
 }
 
 function updatePending(
@@ -170,16 +176,21 @@ function createSendMessage({
   const op_id = crypto.randomUUID()
   const command = commandOf(message.text)
   const at = Date.now()
-  const updateItem = (patchItem: Partial<Pending> | null) =>
-    updatePending(target, (list) =>
+  const updateItem = (patchItem: Partial<Pending> | null) => {
+    // A pending session may resolve while its write is still in flight.
+    const hasWrite = (item: Pending) => item.clientOp === op_id
+    const owner = pendingStore.get(target)?.some(hasWrite)
+      ? target
+      : [...pendingStore].find(([, items]) => items.some(hasWrite))?.[0]
+    if (!owner) return
+    updatePending(owner, (list) =>
       patchItem
         ? list.map((item) =>
-            item.at === at && item.clientOp === op_id
-              ? { ...item, ...patchItem }
-              : item,
+            hasWrite(item) ? { ...item, ...patchItem } : item,
           )
-        : list.filter((item) => !(item.at === at && item.clientOp === op_id)),
+        : list.filter((item) => !hasWrite(item)),
     )
+  }
   if (!command) {
     updatePending(target, (list) => [
       ...list,
@@ -262,7 +273,11 @@ function createSendMessage({
     if (command) {
       commandSentToast(command)
     } else {
-      updateItem({ state: 'queued', uploading: undefined })
+      updateItem({
+        state: 'queued',
+        acceptedAt: Date.now(),
+        uploading: undefined,
+      })
       acceptSessionOptimistic(target, op_id)
     }
   }
@@ -490,7 +505,11 @@ export function useSessionWrites(
     error: state.error,
     setError,
     retryIn: state.retryIn,
-    pendingRaw,
+    mergedPending: mergeOutboxPending(
+      pendingRaw,
+      snapshot?.outbox,
+      snapshot?.outboxReadStartedAt,
+    ),
     send,
     run,
     resolvePrompt,
