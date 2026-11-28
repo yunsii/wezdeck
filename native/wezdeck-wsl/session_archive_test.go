@@ -279,7 +279,7 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(runtimeDir, "primary-pane-wrapper.sh"), []byte("exec \"$@\"\n"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	launcher := fmt.Sprintf("[[ \"$WEZDECK_RESUME_SESSION_ID\" == %q && \"$1\" == codex ]] || exit 1\nsleep 0.4\nexec %q\n", id, codex)
+	launcher := fmt.Sprintf("[[ \"$WEZDECK_RESUME_SESSION_ID\" == %q && \"$1\" == codex ]] || exit 1\nsleep 0.4\nprintf 'Codex ready\\n'\nexec %q\n", id, codex)
 	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -304,5 +304,49 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	check(false)
 	if _, err := restartSession(recoverArgs); err == nil {
 		t.Fatal("recovery must not replace a running Codex")
+	}
+}
+
+func TestRecoverCodexRejectsProcessThatExitsBeforeTUIReady(t *testing.T) {
+	dir, socket, pane, attention := restartFixture(t)
+	t.Setenv("HOME", dir)
+	const id = "11111111-2222-3333-4444-555555555555"
+	doc := fmt.Sprintf(`{"entries":{%q:{"session_id":%q,"tmux_socket":%q,"tmux_session":"work","tmux_pane":%q,"status":"idle","ts":%d,"agent_name":"codex"}}}`, id, id, socket, pane, time.Now().UnixMilli())
+	if err := os.WriteFile(attention, []byte(doc), 0600); err != nil {
+		t.Fatal(err)
+	}
+	run := func(args ...string) {
+		t.Helper()
+		if out, err := tmuxCmd(socket, args...).CombinedOutput(); err != nil {
+			t.Fatalf("tmux %v: %v: %s", args, err, out)
+		}
+	}
+	run("respawn-pane", "-k", "-t", pane, "exec bash --noprofile --norc -i")
+	run("set-option", "-p", "-t", pane, "@wezterm_agent_session_id", id)
+	transcripts := filepath.Join(dir, ".codex", "sessions", "2026", "11", "26")
+	if err := os.MkdirAll(transcripts, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(transcripts, "rollout-2026-11-26T09-49-10-"+id+".jsonl"), []byte(`{"type":"session_meta"}`+"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("WEZDECK_REPO", dir)
+	runtimeDir := filepath.Join(dir, "scripts", "runtime")
+	if err := os.MkdirAll(runtimeDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(runtimeDir, "primary-pane-wrapper.sh"), []byte("\"$@\"\nexec bash --noprofile --norc -i\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	bin := filepath.Join(dir, "codex")
+	if err := os.Symlink("/usr/bin/sleep", bin); err != nil {
+		t.Fatal(err)
+	}
+	launcher := fmt.Sprintf("sleep 0.3\nprintf 'Codex ready\\n'\nexec %q 0.4\n", bin)
+	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := restartSession(json.RawMessage(fmt.Sprintf(`{"id":%q,"recover":true}`, id))); err == nil {
+		t.Fatal("a launcher that exits before painting a Codex TUI must not report ready")
 	}
 }

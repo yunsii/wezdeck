@@ -53,17 +53,15 @@ func recoverCodexSession(id string) (any, error) {
 		return nil, errors.New("the terminal changed before recovery could start")
 	}
 	relayLogf("session_recover", "id=%s pane=%s outcome=launched", id, pane.id)
-	for deadline := time.Now().Add(8 * time.Second); time.Now().Before(deadline); {
-		_, _, cmd, _, _, alive := paneState(e)
-		if !alive {
-			break
-		}
-		if cmd == "codex" {
-			relayLogf("session_recover", "id=%s pane=%s outcome=ready", id, pane.id)
-			return map[string]any{"v": 1, "ok": true, "id": id}, nil
-		}
-		time.Sleep(150 * time.Millisecond)
+	ready, readyErr := waitAgentReadyDetailed(e.TmuxSocket, pane.id, 8*time.Second)
+	_, _, cmd, _, _, alive := paneState(e)
+	if readyErr == nil && ready.Reason == "tui_ready" && ready.HasAgent &&
+		alive && cmd == "codex" {
+		relayLogf("session_recover", "id=%s pane=%s outcome=ready duration_ms=%d",
+			id, pane.id, ready.Duration.Milliseconds())
+		return map[string]any{"v": 1, "ok": true, "id": id}, nil
 	}
-	relayLogf("session_recover", "id=%s pane=%s outcome=unconfirmed", id, pane.id)
+	relayLogf("session_recover", "id=%s pane=%s outcome=unconfirmed command=%s reason=%s duration_ms=%d",
+		id, pane.id, cmd, ready.Reason, ready.Duration.Milliseconds())
 	return nil, errors.New("Codex did not become ready in the original terminal")
 }
