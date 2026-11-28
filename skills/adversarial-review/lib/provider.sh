@@ -91,10 +91,29 @@ _provider_family() {
 }
 provider_same_family() { [ "$(_provider_family "$1")" = "$(_provider_family "$2")" ]; }
 
+provider_unavailable_reason() {
+  local p path disabled
+  p="$(_provider_canonical "$1")"
+  path="${WEZDECK_AGENT_PROFILE_SETTINGS_DIR:-$HOME/.config/wezdeck/agent-profiles}/$p.json"
+  if [ -e "$path" ]; then
+    if [ ! -r "$path" ] || ! command -v jq >/dev/null 2>&1 ||
+       ! disabled="$(jq -r 'if type == "object" and (.disabled == null or (.disabled | type) == "boolean") then (.disabled // false) else error("invalid settings") end' "$path" 2>/dev/null)"; then
+      printf '%s' profile_settings_invalid
+      return 0
+    fi
+    if [ "$disabled" = true ]; then
+      printf '%s' profile_disabled
+      return 0
+    fi
+  fi
+  if ! declare -F "${p}__available" >/dev/null 2>&1 || ! "${p}__available" >/dev/null 2>&1; then
+    printf '%s' not_on_path
+  fi
+}
+
 provider_available() {
   [ -n "${PROVIDER_MOCK:-}" ] && return 0
-  local p; p="$(_provider_canonical "$1")"
-  declare -F "${p}__available" >/dev/null 2>&1 && "${p}__available"
+  [ -z "$(provider_unavailable_reason "$1")" ]
 }
 
 provider_model() {
@@ -171,7 +190,7 @@ agent_text() {
   input="$(cat)"
   if [ -n "${PROVIDER_MOCK:-}" ]; then _provider_mock "$prompt_file" "$input"; return 0; fi
   declare -F "${provider}__invoke" >/dev/null 2>&1 || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
-  "${provider}__available" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
+  provider_available "$provider" || { echo "__PROVIDER_UNAVAILABLE__"; return 3; }
   full="$(cat "$prompt_file")"$'\n\n=== INPUT ===\n'"$input"
   printf '%s' "$full" | "${provider}__invoke" "$effort"
 }
@@ -201,7 +220,11 @@ _selfcheck() {
   for p in "${providers[@]}"; do
     canon="$(_provider_canonical "$p")"
     printf '%-26s ' "$p($canon → $(provider_model "$p")):"
-    if ! provider_available "$p"; then echo "UNAVAILABLE (not resolved on PATH)"; rc=1; continue; fi
+    if ! provider_available "$p"; then
+      echo "UNAVAILABLE ($(provider_unavailable_reason "$p"))"
+      rc=1
+      continue
+    fi
     if got="$(printf 'ping' | run_agent "$p" "$tmp" 2>/dev/null)" \
        && printf '%s' "$got" | jq -e '.[0].ok == true' >/dev/null 2>&1; then
       echo "OK (resolved + JSON round-trip)"

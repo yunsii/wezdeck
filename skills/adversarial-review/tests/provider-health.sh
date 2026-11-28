@@ -45,6 +45,47 @@ case_name=grok_ok; check_success grok__invoke
 case_name=codex_error; check_failure codex__invoke
 case_name=codex_ok; check_success codex__invoke
 
+settings_dir="$(mktemp -d)"
+trap 'rm -rf "$settings_dir"' EXIT
+export WEZDECK_AGENT_PROFILE_SETTINGS_DIR="$settings_dir"
+claude__available() { return 0; }
+claude__invoke() { echo should_not_run; }
+printf '%s\n' '{"disabled":true}' >"$settings_dir/claude.json"
+[ "$(provider_unavailable_reason claude)" = profile_disabled ] || exit 1
+if provider_available claude; then
+  echo 'FAIL: disabled Claude is available' >&2
+  exit 1
+fi
+if got="$(printf 'prompt' | agent_text claude "$here/prompts/critic.md")"; then
+  echo 'FAIL: invoked disabled Claude' >&2
+  exit 1
+fi
+[ "$got" = __PROVIDER_UNAVAILABLE__ ] || exit 1
+ADV_REVIEW_PROBE=1
+timeout() { echo 'FAIL: launched disabled backend probe' >&2; return 99; }
+_PROBE_RESULT=(); _PROBE_REASON=()
+if _avail claude; then
+  echo 'FAIL: probed disabled Claude' >&2
+  exit 1
+fi
+[ "${_PROBE_REASON[claude]}" = profile_disabled ] || exit 1
+[ "$(_probe_failures 'claude grok')" = 'claude=profile_disabled' ] || exit 1
+unset -f timeout
+ADV_REVIEW_PROBE=0
+printf '%s\n' '{"disabled":"yes"}' >"$settings_dir/claude.json"
+[ "$(provider_unavailable_reason claude)" = profile_settings_invalid ] || exit 1
+printf '%s\n' '{"disabled":false}' >"$settings_dir/claude.json"
+provider_available claude || { echo 'FAIL: enabled Claude is unavailable' >&2; exit 1; }
+claude__available() { printf '%s\n' /usr/bin/claude; return 0; }
+[ -z "$(provider_unavailable_reason claude)" ] || {
+  echo 'FAIL: noisy availability check marked Claude unavailable' >&2
+  exit 1
+}
+provider_available claude || { echo 'FAIL: noisy availability check hid Claude' >&2; exit 1; }
+printf '%s\n' '{"disabled":true}' >"$settings_dir/codex.json"
+[ "$(provider_unavailable_reason gpt)" = profile_disabled ] || exit 1
+rm -f "$settings_dir/codex.json"
+
 _PROBE_RESULT=(); _PROBE_REASON=()
 provider_available() { return 1; }
 ADV_REVIEW_PROBE=0

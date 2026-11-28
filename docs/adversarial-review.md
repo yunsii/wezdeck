@@ -46,6 +46,13 @@ Orchestration may be `run.sh` or Main spawning two ACP/TUI turns with distinct
 role prompts. Same binary twice with different stance **is** multi-role;
 same chat turn with no role split **is not**.
 
+Backend availability uses the WezDeck agent profile settings under
+`~/.config/wezdeck/agent-profiles/` (or
+`WEZDECK_AGENT_PROFILE_SETTINGS_DIR`) before checking the CLI and making a
+live probe. A disabled or malformed profile is unavailable, including when a
+backend is named explicitly. Automatic selection reports `profile_disabled`
+separately from `not_on_path` and probe failures in its `excluded` log row.
+
 ## Reporting disclosure (mandatory)
 
 Any Feishu/chat claim of「对抗审查」**must** include this block (OpenClaw L0-21).
