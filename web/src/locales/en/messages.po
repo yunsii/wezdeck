@@ -1404,7 +1404,7 @@ msgstr "Creating the session group…"
 msgid "Creating…"
 msgstr "Creating…"
 
-#: src/features/session-new-job.tsx:464
+#: src/features/session-new-job.tsx:453
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "Creation did not finish. Retry or edit your message above."
 
@@ -2537,8 +2537,8 @@ msgstr "New line"
 #: src/features/session-chat-group.tsx:213
 #: src/features/session-list.tsx:158
 #: src/features/session-new-header.tsx:35
-#: src/features/session-new-job.tsx:402
-#: src/features/session-new-job.tsx:402
+#: src/features/session-new-job.tsx:391
+#: src/features/session-new-job.tsx:391
 #: src/features/session-new.tsx:197
 msgid "New session"
 msgstr "New session"
@@ -4085,7 +4085,7 @@ msgstr "Sessions"
 #: src/features/session-list.tsx:287
 #: src/features/session-list.tsx:414
 #: src/features/session-new-header.tsx:23
-#: src/features/session-new-job.tsx:415
+#: src/features/session-new-job.tsx:404
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
@@ -4535,8 +4535,8 @@ msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "The pane is restarting; the agent resumes in a moment"
 
 #: src/features/session-new-job.tsx:147
-#: src/features/session-new-job.tsx:339
-#: src/features/session-new-job.tsx:353
+#: src/features/session-new-job.tsx:328
+#: src/features/session-new-job.tsx:342
 msgid "The previous session request expired. Start a new one."
 msgstr "The previous session request expired. Start a new one."
 
@@ -5361,7 +5361,7 @@ msgstr "Yesterday"
 msgid "You (initiator)"
 msgstr "You (initiator)"
 
-#: src/features/session-new-job.tsx:465
+#: src/features/session-new-job.tsx:454
 msgid "You can continue chatting here as soon as the session is ready…"
 msgstr "You can continue chatting here as soon as the session is ready…"
 

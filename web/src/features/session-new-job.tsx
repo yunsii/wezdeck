@@ -292,29 +292,18 @@ export function NewSessionJobView({ jobId }: { jobId: string }) {
     clearJobSeed(jobId)
     if (visitPath) recordVisit(visitPath)
     if (current?.warning) toast.warning(current.warning)
-    void (async () => {
-      // Warm the first detail snapshot before replacing the job route. The
-      // old fire-and-forget prefetch let the detail page paint once without
-      // the user's first message, then repaint as the transcript and outbox
-      // converged, which looked like several flashes on a fast new process.
-      try {
-        await Promise.race([
-          prefetchSession(queryClient, targetId),
-          new Promise<void>((resolve) => window.setTimeout(resolve, 200)),
-        ])
-      } catch {
-        // The detail route still owns retry and error rendering. Do not leave
-        // the user on the completed job page when the warm-up request races a
-        // transient relay failure.
-      }
-      void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
-      trace('session-new', { action: 'handoff', job: jobId, id: targetId })
-      void navigate({
-        to: '/{-$locale}/console/sessions/$id',
-        params: { locale: localeParam, id: targetId },
-        replace: true,
-      })
-    })()
+    // Route immediately. A background or remote page may throttle timers, so
+    // waiting for a client-side timeout can leave the completed job view
+    // looking unresponsive. The detail route already owns its loading and
+    // retry states while this best-effort prefetch warms its first snapshot.
+    void prefetchSession(queryClient, targetId).catch(() => undefined)
+    void queryClient.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+    trace('session-new', { action: 'handoff', job: jobId, id: targetId })
+    void navigate({
+      to: '/{-$locale}/console/sessions/$id',
+      params: { locale: localeParam, id: targetId },
+      replace: true,
+    })
   }, [
     targetId,
     visitPath,

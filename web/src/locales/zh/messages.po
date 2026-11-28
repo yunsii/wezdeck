@@ -1404,7 +1404,7 @@ msgstr "正在创建会话组…"
 msgid "Creating…"
 msgstr "创建中…"
 
-#: src/features/session-new-job.tsx:464
+#: src/features/session-new-job.tsx:453
 msgid "Creation did not finish. Retry or edit your message above."
 msgstr "创建未完成，可在上方重试或修改消息后重发。"
 
@@ -2537,8 +2537,8 @@ msgstr "换行"
 #: src/features/session-chat-group.tsx:213
 #: src/features/session-list.tsx:158
 #: src/features/session-new-header.tsx:35
-#: src/features/session-new-job.tsx:402
-#: src/features/session-new-job.tsx:402
+#: src/features/session-new-job.tsx:391
+#: src/features/session-new-job.tsx:391
 #: src/features/session-new.tsx:197
 msgid "New session"
 msgstr "新会话"
@@ -4085,7 +4085,7 @@ msgstr "会话数"
 #: src/features/session-list.tsx:287
 #: src/features/session-list.tsx:414
 #: src/features/session-new-header.tsx:23
-#: src/features/session-new-job.tsx:415
+#: src/features/session-new-job.tsx:404
 msgctxt "nav"
 msgid "Sessions"
 msgstr "会话"
@@ -4535,8 +4535,8 @@ msgid "The pane is restarting; the agent resumes in a moment"
 msgstr "窗格正在重启，agent 稍后恢复"
 
 #: src/features/session-new-job.tsx:147
-#: src/features/session-new-job.tsx:339
-#: src/features/session-new-job.tsx:353
+#: src/features/session-new-job.tsx:328
+#: src/features/session-new-job.tsx:342
 msgid "The previous session request expired. Start a new one."
 msgstr "上一个会话请求已过期，请重新开始。"
 
@@ -5361,7 +5361,7 @@ msgstr "昨天"
 msgid "You (initiator)"
 msgstr "你（发起方）"
 
-#: src/features/session-new-job.tsx:465
+#: src/features/session-new-job.tsx:454
 msgid "You can continue chatting here as soon as the session is ready…"
 msgstr "会话就绪后即可在此继续对话…"
 
