@@ -302,6 +302,10 @@ func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 		t.Fatal(err)
 	}
 	check(false)
+	run("send-keys", "-t", pane, "This conversation is open in another app", "Enter")
+	if _, err := guardSession(id); err == nil || !strings.Contains(err.Error(), "open in another app") {
+		t.Fatalf("locked Codex TUI must reject web writes, got %v", err)
+	}
 	if _, err := restartSession(recoverArgs); err == nil {
 		t.Fatal("recovery must not replace a running Codex")
 	}
@@ -346,7 +350,15 @@ func TestRecoverCodexRejectsProcessThatExitsBeforeTUIReady(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := restartSession(json.RawMessage(fmt.Sprintf(`{"id":%q,"recover":true}`, id))); err == nil {
+	recoverArgs := json.RawMessage(fmt.Sprintf(`{"id":%q,"recover":true}`, id))
+	if _, err := restartSession(recoverArgs); err == nil {
 		t.Fatal("a launcher that exits before painting a Codex TUI must not report ready")
+	}
+	launcher = fmt.Sprintf("printf 'This conversation is open in\\nanother app\\n'\nexec %q 20\n", bin)
+	if err := os.WriteFile(filepath.Join(runtimeDir, "agent-launcher.sh"), []byte(launcher), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := restartSession(recoverArgs); err == nil {
+		t.Fatal("a Codex lock screen must not report ready")
 	}
 }

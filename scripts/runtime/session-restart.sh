@@ -69,6 +69,15 @@ finish() {
 tmux select-pane -t "$pane" 2>/dev/null || true
 
 if ((!fresh)); then
+  # A tracked Codex session may live in a window whose default profile changed.
+  # Pin its actual agent before F5 resolves the primary resume command.
+  primary_pane="$(tmux show-window-options -v -t "$window_id" @wezterm_window_primary_pane 2>/dev/null || true)"
+  if [[ -z "$primary_pane" ]]; then
+    primary_pane="$(tmux list-panes -t "$window_id" -F '#{pane_id}' 2>/dev/null | head -n 1)"
+  fi
+  if [[ "$agent" == codex && "$pane" == "$primary_pane" ]]; then
+    tmux set-window-option -q -t "$window_id" @wezterm_window_agent_profile codex
+  fi
   out="$(bash "$SCRIPT_DIR/tmux-reset.sh" refresh-current-window \
     --session-name "$session_name" --window-id "$window_id" --cwd "${cwd:-}" 2>/dev/null)" || true
   out="${out//$'\r'/}"

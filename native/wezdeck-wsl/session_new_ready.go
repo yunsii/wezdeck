@@ -75,6 +75,11 @@ func isLauncherLoadingBanner(screen string) bool {
 	return true
 }
 
+func isCodexConversationLocked(screen string) bool {
+	return strings.Contains(strings.Join(strings.Fields(screen), " "),
+		"This conversation is open in another app")
+}
+
 // waitAgentReady waits until the agent TUI has actually painted past the
 // launcher's Loading banner and settled briefly, or surfaced a trust dialog.
 // Shell/test-stub panes without a known agent binary keep the static-screen
@@ -109,6 +114,11 @@ func waitAgentReadyDetailed(socket, pane string, limit time.Duration) (agentRead
 		if s == "" {
 			last, stable, tuiSince = "", time.Time{}, time.Time{}
 			continue
+		}
+		if isCodexConversationLocked(s) {
+			info.Reason = "conversation_locked"
+			info.Duration = time.Since(started)
+			return info, errors.New("the Codex conversation is open in another app")
 		}
 		if isLauncherLoadingBanner(s) {
 			info.BannerSeen = true

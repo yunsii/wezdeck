@@ -40,6 +40,13 @@ func guardSession(id string) (attentionEntry, error) {
 		relayLogf("codex_pane", "outcome=unavailable id=%s pane=%s", id, e.TmuxPane)
 		return attentionEntry{}, errors.New("the session's Codex pane is unavailable")
 	}
+	if strings.EqualFold(e.AgentName, "codex") && cmd == "codex" {
+		screen, _ := tmuxCmd(e.TmuxSocket, "capture-pane", "-p", "-t", e.TmuxPane).Output()
+		if isCodexConversationLocked(string(screen)) {
+			relayLogf("codex_pane", "outcome=conversation_locked id=%s pane=%s", id, e.TmuxPane)
+			return attentionEntry{}, errors.New("the Codex conversation is open in another app")
+		}
+	}
 	if (cmd == "bash" || cmd == "zsh" || cmd == "sh") && !paneHasAgentProcess(e.TmuxSocket, e.TmuxPane) {
 		return attentionEntry{}, errors.New("the session's agent pane is unavailable")
 	}
