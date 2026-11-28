@@ -77,6 +77,11 @@ async function requireRuntime() {
 // timeout) before every collab request.
 let lastProbe:
   { at: number; value: Awaited<ReturnType<typeof probeRuntime>> } | undefined
+// A new-session write and its job polls must stay on one transport. During a
+// Runtime restart the initial write can fall back to the paired relay while a
+// later probe succeeds locally, which makes the local bridge report an
+// unknown in-memory job forever.
+let sessionNewViaRemote = false
 async function probeRuntimeCached() {
   // `?remote=1` forces the remote link even where loopback works (acceptance
   // on the host itself).
@@ -415,6 +420,9 @@ export async function hostRead(
   action: HostReadAction,
   args: Record<string, unknown> = {},
 ): Promise<unknown> {
+  if (action === 'session.new.job' && sessionNewViaRemote) {
+    return remoteLink.rpc(action, args)
+  }
   const local = await probeRuntimeCached()
   if (!local?.health.capabilities.includes('remote.read')) {
     return remoteLink.rpc(action, args)
@@ -471,10 +479,17 @@ export async function hostWrite(
   action: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  const local = await probeRuntimeCached()
-  if (!local?.health.capabilities.includes('remote.write')) {
+  if (action === 'session.new.trust' && sessionNewViaRemote) {
     return remoteLink.write(action, args)
   }
+  const local = await probeRuntimeCached()
+  if (!local?.health.capabilities.includes('remote.write')) {
+    if (action === 'session.new' || action === 'session.new.trust') {
+      sessionNewViaRemote = true
+    }
+    return remoteLink.write(action, args)
+  }
+  if (action === 'session.new') sessionNewViaRemote = false
   const result = await requestJson(
     local.baseUrl,
     `/api/v1/remote/${action}`,
