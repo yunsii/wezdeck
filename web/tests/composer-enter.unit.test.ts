@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   detectSoftKeyboardOpen,
   isHardwareOnlyKey,
+  resolveEnterKeyHint,
   shouldEnterSend,
 } from '#/features/composer-enter'
 import type { EnterSendInput } from '#/features/composer-enter'
+import { parseEnterMode } from '#/lib/enter-pref'
 
 const base: EnterSendInput = {
   coarsePrimary: false,
@@ -157,5 +159,52 @@ describe('composer-enter', () => {
         baselineHeight: 714,
       }),
     ).toBe(true)
+  })
+
+  it('per-device enter preference overrides plain Enter while preserving Shift/Ctrl/IME invariants', () => {
+    const phone: EnterSendInput = {
+      ...base,
+      coarsePrimary: true,
+      anyFinePointer: false,
+      wide: false,
+      softKeyboardOpen: true,
+    }
+    // mode='send': phone with a physical keyboard sends on plain Enter,
+    // while Shift+Enter still breaks lines and IME composition never sends.
+    expect(shouldEnterSend({ ...phone, mode: 'send' })).toBe(true)
+    expect(shouldEnterSend({ ...phone, mode: 'send', shiftKey: true })).toBe(
+      false,
+    )
+    expect(shouldEnterSend({ ...phone, mode: 'send', isComposing: true })).toBe(
+      false,
+    )
+    // mode='newline': even desktop inserts a newline on plain Enter, while
+    // Ctrl/⌘+Enter still sends.
+    expect(shouldEnterSend({ ...base, mode: 'newline' })).toBe(false)
+    expect(shouldEnterSend({ ...base, mode: 'newline', ctrlKey: true })).toBe(
+      true,
+    )
+    expect(
+      resolveEnterKeyHint({
+        mode: 'send',
+        coarsePrimary: true,
+        anyFinePointer: false,
+        wide: false,
+        sawHardwareKey: false,
+      }),
+    ).toBe('send')
+    expect(
+      resolveEnterKeyHint({
+        mode: 'newline',
+        coarsePrimary: false,
+        anyFinePointer: true,
+        wide: true,
+        sawHardwareKey: false,
+      }),
+    ).toBe('enter')
+    expect(parseEnterMode('send')).toBe('send')
+    expect(parseEnterMode('newline')).toBe('newline')
+    expect(parseEnterMode('garbage')).toBe('auto')
+    expect(parseEnterMode(null)).toBe('auto')
   })
 })

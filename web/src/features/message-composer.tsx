@@ -13,11 +13,13 @@ import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
 import { trace } from '#/lib/client-trace'
+import { useEnterMode } from '#/lib/enter-pref'
 import { restoreDraft, useDraft } from '#/lib/use-draft'
 import { useIsWide, useMediaQuery } from '#/lib/use-media'
 import {
   isHardwareOnlyKey,
   isSoftKeyboardOpen,
+  resolveEnterKeyHint,
   shouldEnterSend,
 } from './composer-enter'
 import {
@@ -250,9 +252,15 @@ export function MessageComposer({
     true,
   )
   const wide = useIsWide()
+  const [enterMode] = useEnterMode()
   const [sawHardwareKey, setSawHardwareKey] = useState(false)
-  const enterBreaksLine =
-    coarsePrimary && (!wide || (!anyFinePointer && !sawHardwareKey))
+  const enterKeyHint = resolveEnterKeyHint({
+    mode: enterMode,
+    coarsePrimary,
+    anyFinePointer,
+    wide,
+    sawHardwareKey,
+  })
   const canSend = !draft.progress && draft.ready && !blocked
 
   const assignRef = (node: HTMLTextAreaElement | null) => {
@@ -325,6 +333,7 @@ export function MessageComposer({
             const softKeyboardOpen = isSoftKeyboardOpen()
             const hardwareKey = sawHardwareKey || isHardwareOnlyKey(event)
             const sendOnEnter = shouldEnterSend({
+              mode: enterMode,
               coarsePrimary,
               anyFinePointer,
               wide,
@@ -341,6 +350,7 @@ export function MessageComposer({
             })
             trace('composer-enter', {
               send: sendOnEnter,
+              mode: enterMode,
               coarse: coarsePrimary,
               anyFine: anyFinePointer,
               wide,
@@ -370,7 +380,7 @@ export function MessageComposer({
               draft.pick(files)
             }
           }}
-          enterKeyHint={enterBreaksLine ? 'enter' : 'send'}
+          enterKeyHint={enterKeyHint}
           rows={1}
           placeholder={placeholder}
           className={
