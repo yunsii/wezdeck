@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="assets/brand/banner.svg" alt="WezDeck — 本地优先的 AI Agent 工作台" width="960">
+  <img src="assets/brand/banner.svg" alt="WezDeck — 本地优先的 AI 编程会话网页控制台" width="960">
 </p>
 
 <h1 align="center">WezDeck</h1>
 
 <p align="center">
-  <em>面向 AI agent 的终端驾驶舱 — 基于 WezTerm、tmux 与 git worktree。</em>
+  <em>本地优先的 AI 编程会话网页控制台，由 tmux 与 git worktree 承载执行。</em>
 </p>
 
 <p align="center">
@@ -20,53 +20,52 @@
   <img alt="Lua" src="https://img.shields.io/badge/lua-5.4-000080">
 </p>
 
-> 一个 WezTerm tab 对应一个仓库；一个 tmux window 对应一个 worktree；一个 pane 可以挂一个 agent。一键跳到正在等你的那个。
+> 在网页里查看所有 Agent 会话。tmux 持续运行任务，需要真实 TUI 时再打开终端。
 
-本仓库是 WezDeck 运行时的单一事实来源。GitHub 仓库：[`yunsii/wezdeck`](https://github.com/yunsii/wezdeck)（旧地址 `yunsii/wezterm-config` 仍可通过 GitHub 永久重定向访问）。
+本仓库是 WezDeck 运行时的单一事实来源。GitHub 仓库：[`yunsii/wezdeck`](https://github.com/yunsii/wezdeck)。
 
 ## 设计立场
 
-WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面**。三条约束约束每一次新交互；它们同样写在 [`AGENTS.md` · Design stance](AGENTS.md#design-stance) / Hard Rules 里，对 agent 有约束力——不是 README 营销文案。
+WezDeck 是 AI 编程会话的**控制面**。在 Windows/WSL 上，网页控制台是日常入口，tmux 承载 Agent，只在需要直接操作 TUI 时打开 WezTerm。三条约束贯穿每一次新交互，也写在 [`AGENTS.md` · Design stance](AGENTS.md#design-stance) / Hard Rules 里。
 
 | 约束 | 实践含义 |
 |---|---|
-| **键盘优先** | 每个新增或改动的交互必须有键盘路径；鼠标仅作兜底。Manifest 与 palette 覆盖同一批动作。 |
-| **Agent 无头验证** | Debug Chrome 默认无头自启（`CDP·Headless·…`）；agent 经 CDP/MCP 接入，不抢 GUI 焦点。 |
+| **键盘优先** | 每个新增或改动的交互必须有键盘路径；鼠标仅作兜底。网页与终端各自提供快捷键。 |
+| **Agent 无头验证** | Agent 使用已配置的浏览器后端；CDP 路径无头运行，不抢 GUI 焦点。 |
 | **开发过程可观测** | 热路径发出结构化信号，便于复盘一天、门控延迟、优化习惯——而不是靠记忆猜。没有徽章 / 日志 / 投影路径的功能视为**未完成**。 |
 
-第三条是迭代的承重约束：徽章实时告警，日志解释「手感粘」或 attention 卡住，日/周投影把同一批信号变成可复盘闭环。长文见 [`docs/presentations/`](docs/presentations/)。
+第三条是迭代的承重约束：网页状态和日志呈现 attention 与故障，日/周投影把同一批信号变成可复盘闭环。长文见 [`docs/presentations/`](docs/presentations/)。
 
 ## ✨ 亮点
 
-- **Tab × Worktree × Agent 同框** — 每个 WezTerm tab 一个仓库，每个 tmux window 一个 linked worktree，每个 pane 可挂 agent CLI（`claude` / `codex` / `grok` / …）。
-- **主 pane 自动续聊** — 托管 agent pane 经 `agent-launcher.sh` 以 `<base>-resume` 启动；WezTerm 或整机重启后进入 worktree 会续上上次对话（没有会话则开新会话）。
-- **实时 attention 面** — tab 徽章 + 右状态计数 `▲ N waiting ✓ N done ● N running`，由 agent hooks → `attention.json` 驱动。
-- **槽内跳转键** — `Alt+j` / `Alt+k` / `Alt+l` 分别步进 waiting / done / running；`Alt+/` 与 `Alt+x` 是偶发总览 / overflow 选择器，不是主循环。
-- **一键开 worktree** — `Ctrl+k g d`（或网页控制台的「新会话」）在没有合适槽位时切开一个工作站：一个方向一个 linked worktree，带一行描述和配套 agent。
-- **Manifest 驱动热键** — `wezterm-x/commands/manifest.json` 是唯一事实来源；本机覆盖在 `wezterm-x/local/keybindings.lua`。
-- **开发环境可观测** — 右状态压力徽章、结构化 runtime / WezTerm 日志、阈值门控 latency，以及日环 timeline 与 habit-weekly 投影，用于复盘。
+- **网页汇总所有会话** — 在电脑或手机上查看对话、发消息、回答确认，并找到等你处理的任务。
+- **tmux 持续执行** — 每个 worktree 对应一个 tmux 窗口和 Agent pane，进程重启时由 `agent-launcher.sh` 续聊。
+- **实时 attention** — Agent hooks 写入 `attention.json`，网页列表显示 waiting、running 和 done。
+- **网页键盘路径** — `/` 搜索，`j` / `k` 切换会话，本机按 `o` 打开真实终端。
+- **从网页新建 worktree** — 「新会话」在 linked worktree 中启动 Agent，并记录用途。
+- **按需打开终端** — 极简 WezTerm 客户端连接指定 tmux pane，供直接操作 TUI 或执行人工交接脚本。
+- **宿主机可观测** — 结构化 Runtime / relay 日志与日/周投影支持故障排查和习惯复盘。
 
 ## 🎛️ 工作台 · 一天的主循环
 
-> 先落到槽位（workspace / tab / worktree），保持 agent 续聊，再在槽内跳转与验证。实测日环由 `Alt+j/k/l` 与 `Alt+v` 主导——不是总览 picker。
+> 打开网页控制台，选一个会话，在同一条对话里处理工作。浏览器或终端关闭后，tmux 仍维持 Agent 进程。
 
 ```text
 需求出现
-  → 切 workspace (Alt+w/c/…) · tab (Alt+1..9) · worktree (Alt+g)
-       └─ 没有合适槽位 → Ctrl+k g d       创建后进入
-  → 该 cwd 的主 pane 自动 resume
-  → 主循环: Alt+j waiting · Alt+k done · Alt+l running
-               + Alt+v 打开 VS Code（日常验证路径）
-       · 旁路: Alt+b debug Chrome · Alt+/ 总览 · Alt+x overflow
+  → 打开网页控制台 → 用 / 搜索或 j / k 切换会话
+       └─ 没有合适会话 → 「新会话」创建 worktree 与 Agent
+  → 在同一条对话里阅读、发送消息、处理确认
+       └─ 需要真实 TUI 或人工脚本 → 按需打开 tmux pane
+  → 在已配置的浏览器或 VS Code 中验证
   → 交付到 origin/HEAD → recycle（下一轮）/ reclaim（方向收尾）
 ```
 
 | 阶段 | 能力 | 深入阅读 |
 |---|---|---|
-| 落到槽位 | Workspace 切换 + tab 序号 + **`Alt+g`**；没有才创建 | [Workspaces](docs/workspaces.md) |
-| 重启后续聊 | **`<base>-resume`**（`agent-launcher.sh`）+ access-ledger 焦点恢复 | [Architecture · startup](docs/architecture.md#startup-invariants) |
-| 槽内主循环 | 徽章 / 计数 + **`Alt+j/k/l`**（真实日环最高频键） | [Agent attention](docs/agent-attention.md) |
-| 验证 | 日常 **`Alt+v`**；需要 debug Chrome 时用 **`Alt+b`**（MCP 共用 CDP） | [Browser debug](docs/browser-debug.md) |
+| 找到会话 | 网页列表和搜索；需要时新建 worktree | [Workspaces](docs/workspaces.md) |
+| 重启后续聊 | `agent-launcher.sh` 的 **`<base>-resume`** 维持 pane 的对话 | [Architecture · startup](docs/architecture.md#startup-invariants) |
+| 处理 attention | 网页的 waiting / done / running 状态及键盘导航 | [Agent attention](docs/agent-attention.md) |
+| 验证 | 用 **`wezdeck-browser`** 打开已配置浏览器，或使用 VS Code | [Browser debug](docs/browser-debug.md) |
 | 收尾本轮 | 主线交付（无 PR）→ **`worktree-task recycle`** / reclaim | [Maintenance loop](docs/workspaces.md#maintenance-loop-wezdeck-standing-policy) |
 | 复盘日 / 周 | 同一批信号上的 timeline + habit 报告 | [Diagnostics · timeline](docs/diagnostics.md#workflow-timeline) · [Habit report](docs/diagnostics.md#habit-report) |
 
@@ -74,9 +73,9 @@ WezDeck 不是一堆快捷键，而是面向多 agent 终端工作的**控制面
 
 三层共用一个想法：**看不见，就无法改进。**
 
-### 实时右状态（操作员一瞥）
+### 备用完整配置的状态栏
 
-从左到右（压力徽章在健康时**不出现**——出现本身就是信号）：
+网页列表是日常 attention 面。保留的完整 WezTerm 配置仍可显示下列状态段；按需打开的极简终端使用 tmux 状态行：
 
 `IME` · `Ego·…`/`CDP·…` · `◆ SessionBridge·N` · 插件徽章 · `SystemDisk·…`/`WslDisk·…` · `Memory·…` · `LoadAvg·…` · attention 计数
 
@@ -112,15 +111,13 @@ scripts/dev/habit-report.sh --days 7
 ## 🧭 工作原理
 
 ```
-WezTerm tab          ─┐
-  └─ tmux window     ─┤  一个仓库  ·  一个 worktree  ·  一个 agent（resume）
-       └─ tmux pane  ─┘
-                       ↑
-       agent hooks → attention.json → tab 徽章 + 右状态计数
-                                       ↑
-                         Alt+j/k/l  +  Alt+v  （主循环）
-                       ↓
-       结构化日志 → timeline / habit 投影器  （复盘环）
+网页控制台 ── 本机 Runtime / 远程 relay ── tmux session
+                                          └─ worktree window
+                                             └─ agent pane
+                                                  ↑
+Agent hooks ── attention.json ── 网页状态与通知
+按需打开终端 ────────────────────┘
+结构化日志 ── timeline / habit 投影器
 ```
 
 完整架构、所有权边界与 WSL ⇄ Windows 通道：[`docs/architecture.md`](docs/architecture.md)。会话与互通总览（workspace/tab/tmux/worktree/agent/attention ↔ session-bridge ↔ 飞书）：[Session & Interop Overview](docs/architecture.md#session--interop-overview)。
@@ -129,14 +126,14 @@ WezTerm tab          ─┐
 
 | | 要求 | 说明 |
 |---|---|---|
-| **WezTerm** | nightly | `hybrid-wsl` 模式跑在 Windows nightly 上 |
+| **WezTerm** | nightly | 在 Windows/WSL 上用于按需终端客户端和运行时同步探针 |
 | **tmux** | ≥ 3.7（推荐 **3.8**） | DEC sync 需 3.6+；copy-mode 实时刷新需 3.7+（`refresh-from-pane`）/ 3.8+（`refresh-now`）。系统/brew 包 ≥ 3.7 优先；仅当发行版过旧（如 Ubuntu apt 3.4）才用用户前缀 `~/.local`。升级：`install-tmux-user.sh --force 3.8`。[安装](docs/tmux-install.md) · [原因](docs/ime-flicker-and-sync-output.md) |
 | **lua5.4** | 推荐 | 驱动 sync 预检；缺失则跳过预检并警告 |
 | **jq** | 推荐 | Agent-attention 写入与焦点路径；缺失则标签降级 |
 | **go ≥ 1.21** | 可选 | 仅 `native/picker/` 维护者需要。终端用户经 release fetcher 拿 sha256 钉死的预编译包 |
 | **python3** | 可选 | Habit / timeline 投影器；WakaTime 状态 |
 
-支持的运行时模式：`hybrid-wsl`（Windows WezTerm + WSL/tmux）与 `posix-local`（Linux / macOS 本机）。
+支持的运行时模式：`hybrid-wsl`（Windows Runtime + WSL/tmux，WezTerm 按需打开）与 `posix-local`（Linux / macOS 本地终端）。
 
 ## 🚀 快速开始
 
@@ -149,12 +146,15 @@ $EDITOR wezterm-x/local/shared.env      # WAKATIME_API_KEY, MANAGED_AGENT_PROFIL
 # 2. 同步运行时到 $HOME（写入 ~/.wezterm.lua + ~/.wezterm-x/）
 skills/wezdeck-runtime-ops/scripts/sync-runtime.sh
 
-# 3. 重载 WezTerm，确认右状态出现
-#    attention 计数（helper 起来后还有 CDP·…）——说明 attention / CDP 链路活着。
-#    WslDisk· / Memory· 仅在压力下出现。
+# 3. 启动宿主服务，无须常驻 WezTerm 窗口
+scripts/dev/install-headless-runtime-startup.sh
+scripts/dev/install-remote-relay.sh
+
+# 4. 在主机浏览器打开部署好的网页控制台
+#    本机实例：https://wezdeck.yuns.love/console/sessions
 ```
 
-完整安装：[`docs/setup.md`](docs/setup.md)。WSL 主机可选守卫：[`docs/guest-oom.md`](docs/guest-oom.md) · [`docs/host-disk.md`](docs/host-disk.md)。
+完整安装：[`docs/setup.md`](docs/setup.md) · [远程访问](docs/remote-access.md)。WSL 主机可选守卫：[`docs/guest-oom.md`](docs/guest-oom.md) · [`docs/host-disk.md`](docs/host-disk.md)。
 
 ## 📚 文档
 

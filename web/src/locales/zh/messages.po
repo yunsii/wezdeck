@@ -265,8 +265,12 @@ msgid "A headless run is still going; wait until it finishes."
 msgstr "后台运行仍在进行，结束后再操作。"
 
 #: src/features/landing-page.tsx:54
-msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
-msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 WezTerm 标签、tmux 窗格和 git worktree，离开电脑也能在手机上接着干。"
+msgid "A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI."
+msgstr "本地优先的 AI 编程会话网页控制台。tmux 持续运行 Agent，需要真实 TUI 时再打开终端。"
+
+#: src/features/landing-page.tsx:54
+#~ msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+#~ msgstr "本地优先的 AI 编程 Agent 工作台。每个会话都有自己的 WezTerm 标签、tmux 窗格和 git worktree，离开电脑也能在手机上接着干。"
 
 #: src/features/session-info.tsx:104
 msgid "A message sent mid-turn"
@@ -1698,8 +1702,12 @@ msgid "Every 20 messages the relay receives count as one request; messages it se
 msgstr "中转每收到 20 条消息算 1 次请求；它发出的消息和协议层 ping 免费。"
 
 #: src/features/landing-page.tsx:90
-msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
-msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
+#~ msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+#~ msgstr "所有 Agent 会话在一个列表里，等你的排在最前。在终端按 Alt+j 直接跳过去，离开电脑就在移动端接着聊。"
+
+#: src/features/landing-page.tsx:90
+msgid "Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone."
+msgstr "所有 Agent 会话都在一个列表里，等你处理的排在最前。电脑或手机上都能查看和回复。"
 
 #: src/features/ticket-run-chat.tsx:155
 msgid "Execution conversation"

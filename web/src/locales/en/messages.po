@@ -265,8 +265,12 @@ msgid "A headless run is still going; wait until it finishes."
 msgstr "A headless run is still going; wait until it finishes."
 
 #: src/features/landing-page.tsx:54
-msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
-msgstr "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+msgid "A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI."
+msgstr "A local-first web console for AI coding sessions. tmux keeps agents running; open a terminal only when you need the real TUI."
+
+#: src/features/landing-page.tsx:54
+#~ msgid "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
+#~ msgstr "A local-first workbench for AI coding agents. Every session keeps its WezTerm tab, tmux pane and git worktree — and follows you to your phone."
 
 #: src/features/session-info.tsx:104
 msgid "A message sent mid-turn"
@@ -1698,8 +1702,12 @@ msgid "Every 20 messages the relay receives count as one request; messages it se
 msgstr "Every 20 messages the relay receives count as one request; messages it sends and protocol pings are free."
 
 #: src/features/landing-page.tsx:90
-msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
-msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+#~ msgid "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+#~ msgstr "Every agent session in one list, whatever waits on you on top. Alt+j jumps there at the desk; the same conversation goes on from your phone."
+
+#: src/features/landing-page.tsx:90
+msgid "Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone."
+msgstr "Every agent session in one list, with work waiting on you at the top. Read and reply from your computer or phone."
 
 #: src/features/ticket-run-chat.tsx:155
 msgid "Execution conversation"

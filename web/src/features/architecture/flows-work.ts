@@ -137,8 +137,8 @@ export const waitingSignal: Diagram = {
   id: 'waiting',
   title: { zh: '「等你」信号怎么传开', en: 'How “waiting on you” spreads' },
   summary: {
-    zh: '一个 hook 写下状态，终端和网页端都从同一份状态读。',
-    en: 'One hook records the state; the desk and the web console read the same record.',
+    zh: '一个 hook 写下状态，网页优先呈现；打开完整终端时也能看到。',
+    en: 'One hook records the state for the web console, with the full terminal display available when opened.',
   },
   numbered: true,
   lanes: [AGENT, WSL, WINDOWS, DEVICE],
@@ -173,11 +173,11 @@ export const waitingSignal: Diagram = {
     {
       id: 'badge',
       lane: 'windows',
-      title: { zh: '终端徽标', en: 'Desk badges' },
-      sub: { zh: '标签徽标、右侧计数', en: 'Tab badges, counters' },
+      title: { zh: '完整终端状态', en: 'Full terminal status' },
+      sub: { zh: '按需打开时', en: 'When opened' },
       body: {
-        zh: 'WezTerm 的标签和状态栏亮起，Alt+j 直接跳到等你的会话。',
-        en: 'WezTerm tabs and status light up; Alt+j jumps straight to the session that waits.',
+        zh: '使用完整 WezTerm 配置时，标签和状态栏也会显示等待状态。',
+        en: 'The full WezTerm configuration can also show waiting status in tabs and the status bar.',
       },
     },
     {

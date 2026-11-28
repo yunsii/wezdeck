@@ -38,7 +38,7 @@ wording.
 
 ## Interaction Layers
 
-This config nests two terminal multiplexers — WezTerm outside, tmux inside a single pane of each managed project tab — and several concept names collide between the two layers. Keep the ownership split below in mind when routing a new binding, script, or diagnostic.
+The Windows/WSL daily path is Web console → Runtime or relay → tmux. WezTerm attaches to a pane on demand. The full GUI configuration below nests WezTerm outside tmux inside each managed project tab; keep its ownership split in mind when working on that mode.
 
 ### Nested structure
 
