@@ -21,7 +21,7 @@ internal sealed partial class RuntimeWebServer
     {
         "sessions", "session", "upload.get", "sent.list", "repos", "repo.links", "agent.profiles", "workstations", "ticket.targets",
         "session.new.job", "session.handoff.job", "session.autotitle.status", "session.image", "session.file", "session.history", "session.git",
-        "session.skills", "habit.weekly", "habit.schedule.status", "collab.run.chat", "collab.diff", "collab.manager.chat", "devices", "host.warp.status", "host.oppo.status", "disk.reclaim.status",
+        "session.skills", "habit.weekly", "habit.schedule.status", "collab.run.chat", "collab.diff", "collab.manager.chat", "devices", "host.warp.status", "host.oppo.status", "host.resources", "host.disk.candidates", "disk.reclaim.status",
         // local only: this browser polling for the host's diagnostics requests
         "diag.pending",
     };

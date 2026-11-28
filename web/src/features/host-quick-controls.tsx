@@ -7,7 +7,6 @@ import { SectionHeading } from '#/components/ui/section-heading'
 import { hostRead, hostWrite } from '#/lib/runtime-client'
 import { useDeviceState } from './device-state'
 import { useConsoleMode, useRemoteState } from './console-mode'
-import { DiskReclaimControl } from './disk-reclaim-control'
 
 type WarpStatus = {
   state:
@@ -84,56 +83,51 @@ export function HostQuickControls() {
       : null)
   if (!authorized) return null
   return (
-    <>
-      <section className="grid min-w-0 grid-cols-1 gap-1.5">
-        <SectionHeading as="h2" className="bg-brand-deck">
-          {t`Quick controls`}
-        </SectionHeading>
-        <FieldList>
-          <Field label="One Client (WARP)" value={warpLabel} />
-          <Field
-            label={t`OPPO remote control`}
-            value={
-              session?.active === true
-                ? t`Session active`
-                : session?.active === false
-                  ? t`No active session`
-                  : unknown
-            }
-          />
-          <Field
-            label={t`Latest OPPO connection`}
-            value={[lastResult, session?.last_at, session?.error_code]
-              .filter(Boolean)
-              .join(' · ')}
-          />
-        </FieldList>
-        <div className="flex flex-wrap items-center gap-2 px-1 pt-1">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!stable || !reachable || change.isPending}
-            onClick={() => change.mutate(!connected)}
-          >
-            {change.isPending
-              ? t`Changing One Client…`
-              : connected
-                ? t`Disconnect One Client`
-                : t`Connect One Client`}
-          </Button>
-          {reachable && !warp.isError && warp.data?.reason ? (
-            <span className="text-meta text-brand-muted">
-              {warp.data.reason}
-            </span>
-          ) : null}
-        </div>
-        {statusMessage ? (
-          <div role="status" className="px-1 text-meta text-brand-muted">
-            {statusMessage}
-          </div>
+    <section className="grid min-w-0 grid-cols-1 gap-1.5">
+      <SectionHeading as="h2" className="bg-brand-deck">
+        {t`Network and remote control`}
+      </SectionHeading>
+      <FieldList>
+        <Field label="One Client (WARP)" value={warpLabel} />
+        <Field
+          label={t`OPPO remote control`}
+          value={
+            session?.active === true
+              ? t`Session active`
+              : session?.active === false
+                ? t`No active session`
+                : unknown
+          }
+        />
+        <Field
+          label={t`Latest OPPO connection`}
+          value={[lastResult, session?.last_at, session?.error_code]
+            .filter(Boolean)
+            .join(' · ')}
+        />
+      </FieldList>
+      <div className="flex flex-wrap items-center gap-2 px-1 pt-1">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!stable || !reachable || change.isPending}
+          onClick={() => change.mutate(!connected)}
+        >
+          {change.isPending
+            ? t`Changing One Client…`
+            : connected
+              ? t`Disconnect One Client`
+              : t`Connect One Client`}
+        </Button>
+        {reachable && !warp.isError && warp.data?.reason ? (
+          <span className="text-meta text-brand-muted">{warp.data.reason}</span>
         ) : null}
-      </section>
-      <DiskReclaimControl />
-    </>
+      </div>
+      {statusMessage ? (
+        <div role="status" className="px-1 text-meta text-brand-muted">
+          {statusMessage}
+        </div>
+      ) : null}
+    </section>
   )
 }

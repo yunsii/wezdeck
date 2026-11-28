@@ -74,6 +74,25 @@ Windows may be unable to access the caller's WSL UNC working directory. A
 successful probe from `/mnt/c/Windows` distinguishes this from disabled
 interop; it does not require another WSL shutdown.
 
+The Web **我的 → 本机** resource section reads the same disk-guard status as
+`SystemDisk·` / `WslDisk·`, plus the OOM guard's WSL memory and load-average
+sample. It shows both physical volume free/total values; WSL's virtual 1 TB
+filesystem size is not used as D: capacity. At 80% disk use or guard warn/crit,
+an on-demand inventory measures known regenerable caches and `.next`/`.turbo`
+build output in project worktrees. The scan is bounded and only offers review
+candidates; it does not delete files. The Web dependency candidate counts real
+worktree installs and measures them in one `du` invocation so hardlinks are
+deduplicated across those directories; package-store links can still make
+actual deletion savings smaller than the shown size. Each status keeps the producer heartbeat
+so stale monitor data is hidden instead of presented as live.
+
+WSL's `--manage … --compact` uses a console progress indicator but exposes no
+stable percent value to this workflow ([upstream callsite](https://github.com/microsoft/WSL/blob/master/src/windows/common/WslClient.cpp)).
+During compaction the Windows worker samples elapsed time, VHDX file size and
+D: free space every two seconds. The Web page reports observed byte changes,
+which may remain zero until the operation finishes; it does not estimate a
+percentage from the initial VHDX gap.
+
 An approved WezDeck Web device can also start this fixed job from
 **我的 → 快捷控制 → WSL 磁盘**. The confirmation states that every WSL session
 will stop; the signed request records the initiating device ID and returns a

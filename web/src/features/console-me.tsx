@@ -255,6 +255,22 @@ function MeIndex({ active }: { active?: MePage }) {
             value={autoTitleSummary}
           />
         ) : null}
+        {authorized ? (
+          <EntryRow
+            page="habits"
+            active={active === 'habits'}
+            title={titles.habits}
+          />
+        ) : null}
+        {authorized ? (
+          <EntryRow
+            page="schedule"
+            active={active === 'schedule'}
+            title={titles.schedule}
+          />
+        ) : null}
+      </ul>
+      <ul className={cn(group, 'border-t border-brand-edge')}>
         <EntryRow
           page="connection"
           active={active === 'connection'}
@@ -282,6 +298,14 @@ function MeIndex({ active }: { active?: MePage }) {
           title={titles.notifications}
           value={notificationsSummary}
         />
+        {authorized ? (
+          <EntryRow
+            page="host"
+            active={active === 'host'}
+            title={titles.host}
+            value={consoleMode === 'local' ? hostSummary : undefined}
+          />
+        ) : null}
         {remote.mode === 'unpaired' || device.state !== 'approved' ? null : (
           <EntryRow
             page="usage"
@@ -289,20 +313,6 @@ function MeIndex({ active }: { active?: MePage }) {
             title={titles.usage}
           />
         )}
-        {authorized ? (
-          <EntryRow
-            page="habits"
-            active={active === 'habits'}
-            title={titles.habits}
-          />
-        ) : null}
-        {authorized ? (
-          <EntryRow
-            page="schedule"
-            active={active === 'schedule'}
-            title={titles.schedule}
-          />
-        ) : null}
       </ul>
       <ul className={cn(group, 'border-t border-brand-edge')}>
         <EntryRow
@@ -349,12 +359,6 @@ function MeIndex({ active }: { active?: MePage }) {
       </ul>
       {authorized ? (
         <ul className={cn(group, 'border-t border-brand-edge')}>
-          <EntryRow
-            page="host"
-            active={active === 'host'}
-            title={titles.host}
-            value={consoleMode === 'local' ? hostSummary : undefined}
-          />
           {consoleMode === 'local' ? (
             <li>
               <Link

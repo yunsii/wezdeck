@@ -248,6 +248,28 @@ Behavior:
 
 `worktree-task reclaim` (and the `Ctrl+k g r` wrapper) enforce: refuse on the primary worktree, refuse on uncommitted/untracked changes (use `--force` to override), and only delete the workstation branch when it's already merged into the primary worktree's HEAD. The wrapper additionally checks "delivery" — the branch must be either merged into `origin/HEAD` (SHA ancestor **or content absorbed after squash/rebase**), OR pushed to `origin/<branch>` with no local commits ahead of the remote tip; a stale or behind remote ref is not accepted (would silently drop unpushed commits). Pushed-but-unmerged is fine — the work is recoverable via `git fetch && git worktree add ../foo origin/<branch>`. The confirmation prompt names it as a workstation whose direction is done. `--allow-long-lived` is removed (2026-11-25): passing it fails with that replacement. After removal: `git worktree prune` cleans any phantom admin entries git may still hold. The Claude Code transcript at `~/.claude/projects/<escaped-cwd>/` is intentionally left in place — when a later workstation reuses the same name, `claude --continue` resumes the prior conversation; use `/clear` inside the resumed session if the carried-over context isn't wanted.
 
+## Web Dependencies Across Worktrees
+
+`web/node_modules` is large across many linked worktrees even though pnpm
+hardlinks some package files into its store. For a worktree whose
+`web/package.json` and `web/pnpm-lock.yaml` match the primary checkout exactly,
+`scripts/dev/web-worktree-deps.sh link` adds an ignored symlink to the primary
+`web/node_modules`. Existing real dependency directories are left untouched.
+Use `web-worktree-deps.sh build|unit|dev` to run Vite/Vitest with
+`--configLoader runner`; this keeps their temporary config files out of the
+shared dependency tree. For `dev`, the helper also allows Vite to read asset
+files from the shared dependency path; without this, SSR can return
+`ERR_DENIED_ID` for fonts behind the symlink. A worktree changing dependencies needs its own
+`pnpm install`. The script refuses a mismatched manifest, so it cannot silently
+test against the wrong package set. No existing worktree is pruned by this
+workflow.
+On 2026-11-29, 29 linked wezdeck worktrees included 19 real Web dependency
+directories; one combined `du` invocation (which deduplicates hardlinks)
+accounted for about 15 GiB. Individual `du` values cannot be summed because
+pnpm package files share inodes across directories. Link only a checkout with
+matching manifests; reclaim old real dependency directories separately after
+confirming that checkout is not building or running a dev server.
+
 ## File Ownership
 
 - `wezterm-x/workspaces.lua` is the tracked public baseline.

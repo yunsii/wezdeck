@@ -16,29 +16,30 @@ import (
 )
 
 type diskReclaimState struct {
-	TaskID           string  `json:"task_id"`
-	TargetDevice     string  `json:"target_device"`
-	Phase            string  `json:"phase"`
-	Stage            string  `json:"stage,omitempty"`
-	FailedStage      string  `json:"failed_stage,omitempty"`
-	Error            string  `json:"error,omitempty"`
-	StartedAt        string  `json:"started_at,omitempty"`
-	UpdatedAt        string  `json:"updated_at,omitempty"`
-	DurationSeconds  float64 `json:"duration_seconds,omitempty"`
-	ActiveAttention  int     `json:"active_attention,omitempty"`
-	SnapshotWindows  int     `json:"snapshot_windows,omitempty"`
-	BeforeFreeBytes  int64   `json:"before_free_bytes,omitempty"`
-	AfterFreeBytes   int64   `json:"after_free_bytes,omitempty"`
-	ReclaimedBytes   int64   `json:"reclaimed_bytes,omitempty"`
-	BeforeVhdxBytes  int64   `json:"before_vhdx_bytes,omitempty"`
-	AfterVhdxBytes   int64   `json:"after_vhdx_bytes,omitempty"`
-	VhdxReducedBytes int64   `json:"vhdx_reduced_bytes,omitempty"`
-	TrimExit         *int    `json:"trim_exit,omitempty"`
-	CompactExit      *int    `json:"compact_exit,omitempty"`
-	VerifyExit       *int    `json:"verify_exit,omitempty"`
-	VerifyOutput     string  `json:"verify_output,omitempty"`
-	KeepaliveState   string  `json:"keepalive_state,omitempty"`
-	History          []struct {
+	TaskID                string  `json:"task_id"`
+	TargetDevice          string  `json:"target_device"`
+	Phase                 string  `json:"phase"`
+	Stage                 string  `json:"stage,omitempty"`
+	FailedStage           string  `json:"failed_stage,omitempty"`
+	Error                 string  `json:"error,omitempty"`
+	StartedAt             string  `json:"started_at,omitempty"`
+	UpdatedAt             string  `json:"updated_at,omitempty"`
+	DurationSeconds       float64 `json:"duration_seconds,omitempty"`
+	ActiveAttention       int     `json:"active_attention,omitempty"`
+	SnapshotWindows       int     `json:"snapshot_windows,omitempty"`
+	BeforeFreeBytes       int64   `json:"before_free_bytes,omitempty"`
+	AfterFreeBytes        int64   `json:"after_free_bytes,omitempty"`
+	ReclaimedBytes        int64   `json:"reclaimed_bytes,omitempty"`
+	BeforeVhdxBytes       int64   `json:"before_vhdx_bytes,omitempty"`
+	AfterVhdxBytes        int64   `json:"after_vhdx_bytes,omitempty"`
+	VhdxReducedBytes      int64   `json:"vhdx_reduced_bytes,omitempty"`
+	CompactElapsedSeconds float64 `json:"compact_elapsed_seconds,omitempty"`
+	TrimExit              *int    `json:"trim_exit,omitempty"`
+	CompactExit           *int    `json:"compact_exit,omitempty"`
+	VerifyExit            *int    `json:"verify_exit,omitempty"`
+	VerifyOutput          string  `json:"verify_output,omitempty"`
+	KeepaliveState        string  `json:"keepalive_state,omitempty"`
+	History               []struct {
 		Phase string `json:"phase"`
 		At    string `json:"at"`
 	} `json:"history,omitempty"`
@@ -166,8 +167,10 @@ func startDiskReclaim(args json.RawMessage, via, device string) (any, error) {
 func diskReclaimProgressFrame(state diskReclaimState) relayFrame {
 	view := map[string]any{"task_id": state.TaskID, "phase": state.Phase,
 		"updated_at": state.UpdatedAt, "reclaimed_bytes": state.ReclaimedBytes,
-		"vhdx_reduced_bytes": state.VhdxReducedBytes, "failed_stage": state.FailedStage,
-		"error": strings.TrimSpace(clip(state.Error, 160)), "history": state.History}
+		"vhdx_reduced_bytes": state.VhdxReducedBytes, "compact_elapsed_seconds": state.CompactElapsedSeconds,
+		"after_vhdx_bytes": state.AfterVhdxBytes, "after_free_bytes": state.AfterFreeBytes,
+		"failed_stage": state.FailedStage,
+		"error":        strings.TrimSpace(clip(state.Error, 160)), "history": state.History}
 	body, _ := json.Marshal(view)
 	return relayFrame{T: "disk.reclaim.progress", Data: body}
 }

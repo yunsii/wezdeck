@@ -435,6 +435,10 @@ func readRPC(action string, args json.RawMessage, timingOpt ...*rpcTiming) (any,
 		result, err = warpStatus()
 	case "host.oppo.status":
 		result = oppoStatus()
+	case "host.resources":
+		result = readHostResources()
+	case "host.disk.candidates":
+		result = diskCandidates()
 	case "sessions":
 		result, err = listSessionsWithTiming(false, timing)
 	case "session":

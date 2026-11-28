@@ -113,14 +113,41 @@ try {
   Start-Sleep -Seconds 5
   $status.phase = 'compacting'; Publish
   $stopAttempted = $true
-  $compact = Invoke-Wsl @('--manage', $Distro, '--compact')
-  $status.compact_output = $compact.Output
-  $status.compact_exit = $compact.Exit
+  $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = Join-Path $env:SystemRoot 'System32\wsl.exe'
+  $startInfo.Arguments = "--manage $Distro --compact"
+  $startInfo.WorkingDirectory = $env:SystemRoot
+  $startInfo.UseShellExecute = $false
+  $startInfo.CreateNoWindow = $true
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
+  $compact = [System.Diagnostics.Process]::new()
+  $compact.StartInfo = $startInfo
+  if (-not $compact.Start()) { throw 'WSL compact process did not start' }
+  $stdout = $compact.StandardOutput.ReadToEndAsync()
+  $stderr = $compact.StandardError.ReadToEndAsync()
+  $compactStarted = Get-Date
+  while (-not $compact.WaitForExit(2000)) {
+    $status.compact_elapsed_seconds = [math]::Round(((Get-Date) - $compactStarted).TotalSeconds, 1)
+    try {
+      $status.after_vhdx_bytes = (Get-Item -LiteralPath $Vhdx).Length
+      $status.after_free_bytes = (Get-PSDrive -Name $drive).Free
+      $status.vhdx_reduced_bytes = $status.before_vhdx_bytes - $status.after_vhdx_bytes
+      $status.reclaimed_bytes = $status.after_free_bytes - $status.before_free_bytes
+    } catch {
+      $status.measure_error = $_.Exception.Message
+    }
+    Publish
+  }
+  $compact.WaitForExit()
+  $status.compact_output = ($stdout.Result + $stderr.Result).Trim()
+  $status.compact_exit = $compact.ExitCode
+  $status.compact_elapsed_seconds = [math]::Round(((Get-Date) - $compactStarted).TotalSeconds, 1)
   $status.after_free_bytes = (Get-PSDrive -Name $drive).Free
   $status.after_vhdx_bytes = (Get-Item -LiteralPath $Vhdx).Length
   $status.reclaimed_bytes = $status.after_free_bytes - $status.before_free_bytes
   $status.vhdx_reduced_bytes = $status.before_vhdx_bytes - $status.after_vhdx_bytes
-  if ($compact.Exit -ne 0) { throw "WSL compact failed: $($compact.Exit)" }
+  if ($compact.ExitCode -ne 0) { throw "WSL compact failed: $($compact.ExitCode)" }
   $status.phase = 'restarting'; Publish
 
   $task = Get-ScheduledTask -TaskName $KeepaliveTask -ErrorAction SilentlyContinue

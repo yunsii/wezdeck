@@ -126,7 +126,7 @@ msgstr "{n} 秒"
 msgid "{name} is ready, no conversation yet."
 msgstr "{name} 已就绪，还没有对话。"
 
-#: src/features/me-host.tsx:60
+#: src/features/me-host.tsx:62
 msgid "{off} need attention"
 msgstr "{off} 项需要留意"
 
@@ -229,6 +229,10 @@ msgstr "↓ {tokens} tokens"
 #: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 项任务"
+
+#: src/features/host-resources.tsx:184
+msgid "1-minute load / logical CPUs"
+msgstr "1 分钟负载 / 逻辑 CPU 数"
 
 #: src/features/mermaid-block.tsx:133
 msgid "1:1"
@@ -475,7 +479,7 @@ msgstr "全部标签"
 msgid "All tiers"
 msgstr "全部档位"
 
-#: src/features/me-host.tsx:144
+#: src/features/me-host.tsx:148
 msgid "All time"
 msgstr "累计"
 
@@ -579,8 +583,8 @@ msgstr "批准计划"
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 
-#: src/features/host-quick-controls.tsx:83
-#: src/features/me-host.tsx:70
+#: src/features/host-quick-controls.tsx:82
+#: src/features/me-host.tsx:72
 msgid "Approve this device in Device access to use host controls."
 msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
 
@@ -711,7 +715,7 @@ msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:115
-#: src/features/console-me.tsx:437
+#: src/features/console-me.tsx:441
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:81
@@ -780,7 +784,7 @@ msgstr "方块"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
-#: src/features/disk-reclaim-control.tsx:125
+#: src/features/disk-reclaim-control.tsx:134
 msgid "Blocked"
 msgstr "已阻止"
 
@@ -859,7 +863,7 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
-#: src/features/disk-reclaim-control.tsx:203
+#: src/features/disk-reclaim-control.tsx:219
 #: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
@@ -882,7 +886,7 @@ msgstr "正在取消……"
 msgid "Capabilities"
 msgstr "能力"
 
-#: src/features/me-host.tsx:166
+#: src/features/me-host.tsx:170
 msgid "Capabilities ({capabilityCount})"
 msgstr "能力（{capabilityCount}）"
 
@@ -916,7 +920,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "变更"
 
-#: src/features/host-quick-controls.tsx:119
+#: src/features/host-quick-controls.tsx:117
 msgid "Changing One Client…"
 msgstr "正在切换 One Client…"
 
@@ -928,11 +932,11 @@ msgstr "重新检查"
 msgid "Check for updates"
 msgstr "检查更新"
 
-#: src/features/disk-reclaim-control.tsx:118
+#: src/features/disk-reclaim-control.tsx:127
 msgid "Checking"
 msgstr "检查中"
 
-#: src/features/disk-reclaim-control.tsx:122
+#: src/features/disk-reclaim-control.tsx:131
 msgid "Checking services"
 msgstr "检查服务"
 
@@ -940,7 +944,7 @@ msgstr "检查服务"
 #: src/features/me-device-access.tsx:13
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
-#: src/features/me-host.tsx:59
+#: src/features/me-host.tsx:61
 msgid "Checking…"
 msgstr "检查中…"
 
@@ -964,6 +968,10 @@ msgstr "子单"
 #: src/features/session-new.tsx:301
 msgid "Choose an agent"
 msgstr "选择智能体"
+
+#: src/features/host-resources.tsx:127
+msgid "Chrome Service Worker cache"
+msgstr "Chrome Service Worker 缓存"
 
 #: src/features/me-notifications.tsx:208
 msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge."
@@ -1108,8 +1116,8 @@ msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
-#: src/features/disk-reclaim-control.tsx:147
-#: src/features/disk-reclaim-control.tsx:190
+#: src/features/disk-reclaim-control.tsx:156
+#: src/features/disk-reclaim-control.tsx:206
 msgid "Compact and restart WSL"
 msgstr "压缩磁盘并重启 WSL"
 
@@ -1121,11 +1129,11 @@ msgstr "正在压缩上下文"
 msgid "compacting the context"
 msgstr "正在压缩上下文"
 
-#: src/features/disk-reclaim-control.tsx:120
+#: src/features/disk-reclaim-control.tsx:129
 msgid "Compacting VHDX"
 msgstr "压缩 VHDX"
 
-#: src/features/disk-reclaim-control.tsx:123
+#: src/features/disk-reclaim-control.tsx:132
 msgid "Completed"
 msgstr "已完成"
 
@@ -1145,7 +1153,7 @@ msgstr "确认"
 msgid "Confirm & create ticket"
 msgstr "确认并创建工单"
 
-#: src/features/disk-reclaim-control.tsx:211
+#: src/features/disk-reclaim-control.tsx:227
 #: src/features/ticket-proposals.tsx:368
 msgid "Confirm and start"
 msgstr "确认并开始"
@@ -1183,16 +1191,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
 
-#: src/features/host-quick-controls.tsx:122
+#: src/features/host-quick-controls.tsx:120
 msgid "Connect One Client"
 msgstr "连接 One Client"
 
-#: src/features/host-quick-controls.tsx:65
-#: src/features/host-quick-controls.tsx:74
+#: src/features/host-quick-controls.tsx:64
+#: src/features/host-quick-controls.tsx:73
 msgid "Connected"
 msgstr "已连接"
 
-#: src/features/host-quick-controls.tsx:67
+#: src/features/host-quick-controls.tsx:66
 #: src/features/remote-badge.tsx:87
 #: src/features/remote-badge.tsx:94
 msgid "Connecting…"
@@ -1202,7 +1210,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/host-quick-controls.tsx:76
+#: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "连接失败"
 
@@ -1501,7 +1509,7 @@ msgstr "当前样本来自前台 WezTerm 窗口。"
 #~ msgid "D drive recovered {0} GiB"
 #~ msgstr "D 盘已回收 {0} GiB"
 
-#: src/features/disk-reclaim-control.tsx:163
+#: src/features/disk-reclaim-control.tsx:172
 msgid "D drive recovered {reclaimedGiB} GiB"
 msgstr "D 盘已回收 {reclaimedGiB} GiB"
 
@@ -1628,7 +1636,7 @@ msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
-#: src/features/console-me.tsx:371
+#: src/features/console-me.tsx:375
 #: src/features/console-shell.tsx:102
 msgid "Diagnostics"
 msgstr "诊断"
@@ -1673,15 +1681,15 @@ msgstr "停用此 Agent"
 msgid "Disabled"
 msgstr "已停用"
 
-#: src/features/host-quick-controls.tsx:121
+#: src/features/host-quick-controls.tsx:119
 msgid "Disconnect One Client"
 msgstr "断开 One Client"
 
-#: src/features/host-quick-controls.tsx:66
+#: src/features/host-quick-controls.tsx:65
 msgid "Disconnected"
 msgstr "已断开"
 
-#: src/features/host-quick-controls.tsx:68
+#: src/features/host-quick-controls.tsx:67
 msgid "Disconnecting…"
 msgstr "正在断开…"
 
@@ -1752,6 +1760,16 @@ msgstr "修改组名"
 msgid "Effort"
 msgstr "推理力度"
 
+#. placeholder {0}: Math.floor(compactSeconds / 60)
+#. placeholder {1}: compactSeconds % 60
+#: src/features/disk-reclaim-control.tsx:175
+#~ msgid "Elapsed {0}m {1}s"
+#~ msgstr ""
+
+#: src/features/disk-reclaim-control.tsx:177
+msgid "Elapsed {compactMinutes}m {compactRemainder}s"
+msgstr "已用 {compactMinutes} 分 {compactRemainder} 秒"
+
 #: src/features/me-notifications.tsx:406
 msgid "Enable notifications"
 msgstr "开启推送通知"
@@ -1781,7 +1799,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "已完结"
 
-#: src/features/me-host.tsx:128
+#: src/features/me-host.tsx:132
 msgid "Endpoint"
 msgstr "端点"
 
@@ -1821,7 +1839,7 @@ msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
 msgid "Evening"
 msgstr "晚间"
 
-#: src/features/me-host.tsx:37
+#: src/features/me-host.tsx:39
 msgid "Event stream"
 msgstr "事件流"
 
@@ -1874,7 +1892,7 @@ msgstr "Fable 档"
 msgid "failed"
 msgstr "失败"
 
-#: src/features/disk-reclaim-control.tsx:124
+#: src/features/disk-reclaim-control.tsx:133
 #: src/features/me-schedule.tsx:116
 msgid "Failed"
 msgstr "失败"
@@ -2002,6 +2020,10 @@ msgstr "立即生成报告"
 msgid "Git status"
 msgstr "Git 状态"
 
+#: src/features/host-resources.tsx:124
+msgid "Go build cache"
+msgstr "Go 构建缓存"
+
 #: src/features/console-keys.tsx:29
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgstr "切换分区：s 会话、c 工单、a 工单动态、x 诊断、m 我的"
@@ -2086,7 +2108,7 @@ msgstr "主机默认"
 msgid "Host offline"
 msgstr "主机离线"
 
-#: src/features/me-host.tsx:39
+#: src/features/me-host.tsx:41
 msgid "Host signals"
 msgstr "主机信号"
 
@@ -2099,7 +2121,7 @@ msgstr "暂时连不上主机"
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:341
+#: src/features/console-me.tsx:351
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
 #: src/features/public-header.tsx:87
@@ -2182,10 +2204,14 @@ msgstr "发起方"
 msgid "Input cleared"
 msgstr "已清空输入"
 
-#: src/features/me-host.tsx:133
-#: src/features/me-host.tsx:135
+#: src/features/me-host.tsx:137
+#: src/features/me-host.tsx:139
 msgid "Input method"
 msgstr "输入法"
+
+#: src/features/host-resources.tsx:220
+msgid "Inspect reclaimable files"
+msgstr "查看可优化占用"
 
 #: src/features/me-app.tsx:40
 msgid "Install WezDeck"
@@ -2195,7 +2221,7 @@ msgstr "安装 WezDeck"
 msgid "Installed"
 msgstr "已安装"
 
-#: src/features/me-host.tsx:127
+#: src/features/me-host.tsx:131
 msgid "Instance"
 msgstr "实例"
 
@@ -2318,7 +2344,7 @@ msgstr "上次结果"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-status-band.tsx:72
-#: src/features/me-host.tsx:130
+#: src/features/me-host.tsx:134
 msgid "Last sample"
 msgstr "最近采样"
 
@@ -2335,11 +2361,11 @@ msgid "Last week"
 msgstr "上周"
 
 #: src/features/chat-controls.tsx:31
-#: src/features/me-host.tsx:145
+#: src/features/me-host.tsx:149
 msgid "Latest"
 msgstr "回到最新"
 
-#: src/features/host-quick-controls.tsx:105
+#: src/features/host-quick-controls.tsx:103
 msgid "Latest OPPO connection"
 msgstr "最近一次 OPPO 连接"
 
@@ -2690,6 +2716,10 @@ msgstr "变更 Diff"
 msgid "Net diff (d)"
 msgstr "变更 Diff (d)"
 
+#: src/features/host-quick-controls.tsx:88
+msgid "Network and remote control"
+msgstr "网络与远控"
+
 #: src/features/session-restart.tsx:62
 #: src/features/session-restart.tsx:144
 msgid "New agent process"
@@ -2796,7 +2826,7 @@ msgstr "下一个等你处理的会话"
 msgid "no"
 msgstr "否"
 
-#: src/features/host-quick-controls.tsx:100
+#: src/features/host-quick-controls.tsx:98
 msgid "No active session"
 msgstr "当前没有远控会话"
 
@@ -2849,6 +2879,10 @@ msgstr "这张工单还没有后台运行记录。"
 msgid "No human message yet"
 msgstr "还没有人工消息"
 
+#: src/features/host-resources.tsx:256
+msgid "No large rebuildable cache found"
+msgstr "未发现较大的可重建缓存"
+
 #: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
 msgstr "没有关联的工作树"
@@ -2885,7 +2919,7 @@ msgstr "还没有输出"
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
-#: src/features/host-quick-controls.tsx:77
+#: src/features/host-quick-controls.tsx:76
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
@@ -2971,11 +3005,11 @@ msgstr "未送达：agent 已空闲，没收到这条"
 msgid "not done"
 msgstr "未实现"
 
-#: src/features/me-host.tsx:155
+#: src/features/me-host.tsx:159
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:267
+#: src/features/console-me.tsx:283
 msgid "Not paired"
 msgstr "未配对"
 
@@ -3042,6 +3076,14 @@ msgstr "单轮长耗时任务完成时推送（默认关闭，减少打扰）。
 #: src/features/console-activity.tsx:91
 msgid "now {label}"
 msgstr "状态：{label}"
+
+#: src/features/host-resources.tsx:125
+msgid "npm cache"
+msgstr "npm 缓存"
+
+#: src/features/disk-reclaim-control.tsx:179
+msgid "Observed VHDX reduction {observedGiB} GiB"
+msgstr "已观察到 VHDX 缩小 {observedGiB} GiB"
 
 #: src/features/console-me.tsx:226
 #: src/features/me-autotitle.tsx:115
@@ -3177,7 +3219,7 @@ msgstr "建立连接算 1 次请求。"
 msgid "Opening…"
 msgstr "正在打开…"
 
-#: src/features/host-quick-controls.tsx:95
+#: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO 远控"
 
@@ -3278,6 +3320,10 @@ msgstr "已休眠"
 msgid "Part"
 msgstr "组成"
 
+#: src/features/host-resources.tsx:259
+msgid "Partial scan"
+msgstr "部分盘点结果"
+
 #: src/features/ticket-proposals.tsx:436
 msgid "partly done"
 msgstr "部分实现"
@@ -3356,11 +3402,15 @@ msgstr "计划确认"
 msgid "Plugin"
 msgstr "插件"
 
+#: src/features/host-resources.tsx:126
+msgid "pnpm metadata cache"
+msgstr "pnpm 元数据缓存"
+
 #: src/features/session-new-job.tsx:165
 msgid "Prepare workstation"
 msgstr "准备工作站"
 
-#: src/features/disk-reclaim-control.tsx:117
+#: src/features/disk-reclaim-control.tsx:126
 msgid "Preparing"
 msgstr "准备中"
 
@@ -3376,7 +3426,7 @@ msgstr "上一张 / 下一张图片"
 msgid "Previous image"
 msgstr "上一张"
 
-#: src/features/me-host.tsx:161
+#: src/features/me-host.tsx:165
 msgid "Process"
 msgstr "进程"
 
@@ -3434,7 +3484,7 @@ msgstr "放入输入框"
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
-#: src/features/disk-reclaim-control.tsx:116
+#: src/features/disk-reclaim-control.tsx:125
 #: src/features/ticket-pipeline.tsx:334
 #: src/features/ticket-timeline.tsx:101
 msgid "Queued"
@@ -3454,8 +3504,8 @@ msgid "Quick AI capture"
 msgstr "快速 AI 提单"
 
 #: src/features/host-quick-controls.tsx:90
-msgid "Quick controls"
-msgstr "快捷控制"
+#~ msgid "Quick controls"
+#~ msgstr "快捷控制"
 
 #: src/features/session-key-panel.tsx:40
 msgid "Quick keys"
@@ -3491,8 +3541,8 @@ msgstr "阅读文档"
 
 #: src/features/console-shared.tsx:213
 #: src/features/console-status-band.tsx:40
-#: src/features/me-host.tsx:60
-#: src/features/me-host.tsx:157
+#: src/features/me-host.tsx:62
+#: src/features/me-host.tsx:161
 msgid "Ready"
 msgstr "就绪"
 
@@ -3517,11 +3567,11 @@ msgstr "最近提交"
 msgid "Recent sent messages"
 msgstr "最近已发消息"
 
-#: src/features/disk-reclaim-control.tsx:119
+#: src/features/disk-reclaim-control.tsx:128
 msgid "Reclaiming guest blocks"
 msgstr "回收 WSL 空闲块"
 
-#: src/features/disk-reclaim-control.tsx:174
+#: src/features/disk-reclaim-control.tsx:190
 msgid "Recovery failed"
 msgstr "恢复失败"
 
@@ -3816,6 +3866,10 @@ msgstr "重置时间 {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "正在把工作站重置到最新主分支…"
 
+#: src/features/host-resources.tsx:138
+msgid "Resources"
+msgstr "资源"
+
 #: src/features/session-restart.tsx:101
 #: src/features/session-restart.tsx:110
 msgid "Restart"
@@ -3842,7 +3896,7 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 msgid "restarting"
 msgstr "正在重启"
 
-#: src/features/disk-reclaim-control.tsx:121
+#: src/features/disk-reclaim-control.tsx:130
 msgid "Restarting WSL"
 msgstr "重启 WSL"
 
@@ -3874,7 +3928,7 @@ msgstr "正在恢复会话…"
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:551
 #: src/features/host-file-sheet.tsx:359
-#: src/features/me-host.tsx:114
+#: src/features/me-host.tsx:118
 #: src/features/session-new-job.tsx:216
 #: src/features/ticket-timeline.tsx:131
 msgid "Retry"
@@ -3925,7 +3979,7 @@ msgstr "撤销"
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "撤销立即生效：该设备的下一次读取或写入就会被拒绝。主机命令行也能做同样的事：scripts/dev/install-remote-relay.sh --approve / --revoke <id>。"
 
-#: src/features/me-host.tsx:38
+#: src/features/me-host.tsx:40
 msgid "Rime collector"
 msgstr "Rime 采集器"
 
@@ -4041,7 +4095,7 @@ msgstr "在主机 relay 中定时调用本地智能体 CLI，让活跃会话标�
 msgid "Runs, cache hit and cost"
 msgstr "运行、缓存命中与花费"
 
-#: src/features/me-host.tsx:126
+#: src/features/me-host.tsx:130
 msgid "Runtime"
 msgstr "运行时"
 
@@ -4052,7 +4106,7 @@ msgstr "运行时"
 msgid "Runtime action failed"
 msgstr "Runtime 操作失败"
 
-#: src/features/me-host.tsx:36
+#: src/features/me-host.tsx:38
 msgid "Runtime API"
 msgstr "Runtime API"
 
@@ -4111,6 +4165,14 @@ msgstr "保存中…"
 #: src/features/me-autotitle.tsx:408
 msgid "Scan interval"
 msgstr "扫描周期"
+
+#: src/features/host-resources.tsx:253
+msgid "Scan unavailable"
+msgstr "无法盘点"
+
+#: src/features/host-resources.tsx:247
+msgid "Scanning…"
+msgstr "正在盘点…"
 
 #: src/features/me-schedule.tsx:68
 msgid "Schedule change failed"
@@ -4296,7 +4358,7 @@ msgstr "会话"
 msgid "Session actions"
 msgstr "会话操作"
 
-#: src/features/host-quick-controls.tsx:98
+#: src/features/host-quick-controls.tsx:96
 msgid "Session active"
 msgstr "远控会话进行中"
 
@@ -4367,9 +4429,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:474
 #: src/features/console-me.tsx:478
-#: src/features/console-me.tsx:502
+#: src/features/console-me.tsx:482
+#: src/features/console-me.tsx:506
 #: src/features/console-shell.tsx:109
 msgid "Settings"
 msgstr "我的"
@@ -4377,6 +4439,10 @@ msgstr "我的"
 #: src/features/repo-links.tsx:52
 msgid "Shared"
 msgstr "共享"
+
+#: src/features/host-resources.tsx:238
+msgid "Shared hardlinks; reclaim may be smaller"
+msgstr "含共享硬链接，实际回收量可能更少"
 
 #: src/features/tickets-view.tsx:113
 msgid "shipped"
@@ -4459,7 +4525,7 @@ msgstr "槽位 #{slot}"
 msgid "Snapshot"
 msgstr "分支快照"
 
-#: src/features/me-host.tsx:160
+#: src/features/me-host.tsx:164
 msgid "Socket"
 msgstr "套接字"
 
@@ -4588,7 +4654,7 @@ msgstr "正在启动…"
 msgid "State"
 msgstr "状态"
 
-#: src/features/me-host.tsx:153
+#: src/features/me-host.tsx:157
 #: src/features/session-info.tsx:86
 #: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:282
@@ -4696,6 +4762,10 @@ msgstr "正在同步 · 上次成功 {time}"
 #: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "跟随系统"
+
+#: src/features/host-resources.tsx:108
+msgid "System disk"
+msgstr "系统盘"
 
 #: src/features/ticket-info.tsx:166
 msgid "Take over in tmux"
@@ -4865,7 +4935,7 @@ msgid "This browser does not support Web Push notifications."
 msgstr "当前浏览器不支持 Web Push 通知。"
 
 #: src/features/console-me.tsx:66
-#: src/features/console-me.tsx:265
+#: src/features/console-me.tsx:281
 #: src/features/console-shell.tsx:346
 msgid "This computer"
 msgstr "本机"
@@ -4939,7 +5009,7 @@ msgstr "当前会话"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
 
-#: src/features/disk-reclaim-control.tsx:195
+#: src/features/disk-reclaim-control.tsx:211
 msgid "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
 msgstr "这会停止所有 WSL 会话，包括正在运行的代理。tmux 窗口会重建，但进行中的代理回合会中断。"
 
@@ -5091,7 +5161,7 @@ msgid "To ticket"
 msgstr "转工单"
 
 #: src/features/console-activity.tsx:169
-#: src/features/me-host.tsx:137
+#: src/features/me-host.tsx:141
 msgid "Today"
 msgstr "今日"
 
@@ -5099,7 +5169,7 @@ msgstr "今日"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "今天（UTC）{day}，{at}更新。额度每天北京时间 8 点重置；超出只会让这类调用失败到重置为止，不会扣费。"
 
-#: src/features/me-host.tsx:141
+#: src/features/me-host.tsx:145
 msgid "Today events"
 msgstr "今日事件"
 
@@ -5204,7 +5274,7 @@ msgid "Unable to sync · last synced {time}"
 msgstr "暂时无法同步 · 上次成功 {time}"
 
 #: src/features/me-autotitle.tsx:398
-#: src/features/me-host.tsx:90
+#: src/features/me-host.tsx:94
 #: src/features/session-new-panels.tsx:98
 msgid "Unavailable"
 msgstr "不可用"
@@ -5225,7 +5295,7 @@ msgstr "下划线"
 msgid "Undo"
 msgstr "撤销"
 
-#: src/features/host-quick-controls.tsx:63
+#: src/features/host-quick-controls.tsx:62
 msgid "Unknown"
 msgstr "未知"
 
@@ -5284,7 +5354,7 @@ msgstr "正在上传 {step}/{total}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-status-band.tsx:78
-#: src/features/me-host.tsx:129
+#: src/features/me-host.tsx:133
 msgid "Uptime"
 msgstr "运行时长"
 
@@ -5327,6 +5397,16 @@ msgstr "独立验收"
 #: src/features/me-app.tsx:74
 msgid "Version"
 msgstr "版本"
+
+#. placeholder {0}: gib(data.vhdx_bytes)
+#. placeholder {1}: gib(data.gap_bytes)
+#: src/features/host-resources.tsx:174
+#~ msgid "VHDX {0} · reusable inside {1}"
+#~ msgstr ""
+
+#: src/features/host-resources.tsx:204
+msgid "VHDX {vhdxSize} · reusable inside {reusable}"
+msgstr "VHDX {vhdxSize} · 内部可复用 {reusable}"
 
 #: src/features/tickets-view.tsx:521
 msgid "via {handler}"
@@ -5483,6 +5563,10 @@ msgstr "Web／主机工作"
 #: src/features/me-repositories.tsx:83
 msgid "Web default"
 msgstr "网页默认"
+
+#: src/features/host-resources.tsx:120
+msgid "Web dependencies in {count} worktrees"
+msgstr "{count} 个工作树的 Web 依赖"
 
 #: src/features/session-detail-notices.tsx:28
 #~ msgid "Web sending is unavailable for this session."
@@ -5675,16 +5759,25 @@ msgstr "工作树已移除"
 msgid "Worktrees"
 msgstr "工作树"
 
-#: src/features/me-host.tsx:41
-#: src/features/me-host.tsx:151
+#: src/features/me-host.tsx:43
+#: src/features/me-host.tsx:155
 msgid "WSL bridge"
 msgstr "WSL 通道"
 
-#: src/features/disk-reclaim-control.tsx:133
+#: src/features/host-resources.tsx:177
+msgid "WSL CPU load"
+msgstr "WSL CPU 负载"
+
+#: src/features/disk-reclaim-control.tsx:142
+#: src/features/host-resources.tsx:109
 msgid "WSL disk"
 msgstr "WSL 磁盘"
 
-#: src/features/disk-reclaim-control.tsx:168
+#: src/features/host-resources.tsx:189
+msgid "WSL memory"
+msgstr "WSL 内存"
+
+#: src/features/disk-reclaim-control.tsx:184
 msgid "WSL offline; progress resumes after reconnect"
 msgstr "WSL 已离线，重连后继续更新进度"
 

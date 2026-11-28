@@ -266,6 +266,16 @@ export const capabilityGroups: Array<CapabilityGroup> = [
       c('habit.schedule.status', '读取周报定时器', 'Read the habit timer'),
       c('host.warp.status', '读取 One Client 状态', 'Read One Client status'),
       c(
+        'host.resources',
+        '读取系统盘、WSL 磁盘与内存负载采样',
+        'Read system and WSL disk, memory and load samples',
+      ),
+      c(
+        'host.disk.candidates',
+        '按需盘点可再生成缓存与构建产物',
+        'Inventory regenerable caches and build output on demand',
+      ),
+      c(
         'host.oppo.status',
         '查看 OPPO 远控状态',
         'Read OPPO remote-control status',

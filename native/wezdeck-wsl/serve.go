@@ -133,7 +133,7 @@ func dispatch(req request) response {
 	case "remote.upload.get", "remote.sent.list",
 		"remote.repos", "remote.repo.links", "remote.agent.profiles", "remote.workstations", "remote.ticket.targets", "remote.session.new.job",
 		"remote.session.handoff.job", "remote.session.autotitle.status", "remote.session.image", "remote.session.file",
-		"remote.session.history", "remote.session.git", "remote.session.skills", "remote.habit.weekly", "remote.habit.schedule.status", "remote.host.warp.status", "remote.host.oppo.status",
+		"remote.session.history", "remote.session.git", "remote.session.skills", "remote.habit.weekly", "remote.habit.schedule.status", "remote.host.warp.status", "remote.host.oppo.status", "remote.host.resources", "remote.host.disk.candidates",
 		"remote.collab.run.chat", "remote.collab.diff", "remote.collab.manager.chat":
 		// the relay's read-only actions for a browser on the host (readRPC)
 		payload := req.Payload

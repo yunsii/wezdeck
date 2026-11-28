@@ -76,7 +76,7 @@ fi
 if (( SHOW_STATUS )); then
   [[ -f "$STATUS_WSL" ]] || { printf 'no reclaim status at %s\n' "$STATUS_WIN" >&2; exit 1; }
   jq '{task_id,target_device,phase,stage,failed_stage,error,measure_error,started_at,updated_at,duration_seconds,distro,vhdx,windows_cwd,active_attention,snapshot_windows,
-    before_free_bytes,after_free_bytes,reclaimed_bytes,before_vhdx_bytes,
+    before_free_bytes,after_free_bytes,reclaimed_bytes,compact_elapsed_seconds,before_vhdx_bytes,
     after_vhdx_bytes,vhdx_reduced_bytes,compact_exit,verify_exit,
     compact_output,verify_output,keepalive_state,restart_attempt_exit,restart_error}' "$STATUS_WSL"
   exit 0

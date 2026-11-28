@@ -74,7 +74,7 @@ func TestDiskReclaimLocalDeviceTarget(t *testing.T) {
 func TestDiskReclaimProgressFrameOmitsPrivateWorkerOutput(t *testing.T) {
 	state := diskReclaimState{TaskID: "task-1", TargetDevice: "device-a", Phase: "failed",
 		Error: "verification failed", VerifyOutput: "private host log and token",
-		ReclaimedBytes: 123}
+		ReclaimedBytes: 123, CompactElapsedSeconds: 12.5, VhdxReducedBytes: 456}
 	state.History = append(state.History, struct {
 		Phase string `json:"phase"`
 		At    string `json:"at"`
@@ -88,6 +88,9 @@ func TestDiskReclaimProgressFrameOmitsPrivateWorkerOutput(t *testing.T) {
 	}
 	if !strings.Contains(string(frame.Data), `"reclaimed_bytes":123`) {
 		t.Fatalf("reclaimed bytes missing: %s", frame.Data)
+	}
+	if !strings.Contains(string(frame.Data), `"compact_elapsed_seconds":12.5`) || !strings.Contains(string(frame.Data), `"vhdx_reduced_bytes":456`) {
+		t.Fatalf("observed compact progress missing: %s", frame.Data)
 	}
 	if !strings.Contains(string(frame.Data), `"phase":"verifying"`) {
 		t.Fatalf("phase history missing: %s", frame.Data)

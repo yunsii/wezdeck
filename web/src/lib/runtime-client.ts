@@ -384,6 +384,8 @@ export async function getCollab<TCommand extends CollabCommand>(
 export type HostReadAction =
   | 'host.warp.status'
   | 'host.oppo.status'
+  | 'host.resources'
+  | 'host.disk.candidates'
   | 'disk.reclaim.status'
   | 'sessions'
   | 'session'

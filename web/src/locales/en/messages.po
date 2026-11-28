@@ -126,7 +126,7 @@ msgstr "{n} s"
 msgid "{name} is ready, no conversation yet."
 msgstr "{name} is ready, no conversation yet."
 
-#: src/features/me-host.tsx:60
+#: src/features/me-host.tsx:62
 msgid "{off} need attention"
 msgstr "{off} need attention"
 
@@ -229,6 +229,10 @@ msgstr "↓ {tokens} tokens"
 #: src/features/me-autotitle.tsx:215
 msgid "1 task"
 msgstr "1 task"
+
+#: src/features/host-resources.tsx:184
+msgid "1-minute load / logical CPUs"
+msgstr "1-minute load / logical CPUs"
 
 #: src/features/mermaid-block.tsx:133
 msgid "1:1"
@@ -475,7 +479,7 @@ msgstr "All tags"
 msgid "All tiers"
 msgstr "All tiers"
 
-#: src/features/me-host.tsx:144
+#: src/features/me-host.tsx:148
 msgid "All time"
 msgstr "All time"
 
@@ -579,8 +583,8 @@ msgstr "Approve the plan"
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "Approve this device in Device access to manage auto titles."
 
-#: src/features/host-quick-controls.tsx:83
-#: src/features/me-host.tsx:70
+#: src/features/host-quick-controls.tsx:82
+#: src/features/me-host.tsx:72
 msgid "Approve this device in Device access to use host controls."
 msgstr "Approve this device in Device access to use host controls."
 
@@ -711,7 +715,7 @@ msgstr "Availability and note"
 
 #: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:115
-#: src/features/console-me.tsx:437
+#: src/features/console-me.tsx:441
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:81
@@ -780,7 +784,7 @@ msgstr "Block"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 
-#: src/features/disk-reclaim-control.tsx:125
+#: src/features/disk-reclaim-control.tsx:134
 msgid "Blocked"
 msgstr "Blocked"
 
@@ -859,7 +863,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
-#: src/features/disk-reclaim-control.tsx:203
+#: src/features/disk-reclaim-control.tsx:219
 #: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
@@ -882,7 +886,7 @@ msgstr "Cancelling…"
 msgid "Capabilities"
 msgstr "Capabilities"
 
-#: src/features/me-host.tsx:166
+#: src/features/me-host.tsx:170
 msgid "Capabilities ({capabilityCount})"
 msgstr "Capabilities ({capabilityCount})"
 
@@ -916,7 +920,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "Changes"
 
-#: src/features/host-quick-controls.tsx:119
+#: src/features/host-quick-controls.tsx:117
 msgid "Changing One Client…"
 msgstr "Changing One Client…"
 
@@ -928,11 +932,11 @@ msgstr "Check again"
 msgid "Check for updates"
 msgstr "Check for updates"
 
-#: src/features/disk-reclaim-control.tsx:118
+#: src/features/disk-reclaim-control.tsx:127
 msgid "Checking"
 msgstr "Checking"
 
-#: src/features/disk-reclaim-control.tsx:122
+#: src/features/disk-reclaim-control.tsx:131
 msgid "Checking services"
 msgstr "Checking services"
 
@@ -940,7 +944,7 @@ msgstr "Checking services"
 #: src/features/me-device-access.tsx:13
 #: src/features/me-devices.tsx:94
 #: src/features/me-devices.tsx:298
-#: src/features/me-host.tsx:59
+#: src/features/me-host.tsx:61
 msgid "Checking…"
 msgstr "Checking…"
 
@@ -964,6 +968,10 @@ msgstr "Children"
 #: src/features/session-new.tsx:301
 msgid "Choose an agent"
 msgstr "Choose an agent"
+
+#: src/features/host-resources.tsx:127
+msgid "Chrome Service Worker cache"
+msgstr "Chrome Service Worker cache"
 
 #: src/features/me-notifications.tsx:208
 msgid "Chrome Web Push requires mtalk.google.com:5228 (and Google Play Services on Android). Check chrome://gcm-internals, route FCM/GMS through your proxy, or try Firefox/Edge."
@@ -1108,8 +1116,8 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
-#: src/features/disk-reclaim-control.tsx:147
-#: src/features/disk-reclaim-control.tsx:190
+#: src/features/disk-reclaim-control.tsx:156
+#: src/features/disk-reclaim-control.tsx:206
 msgid "Compact and restart WSL"
 msgstr "Compact and restart WSL"
 
@@ -1121,11 +1129,11 @@ msgstr "Compacting conversation"
 msgid "compacting the context"
 msgstr "compacting the context"
 
-#: src/features/disk-reclaim-control.tsx:120
+#: src/features/disk-reclaim-control.tsx:129
 msgid "Compacting VHDX"
 msgstr "Compacting VHDX"
 
-#: src/features/disk-reclaim-control.tsx:123
+#: src/features/disk-reclaim-control.tsx:132
 msgid "Completed"
 msgstr "Completed"
 
@@ -1145,7 +1153,7 @@ msgstr "confirm"
 msgid "Confirm & create ticket"
 msgstr "Confirm & create ticket"
 
-#: src/features/disk-reclaim-control.tsx:211
+#: src/features/disk-reclaim-control.tsx:227
 #: src/features/ticket-proposals.tsx:368
 msgid "Confirm and start"
 msgstr "Confirm and start"
@@ -1183,16 +1191,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
 
-#: src/features/host-quick-controls.tsx:122
+#: src/features/host-quick-controls.tsx:120
 msgid "Connect One Client"
 msgstr "Connect One Client"
 
-#: src/features/host-quick-controls.tsx:65
-#: src/features/host-quick-controls.tsx:74
+#: src/features/host-quick-controls.tsx:64
+#: src/features/host-quick-controls.tsx:73
 msgid "Connected"
 msgstr "Connected"
 
-#: src/features/host-quick-controls.tsx:67
+#: src/features/host-quick-controls.tsx:66
 #: src/features/remote-badge.tsx:87
 #: src/features/remote-badge.tsx:94
 msgid "Connecting…"
@@ -1202,7 +1210,7 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/host-quick-controls.tsx:76
+#: src/features/host-quick-controls.tsx:75
 msgid "Connection failed"
 msgstr "Connection failed"
 
@@ -1501,7 +1509,7 @@ msgstr "Current sample is from the foreground WezTerm window."
 #~ msgid "D drive recovered {0} GiB"
 #~ msgstr "D drive recovered {0} GiB"
 
-#: src/features/disk-reclaim-control.tsx:163
+#: src/features/disk-reclaim-control.tsx:172
 msgid "D drive recovered {reclaimedGiB} GiB"
 msgstr "D drive recovered {reclaimedGiB} GiB"
 
@@ -1628,7 +1636,7 @@ msgstr "Device access"
 
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
-#: src/features/console-me.tsx:371
+#: src/features/console-me.tsx:375
 #: src/features/console-shell.tsx:102
 msgid "Diagnostics"
 msgstr "Diagnostics"
@@ -1673,15 +1681,15 @@ msgstr "Disable this agent"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/features/host-quick-controls.tsx:121
+#: src/features/host-quick-controls.tsx:119
 msgid "Disconnect One Client"
 msgstr "Disconnect One Client"
 
-#: src/features/host-quick-controls.tsx:66
+#: src/features/host-quick-controls.tsx:65
 msgid "Disconnected"
 msgstr "Disconnected"
 
-#: src/features/host-quick-controls.tsx:68
+#: src/features/host-quick-controls.tsx:67
 msgid "Disconnecting…"
 msgstr "Disconnecting…"
 
@@ -1752,6 +1760,16 @@ msgstr "Edit group name"
 msgid "Effort"
 msgstr "Effort"
 
+#. placeholder {0}: Math.floor(compactSeconds / 60)
+#. placeholder {1}: compactSeconds % 60
+#: src/features/disk-reclaim-control.tsx:175
+#~ msgid "Elapsed {0}m {1}s"
+#~ msgstr "Elapsed {0}m {1}s"
+
+#: src/features/disk-reclaim-control.tsx:177
+msgid "Elapsed {compactMinutes}m {compactRemainder}s"
+msgstr "Elapsed {compactMinutes}m {compactRemainder}s"
+
 #: src/features/me-notifications.tsx:406
 msgid "Enable notifications"
 msgstr "Enable notifications"
@@ -1781,7 +1799,7 @@ msgctxt "filter"
 msgid "Ended"
 msgstr "Ended"
 
-#: src/features/me-host.tsx:128
+#: src/features/me-host.tsx:132
 msgid "Endpoint"
 msgstr "Endpoint"
 
@@ -1821,7 +1839,7 @@ msgstr "Estimated from this machine's past runs, not by the planner."
 msgid "Evening"
 msgstr "Evening"
 
-#: src/features/me-host.tsx:37
+#: src/features/me-host.tsx:39
 msgid "Event stream"
 msgstr "Event stream"
 
@@ -1874,7 +1892,7 @@ msgstr "Fable tier"
 msgid "failed"
 msgstr "failed"
 
-#: src/features/disk-reclaim-control.tsx:124
+#: src/features/disk-reclaim-control.tsx:133
 #: src/features/me-schedule.tsx:116
 msgid "Failed"
 msgstr "Failed"
@@ -2002,6 +2020,10 @@ msgstr "Generate report now"
 msgid "Git status"
 msgstr "Git status"
 
+#: src/features/host-resources.tsx:124
+msgid "Go build cache"
+msgstr "Go build cache"
+
 #: src/features/console-keys.tsx:29
 msgid "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
 msgstr "Go to a section: s Sessions, c Tickets, a Activity, x Diagnostics, m Me"
@@ -2086,7 +2108,7 @@ msgstr "host default"
 msgid "Host offline"
 msgstr "Host offline"
 
-#: src/features/me-host.tsx:39
+#: src/features/me-host.tsx:41
 msgid "Host signals"
 msgstr "Host signals"
 
@@ -2099,7 +2121,7 @@ msgstr "Host unreachable right now"
 msgid "Host up since"
 msgstr "Host up since"
 
-#: src/features/console-me.tsx:341
+#: src/features/console-me.tsx:351
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
 #: src/features/public-header.tsx:87
@@ -2182,10 +2204,14 @@ msgstr "Initiator"
 msgid "Input cleared"
 msgstr "Input cleared"
 
-#: src/features/me-host.tsx:133
-#: src/features/me-host.tsx:135
+#: src/features/me-host.tsx:137
+#: src/features/me-host.tsx:139
 msgid "Input method"
 msgstr "Input method"
+
+#: src/features/host-resources.tsx:220
+msgid "Inspect reclaimable files"
+msgstr "Inspect reclaimable files"
 
 #: src/features/me-app.tsx:40
 msgid "Install WezDeck"
@@ -2195,7 +2221,7 @@ msgstr "Install WezDeck"
 msgid "Installed"
 msgstr "Installed"
 
-#: src/features/me-host.tsx:127
+#: src/features/me-host.tsx:131
 msgid "Instance"
 msgstr "Instance"
 
@@ -2318,7 +2344,7 @@ msgstr "Last result"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-status-band.tsx:72
-#: src/features/me-host.tsx:130
+#: src/features/me-host.tsx:134
 msgid "Last sample"
 msgstr "Last sample"
 
@@ -2335,11 +2361,11 @@ msgid "Last week"
 msgstr "Last week"
 
 #: src/features/chat-controls.tsx:31
-#: src/features/me-host.tsx:145
+#: src/features/me-host.tsx:149
 msgid "Latest"
 msgstr "Latest"
 
-#: src/features/host-quick-controls.tsx:105
+#: src/features/host-quick-controls.tsx:103
 msgid "Latest OPPO connection"
 msgstr "Latest OPPO connection"
 
@@ -2690,6 +2716,10 @@ msgstr "Net diff"
 msgid "Net diff (d)"
 msgstr "Net diff (d)"
 
+#: src/features/host-quick-controls.tsx:88
+msgid "Network and remote control"
+msgstr "Network and remote control"
+
 #: src/features/session-restart.tsx:62
 #: src/features/session-restart.tsx:144
 msgid "New agent process"
@@ -2796,7 +2826,7 @@ msgstr "Next session waiting on you"
 msgid "no"
 msgstr "no"
 
-#: src/features/host-quick-controls.tsx:100
+#: src/features/host-quick-controls.tsx:98
 msgid "No active session"
 msgstr "No active session"
 
@@ -2849,6 +2879,10 @@ msgstr "No headless runs recorded for this ticket."
 msgid "No human message yet"
 msgstr "No human message yet"
 
+#: src/features/host-resources.tsx:256
+msgid "No large rebuildable cache found"
+msgstr "No large rebuildable cache found"
+
 #: src/features/session-worktree-manager.tsx:401
 msgid "No linked worktrees"
 msgstr "No linked worktrees"
@@ -2885,7 +2919,7 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/host-quick-controls.tsx:77
+#: src/features/host-quick-controls.tsx:76
 msgid "No recent result"
 msgstr "No recent result"
 
@@ -2971,11 +3005,11 @@ msgstr "Not delivered: the agent went idle without it"
 msgid "not done"
 msgstr "not done"
 
-#: src/features/me-host.tsx:155
+#: src/features/me-host.tsx:159
 msgid "Not on this Runtime"
 msgstr "Not on this Runtime"
 
-#: src/features/console-me.tsx:267
+#: src/features/console-me.tsx:283
 msgid "Not paired"
 msgstr "Not paired"
 
@@ -3042,6 +3076,14 @@ msgstr "Notify when a long agent turn finishes (off by default)."
 #: src/features/console-activity.tsx:91
 msgid "now {label}"
 msgstr "now {label}"
+
+#: src/features/host-resources.tsx:125
+msgid "npm cache"
+msgstr "npm cache"
+
+#: src/features/disk-reclaim-control.tsx:179
+msgid "Observed VHDX reduction {observedGiB} GiB"
+msgstr "Observed VHDX reduction {observedGiB} GiB"
 
 #: src/features/console-me.tsx:226
 #: src/features/me-autotitle.tsx:115
@@ -3177,7 +3219,7 @@ msgstr "Opening the connection is one request."
 msgid "Opening…"
 msgstr "Opening…"
 
-#: src/features/host-quick-controls.tsx:95
+#: src/features/host-quick-controls.tsx:93
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
 
@@ -3278,6 +3320,10 @@ msgstr "parked"
 msgid "Part"
 msgstr "Part"
 
+#: src/features/host-resources.tsx:259
+msgid "Partial scan"
+msgstr "Partial scan"
+
 #: src/features/ticket-proposals.tsx:436
 msgid "partly done"
 msgstr "partly done"
@@ -3356,11 +3402,15 @@ msgstr "Plan review"
 msgid "Plugin"
 msgstr "Plugin"
 
+#: src/features/host-resources.tsx:126
+msgid "pnpm metadata cache"
+msgstr "pnpm metadata cache"
+
 #: src/features/session-new-job.tsx:165
 msgid "Prepare workstation"
 msgstr "Prepare workstation"
 
-#: src/features/disk-reclaim-control.tsx:117
+#: src/features/disk-reclaim-control.tsx:126
 msgid "Preparing"
 msgstr "Preparing"
 
@@ -3376,7 +3426,7 @@ msgstr "Previous / next image"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: src/features/me-host.tsx:161
+#: src/features/me-host.tsx:165
 msgid "Process"
 msgstr "Process"
 
@@ -3434,7 +3484,7 @@ msgstr "Put in input"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
-#: src/features/disk-reclaim-control.tsx:116
+#: src/features/disk-reclaim-control.tsx:125
 #: src/features/ticket-pipeline.tsx:334
 #: src/features/ticket-timeline.tsx:101
 msgid "Queued"
@@ -3454,8 +3504,8 @@ msgid "Quick AI capture"
 msgstr "Quick AI capture"
 
 #: src/features/host-quick-controls.tsx:90
-msgid "Quick controls"
-msgstr "Quick controls"
+#~ msgid "Quick controls"
+#~ msgstr "Quick controls"
 
 #: src/features/session-key-panel.tsx:40
 msgid "Quick keys"
@@ -3491,8 +3541,8 @@ msgstr "Read document"
 
 #: src/features/console-shared.tsx:213
 #: src/features/console-status-band.tsx:40
-#: src/features/me-host.tsx:60
-#: src/features/me-host.tsx:157
+#: src/features/me-host.tsx:62
+#: src/features/me-host.tsx:161
 msgid "Ready"
 msgstr "Ready"
 
@@ -3517,11 +3567,11 @@ msgstr "Recent commits"
 msgid "Recent sent messages"
 msgstr "Recent sent messages"
 
-#: src/features/disk-reclaim-control.tsx:119
+#: src/features/disk-reclaim-control.tsx:128
 msgid "Reclaiming guest blocks"
 msgstr "Reclaiming guest blocks"
 
-#: src/features/disk-reclaim-control.tsx:174
+#: src/features/disk-reclaim-control.tsx:190
 msgid "Recovery failed"
 msgstr "Recovery failed"
 
@@ -3816,6 +3866,10 @@ msgstr "Resets {reset}"
 msgid "Resetting the workstation onto the latest main branch…"
 msgstr "Resetting the workstation onto the latest main branch…"
 
+#: src/features/host-resources.tsx:138
+msgid "Resources"
+msgstr "Resources"
+
 #: src/features/session-restart.tsx:101
 #: src/features/session-restart.tsx:110
 msgid "Restart"
@@ -3842,7 +3896,7 @@ msgstr "Restart this session's pane on the computer; the agent resumes this conv
 msgid "restarting"
 msgstr "restarting"
 
-#: src/features/disk-reclaim-control.tsx:121
+#: src/features/disk-reclaim-control.tsx:130
 msgid "Restarting WSL"
 msgstr "Restarting WSL"
 
@@ -3874,7 +3928,7 @@ msgstr "Resuming conversation…"
 #: src/features/composer-picked.tsx:34
 #: src/features/console-shell.tsx:551
 #: src/features/host-file-sheet.tsx:359
-#: src/features/me-host.tsx:114
+#: src/features/me-host.tsx:118
 #: src/features/session-new-job.tsx:216
 #: src/features/ticket-timeline.tsx:131
 msgid "Retry"
@@ -3925,7 +3979,7 @@ msgstr "Revoke"
 msgid "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 msgstr "Revoking takes effect at once: the device's next read or write is refused. The host CLI does the same: scripts/dev/install-remote-relay.sh --approve / --revoke <id>."
 
-#: src/features/me-host.tsx:38
+#: src/features/me-host.tsx:40
 msgid "Rime collector"
 msgstr "Rime collector"
 
@@ -4041,7 +4095,7 @@ msgstr "Runs in the host relay using a local agent CLI to keep active session ti
 msgid "Runs, cache hit and cost"
 msgstr "Runs, cache hit and cost"
 
-#: src/features/me-host.tsx:126
+#: src/features/me-host.tsx:130
 msgid "Runtime"
 msgstr "Runtime"
 
@@ -4052,7 +4106,7 @@ msgstr "Runtime"
 msgid "Runtime action failed"
 msgstr "Runtime action failed"
 
-#: src/features/me-host.tsx:36
+#: src/features/me-host.tsx:38
 msgid "Runtime API"
 msgstr "Runtime API"
 
@@ -4111,6 +4165,14 @@ msgstr "Saving…"
 #: src/features/me-autotitle.tsx:408
 msgid "Scan interval"
 msgstr "Scan interval"
+
+#: src/features/host-resources.tsx:253
+msgid "Scan unavailable"
+msgstr "Scan unavailable"
+
+#: src/features/host-resources.tsx:247
+msgid "Scanning…"
+msgstr "Scanning…"
 
 #: src/features/me-schedule.tsx:68
 msgid "Schedule change failed"
@@ -4296,7 +4358,7 @@ msgstr "Session"
 msgid "Session actions"
 msgstr "Session actions"
 
-#: src/features/host-quick-controls.tsx:98
+#: src/features/host-quick-controls.tsx:96
 msgid "Session active"
 msgstr "Session active"
 
@@ -4367,9 +4429,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:474
 #: src/features/console-me.tsx:478
-#: src/features/console-me.tsx:502
+#: src/features/console-me.tsx:482
+#: src/features/console-me.tsx:506
 #: src/features/console-shell.tsx:109
 msgid "Settings"
 msgstr "Settings"
@@ -4377,6 +4439,10 @@ msgstr "Settings"
 #: src/features/repo-links.tsx:52
 msgid "Shared"
 msgstr "Shared"
+
+#: src/features/host-resources.tsx:238
+msgid "Shared hardlinks; reclaim may be smaller"
+msgstr "Shared hardlinks; reclaim may be smaller"
 
 #: src/features/tickets-view.tsx:113
 msgid "shipped"
@@ -4459,7 +4525,7 @@ msgstr "slot {slot}"
 msgid "Snapshot"
 msgstr "Snapshot"
 
-#: src/features/me-host.tsx:160
+#: src/features/me-host.tsx:164
 msgid "Socket"
 msgstr "Socket"
 
@@ -4588,7 +4654,7 @@ msgstr "Starting…"
 msgid "State"
 msgstr "State"
 
-#: src/features/me-host.tsx:153
+#: src/features/me-host.tsx:157
 #: src/features/session-info.tsx:86
 #: src/features/session-worktree-detail.tsx:65
 #: src/features/ticket-info.tsx:282
@@ -4696,6 +4762,10 @@ msgstr "Syncing · last synced {time}"
 #: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "System"
+
+#: src/features/host-resources.tsx:108
+msgid "System disk"
+msgstr "System disk"
 
 #: src/features/ticket-info.tsx:166
 msgid "Take over in tmux"
@@ -4865,7 +4935,7 @@ msgid "This browser does not support Web Push notifications."
 msgstr "This browser does not support Web Push notifications."
 
 #: src/features/console-me.tsx:66
-#: src/features/console-me.tsx:265
+#: src/features/console-me.tsx:281
 #: src/features/console-shell.tsx:346
 msgid "This computer"
 msgstr "This computer"
@@ -4939,7 +5009,7 @@ msgstr "This session"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 
-#: src/features/disk-reclaim-control.tsx:195
+#: src/features/disk-reclaim-control.tsx:211
 msgid "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
 msgstr "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
 
@@ -5091,7 +5161,7 @@ msgid "To ticket"
 msgstr "To ticket"
 
 #: src/features/console-activity.tsx:169
-#: src/features/me-host.tsx:137
+#: src/features/me-host.tsx:141
 msgid "Today"
 msgstr "Today"
 
@@ -5099,7 +5169,7 @@ msgstr "Today"
 msgid "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 msgstr "Today (UTC) {day}, updated {at}. Limits reset at 08:00 Beijing time; going over only fails that kind of call until then, nothing is billed."
 
-#: src/features/me-host.tsx:141
+#: src/features/me-host.tsx:145
 msgid "Today events"
 msgstr "Today events"
 
@@ -5204,7 +5274,7 @@ msgid "Unable to sync · last synced {time}"
 msgstr "Unable to sync · last synced {time}"
 
 #: src/features/me-autotitle.tsx:398
-#: src/features/me-host.tsx:90
+#: src/features/me-host.tsx:94
 #: src/features/session-new-panels.tsx:98
 msgid "Unavailable"
 msgstr "Unavailable"
@@ -5225,7 +5295,7 @@ msgstr "Underscore"
 msgid "Undo"
 msgstr "Undo"
 
-#: src/features/host-quick-controls.tsx:63
+#: src/features/host-quick-controls.tsx:62
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -5284,7 +5354,7 @@ msgstr "Uploading {step}/{total}…"
 
 #: src/features/console-shared.tsx:112
 #: src/features/console-status-band.tsx:78
-#: src/features/me-host.tsx:129
+#: src/features/me-host.tsx:133
 msgid "Uptime"
 msgstr "Uptime"
 
@@ -5327,6 +5397,16 @@ msgstr "Verify"
 #: src/features/me-app.tsx:74
 msgid "Version"
 msgstr "Version"
+
+#. placeholder {0}: gib(data.vhdx_bytes)
+#. placeholder {1}: gib(data.gap_bytes)
+#: src/features/host-resources.tsx:174
+#~ msgid "VHDX {0} · reusable inside {1}"
+#~ msgstr "VHDX {0} · reusable inside {1}"
+
+#: src/features/host-resources.tsx:204
+msgid "VHDX {vhdxSize} · reusable inside {reusable}"
+msgstr "VHDX {vhdxSize} · reusable inside {reusable}"
 
 #: src/features/tickets-view.tsx:521
 msgid "via {handler}"
@@ -5483,6 +5563,10 @@ msgstr "Web / host work"
 #: src/features/me-repositories.tsx:83
 msgid "Web default"
 msgstr "Web default"
+
+#: src/features/host-resources.tsx:120
+msgid "Web dependencies in {count} worktrees"
+msgstr "Web dependencies in {count} worktrees"
 
 #: src/features/session-detail-notices.tsx:28
 #~ msgid "Web sending is unavailable for this session."
@@ -5675,16 +5759,25 @@ msgstr "Worktree removed"
 msgid "Worktrees"
 msgstr "Worktrees"
 
-#: src/features/me-host.tsx:41
-#: src/features/me-host.tsx:151
+#: src/features/me-host.tsx:43
+#: src/features/me-host.tsx:155
 msgid "WSL bridge"
 msgstr "WSL bridge"
 
-#: src/features/disk-reclaim-control.tsx:133
+#: src/features/host-resources.tsx:177
+msgid "WSL CPU load"
+msgstr "WSL CPU load"
+
+#: src/features/disk-reclaim-control.tsx:142
+#: src/features/host-resources.tsx:109
 msgid "WSL disk"
 msgstr "WSL disk"
 
-#: src/features/disk-reclaim-control.tsx:168
+#: src/features/host-resources.tsx:189
+msgid "WSL memory"
+msgstr "WSL memory"
+
+#: src/features/disk-reclaim-control.tsx:184
 msgid "WSL offline; progress resumes after reconnect"
 msgstr "WSL offline; progress resumes after reconnect"
 

@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import type { Plugin } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
 import babel from '@rolldown/plugin-babel'
@@ -75,6 +75,18 @@ function pwaBuildInfo(): Plugin {
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  ...(process.env.WEZDECK_WEB_SHARED_DEPS
+    ? {
+        server: {
+          fs: {
+            allow: [
+              searchForWorkspaceRoot(process.cwd()),
+              process.env.WEZDECK_WEB_SHARED_DEPS,
+            ],
+          },
+        },
+      }
+    : {}),
   define: {
     __BUILD_ID__: JSON.stringify(buildId),
     __CACHE_BUSTER__: JSON.stringify(cacheBuster),

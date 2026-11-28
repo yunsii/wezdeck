@@ -19,6 +19,9 @@ type Progress = {
   snapshot_windows?: number
   reclaimed_bytes?: number
   vhdx_reduced_bytes?: number
+  compact_elapsed_seconds?: number
+  after_vhdx_bytes?: number
+  after_free_bytes?: number
   failed_stage?: string
   error?: string
   history?: Array<{ phase: string; at: string }>
@@ -112,6 +115,12 @@ export function DiskReclaimControl() {
   })
   const progress = status.data?.task
   const reclaimedGiB = ((progress?.reclaimed_bytes ?? 0) / 1024 ** 3).toFixed(1)
+  const observedGiB = ((progress?.vhdx_reduced_bytes ?? 0) / 1024 ** 3).toFixed(
+    1,
+  )
+  const compactSeconds = Math.floor(progress?.compact_elapsed_seconds ?? 0)
+  const compactMinutes = Math.floor(compactSeconds / 60)
+  const compactRemainder = compactSeconds % 60
   const phaseLabel: Record<string, string> = {
     queued: t`Queued`,
     preparing: t`Preparing`,
@@ -161,6 +170,13 @@ export function DiskReclaimControl() {
       {progress?.phase === 'complete' ? (
         <p className="px-1 text-meta text-brand-muted">
           {t`D drive recovered ${reclaimedGiB} GiB`}
+        </p>
+      ) : null}
+      {progress?.phase === 'compacting' ? (
+        <p className="px-1 text-meta tabular-nums text-brand-muted">
+          {t`Elapsed ${compactMinutes}m ${compactRemainder}s`}
+          {' · '}
+          {t`Observed VHDX reduction ${observedGiB} GiB`}
         </p>
       ) : null}
       {!reachable && progress && activePhases.has(progress.phase) ? (

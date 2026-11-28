@@ -12,6 +12,8 @@ import { Field, FieldList } from '#/components/ui/field'
 import { useConsoleMode } from './console-mode'
 import { useDeviceState } from './device-state'
 import { HostQuickControls } from './host-quick-controls'
+import { HostResources } from './host-resources'
+import { DiskReclaimControl } from './disk-reclaim-control'
 import { runtimeQuery, useRuntimeData } from './console-data'
 import {
   ImeDetail,
@@ -72,6 +74,8 @@ export function HostPage() {
     )
   return (
     <div className="grid min-w-0 grid-cols-1 gap-5">
+      <HostResources />
+      <DiskReclaimControl />
       <HostQuickControls />
       {mode === 'local' ? <LocalHostDetails /> : null}
     </div>
