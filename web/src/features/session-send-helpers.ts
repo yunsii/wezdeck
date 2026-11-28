@@ -1,6 +1,14 @@
 // Pure helpers for session writes (re-exported by session-send.ts).
+import type { QueryClient } from '@tanstack/react-query'
+import {
+  acceptSessionOptimistic,
+  applySessionOptimistic,
+  promptFingerprint,
+  rollbackSessionOptimistic,
+} from '#/lib/optimistic-state'
 import type { Pending } from './chat-thread'
 import type { SentRecord } from './sent-history'
+import type { Detail } from './session-detail-types'
 
 /**
  * Merge local optimistic bubbles (sending / just-sent) with host-persisted
@@ -94,3 +102,86 @@ export async function withDeskRetry<T>(
  */
 export const commandOf = (text: string) =>
   /^\/[a-z][\w:-]*(?=\s|$)/i.exec(text.trim())?.[0] ?? ''
+
+export function followSessionReply(
+  follow: (from: string, to: string) => void,
+  target: string,
+  reply: unknown,
+) {
+  if (
+    reply &&
+    typeof reply === 'object' &&
+    'session_id' in reply &&
+    typeof reply.session_id === 'string' &&
+    reply.session_id !== target
+  ) {
+    follow(target, reply.session_id)
+  }
+}
+
+export function buildSessionBaseline(
+  snapshot: Detail | undefined,
+  transcriptEnd: number,
+  listTs?: number,
+  promptKey?: string,
+) {
+  const ts = Math.max(snapshot?.ts ?? 0, listTs ?? 0) || undefined
+  return {
+    status: snapshot?.status,
+    ts,
+    waitingKind: snapshot?.waiting_kind,
+    promptKey: promptKey ?? promptFingerprint(snapshot),
+    transcriptEnd,
+  }
+}
+
+export function createResolvePrompt({
+  target,
+  baseline,
+  client,
+  onError,
+  resolvingRef,
+  opts,
+}: {
+  target: string
+  baseline: ReturnType<typeof buildSessionBaseline>
+  client: QueryClient
+  onError: (message: string) => void
+  resolvingRef: { current: number }
+  opts: {
+    kind: 'prompt-submit' | 'prompt-cancel'
+    promptKey: string
+    execute: () => Promise<boolean>
+  }
+}): Promise<boolean> {
+  const op_id = crypto.randomUUID()
+  applySessionOptimistic({
+    id: target,
+    opId: op_id,
+    kind: opts.kind,
+    suppressedPromptKey: opts.promptKey,
+    baseline,
+  })
+  onError('')
+  resolvingRef.current += 1
+  return Promise.resolve()
+    .then(() => opts.execute())
+    .then((ok) => {
+      if (!ok) {
+        rollbackSessionOptimistic(target, op_id, 'key-failed')
+        return false
+      }
+      acceptSessionOptimistic(target, op_id)
+      void client.invalidateQueries({ queryKey: ['remote', 'session', target] })
+      void client.invalidateQueries({ queryKey: ['remote', 'sessions'] })
+      return true
+    })
+    .catch((error: unknown) => {
+      rollbackSessionOptimistic(target, op_id, (error as Error).message)
+      onError((error as Error).message)
+      return false
+    })
+    .finally(() => {
+      resolvingRef.current = Math.max(0, resolvingRef.current - 1)
+    })
+}

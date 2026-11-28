@@ -22,6 +22,74 @@ const attention = process.env.WEZDECK_TEST_ATTENTION ?? ''
 const devicesFile = process.env.WEZDECK_TEST_DEVICES ?? ''
 const repo = join(import.meta.dirname, '..', '..')
 
+async function installPermissionSettleWatch(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as Record<string, unknown>
+    const stats = {
+      promptFlashes: 0,
+      listWaitingBounces: 0,
+      statusbarShifts: 0,
+    }
+    w.__permSettleStats = stats
+    const observer = new MutationObserver(() => {
+      if (
+        document.querySelector(
+          '[data-testid="session-permission-keys"], [data-testid="permission-card"]',
+        )
+      ) {
+        stats.promptFlashes += 1
+      }
+      const tone = document
+        .querySelector(
+          '[data-session="opt-allow"] [data-testid="chat-preview"]',
+        )
+        ?.getAttribute('data-tone')
+      if (tone === 'waiting') {
+        stats.listWaitingBounces += 1
+      }
+    })
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-tone'],
+    })
+    const po = new PerformanceObserver((list) => {
+      for (const raw of list.getEntries()) {
+        const entry = raw as PerformanceEntry & {
+          value: number
+          hadRecentInput: boolean
+          sources?: Array<{ node?: Node | null }>
+        }
+        if (entry.hadRecentInput || entry.value < 0.001) continue
+        const hit = (entry.sources ?? []).some(
+          (src) =>
+            src.node instanceof HTMLElement &&
+            Boolean(src.node.closest('[data-testid="session-statusbar"]')),
+        )
+        if (hit) stats.statusbarShifts += 1
+      }
+    })
+    po.observe({ type: 'layout-shift', buffered: false })
+    w.__stopPermSettleWatch = () => {
+      observer.disconnect()
+      po.disconnect()
+    }
+  })
+}
+
+async function readPermissionSettleWatch(page: Page) {
+  return page.evaluate(() => {
+    const w = window as unknown as Record<string, unknown>
+    ;(w.__stopPermSettleWatch as (() => void) | undefined)?.()
+    return w.__permSettleStats as {
+      promptFlashes: number
+      listWaitingBounces: number
+      statusbarShifts: number
+    }
+  })
+}
+
 describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
   let browser: Browser
   const socket = join(mkdtempSync(join(tmpdir(), 'wd-opt-')), 'sock')
@@ -175,6 +243,55 @@ describe.runIf(attention && devicesFile)('Optimistic session UI', () => {
       )
       .toBe('running')
     expect(await allowRow.getByTestId('chat-unread').count()).toBe(0)
+
+    // 2b. Host confirms Allow (waiting → running) across staggered detail/list polls:
+    //     permission card and composer-blocked notice must NEVER flash back in,
+    //     TurnLine must stay mounted, and list tone must never bounce back to waiting.
+    await installPermissionSettleWatch(page)
+    const settledNow = Date.now()
+    writeEntries({
+      'opt-send': {
+        session_id: 'opt-send',
+        tmux_socket: socket,
+        tmux_session: 'opt-send',
+        tmux_pane: panes['opt-send'],
+        status: 'done',
+        agent_name: 'claude',
+        tmux_window_name: 'opt-send',
+        last_user_prompt: 'earlier task',
+        ts: settledNow - 60_000,
+      },
+      'opt-allow': {
+        session_id: 'opt-allow',
+        tmux_socket: socket,
+        tmux_session: 'opt-allow',
+        tmux_pane: panes['opt-allow'],
+        status: 'running',
+        agent_name: 'claude',
+        tmux_window_name: 'opt-allow',
+        last_user_prompt: 'run tests',
+        ts: settledNow,
+      },
+      'opt-deny': {
+        session_id: 'opt-deny',
+        tmux_socket: socket,
+        tmux_session: 'opt-deny',
+        tmux_pane: panes['opt-deny'],
+        status: 'waiting',
+        waiting_kind: 'permission_prompt',
+        agent_name: 'claude',
+        tmux_window_name: 'opt-deny',
+        last_user_prompt: 'delete files',
+        ts: settledNow - 20_000,
+      },
+    })
+    // Wait through both detail (1s) and list settlement polls
+    await page.waitForTimeout(2_500)
+    expect(await readPermissionSettleWatch(page)).toEqual({
+      promptFlashes: 0,
+      listWaitingBounces: 0,
+      statusbarShifts: 0,
+    })
 
     // 3. Waiting prompt Deny (`Esc`) -> card dismisses AND composer unlocks immediately
     await page.locator('[data-session=opt-deny]').click()

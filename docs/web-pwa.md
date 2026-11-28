@@ -581,8 +581,8 @@ per tab (sessionStorage) so in-app navigation keeps the remote path.
   scrollTop jumps ≥ 4 px), `session-list-diff` (order/membership/status churn or ≥ 6
   renders/s bursts), `listScroller` rect in snapshots, and read-only diag step
   `sample-list` (per-rAF row geometry & scroll jitter probe; see [`web-motion.md`](web-motion.md#split-switches)).
-- Optimistic UI transitions (`optimistic-state.ts`, `optimistic-tickets.ts`, `serial-queue.ts`):
-  message sends (including deferred local-preview image uploads and outbox dismiss), interactive prompt cards (Ask, permission, plan review, generic keys), mark-read, interrupts, and ticket replies / split proposals / manager sessions / delivery actions project state across detail, list, and tab badges at 0 ms via fingerprinted read-time overlays while serializing TUI writes, never swallowing a newer prompt fingerprint, and rolling back on error or settling TTL. Client trace records `optimistic` (`scope`, `id`, `op_id`, `action`, `event: apply | settle | rollback | timeout`, `latency_ms`).
+- Optimistic UI transitions (`optimistic-state.ts`, `optimistic-state-project.ts`, `optimistic-tickets.ts`, `serial-queue.ts`):
+  message sends (including deferred local-preview image uploads and outbox dismiss), interactive prompt cards (Ask, permission, plan review, generic keys), mark-read, interrupts, and ticket replies / split proposals / manager sessions / delivery actions project state across detail, list, and tab badges at 0 ms via fingerprinted read-time overlays while serializing TUI writes, reconciling only post-commit across both detail and list caches (no stale-card or statusbar flash on settlement), never swallowing a newer prompt fingerprint, and rolling back on error or settling TTL. Client trace records `optimistic` (`scope`, `id`, `op_id`, `action`, `event: apply | settle | rollback | timeout`, `latency_ms`).
 
 ## Phases and verification
 

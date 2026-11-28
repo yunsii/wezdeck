@@ -1015,7 +1015,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:484
+#: src/features/session-send.ts:450
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -2060,7 +2060,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:409
+#: src/features/session-send.ts:399
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -4402,7 +4402,7 @@ msgstr "The contract or behaviour you expect — the target checks this first"
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/session-send.ts:315
+#: src/features/session-send.ts:288
 msgid "The host did not confirm the action; please check and retry."
 msgstr "The host did not confirm the action; please check and retry."
 
@@ -4414,7 +4414,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-send.ts:486
+#: src/features/session-send.ts:452
 msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 
@@ -4742,7 +4742,7 @@ msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
 #: src/features/session-detail-parts.tsx:90
-#: src/features/session-send.ts:405
+#: src/features/session-send.ts:395
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 

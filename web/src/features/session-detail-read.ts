@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   applySessionDetailOverlay,
   reconcileSessionDetail,
@@ -10,6 +10,7 @@ import { hostRead } from '#/lib/runtime-client'
 import { mergeReply, pollArgs } from '#/lib/session-cache'
 import { traceSessionSync } from '#/lib/session-sync-trace'
 import type { Detail } from './console-sessions'
+import type { SessionsReply } from './session-delete-state'
 
 export const detailKey = (id: string) => ['remote', 'session', id] as const
 
@@ -22,9 +23,7 @@ export async function readDetail(client: QueryClient, id: string) {
   )) as Detail
   const have = client.getQueryData<Detail>(key)
   traceSessionSync(have, reply, id)
-  const merged = mergeReply(have, reply)
-  reconcileSessionDetail(id, merged)
-  return merged
+  return mergeReply(have, reply)
 }
 
 export function useSessionDetail(
@@ -41,11 +40,18 @@ export function useSessionDetail(
     enabled: typeof window !== 'undefined',
     refetchInterval: (query) => {
       const activeOverlay = overlayRef.current
-      if (activeOverlay) return 1_000
+      if (activeOverlay && !activeOverlay.settledOn?.detail) return 1_000
       return query.state.data && busyOf(query.state.data) ? 1_000 : 2_500
     },
     queryFn: () => readDetail(client, id),
   })
+  useEffect(() => {
+    if (!detail.data || !overlay) return
+    const listRow = client
+      .getQueryData<SessionsReply>(['remote', 'sessions'])
+      ?.sessions.find((row) => row.id === id)
+    reconcileSessionDetail(id, detail.data, Date.now(), { listRow })
+  }, [client, id, detail.data, overlay])
   const data = useMemo(
     () => applySessionDetailOverlay(detail.data, overlay),
     [detail.data, overlay],
