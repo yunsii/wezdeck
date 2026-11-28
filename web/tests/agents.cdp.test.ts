@@ -64,7 +64,7 @@ async function pageWithProfiles(
           { id: 'claude', label: 'Claude', ...settings.claude },
           {
             id: 'claude_sub2api',
-            label: 'Claude · gateway',
+            label: 'Claude · sub2api',
             configured: true,
             default_model: 'gateway-model',
             masked_key: '••••••••1234',
@@ -511,7 +511,7 @@ describe('Agent settings layout', () => {
     expect(await agyOpt.getByTestId('agent-avatar').count()).toBe(1)
     const options = await page.getByRole('option').allTextContents()
     expect(
-      options.some((o) => ['Codex', 'Claude', 'Claude · gateway'].includes(o)),
+      options.some((o) => ['Codex', 'Claude', 'Claude · sub2api'].includes(o)),
     ).toBe(false)
     await context.close()
   })

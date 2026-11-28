@@ -23,11 +23,15 @@ export type PickerOption = {
 export function useAgentSelection(
   profiles: Array<AgentProfile>,
   preferred: string,
+  includeUnavailable = false,
 ) {
   const [picked, setPicked] = useState<string | null>(null)
   const available = profiles.filter(
     (profile) =>
-      !profile.disabled && (profile.id !== 'claude_kimi' || profile.configured),
+      (includeUnavailable || !profile.disabled) &&
+      (includeUnavailable ||
+        profile.id !== 'claude_kimi' ||
+        profile.configured),
   )
   const requested = picked ?? preferred
   const selected = available.some((profile) => profile.id === requested)
@@ -61,6 +65,7 @@ export function useNewSessionAgentOptions(
   agentProfiles: Array<AgentProfile>,
   defaultAgentDisabled: boolean,
   defaultAgentProfile = '',
+  includeUnavailable = false,
 ): Array<PickerOption> {
   const { t } = useLingui()
   return [
@@ -76,17 +81,24 @@ export function useNewSessionAgentOptions(
           },
         ]),
     ...agentProfiles
-      .filter((profile) => !profile.disabled)
+      .filter((profile) => includeUnavailable || !profile.disabled)
       .map((profile) => ({
         value: profile.id,
-        disabled: profile.id === 'claude_kimi' && !profile.configured,
+        disabled:
+          !includeUnavailable &&
+          profile.id === 'claude_kimi' &&
+          !profile.configured,
         icon: <AgentAvatar profile={profile.id} size={24} />,
         label:
           profile.id === 'claude_kimi' && !profile.configured
             ? `${profile.label} (${t`Not configured`})`
-            : profile.default
-              ? `${profile.label} (${t`host default`})`
-              : profile.label,
+            : includeUnavailable &&
+                (profile.disabled ||
+                  (profile.id === 'claude_kimi' && !profile.configured))
+              ? `${profile.label} (${t`Unavailable`})`
+              : profile.default
+                ? `${profile.label} (${t`host default`})`
+                : profile.label,
       })),
   ]
 }

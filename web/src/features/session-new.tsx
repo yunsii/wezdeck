@@ -250,6 +250,7 @@ function NewSessionGuidedForm({
   } = useAgentSelection(
     agentProfiles.data?.profiles ?? [],
     seed.agent ?? preferredAgent,
+    Boolean(anchor),
   )
   const [repo, setRepo] = useState(
     () => seed.repo ?? readPreference(preferenceKeys.repo) ?? '',
@@ -293,6 +294,7 @@ function NewSessionGuidedForm({
     agentProfiles.data?.profiles ?? [],
     defaultDisabled || settingsError,
     repoDefault,
+    Boolean(anchor),
   )
   const agentOptions = settingsError
     ? [

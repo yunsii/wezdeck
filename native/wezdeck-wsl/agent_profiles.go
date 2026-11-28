@@ -50,7 +50,7 @@ func agentProfileLabel(id string) string {
 	case "claude":
 		return "Claude"
 	case "claude_sub2api":
-		return "Claude · gateway"
+		return "Claude · sub2api"
 	case "claude_kimi":
 		return "Claude · Kimi"
 	case "codex":
