@@ -265,6 +265,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '读取后台会话自动标题配置、可用本地 CLI 智能体与各会话当前标题来源',
         'Read background session auto-title config, available host CLI providers and current session title sources',
       ),
+      c('habit.weekly', '读取缓存周报', 'Read the cached habit report'),
+      c('habit.schedule.status', '读取周报定时器', 'Read the habit timer'),
       c('host.warp.status', '读取 One Client 状态', 'Read One Client status'),
       c(
         'host.oppo.status',
@@ -380,6 +382,8 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         '更新后台会话自动标题开关、指定本地 CLI 智能体、扫描周期，或手动重算/解锁单条会话标题',
         'Update background session auto-title settings (enabled, host CLI provider, interval), or trigger a refresh / unlock one session title',
       ),
+      c('habit.refresh', '生成周报快照', 'Generate a habit snapshot'),
+      c('habit.schedule.update', '修改周报定时器', 'Update the habit timer'),
       c(
         'ticket.draft',
         '调用主机本地 AI CLI 将自由文本与截图整理为结构化工单草稿',

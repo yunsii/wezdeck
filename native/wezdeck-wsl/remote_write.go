@@ -78,6 +78,10 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = startSessionHandoff(args)
 	case "session.autotitle.update":
 		result, err = updateAutoTitle(args)
+	case "habit.refresh":
+		result, err = habitRefresh()
+	case "habit.schedule.update":
+		result, err = habitScheduleUpdate(args)
 	case "ticket.draft":
 		result, err = draftTicket(args)
 	case "ticket.new":

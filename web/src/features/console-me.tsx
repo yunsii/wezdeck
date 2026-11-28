@@ -31,6 +31,8 @@ import { usePreferredAgentProfile } from './agent-profiles'
 import { AgentsPage } from './me-agents'
 import { RepositoriesPage } from './me-repositories'
 import { AutoTitlePage, useAutoTitleSummary } from './me-autotitle'
+import { HabitsPage } from './me-habits'
+import { SchedulePage } from './me-schedule'
 import { EntryRow } from './me-entry-row'
 import { NotificationsPage, useNotificationsSummary } from './me-notifications'
 
@@ -47,6 +49,8 @@ export const ME_PAGES = [
   'agents',
   'repositories',
   'autotitle',
+  'habits',
+  'schedule',
 ] as const
 export type MePage = (typeof ME_PAGES)[number]
 
@@ -64,6 +68,8 @@ function useMeTitles(): Record<MePage, string> {
     agents: t`Agents`,
     repositories: t`Repositories`,
     autotitle: t`Auto titles`,
+    habits: t`Development habits`,
+    schedule: t`Scheduled tasks`,
   }
 }
 
@@ -283,6 +289,20 @@ function MeIndex({ active }: { active?: MePage }) {
             title={titles.usage}
           />
         )}
+        {authorized ? (
+          <EntryRow
+            page="habits"
+            active={active === 'habits'}
+            title={titles.habits}
+          />
+        ) : null}
+        {authorized ? (
+          <EntryRow
+            page="schedule"
+            active={active === 'schedule'}
+            title={titles.schedule}
+          />
+        ) : null}
       </ul>
       <ul className={cn(group, 'border-t border-brand-edge')}>
         <EntryRow
@@ -390,13 +410,15 @@ function MeSubPage({ page }: { page: MePage }) {
     agents: <AgentsPage />,
     repositories: <RepositoriesPage />,
     autotitle: <AutoTitlePage />,
+    habits: <HabitsPage />,
+    schedule: <SchedulePage />,
   }[page]
   return (
     <div
       // 交互调试 lays out a list beside its detail: give it the room
       className={cn(
         'grid min-w-0 grid-cols-1 content-start gap-3',
-        page === 'interactions' || page === 'agents'
+        page === 'interactions' || page === 'agents' || page === 'habits'
           ? 'max-w-none'
           : 'max-w-2xl',
       )}
@@ -425,6 +447,8 @@ function MeSubPage({ page }: { page: MePage }) {
       page === 'agents' ||
       page === 'host' ||
       page === 'autotitle' ||
+      page === 'habits' ||
+      page === 'schedule' ||
       page === 'notifications' ? (
         body
       ) : (

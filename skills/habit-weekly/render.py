@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from render_git import render_git_sections
+
 
 def _top(d: dict[str, Any] | None, n: int = 10) -> list[tuple[str, int]]:
     if not d:
@@ -82,6 +84,7 @@ def render(report: dict[str, Any]) -> str:
     plugins_all = report.get("plugins") or {}
     rime = plugins_all.get("rime") or report.get("rime_commits") or {}
     git_churn = plugins_all.get("git_churn") or {}
+    work_focus = report.get("work_focus") or {}
 
     # One-line BLUF
     cli0 = cli[0][0] if cli else "（无 CLI 信号）"
@@ -92,6 +95,11 @@ def render(report: dict[str, Any]) -> str:
         f"热键以 **Alt+l** 巡检为主（{alt_sum}/{presses}，{alt_pct}%）",
         f"能力侧高频 **{cli0}** + skill **{skill0}**",
     ]
+    if work_focus.get("ok") and work_focus.get("commits"):
+        bluf_parts[1] = (
+            f"本仓 Web/宿主相关提交 "
+            f"**{work_focus.get('web_related', 0)}/{work_focus['commits']}**"
+        )
     if waka_ok and waka_total:
         bluf_parts.insert(1, f"WakaTime 合计 **{waka_total}**")
     if active_p50 is not None:
@@ -126,6 +134,7 @@ def render(report: dict[str, Any]) -> str:
             sess=sess,
             rime=rime,
             git_churn=git_churn,
+            work_focus=work_focus,
             verify=verify,
             cli0=cli0,
             skill0=skill0,
@@ -475,42 +484,7 @@ def render(report: dict[str, Any]) -> str:
             lines.append(f"- _{note}_")
         lines.append("")
 
-    if git_churn.get("ok") and (
-        git_churn.get("commits")
-        or git_churn.get("insertions")
-        or git_churn.get("repos_scanned")
-    ):
-        lines.append('<a id="sec-git-churn"></a>')
-        lines.append("## 代码变更量（git churn）")
-        lines.append("")
-        lines.append(
-            f"提交 **{git_churn.get('commits', 0)}** · "
-            f"+{git_churn.get('insertions', 0)} / −{git_churn.get('deletions', 0)} 行 · "
-            f"文件 **{git_churn.get('files', 0)}** · "
-            f"有产出仓 **{git_churn.get('repos_with_activity', 0)}** / "
-            f"扫描 **{git_churn.get('repos_scanned', 0)}**"
-            + (
-                f" · 路径排除命中 {git_churn.get('skipped_paths', 0)}"
-                if git_churn.get("skipped_paths")
-                else ""
-            )
-        )
-        lines.append("")
-        top = git_churn.get("top_repos") or []
-        if top:
-            lines.append("| 仓库 | 提交 | +行 | −行 | 文件 |")
-            lines.append("| --- | ---: | ---: | ---: | ---: |")
-            for row in top[:12]:
-                lines.append(
-                    f"| `{row.get('repo')}` | {row.get('commits', 0)} | "
-                    f"{row.get('insertions', 0)} | {row.get('deletions', 0)} | "
-                    f"{row.get('files', 0)} |"
-                )
-            lines.append("")
-        cfg = git_churn.get("config_path")
-        if cfg:
-            lines.append(f"_排除规则见 `{cfg}`（`exclude_repos` / `exclude_repo_globs` / `exclude_path_globs`）。_")
-            lines.append("")
+    lines.extend(render_git_sections(git_churn, work_focus))
 
     # Skills / CLI
     lines.append('<a id="sec-skills"></a>')
@@ -802,6 +776,7 @@ def _render_key_metrics(
     sess: dict,
     rime: dict,
     git_churn: dict,
+    work_focus: dict,
     verify: dict,
     cli0: str,
     skill0: str,
@@ -819,6 +794,12 @@ def _render_key_metrics(
         lines.append(f"| {name} | {value} | [查看](#{anchor}) |")
 
     row("Agent 并行峰值", f"**{max_r}** pane", "sec-concurrency")
+    if work_focus.get("ok") and work_focus.get("commits"):
+        row(
+            "Web / 宿主工作重心",
+            f"**{work_focus.get('web_related', 0)}/{work_focus['commits']}** 提交",
+            "sec-work-focus",
+        )
     row("热键 / Alt+l", f"**{presses}** / **{alt_sum}**", "sec-hotkeys")
     if waka_ok and waka_total:
         row("WakaTime", f"**{waka_total}**", "sec-wakatime")

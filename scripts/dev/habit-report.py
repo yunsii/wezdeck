@@ -36,6 +36,7 @@ from habit_report.plugins import (  # noqa: E402
     run_plugins,
 )
 from habit_report.schema import merge_metrics  # noqa: E402
+from habit_report.work_focus import collect_work_focus  # noqa: E402
 from habit_report.wakatime import fetch_summaries  # noqa: E402
 
 
@@ -412,6 +413,9 @@ def main(argv: list[str] | None = None) -> int:
             "CDP verify→iterate is a same-session heuristic (≤60m after chrome-devtools).",
         ],
     }
+    report["work_focus"] = collect_work_focus(
+        Path(__file__).resolve().parents[2], start=start_day, end=end_day
+    )
 
     if args.wakatime:
         report["wakatime"] = fetch_summaries(start_day, end_day)

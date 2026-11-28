@@ -334,6 +334,10 @@ msgstr "活跃"
 msgid "Active CLI"
 msgstr "当前生效 CLI"
 
+#: src/features/me-habits.tsx:210
+msgid "Active session median"
+msgstr "活跃会话时长中位数"
+
 #: src/features/landing-page.tsx:238
 msgid "Add stable test ids to the 404 and 500 pages."
 msgstr "给 404 和 500 页面补上稳定的 test id。"
@@ -369,7 +373,11 @@ msgstr "智能体"
 msgid "Agent CLI used to generate titles"
 msgstr "用于生成标题的本地智能体 CLI"
 
-#: src/features/console-me.tsx:242
+#: src/features/me-habits.tsx:112
+msgid "Agent concurrency peak"
+msgstr "Agent 并发峰值"
+
+#: src/features/console-me.tsx:248
 msgid "Agent defaults"
 msgstr "智能体默认值"
 
@@ -388,7 +396,11 @@ msgstr "Agent 会话"
 msgid "agent settings and execution mode"
 msgstr "查看设置与执行模式"
 
-#: src/features/console-me.tsx:64
+#: src/features/me-habits.tsx:206
+msgid "Agent turns"
+msgstr "Agent 轮次"
+
+#: src/features/console-me.tsx:68
 #: src/features/me-agents.tsx:176
 msgid "Agents"
 msgstr "智能体"
@@ -530,12 +542,12 @@ msgstr "API 错误"
 msgid "API Key · {0}"
 msgstr "API Key · {0}"
 
-#: src/features/console-me.tsx:61
+#: src/features/console-me.tsx:65
 #: src/features/me-app.tsx:36
 msgid "App"
 msgstr "应用"
 
-#: src/features/console-me.tsx:60
+#: src/features/console-me.tsx:64
 msgid "Appearance"
 msgstr "外观"
 
@@ -571,6 +583,14 @@ msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 #: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
+
+#: src/features/me-schedule.tsx:78
+msgid "Approve this device to manage scheduled reports."
+msgstr "批准此设备后可管理定时周报。"
+
+#: src/features/me-habits.tsx:345
+msgid "Approve this device to view development habits."
+msgstr "批准此设备后可查看开发习惯。"
 
 #: src/features/landing-page.tsx:138
 #: src/features/me-devices.tsx:273
@@ -620,7 +640,7 @@ msgstr "已附带截图（随工单永久保存）"
 msgid "Attachments"
 msgstr "附件"
 
-#: src/features/console-me.tsx:189
+#: src/features/console-me.tsx:195
 #: src/features/me-autotitle.tsx:165
 #: src/features/me-autotitle.tsx:337
 #: src/features/session-statusbar.tsx:91
@@ -657,11 +677,11 @@ msgstr "Auto mode 服务端"
 msgid "Auto off"
 msgstr "未开 Auto"
 
-#: src/features/console-me.tsx:195
+#: src/features/console-me.tsx:201
 msgid "Auto sends on desktop and tablet keyboards, and breaks lines on phones. Shift+Enter always breaks lines; Ctrl/⌘+Enter always sends."
 msgstr "自动模式下，桌面与平板外接键盘按回车发送、手机端回车换行。Shift+Enter 始终换行，Ctrl/⌘+Enter 始终发送。"
 
-#: src/features/console-me.tsx:66
+#: src/features/console-me.tsx:70
 msgid "Auto titles"
 msgstr "自动标题"
 
@@ -677,13 +697,21 @@ msgstr "自动标题智能体 CLI"
 msgid "Auto-title settings saved"
 msgstr "自动标题配置已保存"
 
+#: src/features/me-schedule.tsx:127
+msgid "Automatic refresh"
+msgstr "自动刷新"
+
+#: src/features/me-habits.tsx:97
+msgid "Automation"
+msgstr "自动化"
+
 #: src/features/me-agent-detail.tsx:276
 msgid "Availability and note"
 msgstr "可用状态与备注"
 
 #: src/components/ui/sheet.tsx:124
 #: src/features/console-collab.tsx:115
-#: src/features/console-me.tsx:415
+#: src/features/console-me.tsx:437
 #: src/features/public-header.tsx:50
 #: src/features/session-worktree-manager.tsx:460
 #: src/features/ticket-header.tsx:81
@@ -724,7 +752,7 @@ msgstr "后台自动更新标题"
 msgid "Background tasks"
 msgstr "后台任务"
 
-#: src/features/console-me.tsx:173
+#: src/features/console-me.tsx:179
 msgid "Bar"
 msgstr "细线"
 
@@ -744,11 +772,11 @@ msgstr "二进制文件已变更"
 msgid "Blank switch"
 msgstr "空白切换"
 
-#: src/features/console-me.tsx:174
+#: src/features/console-me.tsx:180
 msgid "Block"
 msgstr "方块"
 
-#: src/features/console-me.tsx:179
+#: src/features/console-me.tsx:185
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
@@ -861,6 +889,10 @@ msgstr "携带简报"
 #: src/features/console-diagnostics.tsx:349
 msgid "Category"
 msgstr "分类"
+
+#: src/features/me-habits.tsx:116
+msgid "CDP verifications"
+msgstr "CDP 验证次数"
 
 #: src/features/ticket-timeline.tsx:214
 msgid "Challenge"
@@ -1139,7 +1171,7 @@ msgstr "已连接"
 msgid "Connecting…"
 msgstr "连接中…"
 
-#: src/features/console-me.tsx:56
+#: src/features/console-me.tsx:60
 msgid "Connection"
 msgstr "连接"
 
@@ -1441,8 +1473,12 @@ msgstr "当前样本来自前台 WezTerm 窗口。"
 msgid "Daemon"
 msgstr "常驻后台"
 
-#: src/features/console-me.tsx:162
-#: src/features/console-me.tsx:227
+#: src/features/me-habits.tsx:169
+msgid "Daily activity"
+msgstr "每日活动"
+
+#: src/features/console-me.tsx:168
+#: src/features/console-me.tsx:233
 #: src/features/console-shared.tsx:394
 msgid "Dark"
 msgstr "深色"
@@ -1533,13 +1569,26 @@ msgstr "终端空闲"
 msgid "Detached"
 msgstr "游离分支"
 
-#: src/features/console-me.tsx:57
+#: src/features/me-schedule.tsx:122
+msgid "Development habit report"
+msgstr "开发习惯周报"
+
+#: src/features/console-me.tsx:71
+#: src/features/me-habits.tsx:203
+msgid "Development habits"
+msgstr "开发习惯"
+
+#: src/features/me-habits.tsx:353
+msgid "Development habits are unavailable."
+msgstr "开发习惯暂不可用。"
+
+#: src/features/console-me.tsx:61
 msgid "Device access"
 msgstr "设备授权"
 
 #: src/features/console-diagnostics.tsx:201
 #: src/features/console-diagnostics.tsx:226
-#: src/features/console-me.tsx:351
+#: src/features/console-me.tsx:371
 #: src/features/console-shell.tsx:102
 msgid "Diagnostics"
 msgstr "诊断"
@@ -1610,6 +1659,10 @@ msgstr "已派发"
 msgid "Document"
 msgstr "文档"
 
+#: src/features/me-habits.tsx:98
+msgid "Documentation"
+msgstr "文档"
+
 #: src/features/host-file-context.tsx:175
 msgid "Documents"
 msgstr "文档"
@@ -1663,11 +1716,11 @@ msgstr "推理力度"
 msgid "Enable notifications"
 msgstr "开启推送通知"
 
-#: src/features/console-me.tsx:216
+#: src/features/console-me.tsx:222
 msgid "Enabled"
 msgstr "已启用"
 
-#: src/features/console-me.tsx:215
+#: src/features/console-me.tsx:221
 msgid "Enabled on this computer"
 msgstr "本机，已启用"
 
@@ -1698,8 +1751,8 @@ msgstr "端点"
 msgid "Enter"
 msgstr "回车"
 
-#: src/features/console-me.tsx:183
-#: src/features/console-me.tsx:185
+#: src/features/console-me.tsx:189
+#: src/features/console-me.tsx:191
 msgid "Enter key"
 msgstr "回车键"
 
@@ -1723,6 +1776,10 @@ msgstr "Esc"
 #: src/features/ticket-proposals.tsx:421
 msgid "Estimated from this machine's past runs, not by the planner."
 msgstr "以上按本机历史运行估算，不是规划 agent 说的。"
+
+#: src/features/me-schedule.tsx:99
+msgid "Evening"
+msgstr "晚间"
 
 #: src/features/me-host.tsx:37
 msgid "Event stream"
@@ -1775,6 +1832,10 @@ msgstr "Fable 档"
 
 #: src/features/tickets-view.tsx:116
 msgid "failed"
+msgstr "失败"
+
+#: src/features/me-schedule.tsx:116
+msgid "Failed"
 msgstr "失败"
 
 #: src/features/collab-metrics.tsx:153
@@ -1874,10 +1935,26 @@ msgstr "完全访问"
 msgid "Full access: auto-approves all actions"
 msgstr "完全访问：自动批准所有操作"
 
+#: src/features/me-habits.tsx:377
+msgid "Full report"
+msgstr "完整周报"
+
+#: src/features/me-habits.tsx:393
+msgid "Full report is unavailable."
+msgstr "完整周报暂不可用。"
+
 #: src/features/session-permission.tsx:393
 #: src/features/session-permission.tsx:434
 msgid "Full view"
 msgstr "完整查看"
+
+#: src/features/me-habits.tsx:331
+msgid "Generate a fresh report"
+msgstr "生成最新报告"
+
+#: src/features/me-schedule.tsx:211
+msgid "Generate report now"
+msgstr "立即生成周报"
 
 #: src/features/session-git.tsx:220
 #: src/features/session-git.tsx:359
@@ -1977,11 +2054,11 @@ msgstr "主机信号"
 msgid "Host unreachable right now"
 msgstr "暂时连不上主机"
 
-#: src/features/console-me.tsx:110
+#: src/features/console-me.tsx:116
 msgid "Host up since"
 msgstr "主机上线于"
 
-#: src/features/console-me.tsx:321
+#: src/features/console-me.tsx:341
 #: src/features/landing-page.tsx:70
 #: src/features/landing-page.tsx:153
 #: src/features/public-header.tsx:87
@@ -2101,7 +2178,7 @@ msgstr "集成验收未通过"
 msgid "Integration verification passed and awaits delivery confirmation."
 msgstr "集成验证已通过，等待确认交付。"
 
-#: src/features/console-me.tsx:63
+#: src/features/console-me.tsx:67
 msgid "Interaction debugging"
 msgstr "交互调试"
 
@@ -2124,6 +2201,10 @@ msgstr "已发送中断请求，Agent 尚未确认。"
 #: src/features/session-info.tsx:290
 msgid "is queued"
 msgstr "排队等这一轮结束"
+
+#: src/features/me-habits.tsx:120
+msgid "Iterated after verification"
+msgstr "验证后继续迭代"
 
 #: src/features/session-info.tsx:289
 msgid "joins the current turn"
@@ -2167,8 +2248,8 @@ msgstr "局域网"
 msgid "Lands on {where}; nothing is pushed and no MR is opened"
 msgstr "改动落在 {where}；不推送、不提 MR"
 
-#: src/features/console-me.tsx:135
-#: src/features/console-me.tsx:137
+#: src/features/console-me.tsx:141
+#: src/features/console-me.tsx:143
 #: src/features/console-shared.tsx:412
 #: src/features/console-shared.tsx:414
 msgid "Language"
@@ -2182,9 +2263,17 @@ msgstr "变更较大，已截断以适应移动查看。"
 msgid "last {lastSeen}"
 msgstr "最近 {lastSeen}"
 
-#: src/features/console-me.tsx:117
+#: src/features/me-habits.tsx:321
+msgid "Last 14 days"
+msgstr "近 14 天"
+
+#: src/features/console-me.tsx:123
 msgid "Last direct attempt"
 msgstr "上次直连"
+
+#: src/features/me-schedule.tsx:233
+msgid "Last result"
+msgstr "最近结果"
 
 #: src/features/console-shared.tsx:106
 #: src/features/console-status-band.tsx:72
@@ -2192,9 +2281,17 @@ msgstr "上次直连"
 msgid "Last sample"
 msgstr "最近采样"
 
+#: src/features/me-schedule.tsx:227
+msgid "Last trigger"
+msgstr "上次触发"
+
 #: src/features/session-info.tsx:85
 msgid "Last turn"
 msgstr "最后一轮"
+
+#: src/features/me-habits.tsx:320
+msgid "Last week"
+msgstr "上周"
 
 #: src/features/chat-controls.tsx:31
 #: src/features/me-host.tsx:145
@@ -2208,6 +2305,10 @@ msgstr "最近一次 OPPO 连接"
 #: src/features/session-background.tsx:95
 msgid "Latest output"
 msgstr "最新输出"
+
+#: src/features/me-schedule.tsx:219
+msgid "Latest run"
+msgstr "最近运行"
 
 #: src/features/console-collab-run.tsx:115
 msgid "Launch details"
@@ -2234,8 +2335,8 @@ msgstr "级别"
 msgid "Level with upstream."
 msgstr "与上游一致。"
 
-#: src/features/console-me.tsx:161
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:167
+#: src/features/console-me.tsx:233
 #: src/features/console-shared.tsx:393
 msgid "Light"
 msgstr "浅色"
@@ -2278,6 +2379,10 @@ msgstr "已回填到输入框"
 msgid "Loaded on this page"
 msgstr "本页已加载"
 
+#: src/features/me-habits.tsx:349
+msgid "Loading development habits…"
+msgstr "正在加载开发习惯…"
+
 #: src/features/ticket-diff.tsx:82
 msgid "Loading diff…"
 msgstr "加载变更中…"
@@ -2285,6 +2390,15 @@ msgstr "加载变更中…"
 #: src/features/image-viewer.tsx:144
 msgid "Loading original…"
 msgstr "正在加载原图…"
+
+#: src/features/me-habits.tsx:383
+#: src/features/me-habits.tsx:387
+msgid "Loading report…"
+msgstr "正在加载周报…"
+
+#: src/features/me-schedule.tsx:84
+msgid "Loading scheduled tasks…"
+msgstr "正在加载定时任务…"
 
 #: src/features/chat-controls.tsx:71
 #: src/features/console-activity.tsx:249
@@ -2447,12 +2561,16 @@ msgstr "消息数"
 msgid "Metrics window"
 msgstr "统计窗口"
 
+#: src/features/me-schedule.tsx:98
+msgid "Midday"
+msgstr "中午"
+
 #: src/features/me-notifications.tsx:116
 #: src/features/me-notifications.tsx:119
 msgid "Minimum duration"
 msgstr "最小时长阈值"
 
-#: src/features/console-me.tsx:80
+#: src/features/console-me.tsx:86
 msgid "Mode"
 msgstr "模式"
 
@@ -2479,6 +2597,10 @@ msgstr "已修改"
 #: src/features/session-git.tsx:289
 msgid "More files changed than listed here."
 msgstr "改动的文件比这里列出的更多。"
+
+#: src/features/me-schedule.tsx:97
+msgid "Morning"
+msgstr "上午"
 
 #: src/features/session-ask-claude.tsx:262
 msgid "Multiple choice: each tap toggles an option; check the screen below, then press Enter."
@@ -2513,6 +2635,10 @@ msgstr "需要确认"
 msgctxt "ticket bucket"
 msgid "Needs attention"
 msgstr "需你处理"
+
+#: src/features/me-habits.tsx:366
+msgid "Needs refresh"
+msgstr "待更新"
 
 #: src/features/ticket-diff.tsx:364
 #: src/features/ticket-header.tsx:118
@@ -2593,7 +2719,7 @@ msgstr "有新版本"
 msgid "New version ready, reload to use it"
 msgstr "新版本已就绪，刷新后生效"
 
-#: src/features/console-me.tsx:190
+#: src/features/console-me.tsx:196
 msgid "Newline"
 msgstr "换行"
 
@@ -2616,6 +2742,10 @@ msgstr "下一个已完成的会话"
 #: src/features/image-viewer.tsx:172
 msgid "Next image"
 msgstr "下一张"
+
+#: src/features/me-schedule.tsx:221
+msgid "Next scheduled run"
+msgstr "下次计划运行"
 
 #: src/features/console-keys.tsx:60
 msgid "Next session waiting on you"
@@ -2649,6 +2779,10 @@ msgstr "现在没有正在运行的 Agent 会话。"
 msgctxt "git"
 msgid "No changes"
 msgstr "无改动"
+
+#: src/features/me-habits.tsx:163
+msgid "No commits in this period."
+msgstr "本周期没有提交。"
 
 #: src/features/ticket-run-chat.tsx:283
 msgid "No conversation messages recorded for this run."
@@ -2714,6 +2848,10 @@ msgstr "还没有写计划"
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
+#: src/features/me-habits.tsx:357
+msgid "No report has been generated for this period."
+msgstr "本周期尚未生成报告。"
+
 #: src/features/me-repositories.tsx:168
 msgid "No repositories yet"
 msgstr "暂无仓库"
@@ -2764,6 +2902,10 @@ msgstr "没有上游分支，无法比较。"
 msgid "Noise control"
 msgstr "降噪策略"
 
+#: src/features/me-habits.tsx:128
+msgid "Non-merge commits in this repository. A commit may touch several areas."
+msgstr "统计本仓库的非合并提交。一次提交可能涉及多个领域。"
+
 #: src/features/me-agent-detail.tsx:67
 #: src/features/me-agent-detail.tsx:216
 #: src/features/me-agent-detail.tsx:339
@@ -2792,7 +2934,7 @@ msgstr "未实现"
 msgid "Not on this Runtime"
 msgstr "当前 Runtime 还没有这条通道"
 
-#: src/features/console-me.tsx:261
+#: src/features/console-me.tsx:267
 msgid "Not paired"
 msgstr "未配对"
 
@@ -2840,7 +2982,7 @@ msgstr "没有匹配项"
 msgid "Notification permission is blocked in browser settings. Re-enable notifications for this site to subscribe."
 msgstr "浏览器已拦截此站点的通知权限，请在浏览器设置中重新允许。"
 
-#: src/features/console-me.tsx:58
+#: src/features/console-me.tsx:62
 msgid "Notifications"
 msgstr "通知"
 
@@ -2860,10 +3002,11 @@ msgstr "单轮长耗时任务完成时推送（默认关闭，减少打扰）。
 msgid "now {label}"
 msgstr "状态：{label}"
 
-#: src/features/console-me.tsx:220
+#: src/features/console-me.tsx:226
 #: src/features/me-autotitle.tsx:115
 #: src/features/me-autotitle.tsx:370
 #: src/features/me-notifications.tsx:45
+#: src/features/me-schedule.tsx:147
 msgid "Off"
 msgstr "未启用"
 
@@ -2882,6 +3025,7 @@ msgstr "离线中，稍后再试"
 #: src/features/me-autotitle.tsx:117
 #: src/features/me-autotitle.tsx:369
 #: src/features/me-notifications.tsx:44
+#: src/features/me-schedule.tsx:147
 msgid "On"
 msgstr "开启"
 
@@ -3012,6 +3156,7 @@ msgstr "发起会话"
 msgid "Original request"
 msgstr "原始描述"
 
+#: src/features/me-habits.tsx:99
 #: src/features/repo-links.tsx:53
 msgid "Other"
 msgstr "其他"
@@ -3037,6 +3182,7 @@ msgstr "输出 {outputTokens}"
 msgid "Output rate"
 msgstr "输出速率"
 
+#: src/features/me-habits.tsx:376
 #: src/features/public-header.tsx:79
 #: src/features/session-info.tsx:327
 #: src/features/ticket-info.tsx:333
@@ -3063,7 +3209,7 @@ msgstr "需先配对"
 msgid "Pair this device with your host first to enable remote push notifications."
 msgstr "请先与宿主机完成配对，再开启远程推送通知。"
 
-#: src/features/console-me.tsx:93
+#: src/features/console-me.tsx:99
 msgid "Pairing command"
 msgstr "配对命令"
 
@@ -3127,7 +3273,7 @@ msgstr "权限审批、提问等你回复与计划待确认。"
 msgid "Phase"
 msgstr "阶段"
 
-#: src/features/console-me.tsx:86
+#: src/features/console-me.tsx:92
 msgid "Phone or tablet"
 msgstr "手机或平板"
 
@@ -3333,6 +3479,7 @@ msgstr "回收工作树"
 #: src/features/host-file-sheet.tsx:80
 #: src/features/host-file-sheet.tsx:81
 #: src/features/me-devices.tsx:165
+#: src/features/me-habits.tsx:339
 #: src/features/ticket-diff.tsx:255
 #: src/features/ticket-diff.tsx:256
 msgid "Refresh"
@@ -3342,10 +3489,18 @@ msgstr "刷新"
 msgid "Refresh active sessions now"
 msgstr "立即刷新活跃会话"
 
+#: src/features/me-habits.tsx:297
+msgid "Refresh failed"
+msgstr "刷新失败"
+
 #: src/features/repo-links.tsx:314
 #: src/features/repo-links.tsx:315
 msgid "Refresh links"
 msgstr "刷新外链"
+
+#: src/features/me-schedule.tsx:190
+msgid "Refresh times saved"
+msgstr "刷新时间已保存"
 
 #: src/features/me-autotitle.tsx:295
 msgid "Refreshing session titles in the background…"
@@ -3496,7 +3651,23 @@ msgstr "本仓工单 (t)"
 msgid "Repo tickets & quick ticket"
 msgstr "本仓工单与快速提单"
 
-#: src/features/console-me.tsx:65
+#: src/features/me-schedule.tsx:205
+msgid "Report generation started"
+msgstr "已开始生成周报"
+
+#: src/features/me-habits.tsx:314
+msgid "Report period"
+msgstr "报告周期"
+
+#: src/features/me-habits.tsx:279
+msgid "Report refresh is taking longer than expected."
+msgstr "周报刷新时间比预期长。"
+
+#: src/features/me-habits.tsx:371
+msgid "Report view"
+msgstr "报告视图"
+
+#: src/features/console-me.tsx:69
 msgid "Repositories"
 msgstr "仓库"
 
@@ -3517,7 +3688,7 @@ msgstr "无法读取主机上的仓库智能体设置。这里显示工作区默
 msgid "Repository agent settings could not be read. Select an agent explicitly."
 msgstr "仓库智能体设置无法读取，请明确选择智能体。"
 
-#: src/features/console-me.tsx:236
+#: src/features/console-me.tsx:242
 #: src/features/me-agents.tsx:152
 #: src/features/session-new-panels.tsx:73
 #: src/features/session-new-panels.tsx:74
@@ -3545,7 +3716,7 @@ msgstr "申请授权"
 msgid "Request changes"
 msgstr "请修改"
 
-#: src/features/console-me.tsx:112
+#: src/features/console-me.tsx:118
 msgid "Requests (WebRTC / relay)"
 msgstr "请求数（WebRTC / 中转）"
 
@@ -3757,7 +3928,7 @@ msgstr "立即后台执行"
 msgid "Run started"
 msgstr "启动运行"
 
-#: src/features/console-me.tsx:89
+#: src/features/console-me.tsx:95
 msgid "Run this on the host, then open the link it prints on that device:"
 msgstr "在主机上运行下面的命令，再到那台设备上打开它生成的链接："
 
@@ -3859,6 +4030,10 @@ msgstr "保存"
 msgid "Save availability and note"
 msgstr "保存可用状态与备注"
 
+#: src/features/me-schedule.tsx:196
+msgid "Save times"
+msgstr "保存时间"
+
 #: src/features/me-agent-detail.tsx:23
 #: src/features/session-worktree-detail.tsx:50
 msgid "Saved"
@@ -3878,6 +4053,26 @@ msgstr "保存中…"
 #: src/features/me-autotitle.tsx:408
 msgid "Scan interval"
 msgstr "扫描周期"
+
+#: src/features/me-schedule.tsx:68
+msgid "Schedule change failed"
+msgstr "定时任务修改失败"
+
+#: src/features/me-schedule.tsx:141
+msgid "Schedule enabled"
+msgstr "已启用定时任务"
+
+#: src/features/me-schedule.tsx:142
+msgid "Schedule paused"
+msgstr "已暂停定时任务"
+
+#: src/features/console-me.tsx:72
+msgid "Scheduled tasks"
+msgstr "定时任务"
+
+#: src/features/me-schedule.tsx:90
+msgid "Scheduled tasks are unavailable."
+msgstr "定时任务暂不可用。"
 
 #: src/features/ticket-timeline.tsx:93
 msgid "Scheduler"
@@ -3944,7 +4139,7 @@ msgid "Select a target repository first."
 msgstr "请先选择目标仓库。"
 
 #: src/features/console-keys.tsx:109
-#: src/features/console-me.tsx:191
+#: src/features/console-me.tsx:197
 #: src/features/message-composer.tsx:400
 #: src/features/message-composer.tsx:402
 #: src/features/ticket-manager-panel.tsx:132
@@ -4114,9 +4309,9 @@ msgid "Sessions come over the remote link, and this device is not paired yet. On
 msgstr "会话通过远程链接读取，这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair，在这里打开生成的链接。"
 
 #: src/features/console-diagnostics.tsx:224
-#: src/features/console-me.tsx:450
-#: src/features/console-me.tsx:454
+#: src/features/console-me.tsx:474
 #: src/features/console-me.tsx:478
+#: src/features/console-me.tsx:502
 #: src/features/console-shell.tsx:109
 msgid "Settings"
 msgstr "我的"
@@ -4168,6 +4363,10 @@ msgstr "文件较大，仅显示前 256 KB。"
 #: src/features/console-activity.tsx:243
 msgid "showing the last copy"
 msgstr "显示的是上次的数据"
+
+#: src/features/me-schedule.tsx:130
+msgid "Singapore time"
+msgstr "新加坡时间"
 
 #: src/features/public-header.tsx:70
 msgid "Site navigation"
@@ -4368,6 +4567,10 @@ msgstr "已提交"
 msgid "Submitting your answer…"
 msgstr "正在提交答案……"
 
+#: src/features/me-schedule.tsx:114
+msgid "Succeeded"
+msgstr "成功"
+
 #: src/features/session-commands.tsx:210
 #: src/features/session-commands.tsx:242
 #: src/features/session-skills.tsx:59
@@ -4430,8 +4633,8 @@ msgstr "已同步 {time}"
 msgid "Syncing · last synced {time}"
 msgstr "正在同步 · 上次成功 {time}"
 
-#: src/features/console-me.tsx:160
-#: src/features/console-me.tsx:227
+#: src/features/console-me.tsx:166
+#: src/features/console-me.tsx:233
 #: src/features/console-shared.tsx:392
 msgid "System"
 msgstr "跟随系统"
@@ -4477,6 +4680,14 @@ msgstr "技术细节"
 msgid "Terminal"
 msgstr "终端画面"
 
+#: src/features/me-habits.tsx:96
+msgid "Terminal config"
+msgstr "终端配置"
+
+#: src/features/me-habits.tsx:218
+msgid "Terminal hotkeys observed"
+msgstr "终端热键次数"
+
 #: src/features/session-actions.tsx:69
 msgid "Terminal keys"
 msgstr "终端按键"
@@ -4489,8 +4700,8 @@ msgstr "终端画面"
 msgid "Test notification sent"
 msgstr "已发送测试通知"
 
-#: src/features/console-me.tsx:167
-#: src/features/console-me.tsx:169
+#: src/features/console-me.tsx:173
+#: src/features/console-me.tsx:175
 msgid "Text caret"
 msgstr "输入光标"
 
@@ -4533,6 +4744,10 @@ msgstr "期望的契约或行为——目标仓库会优先核对这一项"
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "当前前台应用不是 WezTerm，因此 Runtime 保留上一次 WezTerm 样本。"
 
+#: src/features/me-schedule.tsx:152
+msgid "The habit snapshot timer is not installed on this host."
+msgstr "本机尚未安装习惯周报定时任务。"
+
 #: src/features/session-prompt-timeout.ts:17
 msgid "The host did not confirm the action; please check and retry."
 msgstr "主机未确认该操作，请检查后重试。"
@@ -4567,8 +4782,8 @@ msgstr "命令后面的文字会成为新会话的名字（「{name}」），之
 msgid "The web default applies to new sessions from this console. Follow workspace setting uses the agent configured for the repository on the host."
 msgstr "网页默认值用于从控制台新建的会话。跟随工作区设置时，会使用主机为该仓库配置的智能体。"
 
-#: src/features/console-me.tsx:154
-#: src/features/console-me.tsx:156
+#: src/features/console-me.tsx:160
+#: src/features/console-me.tsx:162
 #: src/features/console-shared.tsx:385
 #: src/features/console-shared.tsx:387
 msgid "Theme"
@@ -4591,17 +4806,17 @@ msgstr "当前浏览器"
 msgid "This browser does not support Web Push notifications."
 msgstr "当前浏览器不支持 Web Push 通知。"
 
-#: src/features/console-me.tsx:62
-#: src/features/console-me.tsx:259
+#: src/features/console-me.tsx:66
+#: src/features/console-me.tsx:265
 #: src/features/console-shell.tsx:346
 msgid "This computer"
 msgstr "本机"
 
-#: src/features/console-me.tsx:80
+#: src/features/console-me.tsx:86
 msgid "This computer (local Runtime)"
 msgstr "本机（本地运行时）"
 
-#: src/features/console-me.tsx:82
+#: src/features/console-me.tsx:88
 msgid "This computer reads and writes sessions and tickets through the local Runtime directly; there is nothing to pair here."
 msgstr "这台电脑直接通过本地 Runtime 读写会话和工单，不需要配对。"
 
@@ -4619,7 +4834,7 @@ msgstr "当前设备"
 msgid "This device is not approved yet (Settings › Device access)."
 msgstr "这台设备还没获批（我的 › 设备授权）。"
 
-#: src/features/console-me.tsx:104
+#: src/features/console-me.tsx:110
 msgid "This device is not paired. On the host run scripts/dev/install-remote-relay.sh --pair and scan the code."
 msgstr "这台设备还没配对。在主机上运行 scripts/dev/install-remote-relay.sh --pair 后扫码。"
 
@@ -4665,6 +4880,10 @@ msgstr "当前会话"
 #: src/features/session-focus.tsx:50
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
+
+#: src/features/me-habits.tsx:319
+msgid "This week"
+msgstr "本周"
 
 #: src/features/session-delete.tsx:52
 msgid "This worktree has local changes. Review them in the session before deleting."
@@ -4935,7 +5154,7 @@ msgstr "不可用智能体（{disabledCount}）"
 msgid "Unconfirmed ({unsettledCount})"
 msgstr "未确认 ({unsettledCount})"
 
-#: src/features/console-me.tsx:175
+#: src/features/console-me.tsx:181
 msgid "Underscore"
 msgstr "下划线"
 
@@ -4971,6 +5190,10 @@ msgctxt "git"
 msgid "Untracked"
 msgstr "未跟踪"
 
+#: src/features/me-habits.tsx:367
+msgid "Updated"
+msgstr "更新于"
+
 #: src/features/tickets-view.tsx:153
 msgid "Updated {time}"
 msgstr "更新于 {time}"
@@ -4978,6 +5201,10 @@ msgstr "更新于 {time}"
 #: src/features/pwa-boot.tsx:40
 msgid "Updated to the new version"
 msgstr "已更新到新版本"
+
+#: src/features/me-habits.tsx:292
+msgid "Updating development habits"
+msgstr "正在更新开发习惯"
 
 #: src/features/landing-page.tsx:227
 msgid "Updating shell rail, sticky public header and architecture TOC…"
@@ -4998,7 +5225,7 @@ msgstr "正在上传 {step}/{total}…"
 msgid "Uptime"
 msgstr "运行时长"
 
-#: src/features/console-me.tsx:59
+#: src/features/console-me.tsx:63
 #: src/features/session-info.tsx:56
 msgid "Usage"
 msgstr "用量"
@@ -5072,7 +5299,7 @@ msgstr "等待类型"
 msgid "Waiting for approval or reply"
 msgstr "等待确认或回复"
 
-#: src/features/console-me.tsx:218
+#: src/features/console-me.tsx:224
 msgid "Waiting for the host"
 msgstr "等电脑确认"
 
@@ -5154,6 +5381,7 @@ msgid "Waiting to retry"
 msgstr "等待重试"
 
 #: src/features/console-status-band.tsx:51
+#: src/features/me-habits.tsx:222
 msgid "WakaTime"
 msgstr "WakaTime"
 
@@ -5185,6 +5413,10 @@ msgstr "警告"
 msgid "Web (this console)"
 msgstr "网页端（当前控制台）"
 
+#: src/features/me-habits.tsx:108
+msgid "Web / host work"
+msgstr "Web / 宿主工作占比"
+
 #: src/features/me-repositories.tsx:83
 msgid "Web default"
 msgstr "网页默认"
@@ -5192,6 +5424,10 @@ msgstr "网页默认"
 #: src/features/session-detail-notices.tsx:28
 #~ msgid "Web sending is unavailable for this session."
 #~ msgstr "此会话暂时无法从网页发送消息。"
+
+#: src/features/me-habits.tsx:93
+msgid "Web UI"
+msgstr "Web 界面"
 
 #: src/features/landing-page.tsx:133
 #: src/features/remote-badge.tsx:98
@@ -5286,9 +5522,17 @@ msgstr "理由（必填，提议方会看到）"
 msgid "Why reject"
 msgstr "驳回理由"
 
+#: src/features/me-habits.tsx:95
+msgid "Windows Runtime"
+msgstr "Windows Runtime"
+
 #: src/features/session-commands.tsx:247
 msgid "with what to keep"
 msgstr "说明要保留什么"
+
+#: src/features/me-habits.tsx:126
+msgid "Work focus"
+msgstr "工作重心"
 
 #: src/features/ticket-thread-view.tsx:15
 msgid "Worker"
@@ -5372,6 +5616,10 @@ msgstr "工作树"
 #: src/features/me-host.tsx:151
 msgid "WSL bridge"
 msgstr "WSL 通道"
+
+#: src/features/me-habits.tsx:94
+msgid "WSL relay"
+msgstr "WSL 中转"
 
 #: src/features/session-info.tsx:108
 msgid "yes"

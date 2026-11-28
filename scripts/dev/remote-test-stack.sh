@@ -39,6 +39,7 @@ export WEZDECK_TEST_ATTENTION=$STATE/attention.json
 export WEZDECK_TEST_DEVICES=$STATE/devices.json
 export WEZDECK_TEST_UPLOADS=$STATE/uploads
 export WEZDECK_TEST_CLAUDE_STATUS=$STATE/claude-status
+export WEZDECK_TEST_HABIT_DIR=$STATE/habit-weekly
 export WEZDECK_RELAY_CONTROL=$STATE/relay.sock
 export WEZDECK_TEST_STACK_DIR=$STATE
 export WEZDECK_REMOTE_URL=http://127.0.0.1:$PORT
@@ -115,6 +116,9 @@ start_relay() {
     WEZDECK_ACCESS_LEDGER="$STATE/access-ledger.json" \
     WEZDECK_SESSION_PINS="$STATE/session-pins.json" \
     WEZDECK_SENT_MESSAGES="$STATE/sent-messages.json" \
+    WEZDECK_HABIT_SNAPSHOT_DIR="$STATE/habit-weekly" \
+    WEZDECK_HABIT_SYSTEMD_DIR="$STATE/systemd-user" \
+    WEZDECK_HABIT_SYSTEMCTL="$STATE/fake-habit-systemctl" \
     WEZDECK_SESSION_NEW_CMD="$STATE/fake-open-task-window" \
     WEZDECK_SESSION_REUSE_CMD="$STATE/fake-reuse-workstation" \
     WEZDECK_SESSION_RESTART_CMD="$STATE/fake-session-restart" \
@@ -227,6 +231,22 @@ echo "\$*" >>"$STATE/restart.log"
 echo outcome=respawned
 FAKE
   chmod +x "$STATE/fake-session-restart"
+  mkdir -p "$STATE/habit-weekly" "$STATE/systemd-user"
+  printf '[Timer]\n' >"$STATE/systemd-user/wezdeck-habit-snapshot.timer"
+  touch "$STATE/habit-enabled"
+  cat >"$STATE/fake-habit-systemctl" <<FAKE
+#!/usr/bin/env bash
+set -euo pipefail
+case " \$* " in
+  *" is-enabled "*) [[ -f "$STATE/habit-enabled" ]] && echo enabled || { echo disabled; exit 1; } ;;
+  *" show "*"habit-snapshot.timer"*) printf 'ActiveState=active\nNextElapseUSecRealtime=Sat 2026-11-28 12:30:00 +08\nLastTriggerUSec=Sat 2026-11-28 09:00:00 +08\n' ;;
+  *" show "*"habit-snapshot.service"*) printf 'Result=success\n' ;;
+  *" disable "*) rm -f "$STATE/habit-enabled" ;;
+  *" enable "*) touch "$STATE/habit-enabled" ;;
+  *" start "*) printf 'started\n' >>"$STATE/habit-refresh.log" ;;
+esac
+FAKE
+  chmod +x "$STATE/fake-habit-systemctl"
   # stand-in for session-handoff.sh: record the relay argv, give the test pane
   # a stable ready screen and return a blank switch's pending id. Only the
   # test's own tmux socket is touched; no source transcript is read.

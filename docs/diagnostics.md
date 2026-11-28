@@ -296,8 +296,8 @@ Aggregate press counts — no event log — for every WezTerm keymap entry and t
 
 ## Habit report
 
-Personal **agent-efficiency + intensity** metrics over recent days —
-complementary to the workflow timeline (day *loop* reconstruction).
+Personal **agent-efficiency, work-focus and intensity** metrics over recent
+days, including Web/host commit paths; complementary to the workflow timeline.
 
 - Entry: [`scripts/dev/habit-report.sh`](../scripts/dev/habit-report.sh)
   (orchestrator: `scripts/dev/habit-report.py`; plugins:

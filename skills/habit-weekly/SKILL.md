@@ -19,6 +19,11 @@ description: >
 
 数据收集器是 `scripts/dev/habit-report.sh`（插件化 Claude / Grok / Codex + 可选 WakaTime）。本 skill 负责：**定窗口 → 拉 JSON → 按固定模板渲染周报 →（可选）落盘 →（显式）推送到习惯归档仓**。
 
+宿主定时器由 `scripts/dev/install-habit-snapshot.sh` 安装，在新加坡时间
+09:00、12:30、18:30 更新本周及近 14 天的本机快照。完整周通过
+`run.sh --write --push` 归档到私有仓，失败时下个时段重试。网页
+`我的 › 开发习惯` 读取快照；手动刷新走已授权的写入动作。
+
 ## When to load / run
 
 | 用户意图 | 你做 |

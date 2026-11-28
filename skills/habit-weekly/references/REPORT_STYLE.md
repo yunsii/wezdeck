@@ -12,14 +12,15 @@
 6. **会话形态**（活跃时长/片段/投喂分桶/图链/Goal 工期/改写分布/常用关键词；**禁止**把墙钟当主指标；含 **按端协议注入表**）  
 7. **Token / 费用（分 agent · 分模型）**（Claude `cost-state.modelUsage` / Grok `usage.json` / Codex `last_token_usage`+`turn_context.model`；主读分端与分模型 USD + output/reasoning；`total` 含 cache 不作跨端主 KPI）  
 8. **Rime 上屏 × 前台/pane-focus**（可选插件；桶=`wezterm.agent.*` / `.shell`；另表 `by_process` 写 OS 进程名）  
-9. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）  
-10. **Skill / CLI / MCP**（Skill/CLI Top 表；MCP 只计真实调用的 Server/工具表，禁止裸 `mcp: N`，禁止把 `mcp_server_starting` 当调用）  
-11. **CDP 验证→迭代**（有数据才写）  
-12. **热键调度**（Alt+l 为主；忙日/轻量日对照）  
-13. **工作环路**（短流程图或 5 步列表）  
-14. **数据边界**（固定注意点，可压缩）  
-15. **复现命令**  
-16. **本次提取的数据**（结尾必有）  
+9. **工作重心**（本仓非合并提交按路径分类，Web / 宿主相关占比；领域可重叠，不作效率评分）
+10. **代码变更量**（可选插件 `git_churn`；排除规则见 `git-churn.json`）
+11. **Skill / CLI / MCP**（Skill/CLI Top 表；MCP 只计真实调用的 Server/工具表，禁止裸 `mcp: N`，禁止把 `mcp_server_starting` 当调用）
+12. **CDP 验证→迭代**（有数据才写）
+13. **终端热键**（次要信号；零 GUI 日可为 0）
+14. **工作环路**（短流程图或 5 步列表）
+15. **数据边界**（固定注意点，可压缩）
+16. **复现命令**
+17. **本次提取的数据**（结尾必有）
 ## 文风
 
 - 简体中文；标识符/命令保持原文  

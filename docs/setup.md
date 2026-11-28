@@ -18,6 +18,14 @@ full WezTerm GUI.
 Check both tasks with `Get-ScheduledTask -TaskName 'WezDeck*'` and the
 local Runtime at `http://127.0.0.1:35791/api/v1/health`.
 
+For development-habit snapshots, run `scripts/dev/install-habit-snapshot.sh`
+from WSL. Its user timer refreshes at 09:00, 12:30 and 18:30 Singapore time,
+retains the last complete week, and archives completed reports to the
+configured private habit repository. The web console shows the reports under
+`我的 › 开发习惯` and the timer controls under `我的 › 定时任务`.
+Check it with `scripts/dev/install-habit-snapshot.sh --check` and
+`journalctl --user -u wezdeck-habit-snapshot.service`.
+
 - `hybrid-wsl` uses the Windows WezTerm nightly build plus a WSL domain configured in `wezterm-x/local/constants.lua`.
 - `posix-local` runs directly on Linux or macOS without a WSL domain.
 - `tmux 3.7+` must be available in the runtime environment that will host managed project tabs (DEC mode 2026 / sync needs 3.6+; copy-mode auto-refresh needs 3.7 `refresh-from-pane`). **If the OS/package-manager `tmux` already meets ≥ 3.7, use it — do not compile a user copy.** Only when the distro package is too old (e.g. Ubuntu 24.04 apt 3.4) install a user-prefix build to `~/.local/bin/tmux` and put that dir first on PATH. Cross-OS decision tree, package options, and fallback script: [`tmux-install.md`](./tmux-install.md). Why the floor: [`ime-flicker-and-sync-output.md`](./ime-flicker-and-sync-output.md).

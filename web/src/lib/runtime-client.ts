@@ -401,6 +401,8 @@ export type HostReadAction =
   | 'session.git'
   | 'session.skills'
   | 'session.autotitle.status'
+  | 'habit.weekly'
+  | 'habit.schedule.status'
   | 'collab.run.chat'
   | 'collab.diff'
   | 'collab.manager.chat'

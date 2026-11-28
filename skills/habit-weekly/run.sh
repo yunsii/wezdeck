@@ -227,12 +227,21 @@ stem="habit-weekly-${since}_to_${until}"
 written_md=''
 written_json=''
 
+publish_atomic() {
+  local source="$1" target="$2" temporary
+  temporary="$(mktemp "${target}.tmp.XXXXXX")" || return 1
+  if ! install -m 600 "$source" "$temporary" || ! mv -f "$temporary" "$target"; then
+    rm -f "$temporary"
+    return 1
+  fi
+}
+
 if (( write )); then
   mkdir -p "$out_dir"
   written_json="$out_dir/${stem}.json"
   written_md="$out_dir/${stem}.md"
-  cp -f "$json_path" "$written_json"
-  cp -f "$md_path" "$written_md"
+  publish_atomic "$json_path" "$written_json"
+  publish_atomic "$md_path" "$written_md"
   printf 'wrote %s\n' "$written_md" >&2
   printf 'wrote %s\n' "$written_json" >&2
 fi
