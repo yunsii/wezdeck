@@ -944,7 +944,7 @@ msgstr "Claude commands, sent into the pane"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude wants to leave plan mode and start on this plan"
 
-#: src/features/session-composer-tools.tsx:232
+#: src/features/session-composer-tools.tsx:214
 msgid "Clear input"
 msgstr "Clear input"
 
@@ -1046,7 +1046,7 @@ msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
 #: src/features/session-commands.tsx:290
-#: src/features/session-composer-tools.tsx:122
+#: src/features/session-composer-tools.tsx:144
 msgid "Commands"
 msgstr "Commands"
 
@@ -2014,7 +2014,7 @@ msgstr "Image preview"
 msgid "Image viewer"
 msgstr "Image viewer"
 
-#: src/features/session-composer-tools.tsx:96
+#: src/features/session-composer-tools.tsx:114
 msgid "Images"
 msgstr "Images"
 
@@ -2425,9 +2425,9 @@ msgstr "Merge"
 msgid "Message"
 msgstr "Message"
 
-#: src/features/session-composer-tools.tsx:68
-#: src/features/session-composer-tools.tsx:70
-#: src/features/session-composer-tools.tsx:88
+#: src/features/session-composer-tools.tsx:72
+#: src/features/session-composer-tools.tsx:74
+#: src/features/session-composer-tools.tsx:95
 msgid "Message actions"
 msgstr "Message actions"
 
@@ -3972,7 +3972,8 @@ msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
 #: src/features/chat-pending.tsx:158
-#: src/features/session-composer-tools.tsx:144
+#: src/features/session-delivery-options.tsx:27
+#: src/features/session-delivery-options.tsx:68
 msgid "Send now"
 msgstr "Send now"
 
@@ -3988,11 +3989,14 @@ msgstr "Send test notification"
 msgid "Send the first message below."
 msgstr "Send the first message below."
 
-#: src/features/session-composer-tools.tsx:140
+#: src/features/session-composer-tools.tsx:95
+#: src/features/session-delivery-options.tsx:46
+#: src/features/session-delivery-options.tsx:78
 msgid "Send timing"
 msgstr "Send timing"
 
-#: src/features/session-composer-tools.tsx:145
+#: src/features/session-delivery-options.tsx:29
+#: src/features/session-delivery-options.tsx:69
 msgid "Send when this turn ends"
 msgstr "Send when this turn ends"
 
@@ -4019,7 +4023,7 @@ msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "Sensitive tokens were redacted before leaving the host."
 
 #: src/features/sent-history.tsx:209
-#: src/features/session-composer-tools.tsx:199
+#: src/features/session-composer-tools.tsx:181
 msgid "Sent messages"
 msgstr "Sent messages"
 
@@ -4173,7 +4177,7 @@ msgstr "Site navigation"
 msgid "Size"
 msgstr "Size"
 
-#: src/features/session-composer-tools.tsx:184
+#: src/features/session-composer-tools.tsx:166
 #: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "Skills"
@@ -5054,8 +5058,9 @@ msgstr "VS Code window focused"
 msgid "vscode-links is not installed on the host."
 msgstr "vscode-links is not installed on the host."
 
-#: src/features/session-composer-tools.tsx:146
 #: src/features/session-composer.tsx:234
+#: src/features/session-delivery-options.tsx:30
+#: src/features/session-delivery-options.tsx:72
 msgid "Wait for my confirmation"
 msgstr "Wait for my confirmation"
 

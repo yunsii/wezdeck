@@ -944,7 +944,7 @@ msgstr "Claude 命令，发进窗格执行"
 msgid "Claude wants to leave plan mode and start on this plan"
 msgstr "Claude 想退出计划模式，按这个计划开始执行"
 
-#: src/features/session-composer-tools.tsx:232
+#: src/features/session-composer-tools.tsx:214
 msgid "Clear input"
 msgstr "清空输入"
 
@@ -1046,7 +1046,7 @@ msgid "Command sent: {command}"
 msgstr "已发送命令 {command}"
 
 #: src/features/session-commands.tsx:290
-#: src/features/session-composer-tools.tsx:122
+#: src/features/session-composer-tools.tsx:144
 msgid "Commands"
 msgstr "命令"
 
@@ -2014,7 +2014,7 @@ msgstr "图片预览"
 msgid "Image viewer"
 msgstr "图片查看"
 
-#: src/features/session-composer-tools.tsx:96
+#: src/features/session-composer-tools.tsx:114
 msgid "Images"
 msgstr "图片"
 
@@ -2425,9 +2425,9 @@ msgstr "合并分支"
 msgid "Message"
 msgstr "发消息"
 
-#: src/features/session-composer-tools.tsx:68
-#: src/features/session-composer-tools.tsx:70
-#: src/features/session-composer-tools.tsx:88
+#: src/features/session-composer-tools.tsx:72
+#: src/features/session-composer-tools.tsx:74
+#: src/features/session-composer-tools.tsx:95
 msgid "Message actions"
 msgstr "消息操作"
 
@@ -3972,7 +3972,8 @@ msgid "Send failed: {errorText}"
 msgstr "发送失败：{errorText}"
 
 #: src/features/chat-pending.tsx:158
-#: src/features/session-composer-tools.tsx:144
+#: src/features/session-delivery-options.tsx:27
+#: src/features/session-delivery-options.tsx:68
 msgid "Send now"
 msgstr "立即发送"
 
@@ -3988,11 +3989,14 @@ msgstr "发送测试通知"
 msgid "Send the first message below."
 msgstr "在下方发第一条消息。"
 
-#: src/features/session-composer-tools.tsx:140
+#: src/features/session-composer-tools.tsx:95
+#: src/features/session-delivery-options.tsx:46
+#: src/features/session-delivery-options.tsx:78
 msgid "Send timing"
 msgstr "发送时机"
 
-#: src/features/session-composer-tools.tsx:145
+#: src/features/session-delivery-options.tsx:29
+#: src/features/session-delivery-options.tsx:69
 msgid "Send when this turn ends"
 msgstr "本轮完成后自动发送"
 
@@ -4019,7 +4023,7 @@ msgid "Sensitive tokens were redacted before leaving the host."
 msgstr "敏感令牌已在离开宿主机前自动脱敏。"
 
 #: src/features/sent-history.tsx:209
-#: src/features/session-composer-tools.tsx:199
+#: src/features/session-composer-tools.tsx:181
 msgid "Sent messages"
 msgstr "已发送记录"
 
@@ -4173,7 +4177,7 @@ msgstr "全站导航"
 msgid "Size"
 msgstr "大小"
 
-#: src/features/session-composer-tools.tsx:184
+#: src/features/session-composer-tools.tsx:166
 #: src/features/session-skills.tsx:174
 msgid "Skills"
 msgstr "能力"
@@ -5054,8 +5058,9 @@ msgstr "已切到 VS Code 窗口"
 msgid "vscode-links is not installed on the host."
 msgstr "主机尚未安装 vscode-links。"
 
-#: src/features/session-composer-tools.tsx:146
 #: src/features/session-composer.tsx:234
+#: src/features/session-delivery-options.tsx:30
+#: src/features/session-delivery-options.tsx:72
 msgid "Wait for my confirmation"
 msgstr "完成后等我确认"
 

@@ -11,6 +11,10 @@ after this turn. The latter two call signed `deferred.enqueue`; they do not
 paste into the TUI. `session` returns `deferred[]` to every approved device.
 The browser keeps only its unsent composer draft and preferred delivery mode
 locally. The plus menu shows the pending count and jumps to the queue bubbles.
+Its Send timing row shows the current choice and opens a nested Sheet view.
+Each choice is a full-width radio row with a selected check; Back returns to
+the actions list, while choosing a value closes the Sheet. Tab and arrow keys
+reach the same choices as touch; Enter and Space activate the focused choice.
 
 `deferred.release` sends one item now and `deferred.cancel` removes one item.
 Both are signed writes. Edit loads the item back into the composer and cancels
