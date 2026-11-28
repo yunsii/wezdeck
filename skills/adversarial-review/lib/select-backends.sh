@@ -48,7 +48,7 @@ _probe_backend() {
     return
   fi
   if ! provider_available "$p"; then
-    rc=1; reason=not_on_path
+    rc=1; reason="$(provider_unavailable_reason "$p")"; reason="${reason:-not_on_path}"
   elif [ "$ADV_REVIEW_PROBE" = "0" ]; then
     reason=path_only
   else
@@ -72,6 +72,7 @@ _probe_failures() {
     p="$(_provider_canonical "$p")"
     [[ "$seen" == *" $p "* ]] && continue
     seen+="$p "
+    [ -n "${_PROBE_RESULT[$p]+set}" ] || continue
     [ "${_PROBE_RESULT[$p]:-1}" = 0 ] && continue
     out+="${out:+, }$p=${_PROBE_REASON[$p]:-unknown}"
   done

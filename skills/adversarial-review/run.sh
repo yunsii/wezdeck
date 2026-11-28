@@ -369,6 +369,8 @@ elif [ "$auto_select" -eq 1 ] || [ -z "$reviewer" ] || [ -z "$refuter" ]; then
     select_reason="${SEL_REASON:-}"
     log "backend select: writer=$writer → $reviewer vs $refuter (form=$select_form degraded=$select_degraded)"
     log "  reason: $select_reason"
+    excluded="$(_probe_failures "$(role_candidates adversarial find) $(role_candidates adversarial refute)")"
+    [ -z "$excluded" ] || log "  excluded: $excluded"
   else
     die "${SEL_REASON:-no review backends available} (writer=$writer)" 2
   fi
