@@ -17,6 +17,8 @@ export type Pending = {
   /** ms when sent; also the key */
   at: number
   browserSentAt?: number
+  /** Browser time when the host acknowledged this local write. */
+  acceptedAt?: number
   note?: string
   /** uploaded names sent with it: the bubble shows them as the message will */
   attachments?: Array<string>

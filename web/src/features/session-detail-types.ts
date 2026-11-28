@@ -106,4 +106,6 @@ export type Detail = StatusFields & {
   focus?: { session_id: string; recent?: boolean; archived_ts?: number }
   /** host-persisted unsettled sent messages for this session (remote_outbox.go) */
   outbox?: Array<SentRecord>
+  /** Browser time when the detail request carrying this outbox began. */
+  outboxReadStartedAt?: number
 }

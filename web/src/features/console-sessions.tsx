@@ -26,11 +26,7 @@ import { HostFileProvider } from './host-file-sheet'
 import { ComposerBox, useComposer } from './session-composer'
 import type { Composer, Outgoing } from './session-composer'
 import { hasPromptPanel } from './session-elicitation'
-import {
-  mergeOutboxPending,
-  useFollowReplacement,
-  useSessionWrites,
-} from './session-send'
+import { useFollowReplacement, useSessionWrites } from './session-send'
 import { OutboxNotice, useSentHistoryControl } from './sent-history'
 import { QuickTicketSheet } from './ticket-quick-form'
 import type { MessagePayload } from './composer-images'
@@ -330,13 +326,12 @@ export function SessionDetail({ id }: { id: string }) {
     error,
     setError,
     retryIn,
-    pendingRaw,
+    mergedPending,
     send,
     run,
     resolvePrompt,
     dismiss,
   } = writes
-  const mergedPending = mergeOutboxPending(pendingRaw, data?.outbox)
   useFollowReplacement(data?.replaced_by)
   const end = useRef<HTMLDivElement>(null)
   const messages: Array<Message> = data?.messages ?? []

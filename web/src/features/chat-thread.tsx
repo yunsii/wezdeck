@@ -152,6 +152,17 @@ export function settleCursor(
   return cursor
 }
 
+function useChatRenderTrace(
+  id: string | undefined,
+  shown: number,
+  total: number,
+  pending: number,
+) {
+  useEffect(() => {
+    if (id) trace('chat-render', { id, shown, total, pending })
+  }, [id, shown, total, pending])
+}
+
 /**
  * The agent waits on a foreground command or subagent: the newest message is
  * a call Ctrl+B can move to the background (chat-tools canBackground). That
@@ -286,10 +297,6 @@ export function ChatThread({
   const from = cursor === null ? (baseline.current ?? end) : cursor
   const caught = catchUp(items, start, from)
   const effective = settleCursor(items, start, caught)
-  useEffect(() => {
-    if (sessionId)
-      trace('chat-render', { id: sessionId, shown: effective, total: end })
-  }, [sessionId, effective, end])
   const skippedFrom = caught > from ? from : null
   useCatchUpSignal(skippedFrom)
   // shown at once by a catch-up: no entrance, they were not watched arriving
@@ -310,6 +317,7 @@ export function ChatThread({
   // (0.55 → 1) instead of flashing from opacity 0 with `chat-in`.
   const revealedMessages = messages.slice(0, Math.max(0, effective - start + 1))
   const queue = settleMatches(pending, revealedMessages, start, busy)
+  useChatRenderTrace(sessionId, effective, end, queue.left.length)
   const prevShownPending = useRef<Array<Pending>>([])
   const settledAt = collectSettledIndices(
     queue.took,

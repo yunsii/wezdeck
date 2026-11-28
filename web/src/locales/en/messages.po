@@ -18,7 +18,7 @@ msgctxt "list separator"
 msgid ", "
 msgstr ", "
 
-#: src/features/chat-thread.tsx:517
+#: src/features/chat-thread.tsx:525
 msgid "· summary"
 msgstr "· summary"
 
@@ -51,7 +51,7 @@ msgstr "{bg} background tasks running"
 msgid "{by} proposes splitting off a ticket"
 msgstr "{by} proposes splitting off a ticket"
 
-#: src/features/console-sessions.tsx:312
+#: src/features/console-sessions.tsx:308
 #: src/features/message-composer.tsx:136
 #: src/features/message-composer.tsx:166
 msgid "{count} images"
@@ -1038,7 +1038,7 @@ msgstr "Command"
 msgid "Command output"
 msgstr "Command output"
 
-#: src/features/session-send.ts:450
+#: src/features/session-send.ts:465
 msgid "Command sent: {command}"
 msgstr "Command sent: {command}"
 
@@ -1170,11 +1170,11 @@ msgstr "Context"
 msgid "Context {usedTokens} / {limitTokens}"
 msgstr "Context {usedTokens} / {limitTokens}"
 
-#: src/features/chat-thread.tsx:501
+#: src/features/chat-thread.tsx:509
 msgid "Context compacted (/compact)"
 msgstr "Context compacted (/compact)"
 
-#: src/features/chat-thread.tsx:502
+#: src/features/chat-thread.tsx:510
 msgid "Context compacted automatically"
 msgstr "Context compacted automatically"
 
@@ -1630,7 +1630,7 @@ msgstr "Earlier conversations of this project. The pane switches to the one you 
 msgid "Earlier messages are left out here; the ticket file has them all."
 msgstr "Earlier messages are left out here; the ticket file has them all."
 
-#: src/features/chat-pending.tsx:144
+#: src/features/chat-pending.tsx:146
 msgid "Edit"
 msgstr "Edit"
 
@@ -2106,7 +2106,7 @@ msgstr "interrupt"
 msgid "Interrupt"
 msgstr "Interrupt"
 
-#: src/features/session-send.ts:399
+#: src/features/session-send.ts:414
 msgid "Interrupt sent, but the agent has not confirmed it."
 msgstr "Interrupt sent, but the agent has not confirmed it."
 
@@ -2259,7 +2259,7 @@ msgstr "Load earlier"
 msgid "Load earlier ({start} more)"
 msgstr "Load earlier ({start} more)"
 
-#: src/features/console-sessions.tsx:274
+#: src/features/console-sessions.tsx:270
 msgid "Loaded back into input"
 msgstr "Loaded back into input"
 
@@ -2769,7 +2769,7 @@ msgstr "Not connected yet: the Worker needs a read-only Cloudflare analytics tok
 msgid "Not delivered"
 msgstr "Not delivered"
 
-#: src/features/chat-pending.tsx:126
+#: src/features/chat-pending.tsx:128
 msgid "Not delivered: the agent went idle without it"
 msgstr "Not delivered: the agent went idle without it"
 
@@ -3226,7 +3226,7 @@ msgctxt "ticket bucket"
 msgid "Queued"
 msgstr "Queued"
 
-#: src/features/chat-pending.tsx:71
+#: src/features/chat-pending.tsx:73
 msgid "Queued messages"
 msgstr "Queued messages"
 
@@ -3384,7 +3384,7 @@ msgstr "Remote devices"
 msgid "Remote project"
 msgstr "Remote project"
 
-#: src/features/chat-pending.tsx:164
+#: src/features/chat-pending.tsx:166
 msgid "Remove"
 msgstr "Remove"
 
@@ -3543,7 +3543,7 @@ msgstr "Research done"
 msgid "research failed"
 msgstr "research failed"
 
-#: src/features/chat-pending.tsx:134
+#: src/features/chat-pending.tsx:136
 #: src/features/sent-history-row.tsx:161
 msgid "Resend"
 msgstr "Resend"
@@ -3932,11 +3932,11 @@ msgstr "Send (also on a touch screen, where Enter is a new line)"
 msgid "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 msgstr "Send Ctrl+B: the running command keeps going in the background and the agent carries on"
 
-#: src/features/chat-pending.tsx:125
+#: src/features/chat-pending.tsx:127
 msgid "Send failed"
 msgstr "Send failed"
 
-#: src/features/chat-pending.tsx:124
+#: src/features/chat-pending.tsx:126
 msgid "Send failed: {errorText}"
 msgstr "Send failed: {errorText}"
 
@@ -4449,7 +4449,7 @@ msgstr "Text caret"
 msgid "The agent asks:"
 msgstr "The agent asks:"
 
-#: src/features/console-sessions.tsx:161
+#: src/features/console-sessions.tsx:157
 msgid "The agent is asking for a confirmation: answer it with the keys above."
 msgstr "The agent is asking for a confirmation: answer it with the keys above."
 
@@ -4484,7 +4484,7 @@ msgstr "The contract or behaviour you expect — the target checks this first"
 msgid "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 msgstr "The foreground app is not WezTerm, so Runtime is holding the last WezTerm sample."
 
-#: src/features/session-send.ts:288
+#: src/features/session-send.ts:303
 msgid "The host did not confirm the action; please check and retry."
 msgstr "The host did not confirm the action; please check and retry."
 
@@ -4496,7 +4496,7 @@ msgstr "The local Runtime restarted (about {gone} s without it)"
 msgid "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 msgstr "The local Runtime started a few minutes ago (a runtime sync restarts it)"
 
-#: src/features/session-send.ts:452
+#: src/features/session-send.ts:467
 msgid "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 msgstr "The message was pasted, but tmux could not press Enter. Check the terminal input before retrying. Diagnostic ID: {op_id}"
 
@@ -4564,7 +4564,7 @@ msgstr "This conversation is read-only."
 msgid "This device"
 msgstr "This device"
 
-#: src/features/console-sessions.tsx:157
+#: src/features/console-sessions.tsx:153
 #: src/features/ticket-proposals.tsx:291
 #: src/features/ticket-reply.tsx:245
 msgid "This device is not approved yet (Settings › Device access)."
@@ -4755,7 +4755,7 @@ msgstr "tmux window"
 msgid "To"
 msgstr "To"
 
-#: src/features/chat-pending.tsx:154
+#: src/features/chat-pending.tsx:156
 #: src/features/sent-history-row.tsx:174
 msgid "To ticket"
 msgstr "To ticket"
@@ -4828,11 +4828,11 @@ msgid "Turn {turns}"
 msgstr "Turn {turns}"
 
 #: src/features/session-detail-parts.tsx:90
-#: src/features/session-send.ts:395
+#: src/features/session-send.ts:410
 msgid "Turn interrupted"
 msgstr "Turn interrupted"
 
-#: src/features/console-sessions.tsx:231
+#: src/features/console-sessions.tsx:227
 msgid "Turn message into ticket"
 msgstr "Turn message into ticket"
 
