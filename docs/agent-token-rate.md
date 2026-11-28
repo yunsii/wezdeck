@@ -77,7 +77,12 @@ scripts/dev/probe-agent-otel.sh --providers claude-kimi,codex,grok
 ## Web Console Surface
 
 - **Working turn line** (`chat-turn.tsx`): appends smoothed effective rate
-  (`运行中… 42s · ↓ 1.8k tokens · 88.6 tok/s`) when available.
+  (`运行中… 42s · ↓ 1.8k tokens · 88.6 tok/s`) when available. A Claude API
+  error ends the web turn even if its `Stop` hook is absent, so this historical
+  rate is no longer presented as current activity. The relay derives `done`
+  from the newest transcript conversation event after `turn_started`, cached
+  by file size; a later user turn clears the projection. The hook-owned
+  attention state is unchanged.
 - **Session info** (`session-info.tsx`, under Usage): shows `Output rate` with
   effective rate, pure decode rate, TTFT (when OTel provides it), and source
   (`otel` or `transcript`).

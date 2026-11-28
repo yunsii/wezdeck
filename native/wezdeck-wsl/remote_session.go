@@ -428,6 +428,8 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			if !readOnly && !paneOwnsSessionAgent(cmd, profile, agent) {
 				continue
 			}
+			e = settleClaudeAPIError(e, path, agent)
+			card.Status, card.RunningKind = e.Status, e.RunningKind
 			card.Agent = agent
 			card.Transcript = true
 			card.Title = resolveSessionTitle(e.SessionID, path, agent)
@@ -716,6 +718,12 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 			return nil, err
 		}
 		loadedTranscript = t
+		e = settleClaudeAPIError(e, path, agent)
+		out["status"], out["running_kind"], out["ts"] = e.Status, e.RunningKind, e.TS
+		if e.Status == "done" {
+			delete(out, "turn_started")
+			delete(out, "compact_started")
+		}
 		out["meta"] = sessionMetaWithPane(e, path, agent, t, cwd, cmd, paneIndex, paneAlive)
 		transcriptsMu.Lock()
 		total := len(t.messages)
