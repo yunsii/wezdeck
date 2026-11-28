@@ -579,7 +579,7 @@ msgstr "批准计划"
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "请先在「设备权限」批准此设备后再管理自动标题。"
 
-#: src/features/host-quick-controls.tsx:82
+#: src/features/host-quick-controls.tsx:83
 #: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "请先在「设备授权」中批准这台设备，再使用主机控制。"
@@ -780,6 +780,10 @@ msgstr "方块"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "方块和下划线需要 Chrome 144 及以上；其他浏览器仍显示细线。"
 
+#: src/features/disk-reclaim-control.tsx:125
+msgid "Blocked"
+msgstr "已阻止"
+
 #: src/features/ticket-pipeline.tsx:312
 msgid "Blocked by dependency"
 msgstr "被前置阻塞"
@@ -855,6 +859,7 @@ msgstr "暂时拿不到最新内容，显示的是 {staleAt} 的内容："
 msgid "cancel"
 msgstr "取消"
 
+#: src/features/disk-reclaim-control.tsx:203
 #: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
@@ -911,7 +916,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "变更"
 
-#: src/features/host-quick-controls.tsx:117
+#: src/features/host-quick-controls.tsx:119
 msgid "Changing One Client…"
 msgstr "正在切换 One Client…"
 
@@ -922,6 +927,14 @@ msgstr "重新检查"
 #: src/features/me-app.tsx:87
 msgid "Check for updates"
 msgstr "检查更新"
+
+#: src/features/disk-reclaim-control.tsx:118
+msgid "Checking"
+msgstr "检查中"
+
+#: src/features/disk-reclaim-control.tsx:122
+msgid "Checking services"
+msgstr "检查服务"
 
 #: src/features/me-app.tsx:87
 #: src/features/me-device-access.tsx:13
@@ -1095,6 +1108,11 @@ msgctxt "git"
 msgid "Commits"
 msgstr "提交"
 
+#: src/features/disk-reclaim-control.tsx:147
+#: src/features/disk-reclaim-control.tsx:190
+msgid "Compact and restart WSL"
+msgstr "压缩磁盘并重启 WSL"
+
 #: src/features/chat-turn.tsx:146
 msgid "Compacting conversation"
 msgstr "正在压缩上下文"
@@ -1102,6 +1120,14 @@ msgstr "正在压缩上下文"
 #: src/features/session-status-text.ts:19
 msgid "compacting the context"
 msgstr "正在压缩上下文"
+
+#: src/features/disk-reclaim-control.tsx:120
+msgid "Compacting VHDX"
+msgstr "压缩 VHDX"
+
+#: src/features/disk-reclaim-control.tsx:123
+msgid "Completed"
+msgstr "已完成"
 
 #: src/features/console-keys.tsx:103
 msgid "Composer"
@@ -1119,6 +1145,7 @@ msgstr "确认"
 msgid "Confirm & create ticket"
 msgstr "确认并创建工单"
 
+#: src/features/disk-reclaim-control.tsx:211
 #: src/features/ticket-proposals.tsx:368
 msgid "Confirm and start"
 msgstr "确认并开始"
@@ -1156,16 +1183,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "冲突"
 
-#: src/features/host-quick-controls.tsx:120
+#: src/features/host-quick-controls.tsx:122
 msgid "Connect One Client"
 msgstr "连接 One Client"
 
-#: src/features/host-quick-controls.tsx:64
-#: src/features/host-quick-controls.tsx:73
+#: src/features/host-quick-controls.tsx:65
+#: src/features/host-quick-controls.tsx:74
 msgid "Connected"
 msgstr "已连接"
 
-#: src/features/host-quick-controls.tsx:66
+#: src/features/host-quick-controls.tsx:67
 #: src/features/remote-badge.tsx:87
 #: src/features/remote-badge.tsx:94
 msgid "Connecting…"
@@ -1175,7 +1202,7 @@ msgstr "连接中…"
 msgid "Connection"
 msgstr "连接"
 
-#: src/features/host-quick-controls.tsx:75
+#: src/features/host-quick-controls.tsx:76
 msgid "Connection failed"
 msgstr "连接失败"
 
@@ -1469,6 +1496,15 @@ msgstr "当前运行状态"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "当前样本来自前台 WezTerm 窗口。"
 
+#. placeholder {0}: ((progress.reclaimed_bytes ?? 0) / 1024 ** 3).toFixed(1)
+#: src/features/disk-reclaim-control.tsx:161
+#~ msgid "D drive recovered {0} GiB"
+#~ msgstr "D 盘已回收 {0} GiB"
+
+#: src/features/disk-reclaim-control.tsx:163
+msgid "D drive recovered {reclaimedGiB} GiB"
+msgstr "D 盘已回收 {reclaimedGiB} GiB"
+
 #: src/features/session-permission.tsx:81
 msgid "Daemon"
 msgstr "常驻后台"
@@ -1637,15 +1673,15 @@ msgstr "停用此 Agent"
 msgid "Disabled"
 msgstr "已停用"
 
-#: src/features/host-quick-controls.tsx:119
+#: src/features/host-quick-controls.tsx:121
 msgid "Disconnect One Client"
 msgstr "断开 One Client"
 
-#: src/features/host-quick-controls.tsx:65
+#: src/features/host-quick-controls.tsx:66
 msgid "Disconnected"
 msgstr "已断开"
 
-#: src/features/host-quick-controls.tsx:67
+#: src/features/host-quick-controls.tsx:68
 msgid "Disconnecting…"
 msgstr "正在断开…"
 
@@ -1838,6 +1874,7 @@ msgstr "Fable 档"
 msgid "failed"
 msgstr "失败"
 
+#: src/features/disk-reclaim-control.tsx:124
 #: src/features/me-schedule.tsx:116
 msgid "Failed"
 msgstr "失败"
@@ -2302,7 +2339,7 @@ msgstr "上周"
 msgid "Latest"
 msgstr "回到最新"
 
-#: src/features/host-quick-controls.tsx:103
+#: src/features/host-quick-controls.tsx:105
 msgid "Latest OPPO connection"
 msgstr "最近一次 OPPO 连接"
 
@@ -2759,7 +2796,7 @@ msgstr "下一个等你处理的会话"
 msgid "no"
 msgstr "否"
 
-#: src/features/host-quick-controls.tsx:98
+#: src/features/host-quick-controls.tsx:100
 msgid "No active session"
 msgstr "当前没有远控会话"
 
@@ -2848,7 +2885,7 @@ msgstr "还没有输出"
 msgid "No plan written yet"
 msgstr "还没有写计划"
 
-#: src/features/host-quick-controls.tsx:76
+#: src/features/host-quick-controls.tsx:77
 msgid "No recent result"
 msgstr "暂无最近的连接结果"
 
@@ -3140,7 +3177,7 @@ msgstr "建立连接算 1 次请求。"
 msgid "Opening…"
 msgstr "正在打开…"
 
-#: src/features/host-quick-controls.tsx:93
+#: src/features/host-quick-controls.tsx:95
 msgid "OPPO remote control"
 msgstr "OPPO 远控"
 
@@ -3323,6 +3360,10 @@ msgstr "插件"
 msgid "Prepare workstation"
 msgstr "准备工作站"
 
+#: src/features/disk-reclaim-control.tsx:117
+msgid "Preparing"
+msgstr "准备中"
+
 #: src/features/composer-picked.tsx:64
 msgid "Preview {label}"
 msgstr "预览{label}"
@@ -3393,6 +3434,7 @@ msgstr "放入输入框"
 msgid "Put the caret in the composer"
 msgstr "把光标放进输入框"
 
+#: src/features/disk-reclaim-control.tsx:116
 #: src/features/ticket-pipeline.tsx:334
 #: src/features/ticket-timeline.tsx:101
 msgid "Queued"
@@ -3411,7 +3453,7 @@ msgstr "排队中的消息"
 msgid "Quick AI capture"
 msgstr "快速 AI 提单"
 
-#: src/features/host-quick-controls.tsx:88
+#: src/features/host-quick-controls.tsx:90
 msgid "Quick controls"
 msgstr "快捷控制"
 
@@ -3474,6 +3516,14 @@ msgstr "最近提交"
 #: src/features/composer-suggest-list.tsx:97
 msgid "Recent sent messages"
 msgstr "最近已发消息"
+
+#: src/features/disk-reclaim-control.tsx:119
+msgid "Reclaiming guest blocks"
+msgstr "回收 WSL 空闲块"
+
+#: src/features/disk-reclaim-control.tsx:174
+msgid "Recovery failed"
+msgstr "恢复失败"
 
 #: src/features/session-worktree-lifecycle.tsx:64
 #: src/features/session-worktree-lifecycle.tsx:119
@@ -3791,6 +3841,10 @@ msgstr "在电脑上原地重启这个会话的窗格，agent 会恢复当前对
 #: src/features/session-status-text.ts:13
 msgid "restarting"
 msgstr "正在重启"
+
+#: src/features/disk-reclaim-control.tsx:121
+msgid "Restarting WSL"
+msgstr "重启 WSL"
 
 #: src/features/session-chat-group.tsx:91
 msgid "Restarting…"
@@ -4242,7 +4296,7 @@ msgstr "会话"
 msgid "Session actions"
 msgstr "会话操作"
 
-#: src/features/host-quick-controls.tsx:96
+#: src/features/host-quick-controls.tsx:98
 msgid "Session active"
 msgstr "远控会话进行中"
 
@@ -4885,6 +4939,10 @@ msgstr "当前会话"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "这个会话所在的 tmux 会话（{name}）没有显示在任何 WezTerm 标签里，无处可切"
 
+#: src/features/disk-reclaim-control.tsx:195
+msgid "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
+msgstr "这会停止所有 WSL 会话，包括正在运行的代理。tmux 窗口会重建，但进行中的代理回合会中断。"
+
 #: src/features/me-habits.tsx:319
 msgid "This week"
 msgstr "本周"
@@ -5167,7 +5225,7 @@ msgstr "下划线"
 msgid "Undo"
 msgstr "撤销"
 
-#: src/features/host-quick-controls.tsx:62
+#: src/features/host-quick-controls.tsx:63
 msgid "Unknown"
 msgstr "未知"
 
@@ -5621,6 +5679,14 @@ msgstr "工作树"
 #: src/features/me-host.tsx:151
 msgid "WSL bridge"
 msgstr "WSL 通道"
+
+#: src/features/disk-reclaim-control.tsx:133
+msgid "WSL disk"
+msgstr "WSL 磁盘"
+
+#: src/features/disk-reclaim-control.tsx:168
+msgid "WSL offline; progress resumes after reconnect"
+msgstr "WSL 已离线，重连后继续更新进度"
 
 #: src/features/me-habits.tsx:94
 msgid "WSL relay"

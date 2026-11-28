@@ -41,8 +41,11 @@ tests its NTFS status handshake, snapshots tmux and runs the same service/Web
 health checks while WSL stays up; it skips cache cleanup, TRIM and compaction.
 The actual command refuses to stop WSL while any turn is
 running or waiting; `--force-stop` explicitly permits interrupting them. The
-actual command needs a real terminal for `sudo fstrim` and must be approved
-with the understanding that all WSL processes, including this caller, stop.
+interactive command needs a real terminal for `sudo fstrim`.
+`--noninteractive` moves TRIM into the Windows worker, which invokes only
+`/sbin/fstrim -av` as the selected WSL distro's root user before compaction;
+the Windows preflight first checks that this root call is available. Either
+path must be approved with the understanding that all WSL processes stop.
 The script clears only the Go build cache, snapshots tmux, runs `sudo fstrim`, and
 hands compaction to a Windows PowerShell worker. The worker checks that the
 VHDX matches the distro's Windows registry path before WSL stops, then
@@ -62,6 +65,16 @@ Override machine-specific targets with `--distro`,
 `--vhdx`, `--keepalive-task`, `--wsl-user` or `--web-origin`. The browser
 reconnects through its existing retry path once the host relay is back; the
 worker verifies host connectivity, not each individual browser tab.
+
+An approved WezDeck Web device can also start this fixed job from
+**我的 → 快捷控制 → WSL 磁盘**. The confirmation states that every WSL session
+will stop; the signed request records the initiating device ID and returns a
+task ID. In this path the Windows worker performs `/sbin/fstrim -av` as the
+specified distro's root user, then compacts and restarts. Progress is written
+to NTFS while WSL is down. When the relay reconnects, it sends the latest
+phase only to the initiating device; the Web view also refetches status to
+recover any missed events. A local loopback page uses the same status file
+with polling when no paired relay channel exists.
 
 Order matters — compacting before trimming reclaims nothing, and every step after the first requires the distro to be fully stopped.
 

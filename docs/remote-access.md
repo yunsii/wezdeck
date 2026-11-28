@@ -214,6 +214,17 @@ writing to the DO socket fails, and browser diagnostics snapshots keep an
 independent 80-entry `linkEvents` ring buffer (`remote-link-trace.ts`) so
 high-volume UI traces never evict disconnect / timeout forensics.
 
+WSL disk reclaim started from **我的 → 快捷控制** uses a signed
+`disk.reclaim.start` request. The host records the verified device ID and
+task ID on NTFS before WSL stops. The Windows worker keeps writing phase and
+outcome there while the WSL relay is unavailable. On reconnect,
+`device.hello` causes the relay to send `disk.reclaim.progress` to that
+device, and later state changes use the same targeted frame. The page also
+refetches `disk.reclaim.status` so a missed frame cannot hide the final
+result. No raw command or transcript enters the push frame; only task ID,
+phase, clipped error and reclaimed byte counts do. The loopback Runtime uses
+the same signed-off UI flow with a browser-local target ID and status polling.
+
 Rotation (`rm` the env file, rerun install + `--push-secrets`) evicts open
 browser sockets: each carries a SHA-256 tag of its token, checked by the DO on
 every message and on every new connection (the host reconnects with the new

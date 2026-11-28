@@ -238,6 +238,7 @@ func runRelay() error {
 	defer cleanupControl()
 	go startAutoTitler(rootCtx)
 	go r.runPushWatcher(rootCtx)
+	go r.runDiskReclaimWatcher(rootCtx)
 	go runDeferredWatcher(rootCtx.Done())
 
 	backoff := 250 * time.Millisecond
@@ -503,7 +504,11 @@ func dispatchRPC(f relayFrame, via string, r *relay, timingOpt ...*rpcTiming) (a
 			via, f.Cid, out.DeviceID, out.State, out.InviteBound)
 		return out.Result, nil
 	case "device.hello":
-		return r.deviceHello(f.Args, f.Cid, via)
+		result, err := r.deviceHello(f.Args, f.Cid, via)
+		if err == nil {
+			r.sendDiskReclaimToClient(f.Cid, r.deviceOf(f.Cid))
+		}
+		return result, err
 	case "diag.submit":
 		return diagSubmit(f.Args, f.Cid, r)
 	}
@@ -513,13 +518,16 @@ func dispatchRPC(f relayFrame, via string, r *relay, timingOpt ...*rpcTiming) (a
 			return nil, err
 		}
 	}
+	if f.Action == "disk.reclaim.status" {
+		return diskReclaimStatus(r.deviceOf(f.Cid)), nil
+	}
 	if result, ok, err := readRPC(f.Action, f.Args, timing); ok {
 		return result, err
 	}
 	switch f.Action {
 	case "usage":
 		return fetchUsage()
-	case "send", "deferred.enqueue", "deferred.release", "deferred.cancel", "key", "reply", "attach", "upload", "sent.action", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "repo.agent.set", "session.restart", "session.pin", "session.delete",
+	case "send", "deferred.enqueue", "deferred.release", "deferred.cancel", "key", "reply", "attach", "upload", "sent.action", "clear", "session.new", "session.new.trust", "agent.profile.configure", "agent.profile.model", "agent.profile.settings", "repo.agent.set", "session.restart", "session.pin", "session.delete", "disk.reclaim.start",
 		"session.handoff", "session.autotitle.update", "habit.refresh", "habit.schedule.update", "ticket.draft", "ticket.new", "ticket.close", "ticket.manager.start", "ticket.manager.park", "ticket.manager.send", "worktree.describe", "worktree.recycle", "worktree.remove", "host.warp.set":
 		w, device, err := verifyWrite(f.Action, f.Args)
 		if err != nil {
@@ -539,6 +547,7 @@ var signedActions = map[string]bool{
 	"session.handoff": true, "session.autotitle.update": true, "ticket.draft": true, "ticket.new": true, "ticket.close": true, "ticket.manager.start": true, "ticket.manager.park": true, "ticket.manager.send": true, "worktree.describe": true, "worktree.recycle": true, "worktree.remove": true, "host.warp.set": true,
 	"habit.refresh":         true,
 	"habit.schedule.update": true,
+	"disk.reclaim.start":    true,
 }
 
 // handleRPC answers one request frame and logs it. Slow RPCs also emit a

@@ -21,8 +21,11 @@ FORCE_STOP=0
 DRY_RUN=0
 SMOKE=0
 SHOW_STATUS=0
+NONINTERACTIVE=0
+TASK_ID=""
+TARGET_DEVICE=""
 usage() {
-  printf 'usage: %s [--status|--dry-run|--smoke] [--force-stop] [--distro NAME] [--vhdx WIN_PATH] [--keepalive-task NAME] [--wsl-user NAME] [--web-origin HTTPS_URL]\n' "$0"
+  printf 'usage: %s [--status|--dry-run|--smoke] [--force-stop] [--noninteractive] [--distro NAME] [--vhdx WIN_PATH] [--keepalive-task NAME] [--wsl-user NAME] [--web-origin HTTPS_URL]\n' "$0"
 }
 while (($#)); do
   case "$1" in
@@ -30,6 +33,9 @@ while (($#)); do
     --smoke) SMOKE=1 ;;
     --status) SHOW_STATUS=1 ;;
     --force-stop) FORCE_STOP=1 ;;
+    --noninteractive) NONINTERACTIVE=1 ;;
+    --task-id) TASK_ID="${2:-}"; shift ;;
+    --target-device) TARGET_DEVICE="${2:-}"; shift ;;
     --distro) DISTRO="${2:-}"; shift ;;
     --vhdx) VHDX="${2:-}"; shift ;;
     --keepalive-task) KEEPALIVE="${2:-}"; shift ;;
@@ -45,6 +51,8 @@ done
 [[ "$DISTRO" =~ ^[A-Za-z0-9._-]+$ && "$WSL_USER" =~ ^[A-Za-z0-9._-]+$ ]] || {
   printf 'invalid distro or WSL user\n' >&2; exit 2;
 }
+[[ -z "$TASK_ID" || "$TASK_ID" =~ ^[0-9a-f]{16}$ ]] || { printf 'invalid task id\n' >&2; exit 2; }
+[[ -z "$TARGET_DEVICE" || "$TARGET_DEVICE" =~ ^[A-Za-z0-9_.:-]{1,128}$ ]] || { printf 'invalid target device\n' >&2; exit 2; }
 [[ "$VHDX" =~ ^[A-Za-z]:\\.+\.vhdx$ ]] || { printf 'invalid Windows VHDX path\n' >&2; exit 2; }
 [[ "$WEB_ORIGIN" == https://* ]] || { printf 'web origin must use HTTPS\n' >&2; exit 2; }
 windows_runtime_detect_paths || { printf 'Windows runtime paths unavailable\n' >&2; exit 1; }
@@ -67,15 +75,21 @@ if (( SMOKE )); then
 fi
 if (( SHOW_STATUS )); then
   [[ -f "$STATUS_WSL" ]] || { printf 'no reclaim status at %s\n' "$STATUS_WIN" >&2; exit 1; }
-  jq '{phase,stage,failed_stage,error,measure_error,started_at,updated_at,duration_seconds,distro,vhdx,active_attention,snapshot_windows,
+  jq '{task_id,target_device,phase,stage,failed_stage,error,measure_error,started_at,updated_at,duration_seconds,distro,vhdx,active_attention,snapshot_windows,
     before_free_bytes,after_free_bytes,reclaimed_bytes,before_vhdx_bytes,
     after_vhdx_bytes,vhdx_reduced_bytes,compact_exit,verify_exit,
     compact_output,verify_output,keepalive_state,restart_attempt_exit,restart_error}' "$STATUS_WSL"
   exit 0
 fi
-if [[ -f "$STATUS_WSL" ]] && jq -e '.phase == "preflight" or .phase == "compacting" or .phase == "restarting"' "$STATUS_WSL" >/dev/null 2>&1; then
-  printf 'an earlier reclaim job is still in progress; inspect %s\n' "$STATUS_WIN" >&2
-  exit 22
+if [[ -f "$STATUS_WSL" ]] && jq -e '.phase | IN("queued","preparing","preflight","trimming","compacting","restarting","verifying")' "$STATUS_WSL" >/dev/null 2>&1; then
+  queued_for_self=0
+  if [[ -n "$TASK_ID" ]] && jq -e --arg id "$TASK_ID" '.phase == "queued" and .task_id == $id' "$STATUS_WSL" >/dev/null 2>&1; then
+    queued_for_self=1
+  fi
+  if (( ! queued_for_self )); then
+    printf 'an earlier reclaim job is still in progress; inspect %s\n' "$STATUS_WIN" >&2
+    exit 22
+  fi
 fi
 
 stage=preflight
@@ -92,9 +106,10 @@ write_prepare_status() {
   (( DRY_RUN == 0 )) || return 0
   local temp="${STATUS_WSL}.tmp.$$"
   jq -n --arg phase "$phase" --arg stage "$stage" --arg error "$message" \
+    --arg task "$TASK_ID" --arg device "$TARGET_DEVICE" \
     --arg distro "$DISTRO" --arg vhdx "$VHDX" \
     --argjson active "$active_count" --arg started "$started_at" --arg time "$(date -Is)" '
-    {phase:$phase,stage:$stage,started_at:$started,updated_at:$time,distro:$distro,vhdx:$vhdx,
+    {task_id:$task,target_device:$device,phase:$phase,stage:$stage,started_at:$started,updated_at:$time,distro:$distro,vhdx:$vhdx,
       active_attention:$active} | if $error != "" then .error=$error else . end
   ' > "$temp"
   mv -f "$temp" "$STATUS_WSL"
@@ -159,6 +174,12 @@ verify_arg="$(windows_powershell_quote "$VERIFY_SCRIPT")"
 origin_arg="$(windows_powershell_quote "$WEB_ORIGIN")"
 signal_arg="$(windows_powershell_quote "$SIGNAL_WIN")"
 worker_call="& $worker_path -Distro $distro_arg -Vhdx $vhdx_arg -KeepaliveTask $keepalive_arg -WslUser $user_arg -VerifyScript $verify_arg -WebOrigin $origin_arg -StatusPath $status_path -StartSignalPath $signal_arg"
+if [[ -n "$TASK_ID" ]]; then
+  worker_call+=" -TaskId $(windows_powershell_quote "$TASK_ID") -TargetDevice $(windows_powershell_quote "$TARGET_DEVICE")"
+fi
+if (( NONINTERACTIVE )); then
+  worker_call+=' -TrimGuest'
+fi
 if ! preflight_output="$(windows_run_powershell_command_utf8 "$worker_call -PreflightOnly" 2>&1)"; then
   write_prepare_status failed "Windows preflight failed: ${preflight_output:0:500}"
   printf '%s\n' "$preflight_output" >&2
@@ -173,7 +194,7 @@ fi
 stage=tmux_snapshot
 "$REPO_ROOT/scripts/runtime/tmux-session-persist.sh" save
 stage=fstrim
-if (( ! SMOKE )); then
+if (( ! SMOKE && ! NONINTERACTIVE )); then
   if ! trim_output="$(sudo fstrim -av 2>&1)"; then
     write_prepare_status failed "fstrim failed: ${trim_output:0:500}"
     printf '%s\n' "$trim_output" >&2

@@ -3,7 +3,6 @@ import {
   OPEN_ACTIONS,
   buildSignedWriteArgs,
   isTransientReconnectError,
-  refusal,
   retriable,
 } from './remote-auth'
 import {
@@ -25,12 +24,13 @@ import {
   notReadyError,
   parseRelayFrame,
   recordLinkEvent,
-  recordRpcTiming,
 } from './remote-link-trace'
 import type { RemoteMode, RemotePath, RemoteState } from './remote-link-trace'
 import { RemoteRtc } from './remote-rtc'
 import { ReplyParts } from './reply-parts'
 import { median } from './rtc-path'
+import { settleRemoteReply } from './remote-link-rpc'
+import type { Pending } from './remote-link-rpc'
 
 export { NOT_PAIRED, forcedRemote }
 export type { RemoteMode, RemotePath, RemoteState }
@@ -49,14 +49,6 @@ const RECONNECT_GRACE_MS = 6_000
 const OFFLINE_RTC_GRACE_MS = 2_000
 
 type Frame = Record<string, unknown> & { t: string; id?: string }
-type Pending = {
-  action: string
-  startedAt: number
-  resolve: (value: unknown) => void
-  reject: (error: Error) => void
-  timer: ReturnType<typeof setTimeout>
-}
-
 class RemoteLink {
   state: RemoteState = {
     mode: 'unpaired',
@@ -317,32 +309,24 @@ class RemoteLink {
       case 'diag.request':
         this.hostRequest?.(frame)
         return
+      case 'disk.reclaim.progress':
+        window.dispatchEvent(
+          new CustomEvent('wezdeck:disk-reclaim-progress', {
+            detail: frame.data,
+          }),
+        )
+        return
       case 'res':
-        this.onResFrame(frame, via)
+        settleRemoteReply(frame, via, this.pending, () =>
+          this.set({
+            rpcCount: {
+              ...this.state.rpcCount,
+              [via]: this.state.rpcCount[via] + 1,
+            },
+          }),
+        )
         return
     }
-  }
-
-  private onResFrame(frame: Frame, via: 'websocket' | 'webrtc') {
-    const entry = this.pending.get(frame.id ?? '')
-    if (!entry) return
-    this.pending.delete(frame.id ?? '')
-    clearTimeout(entry.timer)
-    recordRpcTiming({
-      action: entry.action,
-      via,
-      clientMs: performance.now() - entry.startedAt,
-      hostMs: typeof frame.host_ms === 'number' ? frame.host_ms : undefined,
-      ok: frame.ok !== false,
-    })
-    this.set({
-      rpcCount: {
-        ...this.state.rpcCount,
-        [via]: this.state.rpcCount[via] + 1,
-      },
-    })
-    if (frame.ok === false) entry.reject(refusal(String(frame.error ?? '')))
-    else entry.resolve(frame.result)
   }
 
   private onHostFrame(frame: Frame) {

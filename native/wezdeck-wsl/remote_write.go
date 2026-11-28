@@ -96,6 +96,8 @@ func runWrite(action string, args json.RawMessage, via, device string, logf func
 		result, err = sendTicketManager(args)
 	case "host.warp.set":
 		result, err = setWarp(args)
+	case "disk.reclaim.start":
+		result, err = startDiskReclaim(args, via, device)
 	case "worktree.describe":
 		result, err = describeWorktree(args)
 	case "worktree.recycle", "worktree.remove":

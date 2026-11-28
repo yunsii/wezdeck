@@ -162,9 +162,19 @@ func dispatch(req request) response {
 	case "remote.diag.submit":
 		// …and handing its snapshot back, chunk by chunk
 		res.Result, err = relayControlCall("POST", "/diag/submit", req.Payload)
+	case "remote.disk.reclaim.status":
+		var reclaimArgs struct {
+			TargetDevice string `json:"target_device"`
+		}
+		_ = json.Unmarshal(req.Payload, &reclaimArgs)
+		device := "local"
+		if sessionIDPattern.MatchString(reclaimArgs.TargetDevice) {
+			device = reclaimArgs.TargetDevice
+		}
+		res.Result = diskReclaimStatus(device)
 	case "remote.send", "remote.deferred.enqueue", "remote.deferred.release", "remote.deferred.cancel", "remote.key", "remote.reply", "remote.attach", "remote.upload",
 		"remote.sent.action", "remote.clear", "remote.session.new", "remote.session.new.trust", "remote.agent.profile.configure", "remote.agent.profile.model", "remote.agent.profile.settings", "remote.repo.agent.set", "remote.session.restart", "remote.session.pin", "remote.session.delete",
-		"remote.session.handoff", "remote.session.autotitle.update", "remote.habit.refresh", "remote.habit.schedule.update", "remote.ticket.draft", "remote.ticket.new", "remote.ticket.close", "remote.ticket.manager.start", "remote.ticket.manager.park", "remote.ticket.manager.send", "remote.worktree.describe", "remote.worktree.recycle", "remote.worktree.remove", "remote.host.warp.set":
+		"remote.session.handoff", "remote.session.autotitle.update", "remote.habit.refresh", "remote.habit.schedule.update", "remote.ticket.draft", "remote.ticket.new", "remote.ticket.close", "remote.ticket.manager.start", "remote.ticket.manager.park", "remote.ticket.manager.send", "remote.worktree.describe", "remote.worktree.recycle", "remote.worktree.remove", "remote.host.warp.set", "remote.disk.reclaim.start":
 		// a browser on this computer through the local Runtime (remote_write.go)
 		payload := req.Payload
 		if len(payload) == 0 || string(payload) == "null" {

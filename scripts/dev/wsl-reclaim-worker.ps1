@@ -10,6 +10,9 @@ param(
   [string]$StartSignalPath,
   [int]$ActiveAttention = 0,
   [int]$SnapshotWindows = 0,
+  [string]$TaskId = '',
+  [string]$TargetDevice = '',
+  [switch]$TrimGuest,
   [switch]$Simulate,
   [switch]$PreflightOnly
 )
@@ -17,6 +20,8 @@ $ErrorActionPreference = 'Stop'
 $status = [ordered]@{
   phase = 'preflight'; started_at = (Get-Date).ToString('o'); distro = $Distro; vhdx = $Vhdx
   active_attention = $ActiveAttention; snapshot_windows = $SnapshotWindows
+  task_id = $TaskId; target_device = $TargetDevice
+  history = @(); last_phase = ''
 }
 $stopAttempted = $false
 function Assert-Preflight {
@@ -35,6 +40,10 @@ function Assert-Preflight {
 }
 function Publish {
   $status.updated_at = (Get-Date).ToString('o')
+  if ($status.last_phase -ne $status.phase) {
+    $status.history += @{ phase = $status.phase; at = $status.updated_at }
+    $status.last_phase = $status.phase
+  }
   $status.duration_seconds = [math]::Round(((Get-Date) - [datetime]$status.started_at).TotalSeconds, 1)
   $temp = "$StatusPath.tmp.$PID"
   [System.IO.File]::WriteAllText($temp, ($status | ConvertTo-Json -Depth 4), [System.Text.UTF8Encoding]::new($false))
@@ -55,6 +64,10 @@ function Invoke-Wsl([string[]]$Arguments) {
 }
 if ($PreflightOnly) {
   Assert-Preflight
+  if ($TrimGuest) {
+    $rootCheck = Invoke-Wsl @('--distribution', $Distro, '--user', 'root', '--exec', '/usr/bin/id', '-u')
+    if ($rootCheck.Exit -ne 0 -or $rootCheck.Output -ne '0') { throw 'WSL root fstrim capability unavailable' }
+  }
   Write-Output 'windows_preflight=ok'
   exit 0
 }
@@ -72,6 +85,13 @@ try {
     Start-Sleep -Milliseconds 250
   }
   Remove-Item -LiteralPath $StartSignalPath -Force
+  if ($TrimGuest -and -not $Simulate) {
+    $status.phase = 'trimming'; Publish
+    $trim = Invoke-Wsl @('--distribution', $Distro, '--user', 'root', '--exec', '/sbin/fstrim', '-av')
+    $status.trim_output = $trim.Output
+    $status.trim_exit = $trim.Exit
+    if ($trim.Exit -ne 0) { throw "WSL fstrim failed: $($trim.Exit)" }
+  }
   if ($Simulate) {
     $status.phase = 'verifying'; Publish
     $verify = Invoke-Wsl @('--distribution', $Distro, '--user', $WslUser, '--exec', '/bin/bash', $VerifyScript, $WebOrigin)

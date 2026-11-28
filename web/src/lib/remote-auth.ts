@@ -30,6 +30,7 @@ export const OPEN_ACTIONS = new Set([
   'ticket.new',
   'worktree.describe',
   'host.warp.set',
+  'disk.reclaim.start',
 ])
 
 /**

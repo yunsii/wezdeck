@@ -579,7 +579,7 @@ msgstr "Approve the plan"
 msgid "Approve this device in Device access to manage auto titles."
 msgstr "Approve this device in Device access to manage auto titles."
 
-#: src/features/host-quick-controls.tsx:82
+#: src/features/host-quick-controls.tsx:83
 #: src/features/me-host.tsx:70
 msgid "Approve this device in Device access to use host controls."
 msgstr "Approve this device in Device access to use host controls."
@@ -780,6 +780,10 @@ msgstr "Block"
 msgid "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 msgstr "Block and underscore need Chrome 144 or later; other browsers keep the bar."
 
+#: src/features/disk-reclaim-control.tsx:125
+msgid "Blocked"
+msgstr "Blocked"
+
 #: src/features/ticket-pipeline.tsx:312
 msgid "Blocked by dependency"
 msgstr "Blocked by dependency"
@@ -855,6 +859,7 @@ msgstr "Can't get the latest from the host, showing {staleAt}:"
 msgid "cancel"
 msgstr "cancel"
 
+#: src/features/disk-reclaim-control.tsx:203
 #: src/features/session-delete.tsx:149
 #: src/features/session-handoff.tsx:278
 #: src/features/session-purpose.tsx:115
@@ -911,7 +916,7 @@ msgctxt "git"
 msgid "Changes"
 msgstr "Changes"
 
-#: src/features/host-quick-controls.tsx:117
+#: src/features/host-quick-controls.tsx:119
 msgid "Changing One Client…"
 msgstr "Changing One Client…"
 
@@ -922,6 +927,14 @@ msgstr "Check again"
 #: src/features/me-app.tsx:87
 msgid "Check for updates"
 msgstr "Check for updates"
+
+#: src/features/disk-reclaim-control.tsx:118
+msgid "Checking"
+msgstr "Checking"
+
+#: src/features/disk-reclaim-control.tsx:122
+msgid "Checking services"
+msgstr "Checking services"
 
 #: src/features/me-app.tsx:87
 #: src/features/me-device-access.tsx:13
@@ -1095,6 +1108,11 @@ msgctxt "git"
 msgid "Commits"
 msgstr "Commits"
 
+#: src/features/disk-reclaim-control.tsx:147
+#: src/features/disk-reclaim-control.tsx:190
+msgid "Compact and restart WSL"
+msgstr "Compact and restart WSL"
+
 #: src/features/chat-turn.tsx:146
 msgid "Compacting conversation"
 msgstr "Compacting conversation"
@@ -1102,6 +1120,14 @@ msgstr "Compacting conversation"
 #: src/features/session-status-text.ts:19
 msgid "compacting the context"
 msgstr "compacting the context"
+
+#: src/features/disk-reclaim-control.tsx:120
+msgid "Compacting VHDX"
+msgstr "Compacting VHDX"
+
+#: src/features/disk-reclaim-control.tsx:123
+msgid "Completed"
+msgstr "Completed"
 
 #: src/features/console-keys.tsx:103
 msgid "Composer"
@@ -1119,6 +1145,7 @@ msgstr "confirm"
 msgid "Confirm & create ticket"
 msgstr "Confirm & create ticket"
 
+#: src/features/disk-reclaim-control.tsx:211
 #: src/features/ticket-proposals.tsx:368
 msgid "Confirm and start"
 msgstr "Confirm and start"
@@ -1156,16 +1183,16 @@ msgctxt "git"
 msgid "Conflicts"
 msgstr "Conflicts"
 
-#: src/features/host-quick-controls.tsx:120
+#: src/features/host-quick-controls.tsx:122
 msgid "Connect One Client"
 msgstr "Connect One Client"
 
-#: src/features/host-quick-controls.tsx:64
-#: src/features/host-quick-controls.tsx:73
+#: src/features/host-quick-controls.tsx:65
+#: src/features/host-quick-controls.tsx:74
 msgid "Connected"
 msgstr "Connected"
 
-#: src/features/host-quick-controls.tsx:66
+#: src/features/host-quick-controls.tsx:67
 #: src/features/remote-badge.tsx:87
 #: src/features/remote-badge.tsx:94
 msgid "Connecting…"
@@ -1175,7 +1202,7 @@ msgstr "Connecting…"
 msgid "Connection"
 msgstr "Connection"
 
-#: src/features/host-quick-controls.tsx:75
+#: src/features/host-quick-controls.tsx:76
 msgid "Connection failed"
 msgstr "Connection failed"
 
@@ -1469,6 +1496,15 @@ msgstr "Current runner"
 msgid "Current sample is from the foreground WezTerm window."
 msgstr "Current sample is from the foreground WezTerm window."
 
+#. placeholder {0}: ((progress.reclaimed_bytes ?? 0) / 1024 ** 3).toFixed(1)
+#: src/features/disk-reclaim-control.tsx:161
+#~ msgid "D drive recovered {0} GiB"
+#~ msgstr "D drive recovered {0} GiB"
+
+#: src/features/disk-reclaim-control.tsx:163
+msgid "D drive recovered {reclaimedGiB} GiB"
+msgstr "D drive recovered {reclaimedGiB} GiB"
+
 #: src/features/session-permission.tsx:81
 msgid "Daemon"
 msgstr "Daemon"
@@ -1637,15 +1673,15 @@ msgstr "Disable this agent"
 msgid "Disabled"
 msgstr "Disabled"
 
-#: src/features/host-quick-controls.tsx:119
+#: src/features/host-quick-controls.tsx:121
 msgid "Disconnect One Client"
 msgstr "Disconnect One Client"
 
-#: src/features/host-quick-controls.tsx:65
+#: src/features/host-quick-controls.tsx:66
 msgid "Disconnected"
 msgstr "Disconnected"
 
-#: src/features/host-quick-controls.tsx:67
+#: src/features/host-quick-controls.tsx:68
 msgid "Disconnecting…"
 msgstr "Disconnecting…"
 
@@ -1838,6 +1874,7 @@ msgstr "Fable tier"
 msgid "failed"
 msgstr "failed"
 
+#: src/features/disk-reclaim-control.tsx:124
 #: src/features/me-schedule.tsx:116
 msgid "Failed"
 msgstr "Failed"
@@ -2302,7 +2339,7 @@ msgstr "Last week"
 msgid "Latest"
 msgstr "Latest"
 
-#: src/features/host-quick-controls.tsx:103
+#: src/features/host-quick-controls.tsx:105
 msgid "Latest OPPO connection"
 msgstr "Latest OPPO connection"
 
@@ -2759,7 +2796,7 @@ msgstr "Next session waiting on you"
 msgid "no"
 msgstr "no"
 
-#: src/features/host-quick-controls.tsx:98
+#: src/features/host-quick-controls.tsx:100
 msgid "No active session"
 msgstr "No active session"
 
@@ -2848,7 +2885,7 @@ msgstr "No output yet"
 msgid "No plan written yet"
 msgstr "No plan written yet"
 
-#: src/features/host-quick-controls.tsx:76
+#: src/features/host-quick-controls.tsx:77
 msgid "No recent result"
 msgstr "No recent result"
 
@@ -3140,7 +3177,7 @@ msgstr "Opening the connection is one request."
 msgid "Opening…"
 msgstr "Opening…"
 
-#: src/features/host-quick-controls.tsx:93
+#: src/features/host-quick-controls.tsx:95
 msgid "OPPO remote control"
 msgstr "OPPO remote control"
 
@@ -3323,6 +3360,10 @@ msgstr "Plugin"
 msgid "Prepare workstation"
 msgstr "Prepare workstation"
 
+#: src/features/disk-reclaim-control.tsx:117
+msgid "Preparing"
+msgstr "Preparing"
+
 #: src/features/composer-picked.tsx:64
 msgid "Preview {label}"
 msgstr "Preview {label}"
@@ -3393,6 +3434,7 @@ msgstr "Put in input"
 msgid "Put the caret in the composer"
 msgstr "Put the caret in the composer"
 
+#: src/features/disk-reclaim-control.tsx:116
 #: src/features/ticket-pipeline.tsx:334
 #: src/features/ticket-timeline.tsx:101
 msgid "Queued"
@@ -3411,7 +3453,7 @@ msgstr "Queued messages"
 msgid "Quick AI capture"
 msgstr "Quick AI capture"
 
-#: src/features/host-quick-controls.tsx:88
+#: src/features/host-quick-controls.tsx:90
 msgid "Quick controls"
 msgstr "Quick controls"
 
@@ -3474,6 +3516,14 @@ msgstr "Recent commits"
 #: src/features/composer-suggest-list.tsx:97
 msgid "Recent sent messages"
 msgstr "Recent sent messages"
+
+#: src/features/disk-reclaim-control.tsx:119
+msgid "Reclaiming guest blocks"
+msgstr "Reclaiming guest blocks"
+
+#: src/features/disk-reclaim-control.tsx:174
+msgid "Recovery failed"
+msgstr "Recovery failed"
 
 #: src/features/session-worktree-lifecycle.tsx:64
 #: src/features/session-worktree-lifecycle.tsx:119
@@ -3791,6 +3841,10 @@ msgstr "Restart this session's pane on the computer; the agent resumes this conv
 #: src/features/session-status-text.ts:13
 msgid "restarting"
 msgstr "restarting"
+
+#: src/features/disk-reclaim-control.tsx:121
+msgid "Restarting WSL"
+msgstr "Restarting WSL"
 
 #: src/features/session-chat-group.tsx:91
 msgid "Restarting…"
@@ -4242,7 +4296,7 @@ msgstr "Session"
 msgid "Session actions"
 msgstr "Session actions"
 
-#: src/features/host-quick-controls.tsx:96
+#: src/features/host-quick-controls.tsx:98
 msgid "Session active"
 msgstr "Session active"
 
@@ -4885,6 +4939,10 @@ msgstr "This session"
 msgid "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 msgstr "This session's tmux session ({name}) is not shown in any WezTerm tab, so there is nowhere to switch to"
 
+#: src/features/disk-reclaim-control.tsx:195
+msgid "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
+msgstr "This stops every WSL session, including active agents. Tmux windows will be recreated, but in-progress agent turns will be interrupted."
+
 #: src/features/me-habits.tsx:319
 msgid "This week"
 msgstr "This week"
@@ -5167,7 +5225,7 @@ msgstr "Underscore"
 msgid "Undo"
 msgstr "Undo"
 
-#: src/features/host-quick-controls.tsx:62
+#: src/features/host-quick-controls.tsx:63
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -5621,6 +5679,14 @@ msgstr "Worktrees"
 #: src/features/me-host.tsx:151
 msgid "WSL bridge"
 msgstr "WSL bridge"
+
+#: src/features/disk-reclaim-control.tsx:133
+msgid "WSL disk"
+msgstr "WSL disk"
+
+#: src/features/disk-reclaim-control.tsx:168
+msgid "WSL offline; progress resumes after reconnect"
+msgstr "WSL offline; progress resumes after reconnect"
 
 #: src/features/me-habits.tsx:94
 msgid "WSL relay"

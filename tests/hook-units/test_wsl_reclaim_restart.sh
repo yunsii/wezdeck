@@ -58,4 +58,12 @@ set -e
   printf 'concurrent-job gate failed: rc=%s\n%s\n' "$rc" "$output" >&2
   exit 1
 }
+printf '%s\n' '{"phase":"queued","task_id":"aaaaaaaaaaaaaaaa"}' > "$TEST_ROOT/windows/state/disk-reclaim/status.json"
+set +e
+output="$(bash "$SCRIPT" --dry-run --force-stop --task-id bbbbbbbbbbbbbbbb --target-device test-browser 2>&1)"
+rc=$?
+set -e
+[[ "$rc" == 22 && "$output" == *'earlier reclaim job is still in progress'* ]]
+output="$(bash "$SCRIPT" --dry-run --force-stop --task-id aaaaaaaaaaaaaaaa --target-device test-browser)"
+[[ "$output" == *'dry-run: no files deleted and WSL not stopped'* ]]
 printf 'PASS wsl-reclaim-restart\n'
