@@ -72,8 +72,11 @@ Surveyed fe1 (`~/work/fe1/cloud/apps/team`) and forge
    sending starts the async job and replaces the URL with `/console/sessions/job-<id>`
    at once, showing the first message, live steps, optional trust confirmation,
    and retry/edit recovery before replacing into the real session id (while
-   `creating_jobs` keeps in-flight creations reachable from the list). Managed
-   worktrees are pre-trusted (`session.new.trust` fallback), and 我的 › Agents
+   `creating_jobs` keeps in-flight creations reachable from the list). The
+   agent avatar and name follow the selected profile through creation; repository
+   defaults are managed in 我的 › 仓库 ([details](./workspaces.md#web-created-session-defaults)).
+   Managed worktrees are pre-trusted
+   (`session.new.trust` fallback), and 我的 › Agents
    lists every managed model. 工单 has the
    same + (`n`): 新工单 — from / to repository, title, what you saw, what you
    assume, optionally start the run now. The

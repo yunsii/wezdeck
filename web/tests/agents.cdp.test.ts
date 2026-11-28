@@ -13,6 +13,7 @@ async function pageWithProfiles(
   browser: Browser,
   width: number,
   kimiConfigured = false,
+  repoSettingsError = false,
 ) {
   const context: BrowserContext = await browser.newContext({
     viewport: { width, height: 850 },
@@ -25,6 +26,8 @@ async function pageWithProfiles(
     note: string
     disabled: boolean
   }> = []
+  const repoWrites: Array<{ repo: string; profile: string }> = []
+  let repoProfile = 'codex'
   const settings: Record<string, { note: string; disabled: boolean }> = {
     claude: { note: '当前不可用', disabled: true },
     claude_sub2api: { note: '当前不可用', disabled: true },
@@ -90,6 +93,31 @@ async function pageWithProfiles(
           { id: 'agy', label: 'Antigravity' },
         ],
       })
+    if (url.pathname === '/api/v1/remote/repos')
+      return json({
+        v: 1,
+        ok: true,
+        settings_error: repoSettingsError,
+        repos: [
+          {
+            root: '/home/test/example',
+            label: 'example',
+            agent_profile: repoProfile,
+            agent_source: repoWrites.length ? 'override' : 'workspace',
+          },
+        ],
+      })
+    if (url.pathname === '/api/v1/remote/sessions')
+      return json({ v: 1, ok: true, sessions: [], creating_jobs: [] })
+    if (url.pathname === '/api/v1/remote/repo.agent.set') {
+      const body = route.request().postDataJSON() as {
+        repo: string
+        profile: string
+      }
+      repoWrites.push(body)
+      repoProfile = body.profile || 'codex'
+      return json({ v: 1, ok: true })
+    }
     if (url.pathname === '/api/v1/remote/agent.profile.model') {
       const body = route.request().postDataJSON() as {
         profile: string
@@ -123,7 +151,7 @@ async function pageWithProfiles(
       if (attempt === 2) throw error
     }
   }
-  return { context, page, writes, settingsWrites }
+  return { context, page, writes, settingsWrites, repoWrites }
 }
 
 // Agent settings cases share one mocked Runtime contract.
@@ -136,6 +164,95 @@ describe('Agent settings layout', () => {
   afterAll(async () => {
     await browser.close()
   })
+
+  it('shows and updates the resolved agent for a repository', async () => {
+    const { context, page, repoWrites } = await pageWithProfiles(browser, 1440)
+    await page.goto(`${base}/zh/console/me/repositories`)
+    const row = page.getByTestId('repositories-page').getByRole('listitem')
+    await row.waitFor()
+    expect(
+      await row.getByTestId('agent-avatar').first().getAttribute('data-agent'),
+    ).toBe('codex')
+    await row.getByRole('combobox', { name: /example.*默认智能体/ }).click()
+    await page.getByRole('option', { name: 'Grok' }).click()
+    await expect.poll(() => repoWrites.length).toBe(1)
+    expect(repoWrites[0]).toEqual({
+      repo: '/home/test/example',
+      profile: 'grok',
+    })
+    await expect
+      .poll(() =>
+        row.getByTestId('agent-avatar').first().getAttribute('data-agent'),
+      )
+      .toBe('grok')
+    await page.goto(`${base}/zh/console/sessions/new`)
+    const view = page.getByTestId('new-session-view')
+    await view.waitFor()
+    await expect
+      .poll(() =>
+        view
+          .getByTestId('new-session-header')
+          .getByTestId('agent-avatar')
+          .getAttribute('data-agent'),
+      )
+      .toBe('grok')
+    const agent = view.getByRole('combobox', { name: '智能体' })
+    await agent.click()
+    await page.getByRole('option', { name: 'Codex' }).click()
+    await expect
+      .poll(() =>
+        view
+          .getByTestId('new-session-header')
+          .getByTestId('agent-avatar')
+          .getAttribute('data-agent'),
+      )
+      .toBe('codex')
+    await context.close()
+  }, 45_000)
+
+  it('keeps repository settings usable on a phone width', async () => {
+    const { context, page } = await pageWithProfiles(browser, 390)
+    await page.goto(`${base}/zh/console/me/repositories`)
+    const row = page.getByTestId('repositories-page').getByRole('listitem')
+    await row.waitFor()
+    expect(
+      await row
+        .getByRole('combobox', { name: /example.*默认智能体/ })
+        .isVisible(),
+    ).toBe(true)
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(1)
+    await context.close()
+  }, 45_000)
+
+  it('requires an explicit agent when repository settings are unreadable', async () => {
+    const { context, page } = await pageWithProfiles(browser, 390, false, true)
+    await page.goto(`${base}/zh/console/sessions/new`)
+    const view = page.getByTestId('new-session-view')
+    await view.waitFor()
+    await view.getByRole('alert').getByText('仓库智能体设置无法读取').waitFor()
+    expect(
+      await view.getByRole('button', { name: '创建会话' }).isDisabled(),
+    ).toBe(true)
+    await view.getByRole('combobox', { name: '智能体' }).click()
+    await page.getByRole('option', { name: 'Codex' }).click()
+    expect(
+      await view
+        .getByTestId('new-session-header')
+        .getByTestId('agent-avatar')
+        .getAttribute('data-agent'),
+    ).toBe('codex')
+    await page.goto(`${base}/zh/console/me/repositories`)
+    await page.getByTestId('repositories-page').getByRole('alert').waitFor()
+    expect(
+      await page
+        .getByRole('combobox', { name: /example.*默认智能体/ })
+        .isDisabled(),
+    ).toBe(true)
+    await context.close()
+  }, 45_000)
 
   it('desktop keeps a detail column while switching profiles and saves the selected model', async () => {
     const { context, page, writes } = await pageWithProfiles(

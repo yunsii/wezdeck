@@ -6,6 +6,9 @@ Transport, pairing, write signatures, cost and operations are in
 [`remote-access.md`](./remote-access.md); the web console UI is in
 [`web-pwa.md`](./web-pwa.md).
 
+Repository agent defaults and their API contract are in
+[`workspaces.md#web-created-session-defaults`](./workspaces.md#web-created-session-defaults).
+
 ## Codex chat messages and titles
 
 The relay drops Codex-injected instructions and environment context from the

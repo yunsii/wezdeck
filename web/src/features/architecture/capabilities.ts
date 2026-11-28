@@ -338,6 +338,11 @@ export const capabilityGroups: Array<CapabilityGroup> = [
         'Save an agent note and disabled state; block new sessions and handoffs to disabled profiles',
       ),
       c(
+        'repo.agent.set',
+        '保存或清除某仓库从网页新建会话时的默认智能体',
+        'Save or clear the default agent for web-created sessions in a repository',
+      ),
+      c(
         'worktree.describe',
         '改工作站的一行描述（git 分支描述，等同终端 Alt+g 里的 Ctrl+e）',
         'Set a workstation’s one-line purpose (its git branch description; Ctrl+e in the desk’s Alt+g)',

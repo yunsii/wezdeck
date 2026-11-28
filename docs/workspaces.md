@@ -79,6 +79,26 @@ Three layers, most specific wins:
 | **Workspace** | `defaults.launcher` for that workspace | `config` / `opensource` inherit the machine default (`MANAGED_AGENT_PROFILE`) |
 | **Global** | `MANAGED_AGENT_PROFILE` in `wezterm-x/local/shared.env` (else `WT_PROVIDER_AGENT_PROFILE` / built-in `claude`) | machine default for `work` when its defaults still point at `managed_launcher` |
 
+### Web-created session defaults
+
+`我的 › 仓库` lists known repositories and lets an approved device set a
+default agent for sessions created from the Web console. The host stores
+overrides in `~/.config/wezdeck/repo-agents.json` (0600, atomic rename); an
+empty profile clears the override. Existing sessions and terminal launches
+keep their agents. Without an override, the host resolves the workspace map
+and then the global default through
+`resume-command.sh::resume_command_active_profile`.
+
+The `repos` response includes resolved `agent_profile`, `agent_source`
+(`workspace` or `override`), and `settings_error`. A damaged settings file
+leaves the repository list visible with workspace defaults, but new-session
+requires an explicit agent selection until the file is repaired. `session.new`
+validates and records the resolved profile before queueing; the form, progress
+page, and `creating_jobs` row show the same agent. `repo.agent.set` is a signed
+write for approved devices. It locks a separate file across host processes
+before read-modify-write; read-only resolution batches repositories in one
+shell invocation. Writes log `event=repo_agent` plus the signed write outcome.
+
 ```lua
 config = {
   defaults = {
