@@ -40,6 +40,9 @@ func guardSession(id string) (attentionEntry, error) {
 		relayLogf("codex_pane", "outcome=unavailable id=%s pane=%s", id, e.TmuxPane)
 		return attentionEntry{}, errors.New("the session's Codex pane is unavailable")
 	}
+	if (cmd == "bash" || cmd == "zsh" || cmd == "sh") && !paneHasAgentProcess(e.TmuxSocket, e.TmuxPane) {
+		return attentionEntry{}, errors.New("the session's agent pane is unavailable")
+	}
 	if act := deskActivity(e); act > 0 && time.Since(time.Unix(act, 0)) < deskIdle {
 		ago := time.Since(time.Unix(act, 0))
 		// "retry in Ns" is parsed by the phone, which counts down and resends

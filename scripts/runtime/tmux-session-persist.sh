@@ -97,10 +97,12 @@ snapshot_pane() {
   local pane="$1" root="$2" slot="$3" profile pin sid="" attention="" status="" started="" active=""
   profile="$(agent_for_pane "$pane")"
   active="$(tmux display-message -p -t "$pane" '#{pane_active}')"
-  pin="$(agent_session_pin_get "$root" "$slot" 2>/dev/null || true)"
-  if [[ "$pin" == *$'\t'* ]]; then
-    sid="${pin%%$'\t'*}"
-    [[ -n "$profile" ]] || sid=""
+  if [[ -n "$profile" ]]; then
+    sid="$(tmux show-options -p -v -t "$pane" @wezterm_agent_session_id 2>/dev/null || true)"
+    if ! agent_session_id_usable "$sid"; then
+      pin="$(agent_session_pin_get "$root" "$slot" 2>/dev/null || true)"
+      [[ "$pin" == *$'\t'* ]] && sid="${pin%%$'\t'*}" || sid=""
+    fi
   fi
   if [[ -n "$sid" && -f "$ATTENTION_FILE" ]]; then
     attention="$(jq -r --arg sid "$sid" '(.entries[$sid] // {}) | [(.status // ""), ((.turn_started // .ts // 0) | tostring)] | @tsv' "$ATTENTION_FILE" 2>/dev/null || true)"
@@ -171,11 +173,14 @@ save_snapshot() {
 }
 
 pane_command() {
-  local root="$1" kind="$2" profile="$3" resolved="" quoted=""
+  local root="$1" kind="$2" profile="$3" sid="${4:-}" resolved="" quoted=""
   if [[ "$kind" == agent && -n "$profile" ]]; then
     resolved="$(resolve_profile_resume_command "$REPO_ROOT" "$profile" "$root" 2>/dev/null || true)"
   fi
   if [[ -n "$resolved" ]]; then
+    if [[ "$kind" == agent ]] && agent_session_id_usable "$sid"; then
+      printf -v resolved 'env WEZDECK_RESUME_SESSION_ID=%q %s' "$sid" "$resolved"
+    fi
     printf -v quoted 'bash -lc %q' "$resolved"
   else
     printf -v quoted '%q -l' "$(resolve_login_shell)"
@@ -235,7 +240,7 @@ restore_snapshot() {
       pane="$(jq -c '.panes[0]' <<< "$window")"
       kind="$(jq -r '.kind' <<< "$pane")"
       profile="$(jq -r '.profile' <<< "$pane")"
-      command="$(pane_command "$root" "$kind" "$profile")"
+      command="$(pane_command "$root" "$kind" "$profile" "$(jq -r '.sid // empty' <<< "$pane")")"
       if [[ "$kind" == agent && -n "$profile" ]]; then
         printf -v command 'bash %q %s' "$SCRIPT_DIR/primary-pane-wrapper.sh" "$command"
       fi
@@ -264,7 +269,7 @@ restore_snapshot() {
       if [[ -n "$pane" ]]; then
         kind="$(jq -r '.kind' <<< "$pane")"
         profile="$(jq -r '.profile' <<< "$pane")"
-        command="$(pane_command "$root" "$kind" "$profile")"
+        command="$(pane_command "$root" "$kind" "$profile" "$(jq -r '.sid // empty' <<< "$pane")")"
         pane_id="$(tmux split-window -d -h -P -F '#{pane_id}' -t "$first_pane" -c "$root" "$command")"
         if [[ "$kind" == agent && -n "$profile" ]]; then
           tmux set-option -p -t "$pane_id" -q @wezterm_pane_role "agent-cli:$profile"
@@ -282,12 +287,37 @@ restore_snapshot() {
   done < <(jq -c '.sessions[]' "$SNAPSHOT")
   runtime_log_info tmux_persist 'restored managed sessions' "created=$created" "skipped=$skipped" "file=$SNAPSHOT"
   printf 'created=%s skipped=%s\n' "$created" "$skipped"
-  reconcile_dirty_sessions
+  reconcile_live_sessions
 }
 
-reconcile_dirty_sessions() {
-  local pane cwd root profile sid socket session window name slot pin old count=0
-  local attention_json="" coords=""
+bind_existing_attention() {
+  local sid="$1" socket="$2" session="$3" window="$4" name="$5" pane="$6"
+  local lock current next
+  lock="$(attention_state_lock_path)"
+  (
+    flock -x 8
+    current="$(attention_state_read)"
+    jq -e --arg sid "$sid" '.entries[$sid] | type == "object"' <<< "$current" >/dev/null || exit 1
+    jq -e --arg sid "$sid" --arg socket "$socket" --arg pane "$pane" '
+      [.entries // {} | to_entries[] | select(.key != $sid and .value.tmux_socket == $socket and .value.tmux_pane == $pane)] | length == 0
+    ' <<< "$current" >/dev/null || exit 1
+    next="$(jq -c --arg sid "$sid" --arg socket "$socket" --arg session "$session" \
+      --arg window "$window" --arg name "$name" --arg pane "$pane" '
+      .entries[$sid] |= (.tmux_socket=$socket | .tmux_session=$session |
+        .tmux_window=$window | .tmux_window_name=$name | .tmux_pane=$pane |
+        .wezterm_pane_id="" | del(.restart_pending))
+    ' <<< "$current")" || exit 1
+    [[ "$next" == "$current" ]] || {
+      AGENT_ATTENTION_AUDIT_OP=crash_rebind \
+        AGENT_ATTENTION_AUDIT_SESSION_ID="$sid" \
+        attention_state_write "$next"
+    }
+  ) 8>"$lock"
+}
+
+reconcile_live_sessions() {
+  local pane cwd root profile agent sid socket session window name slot pin old old_socket old_pin count=0
+  local attention_json="" coords="" discovered=0
   [[ -f "$ATTENTION_FILE" ]] || return 0
   attention_json="$(attention_state_read)"
   while IFS= read -r pane; do
@@ -297,7 +327,6 @@ reconcile_dirty_sessions() {
     cwd="$(tmux display-message -p -t "$pane" '#{pane_current_path}')"
     root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
     [[ -n "$root" && -d "$root" ]] || continue
-    [[ -n "$(git -C "$root" status --porcelain=v1 2>/dev/null)" ]] || continue
     coords="$(tmux display-message -p -t "$pane" '#{socket_path}|#{session_name}|#{window_id}|#{window_name}')"
     IFS='|' read -r socket session window name <<< "$coords"
     [[ -n "$socket" && -n "$session" && -n "$window" ]] || continue
@@ -305,22 +334,30 @@ reconcile_dirty_sessions() {
       '[.entries // {} | to_entries[] | select(.value.tmux_socket == $socket and .value.tmux_pane == $pane)] | length' <<< "$attention_json")"
     [[ "$old" == 0 ]] || continue
     sid="$(tmux show-options -p -v -t "$pane" @wezterm_agent_session_id 2>/dev/null || true)"
+    discovered=0
     if ! agent_session_id_usable "$sid"; then
+      [[ -n "$(git -C "$root" status --porcelain=v1 2>/dev/null)" ]] || continue
       case "$profile" in
-        grok) sid="$(agent_session_discover_latest_grok "$root" '' 31536000 2>/dev/null || true)" ;;
+        grok) sid="$(agent_session_discover_latest_grok "$root" '' 31536000 2>/dev/null || true)"; discovered=1 ;;
         *) sid="" ;;
       esac
     fi
     if ! agent_session_id_usable "$sid"; then
-      runtime_log_warn tmux_persist 'dirty agent has no verified session id' \
+      runtime_log_warn tmux_persist 'live agent has no verified session id' \
         "pane_id=$pane" "worktree_root=$root" "agent=$profile"
       continue
     fi
     [[ ! -e "$ATTENTION_FILE.closed-sessions/$sid" ]] || continue
-    old="$(jq -r --arg sid "$sid" '[.recent[]? | select(.session_id == $sid)] | length' <<< "$attention_json")"
-    [[ "$old" == 0 ]] || continue
+    if (( discovered )); then
+      old="$(jq -r --arg sid "$sid" '[.recent[]? | select(.session_id == $sid)] | length' <<< "$attention_json")"
+      [[ "$old" == 0 ]] || continue
+    fi
     old="$(jq -r --arg sid "$sid" '.entries[$sid].tmux_pane // empty' <<< "$attention_json")"
-    [[ -z "$old" ]] || continue
+    if [[ -n "$old" && "$old" != "$pane" ]]; then
+      old_socket="$(jq -r --arg sid "$sid" '.entries[$sid].tmux_socket // empty' <<< "$attention_json")"
+      old_pin="$(tmux -S "$old_socket" display-message -p -t "$old" '#{@wezterm_agent_session_id}' 2>/dev/null || true)"
+      [[ "$old_pin" != "$sid" ]] || continue
+    fi
     slot="$(agent_session_slot_for_pane "$pane" 2>/dev/null || true)"
     pin="$(agent_session_pin_get "$root" "$slot" 2>/dev/null || true)"
     if [[ -z "$pin" ]]; then
@@ -328,12 +365,18 @@ reconcile_dirty_sessions() {
     else
       tmux set-option -p -t "$pane" -q @wezterm_agent_session_id "$sid"
     fi
-    attention_state_upsert "$sid" "" "$socket" "$session" "$window" "$pane" \
-      idle 'restored from tmux' "$(git -C "$root" branch --show-current 2>/dev/null || true)" \
-      "" "" "$profile" "$name"
+    agent="$(agent_session_normalize_agent "$profile" 2>/dev/null || true)"
+    [[ -n "$agent" ]] || continue
+    if jq -e --arg sid "$sid" '.entries[$sid] | type == "object"' <<< "$attention_json" >/dev/null; then
+      bind_existing_attention "$sid" "$socket" "$session" "$window" "$name" "$pane" || continue
+    else
+      attention_state_upsert "$sid" "" "$socket" "$session" "$window" "$pane" \
+        idle 'restored from tmux' "$(git -C "$root" branch --show-current 2>/dev/null || true)" \
+        "" "" "$agent" "$name"
+    fi
     ((count += 1))
-    runtime_log_info tmux_persist 'imported dirty agent session' \
-      "session_id=$sid" "pane_id=$pane" "worktree_root=$root" "agent=$profile"
+    runtime_log_info tmux_persist 'reconciled live agent session' \
+      "session_id=$sid" "pane_id=$pane" "worktree_root=$root" "agent=$agent" "discovered=$discovered"
     attention_json="$(attention_state_read)"
   done < <(tmux list-panes -a -F '#{pane_id}' 2>/dev/null || true)
   printf 'imported=%s\n' "$count"
@@ -341,15 +384,12 @@ reconcile_dirty_sessions() {
 
 restore_pane_state() {
   local pane="$1" root="$2" slot="$3" session="$4" window="$5" name="$6" pane_id="$7"
-  local sid profile status started pin current_sid
+  local sid profile status started
   sid="$(jq -r '.sid' <<< "$pane")"
   profile="$(jq -r '.profile' <<< "$pane")"
   status="$(jq -r '.status' <<< "$pane")"
   started="$(jq -r '.turn_started' <<< "$pane")"
   [[ -n "$sid" && "$sid" != null ]] || return 0
-  pin="$(agent_session_pin_get "$root" "$slot" 2>/dev/null || true)"
-  current_sid="${pin%%$'\t'*}"
-  [[ "$current_sid" == "$sid" ]] || return 0
   tmux set-option -p -t "$pane_id" -q @wezterm_agent_session_id "$sid"
   if [[ "$status" == running || "$status" == waiting ]] && [[ "$started" =~ ^[0-9]+$ ]]; then
     tmux set-option -p -t "$pane_id" -q @wezdeck_interrupted_turn "$sid/$started"
@@ -395,6 +435,6 @@ fi
 case "$MODE" in
   save) save_snapshot ;;
   restore) restore_snapshot ;;
-  reconcile) reconcile_dirty_sessions ;;
+  reconcile) reconcile_live_sessions ;;
   status) if [[ -f "$SNAPSHOT" ]]; then jq '{saved_at,sessions:(.sessions|length),windows:([.sessions[].windows[]]|length)}' "$SNAPSHOT"; else printf 'no snapshot\n'; fi ;;
 esac

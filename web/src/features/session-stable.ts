@@ -8,6 +8,7 @@ import { flattenChats, stabilizeChatGroups } from './session-chats'
 
 let shown = { filter: '', ids: new Set<string>() }
 let chatOrder: Array<string> = []
+let hostEpoch: string | undefined
 
 // a reset must re-render the list itself: a refetch that returns the same
 // sessions keeps the same data object, so nothing else would
@@ -32,9 +33,28 @@ export function resetSessionOrder() {
   for (const listener of listeners) listener()
 }
 
-/** Hold chat row order across detail -> list navigation and cache refreshes. */
-export function useStableChatOrder(groups: Array<ChatRepoGroup>) {
+export function stableGroupsForEpoch(
+  groups: Array<ChatRepoGroup>,
+  previousKeys: ReadonlyArray<string>,
+  previousEpoch: string | undefined,
+  nextEpoch: string | undefined,
+) {
+  return previousEpoch === nextEpoch
+    ? stabilizeChatGroups(groups, previousKeys)
+    : groups
+}
+
+/** Hold order during ordinary refreshes; rebuild it after a host restart. */
+export function useStableChatOrder(
+  groups: Array<ChatRepoGroup>,
+  epoch?: string,
+) {
   useVersion()
+  const previousEpoch = hostEpoch
+  if (previousEpoch !== epoch) {
+    chatOrder = []
+    hostEpoch = epoch
+  }
   const keys = flattenChats(groups).map(
     (chat) => `${chat.repoKey}\u0000${chat.key}`,
   )
@@ -47,7 +67,7 @@ export function useStableChatOrder(groups: Array<ChatRepoGroup>) {
     ...chatOrder.filter((key) => keys.includes(key)),
     ...keys.filter((key) => !known.has(key)),
   ]
-  return stabilizeChatGroups(groups, chatOrder)
+  return stableGroupsForEpoch(groups, chatOrder, previousEpoch, epoch)
 }
 
 /** ids to list under `filter`: the matching ones plus those already shown */

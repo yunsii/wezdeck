@@ -48,6 +48,7 @@ export function isSessionMissing(id: string, detailError?: unknown) {
 
 export type SessionsReply = {
   sessions: Array<SessionCard>
+  host_epoch?: string
   creating_jobs?: Array<NewSessionJob>
   redirects?: Array<{ from: string; to: string }>
 }

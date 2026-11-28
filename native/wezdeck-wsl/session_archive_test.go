@@ -84,6 +84,65 @@ func TestArchivedCodexSessionWithNoAgentPane(t *testing.T) {
 	}
 }
 
+func TestRestoredShellKeepsClaudeTranscriptReadOnly(t *testing.T) {
+	dir, socket, pane, attention := restartFixture(t)
+	t.Setenv("HOME", dir)
+	if out, err := exec.Command("git", "init", "-q", dir).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v: %s", err, out)
+	}
+	if out, err := tmuxCmd(socket, "rename-window", "-t", pane, "web-cmdb-primary").CombinedOutput(); err != nil {
+		t.Fatalf("rename window: %v: %s", err, out)
+	}
+	if out, err := tmuxCmd(socket, "respawn-pane", "-k", "-t", pane, "-c", dir,
+		"bash --noprofile --norc -i").CombinedOutput(); err != nil {
+		t.Fatalf("respawn shell: %v: %s", err, out)
+	}
+	project := filepath.Join(dir, ".claude", "projects", "-fixture")
+	if err := os.MkdirAll(project, 0700); err != nil {
+		t.Fatal(err)
+	}
+	id := "archived-claude"
+	content := fmt.Sprintf("{\"type\":\"user\",\"cwd\":%q,\"message\":{\"role\":\"user\",\"content\":\"hello\"}}\n", dir)
+	if err := os.WriteFile(filepath.Join(project, id+".jsonl"), []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	doc := fmt.Sprintf(`{"entries":{},"recent":[{"session_id":%q,"tmux_socket":%q,"tmux_session":"work","tmux_window_name":"web-cmdb-primary","tmux_pane":"%%999","last_status":"done","archived_ts":%d,"agent_name":"claude"}]}`, id, socket, time.Now().UnixMilli())
+	if err := os.WriteFile(attention, []byte(doc), 0600); err != nil {
+		t.Fatal(err)
+	}
+	list, err := listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != id || cards[0].Cwd != dir || cards[0].TmuxPane != "" {
+		t.Fatalf("restored shell history should be one read-only card: %+v", cards)
+	}
+	detail, err := sessionDetail(json.RawMessage(`{"id":"archived-claude"}`))
+	if err != nil || detail.(map[string]any)["read_only"] != true {
+		t.Fatalf("restored shell transcript should be readable but not writable: %v, %v", detail, err)
+	}
+	activeDoc := fmt.Sprintf(`{"entries":{%q:{"session_id":%q,"tmux_socket":%q,"tmux_session":"work","tmux_window_name":"web-cmdb-primary","tmux_pane":%q,"status":"running","ts":1234,"agent_name":"claude"}},"recent":[]}`, id, id, socket, pane)
+	if err := os.WriteFile(attention, []byte(activeDoc), 0600); err != nil {
+		t.Fatal(err)
+	}
+	list, err = listSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards = list.(map[string]any)["sessions"].([]sessionCard)
+	if len(cards) != 1 || cards[0].ID != id || cards[0].Status != "idle" || cards[0].TmuxPane != "" {
+		t.Fatalf("stale live shell must be a read-only card: %+v", cards)
+	}
+	detail, err = sessionDetail(json.RawMessage(`{"id":"archived-claude"}`))
+	if err != nil || detail.(map[string]any)["read_only"] != true {
+		t.Fatalf("stale live shell detail must be read-only: %v, %v", detail, err)
+	}
+	if _, err := guardSession(id); err == nil {
+		t.Fatal("stale Claude shell accepted a message")
+	}
+}
+
 func TestTrackedCodexDetailFollowsPaneAvailability(t *testing.T) {
 	if _, err := exec.LookPath("tmux"); err != nil {
 		t.Skip("tmux unavailable")

@@ -386,8 +386,8 @@ msgid "Agent name"
 msgstr "Agent name"
 
 #: src/features/landing-page.tsx:247
-#: src/features/session-list.tsx:323
-#: src/features/session-list.tsx:396
+#: src/features/session-list.tsx:326
+#: src/features/session-list.tsx:399
 msgid "Agent sessions"
 msgstr "Agent sessions"
 
@@ -996,7 +996,7 @@ msgstr "Clear input"
 #: src/features/console-diagnostics.tsx:143
 #: src/features/repo-links.tsx:300
 #: src/features/session-list.tsx:113
-#: src/features/session-list.tsx:313
+#: src/features/session-list.tsx:316
 #: src/features/ticket-search.tsx:42
 msgid "Clear search"
 msgstr "Clear search"
@@ -2812,7 +2812,7 @@ msgstr "No activity for a while"
 msgid "No activity yet"
 msgstr "No activity yet"
 
-#: src/features/session-list.tsx:318
+#: src/features/session-list.tsx:321
 msgid "No agent sessions are running."
 msgstr "No agent sessions are running."
 
@@ -2905,7 +2905,7 @@ msgstr "No sent messages recorded yet."
 msgid "No session titles recorded yet."
 msgstr "No session titles recorded yet."
 
-#: src/features/session-list.tsx:305
+#: src/features/session-list.tsx:308
 msgid "No sessions match that search."
 msgstr "No sessions match that search."
 
@@ -4354,15 +4354,15 @@ msgstr "Sessions"
 #: src/features/console-shell.tsx:87
 #: src/features/landing-page.tsx:89
 #: src/features/session-header.tsx:256
-#: src/features/session-list.tsx:284
-#: src/features/session-list.tsx:418
+#: src/features/session-list.tsx:287
+#: src/features/session-list.tsx:421
 #: src/features/session-new-header.tsx:23
 #: src/features/session-new-job.tsx:404
 msgctxt "nav"
 msgid "Sessions"
 msgstr "Sessions"
 
-#: src/features/session-list.tsx:295
+#: src/features/session-list.tsx:298
 msgid "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 msgstr "Sessions come over the remote link, and this device is not paired yet. On the host run scripts/dev/install-remote-relay.sh --pair and open the link here."
 

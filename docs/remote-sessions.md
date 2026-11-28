@@ -96,7 +96,7 @@ check uses the managed profile when wrappers hide the real process name
 
 When a completed Codex turn is acknowledged and its pane no longer runs
 Codex, its archived or stale active entry remains in the local-mode session list for three
-minutes unless a new session has taken over the same pane. In local mode,
+minutes unless a new session has taken over the same pane. A restored Claude window whose agent exited to a shell keeps its matching transcript as a read-only row (window name and recorded cwd must match); a stale active Claude row on a shell is also read-only and cannot accept writes. In local mode,
 the detail page can read its transcript while the entry is in the attention
 archive. The page reports that Web sending is unavailable. A Codex TUI can
 still be open in another pane because hooks from a shared app-server can

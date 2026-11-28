@@ -45,6 +45,11 @@ tmux select-pane -t "$second.1"
 tmux set-option -p -t "$old_pane" @wezterm_pane_role agent-cli:codex
 third="$(tmux new-window -d -P -F '#{window_id}' -t "$session:" -n linked-debug -c "$TEST_ROOT/linked" 'exec sleep 300')"
 tmux_worktree_set_window_metadata "$third" managed_primary "$TEST_ROOT/linked" linked-debug 'exec sleep 300' managed_two_pane
+other_sid=55555555-6666-7777-8888-999999999999
+third_pane="$(tmux list-panes -t "$third" -F '#{pane_id}' | head -n 1)"
+tmux respawn-pane -k -t "$third_pane" -c "$TEST_ROOT/linked" "$TEST_SHIM_DIR/codex 300"
+tmux set-option -p -t "$third_pane" @wezterm_pane_role agent-cli:codex
+tmux set-option -p -t "$third_pane" @wezterm_agent_session_id "$other_sid"
 tmux select-window -t "$second"
 tmux new-session -d -s wezdeck_recovered_example -n recovered -c "$TEST_ROOT/linked" 'exec sleep 300'
 agent_session_pin_put "$TEST_ROOT/linked" primary sid-cold codex
@@ -54,6 +59,8 @@ printf '%s\n' '{"version":1,"rev":1,"entries":{"sid-cold":{"session_id":"sid-col
 persist="$SCRIPT_DIR/../../../scripts/runtime/tmux-session-persist.sh"
 bash "$persist" save
 tmux_test_assert_eq 3 "$(jq '.sessions[0].windows | length' "$WEZDECK_TMUX_SESSIONS_FILE")" 'snapshot must contain same-root debug window'
+tmux_test_assert_eq "$other_sid" "$(jq -r '.sessions[0].windows[] | select(.name == "linked-debug") | .panes[0].sid' "$WEZDECK_TMUX_SESSIONS_FILE")" \
+  'pane-local session id must beat a shared worktree-slot pin'
 tmux_test_assert_eq 2 "$(jq '.sessions | length' "$WEZDECK_TMUX_SESSIONS_FILE")" 'snapshot must include manually recovered project session'
 tmux kill-server
 snapshot_before="$(sha256sum "$WEZDECK_TMUX_SESSIONS_FILE")"
@@ -62,6 +69,10 @@ tmux_test_assert_eq "$snapshot_before" "$(sha256sum "$WEZDECK_TMUX_SESSIONS_FILE
 bash "$persist" restore
 
 tmux_test_assert_eq 3 "$(tmux list-windows -t "$session" -F '#{window_id}' | wc -l)" 'restore must recreate all windows'
+restored_other="$(tmux list-panes -t "$session:linked-debug" -F '#{pane_id}' | head -n 1)"
+tmux_test_assert_eq "$other_sid" "$(tmux show-options -p -v -t "$restored_other" @wezterm_agent_session_id)" \
+  'two agent windows on one worktree must keep separate conversations'
+tmux display-message -p -t "$restored_other" '#{pane_start_command}' | grep -Fq "WEZDECK_RESUME_SESSION_ID=$other_sid"
 tmux has-session -t wezdeck_recovered_example
 tmux_test_assert_eq linked "$(tmux display-message -p -t "$session" '#{window_name}')" 'restore must select previous active window'
 new_pane="$(tmux list-panes -t "$session:linked" -F '#{pane_id}' | head -n 1)"
@@ -103,5 +114,26 @@ mkdir -p "$HOME/.grok/sessions/$clean_root/22222222-3333-4444-5555-666666666666"
 tmux_test_assert_eq imported=0 "$(bash "$persist" reconcile)" 'reconcile must not duplicate the imported entry'
 tmux_test_assert_eq 0 "$(jq '[.entries // {} | .[] | select(.tmux_pane == "'$clean_pane'")] | length' "$WEZDECK_ATTENTION_STATE_PATH")" \
   'clean untracked agent must not be imported'
+
+clean_sid=33333333-4444-5555-6666-777777777777
+pinned_pane="$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n clean-pinned -c "$TEST_ROOT/main" \
+  "$TEST_SHIM_DIR/codex 300")"
+tmux set-option -p -t "$pinned_pane" @wezterm_pane_role agent-cli:codex
+tmux set-option -p -t "$pinned_pane" @wezterm_agent_session_id "$clean_sid"
+running_sid=44444444-5555-6666-7777-888888888888
+running_pane="$(tmux new-window -d -P -F '#{pane_id}' -t "$session:" -n running-pinned -c "$TEST_ROOT/main" \
+  "$TEST_SHIM_DIR/codex 300")"
+tmux set-option -p -t "$running_pane" @wezterm_pane_role agent-cli:codex
+tmux set-option -p -t "$running_pane" @wezterm_agent_session_id "$running_sid"
+state_tmp="$(mktemp "$TEST_ROOT/attention.XXXXXX")"
+jq --arg sid "$running_sid" '.entries[$sid] = {session_id:$sid,status:"running",ts:123,turn_started:123,tmux_pane:""}' \
+  "$WEZDECK_ATTENTION_STATE_PATH" > "$state_tmp"
+mv "$state_tmp" "$WEZDECK_ATTENTION_STATE_PATH"
+tmux_test_assert_eq imported=2 "$(bash "$persist" reconcile)" 'clean pinned agents must enter the Web attention catalog'
+tmux_test_assert_eq "$pinned_pane" "$(jq -r --arg sid "$clean_sid" '.entries[$sid].tmux_pane' "$WEZDECK_ATTENTION_STATE_PATH")" \
+  'clean pinned agent must bind to its current pane'
+tmux_test_assert_eq "running|$running_pane" "$(jq -r --arg sid "$running_sid" '[.entries[$sid].status,.entries[$sid].tmux_pane]|join("|")' "$WEZDECK_ATTENTION_STATE_PATH")" \
+  'rebind must preserve an active turn instead of marking it done'
+tmux_test_assert_eq imported=0 "$(bash "$persist" reconcile)" 'repeated reconcile must not duplicate pinned sessions'
 
 printf 'PASS cold-restore-managed-sessions\n'

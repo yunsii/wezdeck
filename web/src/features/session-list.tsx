@@ -223,7 +223,10 @@ export function SessionList({
     ...row,
     draft: readDraft(sessionDraftKey(row.id)).trim(),
   }))
-  const groups = useStableChatOrder(buildChatGroups(rowsWithDrafts))
+  const groups = useStableChatOrder(
+    buildChatGroups(rowsWithDrafts),
+    sessions.data?.host_epoch,
+  )
   const previewLabels = useChatPreviewLabels()
   const timeOf = useChatTimeLabel()
   const [query, setQuery] = useState('')

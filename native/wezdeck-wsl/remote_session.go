@@ -32,6 +32,8 @@ import (
 // resends on its own ("retry in Ns").
 const deskIdle = 10 * time.Second
 
+var sessionCatalogEpoch = time.Now().UTC().Format(time.RFC3339Nano)
+
 type attentionEntry struct {
 	SessionID      string `json:"session_id"`
 	TmuxSocket     string `json:"tmux_socket"`
@@ -380,8 +382,10 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			archived = true
 		}
 		cwd, cmd, index, profile, interrupt := p.cwd, p.cmd, p.index, p.profile, p.interrupt
-		readOnly := archived || codexPaneUnavailable(e.AgentName, cmd)
-		if readOnly && e.TS > 0 && now.Sub(time.UnixMilli(e.TS)) >= recentFinishedSession {
+		shellReadOnly := alive && (cmd == "bash" || cmd == "zsh" || cmd == "sh") &&
+			!isAgentPaneSnap(p, e)
+		readOnly := archived || codexPaneUnavailable(e.AgentName, cmd) || shellReadOnly
+		if readOnly && !shellReadOnly && e.TS > 0 && now.Sub(time.UnixMilli(e.TS)) >= recentFinishedSession {
 			continue
 		}
 		if readOnly {
@@ -401,6 +405,9 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 			RunningKind: e.RunningKind, RestartPending: e.RestartPending, Background: backgroundOf(e),
 			TmuxSession: e.TmuxSession, TmuxPane: e.TmuxPane, PaneIndex: index, PaneRole: paneRole(index),
 			AgentProfile: profile, TicketID: ticketIDForSession(e, cwd)}
+		if shellReadOnly {
+			card.TmuxPane = ""
+		}
 		if family := paneAgentFamily(e, cmd, profile); family != "" {
 			card.Agent = family
 		}
@@ -474,11 +481,23 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 		}
 		cards = append(cards, card)
 	}
-	if includeArchived {
-		listed := make(map[string]bool, len(cards))
-		for _, card := range cards {
-			listed[card.ID] = true
+	listed := make(map[string]bool, len(cards))
+	for _, card := range cards {
+		listed[card.ID] = true
+	}
+	for _, r := range recent {
+		if _, live := entries[r.SessionID]; live || listed[r.SessionID] || closed[r.SessionID] {
+			continue
 		}
+		if path, agent, cwd := restoredShellTranscript(r, paneSnap); path != "" {
+			card := restoredShellCard(r, path, agent, cwd)
+			card.RepoLabel = aliases[card.Repo]
+			card.Visited = visitOf(visits, card.Worktree, cwd)
+			cards = append(cards, card)
+			listed[r.SessionID] = true
+		}
+	}
+	if includeArchived {
 		for _, r := range recent {
 			if _, live := entries[r.SessionID]; live || listed[r.SessionID] || r.ClearedTo != "" || closed[r.SessionID] ||
 				replacementForArchived(r.SessionID, recent, entries) != "" ||
@@ -500,7 +519,7 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 	cards = dropEmptyHandoffSplashes(cards, recent)
 	// newest conversation activity first
 	sort.Slice(cards, func(i, j int) bool { return cards[i].TS > cards[j].TS })
-	listed := make(map[string]bool, len(cards))
+	listed = make(map[string]bool, len(cards))
 	for _, c := range cards {
 		listed[c.ID] = true
 	}
@@ -512,7 +531,7 @@ func listSessionsWithTiming(includeArchived bool, timing *rpcTiming) (any, error
 	jobs := activeNewSessionJobsFor(cards)
 	timing.add("post_ms", time.Since(tPost))
 	return map[string]any{
-		"v": 1, "ok": true, "sessions": cards,
+		"v": 1, "ok": true, "sessions": cards, "host_epoch": sessionCatalogEpoch,
 		"creating_jobs": jobs,
 		"redirects":     redirects,
 	}, nil
@@ -579,6 +598,18 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 				return map[string]any{"v": 1, "ok": true, "id": a.ID, "replaced_by": id, "status": "idle"}, nil
 			}
 		}
+		for _, r := range recent {
+			if r.SessionID != a.ID || sessionWasClosed(a.ID) {
+				continue
+			}
+			if p, family, recordedCwd := restoredShellTranscript(r, paneSnap); p != "" {
+				path, agent, cwd = p, family, recordedCwd
+				e = r.attentionEntry.asReadOnly()
+				e.TmuxPane = ""
+				readOnly = true
+			}
+			break
+		}
 		if includeArchived {
 			for _, r := range recent {
 				if r.SessionID == a.ID && !sessionWasClosed(a.ID) {
@@ -601,6 +632,10 @@ func sessionDetailWithTiming(args json.RawMessage, includeArchived bool, timing 
 			cwd, cmd, paneIndex, profile, interrupt, paneAlive, paneAttached = p.cwd, p.cmd, p.index, p.profile, p.interrupt, true, p.attached
 		}
 		readOnly = codexPaneUnavailable(e.AgentName, cmd)
+		if paneAlive && (cmd == "bash" || cmd == "zsh" || cmd == "sh") &&
+			!isAgentPaneSnap(paneSnap[e.TmuxSocket+"|"+e.TmuxPane], e) {
+			readOnly = true
+		}
 		interrupted = !readOnly && paneAlive && e.interrupted(interrupt)
 		if readOnly {
 			e = e.asReadOnly()

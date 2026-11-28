@@ -762,11 +762,11 @@ attention_state_upsert() {
                | .entries[$sid] = (
                    {
                      session_id: $sid,
-                     wezterm_pane_id: $wp,
-                     tmux_socket: $tsk,
-                     tmux_session: $tses,
-                     tmux_window: $tw,
-                     tmux_pane: $tp,
+                     wezterm_pane_id: (if $wp != "" then $wp else ($prev.wezterm_pane_id // "") end),
+                     tmux_socket: (if $tsk != "" then $tsk else ($prev.tmux_socket // "") end),
+                     tmux_session: (if $tses != "" then $tses else ($prev.tmux_session // "") end),
+                     tmux_window: (if $tw != "" then $tw else ($prev.tmux_window // "") end),
+                     tmux_pane: (if $tp != "" then $tp else ($prev.tmux_pane // "") end),
                      status: $st,
                      reason: $rs,
                      git_branch: $gb,

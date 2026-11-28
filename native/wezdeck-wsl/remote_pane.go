@@ -27,6 +27,7 @@ type tmuxPaneSnap struct {
 	pid            int
 	attached       bool
 	windowActivity int64 // unix ms
+	windowName     string
 }
 
 const attentionPathCacheTTL = 60 * time.Second
@@ -71,7 +72,7 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 			continue
 		}
 		raw, err := tmuxCmd(socket, "list-panes", "-a", "-F",
-			"#{pane_id}\t#{session_name}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}\t#{@wezterm_agent_session_id}\t#{pane_pid}\t#{session_attached}\t#{window_activity}").Output()
+			"#{pane_id}\t#{session_name}\t#{pane_current_path}\t#{pane_current_command}\t#{pane_index}\t#{@wezterm_agent_profile}\t#{@wezterm_window_agent_profile}\t#{@wezterm_pane_role}\t#{@wezdeck_interrupted_turn}\t#{@wezterm_agent_session_id}\t#{pane_pid}\t#{session_attached}\t#{window_activity}\t#{window_name}").Output()
 		if err != nil {
 			markDeadTmuxSocket(socket)
 			continue
@@ -81,12 +82,12 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 			if line == "" {
 				continue
 			}
-			parts := strings.SplitN(line, "\t", 13)
+			parts := strings.SplitN(line, "\t", 14)
 			if len(parts) < 5 || parts[0] == "" {
 				continue
 			}
 			index, _ := strconv.Atoi(parts[4])
-			paneProfile, windowProfile, role, interrupt, sid := "", "", "", "", ""
+			paneProfile, windowProfile, role, interrupt, sid, windowName := "", "", "", "", "", ""
 			var pid int
 			var attached bool
 			var winAct int64
@@ -116,6 +117,9 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 					winAct = v * 1000
 				}
 			}
+			if len(parts) > 13 {
+				windowName = parts[13]
+			}
 			out[socket+"|"+parts[0]] = tmuxPaneSnap{
 				id:             parts[0],
 				session:        parts[1],
@@ -128,6 +132,7 @@ func snapshotTmuxPanes(sockets map[string]bool) map[string]tmuxPaneSnap {
 				pid:            pid,
 				attached:       attached,
 				windowActivity: winAct,
+				windowName:     windowName,
 			}
 		}
 	}
