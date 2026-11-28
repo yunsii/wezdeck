@@ -46,7 +46,6 @@ export function EmptySession({ data }: { data: Detail }) {
   const facts: Array<[string, string, boolean]> = [
     [t`Model`, [model, effort].filter(Boolean).join(' · '), false],
     [t`Directory`, metaValue(data, 'location', 'cwd'), true],
-    [t`Branch`, data.branch || metaValue(data, 'location', 'branch'), true],
     [t`Session`, data.id, true],
   ]
   const screen = !known && data.screen ? compactScreen(data.screen) : ''

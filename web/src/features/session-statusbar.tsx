@@ -1,12 +1,10 @@
 // The session's status under the composer, two lines of essentials:
 //
 //   agent:    the model · shell N · monitor N (background tasks by kind)
-//   checkout: branch · git changes · linked N
+//   checkout: git changes
 //
-// Usage tags follow the background tasks when they fit. Each line holds
-// one row — the branch truncates first, the rest
-// folds behind +N opening upward; the task lists and linked open upward over
-// the thread, so nothing in it moves. The git tag keeps its width.
+// Branch and worktree identity live in session information's technical details;
+// this bar keeps only state that can change the next action.
 import { useLingui } from '@lingui/react/macro'
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover'
 import {
@@ -21,7 +19,6 @@ import {
 
 import {
   AGENT_MARKS,
-  BranchTag,
   SessionTag,
   TagLine,
 } from '#/components/deck/session-tags'
@@ -30,8 +27,6 @@ import { PopoverContent } from '#/components/ui/popover'
 import type { Detail } from './console-sessions'
 import { BackgroundTasks } from './session-background'
 import { GitStatusButton } from './session-git'
-import { WorktreeManager } from './session-worktree-manager'
-import type { WorkstationDirection } from './session-worktree-manager'
 import { UsageTag, usageMetrics } from './session-usage'
 
 /** what the status bar adds to the session reply (session_env.go) */
@@ -191,11 +186,9 @@ function Background({
 export function SessionStatusBar({
   data,
   onVisibleUsage,
-  workstationsSample,
 }: {
   data?: Detail
   onVisibleUsage?: (ids: string) => void
-  workstationsSample?: WorkstationDirection[]
 }) {
   if (!data) return null
   const agent = data.agent && data.agent !== 'agent' ? data.agent : ''
@@ -203,11 +196,10 @@ export function SessionStatusBar({
   const model = modelName(data.usage?.model) || agent
   const mode = data.mode?.trim() || ''
   const metrics = usageMetrics(data.usage, data.account)
-  const worktrees = data.worktrees ?? []
   const background = data.background ?? []
   const shells = background.filter((task) => kindOf(task) === 'shell')
   const monitors = background.filter((task) => kindOf(task) === 'monitor')
-  const custom = Boolean(data.branch || data.git || worktrees.length > 1)
+  const custom = Boolean(data.git)
   if (!model && !mode && !background.length && !metrics.length && !custom)
     return null
   return (
@@ -248,25 +240,15 @@ export function SessionStatusBar({
         </TagLine>
       ) : null}
       {custom ? (
-        // the checkout: branch, git changes, linked worktrees
+        // Git changes remain actionable; branch and worktree are technical context.
         <TagLine
           testId="statusbar-custom"
           maxLines={1}
           panelSide="top"
           className="session-statusbar"
         >
-          {data.branch ? <BranchTag branch={data.branch} /> : null}
-          {/* right after the branch: when its width moves, the branch's
-              truncation takes it up */}
           {data.git ? (
             <GitStatusButton id={data.id} git={data.git} fixed />
-          ) : null}
-          {worktrees.length > 1 ? (
-            <WorktreeManager
-              list={worktrees}
-              sample={workstationsSample}
-              repoPath={worktrees[0].path}
-            />
           ) : null}
         </TagLine>
       ) : null}

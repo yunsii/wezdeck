@@ -180,8 +180,8 @@ export function chromeSections(): Array<Omit<Section, 'group'>> {
       tags: ['common'],
       title: { zh: '底部状态栏', en: 'Status bar' },
       source: {
-        zh: '输入框下方一行关键信息：模型、分支、git 改动、linked worktree 数、后台任务（session_env.go / bg_detail.go）；放不下时分支省略、其余收进 +N；linked 与后台任务向上浮出，不推动对话。上下文和额度在空间允许时显示在底栏，折叠的告警在标题栏补充',
-        en: 'one line of essentials under the composer: model, branch, git changes, linked worktrees, background tasks (session_env.go / bg_detail.go); the branch truncates, the rest folds behind +N; linked and background tasks open upward without moving the thread. context and account limits use available space in the bottom row, with header alerts for folded metrics',
+        zh: '输入框下方保留可行动信息：模型、git 改动、后台任务与额度（session_env.go / bg_detail.go）；分支和 worktree 归入会话信息的技术详情，后台任务向上浮出，不推动对话。上下文和额度在空间允许时显示在底栏，折叠的告警在标题栏补充',
+        en: 'the composer keeps actionable essentials: model, git changes, background tasks and account limits (session_env.go / bg_detail.go); branch and worktree identity live in session information technical details. Background tasks open upward without moving the thread, while folded metrics surface in the header',
       },
       keys: { zh: '无（点各项查看）', en: 'None (tap an item)' },
       demo: <StatusBarDemo />,

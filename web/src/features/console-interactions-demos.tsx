@@ -22,7 +22,6 @@ import { SessionStatusBar } from './session-statusbar'
 import type { Detail } from './console-sessions'
 import {
   BACKGROUND,
-  STATUS_WORKSTATIONS,
   STATUS_WORKTREE_PATHS,
 } from './console-interactions-samples'
 import type { Subagent } from './session-subagents'
@@ -458,9 +457,9 @@ const STATUS_SAMPLE: Detail = {
 }
 
 /**
- * The status bar under the composer, as on a phone: agent, branch, git,
- * node, worktrees, background tasks on one line; worktrees and background
- * tasks open upward over the conversation.
+ * The status bar under the composer, as on a phone: agent, git, model,
+ * background tasks and usage. Branch and worktree identity live in technical
+ * details rather than competing with actionable state here.
  */
 export function StatusBarDemo() {
   const [visibleUsage, setVisibleUsage] = useState('')
@@ -472,11 +471,7 @@ export function StatusBarDemo() {
           发消息
         </span>
       </div>
-      <SessionStatusBar
-        data={STATUS_SAMPLE}
-        onVisibleUsage={setVisibleUsage}
-        workstationsSample={STATUS_WORKSTATIONS}
-      />
+      <SessionStatusBar data={STATUS_SAMPLE} onVisibleUsage={setVisibleUsage} />
     </div>
   )
 }
@@ -522,10 +517,7 @@ export function GitChurnDemo() {
           发消息
         </span>
       </div>
-      <SessionStatusBar
-        data={sample}
-        workstationsSample={STATUS_WORKSTATIONS}
-      />
+      <SessionStatusBar data={sample} />
     </div>
   )
 }

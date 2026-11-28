@@ -318,7 +318,7 @@ lights (● running, ▲ waiting, ✓ shipped, ✕ failed, ○ idle;
   the thread itself (while the session list and tab badges surface waiting
   sessions before entry). The composer agent row shows context used
   and the available 5 h and 7 d limits after the model and background tasks.
-  Tags that do not fit are available in the upward `+N` panel. A metric at
+  Tags that do not fit are available in the upward `+N` panel. Branch and worktree identity stay in 会话信息的 Technical details instead of repeating under the composer. A metric at
   or above 75% appears in the header when it is folded out of the bottom
   row. Expired limit snapshots are skipped. Tags open token counts or
   reset times, and the conversation info keeps the full usage details.

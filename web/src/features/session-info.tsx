@@ -9,7 +9,7 @@ import { ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { AgentTag, BranchTag, TagLine } from '#/components/deck/session-tags'
+import { AgentTag, TagLine } from '#/components/deck/session-tags'
 import { Button } from '#/components/ui/button'
 import { Disclosure } from '#/components/ui/disclosure'
 import { Field, FieldList } from '#/components/ui/field'
@@ -41,6 +41,7 @@ import { worktreeKey } from './session-order'
 import { useStatusText } from './session-status-text'
 import { SessionTitleHistorySection } from './session-title-history'
 import { SessionDocumentsSection } from './host-file-context'
+import { WorktreeManager } from './session-worktree-manager'
 
 export { metaValue }
 export type { MetaGroup } from './session-info-meta'
@@ -109,17 +110,19 @@ function useLabels() {
 
 function TechnicalDetailsSection({
   groups,
+  worktrees,
   groupLabels,
   keys,
   humanStatus,
 }: {
   groups: ReturnType<typeof buildTechnicalGroups>
+  worktrees: NonNullable<Detail['worktrees']>
   groupLabels: Record<string, string>
   keys: Record<string, string>
   humanStatus: string
 }) {
   const { t } = useLingui()
-  if (!groups.length) return null
+  if (!groups.length && worktrees.length <= 1) return null
   return (
     <Disclosure
       data-testid="session-tech-details"
@@ -139,6 +142,14 @@ function TechnicalDetailsSection({
       <p className="px-1 text-meta text-brand-label">
         {t`Tap a row to copy its value; long-press or right-click for more.`}
       </p>
+      {worktrees.length > 1 ? (
+        <section className="grid gap-1">
+          <SectionHeading className="bg-brand-deck">
+            {t`Worktrees`}
+          </SectionHeading>
+          <WorktreeManager list={worktrees} repoPath={worktrees[0].path} />
+        </section>
+      ) : null}
       {groups.map((group) => (
         <section key={group.name} className="grid gap-1">
           <SectionHeading className="bg-brand-deck">
@@ -218,12 +229,11 @@ function SessionInfoHeader({
             {t`Untitled session`}
           </p>
         )}
-        {data.agent || data.branch || data.git ? (
+        {data.agent || data.git ? (
           <TagLine testId="info-tags">
             {data.agent && data.agent !== 'agent' ? (
               <AgentTag agent={data.agent} />
             ) : null}
-            {data.branch ? <BranchTag branch={data.branch} /> : null}
             {data.git ? <GitStatusButton id={data.id} git={data.git} /> : null}
           </TagLine>
         ) : null}
@@ -422,6 +432,7 @@ export function SessionInfo({
 
           <TechnicalDetailsSection
             groups={technicalGroups}
+            worktrees={data.worktrees ?? []}
             groupLabels={groupLabels}
             keys={keys}
             humanStatus={humanStatus}
