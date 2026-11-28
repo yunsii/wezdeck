@@ -68,6 +68,11 @@ worker verifies host connectivity, not each individual browser tab.
 The Windows worker changes to a Windows-native working directory before
 stopping WSL; otherwise the inherited `\\wsl.localhost` directory disappears
 and even a successful compact cannot launch `wsl.exe` for verification.
+The WSL-side PowerShell and `cmd.exe` wrappers also launch from `/mnt/c/Windows`:
+if those executables exist but report `Invalid argument` after a restart,
+Windows may be unable to access the caller's WSL UNC working directory. A
+successful probe from `/mnt/c/Windows` distinguishes this from disabled
+interop; it does not require another WSL shutdown.
 
 An approved WezDeck Web device can also start this fixed job from
 **我的 → 快捷控制 → WSL 磁盘**. The confirmation states that every WSL session

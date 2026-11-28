@@ -47,10 +47,10 @@ EOF
   fi
 
   local probe_output=""
-  if ! probe_output="$("$powershell" -NoProfile -NonInteractive -Command '[Console]::Write("interop-ok")' 2>&1)"; then
+  if ! probe_output="$(cd "$(windows_shell_native_cwd)" && "$powershell" -NoProfile -NonInteractive -Command '[Console]::Write("interop-ok")' 2>&1)"; then
     sync_trace "step=powershell-interop status=failed reason=unexecutable output=$(printf '%s' "$probe_output" | tr '\r\n' '  ' | cut -c1-180)"
     cat >&2 <<'EOF'
-[sync] powershell.exe was found but could not execute (WSL interop is likely disabled).
+[sync] powershell.exe was found but could not execute from a Windows-native directory.
 [sync] Ensure /etc/wsl.conf contains:
 
 [interop]

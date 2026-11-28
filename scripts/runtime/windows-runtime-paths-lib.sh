@@ -4,6 +4,12 @@ windows_runtime_trim_cr() {
   printf '%s' "${1-}" | tr -d '\r'
 }
 
+windows_runtime_native_cmd_echo() {
+  local name="$1" native_cwd="${WINDOWS_POWERSHELL_CWD:-/mnt/c/Windows}"
+  [[ -d "$native_cwd" ]] || native_cwd="$PWD"
+  (cd "$native_cwd" && cmd.exe /c echo "$name")
+}
+
 windows_runtime_detect_paths() {
   # Fast path 1: in-process memoization. Multiple call sites in one
   # bash invocation (e.g. attention_state_path called by both _init and
@@ -43,8 +49,8 @@ windows_runtime_detect_paths() {
   command -v cmd.exe >/dev/null 2>&1 || return 1
   command -v wslpath >/dev/null 2>&1 || return 1
 
-  localappdata_win="$(windows_runtime_trim_cr "$(cmd.exe /c echo %LOCALAPPDATA% 2>/dev/null || true)")"
-  userprofile_win="$(windows_runtime_trim_cr "$(cmd.exe /c echo %USERPROFILE% 2>/dev/null || true)")"
+  localappdata_win="$(windows_runtime_trim_cr "$(windows_runtime_native_cmd_echo '%LOCALAPPDATA%' 2>/dev/null || true)")"
+  userprofile_win="$(windows_runtime_trim_cr "$(windows_runtime_native_cmd_echo '%USERPROFILE%' 2>/dev/null || true)")"
 
   [[ -n "$localappdata_win" && -n "$userprofile_win" ]] || return 1
 

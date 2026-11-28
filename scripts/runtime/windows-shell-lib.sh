@@ -10,6 +10,15 @@ windows_powershell_exe() {
   fi
 }
 
+windows_shell_native_cwd() {
+  local path="${WINDOWS_POWERSHELL_CWD:-/mnt/c/Windows}"
+  if [[ -d "$path" ]]; then
+    printf '%s\n' "$path"
+  else
+    printf '%s\n' "$PWD"
+  fi
+}
+
 windows_powershell_quote() {
   local value="${1-}"
   value="${value//\'/\'\'}"
@@ -36,7 +45,10 @@ windows_run_powershell_command_utf8() {
       | tr -d '\r\n'
   )"
 
-  "$powershell" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "$encoded_command"
+  (
+    cd "$(windows_shell_native_cwd)"
+    "$powershell" -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand "$encoded_command"
+  )
 }
 
 windows_run_powershell_script_utf8() {
