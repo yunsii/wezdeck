@@ -7,11 +7,10 @@ import {
 } from '../src/features/foreground-sync'
 
 describe('foreground sync', () => {
-  it('includes the open detail in the app status', () => {
-    expect(foregroundSyncKeys('/zh/console/sessions/a%2Fb').at(-1)).toEqual([
-      'remote',
-      'session',
-      'a/b',
+  it('leaves session queries to their views and keeps ticket detail warm', () => {
+    expect(foregroundSyncKeys('/zh/console/sessions/a%2Fb')).toEqual([
+      ['runtime', 'collab', 'health', {}],
+      ['runtime', 'collab', 'list', { limit: 200 }],
     ])
     expect(foregroundSyncKeys('/console/collab/ticket-1').at(-1)).toEqual([
       'runtime',
@@ -21,33 +20,27 @@ describe('foreground sync', () => {
     ])
   })
 
-  it('uses the oldest successful read and keeps it when a refresh fails', async () => {
+  it('keeps the previous successful read when a refresh fails', async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    const keys = foregroundSyncKeys('/console/sessions')
-    keys.forEach((key, index) =>
-      client.setQueryData(
-        key,
-        { ok: true },
-        { updatedAt: 1_000 + index * 100 },
-      ),
-    )
-    expect(foregroundSyncState(client, keys)).toMatchObject({
+    const key = ['remote', 'sessions']
+    client.setQueryData(key, { sessions: [] }, { updatedAt: 1_000 })
+    expect(foregroundSyncState(client, key)).toMatchObject({
       lastAt: 1_000,
       fresh: true,
       failed: false,
     })
-    expect(foregroundSyncState(client, keys, 1_500).fresh).toBe(false)
+    expect(foregroundSyncState(client, key, 1_500).fresh).toBe(false)
 
     await client
       .fetchQuery({
-        queryKey: keys[0],
+        queryKey: key,
         queryFn: () => Promise.reject(new Error('offline')),
         staleTime: 0,
       })
       .catch(() => undefined)
-    expect(foregroundSyncState(client, keys, 1_500)).toMatchObject({
+    expect(foregroundSyncState(client, key, 1_500)).toMatchObject({
       lastAt: 1_000,
       fresh: false,
       failed: true,
@@ -56,11 +49,10 @@ describe('foreground sync', () => {
 
   it('treats an unsuccessful collab envelope as a failure', () => {
     const client = new QueryClient()
-    const keys = foregroundSyncKeys('/console/collab')
-    keys.forEach((key) => client.setQueryData(key, { ok: true }))
-    client.setQueryData(keys[1], { ok: false })
-    expect(foregroundSyncState(client, keys)).toMatchObject({
-      lastAt: 0,
+    const key = foregroundSyncKeys('/console/collab')[1]
+    client.setQueryData(key, { ok: false }, { updatedAt: 1_000 })
+    expect(foregroundSyncState(client, key)).toMatchObject({
+      lastAt: 1_000,
       fresh: false,
       failed: true,
     })

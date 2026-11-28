@@ -28,6 +28,10 @@ import { useSessionKeys, useSessionNav } from './session-switcher'
 import { Button } from '#/components/ui/button'
 import { trace } from '#/lib/client-trace'
 import { SessionActionsSheet } from './session-actions'
+import {
+  ForegroundSyncNotice,
+  useForegroundSyncNotice,
+} from './foreground-sync'
 import { RepoTicketsSheet, useRepoTickets } from './session-tickets'
 
 const tokens = (n: number) =>
@@ -186,6 +190,7 @@ export function SessionHeader({
   onTicketUse?: (payload: MessagePayload) => void
 }) {
   const { t } = useLingui()
+  const syncNotice = useForegroundSyncNotice('detail', id)
   const [infoOpen, setInfoOpen] = useState(false)
   const [ticketsOpen, setTicketsOpen] = useState(false)
   const [actionsOpen, setActionsOpen] = useState(false)
@@ -242,7 +247,7 @@ export function SessionHeader({
     <header
       ref={head}
       data-testid="session-header"
-      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:static md:mx-0 md:mt-0 md:shrink-0 md:px-[var(--page-x)]"
+      className="sticky top-[env(safe-area-inset-top)] z-30 -mx-2.5 -mt-1 grid gap-1.5 border-b border-brand-edge bg-brand-deck px-2.5 py-1.5 md:relative md:mx-0 md:mt-0 md:shrink-0 md:px-[var(--page-x)]"
     >
       <div className="flex min-w-0 items-center gap-1">
         {/* the list sits beside the conversation on a wide screen */}
@@ -344,6 +349,7 @@ export function SessionHeader({
         </Button>
       </div>
       <SessionUsageAlerts data={data} visibleUsage={visibleUsage} />
+      <ForegroundSyncNotice kind="detail" notice={syncNotice} />
       {data ? (
         <>
           <SessionInfo
