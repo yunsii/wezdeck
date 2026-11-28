@@ -182,6 +182,13 @@ describe('settle (optimistic sends leave once the transcript shows them)', () =>
     })
   })
 
+  it('drops queued bubbles when the host reports an empty outbox after restart', () => {
+    const queued = sent('old draft', 3, { state: 'queued', at: NOW - 5_000 })
+    const sending = sent('current write', 3, { state: 'sending', at: NOW })
+    expect(mergeOutboxPending([queued, sending], [])).toEqual([sending])
+    expect(mergeOutboxPending([queued], undefined)).toEqual([queued])
+  })
+
   it('keeps pendingKey stable when host outbox attaches sentId to a clientOp bubble', () => {
     const local = sent('hello', 3, { clientOp: 'op-1', at: NOW - 1_000 })
     const hostMerged = sent('hello', 3, {

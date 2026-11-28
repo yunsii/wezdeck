@@ -24,6 +24,11 @@ export function mergeOutboxPending(
   const visibleHost = dismissedIds?.size
     ? hostOutbox?.filter((rec) => !dismissedIds.has(rec.id))
     : hostOutbox
+  // Once the host has answered with an explicit empty outbox, queued bubbles
+  // from before a process restart are stale. Keep only a currently submitting
+  // browser write, which may not have reached the host record yet.
+  if (visibleHost && visibleHost.length === 0)
+    return local.filter((item) => item.state === 'sending')
   if (!visibleHost?.length) return local
   const localTimes = new Map(
     local
